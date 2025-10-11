@@ -1,0 +1,374 @@
+"""Git integration module for enhanced Git workflow support."""
+
+import os
+import re
+import subprocess
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+from .models import Issue
+
+
+@dataclass
+class GitCommit:
+    """Represents a Git commit with roadmap-relevant information."""
+
+    hash: str
+    author: str
+    date: datetime
+    message: str
+    files_changed: List[str]
+    insertions: int = 0
+    deletions: int = 0
+
+    @property
+    def short_hash(self) -> str:
+        """Get short commit hash."""
+        return self.hash[:8]
+
+    def extract_roadmap_references(self) -> List[str]:
+        """Extract roadmap issue references from commit message."""
+        # Pattern: [roadmap:issue-id] or [closes roadmap:issue-id]
+        # Issue IDs can be hex or alphanumeric
+        patterns = [
+            r"\[roadmap:([a-zA-Z0-9]{8,})\]",
+            r"\[closes roadmap:([a-zA-Z0-9]{8,})\]",
+            r"\[fixes roadmap:([a-zA-Z0-9]{8,})\]",
+            r"roadmap:([a-zA-Z0-9]{8,})",
+        ]
+
+        references = []
+        for pattern in patterns:
+            matches = re.findall(pattern, self.message, re.IGNORECASE)
+            references.extend(matches)
+
+        return list(set(references))  # Remove duplicates
+
+    def extract_progress_info(self) -> Optional[float]:
+        """Extract progress percentage from commit message."""
+        # Pattern: [progress:25%] or [progress:25]
+        patterns = [
+            r"\[progress:(\d+)%?\]",
+            r"progress:(\d+)%?",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, self.message, re.IGNORECASE)
+            if match:
+                return float(match.group(1))
+
+        return None
+
+
+@dataclass
+class GitBranch:
+    """Represents a Git branch with roadmap integration info."""
+
+    name: str
+    current: bool = False
+    remote: Optional[str] = None
+    last_commit: Optional[str] = None
+
+    def extract_issue_id(self) -> Optional[str]:
+        """Extract issue ID from branch name patterns."""
+        # Common patterns:
+        # feature/issue-abc12345-description
+        # bugfix/abc12345-fix-login
+        # abc12345-new-feature
+        patterns = [
+            r"(?:feature|bugfix|hotfix)/(?:issue-)?([a-f0-9]{8})",
+            r"^([a-f0-9]{8})-",
+            r"/([a-f0-9]{8})-",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, self.name, re.IGNORECASE)
+            if match:
+                return match.group(1)
+
+        return None
+
+    def suggests_issue_type(self) -> Optional[str]:
+        """Suggest issue type based on branch name."""
+        if self.name.startswith(("feature/", "feat/")):
+            return "feature"
+        elif self.name.startswith(("bugfix/", "bug/", "fix/")):
+            return "bug"
+        elif self.name.startswith(("hotfix/", "urgent/")):
+            return "hotfix"
+        elif self.name.startswith(("docs/", "doc/")):
+            return "documentation"
+        elif self.name.startswith(("test/", "tests/")):
+            return "testing"
+
+        return None
+
+
+class GitIntegration:
+    """Enhanced Git integration for roadmap workflow support."""
+
+    def __init__(self, repo_path: Optional[Path] = None):
+        """Initialize Git integration."""
+        self.repo_path = repo_path or Path.cwd()
+        self._git_dir = self._find_git_directory()
+
+    def _find_git_directory(self) -> Optional[Path]:
+        """Find the .git directory by walking up the directory tree."""
+        current = self.repo_path.resolve()
+
+        while current != current.parent:
+            git_dir = current / ".git"
+            if git_dir.exists():
+                return git_dir
+            current = current.parent
+
+        return None
+
+    def is_git_repository(self) -> bool:
+        """Check if current directory is in a Git repository."""
+        return self._git_dir is not None
+
+    def _run_git_command(
+        self, args: List[str], cwd: Optional[Path] = None
+    ) -> Optional[str]:
+        """Run a git command and return the output."""
+        if not self.is_git_repository():
+            return None
+
+        try:
+            result = subprocess.run(
+                ["git"] + args,
+                cwd=cwd or self.repo_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return result.stdout.strip()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return None
+
+    def get_current_user(self) -> Optional[str]:
+        """Get current Git user name."""
+        return self._run_git_command(["config", "user.name"])
+
+    def get_current_email(self) -> Optional[str]:
+        """Get current Git user email."""
+        return self._run_git_command(["config", "user.email"])
+
+    def get_current_branch(self) -> Optional[GitBranch]:
+        """Get information about the current branch."""
+        branch_name = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
+        if not branch_name or branch_name == "HEAD":
+            return None
+
+        # Get remote tracking branch
+        remote = self._run_git_command(
+            ["rev-parse", "--abbrev-ref", f"{branch_name}@{{upstream}}"]
+        )
+
+        # Get last commit
+        last_commit = self._run_git_command(["rev-parse", "HEAD"])
+
+        return GitBranch(
+            name=branch_name, current=True, remote=remote, last_commit=last_commit
+        )
+
+    def get_all_branches(self) -> List[GitBranch]:
+        """Get all local branches."""
+        output = self._run_git_command(["branch", "--format=%(refname:short)|%(HEAD)"])
+        if not output:
+            return []
+
+        branches = []
+        for line in output.split("\n"):
+            if "|" not in line:
+                continue
+
+            name, head_marker = line.split("|", 1)
+            is_current = head_marker.strip() == "*"
+
+            branches.append(GitBranch(name=name.strip(), current=is_current))
+
+        return branches
+
+    def get_recent_commits(
+        self, count: int = 10, since: Optional[str] = None
+    ) -> List[GitCommit]:
+        """Get recent commits with detailed information."""
+        args = ["log", f"-{count}", "--pretty=format:%H|%an|%ad|%s", "--date=iso"]
+        if since:
+            args.extend(["--since", since])
+
+        output = self._run_git_command(args)
+        if not output:
+            return []
+
+        commits = []
+        for line in output.split("\n"):
+            if not line.strip():
+                continue
+
+            try:
+                hash_val, author, date_str, message = line.split("|", 3)
+                date = datetime.fromisoformat(date_str.replace(" ", "T"))
+
+                # Get file statistics for this commit
+                stat_output = self._run_git_command(
+                    ["show", "--stat", "--format=", hash_val]
+                )
+                files_changed = []
+                insertions = deletions = 0
+
+                if stat_output:
+                    for stat_line in stat_output.split("\n"):
+                        if " | " in stat_line:
+                            file_path = stat_line.split(" | ")[0].strip()
+                            files_changed.append(file_path)
+                        elif "insertion" in stat_line or "deletion" in stat_line:
+                            # Parse lines like: "2 files changed, 15 insertions(+), 3 deletions(-)"
+                            numbers = re.findall(r"(\d+) insertion", stat_line)
+                            if numbers:
+                                insertions = int(numbers[0])
+                            numbers = re.findall(r"(\d+) deletion", stat_line)
+                            if numbers:
+                                deletions = int(numbers[0])
+
+                commits.append(
+                    GitCommit(
+                        hash=hash_val,
+                        author=author,
+                        date=date,
+                        message=message,
+                        files_changed=files_changed,
+                        insertions=insertions,
+                        deletions=deletions,
+                    )
+                )
+            except (ValueError, IndexError):
+                continue
+
+        return commits
+
+    def get_commits_for_issue(
+        self, issue_id: str, since: Optional[str] = None
+    ) -> List[GitCommit]:
+        """Get all commits that reference a specific issue."""
+        commits = self.get_recent_commits(count=100, since=since)
+        return [
+            commit
+            for commit in commits
+            if issue_id in commit.extract_roadmap_references()
+        ]
+
+    def suggest_branch_name(self, issue: Issue) -> str:
+        """Suggest a branch name based on issue information."""
+        # Clean title for branch name
+        title_slug = re.sub(r"[^a-zA-Z0-9\s-]", "", issue.title.lower())
+        title_slug = re.sub(r"\s+", "-", title_slug)
+        title_slug = title_slug[:40]  # Limit length
+
+        # Determine prefix based on issue type or priority
+        prefix = "feature"
+        if hasattr(issue, "issue_type"):
+            if issue.issue_type == "bug":
+                prefix = "bugfix"
+            elif issue.issue_type == "documentation":
+                prefix = "docs"
+        elif issue.priority.value == "critical":
+            prefix = "hotfix"
+
+        return f"{prefix}/{issue.id}-{title_slug}"
+
+    def create_branch_for_issue(self, issue: Issue, checkout: bool = True) -> bool:
+        """Create a new branch for an issue."""
+        branch_name = self.suggest_branch_name(issue)
+
+        # Create the branch
+        result = self._run_git_command(["checkout", "-b", branch_name])
+        if result is None:
+            return False
+
+        if not checkout:
+            # Switch back to previous branch
+            prev_branch = self._run_git_command(
+                ["rev-parse", "--abbrev-ref", "HEAD@{1}"]
+            )
+            if prev_branch:
+                self._run_git_command(["checkout", prev_branch])
+
+        return True
+
+    def get_repository_info(self) -> Dict[str, Any]:
+        """Get general repository information."""
+        if not self.is_git_repository():
+            return {}
+
+        info = {}
+
+        # Remote origin URL
+        origin_url = self._run_git_command(["config", "--get", "remote.origin.url"])
+        if origin_url:
+            info["origin_url"] = origin_url
+
+            # Try to extract GitHub repo info
+            github_match = re.search(r"github\.com[:/]([^/]+)/([^/.]+)", origin_url)
+            if github_match:
+                info["github_owner"] = github_match.group(1)
+                info["github_repo"] = github_match.group(2)
+
+        # Current branch
+        current_branch = self.get_current_branch()
+        if current_branch:
+            info["current_branch"] = current_branch.name
+
+        # Repository root
+        repo_root = self._run_git_command(["rev-parse", "--show-toplevel"])
+        if repo_root:
+            info["repo_root"] = repo_root
+
+        # Total commits
+        commit_count = self._run_git_command(["rev-list", "--count", "HEAD"])
+        if commit_count:
+            info["total_commits"] = int(commit_count)
+
+        return info
+
+    def parse_commit_message_for_updates(self, commit: GitCommit) -> Dict[str, Any]:
+        """Parse commit message for roadmap updates."""
+        updates = {}
+
+        # Extract progress
+        progress = commit.extract_progress_info()
+        if progress is not None:
+            updates["progress_percentage"] = min(100.0, max(0.0, progress))
+
+        # Check for completion indicators
+        completion_patterns = [
+            r"\[closes roadmap:[a-f0-9]{8}\]",
+            r"\[fixes roadmap:[a-f0-9]{8}\]",
+            r"\b(?:close|closes|fix|fixes|resolve|resolves)\b.*roadmap",
+        ]
+
+        for pattern in completion_patterns:
+            if re.search(pattern, commit.message, re.IGNORECASE):
+                updates["status"] = "done"
+                updates["progress_percentage"] = 100.0
+                break
+
+        return updates
+
+    def get_branch_linked_issues(self, branch_name: str) -> List[str]:
+        """Get issue IDs linked to a specific branch."""
+        try:
+            # Create a GitBranch object and extract issue ID
+            branch = GitBranch(branch_name)
+            issue_id = branch.extract_issue_id()
+            
+            if issue_id:
+                return [issue_id]
+            else:
+                return []
+        except Exception:
+            return []

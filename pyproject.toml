@@ -1,42 +1,91 @@
 [tool.poetry]
-name = "roadmap"
-version = "0.1.0"
-description = "A command line tool for creating and managing roadmaps"
-authors = ["Your Name <your.email@example.com>"]
+name = "roadmap-cli"
+version = "1.0.0"
+description = "Enterprise-grade command line tool for project roadmap management with GitHub integration, data visualization, and advanced analytics"
+authors = ["Roadmap CLI Team <contact@roadmap-cli.com>"]
+license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/yourusername/roadmap"
-repository = "https://github.com/yourusername/roadmap"
-documentation = "https://github.com/yourusername/roadmap"
-keywords = ["cli", "roadmap", "planning", "project-management"]
+homepage = "https://roadmap-cli.readthedocs.io"
+repository = "https://github.com/roadmap-cli/roadmap"
+documentation = "https://roadmap-cli.readthedocs.io"
+keywords = [
+    "cli", 
+    "roadmap", 
+    "planning", 
+    "project-management", 
+    "github",
+    "agile",
+    "scrum",
+    "milestone",
+    "issue-tracking",
+    "analytics",
+    "visualization",
+    "productivity"
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.11", 
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Bug Tracking",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Topic :: Office/Business :: Scheduling",
+    "Topic :: Utilities",
+    "Environment :: Console",
+    "Operating System :: OS Independent"
 ]
 packages = [{include = "roadmap"}]
+include = [
+    "LICENSE.md",
+    "CHANGELOG.md",
+    "docs/**/*.md",
+    "demos/*.py"
+]
+exclude = [
+    "tests/",
+    "htmlcov/",
+    "site/",
+    ".roadmap/",
+    "scripts/"
+]
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
-click = "^8.1.0"
-rich = "^13.0.0"
-pydantic = "^2.0.0"
-pyyaml = "^6.0"
+python = ">=3.10,<4.0"
+click = ">=8.0.0,<9.0.0"
+rich = ">=13.0.0,<15.0.0"
+pydantic = ">=2.0.0,<3.0.0"
+pyyaml = ">=6.0.0,<7.0.0"
+requests = ">=2.28.0,<3.0.0"
+python-dotenv = ">=1.0.0,<2.0.0"
+keyring = ">=23.0.0,<26.0.0"
+pandas = ">=2.0.0,<3.0.0"
+openpyxl = ">=3.1.0,<4.0.0"
+matplotlib = ">=3.6.0,<4.0.0"
+plotly = ">=5.15.0,<6.0.0"
+seaborn = ">=0.12.0,<1.0.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
-black = "^23.0.0"
-isort = "^5.12.0"
-flake8 = "^6.0.0"
-mypy = "^1.5.0"
-pre-commit = "^3.3.0"
+pytest = "^8.4.2"
+pytest-cov = "^7.0.0"
+black = "^25.9.0"
+isort = "^6.1.0"
+flake8 = "^7.3.0"
+mypy = "^1.18.2"
+pre-commit = "^4.3.0"
+# Documentation dependencies
+sphinx = "^8.0.0"
+sphinx-rtd-theme = "^3.0.0"
+sphinx-click = "^6.0.0"
+mkdocs = "^1.6.0"
+mkdocs-material = "^9.5.0"
+mkdocs-click = "^0.8.0"
+myst-parser = "^4.0.0"
 
 [tool.poetry.scripts]
 roadmap = "roadmap.cli:main"

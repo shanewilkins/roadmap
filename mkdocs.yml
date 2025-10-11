@@ -1,0 +1,168 @@
+site_name: Roadmap CLI
+site_description: A powerful command-line tool for creating and managing project roadmaps
+site_author: Roadmap CLI Team
+site_url: https://roadmap-cli.readthedocs.io/
+
+# Repository
+repo_name: roadmap-cli/roadmap
+repo_url: https://github.com/roadmap-cli/roadmap
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: Copyright &copy; 2025 Roadmap CLI Team
+
+# Configuration
+theme:
+  name: material
+  
+  # Static files
+  static_templates:
+    - 404.html
+  
+  # Theme options
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  # Features
+  features:
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - content.footnote.tooltips
+    - content.tabs.link
+    - content.tooltips
+    - header.autohide
+    - navigation.expand
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.prune
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+
+  # Icon
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: roadmap-cli
+      repo: roadmap
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/mkdocs.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      combine_header_slug: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Plugins
+plugins:
+  - search
+
+# Page tree
+nav:
+  - Home: index.md
+  - Installation: INSTALLATION.md
+  - Quick Start: quickstart.md
+  - CLI Reference: 
+    - Manual: CLI_REFERENCE.md
+    - Auto-Generated: CLI_REFERENCE_AUTO.md
+  - Features: 
+    - Overview: FEATURE_SHOWCASE.md
+    - Data Visualization: VISUALIZATION_FEATURES.md
+  - Performance: PERFORMANCE_OPTIMIZATION.md
+  - Security: 
+    - Overview: SECURITY.md
+    - Implementation: SECURITY_IMPLEMENTATION.md
+    - Assessment: SECURITY_ASSESSMENT.md
+  - Development:
+    - PyPI Publication: PYPI_PUBLICATION.md
+  - Troubleshooting: TROUBLESHOOTING.md
+  - User Workflows: USER_WORKFLOWS.md
+
+# Customization
+extra:
+  homepage: https://roadmap-cli.readthedocs.io/
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/roadmap-cli/roadmap
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/roadmap-cli/
+    - icon: fontawesome/solid/paper-plane
+      link: mailto:support@roadmap-cli.com
+
+# Additional CSS
+extra_css:
+  - stylesheets/extra.css
+
+# Watch
+watch:
+  - roadmap/
