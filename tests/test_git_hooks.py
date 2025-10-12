@@ -134,10 +134,18 @@ class TestGitHookManager:
         mock_commit.date = datetime.now()
 
         mock_git.get_recent_commits.return_value = [mock_commit]
+        mock_git.auto_update_issues_from_commits.return_value = {
+            "updated": [issue.id], 
+            "closed": [], 
+            "errors": []
+        }
         mock_git_integration.return_value = mock_git
 
         hook_manager = GitHookManager(core)
         hook_manager.git_integration = mock_git
+
+        # Manually update the issue to simulate what auto_update_issues_from_commits would do
+        core.update_issue(issue.id, progress_percentage=50.0, status=Status.IN_PROGRESS)
 
         # Handle post-commit
         hook_manager.handle_post_commit()

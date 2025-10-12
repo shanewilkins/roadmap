@@ -34,8 +34,13 @@ class TestGitHubClient:
         assert client.owner == "test_owner"
         assert client.repo == "test_repo"
 
-    def test_initialization_without_token_raises_error(self):
+    @patch.dict("os.environ", {}, clear=True)
+    @patch("roadmap.github_client.get_credential_manager")
+    def test_initialization_without_token_raises_error(self, mock_credential_manager):
         """Test that missing token raises error."""
+        # Mock credential manager to return None
+        mock_credential_manager.return_value.get_token.return_value = None
+        
         with pytest.raises(GitHubAPIError, match="GitHub token is required"):
             GitHubClient()
 

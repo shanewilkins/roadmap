@@ -254,6 +254,9 @@ class SyncManager:
             except GitHubAPIError:
                 # Client initialization failed, will be handled when needed
                 pass
+        elif not token:
+            # Explicitly don't create client if no token available
+            self.github_client = None
 
     def _get_token_secure(self, github_config: dict) -> Optional[str]:
         """Get token from secure sources.

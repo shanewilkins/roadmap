@@ -86,9 +86,14 @@ class TestSyncManager:
         sync_manager = SyncManager(mock_core, config)
         assert sync_manager.github_client is None
 
-    def test_initialization_with_missing_token(self, mock_core, mock_config):
+    @patch("roadmap.sync.get_credential_manager")
+    def test_initialization_with_missing_token(self, mock_credential_manager, mock_core, mock_config):
         """Test sync manager initialization with missing token."""
         mock_config.github["token"] = ""
+        
+        # Mock credential manager to return None
+        mock_credential_manager.return_value.is_available.return_value = False
+        mock_credential_manager.return_value.get_token.return_value = None
 
         with patch.dict("os.environ", {}, clear=True):
             sync_manager = SyncManager(mock_core, mock_config)

@@ -689,3 +689,4 @@ Complete documentation is available in the [`/docs`](docs/) directory:
 Built with ❤️ using Python 3.12+ and modern development practices
 
 *For detailed API documentation, examples, and advanced usage patterns, visit our [documentation site](https://roadmap-cli.readthedocs.io) (coming soon).*
+# Test comment

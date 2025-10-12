@@ -936,7 +936,7 @@ def test_issue_done_command(initialized_roadmap):
     # Mark the issue as done
     result = runner.invoke(main, ["issue", "done", issue_id])
     assert result.exit_code == 0
-    assert "✅ Updated issue: test-issue" in result.output
+    assert "✅ Finished: test-issue" in result.output
 
 
 def test_issue_done_command_with_reason(initialized_roadmap):
@@ -957,8 +957,8 @@ def test_issue_done_command_with_reason(initialized_roadmap):
         main, ["issue", "done", issue_id, "--reason", "Duplicate of #123"]
     )
     assert result.exit_code == 0
-    assert "✅ Updated issue: test-issue" in result.output
-    assert "reason: Duplicate of #123" in result.output
+    assert "✅ Finished: test-issue" in result.output
+    assert "Reason: Duplicate of #123" in result.output
 
 
 def test_issue_update_with_reason(initialized_roadmap):

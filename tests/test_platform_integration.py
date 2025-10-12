@@ -20,7 +20,7 @@ class TestCrossPlatformCLIWorkflows:
         with tempfile.TemporaryDirectory() as temp_dir:
             os.chdir(temp_dir)
             runner = CliRunner()
-            result = runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
             assert result.exit_code == 0
             yield temp_dir
 

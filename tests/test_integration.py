@@ -176,7 +176,7 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Initialize and create some data
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
         runner.invoke(main, ["issue", "create", "Test issue"])
         runner.invoke(main, ["milestone", "create", "Test milestone"])
 
@@ -208,7 +208,7 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Initialize roadmap
-        result = runner.invoke(main, ["init"])
+        result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
         assert result.exit_code == 0
 
         # Check config file exists and has correct structure
@@ -236,7 +236,7 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Setup
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
         # Create issues
         result = runner.invoke(main, ["issue", "create", "Issue 1"])
@@ -326,7 +326,7 @@ class TestEndToEndWorkflows:
         assert "Roadmap not initialized" in result.output
 
         # Initialize and test invalid operations
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
         # Try to update non-existent issue
         result = runner.invoke(
@@ -355,7 +355,7 @@ class TestSyncIntegration:
         runner = CliRunner()
 
         # Initialize roadmap
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
         # Test sync setup
         with patch("roadmap.cli.SyncManager") as mock_sync_manager_class:
@@ -390,7 +390,7 @@ class TestSyncIntegration:
         runner = CliRunner()
 
         # Setup
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
         with patch("roadmap.cli.SyncManager") as mock_sync_manager_class:
             mock_sync_manager = Mock()
@@ -434,7 +434,7 @@ class TestCrossModuleIntegration:
         runner = CliRunner()
 
         # Initialize and create data
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
         runner.invoke(main, ["issue", "create", "Test issue"])
 
         # Verify core can read what was created
@@ -455,7 +455,7 @@ class TestCrossModuleIntegration:
         runner = CliRunner()
 
         # Create data through CLI
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
         result = runner.invoke(
             main, ["issue", "create", "CLI Issue", "--priority", "high"]
         )
@@ -492,7 +492,7 @@ class TestPerformanceAndStress:
         runner = CliRunner()
 
         # Initialize
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
         # Create many issues and milestones
         num_issues = 50
@@ -513,17 +513,20 @@ class TestPerformanceAndStress:
             result = runner.invoke(
                 main, ["issue", "create", f"Issue {i+1}", "--priority", priority]
             )
+            assert result.exit_code == 0
 
             # Extract issue ID
+            issue_id = None
             for line in result.output.split("\n"):
                 if "ID:" in line:
-                    issue_id = line.split(":")[1].strip()
+                    issue_id = line.split("ID:")[1].strip().split()[0]
                     issue_ids.append(issue_id)
                     break
-
-            # Assign to milestone
-            milestone_name = milestone_names[i % len(milestone_names)]
-            runner.invoke(main, ["milestone", "assign", issue_id, milestone_name])
+            
+            # Only assign to milestone if we successfully extracted the ID
+            if issue_id:
+                milestone_name = milestone_names[i % len(milestone_names)]
+                runner.invoke(main, ["milestone", "assign", issue_id, milestone_name])
 
         # Test operations on large dataset
         result = runner.invoke(main, ["status"])
@@ -561,7 +564,7 @@ class TestPerformanceAndStress:
         runner = CliRunner()
 
         # Initialize
-        runner.invoke(main, ["init"])
+        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
         # Simulate concurrent operations by creating multiple core instances
         cores = [RoadmapCore() for _ in range(3)]
