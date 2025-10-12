@@ -39,6 +39,7 @@ class RoadmapCore:
         self.roadmap_dir = self.root_path / roadmap_dir_name
         self.issues_dir = self.roadmap_dir / "issues"
         self.milestones_dir = self.roadmap_dir / "milestones"
+        self.projects_dir = self.roadmap_dir / "projects"
         self.templates_dir = self.roadmap_dir / "templates"
         self.artifacts_dir = self.roadmap_dir / "artifacts"
         self.config_file = self.roadmap_dir / "config.yaml"
@@ -88,6 +89,7 @@ class RoadmapCore:
         )  # Owner full, group/other read/execute
         create_secure_directory(self.issues_dir, 0o755)
         create_secure_directory(self.milestones_dir, 0o755)
+        create_secure_directory(self.projects_dir, 0o755)
         create_secure_directory(self.templates_dir, 0o755)
         create_secure_directory(self.artifacts_dir, 0o755)
 
@@ -859,3 +861,20 @@ Project notes and additional context.
                 branch_issues[branch.name] = [issue_id]
 
         return branch_issues
+
+    def _generate_id(self) -> str:
+        """Generate a unique ID for projects and issues."""
+        import uuid
+        return str(uuid.uuid4()).replace('-', '')[:8]
+
+    def _normalize_filename(self, title: str) -> str:
+        """Normalize a title for use as a filename."""
+        import re
+        # Replace non-alphanumeric characters with hyphens
+        normalized = re.sub(r'[^a-zA-Z0-9\s]', '', title)
+        # Replace spaces with hyphens and convert to lowercase
+        normalized = re.sub(r'\s+', '-', normalized.strip()).lower()
+        # Remove consecutive hyphens
+        normalized = re.sub(r'-+', '-', normalized)
+        # Remove leading/trailing hyphens
+        return normalized.strip('-')

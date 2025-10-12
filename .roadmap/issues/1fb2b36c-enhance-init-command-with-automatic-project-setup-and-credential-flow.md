@@ -2,20 +2,20 @@
 id: 1fb2b36c
 title: Enhance init command with automatic project setup and credential flow
 priority: high
-status: todo
+status: in-progress
 issue_type: feature
 milestone: ''
 labels: []
 github_issue: null
 created: '2025-10-11T20:21:35.559175'
-updated: '2025-10-11T20:21:35.559179'
+updated: '2025-10-12T12:33:43.525514'
 assignee: shane
 estimated_hours: 4.0
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-10-12T11:46:14.418823'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 85.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
