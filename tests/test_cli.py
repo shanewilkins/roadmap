@@ -1543,8 +1543,8 @@ class TestTeamCommands:
             assert "charlie" in result.output
 
 
-class TestProjectCommands:
-    """Test project-related CLI commands with proper isolation."""
+class TestRoadmapCommands:
+    """Test roadmap-related CLI commands with proper isolation."""
 
     @pytest.fixture
     def isolated_roadmap_dir(self):
@@ -1565,45 +1565,45 @@ class TestProjectCommands:
                 # Always restore original directory
                 os.chdir(original_cwd)
 
-    def test_project_help(self, cli_runner, isolated_roadmap_dir):
-        """Test project help command."""
-        result = cli_runner.invoke(main, ["project", "--help"])
+    def test_roadmap_help(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap help command."""
+        result = cli_runner.invoke(main, ["roadmap", "--help"])
         assert result.exit_code == 0
-        assert "Manage projects" in result.output
+        assert "Manage roadmaps" in result.output
         assert "create" in result.output
         assert "overview" in result.output
 
-    def test_project_create_command(self, cli_runner, isolated_roadmap_dir):
-        """Test project create command."""
+    def test_roadmap_create_command(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap create command."""
         result = cli_runner.invoke(main, [
-            "project", "create", "test-project",
-            "--description", "A test project",
+            "roadmap", "create", "test-roadmap",
+            "--description", "A test roadmap",
             "--owner", "testuser",
             "--priority", "high"
         ])
         assert result.exit_code == 0
-        assert "Created project" in result.output
+        assert "Created roadmap" in result.output
         
-        # Verify project file was created in temp directory
+        # Verify roadmap file was created in temp directory
         projects_dir = os.path.join(isolated_roadmap_dir, ".roadmap", "projects")
         assert os.path.exists(projects_dir)
-        project_files = [f for f in os.listdir(projects_dir) if f.endswith('.md')]
-        assert len(project_files) == 1
+        roadmap_files = [f for f in os.listdir(projects_dir) if f.endswith('.md')]
+        assert len(roadmap_files) == 1
         
-        # Verify project file content
-        project_file = os.path.join(projects_dir, project_files[0])
-        with open(project_file, 'r') as f:
+        # Verify roadmap file content
+        roadmap_file = os.path.join(projects_dir, roadmap_files[0])
+        with open(roadmap_file, 'r') as f:
             content = f.read()
-            assert "test-project" in content
-            assert "A test project" in content
+            assert "test-roadmap" in content
+            assert "A test roadmap" in content
             assert "testuser" in content
             assert "priority: \"high\"" in content
 
-    def test_project_create_with_all_options(self, cli_runner, isolated_roadmap_dir):
-        """Test project create command with all options."""
+    def test_roadmap_create_with_all_options(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap create command with all options."""
         result = cli_runner.invoke(main, [
-            "project", "create", "full-project",
-            "--description", "A comprehensive test project",
+            "roadmap", "create", "full-roadmap",
+            "--description", "A comprehensive test roadmap",
             "--owner", "developer",
             "--priority", "critical",
             "--start-date", "2025-01-01",
@@ -1613,16 +1613,16 @@ class TestProjectCommands:
             "--milestones", "v2.0"
         ])
         assert result.exit_code == 0
-        assert "Created project" in result.output
+        assert "Created roadmap" in result.output
 
-    def test_project_create_without_roadmap(self, cli_runner):
-        """Test project create command without initialized roadmap."""
+    def test_roadmap_create_without_roadmap(self, cli_runner):
+        """Test roadmap create command without initialized roadmap."""
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = os.getcwd()
             try:
                 os.chdir(temp_dir)
                 result = cli_runner.invoke(main, [
-                    "project", "create", "test-project"
+                    "roadmap", "create", "test-roadmap"
                 ])
                 # The command might succeed if it creates a roadmap automatically
                 # or fail if it requires manual initialization
@@ -1631,48 +1631,134 @@ class TestProjectCommands:
             finally:
                 os.chdir(original_cwd)
 
-    def test_project_overview_command(self, cli_runner, isolated_roadmap_dir):
-        """Test project overview command."""
-        # First create a project
-        cli_runner.invoke(main, [
-            "project", "create", "overview-test",
-            "--description", "Project for overview testing"
+    def test_roadmap_overview_command(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap overview command."""
+        # First create a roadmap
+        create_result = cli_runner.invoke(main, [
+            "roadmap", "create", "overview-test",
+            "--description", "Roadmap for overview testing"
         ])
+        assert create_result.exit_code == 0
         
-        # Then test overview
-        result = cli_runner.invoke(main, ["project", "overview"])
-        # Overview might have implementation issues, just check it doesn't crash completely
-        # The important thing is that no files leak into the real .roadmap directory
-        assert result.exit_code is not None  # Command completed (success or failure)
+        # Extract roadmap ID from the create output
+        import re
+        id_match = re.search(r'ID: ([a-f0-9]+)', create_result.output)
+        assert id_match is not None
+        roadmap_id = id_match.group(1)
+        
+        # Then test overview with specific roadmap ID
+        result = cli_runner.invoke(main, ["roadmap", "overview", roadmap_id])
+        # Should succeed and show roadmap details
+        assert result.exit_code == 0
+        assert "Roadmap:" in result.output
 
-    def test_project_overview_without_roadmap(self, cli_runner):
-        """Test project overview command without initialized roadmap."""
+    def test_roadmap_overview_without_roadmap(self, cli_runner):
+        """Test roadmap overview command without initialized roadmap."""
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = os.getcwd()
             try:
                 os.chdir(temp_dir)
-                result = cli_runner.invoke(main, ["project", "overview"])
+                result = cli_runner.invoke(main, ["roadmap", "overview"])
                 # Command should either fail gracefully or handle missing roadmap
                 if result.exit_code != 0 and result.output:
                     assert "not initialized" in result.output.lower() or "error" in result.output.lower()
             finally:
                 os.chdir(original_cwd)
 
-    def test_project_create_invalid_priority(self, cli_runner, isolated_roadmap_dir):
-        """Test project create with invalid priority."""
+    def test_roadmap_create_invalid_priority(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap create with invalid priority."""
         result = cli_runner.invoke(main, [
-            "project", "create", "invalid-priority-project",
+            "roadmap", "create", "invalid-priority-roadmap",
             "--priority", "invalid"
         ])
         assert result.exit_code != 0
 
-    def test_project_create_invalid_date_format(self, cli_runner, isolated_roadmap_dir):
-        """Test project create with invalid date format."""
+    def test_roadmap_create_invalid_date_format(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap create with invalid date format."""
         result = cli_runner.invoke(main, [
-            "project", "create", "invalid-date-project",
+            "roadmap", "create", "invalid-date-roadmap",
             "--start-date", "invalid-date"
         ])
         # The command might succeed if it gracefully handles invalid dates
         # or fail with validation error - both are acceptable
         if result.exit_code != 0:
             assert "error" in result.output.lower() or "invalid" in result.output.lower()
+
+    def test_roadmap_update_command(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap update command."""
+        # First create a roadmap
+        create_result = cli_runner.invoke(main, [
+            "roadmap", "create", "update-test",
+            "--description", "Roadmap for update testing",
+            "--priority", "medium"
+        ])
+        assert create_result.exit_code == 0
+        
+        # Extract roadmap ID from the create output
+        import re
+        id_match = re.search(r'ID: ([a-f0-9]+)', create_result.output)
+        assert id_match is not None
+        roadmap_id = id_match.group(1)
+        
+        # Then test update
+        result = cli_runner.invoke(main, [
+            "roadmap", "update", roadmap_id,
+            "--priority", "high",
+            "--status", "active",
+            "--add-milestone", "Phase 1"
+        ])
+        assert result.exit_code == 0
+        assert "Updated roadmap" in result.output
+        assert "priority: high" in result.output
+        assert "status: active" in result.output
+        assert "added milestone: Phase 1" in result.output
+
+    def test_roadmap_list_command(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap list command."""
+        # First create a few roadmaps
+        cli_runner.invoke(main, [
+            "roadmap", "create", "list-test-1",
+            "--priority", "high"
+        ])
+        cli_runner.invoke(main, [
+            "roadmap", "create", "list-test-2", 
+            "--priority", "low"
+        ])
+        
+        # Test list all
+        result = cli_runner.invoke(main, ["roadmap", "list"])
+        assert result.exit_code == 0
+        assert "list-test-1" in result.output
+        assert "list-test-2" in result.output
+        
+        # Test list with filter
+        result = cli_runner.invoke(main, ["roadmap", "list", "--priority", "high"])
+        assert result.exit_code == 0
+        assert "list-test-1" in result.output
+        assert "list-test-2" not in result.output
+
+    def test_roadmap_delete_command(self, cli_runner, isolated_roadmap_dir):
+        """Test roadmap delete command."""
+        # First create a roadmap
+        create_result = cli_runner.invoke(main, [
+            "roadmap", "create", "delete-test",
+            "--description", "Roadmap for delete testing"
+        ])
+        assert create_result.exit_code == 0
+        
+        # Extract roadmap ID from the create output
+        import re
+        id_match = re.search(r'ID: ([a-f0-9]+)', create_result.output)
+        assert id_match is not None
+        roadmap_id = id_match.group(1)
+        
+        # Then test delete with confirm flag
+        result = cli_runner.invoke(main, [
+            "roadmap", "delete", roadmap_id, "--confirm"
+        ])
+        assert result.exit_code == 0
+        assert "Deleted roadmap" in result.output
+        
+        # Verify roadmap was actually deleted
+        list_result = cli_runner.invoke(main, ["roadmap", "list"])
+        assert "delete-test" not in list_result.output
