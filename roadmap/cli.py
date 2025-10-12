@@ -2814,27 +2814,135 @@ def update_issue(
         console.print(f"❌ Failed to update issue: {e}", style="bold red")
 
 
+@issue.command("finish")
+@click.argument("issue_id")
+@click.option("--reason", "-r", help="Reason for finishing the issue")
+@click.option("--date", help="Completion date (YYYY-MM-DD HH:MM, defaults to now)")
+@click.option(
+    "--record-time", "-t",
+    is_flag=True,
+    help="Record actual completion time and duration (like old 'complete' command)"
+)
+@click.pass_context
+def finish_issue(ctx: click.Context, issue_id: str, reason: str, date: str, record_time: bool):
+    """Finish an issue (replaces both 'done' and 'complete' commands).
+
+    By default, this marks the issue as done with an optional reason.
+    Use --record-time to also record actual completion date and calculate duration.
+    
+    Examples:
+        roadmap issue finish abc12345 --reason "Bug fixed"
+        roadmap issue finish abc12345 --record-time --date "2025-01-15 14:30"
+        roadmap issue finish abc12345 -r "Feature implemented" -t
+    """
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        return
+
+    try:
+        # Get the issue first
+        issue = core.get_issue(issue_id)
+        if not issue:
+            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+            return
+
+        # Prepare update data
+        update_data = {
+            "status": Status.DONE,
+            "progress_percentage": 100.0,
+        }
+
+        # Handle completion date if record_time is enabled
+        if record_time:
+            if date:
+                try:
+                    end_date = datetime.strptime(date, "%Y-%m-%d %H:%M")
+                except ValueError:
+                    try:
+                        end_date = datetime.strptime(date, "%Y-%m-%d")
+                    except ValueError:
+                        console.print(
+                            "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
+                            style="bold red",
+                        )
+                        return
+            else:
+                end_date = datetime.now()
+            
+            update_data["actual_end_date"] = end_date
+
+        # Handle reason
+        if reason:
+            # Append reason to existing content
+            content = issue.content or ""
+            completion_note = f"\n\n**Finished:** {reason}"
+            update_data["content"] = content + completion_note
+
+        # Update the issue
+        success = core.update_issue(issue_id, **update_data)
+
+        if success:
+            console.print(f"✅ Finished: {issue.title}", style="bold green")
+            
+            if reason:
+                console.print(f"   Reason: {reason}", style="cyan")
+            
+            if record_time:
+                end_date = update_data.get("actual_end_date", datetime.now())
+                console.print(
+                    f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}", 
+                    style="cyan"
+                )
+                
+                # Show duration if we have start date
+                if issue.actual_start_date:
+                    duration = end_date - issue.actual_start_date
+                    hours = duration.total_seconds() / 3600
+                    console.print(f"   Duration: {hours:.1f} hours", style="cyan")
+                    
+                    # Compare with estimate
+                    if issue.estimated_hours:
+                        diff = hours - issue.estimated_hours
+                        if abs(diff) > 0.5:  # More than 30 minutes difference
+                            if diff > 0:
+                                console.print(
+                                    f"   Over estimate by: {diff:.1f} hours", 
+                                    style="yellow"
+                                )
+                            else:
+                                console.print(
+                                    f"   Under estimate by: {abs(diff):.1f} hours", 
+                                    style="green"
+                                )
+                        else:
+                            console.print(
+                                "   ✅ Right on estimate!", style="green"
+                            )
+                
+            console.print(f"   Status: Done", style="green")
+        else:
+            console.print(f"❌ Failed to finish issue: {issue_id}", style="bold red")
+
+    except Exception as e:
+        console.print(f"❌ Error finishing issue: {e}", style="bold red")
+
+
+# Keep 'done' as an alias for backward compatibility
 @issue.command("done")
 @click.argument("issue_id")
 @click.option("--reason", "-r", help="Reason for completing the issue")
 @click.pass_context
 def done_issue(ctx: click.Context, issue_id: str, reason: str):
-    """Mark an issue as done.
+    """Mark an issue as done (alias for 'finish').
 
-    This is a convenient alias for 'roadmap issue update --status done'.
-    Done issues are preserved in the roadmap for historical tracking.
+    This is kept for backward compatibility. Consider using 'roadmap issue finish' instead.
     """
-    # Call the update command with status=done
-    ctx.invoke(
-        update_issue,
-        issue_id=issue_id,
-        status="done",
-        priority=None,
-        milestone=None,
-        assignee=None,
-        estimate=None,
-        reason=reason,
-    )
+    console.print("ℹ️  Note: 'done' is deprecated. Use 'roadmap issue finish' instead.", style="yellow")
+    ctx.invoke(finish_issue, issue_id=issue_id, reason=reason, date=None, record_time=False)
 
 
 @issue.command("delete")
@@ -3202,6 +3310,20 @@ def _build_dependency_chains(issues):
             build_chain(root_id, [])
 
     return chains
+
+
+# Deprecated aliases for backward compatibility
+@issue.command("complete")
+@click.argument("issue_id")
+@click.option("--date", help="Completion date (YYYY-MM-DD HH:MM, defaults to now)")
+@click.pass_context
+def complete_issue(ctx: click.Context, issue_id: str, date: str):
+    """Complete work on an issue (alias for 'finish --record-time').
+    
+    This is kept for backward compatibility. Consider using 'roadmap issue finish --record-time' instead.
+    """
+    console.print("ℹ️  Note: 'complete' is deprecated. Use 'roadmap issue finish --record-time' instead.", style="yellow")
+    ctx.invoke(finish_issue, issue_id=issue_id, reason=None, date=date, record_time=True)
 
 
 @issue.command("start")

@@ -455,7 +455,7 @@ class GitIntegration:
             # GitHub/GitLab style completion patterns
             r"\b(?:fix|fixes|fixed|close|closes|closed|resolve|resolves|resolved)\s+#[a-f0-9]{8}",
             # General completion indicators
-            r"\b(?:complete|completed|done|finished)\b.*roadmap",
+            r"\b(?:complete|completed|done|finished|finish)\b.*roadmap",
             r"\b(?:close|closes|fix|fixes|resolve|resolves)\b.*roadmap",
         ]
 
