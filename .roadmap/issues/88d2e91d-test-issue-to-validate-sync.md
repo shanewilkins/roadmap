@@ -2,14 +2,14 @@
 id: 88d2e91d
 title: test issue to validate sync
 priority: medium
-status: todo
+status: done
 issue_type: other
 milestone: ''
 labels: []
 github_issue: 5
 created: '2025-10-11T20:01:37.243267'
-updated: '2025-10-11T20:01:37.243273'
-assignee: ''
+updated: '2025-10-11T20:11:46.042697'
+assignee: shane
 estimated_hours: null
 depends_on: []
 blocks: []
