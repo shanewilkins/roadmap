@@ -119,8 +119,8 @@ def generate_issues_batch(milestone, count, developers, issue_templates):
                 
                 # Some started issues get completed
                 if random.random() < 0.4:  # 40% of started issues get completed
-                    close_cmd = f"poetry run roadmap issue close $(poetry run roadmap issue list | head -2 | tail -1 | cut -d' ' -f1)"
-                    run_command(close_cmd)
+                    done_cmd = f"poetry run roadmap issue done $(poetry run roadmap issue list | head -2 | tail -1 | cut -d' ' -f1)"
+                    run_command(done_cmd)
         
         # Progress indicator
         if (i + 1) % 50 == 0:

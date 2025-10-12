@@ -2201,6 +2201,7 @@ def list_issues(
 @click.option("--milestone", "-m", help="Update milestone")
 @click.option("--assignee", "-a", help="Update assignee")
 @click.option("--estimate", "-e", type=float, help="Update estimated time (in hours)")
+@click.option("--reason", "-r", help="Reason for the update (especially useful when changing status)")
 @click.pass_context
 def update_issue(
     ctx: click.Context,
@@ -2210,6 +2211,7 @@ def update_issue(
     milestone: str,
     assignee: str,
     estimate: float,
+    reason: str,
 ):
     """Update an existing issue."""
     core = ctx.obj["core"]
@@ -2241,6 +2243,20 @@ def update_issue(
             )
             return
 
+        # Handle reason parameter - if provided, we need to update the content too
+        if reason:
+            # Get the current issue to append the reason
+            current_issue = core.get_issue(issue_id)
+            if not current_issue:
+                console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+                return
+            
+            # Append reason to content
+            reason_text = f"\n\n**Update:** {reason}"
+            if status == "done":
+                reason_text = f"\n\n**Completed:** {reason}"
+            updates["content"] = current_issue.content + reason_text
+
         issue = core.update_issue(issue_id, **updates)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
@@ -2251,10 +2267,40 @@ def update_issue(
             if field == "estimated_hours":
                 display_value = issue.estimated_time_display
                 console.print(f"   estimate: {display_value}", style="cyan")
+            elif field == "content":
+                # Don't display the content update, it's internal
+                continue
             else:
                 console.print(f"   {field}: {value}", style="cyan")
+        
+        # Show reason if provided
+        if reason:
+            console.print(f"   reason: {reason}", style="cyan")
     except Exception as e:
         console.print(f"❌ Failed to update issue: {e}", style="bold red")
+
+
+@issue.command("done")
+@click.argument("issue_id")
+@click.option("--reason", "-r", help="Reason for completing the issue")
+@click.pass_context
+def done_issue(ctx: click.Context, issue_id: str, reason: str):
+    """Mark an issue as done.
+
+    This is a convenient alias for 'roadmap issue update --status done'.
+    Done issues are preserved in the roadmap for historical tracking.
+    """
+    # Call the update command with status=done
+    ctx.invoke(
+        update_issue,
+        issue_id=issue_id,
+        status="done",
+        priority=None,
+        milestone=None,
+        assignee=None,
+        estimate=None,
+        reason=reason,
+    )
 
 
 @issue.command("delete")
@@ -2309,54 +2355,6 @@ def delete_issue(ctx: click.Context, issue_id: str):
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
     except Exception as e:
         console.print(f"❌ Failed to delete issue: {e}", style="bold red")
-
-
-@issue.command("close")
-@click.argument("issue_id")
-@click.option("--reason", help="Reason for closing the issue")
-@click.pass_context
-def close_issue(ctx: click.Context, issue_id: str, reason: str):
-    """Close an issue by marking it as done.
-
-    This is the recommended way to complete an issue instead of deleting it.
-    Closed issues are preserved in the roadmap for historical tracking.
-    """
-    core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
-
-    try:
-        # Get current issue details
-        issue = core.get_issue(issue_id)
-        if not issue:
-            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            return
-
-        # Update issue to done status
-        success = core.update_issue(
-            issue_id,
-            status=Status.DONE,
-            content=issue.content + (f"\n\n**Closed:** {reason}" if reason else ""),
-        )
-
-        if success:
-            console.print(f"✅ Closed issue: {issue.title}", style="bold green")
-            console.print(f"   ID: {issue_id}", style="cyan")
-            console.print(f"   Status: ✅ Done", style="green")
-            if reason:
-                console.print(f"   Reason: {reason}", style="cyan")
-            console.print(
-                "\n💡 Issue preserved in roadmap for historical tracking", style="dim"
-            )
-        else:
-            console.print(f"❌ Failed to close issue: {issue_id}", style="bold red")
-
-    except Exception as e:
-        console.print(f"❌ Failed to close issue: {e}", style="bold red")
 
 
 @issue.command("block")

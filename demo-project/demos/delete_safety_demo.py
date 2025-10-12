@@ -23,12 +23,12 @@ def main():
 
     print("1. ⚠️  ISSUE DELETION IMPROVEMENTS:")
     print("   • Now shows WARNING about permanent deletion")
-    print("   • Suggests using 'roadmap issue close' instead")
+    print("   • Suggests using 'roadmap issue done' instead")
     print("   • Shows issue details before deletion")
     print("   • Explains when deletion should be used")
     print("   • Enhanced confirmation prompt")
 
-    print("\n2. 🆕 NEW ISSUE CLOSE COMMAND:")
+    print("\n2. 🆕 NEW ISSUE DONE COMMAND:")
     print("   • Recommended alternative to deletion")
     print("   • Preserves issue history")
     print("   • Marks status as 'done'")
@@ -58,8 +58,8 @@ def main():
             "⚠️  PERMANENT DELETION: Consider 'roadmap issue update --status done' instead",
         ),
         (
-            "Issue Close",
-            "roadmap issue close issue-123 --reason 'Fixed in v2.1'",
+            "Issue Done",
+            "roadmap issue done issue-123 --reason 'Fixed in v2.1'",
             "Safe alternative - preserves history",
         ),
         (
@@ -88,7 +88,7 @@ def main():
         "✅ Suggestions for safer alternatives",
         "✅ Preview of what will be affected",
         "✅ Enhanced error messages and guidance",
-        "✅ Issue close as safe alternative to deletion",
+        "✅ Issue done as safe alternative to deletion",
         "✅ Milestone deletion with issue reassignment",
         "✅ Consistent confirmation patterns across commands",
     ]
@@ -100,7 +100,7 @@ def main():
     print("-" * 20)
 
     best_practices = [
-        "1. Use 'roadmap issue close' instead of delete",
+        "1. Use 'roadmap issue done' instead of delete",
         "2. Only delete duplicates or mistakes",
         "3. Review details shown before confirming",
         "4. Use --force flag only when certain",

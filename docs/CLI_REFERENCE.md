@@ -354,24 +354,36 @@ roadmap issue update def456 --estimate 2.5
 roadmap issue update ghi789 --estimate 0
 ```
 
-### `roadmap issue close`
+### `roadmap issue done`
 
-Close an issue by marking it as done (recommended over deletion).
+Mark an issue as done (convenient alias for `roadmap issue update --status done`).
 
 ```bash
-# Close an issue
-roadmap issue close issue-abc123
+# Mark issue as done
+roadmap issue done issue-abc123
 
-# Close with reason
-roadmap issue close issue-abc123 --reason "Fixed in version 2.1"
+# Mark as done with reason
+roadmap issue done issue-abc123 --reason "Fixed in version 2.1"
 ```
 
-**Features:**
+### `roadmap issue update` (Enhanced)
 
-- Preserves issue history in the roadmap
-- Marks issue status as "done"
-- Optional reason for closure
-- Recommended alternative to deletion
+Update issue fields including status with optional reason tracking.
+
+```bash
+# Update status with reason
+roadmap issue update issue-abc123 --status done --reason "Feature complete"
+
+# Update multiple fields
+roadmap issue update issue-abc123 --status in-progress --priority high --assignee john
+```
+
+**New `--reason` Feature:**
+
+- Appends reason to issue content for audit trail
+- Especially useful when changing status
+- Uses "**Completed:**" prefix for status changes to "done"
+- Uses "**Update:**" prefix for other status changes
 
 ### `roadmap issue delete`
 
@@ -382,13 +394,13 @@ Delete an issue permanently.
 roadmap issue delete issue-abc123
 ```
 
-**⚠️  WARNING:** This permanently deletes the issue. Consider using `roadmap issue close` instead.
+**⚠️  WARNING:** This permanently deletes the issue. Consider using `roadmap issue done` or `roadmap issue update --status done` instead.
 
 **Safety Features:**
 
 - Requires confirmation by default
 - Shows issue details before deletion
-- Suggests using `roadmap issue close` as alternative
+- Suggests using `roadmap issue done` as alternative
 - Creates backup before deletion
 - Cannot be undone without backup restoration
 

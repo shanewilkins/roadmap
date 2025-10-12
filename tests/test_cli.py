@@ -920,8 +920,8 @@ def test_issue_list_assignee_mixed_statuses_time_aggregation(initialized_roadmap
 
 
 # Additional CLI command tests for improved coverage
-def test_issue_close_command(initialized_roadmap):
-    """Test closing an issue."""
+def test_issue_done_command(initialized_roadmap):
+    """Test marking an issue as done."""
     runner = CliRunner()
 
     # Create an issue first
@@ -933,15 +933,14 @@ def test_issue_close_command(initialized_roadmap):
     id_line = [line for line in output_lines if "ID:" in line][0]
     issue_id = id_line.split("ID:")[1].strip()
 
-    # Close the issue
-    result = runner.invoke(main, ["issue", "close", issue_id])
+    # Mark the issue as done
+    result = runner.invoke(main, ["issue", "done", issue_id])
     assert result.exit_code == 0
-    assert "✅ Closed issue: test-issue" in result.output
-    assert "Status: ✅ Done" in result.output
+    assert "✅ Updated issue: test-issue" in result.output
 
 
-def test_issue_close_command_with_reason(initialized_roadmap):
-    """Test closing an issue with a reason."""
+def test_issue_done_command_with_reason(initialized_roadmap):
+    """Test marking an issue as done with a reason."""
     runner = CliRunner()
 
     # Create an issue first
@@ -953,29 +952,51 @@ def test_issue_close_command_with_reason(initialized_roadmap):
     id_line = [line for line in output_lines if "ID:" in line][0]
     issue_id = id_line.split("ID:")[1].strip()
 
-    # Close the issue with reason
+    # Mark the issue as done with reason
     result = runner.invoke(
-        main, ["issue", "close", issue_id, "--reason", "Duplicate of #123"]
+        main, ["issue", "done", issue_id, "--reason", "Duplicate of #123"]
     )
     assert result.exit_code == 0
-    assert "✅ Closed issue: test-issue" in result.output
-    assert "Reason: Duplicate of #123" in result.output
+    assert "✅ Updated issue: test-issue" in result.output
+    assert "reason: Duplicate of #123" in result.output
 
 
-def test_issue_close_command_nonexistent(initialized_roadmap):
-    """Test closing a non-existent issue."""
+def test_issue_update_with_reason(initialized_roadmap):
+    """Test updating an issue with a reason."""
     runner = CliRunner()
 
-    result = runner.invoke(main, ["issue", "close", "nonexistent"])
+    # Create an issue first
+    result = runner.invoke(main, ["issue", "create", "test-issue"])
+    assert result.exit_code == 0
+
+    # Extract issue ID
+    output_lines = result.output.split("\n")
+    id_line = [line for line in output_lines if "ID:" in line][0]
+    issue_id = id_line.split("ID:")[1].strip()
+
+    # Update with reason
+    result = runner.invoke(
+        main, ["issue", "update", issue_id, "--status", "done", "--reason", "Feature complete"]
+    )
+    assert result.exit_code == 0
+    assert "✅ Updated issue: test-issue" in result.output
+    assert "reason: Feature complete" in result.output
+
+
+def test_issue_done_command_nonexistent(initialized_roadmap):
+    """Test marking a non-existent issue as done."""
+    runner = CliRunner()
+
+    result = runner.invoke(main, ["issue", "done", "nonexistent"])
     assert result.exit_code == 0
     assert "❌ Issue not found: nonexistent" in result.output
 
 
-def test_issue_close_command_without_roadmap(temp_dir):
-    """Test closing an issue without initialized roadmap."""
+def test_issue_done_command_without_roadmap(temp_dir):
+    """Test marking an issue as done without initialized roadmap."""
     runner = CliRunner()
 
-    result = runner.invoke(main, ["issue", "close", "some-id"])
+    result = runner.invoke(main, ["issue", "done", "some-id"])
     assert result.exit_code == 0
     assert "❌ Roadmap not initialized" in result.output
 
