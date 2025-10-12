@@ -45,6 +45,13 @@ class TestGitCommit:
                 ["abc12345", "def67890"],
             ),
             ("normal commit message", []),
+            # New GitHub/GitLab style patterns
+            ("fixes #abc12345", ["abc12345"]),
+            ("closes #def67890", ["def67890"]),
+            ("resolves #ghi13579", ["ghi13579"]),
+            ("fix #jkl24680 and addresses #mno97531", ["jkl24680", "mno97531"]),
+            ("refs #deadbeef", ["deadbeef"]),
+            ("Mixed formats: fixes #abc12345 and [roadmap:def67890]", ["abc12345", "def67890"]),
         ]
 
         for message, expected in test_cases:

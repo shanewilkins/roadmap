@@ -44,6 +44,7 @@ An enterprise-grade project management command line tool for implementing **proj
 - **🔓 No Vendor Lock-in**: Your data remains portable and accessible forever
 - **⚡ Developer Workflow**: Manage projects using the same tools developers use daily
 - **🔗 Single Source of Truth**: Project state lives alongside code, documentation, and infrastructure
+- **Artificial Intelligence**: plain-text project metadata enables use of AI/LLM tools to provide advanced analytics, faster workflows.
 
 ### Three-Tier Architecture
 

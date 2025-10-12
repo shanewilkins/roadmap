@@ -1812,6 +1812,277 @@ def _generate_capacity_forecast(issues: list, days: int, assignee: str = None):
 
 
 @main.group()
+def git():
+    """Git integration and workflow automation commands."""
+    pass
+
+
+@git.command("setup")
+@click.option(
+    "--hooks",
+    multiple=True,
+    type=click.Choice(["post-commit", "pre-push", "post-merge", "post-checkout", "all"]),
+    default=["all"],
+    help="Git hooks to install (default: all)"
+)
+@click.option(
+    "--force", "-f",
+    is_flag=True,
+    help="Force installation, overwriting existing hooks"
+)
+def git_setup(hooks, force):
+    """Set up git integration and install hooks."""
+    from .git_hooks import GitHookManager
+    
+    # Initialize
+    core = RoadmapCore()
+    hook_manager = GitHookManager(core)
+    
+    if not hook_manager.git_integration.is_git_repository():
+        click.echo("❌ Not in a git repository", err=True)
+        return
+        
+    # Determine which hooks to install
+    hooks_to_install = list(hooks)
+    if "all" in hooks_to_install:
+        hooks_to_install = ["post-commit", "pre-push", "post-merge", "post-checkout"]
+    
+    click.echo(f"Installing git hooks: {', '.join(hooks_to_install)}")
+    
+    if force:
+        # Remove existing hooks first
+        hook_manager.uninstall_hooks()
+    
+    success = hook_manager.install_hooks(hooks_to_install)
+    
+    if success:
+        click.echo("✅ Git hooks installed successfully")
+        click.echo("\nFeatures enabled:")
+        click.echo("• Automatic issue updates from commit messages")
+        click.echo("• Auto-creation of issues from branch names")
+        click.echo("• Status synchronization on branch checkout")
+        click.echo("\nExample usage:")
+        click.echo("  git commit -m 'fixes #abc12345 - Fixed login bug'")
+        click.echo("  git checkout -b feature/def67890-new-dashboard")
+    else:
+        click.echo("❌ Failed to install git hooks", err=True)
+
+
+@git.command("sync")
+@click.option(
+    "--commits", "-c",
+    default=10,
+    help="Number of recent commits to process (default: 10)"
+)
+@click.option(
+    "--dry-run", "-n",
+    is_flag=True,
+    help="Show what would be updated without making changes"
+)
+def git_sync(commits, dry_run):
+    """Synchronize issues with recent git commits."""
+    from .git_integration import GitIntegration
+    
+    # Initialize
+    core = RoadmapCore()
+    git_integration = GitIntegration()
+    
+    if not git_integration.is_git_repository():
+        click.echo("❌ Not in a git repository", err=True)
+        return
+        
+    click.echo(f"Analyzing last {commits} commits...")
+    
+    # Get recent commits
+    recent_commits = git_integration.get_recent_commits(count=commits)
+    if not recent_commits:
+        click.echo("No commits found")
+        return
+        
+    # Process commits
+    if dry_run:
+        click.echo("\n🔍 Dry run - showing what would be updated:")
+        for commit in recent_commits:
+            references = commit.extract_roadmap_references()
+            if references:
+                updates = git_integration.parse_commit_message_for_updates(commit)
+                click.echo(f"\n📝 Commit {commit.short_hash}: {commit.message[:50]}...")
+                click.echo(f"   Issues: {', '.join(references)}")
+                if updates:
+                    click.echo(f"   Updates: {updates}")
+    else:
+        results = git_integration.auto_update_issues_from_commits(core, recent_commits)
+        
+        if results["updated"] or results["closed"] or results["errors"]:
+            click.echo("\n📊 Synchronization results:")
+            if results["updated"]:
+                click.echo(f"✅ Updated {len(results['updated'])} issues: {', '.join(results['updated'])}")
+            if results["closed"]:
+                click.echo(f"🎯 Closed {len(results['closed'])} issues: {', '.join(results['closed'])}")
+            if results["errors"]:
+                click.echo(f"❌ Errors: {len(results['errors'])}")
+                for error in results["errors"]:
+                    click.echo(f"   • {error}")
+        else:
+            click.echo("No issues found to update from recent commits")
+
+
+@git.command("status")
+@click.option(
+    "--branch", "-b",
+    help="Show status for specific branch (default: current branch)"
+)
+def git_status(branch):
+    """Show git integration status and linked issues."""
+    from .git_integration import GitIntegration
+    
+    # Initialize
+    core = RoadmapCore()
+    git_integration = GitIntegration()
+    
+    if not git_integration.is_git_repository():
+        click.echo("❌ Not in a git repository", err=True)
+        return
+        
+    # Get repository info
+    repo_info = git_integration.get_repository_info()
+    
+    click.echo("🔧 Git Integration Status")
+    click.echo("=" * 40)
+    
+    # Repository info
+    if "origin_url" in repo_info:
+        click.echo(f"Repository: {repo_info['origin_url']}")
+    if "current_branch" in repo_info:
+        click.echo(f"Current branch: {repo_info['current_branch']}")
+    if "total_commits" in repo_info:
+        click.echo(f"Total commits: {repo_info['total_commits']}")
+        
+    # Branch-specific info
+    target_branch = branch or repo_info.get("current_branch")
+    if target_branch:
+        click.echo(f"\n📋 Branch: {target_branch}")
+        
+        # Check for linked issues
+        linked_issues = git_integration.get_branch_linked_issues(target_branch)
+        if linked_issues:
+            click.echo(f"Linked issues: {', '.join(linked_issues)}")
+            
+            # Show issue details
+            for issue_id in linked_issues:
+                try:
+                    issue = core.get_issue(issue_id)
+                    if issue:
+                        click.echo(f"  • {issue.title} [{issue.status.value}]")
+                except Exception:
+                    click.echo(f"  • {issue_id} [not found]")
+        else:
+            click.echo("No linked issues found")
+            
+        # Suggest creating issue if none exists
+        if not linked_issues and target_branch not in ["main", "master", "develop", "dev"]:
+            click.echo("\n💡 Tip: Run 'roadmap git create-issue' to create an issue for this branch")
+    
+    # Hook status
+    click.echo(f"\n🪝 Git Hooks")
+    hooks_dir = Path(".git/hooks")
+    if hooks_dir.exists():
+        hook_files = ["post-commit", "pre-push", "post-merge", "post-checkout"]
+        installed_hooks = []
+        
+        for hook_name in hook_files:
+            hook_file = hooks_dir / hook_name
+            if hook_file.exists():
+                content = hook_file.read_text()
+                if "roadmap-hook" in content:
+                    installed_hooks.append(hook_name)
+                    
+        if installed_hooks:
+            click.echo(f"Installed: {', '.join(installed_hooks)}")
+        else:
+            click.echo("No roadmap hooks installed")
+            click.echo("Run 'roadmap git setup' to install hooks")
+    else:
+        click.echo("Git hooks directory not found")
+
+
+@git.command("create-issue")
+@click.option(
+    "--branch", "-b",
+    help="Create issue for specific branch (default: current branch)"
+)
+@click.option(
+    "--title", "-t",
+    help="Override auto-generated title"
+)
+@click.option(
+    "--assignee", "-a",
+    help="Override auto-detected assignee"
+)
+def git_create_issue(branch, title, assignee):
+    """Create an issue for a git branch."""
+    from .git_integration import GitIntegration
+    
+    # Initialize
+    core = RoadmapCore()
+    git_integration = GitIntegration()
+    
+    if not git_integration.is_git_repository():
+        click.echo("❌ Not in a git repository", err=True)
+        return
+        
+    # Determine target branch
+    if branch:
+        target_branch = branch
+    else:
+        current_branch = git_integration.get_current_branch()
+        if not current_branch:
+            click.echo("❌ No current branch found", err=True)
+            return
+        target_branch = current_branch.name
+        
+    # Check if issue already exists
+    existing_issues = git_integration.get_branch_linked_issues(target_branch)
+    if existing_issues:
+        click.echo(f"❌ Branch already has linked issues: {', '.join(existing_issues)}")
+        return
+        
+    # Create issue
+    if title or assignee:
+        # Manual creation with overrides
+        from .git_integration import GitBranch
+        branch_obj = GitBranch(target_branch)
+        
+        issue_title = title or git_integration._extract_title_from_branch_name(target_branch)
+        if not issue_title:
+            click.echo("❌ Could not determine title from branch name. Please use --title")
+            return
+            
+        issue_assignee = assignee or git_integration.get_current_user() or "Unknown"
+        issue_type = branch_obj.suggests_issue_type() or "feature"
+        
+        content = f"Created for branch: `{target_branch}`\n\nThis issue was manually created for the git branch `{target_branch}`."
+        
+        issue = core.create_issue(
+            title=issue_title,
+            content=content,
+            assignee=issue_assignee,
+            priority="medium",
+            status="in_progress"
+        )
+        
+        click.echo(f"✅ Created issue {issue.id}: {issue.title}")
+    else:
+        # Auto creation
+        issue_id = git_integration.auto_create_issue_from_branch(core, target_branch)
+        if issue_id:
+            click.echo(f"✅ Auto-created issue {issue_id} for branch {target_branch}")
+        else:
+            click.echo("❌ Could not auto-create issue from branch name")
+            click.echo("Try using --title to specify a custom title")
+
+
+@main.group()
 def issue():
     """Manage issues."""
     pass

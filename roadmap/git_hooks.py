@@ -115,18 +115,55 @@ except Exception as e:
         """Handle post-commit hook - update issues based on commit."""
         try:
             # Get the latest commit
-            latest_commit = self.git_integration.get_recent_commits(count=1)
-            if not latest_commit:
+            latest_commits = self.git_integration.get_recent_commits(count=1)
+            if not latest_commits:
                 return
 
-            commit = latest_commit[0]
+            # Use the new auto-update functionality
+            results = self.git_integration.auto_update_issues_from_commits(
+                self.core, latest_commits
+            )
 
-            # Extract roadmap references
-            references = commit.extract_roadmap_references()
-            progress = commit.extract_progress_info()
+            # Log results for debugging (optional)
+            if results["updated"] or results["closed"]:
+                log_file = Path(".git/roadmap-hooks.log")
+                timestamp = datetime.now().isoformat()
+                log_entry = f"{timestamp}: Updated {len(results['updated'])} issues, closed {len(results['closed'])} issues\n"
+                
+                try:
+                    with open(log_file, "a") as f:
+                        f.write(log_entry)
+                except Exception:
+                    pass  # Silent fail for logging
 
-            for issue_id in references:
-                self._update_issue_from_commit(issue_id, commit, progress)
+        except Exception:
+            # Silent fail to avoid breaking Git operations
+            pass
+
+    def handle_post_checkout(self):
+        """Handle post-checkout hook - auto-create issues for new branches."""
+        try:
+            # Get current branch
+            current_branch = self.git_integration.get_current_branch()
+            if not current_branch:
+                return
+
+            # Try to auto-create issue from branch name
+            issue_id = self.git_integration.auto_create_issue_from_branch(
+                self.core, current_branch.name
+            )
+
+            # Log if issue was created
+            if issue_id:
+                log_file = Path(".git/roadmap-hooks.log")
+                timestamp = datetime.now().isoformat()
+                log_entry = f"{timestamp}: Auto-created issue {issue_id} for branch {current_branch.name}\n"
+                
+                try:
+                    with open(log_file, "a") as f:
+                        f.write(log_entry)
+                except Exception:
+                    pass  # Silent fail for logging
 
         except Exception:
             # Silent fail to avoid breaking Git operations

@@ -30,13 +30,23 @@ class GitCommit:
 
     def extract_roadmap_references(self) -> List[str]:
         """Extract roadmap issue references from commit message."""
-        # Pattern: [roadmap:issue-id] or [closes roadmap:issue-id]
+        # Enhanced patterns to support multiple formats:
+        # 1. [roadmap:issue-id] or [closes roadmap:issue-id] (existing)
+        # 2. fixes #issue-id, closes #issue-id (GitHub/GitLab style)
+        # 3. resolves #issue-id, resolve #issue-id
+        # 4. addresses #issue-id, refs #issue-id
         # Issue IDs can be hex or alphanumeric
         patterns = [
+            # Original roadmap: patterns
             r"\[roadmap:([a-zA-Z0-9]{8,})\]",
             r"\[closes roadmap:([a-zA-Z0-9]{8,})\]",
             r"\[fixes roadmap:([a-zA-Z0-9]{8,})\]",
             r"roadmap:([a-zA-Z0-9]{8,})",
+            # GitHub/GitLab style patterns
+            r"\b(?:fix|fixes|fixed|close|closes|closed|resolve|resolves|resolved)\s+#([a-zA-Z0-9]{8,})\b",
+            r"\b(?:addresses?|refs?)\s+#([a-zA-Z0-9]{8,})\b",
+            # Simple # references
+            r"#([a-f0-9]{8})\b",  # Hex issue IDs only for this pattern to avoid false positives
         ]
 
         references = []
@@ -300,6 +310,99 @@ class GitIntegration:
 
         return True
 
+    def auto_create_issue_from_branch(self, roadmap_core, branch_name: Optional[str] = None) -> Optional[str]:
+        """Automatically create an issue from a branch name if one doesn't exist.
+        
+        Args:
+            roadmap_core: RoadmapCore instance for issue operations
+            branch_name: Branch name to analyze. If None, uses current branch.
+            
+        Returns:
+            Issue ID if created, None if not created or already exists
+        """
+        if branch_name is None:
+            current_branch = self.get_current_branch()
+            if not current_branch:
+                return None
+            branch_name = current_branch.name
+            
+        # Don't create issues for main branches
+        if branch_name in ["main", "master", "develop", "dev"]:
+            return None
+            
+        branch = GitBranch(branch_name)
+        
+        # Check if branch already has an associated issue
+        existing_issue_id = branch.extract_issue_id()
+        if existing_issue_id:
+            # Check if the issue actually exists
+            if roadmap_core.load_issue(existing_issue_id):
+                return None  # Issue already exists
+            
+        # Generate issue details from branch name
+        issue_type = branch.suggests_issue_type() or "feature"
+        
+        # Extract title from branch name
+        title = self._extract_title_from_branch_name(branch_name)
+        if not title:
+            return None
+            
+        # Create the issue
+        try:
+            assignee = self.get_current_user() or "Unknown"
+            
+            content = f"Auto-created from branch: `{branch_name}`\n\nThis issue was automatically created when switching to the branch `{branch_name}`."
+            
+            issue_data = {
+                "title": title,
+                "content": content,
+                "assignee": assignee,
+                "priority": "medium",  # Default priority
+                "status": "in_progress",  # Since they're working on it
+            }
+            
+            # Add issue type if the models support it
+            if hasattr(roadmap_core, 'create_issue_with_type'):
+                issue_data["issue_type"] = issue_type
+                
+            issue = roadmap_core.create_issue(**issue_data)
+            return issue.id
+            
+        except Exception:
+            return None
+            
+    def _extract_title_from_branch_name(self, branch_name: str) -> Optional[str]:
+        """Extract a readable title from a branch name."""
+        # Remove common prefixes
+        name = branch_name
+        prefixes = ["feature/", "bugfix/", "hotfix/", "docs/", "test/", "feat/", "bug/", "fix/"]
+        for prefix in prefixes:
+            if name.startswith(prefix):
+                name = name[len(prefix):]
+                break
+                
+        # Remove issue ID if present
+        name = re.sub(r"^[a-f0-9]{8}-", "", name)
+        name = re.sub(r"^issue-[a-f0-9]{8}-", "", name)
+        
+        # Replace hyphens/underscores with spaces and title case
+        name = re.sub(r"[-_]", " ", name)
+        name = name.strip()
+        
+        if not name:
+            return None
+            
+        # Title case
+        words = name.split()
+        title_words = []
+        for word in words:
+            if len(word) > 3:  # Title case for longer words
+                title_words.append(word.capitalize())
+            else:  # Keep short words lowercase unless first word
+                title_words.append(word.lower() if title_words else word.capitalize())
+                
+        return " ".join(title_words)
+
     def get_repository_info(self) -> Dict[str, Any]:
         """Get general repository information."""
         if not self.is_git_repository():
@@ -344,10 +447,15 @@ class GitIntegration:
         if progress is not None:
             updates["progress_percentage"] = min(100.0, max(0.0, progress))
 
-        # Check for completion indicators
+        # Check for completion indicators (enhanced patterns)
         completion_patterns = [
+            # Original roadmap patterns
             r"\[closes roadmap:[a-f0-9]{8}\]",
             r"\[fixes roadmap:[a-f0-9]{8}\]",
+            # GitHub/GitLab style completion patterns
+            r"\b(?:fix|fixes|fixed|close|closes|closed|resolve|resolves|resolved)\s+#[a-f0-9]{8}",
+            # General completion indicators
+            r"\b(?:complete|completed|done|finished)\b.*roadmap",
             r"\b(?:close|closes|fix|fixes|resolve|resolves)\b.*roadmap",
         ]
 
@@ -357,7 +465,85 @@ class GitIntegration:
                 updates["progress_percentage"] = 100.0
                 break
 
+        # Check for work-in-progress indicators
+        wip_patterns = [
+            r"\b(?:wip|work in progress|working on)\b",
+            r"\[wip\]",
+            r"start(?:ed|ing)?.*#[a-f0-9]{8}",
+        ]
+
+        for pattern in wip_patterns:
+            if re.search(pattern, commit.message, re.IGNORECASE):
+                if "status" not in updates:  # Don't override completion status
+                    updates["status"] = "in-progress"
+                break
+
         return updates
+
+    def auto_update_issues_from_commits(self, roadmap_core, commits: Optional[List[GitCommit]] = None) -> Dict[str, List[str]]:
+        """Automatically update issues based on commit messages.
+        
+        Args:
+            roadmap_core: RoadmapCore instance for issue operations
+            commits: List of commits to process. If None, processes recent commits.
+            
+        Returns:
+            Dictionary with 'updated' and 'closed' issue lists
+        """
+        if commits is None:
+            commits = self.get_recent_commits(count=10)
+            
+        results = {"updated": [], "closed": [], "errors": []}
+        
+        for commit in commits:
+            try:
+                # Get referenced issues
+                issue_ids = commit.extract_roadmap_references()
+                if not issue_ids:
+                    continue
+                    
+                # Parse updates from commit message
+                updates = self.parse_commit_message_for_updates(commit)
+                if not updates:
+                    continue
+                    
+                for issue_id in issue_ids:
+                    try:
+                        # Load the issue
+                        issue = roadmap_core.get_issue(issue_id)
+                        if not issue:
+                            results["errors"].append(f"Issue {issue_id} not found")
+                            continue
+                            
+                        # Apply updates
+                        update_data = {}
+                        if "status" in updates:
+                            update_data["status"] = updates["status"]
+                        if "progress_percentage" in updates:
+                            update_data["progress_percentage"] = updates["progress_percentage"]
+                            
+                        # Add commit reference to content
+                        commit_note = f"\n\n**Auto-updated from commit {commit.short_hash}:** {commit.message}"
+                        if issue.content:
+                            update_data["content"] = issue.content + commit_note
+                        else:
+                            update_data["content"] = commit_note.strip()
+                            
+                        # Update the issue
+                        roadmap_core.update_issue(issue_id, **update_data)
+                        
+                        if updates.get("status") == "done":
+                            results["closed"].append(issue_id)
+                        else:
+                            results["updated"].append(issue_id)
+                            
+                    except Exception as e:
+                        results["errors"].append(f"Error updating issue {issue_id}: {str(e)}")
+                        
+            except Exception as e:
+                results["errors"].append(f"Error processing commit {commit.short_hash}: {str(e)}")
+                
+        return results
 
     def get_branch_linked_issues(self, branch_name: str) -> List[str]:
         """Get issue IDs linked to a specific branch."""
