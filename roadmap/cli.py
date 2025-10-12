@@ -89,10 +89,9 @@ def main(ctx: click.Context) -> None:
     help="Skip automatic project creation",
 )
 @click.option(
-    "--interactive",
-    is_flag=True,
+    "--interactive/--non-interactive",
     default=True,
-    help="Run in interactive mode with prompts",
+    help="Run in interactive mode with prompts (default: interactive)",
 )
 @click.option(
     "--template",
@@ -141,6 +140,10 @@ def init(
         console.print("🔍 Detected Context:", style="bold blue")
         if detected_info["git_repo"]:
             console.print(f"  Git repository: {detected_info['git_repo']}")
+        else:
+            console.print("  Git repository: Not detected", style="dim")
+            if interactive:
+                console.print("    💡 Consider running 'git init' to enable advanced features", style="yellow")
         if detected_info["project_name"]:
             console.print(f"  Project name: {detected_info['project_name']}")
         console.print(f"  Directory: {Path.cwd()}")
@@ -168,7 +171,7 @@ def init(
             )
 
         # Step 5: Success summary and next steps
-        _show_success_summary(name, github_configured, project_info if not skip_project else None)
+        _show_success_summary(name, github_configured, project_info if not skip_project else None, detected_info)
 
     except Exception as e:
         console.print(f"❌ Failed to initialize roadmap: {e}", style="bold red")
@@ -180,44 +183,54 @@ def init(
 
 def _detect_project_context() -> dict:
     """Detect project context from git repository and directory structure."""
-    context = {"git_repo": None, "project_name": None, "git_user": None}
+    context = {"git_repo": None, "project_name": None, "git_user": None, "has_git": False}
     
     try:
-        # Try to get git repository info
-        result = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
+        # Check if we're in a git repository
+        git_check = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
             capture_output=True,
             text=True,
             timeout=5
         )
-        if result.returncode == 0:
-            origin_url = result.stdout.strip()
-            # Parse GitHub repository from URL
-            if "github.com" in origin_url:
-                # Handle both SSH and HTTPS URLs
-                if origin_url.startswith("git@github.com:"):
-                    repo_part = origin_url.replace("git@github.com:", "").replace(".git", "")
-                elif "github.com/" in origin_url:
-                    repo_part = origin_url.split("github.com/")[1].replace(".git", "")
-                else:
-                    repo_part = None
-                
-                if repo_part and "/" in repo_part:
-                    context["git_repo"] = repo_part
-                    context["project_name"] = repo_part.split("/")[1]
+        context["has_git"] = git_check.returncode == 0
         
-        # Get git user info
-        try:
-            user_result = subprocess.run(
-                ["git", "config", "user.name"],
+        if context["has_git"]:
+            # Try to get git repository info
+            result = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
                 capture_output=True,
                 text=True,
                 timeout=5
             )
-            if user_result.returncode == 0:
-                context["git_user"] = user_result.stdout.strip()
-        except:
-            pass
+            if result.returncode == 0:
+                origin_url = result.stdout.strip()
+                # Parse GitHub repository from URL
+                if "github.com" in origin_url:
+                    # Handle both SSH and HTTPS URLs
+                    if origin_url.startswith("git@github.com:"):
+                        repo_part = origin_url.replace("git@github.com:", "").replace(".git", "")
+                    elif "github.com/" in origin_url:
+                        repo_part = origin_url.split("github.com/")[1].replace(".git", "")
+                    else:
+                        repo_part = None
+                    
+                    if repo_part and "/" in repo_part:
+                        context["git_repo"] = repo_part
+                        context["project_name"] = repo_part.split("/")[1]
+            
+            # Get git user info
+            try:
+                user_result = subprocess.run(
+                    ["git", "config", "user.name"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if user_result.returncode == 0:
+                    context["git_user"] = user_result.stdout.strip()
+            except:
+                pass
             
     except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
         pass
@@ -612,7 +625,7 @@ def _setup_github_integration(core: RoadmapCore, github_repo: str, interactive: 
             raise
 
 
-def _show_success_summary(name: str, github_configured: bool, project_info: Optional[dict]) -> None:
+def _show_success_summary(name: str, github_configured: bool, project_info: Optional[dict], detected_info: dict) -> None:
     """Show success summary and next steps."""
     
     console.print()
@@ -662,9 +675,17 @@ def _show_success_summary(name: str, github_configured: bool, project_info: Opti
     console.print()
     console.print("💡 Pro Tips:", style="bold magenta")
     console.print("  • Use 'roadmap dashboard' for daily task overview")
-    console.print("  • Set up git hooks with 'roadmap git setup' for automatic updates")
-    if github_configured:
-        console.print("  • Try 'roadmap sync bidirectional' to sync existing GitHub issues")
+    
+    if detected_info.get("has_git"):
+        console.print("  • Set up git hooks with 'roadmap git setup' for automatic updates")
+        if github_configured:
+            console.print("  • Try 'roadmap sync bidirectional' to sync existing GitHub issues")
+    else:
+        console.print("  • Initialize git with 'git init' to enable advanced features:")
+        console.print("    - Automatic issue updates from commit messages")
+        console.print("    - Git hooks for seamless integration")
+        console.print("    - GitHub synchronization capabilities")
+    
     console.print("  • Create templates in .roadmap/templates/ for consistent formatting")
 
 

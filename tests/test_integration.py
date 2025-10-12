@@ -75,9 +75,9 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Step 1: Initialize roadmap
-        result = runner.invoke(main, ["init"])
+        result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Lifecycle"])
         assert result.exit_code == 0
-        assert "Roadmap initialized" in result.output
+        assert "Roadmap CLI Initialization" in result.output
         assert os.path.exists(".roadmap")
         assert os.path.exists(".roadmap/config.yaml")
 

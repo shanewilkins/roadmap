@@ -86,16 +86,16 @@ def test_cli_help(cli_runner):
 def test_init_command(temp_dir):
     """Test the init command."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init"])
+    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
     assert result.exit_code == 0
-    assert "Initializing new roadmap" in result.output
-    assert "Roadmap initialized successfully" in result.output
+    assert "Roadmap CLI Initialization" in result.output
+    assert "Setup Complete!" in result.output
 
 
 def test_init_command_already_initialized(initialized_roadmap):
     """Test init command when roadmap is already initialized."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init"])
+    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
     assert result.exit_code == 0
     assert "Roadmap already initialized" in result.output
 
