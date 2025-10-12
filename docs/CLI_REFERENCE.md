@@ -609,39 +609,86 @@ roadmap milestone delete "Sprint 1"
 
 ### `roadmap sync setup`
 
-Configure GitHub integration.
+Configure GitHub integration with secure credential storage.
 
 ```bash
-# Basic setup
+# Recommended: Secure credential manager storage
 roadmap sync setup \
   --token "your-github-token" \
   --repo "username/repository"
 
-# Setup with custom GitHub server
+# Repository-only setup (if token already configured)
+roadmap sync setup --repo "username/repository"
+
+# Environment variable setup (alternative)
+export GITHUB_TOKEN="your-github-token"
+roadmap sync setup --repo "username/repository"
+
+# Enterprise GitHub setup
 roadmap sync setup \
   --token "enterprise-token" \
   --repo "org/project" \
   --github-url "https://github.enterprise.com"
 
-# Setup with insecure connection (not recommended)
+# Insecure config file storage (NOT RECOMMENDED)
 roadmap sync setup \
   --token "token" \
   --repo "user/repo" \
   --insecure
 ```
 
+**🔐 Credential Storage Options (Recommended Order):**
+
+1. **System Credential Manager** (Default & Recommended)
+   - macOS: Keychain Access
+   - Windows: Windows Credential Manager  
+   - Linux: Secret Service API
+   - Tokens stored securely, encrypted at rest
+   - Use: `roadmap sync setup --token YOUR_TOKEN`
+
+2. **Environment Variable** (Good for CI/CD)
+   - Set: `export GITHUB_TOKEN="your-token"`
+   - Temporary, not persisted across sessions
+   - Good for automation and CI/CD pipelines
+
+3. **Config File** (NOT RECOMMENDED)
+   - Stores token in plain text in `.roadmap/config.yaml`
+   - Use `--insecure` flag (only for testing)
+   - Security risk - tokens visible in file system
+
 **Options:**
 
 - `--token`: GitHub personal access token
-- `--repo`: Repository in format "owner/repo"
+- `--repo`: Repository in format "owner/repo"  
 - `--github-url`: Custom GitHub URL for enterprise
-- `--insecure`: Skip SSL verification (not recommended)
+- `--insecure`: Store token in config file (NOT RECOMMENDED)
+
+**🔑 Creating a GitHub Personal Access Token:**
+
+1. Go to [GitHub Settings > Tokens](https://github.com/settings/tokens)
+2. Click "Generate new token" → "Generate new token (classic)"
+3. Name: "Roadmap CLI Tool"
+4. Select scopes:
+   - ✅ `public_repo` (for public repositories)
+   - ✅ `repo` (for private repositories) 
+   - ✅ `write:issues` (to create/update issues)
+5. Click "Generate token"
+6. Copy token immediately (shown only once)
 
 **Token Permissions Required:**
 
 - `repo` (for private repositories)
 - `public_repo` (for public repositories)
 - `write:issues` (to create/update issues)
+
+**🛡️ Security Best Practices:**
+
+- ✅ Use credential manager storage (default)
+- ✅ Use environment variables for CI/CD
+- ✅ Generate tokens with minimal required scopes
+- ✅ Regularly rotate tokens (30-90 days)
+- ❌ Never commit tokens to version control
+- ❌ Avoid `--insecure` flag in production
 
 ### `roadmap sync test`
 
@@ -797,6 +844,87 @@ roadmap sync delete-token
 
 # Delete with confirmation
 roadmap sync delete-token --confirm
+```
+
+### 🔧 GitHub Sync Troubleshooting
+
+**Common Issues and Solutions:**
+
+**❌ "GitHub client not configured"**
+```bash
+# Check current status
+roadmap sync status
+
+# Solution: Set up repository
+roadmap sync setup --repo "username/repository"
+```
+
+**❌ "No token configured"**
+```bash
+# Check token sources
+roadmap sync status
+
+# Solution 1: Use credential manager (recommended)
+roadmap sync setup --token "your-github-token"
+
+# Solution 2: Use environment variable
+export GITHUB_TOKEN="your-github-token"
+roadmap sync test
+
+# Solution 3: Check existing credential storage
+roadmap sync status  # Shows which method is active
+```
+
+**❌ "Authentication failed" / 401 Unauthorized**
+```bash
+# Test current token
+roadmap sync test
+
+# Solutions:
+# 1. Token expired - generate new token
+# 2. Wrong token scope - ensure 'public_repo' or 'repo' scope
+# 3. Token revoked - check GitHub settings
+# 4. Repository access - ensure token has access to specified repo
+```
+
+**❌ "Repository not found" / 404 Not Found**
+```bash
+# Check repository configuration
+roadmap sync status
+
+# Solution: Verify repository name format
+roadmap sync setup --repo "correct-owner/correct-repo"
+# Example: roadmap sync setup --repo "shanewilkins/roadmap"
+```
+
+**❌ "Rate limit exceeded"**
+```bash
+# GitHub API rate limits reached
+# Solutions:
+# 1. Wait for rate limit reset (typically 1 hour)
+# 2. Use high-performance mode with smaller batches
+roadmap sync pull --high-performance --batch-size 25
+```
+
+**❌ "SSL verification failed"**
+```bash
+# For enterprise GitHub with custom certificates
+roadmap sync setup --github-url "https://github.enterprise.com"
+
+# Temporary workaround (NOT RECOMMENDED for production)
+roadmap sync setup --insecure
+```
+
+**💡 Diagnostic Commands:**
+```bash
+# Full diagnostic check
+roadmap sync status    # Check configuration
+roadmap sync test      # Test connection
+roadmap status         # Check local roadmap health
+
+# Clear all credentials and reconfigure
+roadmap sync delete-token
+roadmap sync setup --token "new-token" --repo "owner/repo"
 ```
 
 ## 🗂️ Bulk Operations

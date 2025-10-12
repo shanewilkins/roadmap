@@ -20,6 +20,32 @@ A powerful, modern command-line tool for creating and managing project roadmaps 
 pip install roadmap-cli
 ```
 
+### GitHub Integration Setup
+
+Get started with GitHub sync in 3 easy steps:
+
+1. **Create a GitHub token**: Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens) and create a token with `public_repo` scope
+
+2. **Configure your repository**:
+   ```bash
+   roadmap config set github.owner YOUR_USERNAME
+   roadmap config set github.repo YOUR_REPOSITORY
+   ```
+
+3. **Store your credentials securely**:
+   ```bash
+   roadmap credentials set-github-token
+   # Enter your token when prompted
+   ```
+
+4. **Test and sync**:
+   ```bash
+   roadmap sync test-connection
+   roadmap sync bidirectional
+   ```
+
+📖 **Need help?** See the complete [GitHub Integration Guide](user-guide/github.md) for detailed setup instructions, troubleshooting, and advanced features.
+
 ### Basic Usage
 
 ```bash
