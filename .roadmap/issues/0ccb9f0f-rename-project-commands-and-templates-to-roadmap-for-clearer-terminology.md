@@ -2,20 +2,20 @@
 id: 0ccb9f0f
 title: Rename project commands and templates to roadmap for clearer terminology
 priority: medium
-status: todo
+status: done
 issue_type: feature
 milestone: ''
 labels: []
 github_issue: null
 created: '2025-10-11T20:34:42.628405'
-updated: '2025-10-12T08:58:01.975122'
+updated: '2025-10-12T09:09:29.265460'
 assignee: shane
 estimated_hours: 4.0
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-10-12T09:02:14.635933'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 0.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

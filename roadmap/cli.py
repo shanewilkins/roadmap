@@ -9611,7 +9611,11 @@ def create_project(
     estimated_hours: Optional[float],
     milestones: tuple,
 ) -> None:
-    """Create a new project."""
+    """Create a new project (deprecated: use 'roadmap roadmap create')."""
+    console.print("⚠️  DEPRECATED: 'roadmap project create' is deprecated.", style="yellow")
+    console.print("    Use: 'roadmap roadmap create' instead", style="yellow")
+    console.print("    The project command will be removed in a future version.\n")
+    
     try:
         from datetime import datetime
         import uuid
@@ -9733,9 +9737,546 @@ def create_project(
 )
 @click.pass_context
 def project_overview_subcommand(ctx: click.Context, output: Optional[str], format: str, include_charts: bool) -> None:
-    """Comprehensive project-level analysis and reporting."""
+    """Comprehensive project-level analysis and reporting (deprecated: use 'roadmap roadmap overview')."""
+    console.print("⚠️  DEPRECATED: 'roadmap project overview' is deprecated.", style="yellow")
+    console.print("    Use: 'roadmap roadmap overview' instead", style="yellow")
+    console.print("    The project command will be removed in a future version.\n")
     # Call the existing project_overview function
     project_overview(ctx, output, format, include_charts)
+
+
+# ============================================================================
+# Roadmap Commands (New terminology for projects)
+# ============================================================================
+
+@main.group()
+def roadmap_cmd():
+    """Manage roadmaps (top-level planning documents)."""
+    pass
+
+# Register the roadmap command group with a cleaner name
+main.add_command(roadmap_cmd, name="roadmap")
+
+
+@roadmap_cmd.command("create")
+@click.argument("name")
+@click.option(
+    "--description",
+    "-d",
+    default="Roadmap description",
+    help="Roadmap description",
+)
+@click.option(
+    "--owner",
+    "-o",
+    help="Roadmap owner",
+)
+@click.option(
+    "--priority",
+    "-p",
+    type=click.Choice(["critical", "high", "medium", "low"]),
+    default="medium",
+    help="Roadmap priority",
+)
+@click.option(
+    "--start-date",
+    "-s",
+    help="Roadmap start date (YYYY-MM-DD)",
+)
+@click.option(
+    "--target-end-date",
+    "-e",
+    help="Target end date (YYYY-MM-DD)",
+)
+@click.option(
+    "--estimated-hours",
+    "-h",
+    type=float,
+    help="Estimated hours to complete",
+)
+@click.option(
+    "--milestones",
+    "-m",
+    multiple=True,
+    help="Milestone names (can be specified multiple times)",
+)
+def create_roadmap(
+    name: str,
+    description: str,
+    owner: Optional[str],
+    priority: str,
+    start_date: Optional[str],
+    target_end_date: Optional[str],
+    estimated_hours: Optional[float],
+    milestones: tuple,
+) -> None:
+    """Create a new roadmap."""
+    try:
+        from datetime import datetime
+        import uuid
+        from pathlib import Path
+        
+        core = RoadmapCore()
+        
+        # Generate roadmap ID
+        roadmap_id = str(uuid.uuid4())[:8]
+        
+        # Parse dates
+        parsed_start_date = None
+        parsed_target_end_date = None
+        
+        if start_date:
+            try:
+                parsed_start_date = datetime.strptime(start_date, "%Y-%m-%d").isoformat()
+            except ValueError:
+                console.print("❌ Invalid start date format. Use YYYY-MM-DD", style="bold red")
+                return
+                
+        if target_end_date:
+            try:
+                parsed_target_end_date = datetime.strptime(target_end_date, "%Y-%m-%d").isoformat()
+            except ValueError:
+                console.print("❌ Invalid target end date format. Use YYYY-MM-DD", style="bold red")
+                return
+        
+        # Create projects directory if it doesn't exist (keeping same folder structure for now)
+        projects_dir = core.roadmap_dir / "projects"
+        projects_dir.mkdir(exist_ok=True)
+        
+        # Load and process template
+        template_path = core.templates_dir / "project.md"
+        if not template_path.exists():
+            console.print("❌ Roadmap template not found. Run 'roadmap init' first.", style="bold red")
+            return
+            
+        template_content = template_path.read_text()
+        
+        # Replace template variables (use roadmap terminology in content)
+        current_time = datetime.now().isoformat()
+        
+        # Convert milestones tuple to list for template
+        milestone_list = list(milestones) if milestones else ["milestone_1", "milestone_2"]
+        
+        replacements = {
+            "{{ project_id }}": roadmap_id,
+            "{{ project_name }}": name,
+            "{{ project_description }}": description,
+            "{{ project_owner }}": owner or "",
+            "{{ start_date }}": parsed_start_date or "",
+            "{{ target_end_date }}": parsed_target_end_date or "",
+            "{{ created_date }}": current_time,
+            "{{ updated_date }}": current_time,
+            "{{ estimated_hours }}": str(estimated_hours) if estimated_hours else "0",
+            "{{ milestone_1 }}": milestone_list[0] if len(milestone_list) > 0 else "",
+            "{{ milestone_2 }}": milestone_list[1] if len(milestone_list) > 1 else "",
+        }
+        
+        roadmap_content = template_content
+        for placeholder, value in replacements.items():
+            roadmap_content = roadmap_content.replace(placeholder, value)
+        
+        # Handle priority replacement (template has hardcoded "medium")
+        roadmap_content = roadmap_content.replace('priority: "medium"', f'priority: "{priority}"')
+        
+        # Handle status replacement
+        roadmap_content = roadmap_content.replace('**Status:** {{ status }}', f'**Status:** planning')
+        
+        # Update content to use "roadmap" terminology instead of "project"
+        roadmap_content = roadmap_content.replace("# roadmap_project", f"# {name}")
+        roadmap_content = roadmap_content.replace("Project description", description)
+        roadmap_content = roadmap_content.replace("## Project Overview", "## Roadmap Overview")
+        roadmap_content = roadmap_content.replace("**Project Owner:**", "**Roadmap Owner:**")
+        
+        # Handle milestone list in YAML (more complex replacement)
+        if milestones:
+            milestone_yaml = "\n".join([f'  - "{milestone}"' for milestone in milestones])
+            roadmap_content = roadmap_content.replace(
+                'milestones:\n  - "{{ milestone_1}}"\n  - "{{ milestone_2}}"',
+                f"milestones:\n{milestone_yaml}"
+            )
+        
+        # Save roadmap file
+        roadmap_filename = f"{roadmap_id}-{name.lower().replace(' ', '-')}.md"
+        roadmap_path = projects_dir / roadmap_filename
+        
+        with open(roadmap_path, "w") as f:
+            f.write(roadmap_content)
+        
+        console.print("✅ Created roadmap:", style="bold green")
+        console.print(f"   ID: {roadmap_id}")
+        console.print(f"   Name: {name}")
+        console.print(f"   Priority: {priority}")
+        if owner:
+            console.print(f"   Owner: {owner}")
+        if estimated_hours:
+            console.print(f"   Estimated: {estimated_hours}h")
+        console.print(f"   File: {roadmap_path.relative_to(core.root_path)}")
+        
+    except Exception as e:
+        console.print(f"❌ Failed to create roadmap: {e}", style="bold red")
+
+
+@roadmap_cmd.command("list")
+@click.option(
+    "--status",
+    type=click.Choice(["planning", "active", "on-hold", "completed", "cancelled"]),
+    help="Filter by status",
+)
+@click.option(
+    "--owner",
+    help="Filter by owner",
+)
+@click.option(
+    "--priority",
+    type=click.Choice(["critical", "high", "medium", "low"]),
+    help="Filter by priority",
+)
+def list_roadmaps(status: Optional[str], owner: Optional[str], priority: Optional[str]) -> None:
+    """List all roadmaps with optional filtering."""
+    try:
+        core = RoadmapCore()
+        projects_dir = core.roadmap_dir / "projects"
+        
+        if not projects_dir.exists():
+            console.print("No roadmaps found. Create one with 'roadmap roadmap create'", style="yellow")
+            return
+            
+        # Get all roadmap files
+        roadmap_files = list(projects_dir.glob("*.md"))
+        
+        if not roadmap_files:
+            console.print("No roadmaps found. Create one with 'roadmap roadmap create'", style="yellow")
+            return
+        
+        # Parse and filter roadmaps
+        roadmaps = []
+        for file_path in roadmap_files:
+            try:
+                content = file_path.read_text()
+                # Extract YAML frontmatter
+                if content.startswith("---"):
+                    yaml_end = content.find("---", 3)
+                    if yaml_end != -1:
+                        import yaml
+                        yaml_content = content[3:yaml_end]
+                        metadata = yaml.safe_load(yaml_content)
+                        
+                        # Apply filters
+                        if status and metadata.get("status") != status:
+                            continue
+                        if owner and metadata.get("owner") != owner:
+                            continue
+                        if priority and metadata.get("priority") != priority:
+                            continue
+                            
+                        roadmaps.append({
+                            "id": metadata.get("id", "unknown"),
+                            "name": metadata.get("name", "Unnamed"),
+                            "status": metadata.get("status", "unknown"),
+                            "priority": metadata.get("priority", "medium"),
+                            "owner": metadata.get("owner", "Unassigned"),
+                            "file": file_path.name
+                        })
+            except Exception as e:
+                console.print(f"⚠️  Error reading {file_path.name}: {e}", style="yellow")
+                continue
+        
+        if not roadmaps:
+            console.print("No roadmaps match the specified filters.", style="yellow")
+            return
+        
+        # Display roadmaps in a table
+        table = Table(title="Roadmaps")
+        table.add_column("ID", style="cyan")
+        table.add_column("Name", style="bold")
+        table.add_column("Status", style="magenta")
+        table.add_column("Priority", style="yellow")
+        table.add_column("Owner", style="green")
+        
+        for roadmap in sorted(roadmaps, key=lambda x: x["name"]):
+            table.add_row(
+                roadmap["id"][:8],
+                roadmap["name"],
+                roadmap["status"],
+                roadmap["priority"],
+                roadmap["owner"]
+            )
+        
+        console.print(table)
+        console.print(f"\nFound {len(roadmaps)} roadmap(s)")
+        
+    except Exception as e:
+        console.print(f"❌ Failed to list roadmaps: {e}", style="bold red")
+
+
+@roadmap_cmd.command("update")
+@click.argument("roadmap_id")
+@click.option("--description", "-d", help="Update roadmap description")
+@click.option("--owner", "-o", help="Update roadmap owner")
+@click.option("--priority", "-p", type=click.Choice(["critical", "high", "medium", "low"]), help="Update priority")
+@click.option("--status", "-s", type=click.Choice(["planning", "active", "on-hold", "completed", "cancelled"]), help="Update status")
+@click.option("--start-date", help="Update start date (YYYY-MM-DD)")
+@click.option("--target-end-date", help="Update target end date (YYYY-MM-DD)")
+@click.option("--estimated-hours", type=float, help="Update estimated hours")
+@click.option("--add-milestone", multiple=True, help="Add milestone (can be repeated)")
+@click.option("--remove-milestone", multiple=True, help="Remove milestone (can be repeated)")
+@click.option("--set-milestones", multiple=True, help="Replace all milestones (can be repeated)")
+def update_roadmap(
+    roadmap_id: str,
+    description: Optional[str],
+    owner: Optional[str],
+    priority: Optional[str],
+    status: Optional[str],
+    start_date: Optional[str],
+    target_end_date: Optional[str],
+    estimated_hours: Optional[float],
+    add_milestone: tuple,
+    remove_milestone: tuple,
+    set_milestones: tuple,
+) -> None:
+    """Update an existing roadmap."""
+    try:
+        from datetime import datetime
+        import yaml
+        
+        core = RoadmapCore()
+        projects_dir = core.roadmap_dir / "projects"
+        
+        # Find roadmap file
+        roadmap_file = None
+        for file_path in projects_dir.glob("*.md"):
+            if file_path.name.startswith(roadmap_id):
+                roadmap_file = file_path
+                break
+        
+        if not roadmap_file:
+            console.print(f"❌ Roadmap {roadmap_id} not found", style="bold red")
+            return
+        
+        # Read and parse current content
+        content = roadmap_file.read_text()
+        if not content.startswith("---"):
+            console.print(f"❌ Invalid roadmap file format", style="bold red")
+            return
+        
+        yaml_end = content.find("---", 3)
+        if yaml_end == -1:
+            console.print(f"❌ Invalid roadmap file format", style="bold red")
+            return
+        
+        yaml_content = content[3:yaml_end]
+        body_content = content[yaml_end + 3:]
+        metadata = yaml.safe_load(yaml_content)
+        
+        # Track changes
+        changes = []
+        
+        # Update fields
+        if description is not None:
+            metadata["description"] = description
+            changes.append(f"description: {description}")
+        
+        if owner is not None:
+            metadata["owner"] = owner
+            changes.append(f"owner: {owner}")
+        
+        if priority is not None:
+            metadata["priority"] = priority
+            changes.append(f"priority: {priority}")
+        
+        if status is not None:
+            metadata["status"] = status
+            changes.append(f"status: {status}")
+        
+        if start_date is not None:
+            try:
+                parsed_date = datetime.strptime(start_date, "%Y-%m-%d").isoformat()
+                metadata["start_date"] = parsed_date
+                changes.append(f"start_date: {start_date}")
+            except ValueError:
+                console.print("❌ Invalid start date format. Use YYYY-MM-DD", style="bold red")
+                return
+        
+        if target_end_date is not None:
+            try:
+                parsed_date = datetime.strptime(target_end_date, "%Y-%m-%d").isoformat()
+                metadata["target_end_date"] = parsed_date
+                changes.append(f"target_end_date: {target_end_date}")
+            except ValueError:
+                console.print("❌ Invalid target end date format. Use YYYY-MM-DD", style="bold red")
+                return
+        
+        if estimated_hours is not None:
+            metadata["estimated_hours"] = estimated_hours
+            changes.append(f"estimated_hours: {estimated_hours}")
+        
+        # Handle milestone operations
+        current_milestones = metadata.get("milestones", [])
+        
+        if set_milestones:
+            # Replace all milestones
+            metadata["milestones"] = list(set_milestones)
+            changes.append(f"milestones: {list(set_milestones)}")
+        else:
+            # Add milestones
+            if add_milestone:
+                for milestone in add_milestone:
+                    if milestone not in current_milestones:
+                        current_milestones.append(milestone)
+                        changes.append(f"added milestone: {milestone}")
+            
+            # Remove milestones
+            if remove_milestone:
+                for milestone in remove_milestone:
+                    if milestone in current_milestones:
+                        current_milestones.remove(milestone)
+                        changes.append(f"removed milestone: {milestone}")
+            
+            metadata["milestones"] = current_milestones
+        
+        # Update timestamp
+        metadata["updated"] = datetime.now().isoformat()
+        
+        # Write back to file
+        new_content = "---\n" + yaml.dump(metadata, default_flow_style=False) + "---" + body_content
+        roadmap_file.write_text(new_content)
+        
+        if changes:
+            console.print(f"✅ Updated roadmap: {metadata.get('name', roadmap_id)}", style="bold green")
+            for change in changes:
+                console.print(f"   {change}")
+        else:
+            console.print("No changes specified.", style="yellow")
+        
+    except Exception as e:
+        console.print(f"❌ Failed to update roadmap: {e}", style="bold red")
+
+
+@roadmap_cmd.command("overview")
+@click.argument("roadmap_id", required=False)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    help="Custom output directory for roadmap analysis artifacts",
+)
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["rich", "json", "csv"]),
+    default="rich",
+    help="Output format for roadmap analysis",
+)
+@click.option(
+    "--include-charts",
+    is_flag=True,
+    default=True,
+    help="Generate visualization charts with the analysis",
+)
+def overview_roadmap(roadmap_id: Optional[str], output: Optional[str], format: str, include_charts: bool) -> None:
+    """Show roadmap overview and analytics."""
+    try:
+        core = RoadmapCore()
+        
+        if roadmap_id:
+            # Show specific roadmap overview
+            projects_dir = core.roadmap_dir / "projects"
+            roadmap_file = None
+            
+            for file_path in projects_dir.glob("*.md"):
+                if file_path.name.startswith(roadmap_id):
+                    roadmap_file = file_path
+                    break
+            
+            if not roadmap_file:
+                console.print(f"❌ Roadmap {roadmap_id} not found", style="bold red")
+                return
+            
+            # Parse roadmap file
+            content = roadmap_file.read_text()
+            if content.startswith("---"):
+                yaml_end = content.find("---", 3)
+                if yaml_end != -1:
+                    import yaml
+                    yaml_content = content[3:yaml_end]
+                    metadata = yaml.safe_load(yaml_content)
+                    
+                    # Display roadmap overview
+                    console.print(f"\n🗺️  Roadmap: {metadata.get('name', 'Unnamed')}", style="bold blue")
+                    console.print(f"ID: {metadata.get('id', 'unknown')}")
+                    console.print(f"Status: {metadata.get('status', 'unknown')}")
+                    console.print(f"Priority: {metadata.get('priority', 'medium')}")
+                    console.print(f"Owner: {metadata.get('owner', 'Unassigned')}")
+                    console.print(f"Description: {metadata.get('description', 'No description')}")
+                    
+                    if metadata.get('milestones'):
+                        console.print(f"Milestones: {', '.join(metadata['milestones'])}")
+                    
+                    if metadata.get('estimated_hours'):
+                        console.print(f"Estimated Hours: {metadata['estimated_hours']}")
+        else:
+            # Show all roadmaps overview (reuse existing project_overview logic but with roadmap terminology)
+            console.print("🗺️  Roadmap Overview", style="bold blue")
+            console.print("(Using existing project analysis with roadmap terminology)")
+            
+            # For now, call the existing project overview but we'll update terminology
+            from click import Context
+            ctx = Context(overview_roadmap)
+            project_overview(ctx, output, format, include_charts)
+        
+    except Exception as e:
+        console.print(f"❌ Failed to show roadmap overview: {e}", style="bold red")
+
+
+@roadmap_cmd.command("delete")
+@click.argument("roadmap_id")
+@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
+def delete_roadmap(roadmap_id: str, confirm: bool) -> None:
+    """Delete a roadmap."""
+    try:
+        core = RoadmapCore()
+        projects_dir = core.roadmap_dir / "projects"
+        
+        # Find roadmap file
+        roadmap_file = None
+        for file_path in projects_dir.glob("*.md"):
+            if file_path.name.startswith(roadmap_id):
+                roadmap_file = file_path
+                break
+        
+        if not roadmap_file:
+            console.print(f"❌ Roadmap {roadmap_id} not found", style="bold red")
+            return
+        
+        # Get roadmap name for confirmation
+        content = roadmap_file.read_text()
+        roadmap_name = "unknown"
+        if content.startswith("---"):
+            yaml_end = content.find("---", 3)
+            if yaml_end != -1:
+                import yaml
+                yaml_content = content[3:yaml_end]
+                metadata = yaml.safe_load(yaml_content)
+                roadmap_name = metadata.get("name", "unknown")
+        
+        # Confirmation
+        if not confirm:
+            response = click.confirm(f"Are you sure you want to delete roadmap '{roadmap_name}' ({roadmap_id})?")
+            if not response:
+                console.print("Deletion cancelled.", style="yellow")
+                return
+        
+        # Delete file
+        roadmap_file.unlink()
+        console.print(f"✅ Deleted roadmap: {roadmap_name} ({roadmap_id})", style="bold green")
+        
+    except Exception as e:
+        console.print(f"❌ Failed to delete roadmap: {e}", style="bold red")
+
+
+# ============================================================================
+# Backwards Compatibility - Project Commands with Deprecation Warnings
+# ============================================================================
 
 
 if __name__ == "__main__":
