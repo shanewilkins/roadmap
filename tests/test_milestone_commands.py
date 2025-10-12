@@ -23,7 +23,7 @@ def temp_dir():
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init"])
+    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
     assert result.exit_code == 0
     return temp_dir
 
