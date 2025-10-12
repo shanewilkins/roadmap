@@ -2082,6 +2082,269 @@ def git_create_issue(branch, title, assignee):
             click.echo("Try using --title to specify a custom title")
 
 
+@git.command("github-sync")
+@click.option(
+    "--issue-id", "-i",
+    help="Sync specific issue by ID"
+)
+@click.option(
+    "--direction", "-d",
+    type=click.Choice(["to_github", "from_github", "bidirectional"]),
+    default="bidirectional",
+    help="Sync direction (default: bidirectional)"
+)
+@click.option(
+    "--create-missing", "-c",
+    is_flag=True,
+    help="Create GitHub issues for roadmap issues that don't have them"
+)
+@click.option(
+    "--dry-run", "-n",
+    is_flag=True,
+    help="Show what would be synced without making changes"
+)
+def git_github_sync(issue_id, direction, create_missing, dry_run):
+    """Synchronize issues with GitHub."""
+    from .enhanced_github_integration import EnhancedGitHubIntegration
+    
+    # Initialize
+    core = RoadmapCore()
+    github_integration = EnhancedGitHubIntegration(core)
+    
+    if not github_integration.is_github_enabled():
+        click.echo("❌ GitHub integration not available", err=True)
+        click.echo("Set GITHUB_TOKEN environment variable and ensure repository is configured")
+        return
+        
+    if issue_id:
+        # Sync specific issue
+        if dry_run:
+            click.echo(f"🔍 Would sync issue {issue_id} ({direction})")
+        else:
+            click.echo(f"🔄 Syncing issue {issue_id}...")
+            success = github_integration.sync_issue_with_github(issue_id, direction)
+            if success:
+                click.echo(f"✅ Successfully synced issue {issue_id}")
+            else:
+                click.echo(f"❌ Failed to sync issue {issue_id}")
+    else:
+        # Sync all issues
+        click.echo("🔄 Syncing all issues with GitHub...")
+        
+        # Get all issues
+        issues = core.get_all_issues()
+        synced_count = 0
+        created_count = 0
+        error_count = 0
+        
+        for issue in issues:
+            try:
+                if dry_run:
+                    if issue.github_issue:
+                        click.echo(f"🔍 Would sync {issue.id}: {issue.title}")
+                    elif create_missing:
+                        click.echo(f"🔍 Would create GitHub issue for {issue.id}: {issue.title}")
+                    continue
+                    
+                if issue.github_issue:
+                    # Existing GitHub issue - sync it
+                    success = github_integration.sync_issue_with_github(issue.id, direction)
+                    if success:
+                        synced_count += 1
+                        click.echo(f"✅ Synced {issue.id}: {issue.title}")
+                    else:
+                        error_count += 1
+                        click.echo(f"❌ Failed to sync {issue.id}")
+                elif create_missing:
+                    # No GitHub issue - create one
+                    github_issue = github_integration.create_github_issue_from_roadmap(issue)
+                    if github_issue:
+                        created_count += 1
+                        click.echo(f"🆕 Created GitHub issue #{github_issue['number']} for {issue.id}: {issue.title}")
+                    else:
+                        error_count += 1
+                        click.echo(f"❌ Failed to create GitHub issue for {issue.id}")
+                        
+            except Exception as e:
+                error_count += 1
+                click.echo(f"❌ Error processing {issue.id}: {e}")
+                
+        # Summary
+        if not dry_run:
+            click.echo(f"\n📊 Sync Summary:")
+            click.echo(f"✅ Synced: {synced_count}")
+            click.echo(f"🆕 Created: {created_count}")
+            click.echo(f"❌ Errors: {error_count}")
+
+
+@git.command("webhook")
+@click.argument("webhook_url")
+@click.option(
+    "--events", "-e",
+    multiple=True,
+    type=click.Choice(["push", "pull_request", "issues", "issue_comment"]),
+    default=["push", "pull_request", "issues"],
+    help="Events to subscribe to (default: push, pull_request, issues)"
+)
+def git_webhook(webhook_url, events):
+    """Set up GitHub webhook for real-time synchronization."""
+    from .enhanced_github_integration import EnhancedGitHubIntegration
+    
+    # Initialize
+    core = RoadmapCore()
+    github_integration = EnhancedGitHubIntegration(core)
+    
+    if not github_integration.is_github_enabled():
+        click.echo("❌ GitHub integration not available", err=True)
+        return
+        
+    click.echo(f"🪝 Setting up webhook: {webhook_url}")
+    click.echo(f"📋 Events: {', '.join(events)}")
+    
+    success = github_integration.setup_github_webhook(webhook_url, list(events))
+    
+    if success:
+        click.echo("✅ Webhook created successfully")
+        click.echo("\n🔔 Your webhook endpoint should handle these events:")
+        for event in events:
+            click.echo(f"  • {event}")
+    else:
+        click.echo("❌ Failed to create webhook")
+
+
+@git.command("validate")
+@click.option(
+    "--branch", "-b",
+    help="Validate specific branch (default: current branch)"
+)
+@click.option(
+    "--check-ci", "-c",
+    is_flag=True,
+    help="Check CI/CD status for associated issues"
+)
+def git_validate(branch, check_ci):
+    """Validate branch policy and CI/CD status."""
+    from .enhanced_github_integration import EnhancedGitHubIntegration
+    from .git_integration import GitIntegration
+    
+    # Initialize
+    core = RoadmapCore()
+    git_integration = GitIntegration()
+    github_integration = EnhancedGitHubIntegration(core)
+    
+    if not git_integration.is_git_repository():
+        click.echo("❌ Not in a git repository", err=True)
+        return
+        
+    # Determine branch to validate
+    if branch:
+        target_branch = branch
+    else:
+        current_branch = git_integration.get_current_branch()
+        if not current_branch:
+            click.echo("❌ No current branch found", err=True)
+            return
+        target_branch = current_branch.name
+        
+    click.echo(f"🔍 Validating branch: {target_branch}")
+    
+    # Validate branch policy
+    validation = github_integration.enforce_branch_policy(target_branch)
+    
+    if validation["valid"]:
+        click.echo("✅ Branch policy validation passed")
+    else:
+        click.echo("❌ Branch policy validation failed")
+        
+    # Show warnings and suggestions
+    for warning in validation.get("warnings", []):
+        click.echo(f"⚠️  {warning}")
+        
+    for error in validation.get("errors", []):
+        click.echo(f"❌ {error}")
+        
+    for suggestion in validation.get("suggestions", []):
+        click.echo(f"💡 {suggestion}")
+        
+    # Check CI/CD status if requested
+    if check_ci:
+        click.echo(f"\n🔧 Checking CI/CD status...")
+        
+        # Find linked issues
+        linked_issues = git_integration.get_branch_linked_issues(target_branch)
+        
+        if not linked_issues:
+            click.echo("ℹ️  No linked issues found for CI/CD status check")
+        else:
+            for issue_id in linked_issues:
+                ci_status = github_integration.validate_ci_cd_status(issue_id)
+                
+                click.echo(f"\n📋 Issue {issue_id}:")
+                if ci_status.get("has_pr"):
+                    click.echo(f"  🔗 PR Status: {ci_status.get('pr_status', 'unknown')}")
+                    if ci_status.get("ci_status"):
+                        ci_state = ci_status["ci_status"].get("state", "unknown")
+                        if ci_state == "success":
+                            click.echo("  ✅ CI checks passing")
+                        elif ci_state == "failure":
+                            click.echo("  ❌ CI checks failing")
+                        elif ci_state == "pending":
+                            click.echo("  🟡 CI checks pending")
+                        else:
+                            click.echo(f"  ❓ CI status: {ci_state}")
+                            
+                    if ci_status.get("deployable"):
+                        click.echo("  🚀 Ready for deployment")
+                    else:
+                        click.echo("  ⏸️  Not ready for deployment")
+                else:
+                    click.echo("  ❓ No associated pull request found")
+                    
+                if "error" in ci_status:
+                    click.echo(f"  ❌ Error: {ci_status['error']}")
+
+
+@git.command("serve-webhook")
+@click.option(
+    "--host", "-h",
+    default="0.0.0.0",
+    help="Host to bind to (default: 0.0.0.0)"
+)
+@click.option(
+    "--port", "-p",
+    default=8080,
+    type=int,
+    help="Port to bind to (default: 8080)"
+)
+@click.option(
+    "--secret", "-s",
+    help="Webhook secret for signature verification (or set GITHUB_WEBHOOK_SECRET)"
+)
+def git_serve_webhook(host, port, secret):
+    """Start webhook server for real-time GitHub integration."""
+    try:
+        from .webhook_server import WebhookCLI
+        
+        click.echo(f"🚀 Starting webhook server on {host}:{port}")
+        click.echo("📋 Supported events: push, pull_request, issues, issue_comment")
+        click.echo(f"🔗 Webhook URL: http://{host}:{port}/webhook/github")
+        
+        if secret:
+            click.echo("🔐 Signature verification enabled")
+        else:
+            click.echo("⚠️  No webhook secret configured - signatures will not be verified")
+            
+        WebhookCLI.start_server(host, port, secret)
+        
+    except ImportError:
+        click.echo("❌ Webhook server requires aiohttp package", err=True)
+        click.echo("Install with: pip install aiohttp")
+    except KeyboardInterrupt:
+        click.echo("\n👋 Webhook server stopped")
+    except Exception as e:
+        click.echo(f"❌ Failed to start webhook server: {e}", err=True)
+
+
 @main.group()
 def issue():
     """Manage issues."""
