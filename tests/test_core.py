@@ -64,14 +64,22 @@ class TestRoadmapCore:
 
         issue_template = core.templates_dir / "issue.md"
         milestone_template = core.templates_dir / "milestone.md"
+        project_template = core.templates_dir / "project.md"
 
         assert issue_template.exists()
         assert milestone_template.exists()
+        assert project_template.exists()
 
         # Check template content
         issue_content = issue_template.read_text()
         assert "{{ title }}" in issue_content
         assert "priority:" in issue_content
+
+        # Check project template content
+        project_content = project_template.read_text()
+        assert "{{ project_name }}" in project_content
+        assert "{{ project_owner }}" in project_content
+        assert "start_date:" in project_content
 
         milestone_content = milestone_template.read_text()
         assert "{{ milestone_name }}" in milestone_content

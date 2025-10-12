@@ -48,6 +48,7 @@ roadmap export issues --format excel
 
 ### User Guide
 - **[Core Concepts](user-guide/concepts.md)** - Understanding roadmaps, issues, and milestones
+- **[Project Management](PROJECT_MANAGEMENT.md)** - Creating and managing projects with timeline tracking
 - **[Issue Management](user-guide/issues.md)** - Creating and managing issues
 - **[Milestone Planning](user-guide/milestones.md)** - Project milestone management
 - **[Team Collaboration](user-guide/team.md)** - Multi-user workflows and permissions
@@ -65,6 +66,25 @@ roadmap export issues --format excel
 - **[Architecture](architecture.md)** - Technical architecture overview
 
 ## 💡 Key Concepts
+
+### Projects
+Projects provide high-level organization and tracking for complex initiatives. They include timeline management, resource planning, and milestone coordination.
+
+```bash
+# Create a project
+roadmap project create "Q1 Product Launch" \
+  --description "Launch new product features for Q1 2025" \
+  --owner "product-team" \
+  --priority "high" \
+  --start-date "2025-01-01" \
+  --target-end-date "2025-03-31" \
+  --estimated-hours 480.0 \
+  --milestones "Alpha Release" \
+  --milestones "Beta Testing"
+
+# Generate project analysis
+roadmap project overview --format rich
+```
 
 ### Issues
 Issues are the fundamental units of work in your roadmap. Each issue represents a task, feature, bug fix, or any work item that needs to be tracked.

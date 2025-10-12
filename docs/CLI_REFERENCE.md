@@ -7,6 +7,7 @@ Complete reference for all Roadmap CLI commands with examples, options, and usag
 | Command Group | Commands | Description |
 |---------------|----------|-------------|
 | **Core** | `init`, `status` | Project initialization and status |
+| **Projects** | `project create/overview` | Project-level management and analysis |
 | **Issues** | `issue create/list/update/close/delete` | Issue management |
 | **Comments** | `comment list/create/edit/delete` | Issue comment management |
 | **Milestones** | `milestone create/list/assign/delete` | Milestone management |
@@ -75,6 +76,101 @@ Milestones: 3 total (2 open, 1 closed)
 Last Sync: 2024-10-10 14:30:22
 GitHub: ✅ Connected (username/repository)
 ```
+
+## 🏗️ Project Management
+
+### `roadmap project create`
+
+Create a new project with comprehensive metadata and timeline tracking.
+
+```bash
+# Basic project creation
+roadmap project create "My Project"
+
+# Full project with all options
+roadmap project create "Advanced Project" \
+  --description "Complex project with milestones" \
+  --owner "johnsmith" \
+  --priority "high" \
+  --start-date "2025-01-01" \
+  --target-end-date "2025-03-31" \
+  --estimated-hours 120.0 \
+  --milestones "Phase 1" \
+  --milestones "Phase 2" \
+  --milestones "Launch"
+
+# Quick project with minimal options
+roadmap project create "Bug Fix Sprint" \
+  --description "Critical bug fixes for Q1" \
+  --owner "devteam" \
+  --priority "critical" \
+  --estimated-hours 40.0
+```
+
+**Options:**
+
+- `--description, -d TEXT`: Project description
+- `--owner, -o TEXT`: Project owner/lead
+- `--priority, -p [critical|high|medium|low]`: Project priority (default: medium)
+- `--start-date, -s TEXT`: Start date in YYYY-MM-DD format
+- `--target-end-date, -e TEXT`: Target completion date in YYYY-MM-DD format
+- `--estimated-hours, -h FLOAT`: Estimated hours to complete
+- `--milestones, -m TEXT`: Milestone names (can be specified multiple times)
+
+**Creates:**
+
+- Project file in `.roadmap/projects/` with pattern `{id}-{name}.md`
+- Unique 8-character project ID
+- YAML frontmatter with all metadata
+- Template content with sections for objectives, timeline, and notes
+
+**Example Output:**
+
+```
+✅ Created project:
+   ID: a1b2c3d4
+   Name: Advanced Project
+   Priority: high
+   Owner: johnsmith
+   Estimated: 120.0h
+   File: .roadmap/projects/a1b2c3d4-advanced-project.md
+```
+
+### `roadmap project overview`
+
+Generate comprehensive project-level analysis and reporting.
+
+```bash
+# Rich terminal output (default)
+roadmap project overview
+
+# JSON format for automation
+roadmap project overview --format json
+
+# CSV export for spreadsheets
+roadmap project overview --format csv
+
+# Custom output directory
+roadmap project overview --output ./reports
+
+# Skip chart generation
+roadmap project overview --no-include-charts
+```
+
+**Options:**
+
+- `--output, -o PATH`: Custom output directory for analysis artifacts
+- `--format, -f [rich|json|csv]`: Output format (default: rich)
+- `--include-charts/--no-include-charts`: Generate visualization charts (default: true)
+
+**Analysis Includes:**
+
+- **Overall Statistics**: Total issues, completion rates, open bugs
+- **Milestone Progression**: Progress tracking per milestone
+- **Team Workload**: Issue distribution across team members
+- **Issue Type Distribution**: Breakdown by bug/feature/task
+- **Technical Debt Indicators**: Bug ratios and quality metrics
+- **Timeline Analysis**: Project health and delivery projections
 
 ## 📝 Issue Management
 
