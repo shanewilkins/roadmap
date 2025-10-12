@@ -9,6 +9,7 @@ from typing import Optional
 import re
 import os
 import getpass
+import yaml
 
 import click
 import pandas as pd
@@ -482,40 +483,87 @@ def _setup_github_integration(core: RoadmapCore, github_repo: str, interactive: 
         console.print("\nTo sync with GitHub, you'll need a personal access token.")
         console.print("→ Open: https://github.com/settings/tokens")
         console.print("→ Create token with 'repo' scope (or 'public_repo' for public repos)")
+        console.print("→ Required permissions: Issues, Pull requests, Repository metadata")
         console.print()
         
         if not click.confirm("Do you want to set up GitHub integration now?"):
-            console.print("⏭️  Skipping GitHub integration (you can set this up later)")
+            console.print("⏭️  Skipping GitHub integration (you can set this up later with 'roadmap sync setup')")
             return False
     
     try:
         from roadmap.github_client import GitHubClient
         from roadmap.credentials import CredentialManager
         
-        # Get token from user
-        if interactive:
-            token = click.prompt("Paste your GitHub token", hide_input=True)
-        else:
-            console.print("❌ Non-interactive mode requires existing GitHub credentials")
-            return False
+        # Check if credentials already exist
+        cred_manager = CredentialManager()
+        existing_token = None
         
-        # Test the connection
+        try:
+            existing_token = cred_manager.get_github_token()
+            if existing_token and interactive:
+                console.print("🔍 Found existing GitHub credentials")
+                if click.confirm("Use existing GitHub credentials?"):
+                    console.print("✅ Using existing GitHub credentials")
+                else:
+                    existing_token = None
+        except:
+            pass  # No existing credentials
+        
+        # Get token from user if not using existing
+        if not existing_token:
+            if interactive:
+                token = click.prompt("Paste your GitHub token", hide_input=True)
+            else:
+                console.print("❌ Non-interactive mode requires existing GitHub credentials or --skip-github flag")
+                return False
+        else:
+            token = existing_token
+        
+        # Test the connection with comprehensive validation
         console.print("🔍 Testing GitHub connection...", style="yellow")
         github_client = GitHubClient(token)
         
-        # Validate token and repository access
-        owner, repo = github_repo.split("/")
-        repo_info = github_client.get_repository_info(owner, repo)
+        # Validate user authentication
+        try:
+            user_info = github_client._make_request("GET", "/user")
+            console.print(f"✅ Authenticated as: {user_info.get('login', 'unknown')}")
+        except Exception as e:
+            console.print(f"❌ Authentication failed: {e}", style="red")
+            if interactive and click.confirm("Continue without GitHub integration?"):
+                return False
+            else:
+                raise
         
-        console.print(f"✅ Connected to GitHub as {repo_info.get('owner', {}).get('login', 'unknown')}")
+        # Validate repository access
+        try:
+            owner, repo = github_repo.split("/")
+            repo_info = github_client.get_repository_info(owner, repo)
+            repo_name = repo_info.get('full_name', github_repo)
+            console.print(f"✅ Repository access: {repo_name}")
+            
+            # Check permissions
+            permissions = repo_info.get('permissions', {})
+            if permissions.get('admin') or permissions.get('push'):
+                console.print("✅ Write access: Available")
+            elif permissions.get('pull'):
+                console.print("⚠️  Read-only access: Limited sync capabilities", style="yellow")
+            else:
+                console.print("❌ No repository access detected", style="red")
+                
+        except Exception as e:
+            console.print(f"⚠️  Repository validation warning: {e}", style="yellow")
+            if interactive:
+                if not click.confirm("Continue with GitHub integration anyway?"):
+                    return False
+            # Continue anyway for non-interactive mode
         
-        # Store credentials securely
-        cred_manager = CredentialManager()
-        cred_manager.store_github_token(token)
+        # Store credentials securely (only if new token)
+        if not existing_token:
+            cred_manager.store_github_token(token)
+            console.print("🔒 Credentials stored securely")
         
         # Save GitHub repository configuration
         config_file = core.roadmap_dir / "config.yaml"
-        import yaml
         
         if config_file.exists():
             with open(config_file, 'r') as f:
@@ -523,19 +571,38 @@ def _setup_github_integration(core: RoadmapCore, github_repo: str, interactive: 
         else:
             config = {}
         
+        # Enhanced GitHub configuration
         config['github'] = {
             'repository': github_repo,
-            'enabled': True
+            'enabled': True,
+            'sync_enabled': True,
+            'webhook_secret': None,  # Can be set up later
+            'sync_settings': {
+                'bidirectional': True,
+                'auto_close': True,
+                'sync_labels': True,
+                'sync_milestones': True
+            }
         }
         
+        # Save configuration
         with open(config_file, 'w') as f:
-            yaml.dump(config, f, default_flow_style=False)
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
         
-        console.print("🔒 Credentials stored securely")
+        console.print("⚙️  Configuration saved")
+        
+        # Test a basic API call to ensure everything works
+        try:
+            issues = github_client._make_request("GET", f"/repos/{github_repo}/issues", params={"state": "open", "per_page": 1})
+            console.print(f"✅ API test successful ({len(issues)} issue(s) found)")
+        except Exception as e:
+            console.print(f"⚠️  API test warning: {e}", style="yellow")
+        
         return True
         
-    except ImportError:
-        console.print("⚠️  GitHub integration not available (missing dependencies)", style="yellow")
+    except ImportError as e:
+        console.print(f"⚠️  GitHub integration not available: Missing dependencies ({e})", style="yellow")
+        console.print("Install with: pip install requests keyring", style="dim")
         return False
     except Exception as e:
         console.print(f"❌ GitHub setup failed: {e}", style="red")
@@ -555,28 +622,50 @@ def _show_success_summary(name: str, github_configured: bool, project_info: Opti
     # Show what was created
     console.print("📁 Created:", style="bold cyan")
     console.print(f"  ✓ Roadmap structure: {name}/")
+    console.print("    ├── issues/       (issue tracking)")
+    console.print("    ├── milestones/   (milestone management)")
+    console.print("    ├── projects/     (project documents)")
+    console.print("    ├── templates/    (document templates)")
+    console.print("    ├── artifacts/    (generated content)")
+    console.print("    └── config.yaml   (configuration)")
+    
     if project_info:
         console.print(f"  ✓ Main project: {project_info['name']} (ID: {project_info['id']})")
     if github_configured:
         console.print("  ✓ GitHub integration: Connected and configured")
-    console.print("  ✓ Configuration: Default templates and settings")
+        console.print("    • Bidirectional sync enabled")
+        console.print("    • Automatic issue linking")
+        console.print("    • Webhook support ready")
+    console.print("  ✓ Security: Secure file permissions and credential storage")
     
     console.print()
     console.print("🚀 Next Steps:", style="bold yellow")
     
     if project_info:
-        console.print(f"  → roadmap project show {project_info['id']}")
+        console.print(f"  → roadmap project show {project_info['id'][:8]}")
     console.print("  → roadmap issue create \"Your first issue\"")
     if github_configured:
-        console.print("  → roadmap sync bidirectional")
-    console.print("  → roadmap dashboard")
+        console.print("  → roadmap sync bidirectional        # Sync with GitHub")
+        console.print("  → roadmap git setup                 # Configure git hooks")
+    console.print("  → roadmap dashboard                  # View your dashboard")
     
     console.print()
-    console.print("📚 Learn more:", style="dim")
-    console.print("  → roadmap --help")
-    console.print("  → roadmap issue --help")
+    console.print("📚 Learn More:", style="bold cyan")
+    console.print("  → roadmap --help                    # All available commands")
+    console.print("  → roadmap issue --help               # Issue management")
     if github_configured:
-        console.print("  → roadmap sync --help")
+        console.print("  → roadmap sync --help                # GitHub synchronization")
+        console.print("  → roadmap git --help                 # Git integration")
+    console.print("  → roadmap project --help             # Project management")
+    console.print("  → roadmap milestone --help           # Milestone tracking")
+    
+    console.print()
+    console.print("💡 Pro Tips:", style="bold magenta")
+    console.print("  • Use 'roadmap dashboard' for daily task overview")
+    console.print("  • Set up git hooks with 'roadmap git setup' for automatic updates")
+    if github_configured:
+        console.print("  • Try 'roadmap sync bidirectional' to sync existing GitHub issues")
+    console.print("  • Create templates in .roadmap/templates/ for consistent formatting")
 
 
 @main.command()
