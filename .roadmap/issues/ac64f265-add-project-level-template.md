@@ -2,20 +2,20 @@
 id: ac64f265
 title: Add project level template
 priority: medium
-status: in-progress
+status: done
 issue_type: feature
 milestone: ''
 labels: []
 github_issue: null
 created: '2025-10-11T19:03:58.235408'
-updated: '2025-10-11T19:07:12.403562'
+updated: '2025-10-11T19:21:13.472792'
 assignee: shanewilkins
 estimated_hours: 2.0
 depends_on: []
 blocks: []
 actual_start_date: '2025-10-11T19:07:12.400843'
-actual_end_date: null
-progress_percentage: 0.0
+actual_end_date: '2025-10-11T19:21:13.470728'
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
