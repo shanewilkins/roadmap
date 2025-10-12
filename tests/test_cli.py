@@ -1585,13 +1585,13 @@ class TestRoadmapCommands:
         assert "Created roadmap" in result.output
         
         # Verify roadmap file was created in temp directory
-        projects_dir = os.path.join(isolated_roadmap_dir, ".roadmap", "projects")
-        assert os.path.exists(projects_dir)
-        roadmap_files = [f for f in os.listdir(projects_dir) if f.endswith('.md')]
+        roadmaps_dir = os.path.join(isolated_roadmap_dir, ".roadmap", "roadmaps")
+        assert os.path.exists(roadmaps_dir)
+        roadmap_files = [f for f in os.listdir(roadmaps_dir) if f.endswith('.md')]
         assert len(roadmap_files) == 1
         
         # Verify roadmap file content
-        roadmap_file = os.path.join(projects_dir, roadmap_files[0])
+        roadmap_file = os.path.join(roadmaps_dir, roadmap_files[0])
         with open(roadmap_file, 'r') as f:
             content = f.read()
             assert "test-roadmap" in content

@@ -9647,9 +9647,9 @@ def create_roadmap(
                 console.print("❌ Invalid target end date format. Use YYYY-MM-DD", style="bold red")
                 return
         
-        # Create projects directory if it doesn't exist (keeping same folder structure for now)
-        projects_dir = core.roadmap_dir / "projects"
-        projects_dir.mkdir(exist_ok=True)
+        # Create roadmaps directory if it doesn't exist
+        roadmaps_dir = core.roadmap_dir / "roadmaps"
+        roadmaps_dir.mkdir(exist_ok=True)
         
         # Load and process template
         template_path = core.templates_dir / "project.md"
@@ -9705,7 +9705,7 @@ def create_roadmap(
         
         # Save roadmap file
         roadmap_filename = f"{roadmap_id}-{name.lower().replace(' ', '-')}.md"
-        roadmap_path = projects_dir / roadmap_filename
+        roadmap_path = roadmaps_dir / roadmap_filename
         
         with open(roadmap_path, "w") as f:
             f.write(roadmap_content)
@@ -9743,14 +9743,14 @@ def list_roadmaps(status: Optional[str], owner: Optional[str], priority: Optiona
     """List all roadmaps with optional filtering."""
     try:
         core = RoadmapCore()
-        projects_dir = core.roadmap_dir / "projects"
+        roadmaps_dir = core.roadmap_dir / "roadmaps"
         
-        if not projects_dir.exists():
+        if not roadmaps_dir.exists():
             console.print("No roadmaps found. Create one with 'roadmap roadmap create'", style="yellow")
             return
             
         # Get all roadmap files
-        roadmap_files = list(projects_dir.glob("*.md"))
+        roadmap_files = list(roadmaps_dir.glob("*.md"))
         
         if not roadmap_files:
             console.print("No roadmaps found. Create one with 'roadmap roadmap create'", style="yellow")
@@ -9848,11 +9848,11 @@ def update_roadmap(
         import yaml
         
         core = RoadmapCore()
-        projects_dir = core.roadmap_dir / "projects"
+        roadmaps_dir = core.roadmap_dir / "roadmaps"
         
         # Find roadmap file
         roadmap_file = None
-        for file_path in projects_dir.glob("*.md"):
+        for file_path in roadmaps_dir.glob("*.md"):
             if file_path.name.startswith(roadmap_id):
                 roadmap_file = file_path
                 break
@@ -9988,10 +9988,10 @@ def overview_roadmap(roadmap_id: Optional[str], output: Optional[str], format: s
         
         if roadmap_id:
             # Show specific roadmap overview
-            projects_dir = core.roadmap_dir / "projects"
+            roadmaps_dir = core.roadmap_dir / "roadmaps"
             roadmap_file = None
             
-            for file_path in projects_dir.glob("*.md"):
+            for file_path in roadmaps_dir.glob("*.md"):
                 if file_path.name.startswith(roadmap_id):
                     roadmap_file = file_path
                     break
@@ -10043,11 +10043,11 @@ def delete_roadmap(roadmap_id: str, confirm: bool) -> None:
     """Delete a roadmap."""
     try:
         core = RoadmapCore()
-        projects_dir = core.roadmap_dir / "projects"
+        roadmaps_dir = core.roadmap_dir / "roadmaps"
         
         # Find roadmap file
         roadmap_file = None
-        for file_path in projects_dir.glob("*.md"):
+        for file_path in roadmaps_dir.glob("*.md"):
             if file_path.name.startswith(roadmap_id):
                 roadmap_file = file_path
                 break
