@@ -1,5 +1,7 @@
 defaults: {}
 display: {}
-github: {}
+github:
+  owner: shanewilkins
+  repo: roadmap
 milestones: {}
 sync: {}

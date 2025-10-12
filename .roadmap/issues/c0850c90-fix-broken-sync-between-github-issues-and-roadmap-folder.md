@@ -2,14 +2,14 @@
 id: c0850c90
 title: Fix broken sync between GitHub issues and roadmap folder
 priority: high
-status: todo
+status: done
 issue_type: bug
 milestone: ''
 labels: []
-github_issue: null
+github_issue: 3
 created: '2025-10-11T19:48:01.356056'
-updated: '2025-10-11T19:48:01.356060'
-assignee: shanewilkins
+updated: '2025-10-11T20:03:34.015334'
+assignee: ''
 estimated_hours: null
 depends_on: []
 blocks: []
@@ -58,3 +58,7 @@ The synchronization between GitHub issues and the local `.roadmap/issues/` folde
 - [ ] Bidirectional sync maintains data consistency
 - [ ] Proper error handling and user feedback for sync operations
 - [ ] Documentation updated with current sync behavior and troubleshooting
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

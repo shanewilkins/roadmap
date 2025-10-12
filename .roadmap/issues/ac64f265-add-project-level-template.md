@@ -6,10 +6,10 @@ status: done
 issue_type: feature
 milestone: ''
 labels: []
-github_issue: null
+github_issue: 4
 created: '2025-10-11T19:03:58.235408'
-updated: '2025-10-11T19:21:13.472792'
-assignee: shanewilkins
+updated: '2025-10-11T20:03:40.683135'
+assignee: ''
 estimated_hours: 2.0
 depends_on: []
 blocks: []
@@ -82,3 +82,7 @@ roadmap project create "Advanced Project" \
   --milestones "Phase 2" \
   --milestones "Launch"
 ```
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins
