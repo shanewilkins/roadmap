@@ -8,9 +8,9 @@ milestone: ''
 labels: []
 github_issue: null
 created: '2025-10-11T20:34:42.628405'
-updated: '2025-10-11T20:34:42.628410'
+updated: '2025-10-12T08:58:01.975122'
 assignee: shane
-estimated_hours: 3.0
+estimated_hours: 4.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -143,6 +143,25 @@ def create(title, **kwargs):
 def list(**kwargs):  
     """List all roadmaps."""
     # Implementation
+
+@roadmap.command()
+def update(roadmap_id, **kwargs):
+    """Update an existing roadmap."""
+    # Implementation includes:
+    # - Add/remove milestones
+    # - Update description, owner, priority
+    # - Modify dates and status
+    # - Add/remove team members
+
+@roadmap.command()
+def overview(roadmap_id=None, **kwargs):
+    """Show roadmap overview and analytics."""
+    # Implementation
+
+@roadmap.command() 
+def delete(roadmap_id, **kwargs):
+    """Delete a roadmap."""
+    # Implementation
     
 # Backwards compatibility aliases
 @cli.group()
@@ -168,6 +187,9 @@ def project():
 
 ### CLI Command Changes
 - [ ] New `roadmap roadmap` commands work identically to old `roadmap project` commands
+- [ ] **NEW**: `roadmap roadmap update` command for modifying existing roadmaps
+- [ ] **NEW**: Support for adding/removing milestones via CLI (`--add-milestone`, `--remove-milestone`)
+- [ ] **NEW**: Update roadmap metadata (description, owner, priority, dates) via CLI
 - [ ] Backwards compatibility: old `roadmap project` commands still work with deprecation warnings
 - [ ] Help text and documentation updated throughout
 - [ ] Error messages use new "roadmap" terminology
@@ -243,6 +265,81 @@ def create():  # Top-level shortcut
 roadmap config set commands.use_legacy_project_terms false
 roadmap config set commands.show_deprecation_warnings true
 roadmap config set files.roadmap_directory "roadmaps"  # vs "projects"
+```
+
+### Update Command Specification
+```bash
+# New roadmap update command (currently missing from CLI)
+roadmap roadmap update ROADMAP_ID [OPTIONS]
+
+Options:
+  -d, --description TEXT          Update roadmap description
+  -o, --owner TEXT                Update roadmap owner
+  -p, --priority [critical|high|medium|low]  Update priority
+  -s, --status [planning|active|on-hold|completed|cancelled]  Update status
+  --start-date TEXT               Update start date (YYYY-MM-DD)
+  --target-end-date TEXT          Update target end date (YYYY-MM-DD)
+  --estimated-hours FLOAT         Update estimated hours
+  --add-milestone TEXT            Add milestone to roadmap (can be repeated)
+  --remove-milestone TEXT         Remove milestone from roadmap (can be repeated)
+  --set-milestones TEXT           Replace all milestones (can be repeated)
+
+# Examples:
+roadmap roadmap update d9f5556c --add-milestone "v0.5.0"
+roadmap roadmap update d9f5556c --remove-milestone "old-milestone"
+roadmap roadmap update d9f5556c --description "Updated description" --priority high
+roadmap roadmap update d9f5556c --set-milestones "v1.0" --set-milestones "v2.0"
+```
+
+### Update Command Implementation
+```python
+@roadmap.command()
+@click.argument('roadmap_id')
+@click.option('-d', '--description', help='Update roadmap description')
+@click.option('-o', '--owner', help='Update roadmap owner')
+@click.option('-p', '--priority', type=click.Choice(['critical', 'high', 'medium', 'low']))
+@click.option('-s', '--status', type=click.Choice(['planning', 'active', 'on-hold', 'completed', 'cancelled']))
+@click.option('--start-date', help='Update start date (YYYY-MM-DD)')
+@click.option('--target-end-date', help='Update target end date (YYYY-MM-DD)')
+@click.option('--estimated-hours', type=float, help='Update estimated hours')
+@click.option('--add-milestone', multiple=True, help='Add milestone (can be repeated)')
+@click.option('--remove-milestone', multiple=True, help='Remove milestone (can be repeated)')
+@click.option('--set-milestones', multiple=True, help='Replace all milestones (can be repeated)')
+def update(roadmap_id, **kwargs):
+    """Update an existing roadmap."""
+    roadmap_file = find_roadmap_file(roadmap_id)
+    if not roadmap_file:
+        click.echo(f"❌ Roadmap {roadmap_id} not found")
+        return
+        
+    roadmap_data = load_roadmap(roadmap_file)
+    
+    # Update fields
+    if kwargs.get('description'):
+        roadmap_data['description'] = kwargs['description']
+    if kwargs.get('owner'):
+        roadmap_data['owner'] = kwargs['owner']
+    # ... handle other fields
+    
+    # Handle milestone operations
+    if kwargs.get('set_milestones'):
+        roadmap_data['milestones'] = list(kwargs['set_milestones'])
+    else:
+        if kwargs.get('add_milestone'):
+            for milestone in kwargs['add_milestone']:
+                if milestone not in roadmap_data['milestones']:
+                    roadmap_data['milestones'].append(milestone)
+        if kwargs.get('remove_milestone'):
+            for milestone in kwargs['remove_milestone']:
+                if milestone in roadmap_data['milestones']:
+                    roadmap_data['milestones'].remove(milestone)
+    
+    # Update timestamp
+    roadmap_data['updated'] = datetime.now().isoformat()
+    
+    # Save changes
+    save_roadmap(roadmap_file, roadmap_data)
+    click.echo(f"✅ Updated roadmap: {roadmap_data['name']}")
 ```
 
 ### Backwards Compatibility Code
