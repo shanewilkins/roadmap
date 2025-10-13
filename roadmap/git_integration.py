@@ -446,6 +446,9 @@ class GitIntegration:
         progress = commit.extract_progress_info()
         if progress is not None:
             updates["progress_percentage"] = min(100.0, max(0.0, progress))
+            # If progress is set but not 100%, assume work is in progress
+            if 0 < progress < 100:
+                updates["status"] = "in-progress"
 
         # Check for completion indicators (enhanced patterns)
         completion_patterns = [
@@ -528,6 +531,17 @@ class GitIntegration:
                             update_data["content"] = issue.content + commit_note
                         else:
                             update_data["content"] = commit_note.strip()
+                        
+                        # Add commit to git_commits list if not already present
+                        current_commits = issue.git_commits or []
+                        commit_ref = {
+                            "hash": commit.hash,
+                            "message": commit.message,
+                            "date": commit.date.isoformat() if commit.date else None
+                        }
+                        if not any(c.get("hash") == commit.hash for c in current_commits):
+                            current_commits.append(commit_ref)
+                        update_data["git_commits"] = current_commits
                             
                         # Update the issue
                         roadmap_core.update_issue(issue_id, **update_data)
