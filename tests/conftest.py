@@ -3,8 +3,11 @@
 import os
 import tempfile
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
+
+from .test_data_factory import TestDataFactory
 
 
 @pytest.fixture(autouse=True)
@@ -74,3 +77,148 @@ version: "1.0.0"
             yield temp_path
         finally:
             os.chdir(original_cwd)
+
+
+# Centralized Common Fixtures
+# ===========================
+
+@pytest.fixture
+def mock_core():
+    """Create standardized mock RoadmapCore instance.
+    
+    This centralizes the mock_core fixture used across multiple test files.
+    Individual tests can override specific behavior as needed.
+    """
+    return TestDataFactory.create_mock_core()
+
+
+@pytest.fixture
+def mock_config():
+    """Create standardized mock RoadmapConfig instance."""
+    return TestDataFactory.create_mock_config()
+
+
+@pytest.fixture
+def mock_issue():
+    """Create standardized mock Issue instance."""
+    return TestDataFactory.create_mock_issue()
+
+
+@pytest.fixture
+def mock_milestone():
+    """Create standardized mock Milestone instance.""" 
+    return TestDataFactory.create_mock_milestone()
+
+
+@pytest.fixture
+def temp_dir():
+    """Create temporary directory for tests that need filesystem operations.
+    
+    This centralizes the temp_dir fixture pattern used across multiple test files.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        old_cwd = Path.cwd()
+        os.chdir(tmpdir)
+        try:
+            yield Path(tmpdir)
+        finally:
+            os.chdir(old_cwd)
+
+
+@pytest.fixture
+def temp_workspace():
+    """Create temporary workspace with initialized roadmap structure.
+    
+    This provides a more complete workspace setup for integration tests.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        old_cwd = Path.cwd()
+        os.chdir(tmpdir)
+        
+        # Initialize basic roadmap structure
+        roadmap_dir = Path(tmpdir) / '.roadmap'
+        roadmap_dir.mkdir(exist_ok=True)
+        (roadmap_dir / 'issues').mkdir(exist_ok=True)
+        (roadmap_dir / 'milestones').mkdir(exist_ok=True)
+        
+        # Create basic config
+        config_file = roadmap_dir / 'config.yaml'
+        config_file.write_text("""# Test Configuration
+project_name: "Test Project"
+version: "1.0.0"
+""")
+        
+        try:
+            yield Path(tmpdir)
+        finally:
+            os.chdir(old_cwd)
+
+
+# GitHub and Webhook Testing Fixtures
+# ===================================
+
+@pytest.fixture
+def github_webhook_payload():
+    """Create GitHub webhook payload factory function."""
+    return TestDataFactory.create_github_webhook_payload
+
+
+@pytest.fixture
+def webhook_signature_creator():
+    """Create webhook signature factory function."""
+    return TestDataFactory.create_webhook_signature
+
+
+@pytest.fixture
+def github_api_response():
+    """Create GitHub API response factory function."""
+    return TestDataFactory.create_github_api_response
+
+
+@pytest.fixture
+def cli_test_data():
+    """Create CLI test data factory function."""
+    return TestDataFactory.create_cli_test_data
+
+
+# Performance-Optimized Fixtures
+# ==============================
+
+@pytest.fixture
+def lightweight_mock_core():
+    """Create lightweight mock core for performance-critical tests.
+    
+    This provides minimal mocking for tests that don't need full core functionality.
+    """
+    core = Mock()
+    core.is_initialized.return_value = True
+    core.get_issues.return_value = []
+    return core
+
+
+@pytest.fixture
+def patch_github_integration():
+    """Lightweight patch for GitHub integration to avoid heavy mocking."""
+    with patch('roadmap.enhanced_github_integration.EnhancedGitHubIntegration') as mock:
+        mock.return_value.is_github_enabled.return_value = True
+        mock.return_value.handle_push_event.return_value = []
+        mock.return_value.handle_pull_request_event.return_value = []
+        yield mock
+
+
+@pytest.fixture
+def patch_filesystem_operations():
+    """Patch heavy filesystem operations for faster tests."""
+    with patch('roadmap.core.RoadmapCore.initialize') as mock_init, \
+         patch('pathlib.Path.mkdir') as mock_mkdir, \
+         patch('pathlib.Path.write_text') as mock_write:
+        
+        mock_init.return_value = True
+        mock_mkdir.return_value = None
+        mock_write.return_value = None
+        
+        yield {
+            'init': mock_init,
+            'mkdir': mock_mkdir,
+            'write_text': mock_write
+        }

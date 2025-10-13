@@ -169,3 +169,9 @@ cython_debug/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Roadmap local data and backups
+.roadmap/backups/
+.roadmap/artifacts/
+.roadmap/*.tmp
+.roadmap/*.lock

@@ -97,7 +97,7 @@ class RoadmapCore:
         create_secure_directory(self.templates_dir, 0o755)
         create_secure_directory(self.artifacts_dir, 0o755)
 
-        # Update .gitignore to exclude artifacts directory
+        # Update .gitignore to exclude roadmap local data
         self._update_gitignore()
 
         # Copy templates
@@ -250,30 +250,36 @@ Project notes and additional context.
             f.write(project_template)
 
     def _update_gitignore(self) -> None:
-        """Update .gitignore to exclude artifacts directory from version control."""
+        """Update .gitignore to exclude roadmap local data from version control."""
         gitignore_path = self.root_path / ".gitignore"
 
-        # Define the artifacts directory pattern relative to project root
-        artifacts_pattern = f"{self.roadmap_dir_name}/artifacts/"
-        gitignore_comment = f"# Roadmap artifacts directory (generated exports)"
+        # Define patterns to ignore relative to project root
+        roadmap_patterns = [
+            f"{self.roadmap_dir_name}/artifacts/",
+            f"{self.roadmap_dir_name}/backups/", 
+            f"{self.roadmap_dir_name}/*.tmp",
+            f"{self.roadmap_dir_name}/*.lock"
+        ]
+        gitignore_comment = f"# Roadmap local data (generated exports, backups, temp files)"
 
         # Read existing .gitignore if it exists
         existing_lines = []
         if gitignore_path.exists():
             existing_lines = gitignore_path.read_text().splitlines()
 
-        # Check if artifacts pattern is already present
-        artifacts_already_ignored = any(
-            line.strip() == artifacts_pattern for line in existing_lines
-        )
+        # Check which patterns are already present
+        missing_patterns = []
+        for pattern in roadmap_patterns:
+            if not any(line.strip() == pattern for line in existing_lines):
+                missing_patterns.append(pattern)
 
-        if not artifacts_already_ignored:
-            # Add artifacts pattern to .gitignore
+        if missing_patterns:
+            # Add missing patterns to .gitignore
             if existing_lines and not existing_lines[-1].strip() == "":
                 existing_lines.append("")  # Add blank line if needed
 
             existing_lines.append(gitignore_comment)
-            existing_lines.append(artifacts_pattern)
+            existing_lines.extend(missing_patterns)
 
             # Write updated .gitignore
             gitignore_path.write_text("\n".join(existing_lines) + "\n")

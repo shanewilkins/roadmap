@@ -49,6 +49,7 @@ class GitHubWebhookServer:
         
         return app
     
+    @web.middleware
     async def logging_middleware(self, request: Request, handler) -> Response:
         """Logging middleware for requests."""
         start_time = datetime.now()
@@ -130,7 +131,11 @@ class GitHubWebhookServer:
             payload = await request.read()
             
             # Verify signature if secret is configured
-            if self.secret and signature:
+            if self.secret:
+                if not signature:
+                    self.logger.warning(f"Missing signature for delivery {delivery_id}")
+                    return web.Response(status=401, text="Missing signature")
+                    
                 if not self._verify_signature(payload, signature):
                     self.logger.warning(f"Invalid signature for delivery {delivery_id}")
                     return web.Response(status=401, text="Invalid signature")
