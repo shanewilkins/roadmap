@@ -2,21 +2,21 @@
 id: fcad6a99
 title: Validate assignee is team member
 priority: high
-status: todo
+status: done
 issue_type: feature
 milestone: ''
 labels:
 - security,validation,github-integration
 github_issue: null
 created: '2025-10-12T11:41:15.911050'
-updated: '2025-10-12T11:41:15.911063'
+updated: '2025-10-13T10:49:58.641526'
 assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-10-13T09:52:51.660500'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 0.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
