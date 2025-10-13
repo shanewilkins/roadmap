@@ -107,16 +107,15 @@ class TestAssigneeValidation:
         
         core = RoadmapCore(Path(initialized_roadmap))
         
-        # Mock GitHub configuration and client creation
-        mock_client = Mock()
-        mock_client.validate_assignee.return_value = (False, "User 'invaliduser' does not exist")
-        
         with patch.object(core, '_get_github_config', return_value=('token', 'owner', 'repo')):
             # Mock empty team members cache (to force GitHub validation)
             with patch.object(core, '_get_cached_team_members', return_value=[]):
-                # Import the real GitHubClient class to create a proper mock
-                from roadmap.github_client import GitHubClient
-                with patch.object(GitHubClient, '__new__', return_value=mock_client):
+                # Mock the GitHubClient constructor to return our mock
+                with patch('roadmap.github_client.GitHubClient') as mock_client_class:
+                    mock_client = Mock()
+                    mock_client.validate_assignee.return_value = (False, "User 'invaliduser' does not exist")
+                    mock_client_class.return_value = mock_client
+                    
                     is_valid, error = core.validate_assignee("invaliduser")
                     assert not is_valid
                     assert "does not exist" in error
@@ -139,13 +138,14 @@ class TestAssigneeValidation:
             assert error == ""
             
         # Test 3: Full GitHub config -> validation occurs
-        mock_client = Mock()
-        mock_client.validate_assignee.return_value = (True, "")
-        
         with patch.object(core, '_get_github_config', return_value=('token', 'owner', 'repo')):
             with patch.object(core, '_get_cached_team_members', return_value=[]):
-                from roadmap.github_client import GitHubClient
-                with patch.object(GitHubClient, '__new__', return_value=mock_client):
+                # Mock the GitHubClient constructor to return our mock
+                with patch('roadmap.github_client.GitHubClient') as mock_client_class:
+                    mock_client = Mock()
+                    mock_client.validate_assignee.return_value = (True, "")
+                    mock_client_class.return_value = mock_client
+                    
                     is_valid, error = core.validate_assignee("validuser")
                     assert is_valid
                     # Verify that the GitHub client validation was actually called
