@@ -3001,6 +3001,15 @@ def create_issue(
                     f"🔍 Auto-detected assignee from Git: {assignee}", style="dim"
                 )
 
+        # Validate assignee if provided
+        if assignee:
+            is_valid, error_msg = core.validate_assignee(assignee)
+            if not is_valid:
+                console.print(f"❌ Invalid assignee: {error_msg}", style="bold red")
+                raise click.Abort()
+            elif "Warning:" in error_msg:
+                console.print(f"⚠️  {error_msg}", style="bold yellow")
+
         issue = core.create_issue(
             title=title,
             priority=Priority(priority),
@@ -3047,6 +3056,9 @@ def create_issue(
             )
 
         console.print(f"   File: .roadmap/issues/{issue.filename}", style="dim")
+    except click.Abort:
+        # Re-raise click.Abort to maintain proper exit code
+        raise
     except Exception as e:
         console.print(f"❌ Failed to create issue: {e}", style="bold red")
 
@@ -3351,7 +3363,17 @@ def update_issue(
             updates["milestone"] = milestone
         if assignee is not None:
             # Convert empty string to None for proper unassignment
-            updates["assignee"] = assignee if assignee else None
+            if assignee:
+                # Validate assignee before updating
+                is_valid, error_msg = core.validate_assignee(assignee)
+                if not is_valid:
+                    console.print(f"❌ Invalid assignee: {error_msg}", style="bold red")
+                    raise click.Abort()
+                elif "Warning:" in error_msg:
+                    console.print(f"⚠️  {error_msg}", style="bold yellow")
+                updates["assignee"] = assignee
+            else:
+                updates["assignee"] = None
         if estimate is not None:
             updates["estimated_hours"] = estimate
 
@@ -3395,6 +3417,9 @@ def update_issue(
         # Show reason if provided
         if reason:
             console.print(f"   reason: {reason}", style="cyan")
+    except click.Abort:
+        # Re-raise click.Abort to maintain proper exit code
+        raise
     except Exception as e:
         console.print(f"❌ Failed to update issue: {e}", style="bold red")
 

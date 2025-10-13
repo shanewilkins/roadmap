@@ -47,6 +47,10 @@ class RoadmapCore:
         # Initialize Git integration
         self.git = GitIntegration(self.root_path)
 
+        # Cache for team members to avoid repeated API calls
+        self._team_members_cache = None
+        self._cache_timestamp = None
+
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
         return self.roadmap_dir.exists() and self.config_file.exists()
@@ -653,6 +657,38 @@ Project notes and additional context.
         upcoming_milestones.sort(key=lambda x: x.due_date)
         return upcoming_milestones[0]
 
+    def _get_github_config(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
+        """Get GitHub configuration from config file and credentials.
+        
+        Returns:
+            Tuple of (token, owner, repo) or (None, None, None) if not configured
+        """
+        try:
+            from .credentials import get_credential_manager
+            
+            config = self.load_config()
+            github_config = config.github or {}
+            
+            # Get owner and repo from config
+            owner = github_config.get("owner")
+            repo = github_config.get("repo")
+            
+            if not owner or not repo:
+                return None, None, None
+                
+            # Get token from credentials manager or environment
+            credential_manager = get_credential_manager()
+            token = credential_manager.get_credential("github", "token")
+            
+            if not token:
+                import os
+                token = os.getenv("GITHUB_TOKEN")
+                
+            return token, owner, repo
+            
+        except Exception:
+            return None, None, None
+
     def get_team_members(self) -> List[str]:
         """Get team members from GitHub repository.
 
@@ -660,23 +696,14 @@ Project notes and additional context.
             List of usernames if GitHub is configured, empty list otherwise
         """
         try:
-            from .credentials import get_credential_manager
             from .github_client import GitHubClient
 
-            # Try to get GitHub configuration
-            config = self.load_config()
-            if not config.github_token or not config.github_repo:
+            token, owner, repo = self._get_github_config()
+            if not token or not owner or not repo:
                 return []
-
-            # Parse repository
-            if "/" not in config.github_repo:
-                return []
-
-            owner, repo = config.github_repo.split("/", 1)
 
             # Get team members
-            client = GitHubClient(token=config.github_token, owner=owner, repo=repo)
-
+            client = GitHubClient(token=token, owner=owner, repo=repo)
             return client.get_team_members()
         except Exception:
             # Return empty list if GitHub is not configured or accessible
@@ -691,20 +718,12 @@ Project notes and additional context.
         try:
             from .github_client import GitHubClient
 
-            # Try to get GitHub configuration
-            config = self.load_config()
-            if not config.github_token or not config.github_repo:
+            token, owner, repo = self._get_github_config()
+            if not token or not owner or not repo:
                 return None
-
-            # Parse repository
-            if "/" not in config.github_repo:
-                return None
-
-            owner, repo = config.github_repo.split("/", 1)
 
             # Get current user
-            client = GitHubClient(token=config.github_token, owner=owner, repo=repo)
-
+            client = GitHubClient(token=token, owner=owner, repo=repo)
             return client.get_current_user()
         except Exception:
             # Return None if GitHub is not configured or accessible
@@ -737,6 +756,69 @@ Project notes and additional context.
                 assigned_issues[issue.assignee].append(issue)
 
         return assigned_issues
+
+    def _get_cached_team_members(self) -> List[str]:
+        """Get team members with caching (5 minute cache)."""
+        from datetime import datetime, timedelta
+        
+        # Check if cache is valid (5 minutes)
+        if (self._team_members_cache is not None and 
+            self._cache_timestamp is not None and 
+            datetime.now() - self._cache_timestamp < timedelta(minutes=5)):
+            return self._team_members_cache
+            
+        # Refresh cache
+        team_members = self.get_team_members()
+        self._team_members_cache = team_members
+        self._cache_timestamp = datetime.now()
+        
+        return team_members
+
+    def validate_assignee(self, assignee: str) -> tuple[bool, str]:
+        """Validate an assignee against GitHub repository access.
+        
+        This validation only occurs when GitHub integration is configured.
+        For local-only roadmaps, any assignee name is allowed without validation.
+        
+        Args:
+            assignee: Username to validate
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+            - (True, "") if valid or GitHub not configured  
+            - (False, error_message) if invalid GitHub user
+        """
+        if not assignee or not assignee.strip():
+            return False, "Assignee cannot be empty"
+
+        assignee = assignee.strip()
+
+        try:
+            token, owner, repo = self._get_github_config()
+            if not token or not owner or not repo:
+                # If GitHub is not configured, allow any assignee without validation
+                # This supports local-only roadmap usage without GitHub integration
+                return True, ""
+
+            # GitHub is configured - perform validation against repository access
+            
+            # First check against cached team members for performance
+            team_members = self._get_cached_team_members()
+            if team_members and assignee in team_members:
+                return True, ""
+            
+            # If not in cache or cache is empty, do full validation via API
+            from .github_client import GitHubClient
+            
+            client = GitHubClient(token=token, owner=owner, repo=repo)
+            
+            # This will do the full GitHub API validation
+            return client.validate_assignee(assignee)
+
+        except Exception as e:
+            # If validation fails due to network/API issues, allow the assignment
+            # but log a warning that validation couldn't be performed
+            return True, f"Warning: Could not validate assignee (GitHub API unavailable): {str(e)}"
 
     # Git Integration Methods
 
