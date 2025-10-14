@@ -1643,9 +1643,9 @@ class TestRoadmapCommands:
             try:
                 os.chdir(temp_dir)
                 result = cli_runner.invoke(main, [
-                    "roadmap", "create", "test-roadmap"
+                    "project", "create", "test-project"
                 ])
-                # The command might succeed if it creates a roadmap automatically
+                # The command might succeed if it creates a project automatically
                 # or fail if it requires manual initialization
                 if result.exit_code != 0:
                     assert "not initialized" in result.output.lower() or "error" in result.output.lower()
@@ -1654,50 +1654,50 @@ class TestRoadmapCommands:
 
     def test_roadmap_overview_command(self, cli_runner, isolated_roadmap_dir):
         """Test roadmap overview command."""
-        # First create a roadmap
+        # First create a project using new command
         create_result = cli_runner.invoke(main, [
-            "roadmap", "create", "overview-test",
-            "--description", "Roadmap for overview testing"
+            "project", "create", "overview-test",
+            "--description", "Project for overview testing"
         ])
         assert create_result.exit_code == 0
         
-        # Extract roadmap ID from the create output
+        # Extract project ID from the create output
         import re
         id_match = re.search(r'ID: ([a-f0-9]+)', create_result.output)
         assert id_match is not None
-        roadmap_id = id_match.group(1)
+        project_id = id_match.group(1)
         
-        # Then test overview with specific roadmap ID
-        result = cli_runner.invoke(main, ["roadmap", "overview", roadmap_id])
-        # Should succeed and show roadmap details
+        # Then test overview with specific project ID using new command
+        result = cli_runner.invoke(main, ["project", "overview", project_id])
+        # Should succeed and show project details
         assert result.exit_code == 0
-        assert "Roadmap:" in result.output
+        assert "Project:" in result.output
 
     def test_roadmap_overview_without_roadmap(self, cli_runner):
-        """Test roadmap overview command without initialized roadmap."""
+        """Test project overview command without initialized roadmap."""
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = os.getcwd()
             try:
                 os.chdir(temp_dir)
-                result = cli_runner.invoke(main, ["roadmap", "overview"])
-                # Command should either fail gracefully or handle missing roadmap
+                result = cli_runner.invoke(main, ["project", "overview"])
+                # Command should either fail gracefully or handle missing projects
                 if result.exit_code != 0 and result.output:
                     assert "not initialized" in result.output.lower() or "error" in result.output.lower()
             finally:
                 os.chdir(original_cwd)
 
     def test_roadmap_create_invalid_priority(self, cli_runner, isolated_roadmap_dir):
-        """Test roadmap create with invalid priority."""
+        """Test project create with invalid priority."""
         result = cli_runner.invoke(main, [
-            "roadmap", "create", "invalid-priority-roadmap",
+            "project", "create", "invalid-priority-project",
             "--priority", "invalid"
         ])
         assert result.exit_code != 0
 
     def test_roadmap_create_invalid_date_format(self, cli_runner, isolated_roadmap_dir):
-        """Test roadmap create with invalid date format."""
+        """Test project create with invalid date format."""
         result = cli_runner.invoke(main, [
-            "roadmap", "create", "invalid-date-roadmap",
+            "project", "create", "invalid-date-project",
             "--start-date", "invalid-date"
         ])
         # The command might succeed if it gracefully handles invalid dates
@@ -1707,79 +1707,79 @@ class TestRoadmapCommands:
 
     def test_roadmap_update_command(self, cli_runner, isolated_roadmap_dir):
         """Test roadmap update command."""
-        # First create a roadmap
+        # First create a project using new command
         create_result = cli_runner.invoke(main, [
-            "roadmap", "create", "update-test",
-            "--description", "Roadmap for update testing",
+            "project", "create", "update-test",
+            "--description", "Project for update testing",
             "--priority", "medium"
         ])
         assert create_result.exit_code == 0
         
-        # Extract roadmap ID from the create output
+        # Extract project ID from the create output
         import re
         id_match = re.search(r'ID: ([a-f0-9]+)', create_result.output)
         assert id_match is not None
-        roadmap_id = id_match.group(1)
+        project_id = id_match.group(1)
         
-        # Then test update
+        # Then test update using new command
         result = cli_runner.invoke(main, [
-            "roadmap", "update", roadmap_id,
+            "project", "update", project_id,
             "--priority", "high",
             "--status", "active",
             "--add-milestone", "Phase 1"
         ])
         assert result.exit_code == 0
-        assert "Updated roadmap" in result.output
+        assert "Updated project" in result.output
         assert "priority: high" in result.output
         assert "status: active" in result.output
         assert "added milestone: Phase 1" in result.output
 
     def test_roadmap_list_command(self, cli_runner, isolated_roadmap_dir):
         """Test roadmap list command."""
-        # First create a few roadmaps
+        # First create a few projects using new command
         cli_runner.invoke(main, [
-            "roadmap", "create", "list-test-1",
+            "project", "create", "list-test-1",
             "--priority", "high"
         ])
         cli_runner.invoke(main, [
-            "roadmap", "create", "list-test-2", 
+            "project", "create", "list-test-2", 
             "--priority", "low"
         ])
         
-        # Test list all
-        result = cli_runner.invoke(main, ["roadmap", "list"])
+        # Test list all using new command
+        result = cli_runner.invoke(main, ["project", "list"])
         assert result.exit_code == 0
         assert "list-test-1" in result.output
         assert "list-test-2" in result.output
         
-        # Test list with filter
-        result = cli_runner.invoke(main, ["roadmap", "list", "--priority", "high"])
+        # Test list with filter using new command
+        result = cli_runner.invoke(main, ["project", "list", "--priority", "high"])
         assert result.exit_code == 0
         assert "list-test-1" in result.output
         assert "list-test-2" not in result.output
 
     def test_roadmap_delete_command(self, cli_runner, isolated_roadmap_dir):
         """Test roadmap delete command."""
-        # First create a roadmap
+        # First create a project using new command
         create_result = cli_runner.invoke(main, [
-            "roadmap", "create", "delete-test",
-            "--description", "Roadmap for delete testing"
+            "project", "create", "delete-test",
+            "--description", "Project for delete testing"
         ])
         assert create_result.exit_code == 0
         
-        # Extract roadmap ID from the create output
+        # Extract project ID from the create output
         import re
         id_match = re.search(r'ID: ([a-f0-9]+)', create_result.output)
         assert id_match is not None
-        roadmap_id = id_match.group(1)
+        project_id = id_match.group(1)
         
-        # Then test delete with confirm flag
+        # Then test delete with confirm flag using new command
         result = cli_runner.invoke(main, [
-            "roadmap", "delete", roadmap_id, "--confirm"
+            "project", "delete", project_id, "--confirm"
         ])
         assert result.exit_code == 0
-        assert "Deleted roadmap" in result.output
+        assert "Deleted project" in result.output
         
-        # Verify roadmap was actually deleted
-        list_result = cli_runner.invoke(main, ["roadmap", "list"])
+        # Verify project was actually deleted using new command
+        list_result = cli_runner.invoke(main, ["project", "list"])
         assert "delete-test" not in list_result.output
