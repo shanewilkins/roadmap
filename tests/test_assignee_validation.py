@@ -16,14 +16,7 @@ def cli_runner():
     return CliRunner()
 
 
-@pytest.fixture
-def temp_dir():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        old_cwd = os.getcwd()
-        os.chdir(tmpdir)
-        yield tmpdir
-        os.chdir(old_cwd)
+
 
 
 @pytest.fixture

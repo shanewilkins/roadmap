@@ -10,15 +10,26 @@ import pytest
 from .test_data_factory import TestDataFactory
 
 
-@pytest.fixture(autouse=True)
-def isolate_roadmap_workspace():
-    """Isolate each test with its own temporary roadmap workspace.
+@pytest.fixture(autouse=True, scope="function")
+def isolate_roadmap_workspace(request, tmp_path):
+    """Isolate each test in a temporary directory unless it's marked as unit test
     
-    This fixture automatically runs for every test to prevent test pollution
-    by ensuring each test starts with a clean environment.
+    PERFORMANCE OPTIMIZATION: Skip isolation for unit tests that don't need filesystem operations.
     """
-    # Store original state
-    original_cwd = os.getcwd()
+    # Skip isolation for unit tests - major performance win
+    if hasattr(request.node, 'get_closest_marker'):
+        if request.node.get_closest_marker('unit'):
+            yield
+            return
+    
+    # Store original state - ensure we have a valid working directory first
+    try:
+        original_cwd = os.getcwd()
+    except (FileNotFoundError, OSError):
+        # If current directory doesn't exist, use tmp_path as fallback
+        original_cwd = str(tmp_path)
+        os.chdir(original_cwd)
+    
     original_env = os.environ.copy()
     
     try:
@@ -36,7 +47,16 @@ def isolate_roadmap_workspace():
         
     finally:
         # Always restore original working directory and environment
-        os.chdir(original_cwd)
+        try:
+            if os.path.exists(original_cwd):
+                os.chdir(original_cwd)
+            else:
+                # Original directory no longer exists, use a safe fallback
+                os.chdir(str(tmp_path))
+        except (FileNotFoundError, OSError):
+            # If all else fails, ensure we're in a valid directory
+            os.chdir(str(tmp_path))
+        
         os.environ.clear()
         os.environ.update(original_env)
 
@@ -82,7 +102,7 @@ version: "1.0.0"
 # Centralized Common Fixtures
 # ===========================
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_core():
     """Create standardized mock RoadmapCore instance.
     
@@ -92,19 +112,19 @@ def mock_core():
     return TestDataFactory.create_mock_core()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_config():
     """Create standardized mock RoadmapConfig instance."""
     return TestDataFactory.create_mock_config()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_issue():
     """Create standardized mock Issue instance."""
     return TestDataFactory.create_mock_issue()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_milestone():
     """Create standardized mock Milestone instance.""" 
     return TestDataFactory.create_mock_milestone()
@@ -197,6 +217,19 @@ def lightweight_mock_core():
 
 
 @pytest.fixture
+def mock_github_client():
+    """Mock GitHubClient for testing."""
+    with patch("roadmap.sync.GitHubClient") as mock_client_class:
+        mock_client = Mock()
+        # Set up common methods and properties
+        mock_client.is_authenticated = True
+        mock_client.owner = "test-owner"
+        mock_client.repo = "test-repo"
+        mock_client_class.return_value = mock_client
+        yield mock_client
+
+
+@pytest.fixture
 def patch_github_integration():
     """Lightweight patch for GitHub integration to avoid heavy mocking."""
     with patch('roadmap.enhanced_github_integration.EnhancedGitHubIntegration') as mock:
@@ -204,6 +237,41 @@ def patch_github_integration():
         mock.return_value.handle_push_event.return_value = []
         mock.return_value.handle_pull_request_event.return_value = []
         yield mock
+
+
+@pytest.fixture
+def temp_workspace_with_core():
+    """Create temporary workspace with initialized roadmap and return both path and core.
+    
+    Returns tuple of (workspace_path, core_instance) for tests that need both.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        old_cwd = Path.cwd()
+        os.chdir(tmpdir)
+        
+        # Initialize roadmap structure
+        roadmap_dir = Path(tmpdir) / '.roadmap'
+        roadmap_dir.mkdir(exist_ok=True)
+        (roadmap_dir / 'issues').mkdir(exist_ok=True)
+        (roadmap_dir / 'milestones').mkdir(exist_ok=True)
+        
+        # Create basic config
+        config_file = roadmap_dir / 'config.yaml'
+        config_file.write_text("""# Test Configuration
+project_name: "Test Project"
+version: "1.0.0"
+""")
+        
+        # Initialize roadmap core
+        with patch('roadmap.core.RoadmapCore.initialize'):
+            from roadmap.core import RoadmapCore
+            core = RoadmapCore()
+            core.is_initialized = Mock(return_value=True)
+        
+        try:
+            yield Path(tmpdir), core
+        finally:
+            os.chdir(old_cwd)
 
 
 @pytest.fixture

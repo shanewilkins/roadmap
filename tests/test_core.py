@@ -16,15 +16,6 @@ class TestRoadmapCore:
     """Test cases for RoadmapCore."""
 
     @pytest.fixture
-    def temp_dir(self):
-        """Create temporary directory for testing."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            old_cwd = os.getcwd()
-            os.chdir(tmpdir)
-            yield Path(tmpdir)
-            os.chdir(old_cwd)
-
-    @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
         return RoadmapCore(temp_dir)

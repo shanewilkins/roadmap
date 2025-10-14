@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -50,22 +51,21 @@ def cli_runner():
 
 
 @pytest.fixture
-def temp_dir():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        old_cwd = os.getcwd()
-        os.chdir(tmpdir)
-        yield tmpdir
-        os.chdir(old_cwd)
-
-
-@pytest.fixture
-def initialized_roadmap(temp_dir):
-    """Create a temporary directory with initialized roadmap."""
+def cli_isolated_fs():
+    """Provide isolated filesystem for CLI tests that don't need initialization."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
-    assert result.exit_code == 0
-    return temp_dir
+    with runner.isolated_filesystem():
+        yield Path.cwd()
+
+
+@pytest.fixture  
+def initialized_roadmap():
+    """Create a temporary directory with initialized roadmap using CliRunner isolation."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
+        assert result.exit_code == 0
+        yield Path.cwd()
 
 
 def test_cli_version():
@@ -83,7 +83,7 @@ def test_cli_help(cli_runner):
     assert "Roadmap CLI" in result.output
 
 
-def test_init_command(temp_dir):
+def test_init_command(cli_isolated_fs):
     """Test the init command."""
     runner = CliRunner()
     result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])

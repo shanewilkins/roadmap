@@ -8,6 +8,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+# Mark all tests in this file as unit tests (primarily mock-based)
+pytestmark = pytest.mark.unit
+
 from roadmap.core import RoadmapCore
 from roadmap.github_client import GitHubAPIError
 from roadmap.models import (
@@ -23,36 +26,6 @@ from roadmap.sync import SyncConflict, SyncConflictStrategy, SyncManager, SyncSt
 
 class TestSyncManager:
     """Test cases for SyncManager."""
-
-    @pytest.fixture
-    def temp_dir(self):
-        """Create temporary directory for testing."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            old_cwd = os.getcwd()
-            os.chdir(tmpdir)
-            yield Path(tmpdir)
-            os.chdir(old_cwd)
-
-    @pytest.fixture
-    def mock_core(self):
-        """Mock RoadmapCore."""
-        core = Mock(spec=RoadmapCore)
-        core.root_path = Path("/test")
-        core.roadmap_dir = Path("/test/.roadmap")
-        core.issues_dir = Path("/test/.roadmap/issues")
-        core.milestones_dir = Path("/test/.roadmap/milestones")
-        return core
-
-    @pytest.fixture
-    def mock_config(self):
-        """Mock RoadmapConfig."""
-        config = RoadmapConfig()
-        config.github = {
-            "owner": "test_owner",
-            "repo": "test_repo",
-            "token": "test_token",
-        }
-        return config
 
     @pytest.fixture
     def mock_github_client(self):
@@ -725,16 +698,6 @@ class TestBidirectionalSync:
     """Test bidirectional synchronization functionality."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Mock RoadmapCore."""
-        core = Mock(spec=RoadmapCore)
-        core.root_path = Path("/test")
-        core.roadmap_dir = Path("/test/.roadmap")
-        core.issues_dir = Path("/test/.roadmap/issues")
-        core.milestones_dir = Path("/test/.roadmap/milestones")
-        return core
-
-    @pytest.fixture
     def sync_manager_with_strategy(self, mock_core):
         """Create sync manager with conflict strategy."""
         from roadmap.sync import SyncConflictStrategy, SyncManager
@@ -915,16 +878,6 @@ class TestBidirectionalSync:
 
 class TestSyncEnhancements:
     """Test enhanced sync methods with conflict checking."""
-
-    @pytest.fixture
-    def mock_core(self):
-        """Mock RoadmapCore."""
-        core = Mock(spec=RoadmapCore)
-        core.root_path = Path("/test")
-        core.roadmap_dir = Path("/test/.roadmap")
-        core.issues_dir = Path("/test/.roadmap/issues")
-        core.milestones_dir = Path("/test/.roadmap/milestones")
-        return core
 
     @pytest.fixture
     def sync_manager(self, mock_core):

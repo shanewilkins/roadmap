@@ -11,15 +11,6 @@ from roadmap.core import RoadmapCore
 from roadmap.models import Issue, Priority, Status
 
 
-@pytest.fixture
-def temp_dir():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        old_cwd = os.getcwd()
-        os.chdir(tmpdir)
-        yield tmpdir
-        os.chdir(old_cwd)
-
 
 @pytest.fixture
 def initialized_core(temp_dir):

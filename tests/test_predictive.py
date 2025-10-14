@@ -24,6 +24,8 @@ from roadmap.predictive import (
     RiskPredictor,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestIssueEstimator:
     """Test ML-powered issue estimation functionality."""

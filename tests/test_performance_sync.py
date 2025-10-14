@@ -11,6 +11,8 @@ from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
 from roadmap.performance_sync import HighPerformanceSyncManager, SyncCache, SyncStats
 from roadmap.sync import SyncManager
 
+pytestmark = pytest.mark.unit
+
 
 class TestSyncCache:
     """Test sync caching functionality."""

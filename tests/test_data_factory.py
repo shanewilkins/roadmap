@@ -6,9 +6,13 @@ import hmac
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from unittest.mock import Mock
+import pytest
 
 from roadmap.models import Issue, Milestone, RoadmapConfig
 from roadmap.core import RoadmapCore
+
+# Mark all tests in this file as unit tests (no filesystem operations)
+pytestmark = pytest.mark.unit
 
 
 class TestDataFactory:
@@ -110,7 +114,7 @@ class TestDataFactory:
         # Default GitHub configuration
         config.github = kwargs.get('github', {
             'owner': 'test-owner',
-            'repository': 'test-repo',
+            'repo': 'test-repo',
             'token': 'test-token',
             'enabled': True
         })

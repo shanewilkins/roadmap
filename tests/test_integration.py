@@ -20,27 +20,7 @@ from roadmap.core import RoadmapCore
 from roadmap.models import Issue, Milestone, Priority, Status
 from roadmap.sync import SyncManager
 
-
-@pytest.fixture
-def temp_workspace():
-    """Create a temporary workspace directory."""
-    temp_dir = tempfile.mkdtemp()
-    try:
-        original_cwd = os.getcwd()
-    except FileNotFoundError:
-        # Current directory doesn't exist, use a default safe directory
-        original_cwd = os.path.expanduser("~")
-
-    os.chdir(temp_dir)
-    yield temp_dir
-
-    try:
-        os.chdir(original_cwd)
-    except (FileNotFoundError, OSError):
-        # Original directory doesn't exist anymore, go to home
-        os.chdir(os.path.expanduser("~"))
-
-    shutil.rmtree(temp_dir)
+pytestmark = pytest.mark.filesystem
 
 
 @pytest.fixture
@@ -70,8 +50,12 @@ def mock_github_client():
 class TestEndToEndWorkflows:
     """Test complete end-to-end workflows."""
 
-    def test_complete_roadmap_lifecycle(self, temp_workspace):
+    def test_complete_roadmap_lifecycle(self, tmp_path):
         """Test a complete roadmap lifecycle from init to issue management."""
+        # CRITICAL: This test must use tmp_path (clean) instead of temp_workspace (pre-initialized)
+        # because it needs to test the full initialization workflow starting from an empty directory.
+        # The test verifies that 'roadmap init' creates the proper directory structure and config.
+        os.chdir(tmp_path)
         runner = CliRunner()
 
         # Step 1: Initialize roadmap
@@ -312,8 +296,12 @@ class TestEndToEndWorkflows:
         completion_percentage = milestone.get_completion_percentage(all_issues)
         assert completion_percentage == 50.0  # 1 of 2 issues completed
 
-    def test_error_recovery_workflow(self, temp_workspace):
+    def test_error_recovery_workflow(self, tmp_path):
         """Test error handling and recovery in workflows."""
+        # CRITICAL: This test must use tmp_path (clean) instead of temp_workspace (pre-initialized)
+        # because it needs to test error conditions when the roadmap is NOT initialized.
+        # The test verifies proper error messages when operations are attempted without initialization.
+        os.chdir(tmp_path)
         runner = CliRunner()
 
         # Test operations without initialization

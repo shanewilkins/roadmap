@@ -10,6 +10,8 @@ import requests
 from roadmap.github_client import GitHubAPIError, GitHubClient
 from roadmap.models import Priority, Status
 
+pytestmark = pytest.mark.unit
+
 
 class TestGitHubClient:
     """Test cases for GitHubClient."""

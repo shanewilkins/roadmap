@@ -16,20 +16,6 @@ from roadmap.sync import SyncManager
 class TestCrossPlatformCredentials:
     """Test credential management across different platforms."""
 
-    @pytest.fixture
-    def mock_core(self):
-        """Mock RoadmapCore for testing."""
-        core = Mock(spec=RoadmapCore)
-        core.is_initialized.return_value = True
-        return core
-
-    @pytest.fixture
-    def mock_config(self):
-        """Mock RoadmapConfig for testing."""
-        config = RoadmapConfig()
-        config.github = {"owner": "test_owner", "repo": "test_repo"}
-        return config
-
     def test_macos_keychain_integration(self, mock_core, mock_config):
         """Test macOS Keychain integration end-to-end."""
         with patch("platform.system", return_value="Darwin"):
@@ -189,19 +175,7 @@ class TestCrossPlatformCredentials:
 class TestSyncManagerCrossPlatform:
     """Test SyncManager credential handling across platforms."""
 
-    @pytest.fixture
-    def mock_core(self):
-        """Mock RoadmapCore for testing."""
-        core = Mock(spec=RoadmapCore)
-        core.is_initialized.return_value = True
-        return core
 
-    @pytest.fixture
-    def mock_config(self):
-        """Mock RoadmapConfig for testing."""
-        config = RoadmapConfig()
-        config.github = {"owner": "test_owner", "repo": "test_repo"}
-        return config
 
     def test_sync_manager_macos_token_resolution(self, mock_core, mock_config):
         """Test SyncManager token resolution on macOS."""

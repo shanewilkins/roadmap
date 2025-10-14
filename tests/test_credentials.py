@@ -14,6 +14,8 @@ from roadmap.credentials import (
     mask_token,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestCredentialManager:
     """Test cases for CredentialManager."""

@@ -11,6 +11,8 @@ import yaml
 from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
 from roadmap.parser import FrontmatterParser, IssueParser, MilestoneParser
 
+pytestmark = pytest.mark.unit
+
 
 class TestFrontmatterParser:
     """Test cases for FrontmatterParser."""

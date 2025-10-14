@@ -22,14 +22,6 @@ class TestGitHubWebhookServer:
     """Test GitHub webhook server functionality."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create a mock RoadmapCore for testing."""
-        with patch('roadmap.webhook_server.EnhancedGitHubIntegration'):
-            core = Mock(spec=RoadmapCore)
-            core.is_initialized.return_value = True
-            return core
-
-    @pytest.fixture
     def webhook_server(self, mock_core):
         """Create a webhook server for testing."""
         with patch('roadmap.webhook_server.EnhancedGitHubIntegration') as mock_github_integration:
@@ -306,15 +298,6 @@ class TestGitHubWebhookServer:
 class TestWebhookCLI:
     """Test webhook CLI functionality."""
 
-    @pytest.fixture
-    def temp_dir(self):
-        """Create temporary directory."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            old_cwd = Path.cwd()
-            os.chdir(tmpdir)
-            yield Path(tmpdir)
-            os.chdir(old_cwd)
-
     def test_start_server(self, temp_dir):
         """Test starting webhook server."""
         with patch('roadmap.webhook_server.RoadmapCore') as mock_core_class:
@@ -370,25 +353,10 @@ class TestWebhookCLI:
 class TestWebhookServerIntegration:
     """Integration tests for webhook server."""
 
-    @pytest.fixture
-    def temp_workspace(self):
-        """Create temporary workspace with initialized roadmap."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            old_cwd = Path.cwd()
-            os.chdir(tmpdir)
-            
-            # Initialize roadmap
-            with patch('roadmap.core.RoadmapCore.initialize'):
-                core = RoadmapCore()
-                core.is_initialized = Mock(return_value=True)
-            
-            yield Path(tmpdir), core
-            os.chdir(old_cwd)
-
     @pytest.mark.asyncio
-    async def test_full_webhook_lifecycle(self, temp_workspace, aiohttp_client):
+    async def test_full_webhook_lifecycle(self, temp_workspace_with_core, aiohttp_client):
         """Test complete webhook server lifecycle."""
-        workspace_dir, core = temp_workspace
+        workspace_dir, core = temp_workspace_with_core
         
         with patch('roadmap.webhook_server.EnhancedGitHubIntegration') as mock_github_integration:
             # Mock the integration instance with proper return values
@@ -427,9 +395,9 @@ class TestWebhookServerIntegration:
             assert data['status'] == 'healthy'
 
     @pytest.mark.asyncio
-    async def test_webhook_event_processing(self, temp_workspace, aiohttp_client):
+    async def test_webhook_event_processing(self, temp_workspace_with_core, aiohttp_client):
         """Test processing actual webhook events."""
-        workspace_dir, core = temp_workspace
+        workspace_dir, core = temp_workspace_with_core
         
         with patch('roadmap.webhook_server.EnhancedGitHubIntegration'):
             server = GitHubWebhookServer(

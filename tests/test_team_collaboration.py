@@ -13,40 +13,12 @@ from roadmap.models import Issue, Priority, Status
 
 
 @pytest.fixture
-def temp_dir():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        try:
-            old_cwd = os.getcwd()
-        except FileNotFoundError:
-            # Current directory doesn't exist, use a default safe directory
-            old_cwd = os.path.expanduser("~")
-
-        os.chdir(tmpdir)
-        yield tmpdir
-
-        try:
-            os.chdir(old_cwd)
-        except (FileNotFoundError, OSError):
-            # Original directory doesn't exist anymore, go to home
-            os.chdir(os.path.expanduser("~"))
-
-
-@pytest.fixture
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
     runner = CliRunner()
     result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
     assert result.exit_code == 0
     return temp_dir
-
-
-@pytest.fixture
-def mock_core():
-    """Mock RoadmapCore with team collaboration functionality."""
-    core = Mock(spec=RoadmapCore)
-    core.is_initialized.return_value = True
-    return core
 
 
 @pytest.fixture
