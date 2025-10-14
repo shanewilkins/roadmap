@@ -189,7 +189,7 @@ class ChartGenerator:
     <div class="chart-container">
         <h1 class="chart-title">Issue Status Distribution</h1>
         <div id="chart-content">
-            {fig.to_html(include_plotlyjs=True, div_id="chart-content", config={{'displayModeBar': False}})}
+            {fig.to_html(include_plotlyjs=True, div_id="chart-content", config={'displayModeBar': False})}
         </div>
     </div>
 </body>

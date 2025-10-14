@@ -861,16 +861,18 @@ Project notes and additional context.
 
     def create_issue_with_git_branch(self, title: str, **kwargs) -> Optional[Issue]:
         """Create an issue and optionally create a Git branch for it."""
+        # Extract git-specific arguments
+        auto_create_branch = kwargs.pop("auto_create_branch", False)
+        checkout_branch = kwargs.pop("checkout_branch", True)
+        
         # Create the issue first
         issue = self.create_issue(title, **kwargs)
         if not issue:
             return None
 
         # If we're in a Git repo and auto_create_branch is requested
-        if kwargs.get("auto_create_branch", False) and self.git.is_git_repository():
-            self.git.create_branch_for_issue(
-                issue, checkout=kwargs.get("checkout_branch", True)
-            )
+        if auto_create_branch and self.git.is_git_repository():
+            self.git.create_branch_for_issue(issue, checkout=checkout_branch)
 
         return issue
 

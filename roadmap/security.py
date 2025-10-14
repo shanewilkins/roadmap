@@ -128,15 +128,34 @@ def validate_path(
                     f"Path contains potential directory traversal: {path}"
                 )
 
-            return path.resolve()
+            try:
+                return path.resolve()
+            except (FileNotFoundError, OSError):
+                # If resolve() fails due to missing current directory, handle gracefully
+                if path.is_absolute():
+                    return path
+                else:
+                    # For relative paths when cwd is missing, return as-is (caller context should handle)
+                    return path
 
         # Convert base_dir to Path if needed
         if isinstance(base_dir, str):
             base_dir = Path(base_dir)
 
-        # Resolve the path to handle symlinks and .. references
-        resolved_path = path.resolve()
-        resolved_base = base_dir.resolve()
+                # Resolve the path to handle symlinks and .. references
+        try:
+            resolved_path = path.resolve()
+        except (FileNotFoundError, OSError):
+            # If resolve fails, work with absolute version or relative to base
+            if path.is_absolute():
+                resolved_path = path
+            else:
+                resolved_path = base_dir / path
+        
+        try:
+            resolved_base = base_dir.resolve()
+        except (FileNotFoundError, OSError):
+            resolved_base = base_dir
 
         # Check if absolute paths are allowed
         if not allow_absolute and path.is_absolute():
