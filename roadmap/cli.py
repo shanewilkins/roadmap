@@ -5,7 +5,7 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 import re
 import os
 import getpass
@@ -11345,6 +11345,439 @@ def delete_roadmap(roadmap_id: str, confirm: bool) -> None:
     except Exception as e:
         console.print(f"❌ Failed to delete roadmap: {e}", style="bold red")
 
+
+# ============================================================================
+# Curation Commands
+# ============================================================================
+
+@main.group()
+def curate() -> None:
+    """Curation tools for identifying and managing orphaned issues and milestones."""
+    pass
+
+
+@curate.command("orphaned")
+@click.option("--include-backlog", is_flag=True, help="Include backlog items as orphaned")
+@click.option("--min-age", default=0, help="Minimum age in days for items to be considered")
+@click.option("--max-age", default=None, help="Maximum age in days for items to be considered")
+@click.option("--export", help="Export report to file (JSON, CSV, or Markdown)")
+@click.option("--format", default="json", help="Export format (json, csv, markdown)")
+@click.option("--interactive", is_flag=True, help="Interactive mode for guided curation")
+def curate_orphaned(include_backlog: bool, min_age: int, max_age: Optional[int], 
+                   export: Optional[str], format: str, interactive: bool) -> None:
+    """Scan for and display orphaned items (issues and milestones)."""
+    try:
+        from roadmap.curation import RoadmapCurator
+        
+        core = RoadmapCore()
+        if not core.is_initialized():
+            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            return
+            
+        curator = RoadmapCurator(core)
+        
+        with console.status("[bold green]Analyzing orphaned items..."):
+            report = curator.analyze_orphaned_items(
+                include_backlog=include_backlog,
+                min_age_days=min_age,
+                max_age_days=max_age
+            )
+        
+        # Display summary
+        _display_curation_report(report)
+        
+        # Export if requested
+        if export:
+            output_path = Path(export)
+            curator.export_curation_report(report, output_path, format)
+            console.print(f"✅ Report exported to {output_path}", style="bold green")
+        
+        # Interactive mode
+        if interactive:
+            _interactive_curation_workflow(curator, report)
+            
+    except Exception as e:
+        console.print(f"❌ Failed to analyze orphaned items: {e}", style="bold red")
+
+
+@curate.command("issues")
+@click.option("--include-backlog", is_flag=True, help="Include backlog items as orphaned")
+@click.option("--min-age", default=0, help="Minimum age in days")
+@click.option("--max-age", default=None, help="Maximum age in days")
+@click.option("--priority", help="Filter by priority (critical, high, medium, low)")
+@click.option("--assignee", help="Filter by assignee")
+@click.option("--interactive", is_flag=True, help="Interactive assignment mode")
+def curate_issues(include_backlog: bool, min_age: int, max_age: Optional[int], 
+                 priority: Optional[str], assignee: Optional[str], interactive: bool) -> None:
+    """Show issues without milestone assignment."""
+    try:
+        from roadmap.curation import RoadmapCurator
+        
+        core = RoadmapCore()
+        if not core.is_initialized():
+            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            return
+            
+        curator = RoadmapCurator(core)
+        
+        with console.status("[bold green]Analyzing orphaned issues..."):
+            report = curator.analyze_orphaned_items(
+                include_backlog=include_backlog,
+                min_age_days=min_age,
+                max_age_days=max_age
+            )
+        
+        orphaned_issues = report.orphaned_issues + report.invalid_references
+        
+        # Apply filters
+        if priority:
+            priority_filter = Priority(priority.upper())
+            orphaned_issues = [item for item in orphaned_issues if item.priority == priority_filter]
+            
+        if assignee:
+            orphaned_issues = [item for item in orphaned_issues if item.assignee == assignee]
+        
+        if not orphaned_issues:
+            console.print("✅ No orphaned issues found matching criteria", style="bold green")
+            return
+            
+        # Display orphaned issues
+        _display_orphaned_issues(orphaned_issues)
+        
+        # Interactive mode
+        if interactive:
+            _interactive_issue_assignment(curator, orphaned_issues)
+            
+    except Exception as e:
+        console.print(f"❌ Failed to analyze orphaned issues: {e}", style="bold red")
+
+
+@curate.command("milestones")
+@click.option("--min-age", default=0, help="Minimum age in days")
+@click.option("--max-age", default=None, help="Maximum age in days")
+@click.option("--status", help="Filter by status (open, closed)")
+def curate_milestones(min_age: int, max_age: Optional[int], status: Optional[str]) -> None:
+    """Show milestones that need attention (empty, unassigned to roadmaps, etc.)."""
+    try:
+        from roadmap.curation import RoadmapCurator
+        
+        core = RoadmapCore()
+        if not core.is_initialized():
+            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            return
+            
+        curator = RoadmapCurator(core)
+        
+        with console.status("[bold green]Analyzing orphaned milestones..."):
+            report = curator.analyze_orphaned_items(
+                include_backlog=False,
+                min_age_days=min_age,
+                max_age_days=max_age
+            )
+        
+        orphaned_milestones = report.orphaned_milestones
+        
+        # Apply status filter
+        if status:
+            # Note: We'd need to get full milestone objects to filter by status
+            # For now, just show the warning
+            console.print("ℹ️  Status filtering not yet implemented", style="yellow")
+        
+        if not orphaned_milestones:
+            console.print("✅ No orphaned milestones found", style="bold green")
+            return
+            
+        # Display orphaned milestones
+        _display_orphaned_milestones(orphaned_milestones)
+            
+    except Exception as e:
+        console.print(f"❌ Failed to analyze orphaned milestones: {e}", style="bold red")
+
+
+@curate.command("assign")
+@click.argument("issue_ids", nargs=-1)
+@click.option("--milestone", help="Milestone name to assign to (omit for backlog)")
+@click.option("--bulk", is_flag=True, help="Bulk assign orphaned issues based on smart suggestions")
+def curate_assign(issue_ids: Tuple[str, ...], milestone: Optional[str], bulk: bool) -> None:
+    """Assign orphaned issues to milestones or backlog."""
+    try:
+        from roadmap.curation import RoadmapCurator
+        
+        core = RoadmapCore()
+        if not core.is_initialized():
+            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            return
+            
+        curator = RoadmapCurator(core)
+        
+        if bulk:
+            # Get orphaned issues and suggest assignments
+            report = curator.analyze_orphaned_items(include_backlog=True)
+            suggestions = curator.suggest_milestone_assignments(report.orphaned_issues)
+            
+            if not suggestions:
+                console.print("ℹ️  No orphaned issues found or no suitable milestones available", style="yellow")
+                return
+                
+            console.print("🎯 Smart Assignment Suggestions:", style="bold cyan")
+            for milestone_name, suggested_issue_ids in suggestions.items():
+                console.print(f"\n📍 {milestone_name}:")
+                for issue_id in suggested_issue_ids:
+                    issue = core.get_issue(issue_id)
+                    if issue:
+                        console.print(f"  • {issue_id}: {issue.title[:60]}...")
+                        
+            if click.confirm("Apply these assignments?"):
+                total_assigned = 0
+                for milestone_name, suggested_issue_ids in suggestions.items():
+                    successful, failed = curator.bulk_assign_to_milestone(suggested_issue_ids, milestone_name)
+                    total_assigned += len(successful)
+                    
+                    if failed:
+                        console.print(f"⚠️  Failed to assign {len(failed)} issues to {milestone_name}", style="yellow")
+                        
+                console.print(f"✅ Successfully assigned {total_assigned} issues", style="bold green")
+            else:
+                console.print("Assignment cancelled", style="yellow")
+                
+        elif issue_ids:
+            # Assign specific issues
+            if milestone:
+                successful, failed = curator.bulk_assign_to_milestone(list(issue_ids), milestone)
+                console.print(f"✅ Assigned {len(successful)} issues to '{milestone}'", style="bold green")
+            else:
+                successful, failed = curator.bulk_move_to_backlog(list(issue_ids))
+                console.print(f"✅ Moved {len(successful)} issues to backlog", style="bold green")
+                
+            if failed:
+                console.print(f"⚠️  Failed to process {len(failed)} issues: {', '.join(failed)}", style="yellow")
+        else:
+            console.print("❌ Please provide issue IDs or use --bulk flag", style="bold red")
+            
+    except Exception as e:
+        console.print(f"❌ Failed to assign issues: {e}", style="bold red")
+
+
+def _display_curation_report(report) -> None:
+    """Display a comprehensive curation report."""
+    from roadmap.curation import CurationReport
+    
+    console.print("\n🔍 Roadmap Curation Report", style="bold cyan")
+    console.print(f"Generated: {report.generated_at.strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Summary stats
+    table = Table(title="Summary Statistics", show_header=True)
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="bold")
+    
+    table.add_row("Total Issues", str(report.total_issues))
+    table.add_row("Total Milestones", str(report.total_milestones))
+    table.add_row("Backlog Size", str(report.backlog_size))
+    table.add_row("Orphaned Items", f"{report.summary_stats['total_orphaned']} ({report.summary_stats['orphan_percentage']}%)")
+    table.add_row("Critical Orphans", str(report.summary_stats['critical_orphans']))
+    table.add_row("Avg Orphan Age", f"{report.summary_stats['average_orphan_age_days']} days")
+    
+    console.print(table)
+    
+    # Recommendations
+    if report.recommendations:
+        console.print("\n💡 Recommendations:", style="bold yellow")
+        for rec in report.recommendations:
+            console.print(f"  • {rec}")
+    
+    # Orphaned items summary
+    if report.orphaned_issues or report.invalid_references:
+        total_orphaned_issues = len(report.orphaned_issues) + len(report.invalid_references)
+        console.print(f"\n⚠️  Found {total_orphaned_issues} orphaned issues", style="bold yellow")
+        
+    if report.orphaned_milestones:
+        # Count different types of problematic milestones
+        empty_count = len([item for item in report.orphaned_milestones 
+                          if hasattr(item, 'orphanage_reasons') and "empty" in item.orphanage_reasons])
+        unassigned_count = len([item for item in report.orphaned_milestones 
+                               if hasattr(item, 'orphanage_reasons') and "unassigned" in item.orphanage_reasons])
+        
+        console.print(f"⚠️  Found {len(report.orphaned_milestones)} problematic milestones", style="bold yellow")
+        if empty_count > 0:
+            console.print(f"📭 {empty_count} empty milestones", style="yellow")
+        if unassigned_count > 0:
+            console.print(f"🔗 {unassigned_count} milestones not assigned to roadmaps", style="yellow")
+
+
+def _display_orphaned_issues(orphaned_issues) -> None:
+    """Display orphaned issues in a formatted table."""
+    if not orphaned_issues:
+        return
+        
+    table = Table(title="Orphaned Issues", show_header=True)
+    table.add_column("ID", style="cyan")
+    table.add_column("Title", style="white", max_width=40)
+    table.add_column("Type", style="yellow")
+    table.add_column("Priority", style="red")
+    table.add_column("Age", style="dim")
+    table.add_column("Assignee", style="green")
+    table.add_column("Top Recommendation", style="blue", max_width=30)
+    
+    for item in orphaned_issues:
+        priority_style = "red" if item.priority and item.priority.value in ["critical", "high"] else "yellow"
+        age_str = f"{item.orphaned_days}d"
+        top_rec = item.recommendations[0] if item.recommendations else ""
+        
+        table.add_row(
+            item.item_id,
+            item.title,
+            item.orphanage_type.value.replace("_", " ").title(),
+            Text(item.priority.value.title() if item.priority else "", style=priority_style),
+            age_str,
+            item.assignee or "None",
+            top_rec
+        )
+    
+    console.print(table)
+
+
+def _display_orphaned_milestones(orphaned_milestones) -> None:
+    """Display orphaned milestones in a formatted table."""
+    if not orphaned_milestones:
+        return
+        
+    table = Table(title="Orphaned Milestones", show_header=True)
+    table.add_column("Name", style="cyan")
+    table.add_column("Type", style="yellow")
+    table.add_column("Issues", style="magenta")
+    table.add_column("Age", style="dim")
+    table.add_column("Top Recommendation", style="blue", max_width=40)
+    
+    for item in orphaned_milestones:
+        age_str = f"{item.orphaned_days}d"
+        top_rec = item.recommendations[0] if item.recommendations else ""
+        
+        # Create type display based on orphanage reasons
+        if hasattr(item, 'orphanage_reasons') and item.orphanage_reasons:
+            type_parts = []
+            if "empty" in item.orphanage_reasons:
+                type_parts.append("Empty")
+            if "unassigned" in item.orphanage_reasons:
+                type_parts.append("Unassigned")
+            if not type_parts:
+                type_parts.append("Orphaned")
+            type_display = " + ".join(type_parts) + " Milestone"
+        else:
+            # Fallback for legacy orphanage types
+            type_display = item.orphanage_type.value.replace("_", " ").title()
+        
+        # Show orphanage issues as a summary
+        issues_display = ", ".join(item.orphanage_reasons) if hasattr(item, 'orphanage_reasons') and item.orphanage_reasons else "N/A"
+        
+        table.add_row(
+            item.item_id,
+            type_display,
+            issues_display,
+            age_str,
+            top_rec
+        )
+    
+    console.print(table)
+
+
+def _interactive_curation_workflow(curator, report) -> None:
+    """Interactive workflow for guided curation."""
+    console.print("\n🎮 Interactive Curation Mode", style="bold cyan")
+    
+    total_orphaned = (len(report.orphaned_issues) + len(report.invalid_references) + 
+                     len(report.orphaned_milestones))
+    if total_orphaned == 0:
+        console.print("✅ No orphaned items found - your roadmap is well organized!", style="bold green")
+        return
+    
+    choices = []
+    if report.orphaned_issues or report.invalid_references:
+        choices.append("Assign orphaned issues to milestones")
+    if report.orphaned_milestones:
+        choices.append("Review problematic milestones")
+    choices.extend(["Export detailed report", "Exit"])
+    
+    choice = click.prompt(
+        "What would you like to do?",
+        type=click.Choice(choices, case_sensitive=False)
+    )
+    
+    if "assign" in choice.lower():
+        _interactive_issue_assignment(curator, report.orphaned_issues + report.invalid_references)
+    elif "problematic milestones" in choice.lower():
+        _display_orphaned_milestones(report.orphaned_milestones)
+        console.print("\n💡 Consider using 'roadmap milestone' and 'roadmap roadmap' commands to manage milestones")
+    elif "export" in choice.lower():
+        filename = click.prompt("Export filename", default=f"curation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+        format_choice = click.prompt("Format", type=click.Choice(["json", "csv", "markdown"]), default="json")
+        curator.export_curation_report(report, Path(filename), format_choice)
+        console.print(f"✅ Report exported to {filename}", style="bold green")
+
+
+def _interactive_issue_assignment(curator, orphaned_issues) -> None:
+    """Interactive workflow for assigning orphaned issues."""
+    if not orphaned_issues:
+        console.print("✅ No orphaned issues to assign", style="bold green")
+        return
+    
+    # Get available milestones
+    milestones = curator.core.list_milestones()
+    open_milestones = [m for m in milestones if m.status.value == "open"]
+    
+    if not open_milestones:
+        console.print("⚠️  No open milestones available for assignment", style="yellow")
+        return
+    
+    console.print(f"\n📋 Found {len(orphaned_issues)} orphaned issues")
+    
+    # Show smart suggestions
+    suggestions = curator.suggest_milestone_assignments(orphaned_issues)
+    if suggestions:
+        console.print("\n🎯 Smart Assignment Suggestions:", style="bold green")
+        for milestone_name, suggested_ids in suggestions.items():
+            console.print(f"  📍 {milestone_name}: {len(suggested_ids)} issues")
+        
+        if click.confirm("Apply smart suggestions?"):
+            total_assigned = 0
+            for milestone_name, suggested_ids in suggestions.items():
+                successful, failed = curator.bulk_assign_to_milestone(suggested_ids, milestone_name)
+                total_assigned += len(successful)
+            console.print(f"✅ Applied smart assignments for {total_assigned} issues", style="bold green")
+            return
+    
+    # Manual assignment
+    console.print("\n📝 Manual Assignment Mode")
+    milestone_choices = [m.name for m in open_milestones] + ["Backlog", "Skip"]
+    
+    assigned_count = 0
+    for item in orphaned_issues[:10]:  # Limit to first 10 for interactivity
+        console.print(f"\n🎯 Issue: {item.title}")
+        console.print(f"   Priority: {item.priority.value if item.priority else 'None'}")
+        console.print(f"   Age: {item.orphaned_days} days")
+        
+        if item.recommendations:
+            console.print("   💡 Recommendations:")
+            for rec in item.recommendations[:2]:  # Show top 2 recommendations
+                console.print(f"      • {rec}")
+        
+        assignment = click.prompt(
+            "Assign to",
+            type=click.Choice(milestone_choices, case_sensitive=False),
+            default="Skip"
+        )
+        
+        if assignment.lower() == "skip":
+            continue
+        elif assignment.lower() == "backlog":
+            curator.bulk_move_to_backlog([item.item_id])
+            assigned_count += 1
+            console.print(f"✅ Moved to backlog", style="green")
+        else:
+            curator.bulk_assign_to_milestone([item.item_id], assignment)
+            assigned_count += 1
+            console.print(f"✅ Assigned to {assignment}", style="green")
+    
+    console.print(f"\n✅ Assigned {assigned_count} issues", style="bold green")
 
 
 if __name__ == "__main__":

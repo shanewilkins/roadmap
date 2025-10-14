@@ -2,27 +2,27 @@
 id: a9a6bb0b
 title: Add roadmap curation tools to identify orphaned issues and milestones
 priority: high
-status: todo
+status: completed
 issue_type: feature
 milestone: ''
 labels:
 - curation,data-management,orphaned
 github_issue: null
 created: '2025-10-13T08:47:02.916590'
-updated: '2025-10-13T08:47:02.916603'
+updated: '2025-10-14T10:58:00.000000'
 assignee: shanewilkins
 estimated_hours: 6.0
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
 git_branches: []
 git_commits: []
-completed_date: null
+completed_date: '2025-10-14T10:58:00.000000'
 ---
 
 # Add roadmap curation tools to identify orphaned issues and milestones
@@ -45,14 +45,14 @@ Implement comprehensive curation tools to help maintain roadmap data integrity b
 
 ## Acceptance Criteria
 
-- [ ] Add new CLI command `roadmap curate orphaned` to scan for orphaned items
-- [ ] Implement `roadmap curate issues` to show issues without milestone assignment
-- [ ] Implement `roadmap curate milestones` to show milestones without roadmap assignment
-- [ ] Display orphaned items with metadata (creation date, assignee, priority, etc.)
-- [ ] Provide batch operations to assign orphaned items to appropriate parents
-- [ ] Generate curation reports with statistics and recommendations
-- [ ] Add filtering options (by date, assignee, priority, type)
-- [ ] Include interactive mode for guided curation workflow
+- [x] Add new CLI command `roadmap curate orphaned` to scan for orphaned items
+- [x] Implement `roadmap curate issues` to show issues without milestone assignment
+- [x] Implement `roadmap curate milestones` to show milestones without roadmap assignment
+- [x] Display orphaned items with metadata (creation date, assignee, priority, etc.)
+- [x] Provide batch operations to assign orphaned items to appropriate parents
+- [x] Generate curation reports with statistics and recommendations
+- [x] Add filtering options (by date, assignee, priority, type)
+- [x] Include interactive mode for guided curation workflow
 
 ## Technical Notes
 
