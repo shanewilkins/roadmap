@@ -253,28 +253,38 @@ class TestRoadmapCoreUncoveredLines:
 
     def test_validate_assignee_with_cached_team_members(self, core):
         """Test validate_assignee using cached team members."""
-        # Mock GitHub config
-        with patch.object(core, '_get_github_config') as mock_config:
-            mock_config.return_value = ("token", "owner", "repo")
+        # Mock identity manager to allow the identity system to handle validation
+        with patch('roadmap.identity.IdentityManager') as mock_identity_class:
+            mock_identity = Mock()
+            mock_identity.config.validation_mode = "hybrid"
+            mock_identity.resolve_assignee.side_effect = [
+                (True, "alice@example.com", None),  # Valid user
+                (False, "No team configuration found. Falling back to GitHub validation.", None)  # Unknown user
+            ]
+            mock_identity_class.return_value = mock_identity
             
-            # Mock cached team members
-            with patch.object(core, '_get_cached_team_members') as mock_cached:
-                mock_cached.return_value = ["alice@example.com", "bob@example.com"]
+            # Mock GitHub config
+            with patch.object(core, '_get_github_config') as mock_config:
+                mock_config.return_value = ("token", "owner", "repo")
                 
-                # Test valid assignee from cache
-                is_valid, error = core.validate_assignee("alice@example.com")
-                assert is_valid is True
-                assert error == ""
-                
-                # Test invalid assignee not in cache
-                with patch('roadmap.github_client.GitHubClient') as mock_github:
-                    mock_client = Mock()
-                    mock_client.validate_assignee.return_value = (False, "User not found")
-                    mock_github.return_value = mock_client
+                # Mock cached team members
+                with patch.object(core, '_get_cached_team_members') as mock_cached:
+                    mock_cached.return_value = ["alice@example.com", "bob@example.com"]
                     
-                    is_valid, error = core.validate_assignee("unknown@example.com")
-                    assert is_valid is False
-                    assert "User not found" in error
+                    # Test valid assignee - identity system will handle it
+                    is_valid, error = core.validate_assignee("alice@example.com")
+                    assert is_valid is True
+                    assert error == ""
+                    
+                    # Test invalid assignee - falls back to GitHub validation
+                    with patch('roadmap.github_client.GitHubClient') as mock_github:
+                        mock_client = Mock()
+                        mock_client.validate_assignee.return_value = (False, "User not found")
+                        mock_github.return_value = mock_client
+                        
+                        is_valid, error = core.validate_assignee("unknown@example.com")
+                        assert is_valid is False
+                        assert "User not found" in error
 
     def test_validate_assignee_empty_assignee(self, core):
         """Test validate_assignee with empty assignee."""
@@ -299,22 +309,30 @@ class TestRoadmapCoreUncoveredLines:
 
     def test_validate_assignee_with_exception(self, core):
         """Test validate_assignee when GitHub validation raises exception."""
-        # Mock GitHub config
-        with patch.object(core, '_get_github_config') as mock_config:
-            mock_config.return_value = ("token", "owner", "repo")
+        # Mock identity manager to fall back to GitHub
+        with patch('roadmap.identity.IdentityManager') as mock_identity_class:
+            mock_identity = Mock()
+            mock_identity.config.validation_mode = "hybrid"
+            mock_identity.resolve_assignee.return_value = (False, "No team configuration found. Falling back to GitHub validation.", None)
+            mock_identity_class.return_value = mock_identity
             
-            # Mock cached team members (empty)
-            with patch.object(core, '_get_cached_team_members') as mock_cached:
-                mock_cached.return_value = []
+            # Mock GitHub config
+            with patch.object(core, '_get_github_config') as mock_config:
+                mock_config.return_value = ("token", "owner", "repo")
                 
-                # Mock GitHub client to raise exception
-                with patch('roadmap.github_client.GitHubClient') as mock_github:
-                    mock_github.side_effect = Exception("Network error")
+                # Mock cached team members (empty)
+                with patch.object(core, '_get_cached_team_members') as mock_cached:
+                    mock_cached.return_value = []
                     
-                    is_valid, error = core.validate_assignee("test@example.com")
-                    assert is_valid is True  # Should allow with warning
-                    assert "Warning" in error
-                    assert "GitHub API unavailable" in error
+                    # Mock GitHub client to raise exception
+                    with patch('roadmap.github_client.GitHubClient') as mock_github:
+                        mock_github.side_effect = Exception("Network error")
+                        
+                        # Should fall back to legacy validation which allows any assignee when GitHub fails
+                        is_valid, error = core.validate_assignee("test@example.com")
+                        assert is_valid is True  # Should allow with fallback
+                        assert "Warning" in error  # Should have warning about validation failure
+                        assert "Network error" in error
 
     def test_issue_operations_not_initialized(self, temp_dir):
         """Test issue operations when roadmap is not initialized."""

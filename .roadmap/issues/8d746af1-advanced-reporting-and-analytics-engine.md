@@ -1,16 +1,16 @@
 ---
-id: '23834865'
-title: Test assignee validation
-priority: low
+id: 8d746af1
+title: Advanced reporting and analytics engine
+priority: medium
 status: todo
 issue_type: other
-milestone: v.0.5.0
+milestone: v.0.4.0
 labels: []
 github_issue: null
-created: '2025-10-13T10:00:30.998967'
-updated: '2025-10-14T14:16:54.625132'
+created: '2025-10-14T14:18:13.540775'
+updated: '2025-10-14T14:18:13.540780'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 6.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Test assignee validation
+# Advanced reporting and analytics engine
 
 ## Description
 

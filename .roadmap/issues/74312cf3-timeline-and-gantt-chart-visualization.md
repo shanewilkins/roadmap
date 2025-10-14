@@ -1,16 +1,16 @@
 ---
-id: '23834865'
-title: Test assignee validation
-priority: low
+id: 74312cf3
+title: Timeline and Gantt chart visualization
+priority: medium
 status: todo
 issue_type: other
-milestone: v.0.5.0
+milestone: v.0.4.0
 labels: []
 github_issue: null
-created: '2025-10-13T10:00:30.998967'
-updated: '2025-10-14T14:16:54.625132'
+created: '2025-10-14T14:18:18.947332'
+updated: '2025-10-14T14:18:18.947340'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 5.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Test assignee validation
+# Timeline and Gantt chart visualization
 
 ## Description
 

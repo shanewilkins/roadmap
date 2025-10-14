@@ -4,12 +4,12 @@ title: Enhance init command with automatic project setup and credential flow
 priority: high
 status: done
 issue_type: feature
-milestone: ''
+milestone: v.0.9.0
 labels: []
 github_issue: null
 created: '2025-10-11T20:21:35.559175'
-updated: '2025-10-12T12:37:42.103895'
-assignee: shane
+updated: '2025-10-14T13:37:33.241066'
+assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []
 blocks: []

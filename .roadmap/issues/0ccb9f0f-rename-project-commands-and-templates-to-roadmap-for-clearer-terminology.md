@@ -4,12 +4,12 @@ title: Rename project commands and templates to roadmap for clearer terminology
 priority: medium
 status: done
 issue_type: feature
-milestone: ''
+milestone: v.0.2.0
 labels: []
 github_issue: null
 created: '2025-10-11T20:34:42.628405'
-updated: '2025-10-12T09:09:29.265460'
-assignee: shane
+updated: '2025-10-14T13:37:33.322725'
+assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []
 blocks: []

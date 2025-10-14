@@ -4,12 +4,12 @@ title: Test assignee validation improved
 priority: low
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.5.0
 labels: []
 github_issue: null
 created: '2025-10-13T10:03:56.725073'
-updated: '2025-10-13T10:03:56.725079'
-assignee: definitely-nonexistent-user-999999
+updated: '2025-10-14T14:17:01.274531'
+assignee: shanewilkins
 estimated_hours: null
 depends_on: []
 blocks: []

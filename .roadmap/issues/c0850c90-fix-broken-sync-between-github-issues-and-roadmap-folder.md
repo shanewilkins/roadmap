@@ -4,12 +4,12 @@ title: Fix broken sync between GitHub issues and roadmap folder
 priority: high
 status: done
 issue_type: bug
-milestone: ''
+milestone: v.0.9.0
 labels: []
 github_issue: 3
 created: '2025-10-11T19:48:01.356056'
-updated: '2025-10-11T20:03:34.015334'
-assignee: ''
+updated: '2025-10-14T13:37:33.214316'
+assignee: shanewilkins
 estimated_hours: null
 depends_on: []
 blocks: []

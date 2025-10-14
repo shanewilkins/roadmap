@@ -1,21 +1,23 @@
 ---
-id: "d9f5556c"
-name: "roadmap_project"
-description: "Project description"
-status: "planning"
-priority: "medium"
-owner: ""
-start_date: ""
-target_end_date: ""
 actual_end_date: null
-created: "2025-10-12T08:50:38.822226"
-updated: "2025-10-12T08:50:38.822226"
-milestones:
-  - "milestone_1"
-  - "milestone_2"
-  - "v0.5.0"
-estimated_hours: 0
 actual_hours: null
+created: '2025-10-12T08:50:38.822226'
+description: Project description
+estimated_hours: 0
+id: d9f5556c
+milestones:
+- v.0.2.0
+- v.0.3.0
+- v.0.4.0
+- v.0.5.0
+- v.0.9.0
+name: roadmap_project
+owner: ''
+priority: medium
+start_date: ''
+status: planning
+target_end_date: ''
+updated: '2025-10-14T12:58:42.702160'
 ---
 
 # roadmap_project

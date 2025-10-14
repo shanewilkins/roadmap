@@ -4,12 +4,12 @@ title: Enhance backup system with management, cleanup, and user control features
 priority: medium
 status: todo
 issue_type: feature
-milestone: ''
+milestone: v.0.2.0
 labels:
 - backup,data-management,cleanup
 github_issue: null
 created: '2025-10-13T08:55:24.179990'
-updated: '2025-10-13T08:55:24.180002'
+updated: '2025-10-14T13:37:33.331449'
 assignee: shanewilkins
 estimated_hours: 5.0
 depends_on: []

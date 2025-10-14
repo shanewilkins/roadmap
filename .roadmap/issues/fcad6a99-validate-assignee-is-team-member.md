@@ -4,12 +4,12 @@ title: Validate assignee is team member
 priority: high
 status: done
 issue_type: feature
-milestone: ''
+milestone: v.0.5.0
 labels:
 - security,validation,github-integration
 github_issue: null
 created: '2025-10-12T11:41:15.911050'
-updated: '2025-10-13T10:49:58.641526'
+updated: '2025-10-14T14:16:47.394392'
 assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []

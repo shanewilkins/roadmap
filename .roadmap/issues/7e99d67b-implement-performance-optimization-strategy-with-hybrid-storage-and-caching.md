@@ -4,12 +4,12 @@ title: Implement performance optimization strategy with hybrid storage and cachi
 priority: high
 status: todo
 issue_type: feature
-milestone: v0.9.0
+milestone: v.0.9.0
 labels: []
 github_issue: null
 created: '2025-10-12T08:47:01.231368'
 updated: '2025-10-12T08:47:20.313160'
-assignee: shane
+assignee: shanewilkins
 estimated_hours: 6.0
 depends_on: []
 blocks: []

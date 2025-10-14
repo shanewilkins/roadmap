@@ -3002,20 +3002,26 @@ def create_issue(
                 )
 
         # Validate assignee if provided
+        canonical_assignee = assignee
         if assignee:
-            is_valid, error_msg = core.validate_assignee(assignee)
+            is_valid, result = core.validate_assignee(assignee)
             if not is_valid:
-                console.print(f"❌ Invalid assignee: {error_msg}", style="bold red")
+                console.print(f"❌ Invalid assignee: {result}", style="bold red")
                 raise click.Abort()
-            elif "Warning:" in error_msg:
-                console.print(f"⚠️  {error_msg}", style="bold yellow")
+            elif result and "Warning:" in result:
+                console.print(f"⚠️  {result}", style="bold yellow")
+                canonical_assignee = assignee  # Keep original if warning
+            else:
+                canonical_assignee = core.get_canonical_assignee(assignee)
+                if canonical_assignee != assignee:
+                    console.print(f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim")
 
         issue = core.create_issue(
             title=title,
             priority=Priority(priority),
             issue_type=IssueType(issue_type),
             milestone=milestone,
-            assignee=assignee,
+            assignee=canonical_assignee,
             labels=list(labels),
             estimated_hours=estimate,
             depends_on=list(depends_on),
@@ -3365,13 +3371,18 @@ def update_issue(
             # Convert empty string to None for proper unassignment
             if assignee:
                 # Validate assignee before updating
-                is_valid, error_msg = core.validate_assignee(assignee)
+                is_valid, result = core.validate_assignee(assignee)
                 if not is_valid:
-                    console.print(f"❌ Invalid assignee: {error_msg}", style="bold red")
+                    console.print(f"❌ Invalid assignee: {result}", style="bold red")
                     raise click.Abort()
-                elif "Warning:" in error_msg:
-                    console.print(f"⚠️  {error_msg}", style="bold yellow")
-                updates["assignee"] = assignee
+                elif result and "Warning:" in result:
+                    console.print(f"⚠️  {result}", style="bold yellow")
+                    updates["assignee"] = assignee
+                else:
+                    canonical_assignee = core.get_canonical_assignee(assignee)
+                    if canonical_assignee != assignee:
+                        console.print(f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim")
+                    updates["assignee"] = canonical_assignee
             else:
                 updates["assignee"] = None
         if estimate is not None:
@@ -6487,6 +6498,170 @@ def show_team_workload(ctx: click.Context):
 
     except Exception as e:
         console.print(f"❌ Failed to show workload: {e}", style="bold red")
+
+
+@team.command("add")
+@click.argument("canonical_id")
+@click.option("--name", help="Display name for the team member")
+@click.option("--github", help="GitHub username")
+@click.option("--email", help="Email address")
+@click.option("--alias", multiple=True, help="Alternative names/aliases (can be used multiple times)")
+@click.option("--role", multiple=True, help="Project roles (can be used multiple times)")
+@click.pass_context
+def add_team_member(ctx: click.Context, canonical_id: str, name: str, github: str, email: str, alias: tuple, role: tuple):
+    """Add a new team member with identity management."""
+    from .identity import IdentityManager
+    
+    core = ctx.obj["core"]
+    if not core.is_initialized():
+        console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+        return
+    
+    try:
+        identity_manager = IdentityManager(core.root_path)
+        
+        # Use canonical_id as display name if not provided
+        display_name = name or canonical_id
+        
+        profile = identity_manager.add_team_member(
+            canonical_id=canonical_id,
+            display_name=display_name,
+            github_username=github,
+            email=email,
+            aliases=list(alias),
+        )
+        
+        # Add roles
+        if role:
+            profile.roles.update(role)
+        
+        identity_manager.save_team_config()
+        
+        console.print(f"✅ Added team member: {display_name} ({canonical_id})", style="bold green")
+        if github:
+            console.print(f"   GitHub: {github}")
+        if email:
+            console.print(f"   Email: {email}")
+        if alias:
+            console.print(f"   Aliases: {', '.join(alias)}")
+        if role:
+            console.print(f"   Roles: {', '.join(role)}")
+            
+    except Exception as e:
+        console.print(f"❌ Failed to add team member: {e}", style="bold red")
+
+
+@team.command("identity")
+@click.option("--mode", type=click.Choice(["strict", "relaxed", "github-only", "local-only", "hybrid"]), 
+              help="Set validation mode")
+@click.option("--suggest", is_flag=True, help="Suggest identity mappings for existing assignees")
+@click.option("--normalize", is_flag=True, help="Auto-normalize existing assignees")
+@click.pass_context
+def manage_identity(ctx: click.Context, mode: str, suggest: bool, normalize: bool):
+    """Manage identity resolution and validation settings."""
+    from .identity import IdentityManager
+    
+    core = ctx.obj["core"]
+    if not core.is_initialized():
+        console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+        return
+    
+    try:
+        identity_manager = IdentityManager(core.root_path)
+        
+        if mode:
+            identity_manager.config.validation_mode = mode
+            identity_manager.save_team_config()
+            console.print(f"✅ Set validation mode to: {mode}", style="bold green")
+        
+        if suggest:
+            # Get all assignees from existing issues
+            issues = core.list_issues()
+            assignee_names = [issue.assignee for issue in issues if issue.assignee]
+            
+            if not assignee_names:
+                console.print("No assigned issues found to analyze.", style="yellow")
+                return
+            
+            suggestions = identity_manager.suggest_identity_mappings(assignee_names)
+            
+            if not suggestions:
+                console.print("✅ No identity conflicts detected.", style="green")
+                return
+            
+            console.print("🔍 Identity mapping suggestions:", style="bold cyan")
+            console.print()
+            
+            for cluster_key, variants in suggestions.items():
+                console.print(f"Possible duplicates for '{cluster_key}':", style="yellow")
+                for variant in variants:
+                    console.print(f"  • {variant}")
+                console.print()
+                console.print("Consider creating a team member profile to unify these identities.")
+                console.print()
+        
+        if normalize:
+            # This would implement auto-normalization logic
+            console.print("🔄 Auto-normalization not yet implemented", style="yellow")
+            console.print("Use 'roadmap team identity --suggest' to see recommended mappings")
+        
+        if not any([mode, suggest, normalize]):
+            # Show current configuration
+            console.print("👥 Identity Management Configuration", style="bold cyan")
+            console.print()
+            console.print(f"Validation Mode: {identity_manager.config.validation_mode}")
+            console.print(f"Auto-normalize: {identity_manager.config.auto_normalize_assignees}")
+            console.print(f"Require team membership: {identity_manager.config.require_team_membership}")
+            console.print(f"Allow identity learning: {identity_manager.config.allow_identity_learning}")
+            console.print()
+            console.print(f"Team members configured: {len(identity_manager.profiles)}")
+            
+            if identity_manager.profiles:
+                console.print("\nConfigured team members:")
+                for profile in identity_manager.profiles.values():
+                    aliases_text = f" (aliases: {', '.join(profile.aliases)})" if profile.aliases else ""
+                    github_text = f" [GitHub: {profile.github_username}]" if profile.github_username else ""
+                    console.print(f"  • {profile.display_name} ({profile.canonical_id}){github_text}{aliases_text}")
+            
+    except Exception as e:
+        console.print(f"❌ Failed to manage identity: {e}", style="bold red")
+
+
+@team.command("resolve")
+@click.argument("name")
+@click.pass_context
+def resolve_assignee(ctx: click.Context, name: str):
+    """Test assignee name resolution."""
+    from .identity import IdentityManager
+    
+    core = ctx.obj["core"]
+    if not core.is_initialized():
+        console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+        return
+    
+    try:
+        identity_manager = IdentityManager(core.root_path)
+        is_valid, result, profile = identity_manager.resolve_assignee(name)
+        
+        if is_valid:
+            console.print(f"✅ '{name}' resolves to: {result}", style="bold green")
+            if profile:
+                console.print(f"   Display name: {profile.display_name}")
+                if profile.github_username:
+                    console.print(f"   GitHub: {profile.github_username}")
+                if profile.email:
+                    console.print(f"   Email: {profile.email}")
+                if profile.aliases:
+                    console.print(f"   Known aliases: {', '.join(profile.aliases)}")
+                if profile.roles:
+                    console.print(f"   Roles: {', '.join(profile.roles)}")
+            else:
+                console.print("   (No profile configured - using name as-is)")
+        else:
+            console.print(f"❌ '{name}' is not valid: {result}", style="bold red")
+            
+    except Exception as e:
+        console.print(f"❌ Failed to resolve assignee: {e}", style="bold red")
 
 
 # Enhanced reporting commands
@@ -11778,6 +11953,87 @@ def _interactive_issue_assignment(curator, orphaned_issues) -> None:
             console.print(f"✅ Assigned to {assignment}", style="green")
     
     console.print(f"\n✅ Assigned {assigned_count} issues", style="bold green")
+
+
+@main.command()
+@click.option("--workspace", "-w", type=click.Path(exists=True), help="Workspace path (default: current directory)")
+def validate_naming(workspace: Optional[str] = None) -> None:
+    """Validate milestone naming consistency between filenames and YAML name fields."""
+    try:
+        workspace_path = Path(workspace) if workspace else Path.cwd()
+        core = RoadmapCore(workspace_path)
+        
+        inconsistencies = core.validate_milestone_naming_consistency()
+        
+        if not inconsistencies:
+            console.print("✅ All milestone names are consistent!", style="bold green")
+            return
+        
+        console.print(f"⚠️  Found {len(inconsistencies)} naming inconsistencies:", style="bold yellow")
+        
+        table = Table()
+        table.add_column("File", style="cyan")
+        table.add_column("Name Field", style="blue")
+        table.add_column("Expected Filename", style="green")
+        table.add_column("Issue Type", style="red")
+        
+        for issue in inconsistencies:
+            table.add_row(
+                issue["file"],
+                issue["name"],
+                issue["expected_filename"],
+                issue["type"]
+            )
+        
+        console.print(table)
+        console.print("\n💡 Run 'roadmap fix-naming' to automatically fix filename mismatches", style="dim")
+        
+    except Exception as e:
+        console.print(f"❌ Error validating naming: {e}", style="bold red")
+        raise click.ClickException(str(e))
+
+
+@main.command()
+@click.option("--workspace", "-w", type=click.Path(exists=True), help="Workspace path (default: current directory)")
+@click.option("--dry-run", "-n", is_flag=True, help="Show what would be renamed without making changes")
+def fix_naming(workspace: Optional[str] = None, dry_run: bool = False) -> None:
+    """Fix milestone naming inconsistencies by renaming files to match YAML name fields."""
+    try:
+        workspace_path = Path(workspace) if workspace else Path.cwd()
+        core = RoadmapCore(workspace_path)
+        
+        if dry_run:
+            inconsistencies = core.validate_milestone_naming_consistency()
+            rename_candidates = [i for i in inconsistencies if i["type"] == "filename_mismatch"]
+            
+            if not rename_candidates:
+                console.print("✅ No files need renaming!", style="bold green")
+                return
+            
+            console.print("📋 Files that would be renamed:", style="bold blue")
+            for issue in rename_candidates:
+                console.print(f"  {issue['file']} → {issue['expected_filename']}")
+            
+            return
+        
+        results = core.fix_milestone_naming_consistency()
+        
+        if results["renamed"]:
+            console.print("✅ Successfully renamed files:", style="bold green")
+            for rename in results["renamed"]:
+                console.print(f"  {rename}")
+        
+        if results["errors"]:
+            console.print("\n❌ Errors encountered:", style="bold red")
+            for error in results["errors"]:
+                console.print(f"  {error}")
+        
+        if not results["renamed"] and not results["errors"]:
+            console.print("✅ No files needed renaming!", style="bold green")
+        
+    except Exception as e:
+        console.print(f"❌ Error fixing naming: {e}", style="bold red")
+        raise click.ClickException(str(e))
 
 
 if __name__ == "__main__":

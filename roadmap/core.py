@@ -50,6 +50,9 @@ class RoadmapCore:
         # Cache for team members to avoid repeated API calls
         self._team_members_cache = None
         self._cache_timestamp = None
+        
+        # Cache for canonical assignee resolution
+        self._last_canonical_assignee = None
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
@@ -449,18 +452,15 @@ Project notes and additional context.
         return milestones
 
     def get_milestone(self, name: str) -> Optional[Milestone]:
-        """Get a specific milestone by name."""
-        safe_name = "".join(
-            c for c in name if c.isalnum() or c in (" ", "-", "_")
-        ).strip()
-        safe_name = safe_name.replace(" ", "-").lower()
-
-        milestone_file = self.milestones_dir / f"{safe_name}.md"
-        if milestone_file.exists():
+        """Get a specific milestone by name (searches by YAML name field, not filename)."""
+        # Search through all milestone files to find one with matching name field
+        for milestone_file in self.milestones_dir.glob("*.md"):
             try:
-                return MilestoneParser.parse_milestone_file(milestone_file)
+                milestone = MilestoneParser.parse_milestone_file(milestone_file)
+                if milestone.name == name:
+                    return milestone
             except Exception:
-                pass
+                continue
         return None
 
     def delete_milestone(self, name: str) -> bool:
@@ -488,18 +488,16 @@ Project notes and additional context.
             issue_path = self.issues_dir / issue.filename
             IssueParser.save_issue_file(issue, issue_path)
 
-        # Delete the milestone file
-        safe_name = "".join(
-            c for c in name if c.isalnum() or c in (" ", "-", "_")
-        ).strip()
-        safe_name = safe_name.replace(" ", "-").lower()
-        milestone_file = self.milestones_dir / f"{safe_name}.md"
-
-        try:
-            milestone_file.unlink()
-            return True
-        except Exception:
-            return False
+        # Delete the milestone file (find it by searching through files)
+        for milestone_file in self.milestones_dir.glob("*.md"):
+            try:
+                test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
+                if test_milestone.name == name:
+                    milestone_file.unlink()
+                    return True
+            except Exception:
+                continue
+        return False
 
     def update_milestone(
         self,
@@ -543,18 +541,16 @@ Project notes and additional context.
 
         milestone.updated = datetime.now()
 
-        # Save the updated milestone
-        safe_name = "".join(
-            c for c in name if c.isalnum() or c in (" ", "-", "_")
-        ).strip()
-        safe_name = safe_name.replace(" ", "-").lower()
-        milestone_file = self.milestones_dir / f"{safe_name}.md"
-
-        try:
-            MilestoneParser.save_milestone_file(milestone, milestone_file)
-            return True
-        except Exception:
-            return False
+        # Save the updated milestone (find the actual file by searching)
+        for milestone_file in self.milestones_dir.glob("*.md"):
+            try:
+                test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
+                if test_milestone.name == name:
+                    MilestoneParser.save_milestone_file(milestone, milestone_file)
+                    return True
+            except Exception:
+                continue
+        return False
 
     def assign_issue_to_milestone(self, issue_id: str, milestone_name: str) -> bool:
         """Assign an issue to a milestone."""
@@ -781,18 +777,18 @@ Project notes and additional context.
         return team_members
 
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:
-        """Validate an assignee against GitHub repository access.
+        """Validate an assignee using the identity management system.
         
-        This validation only occurs when GitHub integration is configured.
-        For local-only roadmaps, any assignee name is allowed without validation.
+        This validation integrates with the identity management system while
+        maintaining backward compatibility with the original API.
         
         Args:
             assignee: Username to validate
             
         Returns:
             Tuple of (is_valid, error_message)
-            - (True, "") if valid or GitHub not configured  
-            - (False, error_message) if invalid GitHub user
+            - (True, "") if valid (backward compatible)
+            - (False, error_message) if invalid
         """
         if not assignee or not assignee.strip():
             return False, "Assignee cannot be empty"
@@ -800,31 +796,114 @@ Project notes and additional context.
         assignee = assignee.strip()
 
         try:
-            token, owner, repo = self._get_github_config()
-            if not token or not owner or not repo:
-                # If GitHub is not configured, allow any assignee without validation
-                # This supports local-only roadmap usage without GitHub integration
+            # Try identity management system first
+            from .identity import IdentityManager
+            identity_manager = IdentityManager(self.root_path)
+            is_valid, result, profile = identity_manager.resolve_assignee(assignee)
+            
+            if is_valid:
+                # Store canonical form for later retrieval but return empty string for compatibility
+                self._last_canonical_assignee = profile.canonical_id if profile else result
                 return True, ""
-
-            # GitHub is configured - perform validation against repository access
-            
-            # First check against cached team members for performance
-            team_members = self._get_cached_team_members()
-            if team_members and assignee in team_members:
-                return True, ""
-            
-            # If not in cache or cache is empty, do full validation via API
-            from .github_client import GitHubClient
-            
-            client = GitHubClient(token=token, owner=owner, repo=repo)
-            
-            # This will do the full GitHub API validation
-            return client.validate_assignee(assignee)
+            else:
+                # If identity system failed, check if we should fall back to GitHub validation
+                token, owner, repo = self._get_github_config()
+                
+                # If GitHub is configured and identity system suggests GitHub fallback
+                if token and owner and repo and identity_manager.config.validation_mode in ["hybrid", "github-only"]:
+                    # Fall back to GitHub validation for hybrid/github-only mode
+                    team_members = self._get_cached_team_members()
+                    if team_members and assignee in team_members:
+                        self._last_canonical_assignee = assignee
+                        return True, ""
+                    
+                    # Do full validation via API
+                    from .github_client import GitHubClient
+                    client = GitHubClient(token=token, owner=owner, repo=repo)
+                    github_valid, github_error = client.validate_assignee(assignee)
+                    if github_valid:
+                        self._last_canonical_assignee = assignee
+                        return True, ""
+                    else:
+                        return False, github_error
+                
+                # If no GitHub config and identity system is in local/hybrid mode, 
+                # accept reasonable names (for local-only usage)
+                elif not (token and owner and repo) and identity_manager.config.validation_mode in ["local-only", "hybrid"]:
+                    # Basic validation for local usage
+                    if len(assignee) >= 2 and not any(char in assignee for char in '<>{}[]()'):
+                        self._last_canonical_assignee = assignee
+                        return True, ""
+                    else:
+                        return False, f"'{assignee}' is not a valid assignee name"
+                
+                # No fallback available, return identity system result
+                return False, result
 
         except Exception as e:
-            # If validation fails due to network/API issues, allow the assignment
-            # but log a warning that validation couldn't be performed
-            return True, f"Warning: Could not validate assignee (GitHub API unavailable): {str(e)}"
+            # If identity management fails, fall back to legacy validation
+            try:
+                token, owner, repo = self._get_github_config()
+                if not token or not owner or not repo:
+                    # If GitHub is not configured, allow any assignee without validation
+                    # This supports local-only roadmap usage without GitHub integration
+                    self._last_canonical_assignee = assignee
+                    return True, ""
+
+                # GitHub is configured - perform validation against repository access
+                
+                # First check against cached team members for performance
+                team_members = self._get_cached_team_members()
+                if team_members and assignee in team_members:
+                    self._last_canonical_assignee = assignee
+                    return True, ""
+                
+                # If not in cache or cache is empty, do full validation via API
+                from .github_client import GitHubClient
+                
+                client = GitHubClient(token=token, owner=owner, repo=repo)
+                
+                # This will do the full GitHub API validation
+                github_valid, github_error = client.validate_assignee(assignee)
+                if github_valid:
+                    self._last_canonical_assignee = assignee
+                    return True, ""
+                else:
+                    return False, github_error
+
+            except Exception as fallback_error:
+                # If validation fails due to network/API issues, allow the assignment
+                # but log a warning that validation couldn't be performed
+                warning_msg = f"Warning: Could not validate assignee (validation unavailable): {str(fallback_error)}"
+                self._last_canonical_assignee = assignee
+                return True, warning_msg
+                
+    def get_canonical_assignee(self, assignee: str) -> str:
+        """Get the canonical form of an assignee name.
+        
+        This method should be called after validate_assignee to get the canonical form.
+        
+        Args:
+            assignee: Input assignee name
+            
+        Returns:
+            Canonical assignee name (may be same as input if no mapping exists)
+        """
+        # Try to get from identity management system
+        try:
+            from .identity import IdentityManager
+            identity_manager = IdentityManager(self.root_path)
+            is_valid, result, profile = identity_manager.resolve_assignee(assignee)
+            
+            if is_valid and profile:
+                return profile.canonical_id
+            elif is_valid:
+                return result
+        except Exception:
+            pass
+            
+        # Fallback to original assignee
+        return assignee
 
     # Git Integration Methods
 
@@ -951,6 +1030,67 @@ Project notes and additional context.
                 branch_issues[branch.name] = [issue_id]
 
         return branch_issues
+
+    def validate_milestone_naming_consistency(self) -> List[Dict[str, str]]:
+        """Check for inconsistencies between milestone filenames and name fields.
+        
+        Returns:
+            List of dictionaries with inconsistency details
+        """
+        inconsistencies = []
+        
+        for milestone_file in self.milestones_dir.glob("*.md"):
+            try:
+                milestone = MilestoneParser.parse_milestone_file(milestone_file)
+                expected_filename = milestone.filename
+                actual_filename = milestone_file.name
+                
+                if expected_filename != actual_filename:
+                    inconsistencies.append({
+                        "file": actual_filename,
+                        "name": milestone.name,
+                        "expected_filename": expected_filename,
+                        "type": "filename_mismatch"
+                    })
+            except Exception as e:
+                inconsistencies.append({
+                    "file": milestone_file.name,
+                    "name": "PARSE_ERROR",
+                    "expected_filename": "N/A",
+                    "type": "parse_error",
+                    "error": str(e)
+                })
+        
+        return inconsistencies
+
+    def fix_milestone_naming_consistency(self) -> Dict[str, List[str]]:
+        """Fix milestone filename inconsistencies by renaming files to match name fields.
+        
+        Returns:
+            Dictionary with 'renamed' and 'errors' lists
+        """
+        results = {"renamed": [], "errors": []}
+        inconsistencies = self.validate_milestone_naming_consistency()
+        
+        for issue in inconsistencies:
+            if issue["type"] == "filename_mismatch":
+                old_path = self.milestones_dir / issue["file"]
+                new_path = self.milestones_dir / issue["expected_filename"]
+                
+                try:
+                    # Check if target filename already exists
+                    if new_path.exists():
+                        results["errors"].append(f"Cannot rename {issue['file']} -> {issue['expected_filename']}: target exists")
+                        continue
+                    
+                    old_path.rename(new_path)
+                    results["renamed"].append(f"{issue['file']} -> {issue['expected_filename']}")
+                except Exception as e:
+                    results["errors"].append(f"Failed to rename {issue['file']}: {str(e)}")
+            else:
+                results["errors"].append(f"Cannot fix {issue['file']}: {issue['type']}")
+        
+        return results
 
     def _generate_id(self) -> str:
         """Generate a unique ID for projects and issues."""

@@ -4,12 +4,12 @@ title: Test backward compatibility
 priority: medium
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.9.0
 labels: []
 github_issue: null
 created: '2025-10-12T11:36:21.441984'
-updated: '2025-10-12T11:36:21.441989'
-assignee: Shane Wilkins
+updated: '2025-10-14T13:37:33.300786'
+assignee: shanewilkins
 estimated_hours: null
 depends_on: []
 blocks: []

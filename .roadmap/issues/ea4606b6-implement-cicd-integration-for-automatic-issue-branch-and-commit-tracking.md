@@ -4,12 +4,12 @@ title: Implement CI/CD integration for automatic issue branch and commit trackin
 priority: high
 status: todo
 issue_type: feature
-milestone: ''
+milestone: v.0.3.0
 labels: []
 github_issue: null
 created: '2025-10-11T20:28:50.243433'
-updated: '2025-10-11T20:28:50.243437'
-assignee: shane
+updated: '2025-10-14T14:16:25.085279'
+assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []
 blocks: []

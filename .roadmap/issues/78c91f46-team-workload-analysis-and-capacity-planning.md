@@ -1,16 +1,16 @@
 ---
-id: '23834865'
-title: Test assignee validation
-priority: low
+id: 78c91f46
+title: Team workload analysis and capacity planning
+priority: medium
 status: todo
 issue_type: other
 milestone: v.0.5.0
 labels: []
 github_issue: null
-created: '2025-10-13T10:00:30.998967'
-updated: '2025-10-14T14:16:54.625132'
+created: '2025-10-14T14:18:29.392002'
+updated: '2025-10-14T14:18:29.392007'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 4.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Test assignee validation
+# Team workload analysis and capacity planning
 
 ## Description
 

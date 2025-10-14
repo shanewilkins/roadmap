@@ -4,11 +4,11 @@ title: Test with valid assignee
 priority: low
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.5.0
 labels: []
 github_issue: null
 created: '2025-10-13T10:04:07.293002'
-updated: '2025-10-13T10:04:07.293007'
+updated: '2025-10-14T14:17:08.095205'
 assignee: shanewilkins
 estimated_hours: null
 depends_on: []
