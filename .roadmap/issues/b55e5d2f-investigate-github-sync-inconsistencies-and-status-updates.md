@@ -4,12 +4,12 @@ title: Investigate GitHub sync inconsistencies and status updates
 priority: high
 status: todo
 issue_type: bug
-milestone: v.0.3.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 7
 created: '2025-10-11T20:18:40.151751'
-updated: '2025-10-14T15:43:56.951256'
-assignee: shanewilkins
+updated: '2025-10-14T16:41:59.731321'
+assignee: ''
 estimated_hours: 3.0
 depends_on: []
 blocks: []
@@ -101,3 +101,7 @@ While the GitHub sync authentication has been fixed, there are inconsistencies b
 2. Review GitHub issues #3, #4, #5 to confirm they're still open
 3. Investigate sync logs for status update attempts
 4. Test manual status sync commands if available
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

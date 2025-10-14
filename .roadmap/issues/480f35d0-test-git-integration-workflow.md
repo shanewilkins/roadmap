@@ -6,10 +6,10 @@ status: done
 issue_type: other
 milestone: ''
 labels: []
-github_issue: null
+github_issue: 23
 created: '2025-10-12T11:13:08.442964'
-updated: '2025-10-14T15:44:11.414458'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:02.727114'
+assignee: ''
 estimated_hours: null
 depends_on: []
 blocks: []
@@ -39,3 +39,7 @@ Brief description of the issue or feature request.
 **Auto-updated from commit fefa3a2a:** Working on #480f35d0 - Initial implementation of git integration test
 
 **Auto-updated from commit afa4971a:** fixes #480f35d0 - Git integration workflow test completed
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

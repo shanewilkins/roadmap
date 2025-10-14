@@ -1,16 +1,16 @@
 ---
-id: 8d746af1
-title: Advanced reporting and analytics engine
+id: c7609c4f
+title: Test sync validation fix without assignee
 priority: medium
 status: todo
 issue_type: other
 milestone: ''
 labels: []
-github_issue: 28
-created: '2025-10-14T14:18:13.540775'
-updated: '2025-10-14T16:42:03.879008'
+github_issue: 37
+created: '2025-10-14T16:35:14.078582'
+updated: '2025-10-14T16:42:04.803745'
 assignee: ''
-estimated_hours: 6.0
+estimated_hours: null
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Advanced reporting and analytics engine
+# Test sync validation fix without assignee
 
 ## Description
 
@@ -35,7 +35,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

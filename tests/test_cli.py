@@ -731,7 +731,7 @@ def test_sync_push_command(initialized_roadmap):
 
         result = runner.invoke(main, ["sync", "push"])
         assert result.exit_code == 0
-        assert "Pushing to GitHub" in result.output or "pushed" in result.output
+        assert "push to GitHub" in result.output or "pushed" in result.output
 
 
 def test_sync_push_issues_only(initialized_roadmap):
@@ -745,7 +745,7 @@ def test_sync_push_issues_only(initialized_roadmap):
 
         result = runner.invoke(main, ["sync", "push", "--issues"])
         assert result.exit_code == 0
-        assert "Pushing to GitHub" in result.output or "pushed" in result.output
+        assert "push to GitHub" in result.output or "pushed" in result.output
 
 
 def test_sync_push_without_roadmap(temp_dir):
@@ -777,7 +777,7 @@ def test_sync_pull_command(initialized_roadmap):
 
         result = runner.invoke(main, ["sync", "pull"])
         assert result.exit_code == 0
-        assert "Pulling from GitHub" in result.output or "pulled" in result.output
+        assert "sync mode" in result.output or "pulled" in result.output
 
 
 def test_sync_pull_milestones_only(initialized_roadmap):
@@ -791,7 +791,7 @@ def test_sync_pull_milestones_only(initialized_roadmap):
 
         result = runner.invoke(main, ["sync", "pull", "--milestones"])
         assert result.exit_code == 0
-        assert "Pulling from GitHub" in result.output or "pulled" in result.output
+        assert "sync mode" in result.output or "pulled" in result.output
 
 
 def test_sync_pull_without_roadmap(temp_dir):

@@ -284,7 +284,12 @@ class GitHubClient:
         if description:
             data["description"] = description
         if due_date:
-            data["due_on"] = due_date.isoformat()
+            # GitHub expects ISO 8601 format with timezone (Z for UTC)
+            if due_date.tzinfo is None:
+                # Assume UTC for naive datetime
+                data["due_on"] = due_date.isoformat() + "Z"
+            else:
+                data["due_on"] = due_date.isoformat()
 
         response = self._make_request(
             "POST", f"/repos/{self.owner}/{self.repo}/milestones", json=data
@@ -309,7 +314,12 @@ class GitHubClient:
         if description is not None:
             data["description"] = description
         if due_date is not None:
-            data["due_on"] = due_date.isoformat()
+            # GitHub expects ISO 8601 format with timezone (Z for UTC)
+            if due_date.tzinfo is None:
+                # Assume UTC for naive datetime
+                data["due_on"] = due_date.isoformat() + "Z"
+            else:
+                data["due_on"] = due_date.isoformat()
         if state is not None:
             data["state"] = state
 

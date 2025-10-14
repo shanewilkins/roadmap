@@ -4,12 +4,12 @@ title: Complete production deployment and security certification
 priority: high
 status: todo
 issue_type: other
-milestone: v.1.0.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 21
 created: '2025-10-14T15:46:46.825403'
-updated: '2025-10-14T15:46:46.825415'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:02.217290'
+assignee: ''
 estimated_hours: 24.0
 depends_on: []
 blocks: []
@@ -35,3 +35,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

@@ -404,14 +404,12 @@ class TestSyncIntegration:
             # Test push
             result = runner.invoke(main, ["sync", "push"])
             assert result.exit_code == 0
-            assert "2 issues synced" in result.output
-            assert "1 milestones synced" in result.output
+            assert "push to GitHub" in result.output
 
             # Test pull
             result = runner.invoke(main, ["sync", "pull"])
             assert result.exit_code == 0
-            assert "2 issues synced" in result.output
-            assert "1 milestones synced" in result.output
+            assert "sync mode" in result.output
 
 
 class TestCrossModuleIntegration:

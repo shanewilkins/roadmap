@@ -4,12 +4,12 @@ title: Implement CI/CD integration for automatic issue branch and commit trackin
 priority: high
 status: todo
 issue_type: feature
-milestone: v.0.3.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 10
 created: '2025-10-11T20:28:50.243433'
-updated: '2025-10-14T14:16:25.085279'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:00.143212'
+assignee: ''
 estimated_hours: 4.0
 depends_on: []
 blocks: []
@@ -401,3 +401,7 @@ jobs:
 - **Traceability**: Essential for compliance and code review processes
 - **CI/CD adoption**: Modern development requires automated issue tracking
 - **Data accuracy**: Automatic tracking prevents human error and omissions
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

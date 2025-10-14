@@ -6,7 +6,9 @@ status: completed
 issue_type: feature
 milestone: ''
 labels:
-- curation,data-management,orphaned
+- curation
+- data-management
+- orphaned
 github_issue: null
 created: '2025-10-13T08:47:02.916590'
 updated: '2025-10-14T10:58:00.000000'

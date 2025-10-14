@@ -4,12 +4,12 @@ title: Implement automatic milestone and project progress updates based on issue
 priority: high
 status: todo
 issue_type: feature
-milestone: v.0.4.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 8
 created: '2025-10-11T20:24:40.653811'
-updated: '2025-10-14T15:44:01.632861'
-assignee: shanewilkins
+updated: '2025-10-14T16:41:59.750569'
+assignee: ''
 estimated_hours: 5.0
 depends_on: []
 blocks: []
@@ -329,3 +329,7 @@ roadmap config set timeline.velocity_smoothing 0.3
 - **Data integrity**: Ensures consistency between individual work and project status
 - **Decision making**: Accurate progress data enables better project decisions
 - **Team motivation**: Visible progress contribution increases engagement
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

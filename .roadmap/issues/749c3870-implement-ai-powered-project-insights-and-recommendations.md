@@ -4,12 +4,12 @@ title: Implement AI-powered project insights and recommendations
 priority: high
 status: todo
 issue_type: other
-milestone: v.0.6.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 16
 created: '2025-10-14T15:46:06.014124'
-updated: '2025-10-14T15:46:06.014137'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:01.520849'
+assignee: ''
 estimated_hours: 24.0
 depends_on: []
 blocks: []
@@ -35,3 +35,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

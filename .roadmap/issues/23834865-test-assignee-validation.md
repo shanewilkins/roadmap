@@ -4,12 +4,12 @@ title: Test assignee validation
 priority: low
 status: todo
 issue_type: other
-milestone: v.0.5.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 33
 created: '2025-10-13T10:00:30.998967'
-updated: '2025-10-14T15:45:36.317690'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:04.916477'
+assignee: ''
 estimated_hours: 2.0
 depends_on: []
 blocks: []
@@ -35,3 +35,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

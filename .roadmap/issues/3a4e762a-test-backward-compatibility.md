@@ -6,10 +6,10 @@ status: done
 issue_type: other
 milestone: ''
 labels: []
-github_issue: null
+github_issue: 26
 created: '2025-10-12T11:36:38.120849'
-updated: '2025-10-14T15:44:20.946696'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:03.309161'
+assignee: ''
 estimated_hours: null
 depends_on: []
 blocks: []
@@ -37,3 +37,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 3
 
 **Finished:** Testing backward compatibility
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

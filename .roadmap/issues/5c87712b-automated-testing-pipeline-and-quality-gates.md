@@ -4,12 +4,12 @@ title: Automated testing pipeline and quality gates
 priority: high
 status: todo
 issue_type: other
-milestone: v.0.3.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 15
 created: '2025-10-14T14:18:44.676444'
-updated: '2025-10-14T14:18:44.676449'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:01.292178'
+assignee: ''
 estimated_hours: 5.0
 depends_on: []
 blocks: []
@@ -35,3 +35,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

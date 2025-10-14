@@ -4,12 +4,12 @@ title: Add project level template
 priority: medium
 status: done
 issue_type: feature
-milestone: v.0.2.0
+milestone: ''
 labels: []
 github_issue: 4
 created: '2025-10-11T19:03:58.235408'
-updated: '2025-10-14T13:37:33.318906'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:02.289107'
+assignee: ''
 estimated_hours: 2.0
 depends_on: []
 blocks: []

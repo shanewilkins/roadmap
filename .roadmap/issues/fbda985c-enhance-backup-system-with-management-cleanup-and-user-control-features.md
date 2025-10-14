@@ -6,10 +6,12 @@ status: todo
 issue_type: feature
 milestone: v.0.2.0
 labels:
-- backup,data-management,cleanup
-github_issue: null
+- backup
+- data-management
+- cleanup
+github_issue: 41
 created: '2025-10-13T08:55:24.179990'
-updated: '2025-10-14T13:37:33.331449'
+updated: '2025-10-14T16:42:04.046990'
 assignee: shanewilkins
 estimated_hours: 5.0
 depends_on: []

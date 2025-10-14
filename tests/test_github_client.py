@@ -283,7 +283,7 @@ class TestGitHubClient:
         args, kwargs = mock_session.request.call_args
         assert kwargs["json"]["title"] == "v1.0"
         assert kwargs["json"]["description"] == "First release"
-        assert kwargs["json"]["due_on"] == due_date.isoformat()
+        assert kwargs["json"]["due_on"] == due_date.isoformat() + "Z"
 
     def test_update_milestone(self, client, mock_session):
         """Test updating milestone."""

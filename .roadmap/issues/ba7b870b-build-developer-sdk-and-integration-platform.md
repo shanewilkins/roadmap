@@ -4,12 +4,12 @@ title: Build developer SDK and integration platform
 priority: medium
 status: todo
 issue_type: other
-milestone: v.0.8.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 32
 created: '2025-10-14T15:46:35.942526'
-updated: '2025-10-14T15:46:35.942539'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:04.497126'
+assignee: ''
 estimated_hours: 24.0
 depends_on: []
 blocks: []
@@ -35,3 +35,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

@@ -314,9 +314,8 @@ class HighPerformanceSyncManager:
         """Write multiple issues to disk efficiently."""
         for issue, file_path in files_to_write:
             try:
-                # Use enhanced persistence for safe writes
-                with locked_file_ops.safe_write_context(file_path) as temp_path:
-                    IssueParser.save_issue_file(issue, temp_path)
+                # Use the standard save method which handles all the formatting
+                IssueParser.save_issue_file(issue, file_path)
                 stats.disk_writes += 1
             except Exception as e:
                 stats.errors.append(f"Write error for {file_path.name}: {e}")
@@ -478,8 +477,8 @@ class HighPerformanceSyncManager:
         """Write multiple milestones to disk efficiently."""
         for milestone, file_path in files_to_write:
             try:
-                with locked_file_ops.safe_write_context(file_path) as temp_path:
-                    MilestoneParser.save_milestone_file(milestone, temp_path)
+                # Use the standard save method which handles all the formatting
+                MilestoneParser.save_milestone_file(milestone, file_path)
                 self.stats.disk_writes += 1
             except Exception as e:
                 self.stats.errors.append(f"Write error for {file_path.name}: {e}")

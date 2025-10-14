@@ -4874,9 +4874,19 @@ def sync_delete_token(ctx: click.Context):
 @sync.command("push")
 @click.option("--issues", is_flag=True, help="Push issues only")
 @click.option("--milestones", is_flag=True, help="Push milestones only")
+@click.option(
+    "--batch-size",
+    default=50,
+    help="Batch size for high-performance sync (default: 50)",
+)
+@click.option(
+    "--workers",
+    default=8,
+    help="Number of worker threads for high-performance sync (default: 8)",
+)
 @click.pass_context
-def sync_push(ctx: click.Context, issues: bool, milestones: bool):
-    """Push local changes to GitHub."""
+def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int):
+    """Push local changes to GitHub using high-performance sync."""
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -4896,7 +4906,7 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool):
             )
             return
 
-        console.print("🔄 Pushing to GitHub...", style="bold blue")
+        console.print("� High-performance push to GitHub...", style="bold blue")
 
         # Determine what to sync
         sync_issues = issues or not milestones  # Default to issues if nothing specified
@@ -4904,49 +4914,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool):
             milestones or not issues
         )  # Default to milestones if nothing specified
 
-        total_success = 0
-        total_errors = 0
-        all_error_messages = []
-
-        if sync_milestones:
-            console.print("📋 Syncing milestones...", style="cyan")
-            success_count, error_count, error_messages = (
-                sync_manager.sync_all_milestones("push")
-            )
-            total_success += success_count
-            total_errors += error_count
-            all_error_messages.extend(error_messages)
-
-            if success_count > 0:
-                console.print(f"   ✅ {success_count} milestones synced", style="green")
-            if error_count > 0:
-                console.print(f"   ❌ {error_count} milestone errors", style="red")
-
-        if sync_issues:
-            console.print("🎯 Syncing issues...", style="cyan")
-            success_count, error_count, error_messages = sync_manager.sync_all_issues(
-                "push"
-            )
-            total_success += success_count
-            total_errors += error_count
-            all_error_messages.extend(error_messages)
-
-            if success_count > 0:
-                console.print(f"   ✅ {success_count} issues synced", style="green")
-            if error_count > 0:
-                console.print(f"   ❌ {error_count} issue errors", style="red")
-
-        # Summary
-        if total_success > 0:
-            console.print(
-                f"\n✅ Successfully synced {total_success} items to GitHub",
-                style="bold green",
-            )
-
-        if total_errors > 0:
-            console.print(f"\n❌ {total_errors} errors occurred:", style="bold red")
-            for error in all_error_messages:
-                console.print(f"   • {error}", style="red")
+        _sync_push_high_performance(
+            sync_manager, sync_issues, sync_milestones, batch_size, workers
+        )
 
     except Exception as e:
         console.print(f"❌ Failed to push to GitHub: {e}", style="bold red")
@@ -5005,14 +4975,11 @@ def sync_pull(
             milestones or not issues
         )  # Default to milestones if nothing specified
 
-        if high_performance:
-            console.print("🚀 Using high-performance sync mode...", style="bold blue")
-            _sync_pull_high_performance(
-                sync_manager, sync_issues, sync_milestones, batch_size, workers
-            )
-        else:
-            console.print("🔄 Pulling from GitHub...", style="bold blue")
-            _sync_pull_standard(sync_manager, sync_issues, sync_milestones)
+        # Always use high-performance mode (standard sync has hanging bugs)
+        console.print("🚀 Using high-performance sync mode...", style="bold blue")
+        _sync_pull_high_performance(
+            sync_manager, sync_issues, sync_milestones, batch_size, workers
+        )
 
     except Exception as e:
         console.print(f"❌ Failed to pull from GitHub: {e}", style="bold red")
@@ -5093,53 +5060,79 @@ def _sync_pull_high_performance(
             )
 
 
-def _sync_pull_standard(
-    sync_manager: SyncManager, sync_issues: bool, sync_milestones: bool
+def _sync_push_high_performance(
+    sync_manager: SyncManager,
+    sync_issues: bool,
+    sync_milestones: bool,
+    batch_size: int,
+    workers: int,
 ):
-    """Standard sync pull implementation."""
-    total_success = 0
-    total_errors = 0
-    all_error_messages = []
+    """High-performance sync push implementation."""
+
+    def progress_callback(message: str):
+        console.print(f"   {message}", style="cyan")
+
+    hp_sync = HighPerformanceSyncManager(
+        sync_manager=sync_manager,
+        max_workers=workers,
+        batch_size=batch_size,
+        progress_callback=progress_callback,
+    )
+
+    total_start_time = time.time()
 
     if sync_milestones:
-        console.print("📋 Syncing milestones...", style="cyan")
-        success_count, error_count, error_messages = sync_manager.sync_all_milestones(
-            "pull"
-        )
-        total_success += success_count
-        total_errors += error_count
-        all_error_messages.extend(error_messages)
+        console.print("📋 High-performance milestone push...", style="bold cyan")
+        milestone_stats = hp_sync.sync_milestones_optimized("push")
 
-        if success_count > 0:
-            console.print(f"   ✅ {success_count} milestones synced", style="green")
-        if error_count > 0:
-            console.print(f"   ❌ {error_count} milestone errors", style="red")
+        console.print(
+            f"   ✅ {milestone_stats.milestones_created} created, "
+            f"{milestone_stats.milestones_updated} updated",
+            style="green",
+        )
+
+        if milestone_stats.milestones_failed > 0:
+            console.print(
+                f"   ❌ {milestone_stats.milestones_failed} failed", style="red"
+            )
 
     if sync_issues:
-        console.print("🎯 Syncing issues...", style="cyan")
-        success_count, error_count, error_messages = sync_manager.sync_all_issues(
-            "pull"
-        )
-        total_success += success_count
-        total_errors += error_count
-        all_error_messages.extend(error_messages)
+        console.print("🎯 High-performance issue push...", style="bold cyan")
+        issue_stats = hp_sync.sync_issues_optimized("push")
 
-        if success_count > 0:
-            console.print(f"   ✅ {success_count} issues synced", style="green")
-        if error_count > 0:
-            console.print(f"   ❌ {error_count} issue errors", style="red")
-
-    # Summary
-    if total_success > 0:
         console.print(
-            f"\n✅ Successfully synced {total_success} items from GitHub",
-            style="bold green",
+            f"   ✅ {issue_stats.issues_created} created, "
+            f"{issue_stats.issues_updated} updated",
+            style="green",
         )
 
-    if total_errors > 0:
-        console.print(f"\n❌ {total_errors} errors occurred:", style="bold red")
-        for error in all_error_messages:
+        if issue_stats.issues_failed > 0:
+            console.print(f"   ❌ {issue_stats.issues_failed} failed", style="red")
+
+    # Performance report
+    total_time = time.time() - total_start_time
+    report = hp_sync.get_performance_report()
+
+    console.print("\n📊 Performance Report:", style="bold yellow")
+    console.print(f"   ⏱️  Total time: {total_time:.2f} seconds", style="yellow")
+    console.print(
+        f"   🚀 Throughput: {report['throughput_items_per_second']:.1f} items/second",
+        style="yellow",
+    )
+    console.print(f"   📞 API calls: {report['api_calls']}", style="yellow")
+    console.print(f"   💾 Disk writes: {report['disk_writes']}", style="yellow")
+    console.print(f"   ✅ Success rate: {report['success_rate']:.1f}%", style="yellow")
+
+    if hp_sync.stats.errors:
+        console.print(
+            f"\n❌ {len(hp_sync.stats.errors)} errors occurred:", style="bold red"
+        )
+        for error in hp_sync.stats.errors[:10]:  # Show first 10 errors
             console.print(f"   • {error}", style="red")
+        if len(hp_sync.stats.errors) > 10:
+            console.print(
+                f"   ... and {len(hp_sync.stats.errors) - 10} more errors", style="red"
+            )
 
 
 @sync.command("bidirectional")

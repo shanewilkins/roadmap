@@ -6,10 +6,10 @@ status: done
 issue_type: other
 milestone: ''
 labels: []
-github_issue: null
+github_issue: 25
 created: '2025-10-12T11:35:49.044866'
-updated: '2025-10-14T15:44:25.415577'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:02.769641'
+assignee: ''
 estimated_hours: null
 depends_on: []
 blocks: []
@@ -37,3 +37,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 3
 
 **Finished:** Successfully unified done and complete commands
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

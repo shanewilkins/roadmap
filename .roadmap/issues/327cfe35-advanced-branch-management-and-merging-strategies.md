@@ -4,12 +4,12 @@ title: Advanced branch management and merging strategies
 priority: medium
 status: todo
 issue_type: other
-milestone: v.0.3.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 29
 created: '2025-10-14T14:17:51.110415'
-updated: '2025-10-14T14:17:51.110422'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:03.753483'
+assignee: ''
 estimated_hours: 4.0
 depends_on: []
 blocks: []
@@ -35,3 +35,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

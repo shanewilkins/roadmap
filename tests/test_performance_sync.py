@@ -523,7 +523,7 @@ class TestHighPerformanceSyncManagerAdvanced:
 
             hp_sync_manager._bulk_write_issues(files_to_write, stats)
 
-            assert mock_locked_ops.safe_write_context.call_count == 2
+            # Verify the correct save methods were called
             assert mock_parser.save_issue_file.call_count == 2
             assert stats.disk_writes == 2
 
@@ -628,7 +628,7 @@ class TestHighPerformanceSyncManagerAdvanced:
 
             hp_sync_manager._bulk_write_milestones(files_to_write)
 
-            assert mock_locked_ops.safe_write_context.call_count == 2
+            # Verify the correct save methods were called
             assert mock_parser.save_milestone_file.call_count == 2
 
     def test_push_issues_batch_no_client(self, hp_sync_manager):

@@ -4,12 +4,12 @@ title: Project template customization and scaffolding
 priority: medium
 status: todo
 issue_type: other
-milestone: v.0.2.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 35
 created: '2025-10-14T14:18:34.926585'
-updated: '2025-10-14T14:18:34.926590'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:04.435309'
+assignee: ''
 estimated_hours: 3.0
 depends_on: []
 blocks: []
@@ -35,3 +35,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

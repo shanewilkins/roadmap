@@ -482,11 +482,14 @@ class SyncManager:
 
             # Add metadata to body
             body += f"\n\n---\n*Created by roadmap CLI*"
+            
+            # Prepare assignees list for GitHub API
+            assignees = []
             if issue.assignee:
-                body += f"\nAssignee: @{issue.assignee}"
+                assignees = [issue.assignee]
 
             github_issue = self.github_client.create_issue(
-                title=issue.title, body=body, labels=labels, milestone=milestone_number
+                title=issue.title, body=body, labels=labels, milestone=milestone_number, assignees=assignees
             )
 
             # Update local issue with GitHub issue number
@@ -522,6 +525,11 @@ class SyncManager:
             if issue.milestone:
                 milestone_number = self._find_github_milestone(issue.milestone)
 
+            # Prepare assignees list for GitHub API
+            assignees = []
+            if issue.assignee:
+                assignees = [issue.assignee]
+
             # Determine state based on status
             state = "closed" if issue.status == Status.DONE else "open"
 
@@ -531,6 +539,7 @@ class SyncManager:
                 body=issue.content,
                 state=state,
                 labels=labels,
+                assignees=assignees,
                 milestone=milestone_number,
             )
 

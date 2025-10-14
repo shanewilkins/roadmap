@@ -4,12 +4,12 @@ title: Rename project commands and templates to roadmap for clearer terminology
 priority: medium
 status: done
 issue_type: feature
-milestone: v.0.2.0
+milestone: ''
 labels: []
-github_issue: null
+github_issue: 24
 created: '2025-10-11T20:34:42.628405'
-updated: '2025-10-14T13:37:33.322725'
-assignee: shanewilkins
+updated: '2025-10-14T16:42:02.807433'
+assignee: ''
 estimated_hours: 4.0
 depends_on: []
 blocks: []
@@ -411,3 +411,7 @@ def handle_legacy_project_command(ctx, command_name):
 - **Long-term maintenance**: Better to fix early than accumulate confusion
 - **Low risk**: Can implement with full backwards compatibility
 - **Quick win**: Relatively small change with high user experience impact
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

@@ -6,10 +6,12 @@ status: todo
 issue_type: feature
 milestone: v.0.4.0
 labels:
-- kanban,milestone,ui
-github_issue: null
+- kanban
+- milestone
+- ui
+github_issue: 39
 created: '2025-10-13T08:41:57.474244'
-updated: '2025-10-14T14:16:34.166496'
+updated: '2025-10-14T16:42:01.170137'
 assignee: shanewilkins
 estimated_hours: 8.0
 depends_on: []

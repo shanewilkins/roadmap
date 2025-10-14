@@ -6,10 +6,12 @@ status: done
 issue_type: feature
 milestone: v.0.5.0
 labels:
-- security,validation,github-integration
-github_issue: null
+- security
+- validation
+- github-integration
+github_issue: 38
 created: '2025-10-12T11:41:15.911050'
-updated: '2025-10-14T14:16:47.394392'
+updated: '2025-10-14T16:42:01.038660'
 assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []
