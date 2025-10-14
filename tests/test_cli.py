@@ -1595,25 +1595,25 @@ class TestRoadmapCommands:
         assert "overview" in result.output
 
     def test_roadmap_create_command(self, cli_runner, isolated_roadmap_dir):
-        """Test roadmap create command."""
+        """Test project create command (via roadmap project)."""
         result = cli_runner.invoke(main, [
-            "roadmap", "create", "test-roadmap",
+            "project", "create", "test-roadmap",
             "--description", "A test roadmap",
             "--owner", "testuser",
             "--priority", "high"
         ])
         assert result.exit_code == 0
-        assert "Created roadmap" in result.output
+        assert "Created project" in result.output
         
-        # Verify roadmap file was created in temp directory
-        roadmaps_dir = os.path.join(isolated_roadmap_dir, ".roadmap", "roadmaps")
-        assert os.path.exists(roadmaps_dir)
-        roadmap_files = [f for f in os.listdir(roadmaps_dir) if f.endswith('.md')]
-        assert len(roadmap_files) == 1
+        # Verify project file was created in temp directory (projects dir, not roadmaps)
+        projects_dir = os.path.join(isolated_roadmap_dir, ".roadmap", "projects")
+        assert os.path.exists(projects_dir)
+        project_files = [f for f in os.listdir(projects_dir) if f.endswith('.md')]
+        assert len(project_files) == 1
         
-        # Verify roadmap file content
-        roadmap_file = os.path.join(roadmaps_dir, roadmap_files[0])
-        with open(roadmap_file, 'r') as f:
+        # Verify project file content
+        project_file = os.path.join(projects_dir, project_files[0])
+        with open(project_file, 'r') as f:
             content = f.read()
             assert "test-roadmap" in content
             assert "A test roadmap" in content
@@ -1621,9 +1621,9 @@ class TestRoadmapCommands:
             assert "priority: \"high\"" in content
 
     def test_roadmap_create_with_all_options(self, cli_runner, isolated_roadmap_dir):
-        """Test roadmap create command with all options."""
+        """Test project create command with all options."""
         result = cli_runner.invoke(main, [
-            "roadmap", "create", "full-roadmap",
+            "project", "create", "full-roadmap",
             "--description", "A comprehensive test roadmap",
             "--owner", "developer",
             "--priority", "critical",
@@ -1634,7 +1634,7 @@ class TestRoadmapCommands:
             "--milestones", "v2.0"
         ])
         assert result.exit_code == 0
-        assert "Created roadmap" in result.output
+        assert "Created project" in result.output
 
     def test_roadmap_create_without_roadmap(self, cli_runner):
         """Test roadmap create command without initialized roadmap."""
