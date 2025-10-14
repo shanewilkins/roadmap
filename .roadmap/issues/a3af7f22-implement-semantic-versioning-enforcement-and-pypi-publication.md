@@ -1,16 +1,16 @@
 ---
-id: bf483691
-title: Test backward compatibility
-priority: medium
+id: a3af7f22
+title: Implement semantic versioning enforcement and PyPI publication
+priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.1.0.0
 labels: []
 github_issue: null
-created: '2025-10-12T11:36:21.441984'
-updated: '2025-10-14T15:44:16.056168'
+created: '2025-10-14T15:46:41.872165'
+updated: '2025-10-14T15:46:41.872176'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 16.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Test backward compatibility
+# Implement semantic versioning enforcement and PyPI publication
 
 ## Description
 

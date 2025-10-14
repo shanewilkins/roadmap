@@ -8,9 +8,9 @@ milestone: v.0.5.0
 labels: []
 github_issue: null
 created: '2025-10-13T10:04:07.293002'
-updated: '2025-10-14T14:17:08.095205'
+updated: '2025-10-14T15:45:27.695387'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 2.0
 depends_on: []
 blocks: []
 actual_start_date: null

@@ -1,16 +1,16 @@
 ---
-id: bf483691
-title: Test backward compatibility
-priority: medium
+id: bf3e2cce
+title: Build predictive analytics for milestone completion
+priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.6.0
 labels: []
 github_issue: null
-created: '2025-10-12T11:36:21.441984'
-updated: '2025-10-14T15:44:16.056168'
+created: '2025-10-14T15:46:10.530207'
+updated: '2025-10-14T15:46:10.530216'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 16.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Test backward compatibility
+# Build predictive analytics for milestone completion
 
 ## Description
 

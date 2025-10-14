@@ -1,16 +1,16 @@
 ---
-id: bf483691
-title: Test backward compatibility
-priority: medium
+id: 8eced822
+title: Complete comprehensive API documentation and freeze API design
+priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.8.0
 labels: []
 github_issue: null
-created: '2025-10-12T11:36:21.441984'
-updated: '2025-10-14T15:44:16.056168'
+created: '2025-10-14T15:46:25.762446'
+updated: '2025-10-14T15:46:25.762459'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 40.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Test backward compatibility
+# Complete comprehensive API documentation and freeze API design
 
 ## Description
 

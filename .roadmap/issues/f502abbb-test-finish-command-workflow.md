@@ -4,11 +4,11 @@ title: Test finish command workflow
 priority: medium
 status: done
 issue_type: other
-milestone: v.0.9.0
+milestone: ''
 labels: []
 github_issue: null
 created: '2025-10-12T11:35:49.044866'
-updated: '2025-10-14T13:37:33.296734'
+updated: '2025-10-14T15:44:25.415577'
 assignee: shanewilkins
 estimated_hours: null
 depends_on: []

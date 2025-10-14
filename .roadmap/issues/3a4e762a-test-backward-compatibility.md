@@ -4,11 +4,11 @@ title: Test backward compatibility
 priority: medium
 status: done
 issue_type: other
-milestone: v.0.9.0
+milestone: ''
 labels: []
 github_issue: null
 created: '2025-10-12T11:36:38.120849'
-updated: '2025-10-14T13:37:33.304245'
+updated: '2025-10-14T15:44:20.946696'
 assignee: shanewilkins
 estimated_hours: null
 depends_on: []

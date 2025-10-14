@@ -4,11 +4,11 @@ title: Test git integration workflow
 priority: medium
 status: done
 issue_type: other
-milestone: v.0.9.0
+milestone: ''
 labels: []
 github_issue: null
 created: '2025-10-12T11:13:08.442964'
-updated: '2025-10-14T13:37:33.292788'
+updated: '2025-10-14T15:44:11.414458'
 assignee: shanewilkins
 estimated_hours: null
 depends_on: []

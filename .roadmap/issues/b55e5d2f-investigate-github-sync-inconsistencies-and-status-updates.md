@@ -4,11 +4,11 @@ title: Investigate GitHub sync inconsistencies and status updates
 priority: high
 status: todo
 issue_type: bug
-milestone: v.0.9.0
+milestone: v.0.3.0
 labels: []
 github_issue: null
 created: '2025-10-11T20:18:40.151751'
-updated: '2025-10-14T13:37:33.227363'
+updated: '2025-10-14T15:43:56.951256'
 assignee: shanewilkins
 estimated_hours: 3.0
 depends_on: []

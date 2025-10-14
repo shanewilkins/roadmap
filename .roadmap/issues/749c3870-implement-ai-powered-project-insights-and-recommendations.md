@@ -1,16 +1,16 @@
 ---
-id: bf483691
-title: Test backward compatibility
-priority: medium
+id: 749c3870
+title: Implement AI-powered project insights and recommendations
+priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.6.0
 labels: []
 github_issue: null
-created: '2025-10-12T11:36:21.441984'
-updated: '2025-10-14T15:44:16.056168'
+created: '2025-10-14T15:46:06.014124'
+updated: '2025-10-14T15:46:06.014137'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 24.0
 depends_on: []
 blocks: []
 actual_start_date: null
@@ -24,7 +24,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Test backward compatibility
+# Implement AI-powered project insights and recommendations
 
 ## Description
 
