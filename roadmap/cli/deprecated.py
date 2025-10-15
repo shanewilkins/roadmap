@@ -76,3 +76,20 @@ def register_deprecated_commands(main_group):
         # Delegate to new command
         from .user import _original_dashboard
         _original_dashboard(ctx, assignee, days)
+
+    @main_group.command()
+    @click.option("--assignee", "-a", help="Show notifications for specific user")
+    @click.option("--since", "-s", help="Show notifications since date")
+    @click.option("--mark-read", is_flag=True, help="Mark notifications as read")
+    @click.pass_context
+    def notifications(ctx: click.Context, assignee: str, since: str, mark_read: bool):
+        """[DEPRECATED] Show team notifications about issues and updates.
+        
+        ⚠️  DEPRECATION WARNING: Use 'roadmap user show-notifications' instead.
+        """
+        console.print("⚠️  DEPRECATION WARNING: 'roadmap notifications' is deprecated.", style="yellow")
+        console.print("   Use 'roadmap user show-notifications' instead for better organization.", style="yellow")
+        
+        # Delegate to new command
+        from .user import _original_notifications
+        _original_notifications(ctx, assignee, since, mark_read)
