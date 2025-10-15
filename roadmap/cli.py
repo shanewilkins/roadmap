@@ -25,7 +25,7 @@ from roadmap.cli.git_integration import git
 from roadmap.cli.analytics import analytics
 from roadmap.cli.deprecated import register_deprecated_commands
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
 def main(ctx: click.Context):
@@ -36,6 +36,10 @@ def main(ctx: click.Context):
     
     # Initialize core with default roadmap directory
     ctx.obj["core"] = RoadmapCore()
+    
+    # If no subcommand was provided, show help
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
 
 # Register standalone commands
 main.add_command(init)

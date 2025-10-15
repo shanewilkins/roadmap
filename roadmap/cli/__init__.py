@@ -12,7 +12,7 @@ from typing import Optional
 # Initialize console for rich output
 console = Console()
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
 def main(ctx: click.Context):
@@ -20,6 +20,14 @@ def main(ctx: click.Context):
     # Ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below)
     ctx.ensure_object(dict)
+    
+    # Initialize core with default roadmap directory
+    from roadmap.core import RoadmapCore
+    ctx.obj["core"] = RoadmapCore()
+    
+    # If no subcommand was provided, show help
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
 
 
 def register_commands():
