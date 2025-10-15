@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, Mock, MagicMock
 from click.testing import CliRunner
-from roadmap.cli import main, _detect_project_context, _get_current_user
+from roadmap.cli import main
 from roadmap.models import Issue, Milestone
 import json
 import os
