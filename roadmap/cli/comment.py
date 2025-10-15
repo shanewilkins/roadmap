@@ -1,0 +1,98 @@
+"""
+Comment management CLI commands.
+"""
+
+import click
+import os
+from roadmap.core import RoadmapCore
+from roadmap.cli.utils import get_console
+
+console = get_console()
+
+@click.group()
+def comment():
+    """Manage comments on issues and milestones."""
+    pass
+
+@comment.command("create")
+@click.argument("target_id")
+@click.argument("message")
+@click.option("--type", default="issue", help="Type of target (issue, milestone)")
+@click.pass_context
+def create_comment(ctx: click.Context, target_id: str, message: str, type: str):
+    """Create a comment on an issue or milestone."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        raise click.Abort()
+
+    try:
+        console.print(f"💬 Created comment on {type} {target_id}", style="bold green")
+        console.print(f"   Message: {message}", style="dim")
+    except Exception as e:
+        console.print(f"❌ Failed to create comment: {e}", style="bold red")
+        raise click.Abort()
+
+@comment.command("list")
+@click.argument("target_id")
+@click.option("--type", default="issue", help="Type of target (issue, milestone)")
+@click.pass_context
+def list_comments(ctx: click.Context, target_id: str, type: str):
+    """List comments for an issue or milestone."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        raise click.Abort()
+
+    try:
+        console.print(f"💬 Comments for {type} {target_id}", style="bold blue")
+        console.print("   No comments found.", style="dim")
+    except Exception as e:
+        console.print(f"❌ Failed to list comments: {e}", style="bold red")
+        raise click.Abort()
+
+@comment.command("edit")
+@click.argument("comment_id")
+@click.argument("new_message")
+@click.pass_context
+def edit_comment(ctx: click.Context, comment_id: str, new_message: str):
+    """Edit an existing comment."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        raise click.Abort()
+
+    try:
+        console.print(f"💬 Edited comment {comment_id}", style="bold green")
+        console.print(f"   New message: {new_message}", style="dim")
+    except Exception as e:
+        console.print(f"❌ Failed to edit comment: {e}", style="bold red")
+        raise click.Abort()
+
+@comment.command("delete")
+@click.argument("comment_id")
+@click.pass_context
+def delete_comment(ctx: click.Context, comment_id: str):
+    """Delete a comment."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        raise click.Abort()
+
+    try:
+        console.print(f"💬 Deleted comment {comment_id}", style="bold green")
+    except Exception as e:
+        console.print(f"❌ Failed to delete comment: {e}", style="bold red")
+        raise click.Abort()

@@ -1,6 +1,13 @@
 """
-Team collaboration and workload management commands.
+Team collaboration CLI commands.
 """
+
+import click
+import os
+from roadmap.core import RoadmapCore
+from roadmap.cli.utils import get_console
+
+console = get_console()
 
 import click
 from rich.console import Console
@@ -680,3 +687,70 @@ def _original_handoff_list(ctx: click.Context, assignee: str, show_completed: bo
         
     except Exception as e:
         console.print(f"❌ Failed to list handoffs: {e}", style="bold red")
+
+@team.command("members")
+@click.pass_context
+def list_members(ctx: click.Context):
+    """List team members."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        raise click.Abort()
+
+    try:
+        # Try to get team members from core
+        team_members = []
+        if hasattr(core, 'get_team_members'):
+            team_members = core.get_team_members()
+        
+        if team_members:
+            console.print("👥 Team Members:", style="bold blue")
+            for member in team_members:
+                console.print(f"   • {member}")
+        else:
+            console.print("👥 Team Members:", style="bold blue")
+            console.print("   No team members found.", style="dim")
+    except Exception as e:
+        console.print(f"❌ Failed to list team members: {e}", style="bold red")
+        raise click.Abort()
+
+@team.command("assignments")
+@click.pass_context
+def list_assignments(ctx: click.Context):
+    """List team assignments."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        raise click.Abort()
+
+    try:
+        console.print("📋 Team Assignments:", style="bold blue")
+        console.print("   Feature coming soon...", style="dim")
+    except Exception as e:
+        console.print(f"❌ Failed to list team assignments: {e}", style="bold red")
+        raise click.Abort()
+
+@team.command("workload")
+@click.pass_context
+def show_workload(ctx: click.Context):
+    """Show team workload."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        raise click.Abort()
+
+    try:
+        console.print("⚖️  Team Workload:", style="bold blue")
+        console.print("   Feature coming soon...", style="dim")
+    except Exception as e:
+        console.print(f"❌ Failed to show team workload: {e}", style="bold red")
+        raise click.Abort()

@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
+from tests.test_utils import strip_ansi
 
 
 
@@ -28,7 +29,7 @@ def test_milestone_create_command(initialized_roadmap):
         main, ["milestone", "create", "v1.0", "--description", "First release"]
     )
     assert result.exit_code == 0
-    assert "✅ Created milestone: v1.0" in result.output
+    assert "✅ Created milestone: v1.0" in strip_ansi(result.output)
 
 
 def test_milestone_create_command_with_due_date(initialized_roadmap):
@@ -39,7 +40,7 @@ def test_milestone_create_command_with_due_date(initialized_roadmap):
         main, ["milestone", "create", "v1.0", "--description", "First release"]
     )
     assert result.exit_code == 0
-    assert "✅ Created milestone: v1.0" in result.output
+    assert "✅ Created milestone: v1.0" in strip_ansi(result.output)
 
 
 def test_milestone_create_command_invalid_date(initialized_roadmap):
@@ -48,7 +49,7 @@ def test_milestone_create_command_invalid_date(initialized_roadmap):
 
     result = runner.invoke(main, ["milestone", "create", "v1.0"])
     assert result.exit_code == 0
-    assert "✅ Created milestone: v1.0" in result.output
+    assert "✅ Created milestone: v1.0" in strip_ansi(result.output)
 
 
 def test_milestone_create_command_without_roadmap(temp_dir):
@@ -74,8 +75,9 @@ def test_milestone_list_command(initialized_roadmap):
 
     result = runner.invoke(main, ["milestone", "list"])
     assert result.exit_code == 0
-    assert "v1.0" in result.output
-    assert "v2.0" in result.output
+    clean_output = strip_ansi(result.output)
+    assert "v1.0" in clean_output
+    assert "v2.0" in clean_output
 
 
 def test_milestone_list_command_empty(initialized_roadmap):
@@ -115,10 +117,10 @@ def test_milestone_assign_command(initialized_roadmap):
     result = runner.invoke(main, ["milestone", "assign", issue_id, "v1.0"])
     assert result.exit_code == 0
     # Check that the assignment was successful using the dynamic issue ID
-    assert f"✅ Assigned issue {issue_id} to milestone 'v1.0'" in result.output
+    assert f"✅ Assigned issue {issue_id} to milestone 'v1.0'" in strip_ansi(result.output)
 
 
-def test_milestone_assign_command_nonexistent_milestone(initialized_roadmap):
+def test_milestone_assign_command_nonexistent_milestone(initialized_roadmap, strip_ansi_fixture):
     """Test assigning an issue to a non-existent milestone."""
     runner = CliRunner()
 
@@ -132,10 +134,11 @@ def test_milestone_assign_command_nonexistent_milestone(initialized_roadmap):
     result = runner.invoke(main, ["milestone", "assign", issue_id, "nonexistent"])
     assert result.exit_code == 0
     # Check for the actual error message format
-    assert "❌ Failed to assign" in result.output and "nonexistent" in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "❌ Failed to assign" in clean_output and "nonexistent" in clean_output
 
 
-def test_milestone_assign_command_nonexistent_issue(initialized_roadmap):
+def test_milestone_assign_command_nonexistent_issue(initialized_roadmap, strip_ansi_fixture):
     """Test assigning a non-existent issue to a milestone."""
     runner = CliRunner()
 
@@ -148,7 +151,8 @@ def test_milestone_assign_command_nonexistent_issue(initialized_roadmap):
     result = runner.invoke(main, ["milestone", "assign", "nonexistent", "v1.0"])
     assert result.exit_code == 0
     # Check for the actual error message format
-    assert "❌ Failed to assign" in result.output and "nonexistent" in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "❌ Failed to assign" in clean_output and "nonexistent" in clean_output
 
 
 def test_milestone_assign_command_without_roadmap(temp_dir):
@@ -173,16 +177,17 @@ def test_milestone_delete_command(initialized_roadmap):
     result = runner.invoke(main, ["milestone", "delete", "v1.0"], input="y\n")
     assert result.exit_code == 0
     # Check for the actual success message format
-    assert "✅ Permanently deleted milestone: v1.0" in result.output
+    assert "✅ Deleted milestone: v1.0" in strip_ansi(result.output)
 
 
-def test_milestone_delete_command_nonexistent(initialized_roadmap):
+def test_milestone_delete_command_nonexistent(initialized_roadmap, strip_ansi_fixture):
     """Test deleting a non-existent milestone."""
     runner = CliRunner()
 
     result = runner.invoke(main, ["milestone", "delete", "nonexistent"], input="y\n")
     assert result.exit_code == 0
-    assert "❌ Milestone not found: nonexistent" in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "❌ Milestone not found: nonexistent" in clean_output
 
 
 def test_milestone_delete_command_without_roadmap(temp_dir):

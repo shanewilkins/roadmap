@@ -50,7 +50,7 @@ def mock_github_client():
 class TestEndToEndWorkflows:
     """Test complete end-to-end workflows."""
 
-    def test_complete_roadmap_lifecycle(self, tmp_path):
+    def test_complete_roadmap_lifecycle(self, tmp_path, strip_ansi_fixture):
         """Test a complete roadmap lifecycle from init to issue management."""
         # CRITICAL: This test must use tmp_path (clean) instead of temp_workspace (pre-initialized)
         # because it needs to test the full initialization workflow starting from an empty directory.
@@ -98,7 +98,8 @@ class TestEndToEndWorkflows:
         for title in milestone_titles:
             result = runner.invoke(main, ["milestone", "create", title])
             assert result.exit_code == 0
-            assert "Created milestone" in result.output and title in result.output
+            clean_output = strip_ansi_fixture(result.output)
+            assert "Created milestone" in clean_output and title in clean_output
 
             # Extract milestone ID from output (milestone name is the ID)
             milestone_ids.append(title)

@@ -12,13 +12,15 @@ from typing import Optional
 import subprocess
 import yaml
 import getpass
+import os
 from datetime import datetime
 from pathlib import Path
 
 from roadmap.core import RoadmapCore
 from roadmap.models import Status, Priority, MilestoneStatus
+from roadmap.cli.utils import get_console
 
-console = Console()
+console = get_console()
 
 
 @click.command()

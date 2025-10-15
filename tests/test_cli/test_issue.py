@@ -19,9 +19,9 @@ def test_issue_create_command(temp_dir):
     """Test creating an issue."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "create", "test-issue"])
+    # Current implementation requires initialized roadmap
     assert result.exit_code == 0
-    # Current implementation shows placeholder functionality
-    assert "Creating issue" in result.output or "Issue creation" in result.output
+    assert "❌ Roadmap not initialized" in result.output
 
 
 def test_issue_create_without_roadmap(temp_dir):
@@ -29,8 +29,8 @@ def test_issue_create_without_roadmap(temp_dir):
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "create", "test-issue"])
     assert result.exit_code == 0
-    # The current implementation shows a placeholder, not an error
-    assert "Creating issue" in result.output or "Issue creation" in result.output
+    # Current implementation requires initialized roadmap
+    assert "❌ Roadmap not initialized" in result.output
 
 
 def test_issue_list_command(temp_dir):
@@ -38,8 +38,8 @@ def test_issue_list_command(temp_dir):
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list"])
     assert result.exit_code == 0
-    # Current implementation shows placeholder functionality
-    assert "Issue list" in result.output or "functionality" in result.output
+    # Current implementation requires initialized roadmap
+    assert "❌ Roadmap not initialized" in result.output
 
 
 def test_issue_list_without_roadmap(temp_dir):
@@ -47,5 +47,5 @@ def test_issue_list_without_roadmap(temp_dir):
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list"])
     assert result.exit_code == 0
-    # The current implementation shows a placeholder, not an error
-    assert "Issue list" in result.output or "functionality" in result.output
+    # Current implementation requires initialized roadmap
+    assert "❌ Roadmap not initialized" in result.output

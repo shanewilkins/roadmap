@@ -1,6 +1,14 @@
 """
-Data export, import, and reporting commands.
+Data management CLI commands.
 """
+
+import click
+from rich.console import Console
+import os
+
+# Initialize console for rich output with test mode detection
+is_testing = "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("NO_COLOR") == "1"
+console = Console(force_terminal=not is_testing, no_color=is_testing)
 
 import click
 from rich.console import Console

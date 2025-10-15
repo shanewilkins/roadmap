@@ -8,6 +8,30 @@ from unittest.mock import Mock, patch
 import pytest
 
 from .test_data_factory import TestDataFactory
+from .test_utils import strip_ansi, clean_cli_output, assert_in_output, assert_output_contains
+
+
+@pytest.fixture
+def strip_ansi_fixture():
+    """Provide ANSI stripping utility to tests."""
+    return strip_ansi
+
+
+@pytest.fixture 
+def clean_output():
+    """Provide CLI output cleaning utility to tests."""
+    return clean_cli_output
+
+
+@pytest.fixture
+def assert_output():
+    """Provide output assertion helpers to tests."""
+    return {
+        'assert_in': assert_in_output,
+        'assert_contains': assert_output_contains,
+        'clean': clean_cli_output,
+        'strip': strip_ansi,
+    }
 
 
 @pytest.fixture(autouse=True, scope="function")
