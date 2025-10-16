@@ -347,7 +347,7 @@ class TestSyncIntegration:
         runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
         # Test sync setup
-        with patch("roadmap.cli.SyncManager") as mock_sync_manager_class:
+        with patch("roadmap.cli.sync.SyncManager") as mock_sync_manager_class:
             mock_sync_manager = Mock()
             mock_sync_manager_class.return_value = mock_sync_manager
             mock_sync_manager.store_token_secure.return_value = (
@@ -381,7 +381,7 @@ class TestSyncIntegration:
         # Setup
         runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
 
-        with patch("roadmap.cli.SyncManager") as mock_sync_manager_class:
+        with patch("roadmap.cli.sync.SyncManager") as mock_sync_manager_class:
             mock_sync_manager = Mock()
             mock_sync_manager_class.return_value = mock_sync_manager
 

@@ -36,7 +36,7 @@ class TestCrossPlatformCLIWorkflows:
                 mock_run.return_value.stdout = "test_token_macos\n"
 
                 # Mock sync manager operations
-                with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                     mock_instance = Mock()
                     mock_instance.store_token_secure.return_value = (
                         True,
@@ -80,7 +80,7 @@ class TestCrossPlatformCLIWorkflows:
             mock_keyring = MagicMock()
             with patch.dict("sys.modules", {"keyring": mock_keyring}):
                 # Mock sync manager operations
-                with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                     mock_instance = Mock()
                     mock_instance.store_token_secure.return_value = (
                         True,
@@ -122,7 +122,7 @@ class TestCrossPlatformCLIWorkflows:
             mock_keyring.get_keyring.return_value = MagicMock()
             with patch.dict("sys.modules", {"keyring": mock_keyring}):
                 # Mock sync manager operations
-                with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                     mock_instance = Mock()
                     mock_instance.store_token_secure.return_value = (
                         True,
@@ -163,7 +163,7 @@ class TestCrossPlatformCLIWorkflows:
                 runner = CliRunner()
 
                 # Mock credential manager availability
-                with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                     mock_instance = Mock()
                     mock_instance.test_connection.return_value = (
                         False,
@@ -198,7 +198,7 @@ class TestCrossPlatformCLIWorkflows:
                     "os.environ", {"GITHUB_TOKEN": f"env_token_{platform_name.lower()}"}
                 ):
                     # Mock sync manager operations
-                    with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                    with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                         mock_instance = Mock()
                         mock_instance.test_connection.return_value = (
                             True,
@@ -235,7 +235,7 @@ class TestCrossPlatformCLIWorkflows:
                 runner = CliRunner()
 
                 # Mock sync manager operations
-                with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                     mock_instance = Mock()
                     mock_instance.test_connection.return_value = (
                         True,
@@ -282,7 +282,7 @@ class TestCrossPlatformCLIWorkflows:
                 runner = CliRunner()
 
                 # Mock credential manager unavailable
-                with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                     mock_instance = Mock()
                     mock_instance.store_token_secure.return_value = (
                         False,
@@ -318,7 +318,7 @@ class TestCrossPlatformCLIWorkflows:
                 runner = CliRunner()
 
                 # Mock sync manager operations
-                with patch("roadmap.cli.SyncManager") as mock_sync_class:
+                with patch("roadmap.cli.sync.SyncManager") as mock_sync_class:
                     mock_instance = Mock()
                     mock_instance.delete_token_secure.return_value = (
                         True,

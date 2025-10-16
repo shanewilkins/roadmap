@@ -53,13 +53,13 @@ def get_console() -> Console:
     Returns a console with colors disabled during testing or when
     output is not going to a terminal.
     """
-    if is_testing_environment():
-        return Console(
-            force_terminal=False, 
-            no_color=True, 
-            width=80,
-            legacy_windows=False,
-            highlight=False
-        )
+    # For now, simply disable colors during testing - Click's CliRunner doesn't properly set testing environment
+    import sys
+    if any([
+        "PYTEST_CURRENT_TEST" in os.environ,
+        "pytest" in sys.modules,
+        "_pytest" in [m.split(".")[0] for m in sys.modules.keys()],
+    ]):
+        return Console(force_terminal=False, no_color=True, width=80)
     else:
         return Console()

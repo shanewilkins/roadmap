@@ -4,6 +4,8 @@ Issue management CLI commands.
 
 import click
 import os
+from rich.table import Table
+from rich.text import Text
 from roadmap.core import RoadmapCore
 from roadmap.models import Priority, IssueType, Status
 from roadmap.cli.utils import get_console
@@ -67,6 +69,22 @@ def list_issues(
         return
 
     try:
+        # Check for conflicting filters
+        assignee_filters = [assignee is not None, my_issues]
+        if sum(bool(f) for f in assignee_filters) > 1:
+            console.print(
+                "❌ Cannot combine --assignee and --my-issues filters", style="bold red"
+            )
+            return
+
+        exclusive_filters = [backlog, unassigned, next_milestone, milestone is not None]
+        if sum(bool(f) for f in exclusive_filters) > 1:
+            console.print(
+                "❌ Cannot combine --backlog, --unassigned, --next-milestone, and --milestone filters",
+                style="bold red",
+            )
+            return
+
         # Handle special assignee filters first
         if my_issues:
             issues = core.get_my_issues()
@@ -74,23 +92,162 @@ def list_issues(
         elif assignee:
             issues = core.get_assigned_issues(assignee)
             filter_description = f"assigned to {assignee}"
+        # Get base set of issues
+        elif backlog or unassigned:
+            # Show only backlog/unassigned issues
+            issues = core.get_backlog_issues()
+            filter_description = "backlog"
+        elif next_milestone:
+            # Show issues for next milestone
+            next_ms = core.get_next_milestone()
+            if not next_ms:
+                console.print(
+                    "📋 No upcoming milestones with due dates found.", style="yellow"
+                )
+                console.print(
+                    "Create one with: roadmap milestone create 'Milestone name' --due-date YYYY-MM-DD",
+                    style="dim",
+                )
+                return
+            issues = core.get_milestone_issues(next_ms.name)
+            filter_description = f"next milestone ({next_ms.name})"
+        elif milestone:
+            # Show issues for specific milestone
+            issues = core.get_milestone_issues(milestone)
+            filter_description = f"milestone '{milestone}'"
         else:
-            # Show all issues for now (can add more filters later)
+            # Show all issues
             issues = core.list_issues()
             filter_description = "all"
+
+        # Apply additional filters
+        if open:
+            issues = [i for i in issues if i.status != Status.DONE]
+            filter_description += " open"
+
+        if blocked:
+            issues = [i for i in issues if i.status == Status.BLOCKED]
+            filter_description += " blocked"
+
+        if status:
+            issues = [i for i in issues if i.status == Status(status)]
+            filter_description += f" {status}"
+
+        if priority:
+            issues = [i for i in issues if i.priority == Priority(priority)]
+            filter_description += f" {priority} priority"
 
         # Show results
         if not issues:
             console.print(f"📋 No {filter_description} issues found.", style="yellow")
+            console.print(
+                "Create one with: roadmap issue create 'Issue title'", style="dim"
+            )
             return
 
         # Display header with filter info
         header_text = f"📋 {len(issues)} {filter_description} issue{'s' if len(issues) != 1 else ''}"
         console.print(header_text, style="bold cyan")
+        console.print()
 
-        # Simple list for now
+        # Rich table display
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("ID", style="cyan", width=8)
+        table.add_column("Title", style="white", width=25, no_wrap=False)
+        table.add_column("Priority", style="yellow", width=10)
+        table.add_column("Status", style="green", width=12)
+        table.add_column("Progress", style="blue", width=10)
+        table.add_column("Assignee", style="magenta", width=12)
+        table.add_column("Estimate", style="green", width=10)
+        table.add_column("Milestone", style="blue", width=15)
+
         for issue in issues:
-            console.print(f"  {issue.id}: {issue.title}")
+            priority_style = {
+                Priority.CRITICAL: "bold red",
+                Priority.HIGH: "red",
+                Priority.MEDIUM: "yellow",
+                Priority.LOW: "dim",
+            }.get(issue.priority, "white")
+
+            status_style = {
+                Status.TODO: "white",
+                Status.IN_PROGRESS: "yellow",
+                Status.BLOCKED: "red",
+                Status.REVIEW: "blue",
+                Status.DONE: "green",
+            }.get(issue.status, "white")
+
+            table.add_row(
+                issue.id,
+                issue.title,
+                Text(issue.priority.value, style=priority_style),
+                Text(issue.status.value, style=status_style),
+                Text(
+                    issue.progress_display,
+                    style="blue" if issue.progress_percentage else "dim",
+                ),
+                Text(
+                    issue.assignee or "Unassigned",
+                    style="magenta" if issue.assignee else "dim",
+                ),
+                Text(
+                    issue.estimated_time_display,
+                    style="green" if issue.estimated_hours else "dim",
+                ),
+                Text(issue.milestone_name, style="dim" if issue.is_backlog else "blue"),
+            )
+
+        console.print(table)
+
+        # Show time aggregation for assignee filters
+        if assignee or my_issues:
+            assignee_name = assignee if assignee else "you"
+            
+            # Calculate totals
+            total_hours = sum(issue.estimated_hours or 0 for issue in issues)
+            remaining_hours = sum(
+                issue.estimated_hours or 0 
+                for issue in issues 
+                if issue.status.value != "done"
+            )
+            
+            if total_hours > 0:
+                # Format total time display
+                if total_hours < 1:
+                    total_display = f"{total_hours * 60:.0f}m"
+                elif total_hours <= 24:
+                    total_display = f"{total_hours:.1f}h"
+                else:
+                    total_display = f"{total_hours / 8:.1f}d"
+                
+                console.print()
+                console.print(
+                    f"Total estimated time for {assignee_name}: {total_display}",
+                    style="bold blue",
+                )
+                
+                # Show status breakdown
+                status_counts = {}
+                for issue in issues:
+                    status = issue.status.value
+                    if status not in status_counts:
+                        status_counts[status] = {"count": 0, "hours": 0}
+                    status_counts[status]["count"] += 1
+                    status_counts[status]["hours"] += issue.estimated_hours or 0
+
+                console.print("Workload breakdown:", style="bold")
+                for status, data in status_counts.items():
+                    if data["count"] > 0:
+                        if data["hours"] > 0:
+                            if data["hours"] < 1:
+                                time_display = f"{data['hours'] * 60:.0f}m"
+                            elif data["hours"] <= 24:
+                                time_display = f"{data['hours']:.1f}h"
+                            else:
+                                time_display = f"{data['hours'] / 8:.1f}d"
+                            console.print(f"  {status}: {data['count']} issues ({time_display})")
+                        else:
+                            console.print(f"  {status}: {data['count']} issues")
 
     except Exception as e:
         console.print(f"❌ Failed to list issues: {e}", style="bold red")
@@ -226,7 +383,6 @@ def create_issue(
         raise
     except Exception as e:
         console.print(f"❌ Failed to create issue: {e}", style="bold red")
-        raise click.Abort()
 
 @issue.command("update")
 @click.argument("issue_id")
@@ -246,6 +402,7 @@ def create_issue(
 @click.option("--assignee", "-a", help="Update assignee")
 @click.option("--milestone", "-m", help="Update milestone")
 @click.option("--description", "-d", help="Update description")
+@click.option("--estimate", "-e", type=float, help="Update estimated time (in hours)")
 @click.option("--reason", "-r", help="Reason for the update")
 @click.pass_context
 def update_issue(
@@ -257,6 +414,7 @@ def update_issue(
     assignee: str,
     milestone: str,
     description: str,
+    estimate: float,
     reason: str,
 ):
     """Update an existing issue."""
@@ -266,14 +424,14 @@ def update_issue(
         console.print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
-        raise click.Abort()
+        return
 
     try:
         # Check if issue exists
         issue = core.get_issue(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            raise click.Abort()
+            return
 
         # Build update dict
         updates = {}
@@ -283,12 +441,30 @@ def update_issue(
             updates["priority"] = Priority(priority)
         if status:
             updates["status"] = status
-        if assignee:
-            updates["assignee"] = assignee
+        if assignee is not None:
+            # Convert empty string to None for proper unassignment
+            if assignee == "":
+                updates["assignee"] = None
+            else:
+                # Validate assignee before updating
+                is_valid, result = core.validate_assignee(assignee)
+                if not is_valid:
+                    console.print(f"❌ Invalid assignee: {result}", style="bold red")
+                    raise click.Abort()
+                elif result and "Warning:" in result:
+                    console.print(f"⚠️  {result}", style="bold yellow")
+                    updates["assignee"] = assignee
+                else:
+                    canonical_assignee = core.get_canonical_assignee(assignee)
+                    if canonical_assignee != assignee:
+                        console.print(f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim")
+                    updates["assignee"] = canonical_assignee
         if milestone:
             updates["milestone"] = milestone
         if description:
             updates["description"] = description
+        if estimate is not None:
+            updates["estimated_hours"] = estimate
 
         if not updates:
             console.print("❌ No updates specified", style="bold red")
@@ -300,14 +476,21 @@ def update_issue(
         console.print(f"✅ Updated issue: {updated_issue.title}", style="bold green")
         console.print(f"   ID: {updated_issue.id}", style="cyan")
         
+        # Show what was updated
+        for field, value in updates.items():
+            if field == "estimated_hours":
+                display_value = updated_issue.estimated_time_display
+                console.print(f"   estimate: {display_value}", style="cyan")
+            elif field in ["title", "priority", "status", "assignee", "milestone", "description"]:
+                console.print(f"   {field}: {value}", style="cyan")
+        
         if reason:
-            console.print(f"   Reason: {reason}", style="dim")
+            console.print(f"   reason: {reason}", style="dim")
             
     except click.Abort:
         raise
     except Exception as e:
         console.print(f"❌ Failed to update issue: {e}", style="bold red")
-        raise click.Abort()
 
 @issue.command("done")
 @click.argument("issue_id")
@@ -325,19 +508,19 @@ def done_issue(
         console.print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
-        raise click.Abort()
+        return
 
     try:
         # Check if issue exists
         issue = core.get_issue(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            raise click.Abort()
+            return
 
         # Update status to done
         updated_issue = core.update_issue(issue_id, status="done")
         
-        console.print(f"✅ Marked issue as done: {updated_issue.title}", style="bold green")
+        console.print(f"✅ Finished: {updated_issue.title}", style="bold green")
         console.print(f"   ID: {updated_issue.id}", style="cyan")
         
         if reason:
@@ -347,7 +530,6 @@ def done_issue(
         raise
     except Exception as e:
         console.print(f"❌ Failed to mark issue as done: {e}", style="bold red")
-        raise click.Abort()
 
 @issue.command("block")
 @click.argument("issue_id")
@@ -365,20 +547,21 @@ def block_issue(
         console.print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
-        raise click.Abort()
+        return
 
     try:
         # Check if issue exists
         issue = core.get_issue(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            raise click.Abort()
+            return
 
         # Update status to blocked
         updated_issue = core.update_issue(issue_id, status="blocked")
         
-        console.print(f"🚫 Marked issue as blocked: {updated_issue.title}", style="bold red")
+        console.print(f"🚫 Blocked issue: {updated_issue.title}", style="bold red")
         console.print(f"   ID: {updated_issue.id}", style="cyan")
+        console.print("   Status: 🚫 Blocked", style="red")
         
         if reason:
             console.print(f"   Reason: {reason}", style="dim")
@@ -387,7 +570,6 @@ def block_issue(
         raise
     except Exception as e:
         console.print(f"❌ Failed to block issue: {e}", style="bold red")
-        raise click.Abort()
 
 @issue.command("delete")
 @click.argument("issue_id")
@@ -405,14 +587,14 @@ def delete_issue(
         console.print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
-        raise click.Abort()
+        return
 
     try:
         # Check if issue exists
         issue = core.get_issue(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            raise click.Abort()
+            return
 
         # Confirm deletion if not using --yes flag
         if not yes:
@@ -423,11 +605,175 @@ def delete_issue(
         # Delete the issue
         core.delete_issue(issue_id)
         
-        console.print(f"✅ Deleted issue: {issue.title}", style="bold green")
+        console.print(f"✅ Permanently deleted issue: {issue.title}", style="bold green")
         console.print(f"   ID: {issue_id}", style="cyan")
             
     except click.Abort:
         raise
     except Exception as e:
         console.print(f"❌ Failed to delete issue: {e}", style="bold red")
-        raise click.Abort()
+
+
+@issue.command("start")
+@click.argument("issue_id")
+@click.option("--date", help="Start date (YYYY-MM-DD HH:MM, defaults to now)")
+@click.pass_context
+def start_issue(ctx: click.Context, issue_id: str, date: str):
+    """Start work on an issue by recording the actual start date."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        return
+
+    try:
+        from datetime import datetime
+        from roadmap.models import Status
+        
+        # Parse start date
+        if date:
+            try:
+                start_date = datetime.strptime(date, "%Y-%m-%d %H:%M")
+            except ValueError:
+                try:
+                    start_date = datetime.strptime(date, "%Y-%m-%d")
+                except ValueError:
+                    console.print(
+                        "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
+                        style="bold red",
+                    )
+                    return
+        else:
+            start_date = datetime.now()
+
+        # Get the issue
+        issue = core.get_issue(issue_id)
+        if not issue:
+            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+            return
+
+        # Update issue with start date and status
+        success = core.update_issue(
+            issue_id,
+            actual_start_date=start_date,
+            status=Status.IN_PROGRESS,
+            progress_percentage=0.0,
+        )
+
+        if success:
+            console.print(f"🚀 Started work on: {issue.title}", style="bold green")
+            console.print(
+                f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
+            )
+            console.print(f"   Status: In Progress", style="yellow")
+        else:
+            console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
+
+    except Exception as e:
+        console.print(f"❌ Failed to start issue: {e}", style="bold red")
+
+
+@issue.command("progress")
+@click.argument("issue_id")
+@click.argument("percentage", type=float)
+@click.pass_context
+def update_progress(ctx: click.Context, issue_id: str, percentage: float):
+    """Update the progress percentage for an issue (0-100)."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        return
+
+    if not 0 <= percentage <= 100:
+        console.print(
+            "❌ Progress percentage must be between 0 and 100", style="bold red"
+        )
+        return
+
+    try:
+        # Get the issue
+        issue = core.get_issue(issue_id)
+        if not issue:
+            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+            return
+
+        # Update progress
+        success = core.update_issue(issue_id, progress_percentage=percentage)
+
+        if success:
+            console.print(f"📊 Updated progress: {issue.title}", style="bold green")
+            console.print(f"   Progress: {percentage:.0f}%", style="cyan")
+
+            # Auto-update status based on progress
+            if percentage == 0:
+                status_msg = "Todo"
+            elif percentage == 100:
+                status_msg = "Consider marking as done"
+                console.print(
+                    f"   💡 {status_msg}: roadmap issue complete {issue_id}",
+                    style="dim",
+                )
+            else:
+                status_msg = "In Progress"
+                if issue.status == Status.TODO:
+                    core.update_issue(issue_id, status=Status.IN_PROGRESS)
+                    console.print(
+                        f"   Status: Auto-updated to In Progress", style="yellow"
+                    )
+        else:
+            console.print(f"❌ Failed to update progress: {issue_id}", style="bold red")
+
+    except Exception as e:
+        console.print(f"❌ Failed to update progress: {e}", style="bold red")
+
+
+@issue.group("deps")
+def deps():
+    """Manage issue dependencies."""
+    pass
+
+
+@deps.command("add")
+@click.argument("issue_id")
+@click.argument("dependency_id")
+@click.pass_context
+def add_dependency(ctx: click.Context, issue_id: str, dependency_id: str):
+    """Add a dependency to an issue."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        return
+
+    try:
+        # Get the issue
+        issue = core.get_issue(issue_id)
+        if not issue:
+            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+            return
+
+        # Check if dependency issue exists
+        dependency_issue = core.get_issue(dependency_id)
+        if not dependency_issue:
+            console.print(f"❌ Dependency issue not found: {dependency_id}", style="bold red")
+            return
+
+        # Add dependency
+        current_deps = issue.depends_on or []
+        if dependency_id not in current_deps:
+            current_deps.append(dependency_id)
+            core.update_issue(issue_id, depends_on=current_deps)
+            console.print(f"✅ Added dependency: {dependency_issue.title}", style="bold green")
+            console.print(f"   {issue.title} now depends on {dependency_issue.title}", style="dim")
+        else:
+            console.print(f"⚠️ Dependency already exists", style="yellow")
+
+    except Exception as e:
+        console.print(f"❌ Failed to add dependency: {e}", style="bold red")

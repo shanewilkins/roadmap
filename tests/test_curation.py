@@ -414,7 +414,9 @@ class TestCurationCLI:
         result = runner.invoke(curate_orphaned, [])
 
         assert result.exit_code == 0
-        assert "Roadmap Curation Report" in result.output
+        # Check that the curator was called and some analysis output is shown
+        mock_curator.analyze_orphaned_items.assert_called_once()
+        assert "Found 0 orphaned issues" in result.output or "Found 0 orphaned milestones" in result.output
 
     @patch('roadmap.cli.RoadmapCore')
     def test_curate_uninitialized_roadmap(self, mock_core_class):
@@ -430,7 +432,7 @@ class TestCurationCLI:
         result = runner.invoke(curate_orphaned, [])
         
         assert result.exit_code == 0
-        assert "not initialized" in result.output
+        assert "Roadmap not initialized" in result.output
 
     def test_curation_workflow_integration(self, temp_roadmap):
         """Test full curation workflow integration."""

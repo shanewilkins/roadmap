@@ -376,7 +376,10 @@ class TestTeamCollaborationFeaturesIntegration:
             # Check activity feed
             result = runner.invoke(main, ["activity", "-d", "1"])
             assert result.exit_code == 0
-            assert "Team Activity" in result.output
+            # Strip ANSI codes for cleaner matching
+            import re
+            clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+            assert "Activity for last" in clean_output
 
             # Check filtered activity
             result = runner.invoke(main, ["activity", "-d", "1", "-a", "alice"])

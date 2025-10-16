@@ -698,29 +698,39 @@ def list_members(ctx: click.Context):
         console.print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
-        raise click.Abort()
+        return
 
     try:
-        # Try to get team members from core
-        team_members = []
-        if hasattr(core, 'get_team_members'):
-            team_members = core.get_team_members()
-        
-        if team_members:
-            console.print("👥 Team Members:", style="bold blue")
-            for member in team_members:
-                console.print(f"   • {member}")
-        else:
-            console.print("👥 Team Members:", style="bold blue")
-            console.print("   No team members found.", style="dim")
+        team_members = core.get_team_members()
+        current_user = core.get_current_user()
+
+        if not team_members:
+            console.print("👥 No team members found.", style="yellow")
+            console.print(
+                "Make sure GitHub integration is set up: roadmap sync setup",
+                style="dim",
+            )
+            return
+
+        console.print(
+            f"👥 {len(team_members)} team member{'s' if len(team_members) != 1 else ''}",
+            style="bold cyan",
+        )
+        console.print()
+
+        for member in team_members:
+            if member == current_user:
+                console.print(f"  � {member} (you)", style="bold magenta")
+            else:
+                console.print(f"  👤 {member}", style="white")
+
     except Exception as e:
-        console.print(f"❌ Failed to list team members: {e}", style="bold red")
-        raise click.Abort()
+        console.print(f"❌ Failed to get team members: {e}", style="bold red")
 
 @team.command("assignments")
 @click.pass_context
 def list_assignments(ctx: click.Context):
-    """List team assignments."""
+    """Show issue assignments for all team members."""
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -730,8 +740,40 @@ def list_assignments(ctx: click.Context):
         raise click.Abort()
 
     try:
+        assigned_issues = core.get_all_assigned_issues()
+
+        if not assigned_issues:
+            console.print("📋 No assigned issues found.", style="yellow")
+            console.print(
+                "Create issues with: roadmap issue create 'Title' --assignee username",
+                style="dim",
+            )
+            return
+
         console.print("📋 Team Assignments:", style="bold blue")
-        console.print("   Feature coming soon...", style="dim")
+        console.print()
+
+        for assignee, issues in assigned_issues.items():
+            console.print(
+                f"👤 {assignee} ({len(issues)} issue{'s' if len(issues) != 1 else ''})",
+                style="bold magenta",
+            )
+
+            for issue in issues:
+                status_style = {
+                    Status.TODO: "white",
+                    Status.IN_PROGRESS: "yellow",
+                    Status.BLOCKED: "red",
+                    Status.REVIEW: "blue",
+                    Status.DONE: "green",
+                }.get(issue.status, "white")
+
+                console.print(
+                    f"  📝 {issue.id}: {issue.title} [{issue.status.value}]",
+                    style=status_style,
+                )
+            console.print()
+
     except Exception as e:
         console.print(f"❌ Failed to list team assignments: {e}", style="bold red")
         raise click.Abort()
@@ -739,7 +781,7 @@ def list_assignments(ctx: click.Context):
 @team.command("workload")
 @click.pass_context
 def show_workload(ctx: click.Context):
-    """Show team workload."""
+    """Show workload summary for all team members."""
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -749,8 +791,81 @@ def show_workload(ctx: click.Context):
         raise click.Abort()
 
     try:
-        console.print("⚖️  Team Workload:", style="bold blue")
-        console.print("   Feature coming soon...", style="dim")
+        assigned_issues = core.get_all_assigned_issues()
+        team_members = core.get_team_members()
+
+        console.print("📊 Team Workload Summary", style="bold cyan")
+        console.print()
+
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Team Member", style="white")
+        table.add_column("Total", style="cyan", width=8)
+        table.add_column("Todo", style="white", width=8)
+        table.add_column("In Progress", style="yellow", width=12)
+        table.add_column("Blocked", style="red", width=8)
+        table.add_column("Review", style="blue", width=8)
+        table.add_column("Done", style="green", width=8)
+        table.add_column("Est. Time", style="green", width=10)
+
+        for member in team_members:
+            issues = assigned_issues.get(member, [])
+
+            # Count by status
+            status_counts = {status: 0 for status in Status}
+            for issue in issues:
+                status_counts[issue.status] += 1
+
+            # Calculate total estimated time for remaining work
+            remaining_hours = sum(
+                issue.estimated_hours or 0
+                for issue in issues
+                if issue.status != Status.DONE and issue.estimated_hours is not None
+            )
+
+            # Format estimated time display
+            if remaining_hours == 0:
+                time_display = "-"
+            elif remaining_hours < 8:
+                time_display = f"{remaining_hours:.1f}h"
+            else:
+                days = remaining_hours / 8
+                time_display = f"{days:.1f}d"
+
+            table.add_row(
+                member,
+                str(len(issues)),
+                str(status_counts[Status.TODO]),
+                str(status_counts[Status.IN_PROGRESS]),
+                str(status_counts[Status.BLOCKED]),
+                str(status_counts[Status.REVIEW]),
+                str(status_counts[Status.DONE]),
+                time_display,
+            )
+
+        console.print(table)
+
+        # Show unassigned issues count with estimated time
+        all_issues = core.list_issues()
+        unassigned = [i for i in all_issues if not i.assignee]
+        if unassigned:
+            unassigned_hours = sum(
+                issue.estimated_hours or 0
+                for issue in unassigned
+                if issue.estimated_hours is not None
+            )
+
+            if unassigned_hours > 0:
+                days = unassigned_hours / 8
+                time_str = f" ({unassigned_hours:.1f}h / {days:.1f}d estimated)"
+            else:
+                time_str = ""
+
+            console.print()
+            console.print(
+                f"📝 {len(unassigned)} unassigned issue{'s' if len(unassigned) != 1 else ''}{time_str}",
+                style="dim",
+            )
+
     except Exception as e:
         console.print(f"❌ Failed to show team workload: {e}", style="bold red")
         raise click.Abort()

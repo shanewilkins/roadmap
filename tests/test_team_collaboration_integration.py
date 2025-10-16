@@ -130,8 +130,11 @@ class TestTeamCollaborationIntegration:
             # Test team assignments command
             result = runner.invoke(main, ["team", "assignments"])
             assert result.exit_code == 0
-            assert "alice (2 issues)" in result.output
-            assert "bob (1 issue)" in result.output
+            # Strip ANSI codes for cleaner matching
+            import re
+            clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+            assert "alice (2 issues)" in clean_output
+            assert "bob (1 issue)" in clean_output
 
             # Test team workload command
             result = runner.invoke(main, ["team", "workload"])

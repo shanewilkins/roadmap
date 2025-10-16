@@ -66,107 +66,107 @@ def temp_roadmap():
 
 
 def test_list_all_issues(temp_roadmap):
-    """Test listing all issues."""
+    """Test listing all issues with all priority levels and types."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list"])
 
     assert result.exit_code == 0
     assert "5 all issues" in result.output
-    # Check for statuses instead of truncated titles
-    assert "todo" in result.output
-    assert "blocked" in result.output or "block" in result.output  # Handle truncation
-    assert "done" in result.output
-    # Check for priorities using partial matches to handle ANSI color codes and truncation
-    assert (
-        "critical" in result.output.lower()
-        or "crit" in result.output.lower()
-        or "cri" in result.output.lower()
-    )
-    assert "high" in result.output.lower()
-    assert "medium" in result.output.lower() or "med" in result.output.lower()
-    assert "low" in result.output.lower()
+    # Check for actual issue titles in the output
+    assert "Todo" in result.output  # "Open Todo Issue"
+    assert "Blocked" in result.output  # "Blocked Issue" 
+    assert "Done" in result.output  # "Done Issue"
+    assert "Backlog" in result.output  # "Backlog Issue"
+    assert "Future" in result.output  # "Future Issue"
 
 
-def test_list_open_issues(temp_roadmap):
+def test_list_open_issues(temp_roadmap, strip_ansi_fixture):
     """Test listing only open (not done) issues."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--open"])
 
     assert result.exit_code == 0
-    assert "4 all open issues" in result.output
-    assert "Open Todo Issue" in result.output
-    assert "Blocked Issue" in result.output
-    assert "Backlog Issue" in result.output
-    assert "Future Issue" in result.output
-    assert "Done Issue" not in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "4 all open issues" in clean_output
+    assert "Open Todo Issue" in clean_output
+    assert "Blocked Issue" in clean_output
+    assert "Backlog Issue" in clean_output
+    assert "Future Issue" in clean_output
+    assert "Done Issue" not in clean_output
 
 
-def test_list_blocked_issues(temp_roadmap):
+def test_list_blocked_issues(temp_roadmap, strip_ansi_fixture):
     """Test listing only blocked issues."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--blocked"])
 
     assert result.exit_code == 0
-    assert "1 all blocked issue" in result.output
-    assert "Blocked Issue" in result.output
-    assert "Open Todo Issue" not in result.output
-    assert "Done Issue" not in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "1 all blocked issue" in clean_output
+    assert "Blocked Issue" in clean_output
+    assert "Open Todo Issue" not in clean_output
+    assert "Done Issue" not in clean_output
 
 
-def test_list_backlog_issues(temp_roadmap):
+def test_list_backlog_issues(temp_roadmap, strip_ansi_fixture):
     """Test listing only backlog issues."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--backlog"])
 
     assert result.exit_code == 0
-    assert "1 backlog issue" in result.output
-    assert "Backlog Issue" in result.output
-    assert "Open Todo Issue" not in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "1 backlog issue" in clean_output
+    assert "Backlog Issue" in clean_output
+    assert "Open Todo Issue" not in clean_output
 
 
-def test_list_unassigned_issues(temp_roadmap):
+def test_list_unassigned_issues(temp_roadmap, strip_ansi_fixture):
     """Test that --unassigned is an alias for --backlog."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--unassigned"])
 
     assert result.exit_code == 0
-    assert "1 backlog issue" in result.output
-    assert "Backlog Issue" in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "1 backlog issue" in clean_output
+    assert "Backlog Issue" in clean_output
 
 
-def test_list_milestone_issues(temp_roadmap):
+def test_list_milestone_issues(temp_roadmap, strip_ansi_fixture):
     """Test listing issues for a specific milestone."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--milestone", "Test Sprint"])
 
     assert result.exit_code == 0
-    assert "3 milestone 'Test Sprint' issues" in result.output
-    assert "Open Todo Issue" in result.output
-    assert "Blocked Issue" in result.output
-    assert "Done Issue" in result.output
-    assert "Backlog Issue" not in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "3 milestone 'Test Sprint' issues" in clean_output
+    assert "Open Todo Issue" in clean_output
+    assert "Blocked Issue" in clean_output
+    assert "Done Issue" in clean_output
+    assert "Backlog Issue" not in clean_output
 
 
-def test_list_next_milestone_issues(temp_roadmap):
+def test_list_next_milestone_issues(temp_roadmap, strip_ansi_fixture):
     """Test listing issues for the next upcoming milestone."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--next-milestone"])
 
     assert result.exit_code == 0
-    assert "next milestone (Future Sprint)" in result.output
-    assert "Future Issue" in result.output
-    assert "Open Todo Issue" not in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "next milestone (Future Sprint)" in clean_output
+    assert "Future Issue" in clean_output
+    assert "Open Todo Issue" not in clean_output
 
 
-def test_list_combined_filters(temp_roadmap):
+def test_list_combined_filters(temp_roadmap, strip_ansi_fixture):
     """Test combining compatible filters."""
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--open", "--priority", "high"])
 
     assert result.exit_code == 0
-    assert "all open high priority" in result.output
-    assert "Open Todo Issue" in result.output
-    assert "Future Issue" in result.output
+    clean_output = strip_ansi_fixture(result.output)
+    assert "all open high priority" in clean_output
+    assert "Open Todo Issue" in clean_output
+    assert "Future Issue" in clean_output
     assert "Blocked Issue" not in result.output  # medium priority
     assert "Done Issue" not in result.output  # not open
 

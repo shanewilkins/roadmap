@@ -230,8 +230,10 @@ class TestCLITeamCommands:
             result = runner.invoke(main, ["team", "assignments"])
 
             assert result.exit_code == 0
-            # Should show team assignments
-            assert "bob (1 issue)" in result.output
+            # Should show team assignments (strip ANSI codes for cleaner matching)
+            import re
+            clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+            assert "bob (1 issue)" in clean_output
 
     def test_team_workload_command(self, mock_core, sample_issues, initialized_roadmap):
         """Test team workload command."""

@@ -38,7 +38,8 @@ def register_deprecated_commands(main_group):
         """
         console.print("⚠️  DEPRECATION WARNING: 'roadmap workload-analysis' is deprecated.", style="yellow")
         console.print("   Use 'roadmap team analyze-workload' instead for better organization.", style="yellow")
-        
+        if assignee:
+            console.print(f"👤 Workload Analysis: {assignee}", style="bold blue")
         # Delegate to new command
         from .team import _original_workload_analysis
         _original_workload_analysis(ctx, assignee, include_estimates, suggest_rebalance)
@@ -56,7 +57,7 @@ def register_deprecated_commands(main_group):
         """
         console.print("⚠️  DEPRECATION WARNING: 'roadmap smart-assign' is deprecated.", style="yellow")
         console.print("   Use 'roadmap team assign-smart' instead for better organization.", style="yellow")
-        
+        console.print("🎯 Smart Assignment Suggestion", style="bold blue")
         # Delegate to new command
         from .team import _original_smart_assign
         _original_smart_assign(ctx, issue_id, consider_skills, consider_availability, suggest_only)

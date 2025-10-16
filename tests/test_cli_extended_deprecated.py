@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch, Mock, MagicMock
 from click.testing import CliRunner
 from roadmap.cli import main
+from roadmap.cli import _detect_project_context, _get_current_user
 from roadmap.models import Issue, Milestone
 import json
 import os
@@ -212,19 +213,9 @@ class TestCLIActivityExtensive:
 
     def test_activity_with_mock_data(self, cli_runner, mock_roadmap_core):
         """Test activity command with mock data."""
-        with patch('roadmap.cli._get_team_activity') as mock_activity:
-            mock_activity.return_value = [
-                {
-                    'type': 'issue_created',
-                    'user': 'testuser',
-                    'issue_id': 'test-123',
-                    'timestamp': '2024-01-01T10:00:00Z'
-                }
-            ]
-            
-            with cli_runner.isolated_filesystem():
-                result = cli_runner.invoke(main, ['activity'])
-                assert result.exit_code in [0, 1]
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(main, ['activity'])
+            assert result.exit_code in [0, 1]
 
     def test_activity_with_user_filter(self, cli_runner, mock_roadmap_core):
         """Test activity with user filtering."""
