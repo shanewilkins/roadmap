@@ -201,8 +201,8 @@ def sync_status(ctx: click.Context):
 @sync.command("push")
 @click.option("--issues", is_flag=True, help="Push only issues")
 @click.option("--milestones", is_flag=True, help="Push only milestones")
-@click.option("--batch-size", default=10, help="Batch size for bulk operations")
-@click.option("--workers", default=3, help="Number of concurrent workers")
+@click.option("--batch-size", default=50, help="Batch size for bulk operations")
+@click.option("--workers", default=8, help="Number of concurrent workers")
 @click.pass_context
 def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int):
     """Push local changes to GitHub."""
@@ -243,8 +243,8 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
 @sync.command("pull")
 @click.option("--issues", is_flag=True, help="Pull only issues")
 @click.option("--milestones", is_flag=True, help="Pull only milestones")
-@click.option("--batch-size", default=10, help="Batch size for bulk operations")
-@click.option("--workers", default=3, help="Number of concurrent workers")
+@click.option("--batch-size", default=50, help="Batch size for bulk operations")
+@click.option("--workers", default=8, help="Number of concurrent workers")
 @click.pass_context
 def sync_pull(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int):
     """Pull changes from GitHub."""
