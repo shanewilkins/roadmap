@@ -828,6 +828,17 @@ def start_issue(ctx: click.Context, issue_id: str, date: str, git_branch: bool, 
                 f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
             )
             console.print(f"   Status: In Progress", style="yellow")
+            # Determine git-branch behavior: CLI flag overrides, otherwise check config
+            try:
+                from roadmap.models import RoadmapConfig
+                cfg = RoadmapConfig.load_from_file(core.config_file) if core.config_file.exists() else RoadmapConfig()
+                config_auto_branch = bool(cfg.defaults.get("auto_branch", False))
+            except Exception:
+                config_auto_branch = False
+
+            if not git_branch and config_auto_branch:
+                git_branch = True
+
             # Optionally create a git branch for the issue
             try:
                 if git_branch:
