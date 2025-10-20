@@ -775,8 +775,10 @@ def delete_issue(
 @issue.command("start")
 @click.argument("issue_id")
 @click.option("--date", help="Start date (YYYY-MM-DD HH:MM, defaults to now)")
+@click.option("--git-branch/--no-git-branch", default=False, help="Create a Git branch for this issue when starting")
+@click.option("--checkout/--no-checkout", default=True, help="Checkout the created branch (when --git-branch is used)")
 @click.pass_context
-def start_issue(ctx: click.Context, issue_id: str, date: str):
+def start_issue(ctx: click.Context, issue_id: str, date: str, git_branch: bool, checkout: bool):
     """Start work on an issue by recording the actual start date."""
     core = ctx.obj["core"]
 
@@ -826,6 +828,22 @@ def start_issue(ctx: click.Context, issue_id: str, date: str):
                 f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
             )
             console.print(f"   Status: In Progress", style="yellow")
+            # Optionally create a git branch for the issue
+            try:
+                if git_branch:
+                    if hasattr(core, 'git') and core.git.is_git_repository():
+                        branch_success = core.git.create_branch_for_issue(issue, checkout=checkout)
+                        if branch_success:
+                            branch_name = core.git.suggest_branch_name(issue)
+                            console.print(f"🌿 Created Git branch: {branch_name}", style="green")
+                            if checkout:
+                                console.print(f"✅ Checked out branch: {branch_name}", style="green")
+                        else:
+                            console.print("⚠️  Failed to create Git branch", style="yellow")
+                    else:
+                        console.print("⚠️  Not in a Git repository, skipping branch creation", style="yellow")
+            except Exception as e:
+                console.print(f"⚠️  Git branch creation skipped due to error: {e}", style="yellow")
         else:
             console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
 
