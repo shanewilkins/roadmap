@@ -215,8 +215,17 @@ def register_git_commands():
                 )
                 return
 
-            # Create the branch
-            success = core.git.create_branch_for_issue(issue, checkout=checkout)
+            # Create the branch using a compatibility wrapper
+            def _safe_create_branch(git, issue, checkout=True):
+                try:
+                    return git.create_branch_for_issue(issue, checkout=checkout)
+                except TypeError:
+                    try:
+                        return git.create_branch_for_issue(issue)
+                    except Exception:
+                        return False
+
+            success = _safe_create_branch(core.git, issue, checkout=checkout)
 
             if success:
                 console.print(f"🌿 Created branch: {branch_name}", style="bold green")
@@ -229,7 +238,18 @@ def register_git_commands():
                     core.update_issue(issue_id, status="in-progress")
                     console.print("📊 Updated issue status to: in-progress", style="yellow")
             else:
-                console.print(f"❌ Failed to create branch", style="bold red")
+                # Fallback: try direct git checkout -b
+                fallback = core.git._run_git_command(["checkout", "-b", branch_name])
+                if fallback is not None:
+                    console.print(f"🌿 Created branch: {branch_name}", style="bold green")
+                    if checkout:
+                        console.print(f"✅ Checked out branch: {branch_name}", style="green")
+                    console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
+                    if issue.status == "todo":
+                        core.update_issue(issue_id, status="in-progress")
+                        console.print("📊 Updated issue status to: in-progress", style="yellow")
+                else:
+                    console.print(f"❌ Failed to create branch", style="bold red")
 
         except Exception as e:
             console.print(f"❌ Failed to create Git branch: {e}", style="bold red")

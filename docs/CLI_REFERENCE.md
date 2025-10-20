@@ -200,12 +200,36 @@ roadmap issue create "Fix login validation bug" \
 - `--assignee`: Username or team name
 - `--labels`: Comma-separated list of labels
 - `--estimate`: Estimated time to complete in hours (e.g., `2.5`, `8`, `16`)
+- `--git-branch`: Create a git branch for this issue (if in a git repository)
+- `--branch-name`: Override the suggested branch name (e.g. `feature/1234-custom-name`)
+- `--force`: Force branch creation even if the working tree has tracked modifications
 
 **Time Estimation Examples:**
 
 ```bash
 # Quick task (30 minutes)
 roadmap issue create "Update documentation" --estimate 0.5
+
+
+## Configuration: Branch name template
+
+You can customize the suggested branch name format via the configuration file `.roadmap/config.yaml`.
+
+Key: `defaults.branch_name_template`
+
+Supported placeholders:
+- `{id}` - the 8-character issue id
+- `{slug}` - a slugified version of the issue title
+- `{prefix}` - a prefix chosen from the issue type (e.g. `feature`, `bugfix`)
+
+Example:
+
+```yaml
+defaults:
+  branch_name_template: "feat/{id}/{slug}"
+```
+
+If the template is not set, roadmap falls back to `feature/{id}-{slug}`.
 
 # Standard task (4 hours)
 roadmap issue create "Implement login form" --estimate 4
