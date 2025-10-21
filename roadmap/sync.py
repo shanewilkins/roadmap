@@ -779,6 +779,59 @@ class SyncManager:
 
         return None
 
+    def _close_remote_orphaned_issues(self) -> Tuple[int, int, List[str]]:
+        """Close remote GitHub issues that were created by roadmap but no longer exist locally.
+
+        Returns:
+            Tuple of (closed_count, error_count, error_messages)
+        """
+        closed_count = 0
+        error_count = 0
+        error_messages: List[str] = []
+
+        if not self.github_client:
+            return closed_count, error_count, ["GitHub client not configured."]
+
+        try:
+            github_issues = self.github_client.get_issues(state="open")
+            for gh in github_issues:
+                # Only consider issues actually created by roadmap CLI (footer marker)
+                body = gh.get("body") or ""
+                if "*Created by roadmap CLI*" not in body:
+                    continue
+
+                gh_number = gh.get("number")
+
+                # Determine if a local issue references this GitHub issue
+                found_local = False
+                for local in self.core.list_issues():
+                    if local.github_issue == gh_number:
+                        found_local = True
+                        break
+
+                if not found_local:
+                    # Close the remote GitHub issue
+                    try:
+                        self.github_client.update_issue(
+                            issue_number=gh_number,
+                            title=gh.get("title", ""),
+                            body=body + "\n\n(Closed by roadmap CLI due to missing local issue)",
+                            state="closed",
+                            labels=[l["name"] for l in gh.get("labels", [])],
+                            assignees=[gh.get("assignee")] if gh.get("assignee") else [],
+                            milestone=None,
+                        )
+                        closed_count += 1
+                    except GitHubAPIError as e:
+                        error_count += 1
+                        error_messages.append(f"Failed to close issue #{gh_number}: {e}")
+
+        except GitHubAPIError as e:
+            error_count += 1
+            error_messages.append(f"Failed to list GitHub issues: {e}")
+
+        return closed_count, error_count, error_messages
+
     def sync_all_issues(self, direction: str = "push") -> Tuple[int, int, List[str]]:
         """Sync all issues between local and GitHub.
 
@@ -801,6 +854,26 @@ class SyncManager:
                 else:
                     error_count += 1
                     error_messages.append(f"{issue.title}: {message}")
+
+            # Optionally detect local deletions and close remote orphaned issues.
+            # This is an opt-in feature controlled by config.sync.close_orphaned
+            # to avoid surprising behavior during default syncs and in tests.
+            try:
+                close_orphans = bool(self.config.sync.get("close_orphaned", False))
+            except Exception:
+                close_orphans = False
+
+            if close_orphans and self.github_client:
+                try:
+                    closed, close_errors, close_msgs = (
+                        self._close_remote_orphaned_issues()
+                    )
+                    success_count += closed
+                    error_count += close_errors
+                    error_messages.extend(close_msgs)
+                except Exception as e:
+                    error_count += 1
+                    error_messages.append(f"Failed checking remote orphaned issues: {e}")
 
         elif direction == "pull":
             if not self.github_client:

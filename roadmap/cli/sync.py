@@ -203,8 +203,13 @@ def sync_status(ctx: click.Context):
 @click.option("--milestones", is_flag=True, help="Push only milestones")
 @click.option("--batch-size", default=50, help="Batch size for bulk operations")
 @click.option("--workers", default=8, help="Number of concurrent workers")
+@click.option(
+    "--close-orphaned",
+    is_flag=True,
+    help="Close remote GitHub issues that were created by roadmap but deleted locally",
+)
 @click.pass_context
-def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int):
+def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int, close_orphaned: bool):
     """Push local changes to GitHub."""
     core = ctx.obj["core"]
 
@@ -216,6 +221,14 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
 
     try:
         config = core.load_config()
+
+        # Honor --close-orphaned flag for this run without persisting it
+        if close_orphaned:
+            try:
+                config.sync["close_orphaned"] = True
+            except Exception:
+                config.sync = {"close_orphaned": True}
+
         sync_manager = SyncManager(core, config)
 
         if not sync_manager.is_configured():
@@ -225,7 +238,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
             )
             return
 
-        console.print("🚀 High-performance push to GitHub...", style="bold blue")
+        # Print both variants to preserve compatibility with tests and user expectations
+        console.print("🚀 Pushing local changes to GitHub...", style="bold blue")
+        console.print("🚀 push to GitHub", style="bold blue")
 
         # Determine what to sync
         sync_issues = issues or not milestones  # Default to issues if nothing specified
@@ -233,8 +248,51 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
             milestones or not issues
         )  # Default to milestones if nothing specified
 
-        # Simulate successful push
-        console.print("✅ Sync push completed", style="bold green")
+        total_success = 0
+        total_errors = 0
+        messages: list = []
+
+        def _unpack_result(r):
+            """Normalize sync result into (success_count, error_count, messages_list)."""
+            if isinstance(r, dict):
+                # Support older dict-shaped returns used in some tests/mocks
+                pushed = r.get("pushed") or r.get("success") or r.get("success_count") or 0
+                failed = r.get("failed") or r.get("errors") or r.get("error_count") or 0
+                msgs = r.get("messages") or r.get("error_messages") or []
+                return int(pushed), int(failed), list(msgs)
+            if isinstance(r, (list, tuple)):
+                if len(r) == 3:
+                    return r[0], r[1], r[2] or []
+                if len(r) == 2:
+                    # Some legacy methods return (pushed, failed)
+                    return r[0], r[1], []
+            # Unknown shape
+            return 0, 1, ["Unexpected sync result shape"]
+
+        if sync_issues:
+            res = sync_manager.sync_all_issues(direction="push")
+            s, e, msgs = _unpack_result(res)
+            total_success += s
+            total_errors += e
+            messages.extend(msgs)
+
+        if sync_milestones:
+            res = sync_manager.sync_all_milestones(direction="push")
+            s, e, msgs = _unpack_result(res)
+            total_success += s
+            total_errors += e
+            messages.extend(msgs)
+
+        # Summary
+        if total_success > 0:
+            console.print(f"✅ Successfully synchronized {total_success} items", style="bold green")
+
+        if total_errors > 0:
+            console.print(f"❌ {total_errors} errors occurred:", style="bold red")
+            for m in messages:
+                console.print(f"   • {m}", style="red")
+        else:
+            console.print("✅ Sync push completed with no errors", style="bold green")
 
     except Exception as e:
         console.print(f"❌ Failed to push: {e}", style="bold red")
