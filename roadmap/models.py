@@ -278,7 +278,7 @@ class RoadmapConfig(BaseModel):
     """Configuration model for roadmap."""
 
     github: dict = Field(default_factory=dict)
-    defaults: dict = Field(default_factory=dict)
+    defaults: dict = Field(default_factory=lambda: {"auto_branch": False, "branch_name_template": "feature/{id}-{slug}"})
     milestones: dict = Field(default_factory=dict)
     sync: dict = Field(default_factory=dict)
     display: dict = Field(default_factory=dict)

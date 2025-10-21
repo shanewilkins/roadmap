@@ -200,12 +200,36 @@ roadmap issue create "Fix login validation bug" \
 - `--assignee`: Username or team name
 - `--labels`: Comma-separated list of labels
 - `--estimate`: Estimated time to complete in hours (e.g., `2.5`, `8`, `16`)
+- `--git-branch`: Create a git branch for this issue (if in a git repository)
+- `--branch-name`: Override the suggested branch name (e.g. `feature/1234-custom-name`)
+- `--force`: Force branch creation even if the working tree has tracked modifications
 
 **Time Estimation Examples:**
 
 ```bash
 # Quick task (30 minutes)
 roadmap issue create "Update documentation" --estimate 0.5
+
+
+## Configuration: Branch name template
+
+You can customize the suggested branch name format via the configuration file `.roadmap/config.yaml`.
+
+Key: `defaults.branch_name_template`
+
+Supported placeholders:
+- `{id}` - the 8-character issue id
+- `{slug}` - a slugified version of the issue title
+- `{prefix}` - a prefix chosen from the issue type (e.g. `feature`, `bugfix`)
+
+Example:
+
+```yaml
+defaults:
+  branch_name_template: "feat/{id}/{slug}"
+```
+
+If the template is not set, roadmap falls back to `feature/{id}-{slug}`.
 
 # Standard task (4 hours)
 roadmap issue create "Implement login form" --estimate 4
@@ -352,6 +376,61 @@ roadmap issue update def456 --estimate 2.5
 
 # Remove estimate (set to no estimate)
 roadmap issue update ghi789 --estimate 0
+```
+
+### `roadmap issue start`
+
+Start work on an issue by recording the actual start date and optionally creating a Git branch.
+
+```bash
+# Start work on an issue (records current time as start date)
+roadmap issue start abc123
+
+# Start with specific date
+roadmap issue start abc123 --date "2025-01-15 09:00"
+
+# Start and create a Git branch
+roadmap issue start abc123 --git-branch
+
+# Start with custom branch name
+roadmap issue start abc123 --git-branch --branch-name "feat/custom-auth"
+
+# Start with branch creation, even if working tree has changes
+roadmap issue start abc123 --git-branch --force
+```
+
+**Options:**
+
+- `--date`: Start date (YYYY-MM-DD HH:MM, defaults to now)
+- `--git-branch/--no-git-branch`: Create a Git branch for this issue when starting
+- `--checkout/--no-checkout`: Checkout the created branch (default: True when --git-branch is used)
+- `--branch-name`: Override suggested branch name
+- `--force`: Force branch creation even if working tree has tracked modifications
+
+**Behavior:**
+
+- Sets issue status to `in-progress`
+- Records `actual_start_date` for time tracking
+- Optionally creates and checks out a Git branch
+- Respects `defaults.auto_branch` configuration (can be overridden with `--no-git-branch`)
+- Safe by default: won't create branch if working tree has tracked changes (unless `--force` is used)
+- Untracked files don't block branch creation
+
+**Example Workflow:**
+
+```bash
+# Create an issue
+roadmap issue create "Implement authentication" --estimate 8
+
+# Start working on it with automatic branch creation
+roadmap issue start abc123 --git-branch
+
+# Output:
+# 🚀 Started work on: Implement authentication
+#    Started: 2025-01-15 14:30
+#    Status: In Progress
+# 🌿 Created Git branch: feature/abc123-implement-authentication
+# ✅ Checked out branch: feature/abc123-implement-authentication
 ```
 
 ### `roadmap issue done`
