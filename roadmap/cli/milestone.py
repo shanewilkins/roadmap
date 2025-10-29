@@ -176,14 +176,46 @@ def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
     except Exception as e:
         console.print(f"❌ Failed to delete milestone: {e}", style="bold red")
 
+
+@milestone.command("close")
+@click.argument("milestone_name")
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
+    """Convenience command to mark a milestone as closed."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        return
+
+    try:
+        if not force:
+            if not click.confirm(f"Are you sure you want to close milestone '{milestone_name}'?"):
+                console.print("❌ Milestone close cancelled.", style="yellow")
+                return
+
+        from roadmap.models import MilestoneStatus
+
+        success = core.update_milestone(milestone_name, status=MilestoneStatus.CLOSED)
+        if success:
+            console.print(f"✅ Closed milestone: {milestone_name}", style="bold green")
+        else:
+            console.print(f"❌ Milestone not found: {milestone_name}", style="bold red")
+    except Exception as e:
+        console.print(f"❌ Failed to close milestone: {e}", style="bold red")
+
 @milestone.command("update")
 @click.argument("milestone_name")
 @click.option("--name", help="Update milestone name")
 @click.option("--description", "-d", help="Update milestone description")
 @click.option("--due-date", help="Update due date (YYYY-MM-DD format)")
+@click.option("--status", type=click.Choice(["open", "closed"]), help="Set milestone status (open|closed)")
 @click.option("--clear-due-date", is_flag=True, help="Clear the due date")
 @click.pass_context
-def update_milestone(ctx: click.Context, milestone_name: str, name: str, description: str, due_date: str, clear_due_date: bool):
+def update_milestone(ctx: click.Context, milestone_name: str, name: str, description: str, due_date: str, status: str, clear_due_date: bool):
     """Update an existing milestone."""
     core = ctx.obj["core"]
 
@@ -222,13 +254,31 @@ def update_milestone(ctx: click.Context, milestone_name: str, name: str, descrip
                     )
                     return
 
+        if status:
+            # Map CLI status string to MilestoneStatus enum
+            try:
+                from roadmap.models import MilestoneStatus
+
+                # MilestoneStatus expects 'open' or 'closed' values
+                updates["status"] = MilestoneStatus(status)
+            except Exception:
+                # Fallback to raw string if mapping fails
+                updates["status"] = status
+
         if not updates:
             console.print("❌ No updates specified", style="bold red")
             return
 
         # Update the milestone
-        updated_milestone = core.update_milestone(milestone_name, **updates)
-        
+        success = core.update_milestone(milestone_name, **updates)
+
+        if not success:
+            console.print(f"❌ Failed to update milestone: {milestone_name}", style="bold red")
+            return
+
+        # Re-fetch the milestone to show updated values
+        updated_milestone = core.get_milestone(updates.get("name", milestone_name))
+
         console.print(f"✅ Updated milestone: {updated_milestone.name}", style="bold green")
         console.print(f"   Description: {updated_milestone.description}", style="cyan")
         if updated_milestone.due_date:
