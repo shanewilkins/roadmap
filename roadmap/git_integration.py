@@ -119,10 +119,12 @@ class GitBranch:
 class GitIntegration:
     """Enhanced Git integration for roadmap workflow support."""
 
-    def __init__(self, repo_path: Optional[Path] = None):
+    def __init__(self, repo_path: Optional[Path] = None, config: Optional[object] = None):
         """Initialize Git integration."""
         self.repo_path = repo_path or Path.cwd()
         self._git_dir = self._find_git_directory()
+        # Optional roadmap configuration (RoadmapConfig) to influence behavior
+        self.config = config
 
     def _find_git_directory(self) -> Optional[Path]:
         """Find the .git directory by walking up the directory tree."""
@@ -138,6 +140,9 @@ class GitIntegration:
 
     def is_git_repository(self) -> bool:
         """Check if current directory is in a Git repository."""
+        # Re-check git directory in case the repo was initialized after object creation
+        if self._git_dir is None:
+            self._git_dir = self._find_git_directory()
         return self._git_dir is not None
 
     def _run_git_command(
@@ -289,11 +294,61 @@ class GitIntegration:
         elif issue.priority.value == "critical":
             prefix = "hotfix"
 
+        # Use branch name template from config if provided
+        template = None
+        try:
+            if self.config and hasattr(self.config, "defaults"):
+                template = self.config.defaults.get("branch_name_template")
+        except Exception:
+            template = None
+
+        if template:
+            # Allow template placeholders: {id}, {slug}, {prefix}
+            try:
+                return template.format(id=issue.id, slug=title_slug, prefix=prefix)
+            except Exception:
+                # Fall back to default if template formatting fails
+                pass
+
         return f"{prefix}/{issue.id}-{title_slug}"
 
-    def create_branch_for_issue(self, issue: Issue, checkout: bool = True) -> bool:
-        """Create a new branch for an issue."""
+    def create_branch_for_issue(self, issue: Issue, checkout: bool = True, force: bool = False) -> bool:
+        """Create a new branch for an issue.
+
+        Handles edge cases:
+        - refuses to create when working tree is dirty (unless force=True)
+        - if branch already exists, optionally checks it out
+        """
+        if not self.is_git_repository():
+            return False
+
         branch_name = self.suggest_branch_name(issue)
+
+        # Check for uncommitted changes
+        status_output = self._run_git_command(["status", "--porcelain"]) or ""
+        # Consider only substantive changes as dirty: ignore purely untracked files (??)
+        status_lines = [l for l in status_output.splitlines() if l.strip()]
+        has_substantive_changes = any(not l.startswith("??") for l in status_lines)
+        if has_substantive_changes and not force:
+            # Working tree has tracked modifications; do not create branch by default
+            return False
+
+        # Check if branch already exists
+        # Try a couple of rev-parse forms to detect existing local branch
+        existing = self._run_git_command(["rev-parse", "--verify", branch_name])
+        if not existing:
+            existing = self._run_git_command(["rev-parse", "--verify", f"refs/heads/{branch_name}"])
+        # If branch exists, optionally checkout it
+        if existing:
+            if checkout:
+                co = self._run_git_command(["checkout", branch_name])
+                return co is not None
+            else:
+                # Branch exists but we are not checking out; success
+                return True
+
+        # Remember current branch
+        current_branch = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"]) or None
 
         # Create the branch
         result = self._run_git_command(["checkout", "-b", branch_name])
@@ -301,12 +356,9 @@ class GitIntegration:
             return False
 
         if not checkout:
-            # Switch back to previous branch
-            prev_branch = self._run_git_command(
-                ["rev-parse", "--abbrev-ref", "HEAD@{1}"]
-            )
-            if prev_branch:
-                self._run_git_command(["checkout", prev_branch])
+            # Switch back to previous branch if we created branch but shouldn't stay on it
+            if current_branch:
+                self._run_git_command(["checkout", current_branch])
 
         return True
 

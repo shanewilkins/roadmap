@@ -1,6 +1,8 @@
 [tool.poetry]
 name = "roadmap-cli"
+
 version = "0.2.0"
+
 description = "Enterprise-grade command line tool for project roadmap management with GitHub integration, data visualization, and advanced analytics"
 authors = ["Roadmap CLI Team <contact@roadmap-cli.com>"]
 license = "MIT"

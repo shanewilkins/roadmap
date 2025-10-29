@@ -4,6 +4,7 @@ Issue management CLI commands.
 
 import click
 import os
+import subprocess
 from rich.table import Table
 from rich.text import Text
 from roadmap.core import RoadmapCore
@@ -11,6 +12,25 @@ from roadmap.models import Priority, IssueType, Status
 from roadmap.cli.utils import get_console
 
 console = get_console()
+
+
+def _safe_create_branch(git, issue, checkout=True, force=False):
+    """Call create_branch_for_issue with best-effort compatibility for older signatures.
+
+    Tries the newest signature (checkout, force) first, falls back to older ones.
+    """
+    try:
+        return git.create_branch_for_issue(issue, checkout=checkout, force=force)
+    except TypeError:
+        # Try without force
+        try:
+            return git.create_branch_for_issue(issue, checkout=checkout)
+        except TypeError:
+            # Try fully positional (issue only)
+            try:
+                return git.create_branch_for_issue(issue)
+            except Exception:
+                return False
 
 @click.group()
 def issue():
@@ -283,6 +303,8 @@ def list_issues(
     default=True,
     help="Checkout the branch after creation (with --git-branch)",
 )
+@click.option("--branch-name", default=None, help="Override suggested branch name")
+@click.option("--force", is_flag=True, help="Force branch creation even if working tree is dirty")
 @click.pass_context
 def create_issue(
     ctx: click.Context,
@@ -297,6 +319,8 @@ def create_issue(
     blocks: tuple,
     git_branch: bool,
     checkout: bool,
+    branch_name: str,
+    force: bool,
 ):
     """Create a new issue."""
     core = ctx.obj["core"]
@@ -361,21 +385,61 @@ def create_issue(
             console.print(f"   Blocks: {', '.join(blocks)}", style="red1")
 
         # Create Git branch if requested
-        if git_branch and core.git.is_git_repository():
-            branch_success = core.git.create_branch_for_issue(issue, checkout=checkout)
-            if branch_success:
-                branch_name = core.git.suggest_branch_name(issue)
-                console.print(f"🌿 Created Git branch: {branch_name}", style="green")
-                if checkout:
-                    console.print(
-                        f"✅ Checked out branch: {branch_name}", style="green"
-                    )
+        if git_branch:
+            if hasattr(core, 'git') and core.git.is_git_repository():
+                # Determine resolved branch name early so fallbacks use the same name
+                resolved_branch_name = branch_name or core.git.suggest_branch_name(issue)
+                branch_success = _safe_create_branch(core.git, issue, checkout=checkout, force=force)
+                if branch_success:
+                    console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                    if checkout:
+                        console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                else:
+                    # Determine likely reason for failure
+                    status_output = core.git._run_git_command(["status", "--porcelain"]) or ""
+                    if status_output.strip():
+                        console.print(
+                            "⚠️  Working tree has uncommitted changes — branch creation skipped. Use --force to override.",
+                            style="yellow",
+                        )
+                    else:
+                        # Try fallback direct git command
+                        fallback = core.git._run_git_command(["checkout", "-b", resolved_branch_name])
+                        if fallback is not None:
+                            console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                            if checkout:
+                                console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                        else:
+                            # Final check: maybe branch exists already; verify via rev-parse
+                            exists = None
+                            try:
+                                if hasattr(core, 'git'):
+                                    exists = core.git._run_git_command(["rev-parse", "--verify", resolved_branch_name])
+                            except Exception:
+                                exists = None
+
+                            if exists:
+                                console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                                if checkout:
+                                    console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                            else:
+                                # As a last resort try running git directly in the repo root
+                                try:
+                                    subprocess.run([
+                                        "git",
+                                        "checkout",
+                                        "-b",
+                                        resolved_branch_name,
+                                    ], cwd=getattr(core, 'root_path', None) or os.getcwd(), check=True, capture_output=True, text=True)
+                                    console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                                    if checkout:
+                                        console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                                except Exception:
+                                    console.print("⚠️  Failed to create or checkout branch. See git for details.", style="yellow")
             else:
-                console.print("⚠️  Failed to create Git branch", style="yellow")
-        elif git_branch:
-            console.print(
-                "⚠️  Not in a Git repository, skipping branch creation", style="yellow"
-            )
+                console.print(
+                    "⚠️  Not in a Git repository, skipping branch creation", style="yellow"
+                )
 
         console.print(f"   File: .roadmap/issues/{issue.filename}", style="dim")
     except click.Abort:
@@ -775,8 +839,12 @@ def delete_issue(
 @issue.command("start")
 @click.argument("issue_id")
 @click.option("--date", help="Start date (YYYY-MM-DD HH:MM, defaults to now)")
+@click.option("--git-branch/--no-git-branch", default=False, help="Create a Git branch for this issue when starting")
+@click.option("--checkout/--no-checkout", default=True, help="Checkout the created branch (when --git-branch is used)")
+@click.option("--branch-name", default=None, help="Override suggested branch name")
+@click.option("--force", is_flag=True, help="Force branch creation even if working tree is dirty")
 @click.pass_context
-def start_issue(ctx: click.Context, issue_id: str, date: str):
+def start_issue(ctx: click.Context, issue_id: str, date: str, git_branch: bool, checkout: bool, branch_name: str, force: bool):
     """Start work on an issue by recording the actual start date."""
     core = ctx.obj["core"]
 
@@ -826,6 +894,40 @@ def start_issue(ctx: click.Context, issue_id: str, date: str):
                 f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
             )
             console.print(f"   Status: In Progress", style="yellow")
+            # Determine git-branch behavior: CLI flag overrides, otherwise check config
+            try:
+                from roadmap.models import RoadmapConfig
+                cfg = RoadmapConfig.load_from_file(core.config_file) if core.config_file.exists() else RoadmapConfig()
+                config_auto_branch = bool(cfg.defaults.get("auto_branch", False))
+            except Exception:
+                config_auto_branch = False
+
+            if not git_branch and config_auto_branch:
+                git_branch = True
+
+            # Optionally create a git branch for the issue
+            try:
+                if git_branch:
+                    if hasattr(core, 'git') and core.git.is_git_repository():
+                        resolved_branch_name = branch_name or core.git.suggest_branch_name(issue)
+                        branch_success = _safe_create_branch(core.git, issue, checkout=checkout, force=force)
+                        if branch_success:
+                            console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                            if checkout:
+                                console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                        else:
+                            status_output = core.git._run_git_command(["status", "--porcelain"]) or ""
+                            if status_output.strip():
+                                console.print(
+                                    "⚠️  Working tree has uncommitted changes — branch creation skipped. Use --force to override.",
+                                    style="yellow",
+                                )
+                            else:
+                                console.print("⚠️  Failed to create or checkout branch. See git for details.", style="yellow")
+                    else:
+                        console.print("⚠️  Not in a Git repository, skipping branch creation", style="yellow")
+            except Exception as e:
+                console.print(f"⚠️  Git branch creation skipped due to error: {e}", style="yellow")
         else:
             console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
 
