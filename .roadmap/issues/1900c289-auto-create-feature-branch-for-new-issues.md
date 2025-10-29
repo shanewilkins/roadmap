@@ -2,7 +2,7 @@
 id: 1900c289
 title: Auto-create feature branch for new issues
 priority: medium
-status: todo
+status: done
 issue_type: feature
 milestone: v.0.2.0
 labels:
@@ -11,7 +11,7 @@ labels:
 - workflow
 github_issue: 40
 created: '2025-10-12T11:42:46.274786'
-updated: '2025-10-14T17:04:42.040188'
+updated: '2025-10-29T12:48:01.835971'
 assignee: shanewilkins
 estimated_hours: 3.0
 depends_on: []
