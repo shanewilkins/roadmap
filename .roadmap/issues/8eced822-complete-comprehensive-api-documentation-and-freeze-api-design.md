@@ -4,12 +4,12 @@ title: Complete comprehensive API documentation and freeze API design
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: null
 labels: []
 github_issue: 20
 created: '2025-10-14T15:46:25.762446'
-updated: '2025-10-14T17:04:40.018731'
-assignee: ''
+updated: '2025-10-29T13:03:26.206220'
+assignee: shanewilkins
 estimated_hours: 40.0
 depends_on: []
 blocks: []
