@@ -4,11 +4,11 @@ title: Automated testing pipeline and quality gates
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.3.0
 labels: []
 github_issue: 15
 created: '2025-10-14T14:18:44.676444'
-updated: '2025-10-14T17:04:39.453047'
+updated: '2025-10-29T12:56:24.645457'
 assignee: ''
 estimated_hours: 5.0
 depends_on: []

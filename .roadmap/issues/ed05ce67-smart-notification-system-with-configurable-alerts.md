@@ -4,11 +4,11 @@ title: Smart notification system with configurable alerts
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.3.0
 labels: []
 github_issue: 14
 created: '2025-10-14T14:18:24.494979'
-updated: '2025-10-14T17:04:38.955244'
+updated: '2025-10-29T12:56:24.641728'
 assignee: ''
 estimated_hours: 6.0
 depends_on: []

@@ -4,11 +4,11 @@ title: Interactive project dashboard with real-time updates
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.3.0
 labels: []
 github_issue: 13
 created: '2025-10-14T14:18:03.861258'
-updated: '2025-10-14T17:04:38.601131'
+updated: '2025-10-29T12:56:24.638323'
 assignee: ''
 estimated_hours: 8.0
 depends_on: []

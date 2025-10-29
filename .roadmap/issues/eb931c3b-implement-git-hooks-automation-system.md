@@ -4,11 +4,11 @@ title: Implement Git hooks automation system
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.3.0
 labels: []
 github_issue: 12
 created: '2025-10-14T14:17:34.202508'
-updated: '2025-10-14T17:04:38.431081'
+updated: '2025-10-29T12:56:24.634898'
 assignee: ''
 estimated_hours: 6.0
 depends_on: []

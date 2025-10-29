@@ -4,11 +4,11 @@ title: Implement automatic milestone and project progress updates based on issue
 priority: high
 status: todo
 issue_type: feature
-milestone: ''
+milestone: v.0.3.0
 labels: []
 github_issue: 8
 created: '2025-10-11T20:24:40.653811'
-updated: '2025-10-14T17:04:37.444579'
+updated: '2025-10-29T12:56:24.623217'
 assignee: ''
 estimated_hours: 5.0
 depends_on: []

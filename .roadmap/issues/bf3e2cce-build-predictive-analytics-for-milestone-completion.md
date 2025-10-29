@@ -4,11 +4,11 @@ title: Build predictive analytics for milestone completion
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.3.0
 labels: []
 github_issue: 17
 created: '2025-10-14T15:46:10.530207'
-updated: '2025-10-14T17:04:39.435990'
+updated: '2025-10-29T12:56:24.652476'
 assignee: ''
 estimated_hours: 16.0
 depends_on: []
