@@ -131,3 +131,8 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "--cov=roadmap --cov-report=term-missing --cov-report=html"
+markers = [
+    "unit: Unit tests (fast, no filesystem operations)",
+    "integration: Integration tests (slower, with filesystem operations)",
+    "filesystem: Tests that require real filesystem operations"
+]
