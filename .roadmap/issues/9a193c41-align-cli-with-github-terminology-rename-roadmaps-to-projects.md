@@ -6,9 +6,9 @@ status: done
 issue_type: feature
 milestone: v.0.2.0
 labels: []
-github_issue: null
+github_issue: 51
 created: '2025-10-14T17:36:41.628217'
-updated: '2025-10-14T17:52:36.633078'
+updated: '2025-10-30T11:56:34.280593'
 assignee: shanewilkins
 estimated_hours: null
 depends_on: []

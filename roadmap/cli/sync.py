@@ -4,7 +4,7 @@ Sync management CLI commands.
 
 import click
 import os
-from roadmap.sync import SyncManager
+from roadmap.sync import SyncManager, SyncConflictStrategy
 from roadmap.credentials import CredentialManager
 from roadmap.cli.utils import get_console
 
@@ -203,13 +203,14 @@ def sync_status(ctx: click.Context):
 @click.option("--milestones", is_flag=True, help="Push only milestones")
 @click.option("--batch-size", default=50, help="Batch size for bulk operations")
 @click.option("--workers", default=8, help="Number of concurrent workers")
+@click.option("--dry-run", is_flag=True, help="Show what would change without making any remote mutations")
 @click.option(
     "--close-orphaned",
     is_flag=True,
     help="Close remote GitHub issues that were created by roadmap but deleted locally",
 )
 @click.pass_context
-def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int, close_orphaned: bool):
+def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int, dry_run: bool, close_orphaned: bool):
     """Push local changes to GitHub."""
     core = ctx.obj["core"]
 
@@ -236,6 +237,79 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
                 "❌ GitHub integration not configured. Run 'roadmap sync setup' first.",
                 style="bold red",
             )
+            return
+
+        # Dry-run mode: compute and print what would change without mutating remote
+        if dry_run:
+            console.print("🔍 DRY RUN - No changes will be made", style="bold yellow")
+            try:
+                local_issues = core.list_issues()
+                remote_issues = sync_manager.github_client.get_issues(state="all")
+
+                # Build lookups
+                remote_by_number = {i["number"]: i for i in remote_issues if "pull_request" not in i}
+
+                actions = []
+
+                for li in local_issues:
+                    if not li.github_issue:
+                        actions.append(("create_github", li.id, li.title))
+                    else:
+                        gh = remote_by_number.get(li.github_issue)
+                        if not gh:
+                            actions.append(("github_missing", li.id, li.github_issue))
+                        else:
+                            gh_updated = gh.get("updated_at")
+                            comp = sync_manager.sync_strategy.compare_timestamps(li.updated, gh_updated)
+                            if comp == "local_newer":
+                                actions.append(("push_update", li.id, li.github_issue))
+                            elif comp == "remote_newer":
+                                actions.append(("pull_update", li.id, li.github_issue))
+                            else:
+                                actions.append(("noop", li.id, li.github_issue))
+
+                for num, gh in remote_by_number.items():
+                    found = any(li.github_issue == num for li in local_issues)
+                    if not found:
+                        body = gh.get("body") or ""
+                        if "*Created by roadmap CLI*" in body and bool(config.sync.get("close_orphaned", False)):
+                            actions.append(("close_orphan", num, gh.get("title")))
+                        else:
+                            actions.append(("create_local", num, gh.get("title")))
+
+                # Summarize
+                counts = {}
+                for a in actions:
+                    counts[a[0]] = counts.get(a[0], 0) + 1
+
+                console.print("\nDRY-RUN REPORT", style="bold")
+                console.print("─" * 30)
+                console.print(f"Total local issues: {len(local_issues)}")
+                console.print(f"Total remote issues (excluding PRs): {len(remote_by_number)}")
+                console.print("\nAction summary:")
+                for k, v in counts.items():
+                    console.print(f"  {k}: {v}")
+
+                console.print("\nDetails:")
+                for kind, id_or_num, title in actions:
+                    if kind == "create_github":
+                        console.print(f"Would CREATE on GitHub: local issue {id_or_num} - {title}")
+                    elif kind == "push_update":
+                        console.print(f"Would PUSH update to GitHub: local {id_or_num} -> GitHub #{title}")
+                    elif kind == "pull_update":
+                        console.print(f"Would PULL update from GitHub: local {id_or_num} <- GitHub #{title}")
+                    elif kind == "github_missing":
+                        console.print(f"GitHub issue missing for local {id_or_num}: expected GitHub #{title}")
+                    elif kind == "create_local":
+                        console.print(f"Would CREATE local from GitHub: GitHub #{id_or_num} - {title}")
+                    elif kind == "close_orphan":
+                        console.print(f"Would CLOSE remote orphaned GitHub issue: #{id_or_num} - {title}")
+                    elif kind == "noop":
+                        console.print(f"No action needed for local {id_or_num} / GitHub #{title}")
+
+            except Exception as e:
+                console.print(f"❌ Dry-run failed: {e}", style="bold red")
+
             return
 
         # Print both variants to preserve compatibility with tests and user expectations
@@ -394,6 +468,18 @@ def sync_bidirectional(
         config = core.load_config()
         sync_manager = SyncManager(core, config)
 
+        # Apply chosen conflict resolution strategy to the sync manager
+        try:
+            strategy_map = {
+                "local_wins": SyncConflictStrategy.LOCAL_WINS,
+                "remote_wins": SyncConflictStrategy.REMOTE_WINS,
+                "newer_wins": SyncConflictStrategy.NEWER_WINS,
+            }
+            sync_manager.sync_strategy.strategy = strategy_map.get(strategy, sync_manager.sync_strategy.strategy)
+        except Exception:
+            # If mapping fails, continue with existing strategy
+            pass
+
         # Check if GitHub is configured
         success, message = sync_manager.test_connection()
         if not success:
@@ -406,10 +492,92 @@ def sync_bidirectional(
 
         if dry_run:
             console.print("🔍 DRY RUN - No changes will be made", style="bold yellow")
-            console.print(
-                "\n⚠️  Dry run mode not yet implemented. Run without --dry-run to perform actual sync.",
-                style="yellow",
-            )
+            try:
+                # Gather local and remote issues
+                local_issues = core.list_issues()
+                remote_issues = sync_manager.github_client.get_issues(state="all")
+
+                remote_by_number = {i["number"]: i for i in remote_issues if "pull_request" not in i}
+
+                actions = []
+                conflicts = []
+
+                # Compare linked issues
+                for li in local_issues:
+                    if not li.github_issue:
+                        actions.append(("create_github", li.id, li.title))
+                        continue
+
+                    gh = remote_by_number.get(li.github_issue)
+                    if not gh:
+                        actions.append(("github_missing", li.id, li.github_issue))
+                        continue
+
+                    # Detect conflict via sync strategy helper (based on timestamps)
+                    conflict = sync_manager.sync_strategy.detect_issue_conflict(li, gh)
+                    if conflict:
+                        conflicts.append(conflict)
+                        resolution = sync_manager.sync_strategy.resolve_conflict(conflict)
+                        if resolution == "use_local":
+                            actions.append(("push_update", li.id, li.github_issue))
+                        elif resolution == "use_remote":
+                            actions.append(("pull_update", li.id, li.github_issue))
+                        else:
+                            actions.append(("skip", li.id, li.github_issue))
+                    else:
+                        actions.append(("noop", li.id, li.github_issue))
+
+                # Remote-only issues
+                for num, gh in remote_by_number.items():
+                    found = any(li.github_issue == num for li in local_issues)
+                    if not found:
+                        body = gh.get("body") or ""
+                        if "*Created by roadmap CLI*" in body and bool(config.sync.get("close_orphaned", False)):
+                            actions.append(("close_orphan", num, gh.get("title")))
+                        else:
+                            actions.append(("create_local", num, gh.get("title")))
+
+                # Summarize
+                counts = {}
+                for a in actions:
+                    counts[a[0]] = counts.get(a[0], 0) + 1
+
+                console.print("\nDRY-RUN BIDIRECTIONAL REPORT", style="bold")
+                console.print("─" * 30)
+                console.print(f"Total local issues: {len(local_issues)}")
+                console.print(f"Total remote issues (excluding PRs): {len(remote_by_number)}")
+                console.print("\nAction summary:")
+                for k, v in counts.items():
+                    console.print(f"  {k}: {v}")
+
+                if conflicts:
+                    console.print(f"\nConflicts detected: {len(conflicts)}", style="bold yellow")
+                    for c in conflicts:
+                        chosen = sync_manager.sync_strategy.resolve_conflict(c)
+                        console.print(f"  • {c.item_type} {c.item_id}: will resolve -> {chosen}")
+
+                console.print("\nDetails:")
+                for kind, id_or_num, title in actions:
+                    if kind == "create_github":
+                        console.print(f"Would CREATE on GitHub: local issue {id_or_num} - {title}")
+                    elif kind == "push_update":
+                        console.print(f"Would PUSH update to GitHub: local {id_or_num} -> GitHub #{title}")
+                    elif kind == "pull_update":
+                        console.print(f"Would PULL update from GitHub: local {id_or_num} <- GitHub #{title}")
+                    elif kind == "github_missing":
+                        console.print(f"GitHub issue missing for local {id_or_num}: expected GitHub #{title}")
+                    elif kind == "create_local":
+                        console.print(f"Would CREATE local from GitHub: GitHub #{id_or_num} - {title}")
+                    elif kind == "close_orphan":
+                        console.print(f"Would CLOSE remote orphaned GitHub issue: #{id_or_num} - {title}")
+                    elif kind == "noop":
+                        console.print(f"No action needed for local {id_or_num} / GitHub #{title}")
+                    elif kind == "skip":
+                        console.print(f"Would SKIP syncing {id_or_num} due to strategy")
+
+            except Exception as e:
+                console.print(f"❌ Dry-run failed: {e}", style="bold red")
+
             return
 
         console.print("🔄 Starting bidirectional synchronization...", style="bold blue")

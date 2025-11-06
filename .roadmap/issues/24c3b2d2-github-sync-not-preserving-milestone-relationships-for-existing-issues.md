@@ -6,13 +6,13 @@ status: done
 issue_type: bug
 milestone: v.0.2.0
 labels:
-- sync
-- github-integration
-- milestone-tracking
 - bug
+- github-integration
+- sync
+- milestone-tracking
 github_issue: 42
 created: '2025-10-14T17:01:42.932554'
-updated: '2025-10-14T17:15:42.032204'
+updated: '2025-10-30T11:56:34.047404'
 assignee: shanewilkins
 estimated_hours: 8.0
 depends_on: []

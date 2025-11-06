@@ -812,13 +812,25 @@ class SyncManager:
                 if not found_local:
                     # Close the remote GitHub issue
                     try:
+                        # Normalize assignee to a login string if GitHub returns a user object
+                        assignees_list = []
+                        gh_assignee = gh.get("assignee")
+                        if gh_assignee:
+                            # GitHub may return an assignee object or a login string
+                            if isinstance(gh_assignee, dict):
+                                login = gh_assignee.get("login")
+                                if login:
+                                    assignees_list = [login]
+                            elif isinstance(gh_assignee, str):
+                                assignees_list = [gh_assignee]
+
                         self.github_client.update_issue(
                             issue_number=gh_number,
                             title=gh.get("title", ""),
                             body=body + "\n\n(Closed by roadmap CLI due to missing local issue)",
                             state="closed",
                             labels=[l["name"] for l in gh.get("labels", [])],
-                            assignees=[gh.get("assignee")] if gh.get("assignee") else [],
+                            assignees=assignees_list,
                             milestone=None,
                         )
                         closed_count += 1

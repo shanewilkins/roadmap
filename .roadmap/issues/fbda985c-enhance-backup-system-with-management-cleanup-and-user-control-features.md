@@ -2,7 +2,7 @@
 id: fbda985c
 title: Enhance backup system with management, cleanup, and user control features
 priority: medium
-status: todo
+status: done
 issue_type: feature
 milestone: v.0.2.0
 labels:
@@ -11,7 +11,7 @@ labels:
 - cleanup
 github_issue: 41
 created: '2025-10-13T08:55:24.179990'
-updated: '2025-10-20T17:05:00.000000'
+updated: '2025-10-30T11:56:36.271531'
 assignee: shanewilkins
 estimated_hours: 5.0
 depends_on: []
@@ -25,7 +25,6 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: '2025-10-20T17:05:00.000000'
-status: done
 ---
 
 # Enhance backup system with management, cleanup, and user control features

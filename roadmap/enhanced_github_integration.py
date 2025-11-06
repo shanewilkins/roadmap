@@ -436,10 +436,25 @@ class EnhancedGitHubIntegration:
                 "title": roadmap_issue.title,
                 "body": self._format_issue_body_for_github(roadmap_issue),
                 "labels": self._convert_labels_for_github(roadmap_issue),
-                "state": "closed" if roadmap_issue.status == Status.DONE else "open"
+                "state": "closed" if roadmap_issue.status == Status.DONE else "open",
             }
-            
-            self.github_client.update_issue(roadmap_issue.github_issue, **update_data)
+
+            # Normalize assignee into a list of login strings if present.
+            assignees_list: List[str] = []
+            assignee = getattr(roadmap_issue, "assignee", None)
+            if assignee:
+                # Accept either a dict (from GitHub) or a username string
+                if isinstance(assignee, dict):
+                    login = assignee.get("login")
+                    if login:
+                        assignees_list = [login]
+                elif isinstance(assignee, str):
+                    assignees_list = [assignee]
+
+            if assignees_list:
+                update_data["assignees"] = assignees_list
+
+            self.github_client.update_issue(issue_number=roadmap_issue.github_issue, **update_data)
             return True
             
         except GitHubAPIError:

@@ -4,11 +4,11 @@ title: Implement AI-powered project insights and recommendations
 priority: high
 status: todo
 issue_type: other
-milestone: null
+milestone: ''
 labels: []
 github_issue: 16
 created: '2025-10-14T15:46:06.014124'
-updated: '2025-10-29T13:03:26.202555'
+updated: '2025-10-30T11:56:32.480306'
 assignee: shanewilkins
 estimated_hours: 24.0
 depends_on: []
