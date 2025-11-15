@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import yaml
 
-from .models import Issue, IssueType, Milestone, MilestoneStatus, Priority, Status
+from .models import Issue, IssueType, Milestone, MilestoneStatus, Priority, Project, ProjectStatus, Status
 from .persistence import YAMLValidationError, enhanced_persistence
 
 
@@ -275,6 +275,88 @@ class MilestoneParser:
     ) -> Tuple[bool, str]:
         """Safely save a milestone file with automatic backup."""
         return enhanced_persistence.safe_save_with_backup(milestone, file_path)
+
+    @classmethod
+    def _parse_datetime(cls, value: Any) -> Optional[datetime]:
+        """Parse datetime from various formats."""
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+        return None
+
+
+class ProjectParser:
+    """Parser for project markdown files."""
+
+    @classmethod
+    def parse_project_file(cls, file_path: Path) -> Project:
+        """Parse a project file and return a Project instance."""
+        frontmatter, content = FrontmatterParser.parse_file(file_path)
+
+        # Convert frontmatter to Project model
+        project = Project(
+            id=frontmatter.get("id", ""),
+            name=frontmatter.get("name", ""),
+            description=frontmatter.get("description", ""),
+            status=ProjectStatus(frontmatter.get("status", "planning")),
+            priority=Priority(frontmatter.get("priority", "medium")),
+            owner=frontmatter.get("owner"),
+            start_date=cls._parse_datetime(frontmatter.get("start_date")),
+            target_end_date=cls._parse_datetime(frontmatter.get("target_end_date")),
+            actual_end_date=cls._parse_datetime(frontmatter.get("actual_end_date")),
+            created=cls._parse_datetime(frontmatter.get("created")) or datetime.now(),
+            updated=cls._parse_datetime(frontmatter.get("updated")) or datetime.now(),
+            milestones=frontmatter.get("milestones", []),
+            estimated_hours=frontmatter.get("estimated_hours"),
+            actual_hours=frontmatter.get("actual_hours"),
+            content=content,
+            calculated_progress=frontmatter.get("calculated_progress"),
+            last_progress_update=cls._parse_datetime(frontmatter.get("last_progress_update")),
+            projected_end_date=cls._parse_datetime(frontmatter.get("projected_end_date")),
+            schedule_variance=frontmatter.get("schedule_variance"),
+            completion_velocity=frontmatter.get("completion_velocity"),
+            risk_level=frontmatter.get("risk_level", "low"),
+        )
+
+        return project
+
+    @classmethod
+    def save_project_file(cls, project: Project, file_path: Path) -> None:
+        """Save a project to a markdown file."""
+        # Create frontmatter from project data
+        frontmatter = {
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "status": project.status.value,
+            "priority": project.priority.value,
+            "owner": project.owner,
+            "start_date": project.start_date.isoformat() if project.start_date else None,
+            "target_end_date": project.target_end_date.isoformat() if project.target_end_date else None,
+            "actual_end_date": project.actual_end_date.isoformat() if project.actual_end_date else None,
+            "created": project.created.isoformat(),
+            "updated": project.updated.isoformat(),
+            "milestones": project.milestones,
+            "estimated_hours": project.estimated_hours,
+            "actual_hours": project.actual_hours,
+            "calculated_progress": project.calculated_progress,
+            "last_progress_update": project.last_progress_update.isoformat() if project.last_progress_update else None,
+            "projected_end_date": project.projected_end_date.isoformat() if project.projected_end_date else None,
+            "schedule_variance": project.schedule_variance,
+            "completion_velocity": project.completion_velocity,
+            "risk_level": project.risk_level.value,
+        }
+
+        # Remove None values
+        frontmatter = {k: v for k, v in frontmatter.items() if v is not None}
+
+        FrontmatterParser.serialize_file(frontmatter, project.content, file_path)
 
     @classmethod
     def _parse_datetime(cls, value: Any) -> Optional[datetime]:

@@ -2,20 +2,20 @@
 id: 515a927c
 title: Implement automatic milestone and project progress updates based on issue completion
 priority: high
-status: todo
+status: done
 issue_type: feature
 milestone: v.0.3.0
 labels: []
 github_issue: 8
 created: '2025-10-11T20:24:40.653811'
-updated: '2025-10-30T11:56:30.516739'
-assignee: ''
+updated: '2025-11-15T15:35:37.472514'
+assignee: shanewilkins
 estimated_hours: 5.0
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-11-15T15:21:56.032509'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 0.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

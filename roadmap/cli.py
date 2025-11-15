@@ -23,6 +23,7 @@ from roadmap.cli.project import project
 from roadmap.cli.issue import issue
 from roadmap.cli.git_integration import git
 from roadmap.cli.analytics import analytics
+from roadmap.cli.progress import recalculate_progress, progress_reports
 from roadmap.cli.deprecated import register_deprecated_commands
 
 @click.group(invoke_without_command=True)
@@ -53,6 +54,8 @@ main.add_command(project)
 main.add_command(issue)
 main.add_command(git)
 main.add_command(analytics)
+main.add_command(recalculate_progress)
+main.add_command(progress_reports)
 
 # Register deprecated commands for backward compatibility
 register_deprecated_commands(main)

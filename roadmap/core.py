@@ -13,10 +13,12 @@ from .models import (
     Milestone,
     MilestoneStatus,
     Priority,
+    Project,
+    ProjectStatus,
     RoadmapConfig,
     Status,
 )
-from .parser import IssueParser, MilestoneParser
+from .parser import IssueParser, MilestoneParser, ProjectParser
 from .security import (
     create_secure_directory,
     create_secure_file,
@@ -591,6 +593,54 @@ Project notes and additional context.
             "progress": progress,
             "by_status": by_status,
         }
+
+    # Project management methods
+    def list_projects(self) -> List[Project]:
+        """List all projects."""
+        if not self.is_initialized():
+            raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
+
+        projects = []
+        for project_file in self.projects_dir.glob("*.md"):
+            try:
+                project = ProjectParser.parse_project_file(project_file)
+                projects.append(project)
+            except Exception:
+                continue
+
+        projects.sort(key=lambda x: x.created)
+        return projects
+
+    def get_project(self, project_id: str) -> Optional[Project]:
+        """Get a specific project by ID."""
+        for project_file in self.projects_dir.glob("*.md"):
+            try:
+                project = ProjectParser.parse_project_file(project_file)
+                if project.id.startswith(project_id):
+                    return project
+            except Exception:
+                continue
+        return None
+
+    def save_project(self, project: Project) -> bool:
+        """Save an updated project to disk."""
+        if not self.is_initialized():
+            raise ValueError("Roadmap not initialized")
+
+        # Find and update the existing project file
+        for project_file in self.projects_dir.glob("*.md"):
+            try:
+                test_project = ProjectParser.parse_project_file(project_file)
+                if test_project.id == project.id:
+                    ProjectParser.save_project_file(project, project_file)
+                    return True
+            except Exception:
+                continue
+
+        # If not found, create new file
+        project_path = self.projects_dir / project.filename
+        ProjectParser.save_project_file(project, project_path)
+        return True
 
     def get_backlog_issues(self) -> List[Issue]:
         """Get all issues not assigned to any milestone (backlog)."""

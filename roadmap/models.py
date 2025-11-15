@@ -54,6 +54,24 @@ class MilestoneStatus(str, Enum):
     CLOSED = "closed"
 
 
+class ProjectStatus(str, Enum):
+    """Project status values."""
+
+    PLANNING = "planning"
+    ACTIVE = "active"
+    ON_HOLD = "on-hold"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class RiskLevel(str, Enum):
+    """Risk level values for projects and milestones."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
 class Issue(BaseModel):
     """Issue data model."""
 
@@ -196,6 +214,14 @@ class Milestone(BaseModel):
     created: datetime = Field(default_factory=datetime.now)
     updated: datetime = Field(default_factory=datetime.now)
     content: str = ""  # Markdown content
+    
+    # Automatic progress tracking fields
+    calculated_progress: Optional[float] = None  # Auto-calculated from issues
+    last_progress_update: Optional[datetime] = None
+    completion_velocity: Optional[float] = None  # Issues/week
+    risk_level: RiskLevel = RiskLevel.LOW
+    actual_start_date: Optional[datetime] = None
+    actual_end_date: Optional[datetime] = None
 
     def get_issues(self, all_issues: List["Issue"]) -> List["Issue"]:
         """Get all issues assigned to this milestone."""
@@ -205,16 +231,39 @@ class Milestone(BaseModel):
         """Get the count of issues assigned to this milestone."""
         return len(self.get_issues(all_issues))
 
-    def get_completion_percentage(self, all_issues: List["Issue"]) -> float:
-        """Get the completion percentage of this milestone."""
+    def get_completion_percentage(self, all_issues: List["Issue"], method: str = "effort_weighted") -> float:
+        """Get the completion percentage of this milestone.
+        
+        Args:
+            all_issues: List of all issues in the system
+            method: 'effort_weighted' or 'count_based'
+        """
         milestone_issues = self.get_issues(all_issues)
         if not milestone_issues:
             return 0.0
 
-        completed_issues = [
-            issue for issue in milestone_issues if issue.status == Status.DONE
-        ]
-        return (len(completed_issues) / len(milestone_issues)) * 100.0
+        if method == "count_based":
+            # Simple count-based calculation
+            completed_issues = [
+                issue for issue in milestone_issues if issue.status == Status.DONE
+            ]
+            return (len(completed_issues) / len(milestone_issues)) * 100.0
+        else:
+            # Effort-weighted calculation (preferred)
+            total_effort = 0.0
+            completed_effort = 0.0
+            
+            for issue in milestone_issues:
+                effort = issue.estimated_hours or 1.0  # Default to 1 hour if not estimated
+                total_effort += effort
+                
+                if issue.status == Status.DONE:
+                    completed_effort += effort
+                elif issue.progress_percentage is not None:
+                    # Partial completion based on progress percentage
+                    completed_effort += effort * (issue.progress_percentage / 100.0)
+            
+            return (completed_effort / total_effort) * 100.0 if total_effort > 0 else 0.0
 
     def get_total_estimated_hours(self, all_issues: List["Issue"]) -> float:
         """Get the total estimated hours for all issues in this milestone."""
@@ -246,6 +295,21 @@ class Milestone(BaseModel):
             days = total_hours / 8  # Assuming 8-hour work days
             return f"{days:.1f}d"
 
+    def update_automatic_fields(self, all_issues: List["Issue"], method: str = "effort_weighted") -> None:
+        """Update all automatic progress tracking fields."""
+        self.calculated_progress = self.get_completion_percentage(all_issues, method)
+        self.last_progress_update = datetime.now()
+        self.updated = datetime.now()
+
+        # Update status based on progress
+        if self.calculated_progress >= 100.0:
+            self.status = MilestoneStatus.CLOSED
+            if not self.actual_end_date:
+                self.actual_end_date = datetime.now()
+        elif self.calculated_progress > 0:
+            if self.status == MilestoneStatus.OPEN and not self.actual_start_date:
+                self.actual_start_date = datetime.now()
+
     @property
     def filename(self) -> str:
         """Generate filename for this milestone."""
@@ -254,6 +318,89 @@ class Milestone(BaseModel):
         ).strip()
         safe_name = safe_name.replace(" ", "-").lower()
         return f"{safe_name}.md"
+
+
+class Project(BaseModel):
+    """Project data model."""
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
+    name: str
+    description: str = ""
+    status: ProjectStatus = ProjectStatus.PLANNING
+    priority: Priority = Priority.MEDIUM
+    owner: Optional[str] = None
+    start_date: Optional[datetime] = None
+    target_end_date: Optional[datetime] = None
+    actual_end_date: Optional[datetime] = None
+    created: datetime = Field(default_factory=datetime.now)
+    updated: datetime = Field(default_factory=datetime.now)
+    milestones: List[str] = Field(default_factory=list)  # List of milestone names
+    estimated_hours: Optional[float] = None
+    actual_hours: Optional[float] = None
+    content: str = ""  # Markdown content
+    
+    # Automatic progress tracking fields
+    calculated_progress: Optional[float] = None  # Auto-calculated from milestones
+    last_progress_update: Optional[datetime] = None
+    projected_end_date: Optional[datetime] = None  # Auto-calculated
+    schedule_variance: Optional[int] = None  # Days ahead/behind
+    completion_velocity: Optional[float] = None  # Milestones/week
+    risk_level: RiskLevel = RiskLevel.LOW
+
+    def get_milestones(self, all_milestones: List["Milestone"]) -> List["Milestone"]:
+        """Get all milestones assigned to this project."""
+        return [milestone for milestone in all_milestones if milestone.name in self.milestones]
+
+    def get_milestone_count(self, all_milestones: List["Milestone"]) -> int:
+        """Get the count of milestones assigned to this project."""
+        return len(self.get_milestones(all_milestones))
+
+    def calculate_progress(self, all_milestones: List["Milestone"], all_issues: List["Issue"]) -> float:
+        """Calculate project progress from milestone completion (effort-weighted)."""
+        project_milestones = self.get_milestones(all_milestones)
+        if not project_milestones:
+            return 0.0
+
+        # Use milestone effort (total estimated hours) as weight
+        total_weight = 0.0
+        completed_weight = 0.0
+
+        for milestone in project_milestones:
+            milestone_weight = milestone.get_total_estimated_hours(all_issues) or 1.0
+            total_weight += milestone_weight
+            
+            if milestone.status == MilestoneStatus.CLOSED:
+                completed_weight += milestone_weight
+            else:
+                # Partial completion based on milestone progress
+                milestone_progress = milestone.get_completion_percentage(all_issues) / 100.0
+                completed_weight += milestone_weight * milestone_progress
+
+        return (completed_weight / total_weight) * 100.0 if total_weight > 0 else 0.0
+
+    def update_automatic_fields(self, all_milestones: List["Milestone"], all_issues: List["Issue"]) -> None:
+        """Update all automatic progress tracking fields."""
+        self.calculated_progress = self.calculate_progress(all_milestones, all_issues)
+        self.last_progress_update = datetime.now()
+        self.updated = datetime.now()
+
+        # Update status based on progress
+        if self.calculated_progress >= 100.0:
+            self.status = ProjectStatus.COMPLETED
+            if not self.actual_end_date:
+                self.actual_end_date = datetime.now()
+        elif self.calculated_progress > 0:
+            if self.status == ProjectStatus.PLANNING:
+                self.status = ProjectStatus.ACTIVE
+        
+    @property
+    def filename(self) -> str:
+        """Generate filename for this project."""
+        safe_name = "".join(
+            c for c in self.name if c.isalnum() or c in (" ", "-", "_")
+        ).strip()
+        safe_name = safe_name.replace(" ", "-").lower()
+        return f"{self.id}-{safe_name}.md"
 
 
 class Comment(BaseModel):
