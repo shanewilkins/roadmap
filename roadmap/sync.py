@@ -82,8 +82,12 @@ class SyncStrategy:
     """Handles conflict resolution and synchronization strategies."""
 
     def __init__(
-        self, strategy: SyncConflictStrategy = SyncConflictStrategy.NEWER_WINS
+        self, strategy: SyncConflictStrategy = SyncConflictStrategy.LOCAL_WINS
     ):
+        # Default to LOCAL_WINS to avoid GitHub timestamp race conditions:
+        # When we push local changes to GitHub, GitHub updates its updated_at timestamp,
+        # causing subsequent bidirectional syncs with NEWER_WINS to prefer GitHub
+        # and potentially override the local changes we just pushed.
         self.strategy = strategy
         self.conflicts_found: List[SyncConflict] = []
 
@@ -222,9 +226,14 @@ class SyncManager:
         self,
         core: RoadmapCore,
         config: RoadmapConfig,
-        sync_strategy: SyncConflictStrategy = SyncConflictStrategy.NEWER_WINS,
+        sync_strategy: SyncConflictStrategy = SyncConflictStrategy.LOCAL_WINS,
     ):
-        """Initialize sync manager."""
+        """Initialize sync manager.
+        
+        Default sync strategy is LOCAL_WINS to prevent GitHub timestamp race conditions
+        where pushing local changes updates GitHub's timestamp, causing subsequent 
+        bidirectional syncs to prefer remote and override local changes.
+        """
         self.core = core
         self.config = config
         self.github_client = None

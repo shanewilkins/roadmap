@@ -248,6 +248,40 @@ When issues conflict between local and GitHub:
    roadmap config set sync.conflict_resolution "github_wins"
    ```
 
+### Sync Strategy Configuration
+
+The `sync bidirectional` command supports different conflict resolution strategies:
+
+```bash
+# Use local_wins strategy (default - recommended)
+roadmap sync bidirectional --strategy local_wins
+
+# Use remote_wins strategy (prefer GitHub)
+roadmap sync bidirectional --strategy remote_wins
+
+# Use newer_wins strategy (timestamp-based)
+roadmap sync bidirectional --strategy newer_wins
+```
+
+#### Important: GitHub Timestamp Race Condition
+
+**Default Strategy**: The default sync strategy is `local_wins` to prevent a common race condition with GitHub timestamps.
+
+**The Problem**: When using the `newer_wins` strategy with bidirectional sync, a race condition occurs:
+
+1. You mark a local issue as "done"
+2. `roadmap sync bidirectional` pushes this change to GitHub (closes the issue)
+3. GitHub updates its `updated_at` timestamp when the issue is closed
+4. The same sync command then pulls from GitHub and sees GitHub's timestamp is newer
+5. This can cause the sync to prefer GitHub's state and potentially override your local changes
+
+**The Solution**: The `local_wins` strategy ensures that local changes take precedence and avoid this timestamp race condition. This is particularly important for workflows where you primarily work locally and sync to GitHub periodically.
+
+**When to Use Other Strategies**:
+
+- `remote_wins`: When GitHub is your primary workspace and local is just a backup
+- `newer_wins`: When you have multiple team members making changes both locally and on GitHub, and you want true timestamp-based resolution (understanding the race condition risk)
+
 ### Rate Limiting
 
 If you hit GitHub API rate limits:

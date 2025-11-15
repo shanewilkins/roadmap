@@ -912,6 +912,9 @@ class TestSyncEnhancements:
 
     def test_push_issue_with_conflict_check_conflict_detected(self, sync_manager):
         """Test push_issue with conflict checking when conflict is detected."""
+        # Set strategy to NEWER_WINS for this test to trigger the conflict
+        sync_manager.sync_strategy.strategy = SyncConflictStrategy.NEWER_WINS
+        
         issue = Issue(
             id="1",
             title="Local Version",

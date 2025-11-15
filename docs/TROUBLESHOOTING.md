@@ -319,7 +319,30 @@ roadmap sync status  # Shows rate limit info
 
 ### Sync Data Conflicts
 
-#### 1. Merge Conflicts
+#### 1. GitHub Timestamp Race Condition
+
+**Symptoms:**
+```
+Local changes appear to sync to GitHub but then get overridden
+Issues marked as "done" locally don't stay closed on GitHub after sync
+```
+
+**Root Cause:**
+When using `newer_wins` strategy, GitHub updates its `updated_at` timestamp after receiving your push, making it appear "newer" than your local changes during the same bidirectional sync operation.
+
+**Solutions:**
+```bash
+# 1. Use local_wins strategy (recommended default)
+roadmap sync bidirectional --strategy local_wins
+
+# 2. Change default strategy in configuration
+roadmap config set sync.default_strategy "local_wins"
+
+# 3. For timestamp-based resolution with multiple collaborators
+roadmap sync bidirectional --strategy newer_wins  # Understand race condition risk
+```
+
+#### 2. Merge Conflicts
 
 **Error Message:**
 ```

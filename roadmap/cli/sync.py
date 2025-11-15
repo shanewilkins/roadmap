@@ -450,8 +450,8 @@ def sync_delete_token(ctx: click.Context):
 @click.option(
     "--strategy",
     type=click.Choice(["local_wins", "remote_wins", "newer_wins"]),
-    default="newer_wins",
-    help="Conflict resolution strategy (default: newer_wins)",
+    default="local_wins",
+    help="Conflict resolution strategy (default: local_wins)",
 )
 @click.option(
     "--dry-run", is_flag=True, help="Show what would be synced without making changes"
