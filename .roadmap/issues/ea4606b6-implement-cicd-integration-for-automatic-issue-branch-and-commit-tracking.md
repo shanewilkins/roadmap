@@ -8,7 +8,7 @@ milestone: v.0.3.0
 labels: []
 github_issue: 10
 created: '2025-10-11T20:28:50.243433'
-updated: '2025-11-15T15:38:09.754194'
+updated: '2025-11-15T15:58:08.117346'
 assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []
@@ -19,8 +19,10 @@ progress_percentage: 0.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
-git_branches: []
-git_commits: []
+git_branches:
+- feature/ea4606b6-ci-integration
+git_commits:
+- abc12345
 completed_date: null
 ---
 

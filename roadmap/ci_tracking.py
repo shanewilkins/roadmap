@@ -50,7 +50,8 @@ class CITrackingConfig:
         r'bugfix/({issue_id})-.*', 
         r'hotfix/({issue_id})-.*',
         r'({issue_id})-.*',
-        r'.*/({issue_id})/.*'
+        r'.*/({issue_id})/.*',
+        r'\b({issue_id})\b'  # Any issue ID as a word boundary (for multi-ID branches)
     ])
     
     # Commit message patterns  

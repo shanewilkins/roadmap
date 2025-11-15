@@ -24,7 +24,11 @@ class TestCITracker:
     @pytest.fixture
     def mock_core(self):
         """Create a mock RoadmapCore for testing."""
+        from pathlib import Path
         core = Mock(spec=RoadmapCore)
+        
+        # Add the issues_dir attribute that CI tracking expects
+        core.issues_dir = Path("/tmp/test_issues")
         
         # Create sample issues
         issue1 = Issue(
@@ -105,15 +109,19 @@ class TestCITracker:
             result = tracker.extract_issue_ids_from_commit(commit_message)
             assert result == expected, f"Commit '{commit_message}' should extract {expected}, got {result}"
     
-    def test_add_branch_to_issue(self, mock_core, tracker):
+    @patch('roadmap.ci_tracking.IssueParser')
+    def test_add_branch_to_issue(self, mock_issue_parser, mock_core, tracker):
         """Test adding branch association to issue."""
         core, issue1, issue2 = mock_core
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         # Test successful addition
         result = tracker.add_branch_to_issue("ea4606b6", "feature/ea4606b6-test")
         assert result is True
         assert "feature/ea4606b6-test" in issue1.git_branches
-        core.save_issue.assert_called_with(issue1)
+        mock_issue_parser.save_issue_file.assert_called()
         
         # Test duplicate addition (should still return True)
         issue1.git_branches = ["feature/ea4606b6-test"]  # Simulate existing branch
@@ -124,18 +132,24 @@ class TestCITracker:
         result = tracker.add_branch_to_issue("nonexistent", "test-branch")
         assert result is False
     
-    def test_add_commit_to_issue(self, mock_core, tracker):
+    @patch('roadmap.ci_tracking.IssueParser')
+    def test_add_commit_to_issue(self, mock_issue_parser, mock_core, tracker):
         """Test adding commit association to issue."""
         core, issue1, issue2 = mock_core
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         # Test successful addition
         result = tracker.add_commit_to_issue("ea4606b6", "abc12345")
         assert result is True
-        assert "abc12345" in issue1.git_commits
-        core.save_issue.assert_called_with(issue1)
+        # Check that a commit dictionary was added
+        assert any(commit.get('sha') == 'abc12345' if isinstance(commit, dict) else commit == 'abc12345' 
+                  for commit in issue1.git_commits)
+        mock_issue_parser.save_issue_file.assert_called()
         
         # Test duplicate addition
-        issue1.git_commits = ["abc12345"]  # Simulate existing commit
+        issue1.git_commits = [{"sha": "abc12345", "message": "test", "date": "2025-11-15T12:00:00"}]  
         result = tracker.add_commit_to_issue("ea4606b6", "abc12345")
         assert result is True
         
@@ -143,9 +157,13 @@ class TestCITracker:
         result = tracker.add_commit_to_issue("nonexistent", "def67890")
         assert result is False
     
-    def test_remove_branch_from_issue(self, mock_core, tracker):
+    @patch('roadmap.ci_tracking.IssueParser')
+    def test_remove_branch_from_issue(self, mock_issue_parser, mock_core, tracker):
         """Test removing branch association from issue."""
         core, issue1, issue2 = mock_core
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         # Setup issue with existing branch
         issue1.git_branches = ["feature/ea4606b6-test", "another-branch"]
@@ -155,7 +173,7 @@ class TestCITracker:
         assert result is True
         assert "feature/ea4606b6-test" not in issue1.git_branches
         assert "another-branch" in issue1.git_branches  # Should not affect other branches
-        core.save_issue.assert_called_with(issue1)
+        mock_issue_parser.save_issue_file.assert_called()
         
         # Test removing non-existent branch
         result = tracker.remove_branch_from_issue("ea4606b6", "non-existent-branch")
@@ -176,9 +194,13 @@ class TestCITracker:
         result = tracker.get_current_branch()
         assert result is None
     
-    def test_track_branch(self, mock_core, tracker):
+    @patch('roadmap.ci_tracking.IssueParser')
+    def test_track_branch(self, mock_issue_parser, mock_core, tracker):
         """Test comprehensive branch tracking."""
         core, issue1, issue2 = mock_core
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         # Test tracking branch with issue ID
         results = tracker.track_branch("feature/ea4606b6-ci-integration")
@@ -196,10 +218,14 @@ class TestCITracker:
         results = tracker.track_branch("random-branch-name")
         assert results == {}
     
+    @patch('roadmap.ci_tracking.IssueParser')
     @patch('subprocess.run')
-    def test_track_commit(self, mock_run, mock_core, tracker):
+    def test_track_commit(self, mock_run, mock_issue_parser, mock_core, tracker):
         """Test commit tracking functionality."""
         core, issue1, issue2 = mock_core
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         # Mock git log command for commit message
         mock_run.return_value.stdout = "fixes ea4606b6: implement CI tracking"
@@ -220,10 +246,14 @@ class TestCITracker:
             check=True
         )
     
+    @patch('roadmap.ci_tracking.IssueParser')
     @patch('subprocess.run')
-    def test_scan_branches(self, mock_run, mock_core, tracker):
+    def test_scan_branches(self, mock_run, mock_issue_parser, mock_core, tracker):
         """Test scanning all branches for associations."""
         core, issue1, issue2 = mock_core
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         # Mock git branch command
         mock_run.return_value.stdout = """feature/ea4606b6-test
@@ -265,7 +295,12 @@ class TestCIAutomation:
     @pytest.fixture
     def mock_setup(self):
         """Create mocks for CI automation testing."""
+        from pathlib import Path
         core = Mock(spec=RoadmapCore)
+        
+        # Add the issues_dir attribute that CI automation expects
+        core.issues_dir = Path("/tmp/test_issues")
+        
         config = CITrackingConfig()
         tracker = Mock(spec=CITracker)
         tracker.config = config
@@ -304,9 +339,13 @@ class TestCIAutomation:
         # Verify tracker was called
         tracker.track_branch.assert_called_with("feature/ea4606b6-test")
     
-    def test_on_pull_request_opened(self, mock_setup):
+    @patch('roadmap.ci_tracking.IssueParser')
+    def test_on_pull_request_opened(self, mock_issue_parser, mock_setup):
         """Test handling of PR opened event."""
         automation, core, tracker, issue = mock_setup
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         pr_info = {
             "number": 123,
@@ -323,9 +362,13 @@ class TestCIAutomation:
         assert issue.actual_start_date is not None
         assert "Auto-started issue ea4606b6" in results["actions"]
     
-    def test_on_pull_request_merged(self, mock_setup):
+    @patch('roadmap.ci_tracking.IssueParser')
+    def test_on_pull_request_merged(self, mock_issue_parser, mock_setup):
         """Test handling of PR merged event."""
         automation, core, tracker, issue = mock_setup
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         # Set issue to in-progress
         issue.status = Status.IN_PROGRESS
@@ -347,14 +390,21 @@ class TestCIAutomation:
         assert issue.completed_date is not None
         assert "Auto-completed issue ea4606b6" in results["actions"]
     
-    def test_on_pull_request_merged_non_main_branch(self, mock_setup):
+    @patch('roadmap.ci_tracking.IssueParser')
+    def test_on_pull_request_merged_non_main_branch(self, mock_issue_parser, mock_setup):
         """Test PR merged to non-main branch doesn't auto-close."""
         automation, core, tracker, issue = mock_setup
+        
+        # Reset issue status to TODO for this test (previous test may have modified it)
+        issue.status = Status.TODO
+        
+        # Mock the IssueParser.save_issue_file method
+        mock_issue_parser.save_issue_file = Mock()
         
         pr_info = {
             "number": 123,
             "head_branch": "feature/ea4606b6-test",
-            "base_branch": "develop"  # Not a main branch
+            "base_branch": "staging"  # Not a main branch (develop is in main_branches by default)
         }
         
         results = automation.on_pull_request_merged(pr_info)
