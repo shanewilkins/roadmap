@@ -2,14 +2,14 @@
 id: b55e5d2f
 title: Investigate GitHub sync inconsistencies and status updates
 priority: high
-status: todo
+status: done
 issue_type: bug
 milestone: v.0.3.0
 labels: []
 github_issue: 7
 created: '2025-10-11T20:18:40.151751'
-updated: '2025-10-30T11:56:30.094318'
-assignee: ''
+updated: '2025-11-15T15:08:47.870742'
+assignee: shanewilkins
 estimated_hours: 3.0
 depends_on: []
 blocks: []

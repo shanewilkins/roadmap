@@ -8,7 +8,7 @@ milestone: v.0.3.0
 labels: []
 github_issue: 18
 created: '2025-10-14T15:46:16.002409'
-updated: '2025-10-30T11:56:32.908593'
+updated: '2025-11-15T15:08:26.606849'
 assignee: ''
 estimated_hours: 32.0
 depends_on: []

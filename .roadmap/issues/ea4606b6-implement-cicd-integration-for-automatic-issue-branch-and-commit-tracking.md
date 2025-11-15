@@ -2,20 +2,20 @@
 id: ea4606b6
 title: Implement CI/CD integration for automatic issue branch and commit tracking
 priority: high
-status: todo
+status: in-progress
 issue_type: feature
 milestone: v.0.3.0
 labels: []
 github_issue: 10
 created: '2025-10-11T20:28:50.243433'
-updated: '2025-10-30T11:56:30.724729'
-assignee: ''
+updated: '2025-11-15T15:38:09.754194'
+assignee: shanewilkins
 estimated_hours: 4.0
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-11-15T15:38:09.751022'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 0.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

@@ -8,8 +8,8 @@ milestone: v.0.3.0
 labels: []
 github_issue: 15
 created: '2025-10-14T14:18:44.676444'
-updated: '2025-10-30T11:56:32.254455'
-assignee: ''
+updated: '2025-11-15T15:08:24.865435'
+assignee: shanewilkins
 estimated_hours: 5.0
 depends_on: []
 blocks: []
