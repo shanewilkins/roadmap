@@ -396,6 +396,7 @@ def register_commands():
     from .git_integration import git
     from .analytics import analytics
     from .comment import comment
+    from .release import release_group
     from .deprecated import register_deprecated_commands
     
     # Register activity and utility commands
@@ -425,6 +426,7 @@ def register_commands():
     main.add_command(git)
     main.add_command(analytics)
     main.add_command(comment)
+    main.add_command(release_group)
     
     # Register progress and CI commands
     from .progress import recalculate_progress, progress_reports

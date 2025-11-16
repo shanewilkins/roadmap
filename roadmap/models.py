@@ -88,6 +88,7 @@ class Issue(BaseModel):
     assignee: Optional[str] = None
     content: str = ""  # Markdown content
     estimated_hours: Optional[float] = None  # Estimated time to complete in hours
+    due_date: Optional[datetime] = None  # When the issue should be completed
     depends_on: List[str] = Field(
         default_factory=list
     )  # List of issue IDs this depends on

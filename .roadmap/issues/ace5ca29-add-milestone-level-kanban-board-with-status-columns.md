@@ -2,7 +2,7 @@
 id: ace5ca29
 title: Add milestone-level kanban board with status columns
 priority: high
-status: todo
+status: done
 issue_type: feature
 milestone: v.0.4.0
 labels:
@@ -11,9 +11,10 @@ labels:
 - ui
 github_issue: 39
 created: '2025-10-13T08:41:57.474244'
-updated: '2025-11-15T15:08:22.380977'
+updated: '2025-11-16T13:23:34.451036'
 assignee: shanewilkins
 estimated_hours: 8.0
+due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
