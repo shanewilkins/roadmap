@@ -1,0 +1,241 @@
+# Advanced CI/CD with Roadmap Validation
+# Comprehensive testing and roadmap compliance checking
+
+name: 🚀 CI/CD with Roadmap Validation
+
+on:
+  push:
+    branches: [ main, master, develop, 'feature/**', 'bugfix/**' ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  ROADMAP_VALIDATE: true
+
+jobs:
+  # Job 1: Code Quality & Testing
+  test-and-validate:
+    runs-on: ubuntu-latest
+    name: 🧪 Test & Validate Code
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: 📦 Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -e .
+        pip install pytest pytest-cov black flake8
+        
+    - name: 🎨 Code Formatting Check
+      run: |
+        echo "🎨 Checking code formatting with Black..."
+        black --check . || (echo "❌ Code formatting issues found. Run 'black .' to fix." && exit 1)
+        
+    - name: 🔍 Lint Code
+      run: |
+        echo "🔍 Linting code with flake8..."
+        flake8 --max-line-length=88 --ignore=E203,W503 . || echo "⚠️ Linting issues found"
+        
+    - name: 🧪 Run Tests
+      run: |
+        echo "🧪 Running test suite..."
+        pytest --cov=roadmap --cov-report=xml --cov-report=term-missing -v
+        
+    - name: 📊 Upload Coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  # Job 2: Roadmap Compliance Check  
+  roadmap-compliance:
+    runs-on: ubuntu-latest
+    name: 🗺️ Roadmap Compliance
+    needs: test-and-validate
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🐍 Setup Python & Roadmap
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: 📦 Install Roadmap CLI
+      run: |
+        pip install --upgrade pip
+        pip install -e .
+        
+    - name: 🔍 Validate Branch Naming
+      if: github.event_name == 'pull_request'
+      run: |
+        BRANCH_NAME="${{ github.head_ref }}"
+        echo "🌿 Validating branch name: $BRANCH_NAME"
+        
+        # Check if branch follows roadmap conventions
+        if [[ $BRANCH_NAME =~ ^(feature|bugfix|hotfix)/[a-f0-9]{8}- ]]; then
+          echo "✅ Branch follows roadmap naming convention"
+          
+          # Extract issue ID and validate it exists
+          ISSUE_ID=$(echo "$BRANCH_NAME" | grep -o '[a-f0-9]\{8\}' | head -1)
+          echo "🎯 Found issue ID: $ISSUE_ID"
+          
+          # Check if issue exists (will create validation command)
+          roadmap ci track-branch "$BRANCH_NAME" || echo "⚠️ Issue validation skipped"
+        else
+          echo "ℹ️  Branch doesn't follow roadmap convention (feature/issue-id-description)"
+          echo "💡 Consider: feature/12345678-add-new-feature"
+        fi
+        
+    - name: 🔍 Scan for Issue References
+      run: |
+        echo "🔍 Scanning commits for issue references..."
+        
+        # Scan recent commits for roadmap integration
+        COMMITS_TO_SCAN=10
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          COMMITS_TO_SCAN=50  # Scan more commits for PRs
+        fi
+        
+        roadmap ci scan-repository --max-commits $COMMITS_TO_SCAN
+        
+        # Show current tracking status
+        echo "📊 Current CI tracking status:"
+        roadmap ci status
+        
+    - name: 📋 Generate Roadmap Report
+      run: |
+        echo "📋 Generating comprehensive roadmap report..."
+        
+        # Create detailed status report
+        {
+          echo "# 🗺️ Roadmap Status Report"
+          echo "**Generated**: $(date)"
+          echo "**Branch**: ${{ github.ref_name }}"
+          echo "**Commit**: ${{ github.sha }}"
+          echo ""
+          echo "## 📊 Overall Status"
+          roadmap status || echo "Status unavailable"
+          echo ""
+          echo "## 🎯 Active Issues"  
+          roadmap issue list --status todo,in-progress || echo "Issue list unavailable"
+          echo ""
+          echo "## 🚀 Milestone Progress"
+          roadmap milestone list || echo "Milestone list unavailable" 
+          echo ""
+          echo "## 🔧 CI/CD Integration Status"
+          roadmap ci status || echo "CI status unavailable"
+        } > roadmap-report.md
+        
+        # Show report
+        cat roadmap-report.md
+        
+    - name: 💬 Comment Roadmap Status on PR
+      if: github.event_name == 'pull_request' 
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read the roadmap report
+          let report = '📋 Roadmap status report not available';
+          try {
+            report = fs.readFileSync('roadmap-report.md', 'utf8');
+          } catch (error) {
+            console.log('Could not read roadmap report:', error.message);
+          }
+          
+          // Create or update comment
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('🗺️ Roadmap Status Report')
+          );
+          
+          const commentBody = `🗺️ **Roadmap Status Report**
+
+          <details>
+          <summary>📊 Click to view detailed roadmap status</summary>
+
+          ${report}
+
+          </details>
+
+          ---
+          🤖 *This report is automatically generated by the roadmap integration system.*
+          `;
+
+          if (botComment) {
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: commentBody
+            });
+          } else {
+            // Create new comment  
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+          }
+
+  # Job 3: Deploy/Release (if on main branch)
+  deploy:
+    runs-on: ubuntu-latest
+    name: 🚀 Deploy & Release
+    needs: [test-and-validate, roadmap-compliance]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🎉 Mark Milestone Progress
+      run: |
+        echo "🎉 Main branch updated! Checking for milestone completion..."
+        
+        # Install roadmap CLI
+        pip install --upgrade pip
+        pip install -e .
+        
+        # Update milestone progress based on completed issues
+        roadmap recalculate-progress || echo "Progress recalculation skipped"
+        
+        echo "📊 Current milestone status:"
+        roadmap milestone list || echo "Milestone list unavailable"
+        
+    - name: 📦 Build Package (if applicable)
+      run: |
+        echo "📦 Building package for potential release..."
+        # Add your build steps here
+        # python -m build
+        # npm run build
+        # etc.
+        
+    - name: 🏷️ Create Release (if version tagged)
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        echo "🏷️ Version tag detected: ${{ github.ref_name }}"
+        echo "🚀 Release process would be triggered here"
+        # Add release automation here

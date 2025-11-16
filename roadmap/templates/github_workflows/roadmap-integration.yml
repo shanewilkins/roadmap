@@ -1,0 +1,137 @@
+# Roadmap Integration Workflow
+# Automatically tracks issues and updates roadmap based on git activity
+
+name: 🗺️ Roadmap Integration
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+    types: [ opened, synchronize, closed ]
+  workflow_dispatch:
+
+env:
+  ROADMAP_AUTO_TRACK: true
+  ROADMAP_PROGRESS_TRACKING: true
+
+jobs:
+  roadmap-tracking:
+    runs-on: ubuntu-latest
+    name: Track Roadmap Changes
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for comprehensive tracking
+        
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 Install Roadmap CLI
+      run: |
+        pip install --upgrade pip
+        # Install from PyPI when published, for now install locally
+        pip install -e .
+        
+    - name: 🔍 Initialize Roadmap (if needed)
+      run: |
+        if [ ! -f ".roadmap/config.yaml" ]; then
+          echo "Initializing roadmap for CI/CD tracking..."
+          roadmap init --name "${{ github.repository }}" --auto-confirm
+        fi
+        
+    - name: 🎯 Track Commit Changes
+      if: github.event_name == 'push'
+      run: |
+        echo "🔍 Scanning recent commits for roadmap updates..."
+        roadmap ci scan-repository --max-commits 10
+        
+        # Track specific commits in this push
+        for commit in $(git log --format="%H" ${{ github.event.before }}..${{ github.event.after }}); do
+          echo "📝 Tracking commit: $commit"
+          roadmap ci track-commit "$commit" || true
+        done
+        
+    - name: 🔀 Track Pull Request
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "🔍 Tracking PR #${{ github.event.number }}: ${{ github.event.pull_request.title }}"
+        
+        # Extract issue IDs from PR title and body
+        PR_TEXT="${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }}"
+        
+        # Track PR association
+        roadmap ci track-pr \
+          --number "${{ github.event.number }}" \
+          --title "${{ github.event.pull_request.title }}" \
+          --branch "${{ github.event.pull_request.head.ref }}" \
+          --state "${{ github.event.pull_request.state }}" || true
+          
+    - name: ✅ Handle PR Merge
+      if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+      run: |
+        echo "🎉 PR #${{ github.event.number }} merged! Processing completion..."
+        
+        # Scan merged commits for completion
+        roadmap ci scan-repository --max-commits 5
+        
+        # Mark associated issues as potentially complete
+        echo "🏁 Checking for issue completion in merged PR..."
+        
+    - name: 📊 Generate Roadmap Status Report
+      run: |
+        echo "📈 Current roadmap status:"
+        roadmap status || true
+        
+        echo "🔧 CI/CD tracking status:"
+        roadmap ci status || true
+        
+        echo "📋 Recent activity:"
+        roadmap activity || true
+        
+    - name: 💾 Commit Roadmap Updates
+      if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action == 'closed')
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "Roadmap Integration"
+        
+        # Check if there are changes to commit
+        if git diff --quiet HEAD -- .roadmap/; then
+          echo "📝 No roadmap changes to commit"
+        else
+          echo "💾 Committing roadmap updates..."
+          git add .roadmap/
+          git commit -m "🤖 Auto-update roadmap from CI/CD tracking
+
+          - Processed commits from ${{ github.event_name }} event  
+          - Updated issue associations and progress
+          - Automated via GitHub Actions" || true
+          
+          # Push changes back to repository
+          git push || echo "⚠️  Could not push roadmap updates (may need write permissions)"
+        fi
+
+    - name: 📝 Comment on PR (if applicable)
+      if: github.event_name == 'pull_request' && github.event.action == 'opened'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Add a comment with roadmap integration info
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🗺️ **Roadmap Integration**
+            
+            This PR has been automatically tracked by the roadmap system.
+            
+            - 🔍 **Branch analysis**: Scanning for issue associations
+            - 📊 **Progress tracking**: Monitoring commit progress markers  
+            - 🎯 **Auto-completion**: Will process completion on merge
+            
+            Use commit messages like \`[progress:50%]\` or \`[closes roadmap:issue-id]\` for automatic updates!`
+          });

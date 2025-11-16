@@ -68,6 +68,60 @@ class GitHookManager:
         except Exception:
             return False
 
+    def get_hooks_status(self) -> Dict[str, Dict[str, Any]]:
+        """Get the status of all installed roadmap hooks.
+        
+        Returns:
+            Dictionary with hook names as keys and status information as values.
+        """
+        if not self.hooks_dir or not self.hooks_dir.exists():
+            return {}
+        
+        hook_names = ["post-commit", "pre-push", "post-merge", "post-checkout"]
+        status = {}
+        
+        for hook_name in hook_names:
+            hook_file = self.hooks_dir / hook_name
+            hook_status = {
+                "installed": False,
+                "is_roadmap_hook": False,
+                "executable": False,
+                "file_exists": hook_file.exists(),
+                "file_path": str(hook_file) if hook_file.exists() else None
+            }
+            
+            if hook_file.exists():
+                hook_status["installed"] = True
+                try:
+                    content = hook_file.read_text()
+                    hook_status["is_roadmap_hook"] = "roadmap-hook" in content
+                    hook_status["executable"] = bool(hook_file.stat().st_mode & 0o111)
+                except Exception:
+                    pass
+            
+            status[hook_name] = hook_status
+        
+        return status
+
+    def get_hook_config(self) -> Optional[Dict[str, Any]]:
+        """Get the current hook configuration.
+        
+        Returns:
+            Dictionary with hook configuration settings or None if not available.
+        """
+        config = {
+            "hooks_directory": str(self.hooks_dir) if self.hooks_dir else None,
+            "repository_root": str(Path.cwd()),
+            "git_repository": self.git_integration.is_git_repository(),
+            "available_hooks": ["post-commit", "pre-push", "post-merge", "post-checkout"],
+            "core_initialized": self.core is not None,
+        }
+        
+        # Add status for each hook
+        config["hooks_status"] = self.get_hooks_status()
+        
+        return config
+
     def _install_hook(self, hook_name: str):
         """Install a specific Git hook."""
         hook_file = self.hooks_dir / hook_name
