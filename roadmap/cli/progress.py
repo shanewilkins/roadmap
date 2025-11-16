@@ -35,8 +35,8 @@ def recalculate_milestone(ctx: click.Context, milestone_name: str, method: str):
     
     try:
         # Load all data
-        all_issues = core.load_issues()
-        all_milestones = core.load_milestones()
+        all_issues = core.list_issues()
+        all_milestones = core.list_milestones()
         
         # Find the milestone
         milestone = None
@@ -57,7 +57,9 @@ def recalculate_milestone(ctx: click.Context, milestone_name: str, method: str):
         
         if updated:
             # Save the updated milestone
-            core.save_milestone(milestone)
+            from roadmap.parser import MilestoneParser
+            milestone_file = core.milestones_dir / f"{milestone.name}.md"
+            MilestoneParser.save_milestone_file(milestone, milestone_file)
             
             console.print(f"✅ Updated milestone '{milestone_name}':", style="bold green")
             console.print(f"   Progress: {old_progress or 0:.1f}% → {milestone.calculated_progress:.1f}%")
@@ -81,9 +83,9 @@ def recalculate_project(ctx: click.Context, project_id: str, method: str):
     
     try:
         # Load all data
-        all_issues = core.load_issues()
-        all_milestones = core.load_milestones()
-        all_projects = core.load_projects()  # This method needs to be implemented
+        all_issues = core.list_issues()
+        all_milestones = core.list_milestones()
+        all_projects = core.list_projects()  # This method needs to be implemented
         
         # Find the project
         project = None
@@ -132,9 +134,9 @@ def recalculate_all(ctx: click.Context, method: str):
     
     try:
         # Load all data
-        all_issues = core.load_issues()
-        all_milestones = core.load_milestones()
-        all_projects = core.load_projects()
+        all_issues = core.list_issues()
+        all_milestones = core.list_milestones()
+        all_projects = core.list_projects()
         
         # Create progress engine
         engine = ProgressCalculationEngine(method=method)
@@ -148,7 +150,9 @@ def recalculate_all(ctx: click.Context, method: str):
             updated_milestones = 0
             for milestone in all_milestones:
                 if engine.update_milestone_progress(milestone, all_issues):
-                    core.save_milestone(milestone)
+                    from roadmap.parser import MilestoneParser
+                    milestone_file = core.milestones_dir / f"{milestone.name}.md"
+                    MilestoneParser.save_milestone_file(milestone, milestone_file)
                     updated_milestones += 1
                 progress.advance(task)
             
@@ -156,7 +160,9 @@ def recalculate_all(ctx: click.Context, method: str):
             updated_projects = 0
             for project in all_projects:
                 if engine.update_project_progress(project, all_milestones, all_issues):
-                    core.save_project(project)
+                    from roadmap.parser import ProjectParser
+                    project_file = core.projects_dir / f"{project.id}.md"
+                    ProjectParser.save_project_file(project, project_file)
                     updated_projects += 1
                 progress.advance(task)
         
@@ -185,8 +191,8 @@ def milestone_status(ctx: click.Context, milestone_name: str, show_issues: bool)
     
     try:
         # Load data
-        all_issues = core.load_issues()
-        all_milestones = core.load_milestones()
+        all_issues = core.list_issues()
+        all_milestones = core.list_milestones()
         
         # Find the milestone
         milestone = None
@@ -263,9 +269,9 @@ def project_status(ctx: click.Context, project_id: str, show_milestones: bool, s
     
     try:
         # Load data
-        all_issues = core.load_issues()
-        all_milestones = core.load_milestones()
-        all_projects = core.load_projects()
+        all_issues = core.list_issues()
+        all_milestones = core.list_milestones()
+        all_projects = core.list_projects()
         
         # Find the project
         project = None
@@ -319,7 +325,17 @@ def project_status(ctx: click.Context, project_id: str, show_milestones: bool, s
                 table.add_column("Due Date")
                 table.add_column("Issues")
                 
-                for milestone in sorted(project_milestones, key=lambda x: x.due_date or datetime.min):
+                # Sort milestones by due date, handling timezone issues
+                def get_sortable_date(milestone):
+                    due_date = milestone.due_date
+                    if due_date is None:
+                        return datetime.min
+                    # Convert timezone-aware dates to naive for comparison
+                    if due_date.tzinfo is not None:
+                        return due_date.replace(tzinfo=None)
+                    return due_date
+                
+                for milestone in sorted(project_milestones, key=get_sortable_date):
                     progress_value = milestone.calculated_progress or milestone.get_completion_percentage(all_issues)
                     due_date_str = milestone.due_date.strftime('%Y-%m-%d') if milestone.due_date else "No due date"
                     issue_count = milestone.get_issue_count(all_issues)
