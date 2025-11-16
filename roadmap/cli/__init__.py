@@ -426,6 +426,13 @@ def register_commands():
     main.add_command(analytics)
     main.add_command(comment)
     
+    # Register progress and CI commands
+    from .progress import recalculate_progress, progress_reports
+    from .ci import ci
+    main.add_command(recalculate_progress)
+    main.add_command(progress_reports)
+    main.add_command(ci)
+    
     # Register git commands for backward compatibility
     register_git_commands()
     

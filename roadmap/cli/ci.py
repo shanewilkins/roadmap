@@ -376,6 +376,162 @@ def status(issue_id: Optional[str]):
         rprint(f"❌ Error showing status: {e}")
 
 
+@ci.group()
+def hooks():
+    """Manage git hooks for real-time CI/CD integration."""
+    pass
+
+
+@hooks.command()
+@click.option('--hook', multiple=True, help='Specific hooks to install (post-commit, pre-push, post-checkout)')
+def install(hook):
+    """Install git hooks for automatic issue tracking."""
+    try:
+        from ..git_hooks import GitHookManager
+        
+        roadmap_core = RoadmapCore()
+        hook_manager = GitHookManager(roadmap_core)
+        
+        # Check if we're in a git repository
+        if not hook_manager.hooks_dir:
+            rprint("❌ Not in a Git repository. Git hooks require a .git directory.")
+            return
+        
+        hooks_to_install = list(hook) if hook else None
+        
+        rprint("🔧 Installing git hooks for real-time CI/CD tracking...")
+        
+        success = hook_manager.install_hooks(hooks_to_install)
+        
+        if success:
+            installed = hooks_to_install or ["post-commit", "pre-push", "post-checkout", "post-merge"]
+            rprint("✅ Successfully installed git hooks:")
+            for hook_name in installed:
+                rprint(f"   • {hook_name}")
+            rprint("\n💡 Git hooks will now automatically track:")
+            rprint("   • Branch associations when you switch branches (post-checkout)")
+            rprint("   • Commit associations when you make commits (post-commit)")
+            rprint("   • Issue completion when you push to main (pre-push)")
+        else:
+            rprint("❌ Failed to install git hooks")
+        
+    except Exception as e:
+        rprint(f"❌ Error installing git hooks: {e}")
+
+
+@hooks.command()
+def uninstall():
+    """Uninstall git hooks."""
+    try:
+        from ..git_hooks import GitHookManager
+        
+        roadmap_core = RoadmapCore()
+        hook_manager = GitHookManager(roadmap_core)
+        
+        if not hook_manager.hooks_dir:
+            rprint("❌ Not in a Git repository")
+            return
+        
+        rprint("🗑️  Uninstalling git hooks...")
+        
+        success = hook_manager.uninstall_hooks()
+        
+        if success:
+            rprint("✅ Successfully uninstalled git hooks")
+        else:
+            rprint("❌ Failed to uninstall git hooks")
+        
+    except Exception as e:
+        rprint(f"❌ Error uninstalling git hooks: {e}")
+
+
+@hooks.command()
+def status():
+    """Show git hooks installation status."""
+    try:
+        from ..git_hooks import GitHookManager
+        
+        roadmap_core = RoadmapCore()
+        hook_manager = GitHookManager(roadmap_core)
+        
+        if not hook_manager.hooks_dir:
+            rprint("❌ Not in a Git repository")
+            return
+        
+        hooks_to_check = ["post-commit", "pre-push", "post-checkout", "post-merge"]
+        
+        table = Table(title="Git Hooks Status")
+        table.add_column("Hook", style="yellow")
+        table.add_column("Status", style="green")
+        table.add_column("Description")
+        
+        for hook_name in hooks_to_check:
+            hook_file = hook_manager.hooks_dir / hook_name
+            
+            if hook_file.exists():
+                content = hook_file.read_text()
+                if "roadmap-hook" in content:
+                    status = "✅ Installed"
+                else:
+                    status = "⚠️  Other hook"
+            else:
+                status = "❌ Not installed"
+            
+            descriptions = {
+                "post-commit": "Track commits automatically",
+                "pre-push": "Complete issues on push to main",
+                "post-checkout": "Associate branches with issues",
+                "post-merge": "Update milestone progress"
+            }
+            
+            table.add_row(hook_name, status, descriptions.get(hook_name, ""))
+        
+        console.print(table)
+        
+        # Check for log file
+        log_file = hook_manager.hooks_dir.parent / "roadmap-hooks.log"
+        if log_file.exists():
+            rprint(f"\n📊 Hook activity log: {log_file}")
+            
+    except Exception as e:
+        rprint(f"❌ Error checking hooks status: {e}")
+
+
+@hooks.command()
+@click.option('--lines', default=10, help='Number of log lines to show')
+def logs(lines: int):
+    """Show git hooks activity logs."""
+    try:
+        from ..git_hooks import GitHookManager
+        
+        roadmap_core = RoadmapCore()
+        hook_manager = GitHookManager(roadmap_core)
+        
+        if not hook_manager.hooks_dir:
+            rprint("❌ Not in a Git repository")
+            return
+        
+        log_file = hook_manager.hooks_dir.parent / "roadmap-hooks.log"
+        
+        if not log_file.exists():
+            rprint("📝 No hook activity logs found")
+            rprint("💡 Logs will appear here after git operations trigger the hooks")
+            return
+        
+        # Read last N lines
+        with open(log_file, 'r') as f:
+            log_lines = f.readlines()
+        
+        recent_lines = log_lines[-lines:] if len(log_lines) > lines else log_lines
+        
+        rprint(f"📊 Recent git hooks activity (last {len(recent_lines)} entries):")
+        for line in recent_lines:
+            rprint(f"   {line.strip()}")
+        
+    except Exception as e:
+        rprint(f"❌ Error reading hook logs: {e}")
+
+
 # Add the ci group to the main CLI
 if __name__ == '__main__':
     ci()

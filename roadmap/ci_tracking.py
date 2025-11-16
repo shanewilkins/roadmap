@@ -151,6 +151,67 @@ class CITracker:
         
         return issue_ids
     
+    def parse_progress_marker(self, commit_message: str) -> Optional[int]:
+        """Extract progress percentage from commit message.
+        
+        Looks for patterns like [progress:75%] or (progress:50%)
+        
+        Args:
+            commit_message: Git commit message
+            
+        Returns:
+            Progress percentage (0-100) or None if not found
+        """
+        patterns = [
+            r'\[progress:\s*(\d+)%?\]',
+            r'\(progress:\s*(\d+)%?\)',
+            r'progress:\s*(\d+)%',
+            r'(\d+)%\s*complete',
+            r'(\d+)%\s*done'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, commit_message, re.IGNORECASE)
+            if match:
+                progress = int(match.group(1))
+                # Clamp to valid range
+                return max(0, min(100, progress))
+        
+        return None
+    
+    def parse_completion_marker(self, commit_message: str, issue_id: str) -> bool:
+        """Check if commit message indicates issue completion.
+        
+        Looks for patterns like:
+        - [closes roadmap:id] or (closes roadmap:id)
+        - fixes #id or closes #id
+        - complete feature [roadmap:id]
+        
+        Args:
+            commit_message: Git commit message
+            issue_id: Specific issue ID to check for
+            
+        Returns:
+            True if this commit indicates the issue is complete
+        """
+        patterns = [
+            rf'\[closes?\s+(?:roadmap:)?{issue_id}\]',
+            rf'\(closes?\s+(?:roadmap:)?{issue_id}\)',
+            rf'closes?\s+(?:roadmap:)?{issue_id}',
+            rf'fixes?\s+#?{issue_id}',
+            rf'resolves?\s+#?{issue_id}',
+            rf'complete.*{issue_id}',
+            rf'{issue_id}.*complete',
+            rf'finished?\s+{issue_id}',
+            rf'{issue_id}.*(?:done|finished)'
+        ]
+        
+        for pattern in patterns:
+            if re.search(pattern, commit_message, re.IGNORECASE):
+                return True
+        
+        return False
+    
     def get_current_branch(self) -> Optional[str]:
         """Get the current git branch name."""
         try:
@@ -352,6 +413,75 @@ class CITracker:
             logger.error(f"Failed to remove branch {branch_name} from issue {issue_id}: {e}")
             return False
     
+    def update_issue_progress(self, issue_id: str, progress_percent: int) -> bool:
+        """Update the progress percentage of an issue.
+        
+        Args:
+            issue_id: Issue identifier
+            progress_percent: Progress percentage (0-100)
+            
+        Returns:
+            True if progress was updated, False otherwise
+        """
+        try:
+            issue = self.roadmap_core.get_issue(issue_id)
+            if not issue:
+                logger.warning(f"Issue {issue_id} not found for progress update")
+                return False
+            
+            # Update progress
+            old_progress = issue.progress_percentage or 0
+            issue.progress_percentage = progress_percent
+            issue.updated = datetime.now()
+            
+            # Auto-update status based on progress
+            if progress_percent > 0 and issue.status == Status.TODO:
+                issue.status = Status.IN_PROGRESS
+                
+            # Save the issue
+            issue_path = self.roadmap_core.issues_dir / issue.filename
+            IssueParser.save_issue_file(issue, issue_path)
+            
+            logger.info(f"Updated issue {issue_id} progress: {old_progress}% -> {progress_percent}%")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to update progress for issue {issue_id}: {e}")
+            return False
+    
+    def complete_issue(self, issue_id: str) -> bool:
+        """Mark an issue as complete.
+        
+        Args:
+            issue_id: Issue identifier
+            
+        Returns:
+            True if issue was marked complete, False otherwise
+        """
+        try:
+            issue = self.roadmap_core.get_issue(issue_id)
+            if not issue:
+                logger.warning(f"Issue {issue_id} not found for completion")
+                return False
+            
+            # Mark as complete
+            old_status = issue.status
+            issue.status = Status.DONE
+            issue.progress_percentage = 100.0
+            issue.completed_date = datetime.now().isoformat()
+            issue.updated = datetime.now()
+            
+            # Save the issue
+            issue_path = self.roadmap_core.issues_dir / issue.filename
+            IssueParser.save_issue_file(issue, issue_path)
+            
+            logger.info(f"Completed issue {issue_id}: {old_status} -> {issue.status}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to complete issue {issue_id}: {e}")
+            return False
+    
     def track_branch(self, branch_name: str) -> Dict[str, List[str]]:
         """Track a specific branch for issue associations.
         
@@ -420,12 +550,25 @@ class CITracker:
         # Extract issue IDs from commit message
         issue_ids = self.extract_issue_ids_from_commit(commit_message)
         
+        # Parse progress and completion markers
+        progress_percent = self.parse_progress_marker(commit_message)
+        
         for issue_id in issue_ids:
             actions = []
             
             # Add commit association
             if self.add_commit_to_issue(issue_id, commit_sha, commit_message):
                 actions.append("Added commit association")
+            
+            # Update progress if marker found
+            if progress_percent is not None:
+                if self.update_issue_progress(issue_id, progress_percent):
+                    actions.append(f"Updated progress to {progress_percent}%")
+            
+            # Check for completion marker
+            if self.parse_completion_marker(commit_message, issue_id):
+                if self.complete_issue(issue_id):
+                    actions.append("Marked issue as complete")
             
             results[issue_id] = actions
         
@@ -447,6 +590,42 @@ class CITracker:
                     branch_count[issue_id] = branch_count.get(issue_id, 0) + 1
         
         return branch_count
+    
+    def scan_repository_history(self, max_commits: int = 1000) -> Dict[str, int]:
+        """Scan repository commit history for issue associations.
+        
+        Args:
+            max_commits: Maximum number of commits to scan
+            
+        Returns:
+            Summary of associations created per issue
+        """
+        commit_count = {}
+        
+        try:
+            # Get commit history
+            result = subprocess.run([
+                'git', 'log', f'--max-count={max_commits}',
+                '--format=%H|%s'
+            ], capture_output=True, text=True, check=True)
+            
+            for line in result.stdout.strip().split('\n'):
+                if '|' not in line:
+                    continue
+                    
+                commit_sha, commit_message = line.split('|', 1)
+                
+                # Extract issue IDs from commit message
+                issue_ids = self.extract_issue_ids_from_commit(commit_message)
+                
+                for issue_id in issue_ids:
+                    if self.add_commit_to_issue(issue_id, commit_sha, commit_message):
+                        commit_count[issue_id] = commit_count.get(issue_id, 0) + 1
+                        
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logger.warning("Could not scan repository history")
+            
+        return commit_count
     
     def scan_repository_history(self, max_commits: int = 1000) -> Dict[str, int]:
         """Scan repository history for issue associations.
@@ -594,7 +773,7 @@ class CIAutomation:
                 if issue and issue.status in [Status.IN_PROGRESS, Status.TODO]:
                     issue.status = Status.DONE
                     issue.actual_end_date = datetime.now()
-                    issue.completed_date = datetime.now()
+                    issue.completed_date = datetime.now().isoformat()
                     issue.updated = datetime.now()
                     
                     # Save using the same pattern as RoadmapCore.update_issue

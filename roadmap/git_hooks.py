@@ -112,23 +112,36 @@ except Exception as e:
         return base_script
 
     def handle_post_commit(self):
-        """Handle post-commit hook - update issues based on commit."""
+        """Handle post-commit hook - update issues based on commit using CI tracking."""
         try:
-            # Get the latest commit
-            latest_commits = self.git_integration.get_recent_commits(count=1)
-            if not latest_commits:
+            # Use the new CI tracking system for commit handling
+            from .ci_tracking import CITracker, CITrackingConfig
+            
+            # Get the latest commit SHA
+            result = subprocess.run(
+                ['git', 'rev-parse', 'HEAD'], 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+            latest_commit_sha = result.stdout.strip()
+            
+            if not latest_commit_sha:
                 return
 
-            # Use the new auto-update functionality
-            results = self.git_integration.auto_update_issues_from_commits(
-                self.core, latest_commits
-            )
+            # Initialize CI tracker
+            config = CITrackingConfig()
+            tracker = CITracker(self.core, config)
+            
+            # Track the commit automatically
+            results = tracker.track_commit(latest_commit_sha)
 
             # Log results for debugging (optional)
-            if results["updated"] or results["closed"]:
+            if results:
                 log_file = Path(".git/roadmap-hooks.log")
                 timestamp = datetime.now().isoformat()
-                log_entry = f"{timestamp}: Updated {len(results['updated'])} issues, closed {len(results['closed'])} issues\n"
+                updated_issues = list(results.keys())
+                log_entry = f"{timestamp}: Post-commit hook tracked commit {latest_commit_sha[:8]} -> issues: {', '.join(updated_issues)}\n"
                 
                 try:
                     with open(log_file, "a") as f:
@@ -141,23 +154,40 @@ except Exception as e:
             pass
 
     def handle_post_checkout(self):
-        """Handle post-checkout hook - auto-create issues for new branches."""
+        """Handle post-checkout hook - track branches using CI tracking system."""
         try:
+            # Use the new CI tracking system for branch handling
+            from .ci_tracking import CITracker, CITrackingConfig
+            
             # Get current branch
-            current_branch = self.git_integration.get_current_branch()
-            if not current_branch:
+            result = subprocess.run(
+                ['git', 'branch', '--show-current'], 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+            branch_name = result.stdout.strip()
+            
+            if not branch_name:
                 return
 
-            # Try to auto-create issue from branch name
-            issue_id = self.git_integration.auto_create_issue_from_branch(
-                self.core, current_branch.name
-            )
+            # Initialize CI tracker
+            config = CITrackingConfig()
+            tracker = CITracker(self.core, config)
+            
+            # Track the branch automatically
+            results = tracker.track_branch(branch_name)
 
-            # Log if issue was created
-            if issue_id:
+            # Log results for debugging (optional)
+            if results:
                 log_file = Path(".git/roadmap-hooks.log")
                 timestamp = datetime.now().isoformat()
-                log_entry = f"{timestamp}: Auto-created issue {issue_id} for branch {current_branch.name}\n"
+                updated_issues = list(results.keys())
+                actions_summary = []
+                for issue_id, actions in results.items():
+                    actions_summary.append(f"{issue_id}({len(actions)} actions)")
+                
+                log_entry = f"{timestamp}: Post-checkout hook tracked branch '{branch_name}' -> {', '.join(actions_summary)}\n"
                 
                 try:
                     with open(log_file, "a") as f:
@@ -170,22 +200,72 @@ except Exception as e:
             pass
 
     def handle_pre_push(self):
-        """Handle pre-push hook - validate roadmap state before push."""
+        """Handle pre-push hook - simulate PR merge behavior using CI automation."""
         try:
-            # Check for any issues that should be marked as done
-            # based on "closes" or "fixes" commit messages
-            commits = self.git_integration.get_recent_commits(count=20)
-
-            for commit in commits:
-                if any(
-                    keyword in commit.message.lower()
-                    for keyword in ["closes roadmap:", "fixes roadmap:"]
-                ):
-                    references = commit.extract_roadmap_references()
-                    for issue_id in references:
-                        self._complete_issue_from_commit(issue_id, commit)
+            # Use CI automation system to simulate PR behavior
+            from .ci_tracking import CIAutomation, CITracker, CITrackingConfig
+            
+            # Get current branch
+            result = subprocess.run(
+                ['git', 'branch', '--show-current'], 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+            current_branch = result.stdout.strip()
+            
+            if not current_branch:
+                return
+            
+            # Check if pushing to main branch (simulate merge)
+            # Get the remote we're pushing to
+            try:
+                remote_result = subprocess.run(
+                    ['git', 'config', '--get', f'branch.{current_branch}.remote'], 
+                    capture_output=True, 
+                    text=True
+                )
+                remote = remote_result.stdout.strip() or 'origin'
+                
+                merge_result = subprocess.run(
+                    ['git', 'config', '--get', f'branch.{current_branch}.merge'], 
+                    capture_output=True, 
+                    text=True
+                )
+                merge_ref = merge_result.stdout.strip()
+                target_branch = merge_ref.split('/')[-1] if merge_ref else 'main'
+            except:
+                target_branch = 'main'
+            
+            # Initialize CI automation
+            config = CITrackingConfig()
+            tracker = CITracker(self.core, config)
+            automation = CIAutomation(self.core, tracker)
+            
+            # If pushing to main branch, simulate PR merge
+            if target_branch in config.main_branches:
+                pr_info = {
+                    'number': 0,  # Local push doesn't have PR number
+                    'head_branch': current_branch,
+                    'base_branch': target_branch
+                }
+                
+                results = automation.on_pull_request_merged(pr_info)
+                
+                # Log results
+                if results.get('actions'):
+                    log_file = Path(".git/roadmap-hooks.log")
+                    timestamp = datetime.now().isoformat()
+                    log_entry = f"{timestamp}: Pre-push hook simulated PR merge {current_branch} -> {target_branch}: {', '.join(results['actions'])}\n"
+                    
+                    try:
+                        with open(log_file, "a") as f:
+                            f.write(log_entry)
+                    except Exception:
+                        pass
 
         except Exception:
+            # Silent fail to avoid breaking Git operations
             pass
 
     def handle_post_merge(self):
@@ -492,6 +572,7 @@ class WorkflowAutomation:
 
         # Track latest progress and completion status
         latest_progress = None
+        highest_progress = None
         is_completed = False
 
         for commit in commits:
@@ -503,6 +584,8 @@ class WorkflowAutomation:
             progress = commit.extract_progress_info()
             if progress is not None:
                 latest_progress = progress
+                if highest_progress is None or progress > highest_progress:
+                    highest_progress = progress
 
             # Check for completion keywords
             if any(
@@ -510,7 +593,7 @@ class WorkflowAutomation:
                 for keyword in ["closes roadmap:", "fixes roadmap:"]
             ):
                 is_completed = True
-                latest_progress = 100.0
+                # Don't overwrite progress - completion means 100% but preserve highest explicit progress
 
             # Add commit reference
             commit_ref = {
@@ -526,15 +609,19 @@ class WorkflowAutomation:
             updated = True
 
         # Update issue status and progress
-        if latest_progress is not None:
-            issue.progress_percentage = latest_progress
+        if highest_progress is not None:
+            issue.progress_percentage = highest_progress
+            updated = True
+        elif is_completed:
+            # If completed without explicit progress, set to 100%
+            issue.progress_percentage = 100.0
             updated = True
 
         if is_completed and issue.status != Status.DONE:
             issue.status = Status.DONE
             issue.completed_date = datetime.now().isoformat()
             updated = True
-        elif latest_progress and latest_progress > 0 and issue.status == Status.TODO:
+        elif highest_progress and highest_progress > 0 and issue.status == Status.TODO:
             issue.status = Status.IN_PROGRESS
             updated = True
 

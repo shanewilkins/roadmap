@@ -103,11 +103,12 @@ def list_milestones(ctx: click.Context):
 
             # Add color coding for overdue milestones
             if ms.due_date:
-                if ms.due_date < datetime.now() and ms.status.value == "open":
+                now = datetime.now().replace(tzinfo=None)  # Ensure timezone-naive
+                ms_due_date = ms.due_date.replace(tzinfo=None) if ms.due_date.tzinfo else ms.due_date
+                
+                if ms_due_date < now and ms.status.value == "open":
                     due_date_text = f"[bold red]{due_date_text}[/bold red]"
-                elif (
-                    ms.due_date - datetime.now()
-                ).days <= 7 and ms.status.value == "open":
+                elif (ms_due_date - now).days <= 7 and ms.status.value == "open":
                     due_date_text = f"[yellow]{due_date_text}[/yellow]"
 
             table.add_row(
