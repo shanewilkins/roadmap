@@ -44,8 +44,9 @@ def _store_team_update(
             updates = []
 
     # Add new update
+    from roadmap.timezone_utils import now_utc
     update = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": now_utc().isoformat(),
         "sender": sender,
         "message": message,
         "target_assignee": target_assignee,
@@ -98,12 +99,14 @@ def _get_team_activity(core, since_date, assignee_filter: str = None) -> list:
             with open(updates_file, "r") as f:
                 updates = json.load(f)
             for update in updates:
-                update_date = datetime.datetime.fromisoformat(update["timestamp"]).date()
+                from roadmap.timezone_utils import ensure_timezone_aware
+                update_timestamp = ensure_timezone_aware(datetime.datetime.fromisoformat(update["timestamp"]))
+                update_date = update_timestamp.date()
                 if update_date >= since_date:
                     if not assignee_filter or update["sender"] == assignee_filter:
                         activity.append({
                             "type": "team_update",
-                            "timestamp": datetime.datetime.fromisoformat(update["timestamp"]),
+                            "timestamp": update_timestamp,
                             "author": update["sender"],
                             "message": update["message"],
                             "issue_id": update.get("issue_id"),
@@ -111,29 +114,30 @@ def _get_team_activity(core, since_date, assignee_filter: str = None) -> list:
         except (json.JSONDecodeError, FileNotFoundError):
             pass
     issues = core.list_issues()
+    from roadmap.timezone_utils import ensure_timezone_aware
     for issue in issues:
-        if issue.actual_end_date and issue.actual_end_date.date() >= since_date and issue.assignee:
+        if issue.actual_end_date and ensure_timezone_aware(issue.actual_end_date).date() >= since_date and issue.assignee:
             if not assignee_filter or issue.assignee == assignee_filter:
                 activity.append({
                     "type": "issue_completed",
-                    "timestamp": issue.actual_end_date,
+                    "timestamp": ensure_timezone_aware(issue.actual_end_date),
                     "author": issue.assignee,
                     "message": f"Completed: {issue.title}",
                     "issue_id": issue.id,
                 })
-        if issue.actual_start_date and issue.actual_start_date.date() >= since_date and issue.assignee:
+        if issue.actual_start_date and ensure_timezone_aware(issue.actual_start_date).date() >= since_date and issue.assignee:
             if not assignee_filter or issue.assignee == assignee_filter:
                 activity.append({
                     "type": "issue_started",
-                    "timestamp": issue.actual_start_date,
+                    "timestamp": ensure_timezone_aware(issue.actual_start_date),
                     "author": issue.assignee,
                     "message": f"Started: {issue.title}",
                     "issue_id": issue.id,
                 })
-        if issue.created and issue.created.date() >= since_date:
+        if issue.created and ensure_timezone_aware(issue.created).date() >= since_date:
             activity.append({
                 "type": "issue_created",
-                "timestamp": issue.created,
+                "timestamp": ensure_timezone_aware(issue.created),
                 "author": "system",
                 "message": f"Created: {issue.title}",
                 "issue_id": issue.id,

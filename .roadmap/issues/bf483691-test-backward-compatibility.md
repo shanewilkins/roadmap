@@ -7,10 +7,11 @@ issue_type: other
 milestone: ''
 labels: []
 github_issue: 27
-created: '2025-10-12T11:36:21.441984'
-updated: '2025-11-15T15:08:32.751170'
+created: '2025-10-12T11:36:21.441984+00:00'
+updated: '2025-11-16T13:41:23.305564'
 assignee: ''
 estimated_hours: null
+due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null

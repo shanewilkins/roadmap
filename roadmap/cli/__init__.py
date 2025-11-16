@@ -397,6 +397,7 @@ def register_commands():
     from .analytics import analytics
     from .comment import comment
     from .release import release_group
+    from .timezone import timezone_group
     from .deprecated import register_deprecated_commands
     
     # Register activity and utility commands
@@ -427,6 +428,7 @@ def register_commands():
     main.add_command(analytics)
     main.add_command(comment)
     main.add_command(release_group)
+    main.add_command(timezone_group)
     
     # Register progress and CI commands
     from .progress import recalculate_progress, progress_reports

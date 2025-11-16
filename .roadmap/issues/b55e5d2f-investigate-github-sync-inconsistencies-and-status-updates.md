@@ -7,10 +7,11 @@ issue_type: bug
 milestone: v.0.3.0
 labels: []
 github_issue: 7
-created: '2025-10-11T20:18:40.151751'
-updated: '2025-11-15T15:08:47.870742'
+created: '2025-10-11T20:18:40.151751+00:00'
+updated: '2025-11-16T13:41:23.261215'
 assignee: shanewilkins
 estimated_hours: 3.0
+due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null

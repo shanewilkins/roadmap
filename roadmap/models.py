@@ -20,6 +20,15 @@ except ImportError:
         return open(path, mode, **kwargs)
 
 
+# Import timezone utilities with circular import protection
+try:
+    from .timezone_utils import now_utc
+except ImportError:
+    # Fallback during module loading
+    def now_utc():
+        return datetime.now()
+
+
 class Priority(str, Enum):
     """Issue priority levels."""
 
@@ -83,8 +92,8 @@ class Issue(BaseModel):
     milestone: Optional[str] = None
     labels: List[str] = Field(default_factory=list)
     github_issue: Optional[int] = None
-    created: datetime = Field(default_factory=datetime.now)
-    updated: datetime = Field(default_factory=datetime.now)
+    created: datetime = Field(default_factory=now_utc)
+    updated: datetime = Field(default_factory=now_utc)
     assignee: Optional[str] = None
     content: str = ""  # Markdown content
     estimated_hours: Optional[float] = None  # Estimated time to complete in hours
@@ -212,8 +221,8 @@ class Milestone(BaseModel):
     due_date: Optional[datetime] = None
     status: MilestoneStatus = MilestoneStatus.OPEN
     github_milestone: Optional[int] = None
-    created: datetime = Field(default_factory=datetime.now)
-    updated: datetime = Field(default_factory=datetime.now)
+    created: datetime = Field(default_factory=now_utc)
+    updated: datetime = Field(default_factory=now_utc)
     content: str = ""  # Markdown content
     
     # Automatic progress tracking fields

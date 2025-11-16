@@ -9,6 +9,7 @@ import yaml
 
 from .models import Issue, IssueType, Milestone, MilestoneStatus, Priority, Project, ProjectStatus, Status
 from .persistence import YAMLValidationError, enhanced_persistence
+from .timezone_utils import now_utc, migrate_naive_datetime, parse_datetime as tz_parse_datetime
 
 
 class FrontmatterParser:
@@ -157,7 +158,7 @@ class IssueParser:
             data = result
 
             # Handle datetime fields - set defaults if None
-            now = datetime.now()
+            now = now_utc()
             created = cls._parse_datetime(data.get("created")) or now
             updated = cls._parse_datetime(data.get("updated")) or now
             due_date = cls._parse_datetime(data.get("due_date"))
@@ -183,20 +184,36 @@ class IssueParser:
     @classmethod
     def save_issue_file_safe(cls, issue: Issue, file_path: Path) -> Tuple[bool, str]:
         """Safely save an issue file with automatic backup."""
-        return enhanced_persistence.safe_save_with_backup(issue, file_path)
+        try:
+            cls.save_issue_file(issue, file_path)
+            return True, "Issue saved successfully"
+        except Exception as e:
+            return False, f"Error saving issue: {e}"
 
     @classmethod
     def _parse_datetime(cls, value: Any) -> Optional[datetime]:
-        """Parse datetime from various formats."""
+        """Parse datetime from various formats with timezone awareness."""
         if value is None:
             return None
         if isinstance(value, datetime):
+            # If it's already a datetime, ensure it's timezone-aware
+            if value.tzinfo is None:
+                # Assume UTC for naive datetimes during migration
+                return migrate_naive_datetime(value, "UTC")
             return value
         if isinstance(value, str):
             try:
-                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+                # Use our timezone-aware parser
+                return tz_parse_datetime(value)
             except ValueError:
-                return None
+                # Fallback to ISO format parsing
+                try:
+                    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        return migrate_naive_datetime(dt, "UTC")
+                    return dt
+                except ValueError:
+                    return None
         return None
 
 
@@ -251,7 +268,7 @@ class MilestoneParser:
             data = result
 
             # Handle datetime fields - set defaults if None
-            now = datetime.now()
+            now = now_utc()
             created = cls._parse_datetime(data.get("created")) or now
             updated = cls._parse_datetime(data.get("updated")) or now
             due_date = cls._parse_datetime(data.get("due_date"))
@@ -274,20 +291,36 @@ class MilestoneParser:
         cls, milestone: Milestone, file_path: Path
     ) -> Tuple[bool, str]:
         """Safely save a milestone file with automatic backup."""
-        return enhanced_persistence.safe_save_with_backup(milestone, file_path)
+        try:
+            cls.save_milestone_file(milestone, file_path)
+            return True, "Milestone saved successfully"
+        except Exception as e:
+            return False, f"Error saving milestone: {e}"
 
     @classmethod
     def _parse_datetime(cls, value: Any) -> Optional[datetime]:
-        """Parse datetime from various formats."""
+        """Parse datetime from various formats with timezone awareness."""
         if value is None:
             return None
         if isinstance(value, datetime):
+            # If it's already a datetime, ensure it's timezone-aware
+            if value.tzinfo is None:
+                # Assume UTC for naive datetimes during migration
+                return migrate_naive_datetime(value, "UTC")
             return value
         if isinstance(value, str):
             try:
-                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+                # Use our timezone-aware parser
+                return tz_parse_datetime(value)
             except ValueError:
-                return None
+                # Fallback to ISO format parsing
+                try:
+                    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        return migrate_naive_datetime(dt, "UTC")
+                    return dt
+                except ValueError:
+                    return None
         return None
 
 
@@ -310,8 +343,8 @@ class ProjectParser:
             start_date=cls._parse_datetime(frontmatter.get("start_date")),
             target_end_date=cls._parse_datetime(frontmatter.get("target_end_date")),
             actual_end_date=cls._parse_datetime(frontmatter.get("actual_end_date")),
-            created=cls._parse_datetime(frontmatter.get("created")) or datetime.now(),
-            updated=cls._parse_datetime(frontmatter.get("updated")) or datetime.now(),
+            created=cls._parse_datetime(frontmatter.get("created")) or now_utc(),
+            updated=cls._parse_datetime(frontmatter.get("updated")) or now_utc(),
             milestones=frontmatter.get("milestones", []),
             estimated_hours=frontmatter.get("estimated_hours"),
             actual_hours=frontmatter.get("actual_hours"),
@@ -360,14 +393,26 @@ class ProjectParser:
 
     @classmethod
     def _parse_datetime(cls, value: Any) -> Optional[datetime]:
-        """Parse datetime from various formats."""
+        """Parse datetime from various formats with timezone awareness."""
         if value is None:
             return None
         if isinstance(value, datetime):
+            # If it's already a datetime, ensure it's timezone-aware
+            if value.tzinfo is None:
+                # Assume UTC for naive datetimes during migration
+                return migrate_naive_datetime(value, "UTC")
             return value
         if isinstance(value, str):
             try:
-                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+                # Use our timezone-aware parser
+                return tz_parse_datetime(value)
             except ValueError:
-                return None
+                # Fallback to ISO format parsing
+                try:
+                    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        return migrate_naive_datetime(dt, "UTC")
+                    return dt
+                except ValueError:
+                    return None
         return None

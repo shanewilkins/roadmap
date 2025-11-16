@@ -7,13 +7,14 @@ issue_type: feature
 milestone: ''
 labels: []
 github_issue: 24
-created: '2025-10-11T20:34:42.628405'
-updated: '2025-11-15T15:08:31.420159'
+created: '2025-10-11T20:34:42.628405+00:00'
+updated: '2025-11-16T13:41:23.300761'
 assignee: ''
 estimated_hours: 4.0
+due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-10-12T09:02:14.635933'
+actual_start_date: '2025-10-12T09:02:14.635933+00:00'
 actual_end_date: null
 progress_percentage: 0.0
 handoff_notes: null

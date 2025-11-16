@@ -400,7 +400,8 @@ Project notes and additional context.
                 setattr(issue, field, value)
 
         # Update timestamp
-        issue.updated = datetime.now()
+        from .timezone_utils import now_utc
+        issue.updated = now_utc()
 
         # Save updated issue
         issue_path = self.issues_dir / issue.filename
@@ -496,7 +497,8 @@ Project notes and additional context.
         issues = self.list_issues(milestone=name)
         for issue in issues:
             issue.milestone = None
-            issue.updated = datetime.now()
+            from .timezone_utils import now_utc
+            issue.updated = now_utc()
             issue_path = self.issues_dir / issue.filename
             IssueParser.save_issue_file(issue, issue_path)
 
@@ -551,7 +553,8 @@ Project notes and additional context.
         if status is not None:
             milestone.status = status
 
-        milestone.updated = datetime.now()
+        from .timezone_utils import now_utc
+        milestone.updated = now_utc()
 
         # Save the updated milestone (find the actual file by searching)
         for milestone_file in self.milestones_dir.glob("*.md"):
@@ -575,7 +578,8 @@ Project notes and additional context.
             return False
 
         issue.milestone = milestone_name
-        issue.updated = datetime.now()
+        from .timezone_utils import now_utc
+        issue.updated = now_utc()
 
         issue_path = self.issues_dir / issue.filename
         IssueParser.save_issue_file(issue, issue_path)
@@ -693,7 +697,8 @@ Project notes and additional context.
 
         # Update issue milestone
         issue.milestone = milestone_name
-        issue.updated = datetime.now()
+        from .timezone_utils import now_utc
+        issue.updated = now_utc()
 
         # Save updated issue
         issue_path = self.issues_dir / issue.filename

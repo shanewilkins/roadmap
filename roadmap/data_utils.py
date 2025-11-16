@@ -175,10 +175,17 @@ class DataFrameAdapter:
             sheet_name: Excel sheet name
             **kwargs: Additional arguments for pandas.to_excel()
         """
+        # Convert timezone-aware datetimes to naive for Excel compatibility
+        df_export = df.copy()
+        for col in df_export.select_dtypes(include=['datetime64[ns, UTC]', 'datetime64[ns]']).columns:
+            if hasattr(df_export[col].dtype, 'tz') and df_export[col].dtype.tz is not None:
+                # Convert timezone-aware to naive (removes timezone info)
+                df_export[col] = df_export[col].dt.tz_localize(None)
+        
         default_kwargs = {"index": False, "sheet_name": sheet_name}
         default_kwargs.update(kwargs)
 
-        df.to_excel(filepath, **default_kwargs)
+        df_export.to_excel(filepath, **default_kwargs)
 
     @staticmethod
     def export_to_json(df: pd.DataFrame, filepath: Path, **kwargs) -> None:
@@ -207,7 +214,13 @@ class DataFrameAdapter:
         """
         with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
             for sheet_name, df in data_dict.items():
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                # Convert timezone-aware datetimes to naive for Excel compatibility
+                df_export = df.copy()
+                for col in df_export.select_dtypes(include=['datetime64[ns, UTC]', 'datetime64[ns]']).columns:
+                    if hasattr(df_export[col].dtype, 'tz') and df_export[col].dtype.tz is not None:
+                        # Convert timezone-aware to naive (removes timezone info)
+                        df_export[col] = df_export[col].dt.tz_localize(None)
+                df_export.to_excel(writer, sheet_name=sheet_name, index=False)
 
 
 class DataAnalyzer:

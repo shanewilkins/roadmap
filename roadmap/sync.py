@@ -91,6 +91,22 @@ class SyncStrategy:
         self.strategy = strategy
         self.conflicts_found: List[SyncConflict] = []
 
+    def _parse_github_timestamp(self, github_timestamp: str) -> datetime:
+        """Safely parse GitHub timestamp, handling both Z and +00:00 formats."""
+        if not github_timestamp:
+            return datetime.min
+        
+        # Handle malformed timestamps from tests (e.g., "2025-01-01T00:00:00+00:00Z")
+        if github_timestamp.endswith('Z') and '+00:00' in github_timestamp:
+            # Remove the trailing Z if there's already timezone info
+            github_timestamp = github_timestamp[:-1]
+        elif github_timestamp.endswith('Z'):
+            # Standard GitHub API format: replace Z with +00:00
+            github_timestamp = github_timestamp.replace("Z", "+00:00")
+        
+        # If it already has timezone info, parse directly
+        return datetime.fromisoformat(github_timestamp)
+
     def compare_timestamps(
         self, local_updated: datetime, github_updated_str: str
     ) -> str:
@@ -149,11 +165,7 @@ class SyncStrategy:
                 local_item=local_issue,
                 remote_item=github_issue,
                 local_updated=local_updated,
-                remote_updated=(
-                    datetime.fromisoformat(github_updated.replace("Z", "+00:00"))
-                    if github_updated
-                    else datetime.min
-                ),
+                remote_updated=self._parse_github_timestamp(github_updated),
             )
             return conflict
 
@@ -175,11 +187,7 @@ class SyncStrategy:
                 local_item=local_milestone,
                 remote_item=github_milestone,
                 local_updated=local_updated,
-                remote_updated=(
-                    datetime.fromisoformat(github_updated.replace("Z", "+00:00"))
-                    if github_updated
-                    else datetime.min
-                ),
+                remote_updated=self._parse_github_timestamp(github_updated),
             )
             return conflict
 
@@ -964,8 +972,8 @@ class SyncManager:
                         )
                         local_milestone.github_milestone = github_milestone["number"]
                         if github_milestone["due_on"]:
-                            local_milestone.due_date = datetime.fromisoformat(
-                                github_milestone["due_on"].replace("Z", "+00:00")
+                            local_milestone.due_date = self.sync_strategy._parse_github_timestamp(
+                                github_milestone["due_on"]
                             )
                         local_milestone.status = (
                             MilestoneStatus.CLOSED
@@ -985,8 +993,8 @@ class SyncManager:
                         # Create new
                         due_date = None
                         if github_milestone["due_on"]:
-                            due_date = datetime.fromisoformat(
-                                github_milestone["due_on"].replace("Z", "+00:00")
+                            due_date = self.sync_strategy._parse_github_timestamp(
+                                github_milestone["due_on"]
                             )
 
                         new_milestone = Milestone(
@@ -1222,8 +1230,8 @@ class SyncManager:
                                 github_milestone["description"] or ""
                             )
                             if github_milestone["due_on"]:
-                                local_milestone.due_date = datetime.fromisoformat(
-                                    github_milestone["due_on"].replace("Z", "+00:00")
+                                local_milestone.due_date = self.sync_strategy._parse_github_timestamp(
+                                    github_milestone["due_on"]
                                 )
                             else:
                                 local_milestone.due_date = None
@@ -1263,8 +1271,8 @@ class SyncManager:
                     # Create new local milestone
                     due_date = None
                     if github_milestone["due_on"]:
-                        due_date = datetime.fromisoformat(
-                            github_milestone["due_on"].replace("Z", "+00:00")
+                        due_date = self.sync_strategy._parse_github_timestamp(
+                            github_milestone["due_on"]
                         )
 
                     new_milestone = Milestone(

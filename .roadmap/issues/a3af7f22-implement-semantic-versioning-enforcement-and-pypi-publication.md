@@ -7,8 +7,8 @@ issue_type: other
 milestone: v.0.4.0
 labels: []
 github_issue: 22
-created: '2025-10-14T15:46:41.872165'
-updated: '2025-11-16T13:30:38.589427'
+created: '2025-10-14T15:46:41.872165+00:00'
+updated: '2025-11-16T13:41:23.289950'
 assignee: shanewilkins
 estimated_hours: 16.0
 due_date: null

@@ -7,10 +7,11 @@ issue_type: other
 milestone: ''
 labels: []
 github_issue: 21
-created: '2025-10-14T15:46:46.825403'
-updated: '2025-11-15T15:08:28.757268'
+created: '2025-10-14T15:46:46.825403+00:00'
+updated: '2025-11-16T13:41:23.291452'
 assignee: shanewilkins
 estimated_hours: 24.0
+due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null

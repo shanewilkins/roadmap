@@ -7,10 +7,11 @@ issue_type: feature
 milestone: v.0.2.0
 labels: []
 github_issue: 51
-created: '2025-10-14T17:36:41.628217'
-updated: '2025-11-15T15:08:29.987965'
+created: '2025-10-14T17:36:41.628217+00:00'
+updated: '2025-11-16T13:41:23.294562'
 assignee: shanewilkins
 estimated_hours: null
+due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null

@@ -11,10 +11,11 @@ labels:
 - sync
 - milestone-tracking
 github_issue: 42
-created: '2025-10-14T17:01:42.932554'
-updated: '2025-11-15T15:08:29.474480'
+created: '2025-10-14T17:01:42.932554+00:00'
+updated: '2025-11-16T13:41:23.293019'
 assignee: shanewilkins
 estimated_hours: 8.0
+due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null

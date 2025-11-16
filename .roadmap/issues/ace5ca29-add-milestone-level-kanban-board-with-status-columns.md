@@ -10,8 +10,8 @@ labels:
 - milestone
 - ui
 github_issue: 39
-created: '2025-10-13T08:41:57.474244'
-updated: '2025-11-16T13:23:34.451036'
+created: '2025-10-13T08:41:57.474244+00:00'
+updated: '2025-11-16T13:41:23.270406'
 assignee: shanewilkins
 estimated_hours: 8.0
 due_date: null

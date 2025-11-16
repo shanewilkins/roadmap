@@ -10,10 +10,11 @@ labels:
 - git-integration
 - workflow
 github_issue: 40
-created: '2025-10-12T11:42:46.274786'
-updated: '2025-11-15T15:08:33.739015'
+created: '2025-10-12T11:42:46.274786+00:00'
+updated: '2025-11-16T13:41:23.308644'
 assignee: shanewilkins
 estimated_hours: 3.0
+due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null

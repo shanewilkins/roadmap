@@ -10,13 +10,14 @@ labels:
 - validation
 - github-integration
 github_issue: 38
-created: '2025-10-12T11:41:15.911050'
-updated: '2025-11-15T15:08:21.709837'
+created: '2025-10-12T11:41:15.911050+00:00'
+updated: '2025-11-16T13:41:23.268180'
 assignee: shanewilkins
 estimated_hours: 4.0
+due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-10-13T09:52:51.660500'
+actual_start_date: '2025-10-13T09:52:51.660500+00:00'
 actual_end_date: null
 progress_percentage: 0.0
 handoff_notes: null

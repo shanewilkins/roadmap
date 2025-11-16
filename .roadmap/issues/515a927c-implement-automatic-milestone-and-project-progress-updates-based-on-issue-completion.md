@@ -7,13 +7,14 @@ issue_type: feature
 milestone: v.0.3.0
 labels: []
 github_issue: 8
-created: '2025-10-11T20:24:40.653811'
-updated: '2025-11-15T15:35:37.472514'
+created: '2025-10-11T20:24:40.653811+00:00'
+updated: '2025-11-16T13:41:23.264720'
 assignee: shanewilkins
 estimated_hours: 5.0
+due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-11-15T15:21:56.032509'
+actual_start_date: '2025-11-15T15:21:56.032509+00:00'
 actual_end_date: null
 progress_percentage: 0.0
 handoff_notes: null

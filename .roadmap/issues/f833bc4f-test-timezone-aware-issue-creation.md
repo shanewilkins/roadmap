@@ -1,16 +1,16 @@
 ---
-id: 327cfe35
-title: Advanced branch management and merging strategies
-priority: medium
+id: f833bc4f
+title: Test timezone-aware issue creation
+priority: high
 status: todo
 issue_type: other
 milestone: ''
 labels: []
-github_issue: 29
-created: '2025-10-14T14:17:51.110415+00:00'
-updated: '2025-11-16T13:41:23.311885'
-assignee: ''
-estimated_hours: 4.0
+github_issue: null
+created: '2025-11-16T19:41:48.050372+00:00'
+updated: '2025-11-16T19:41:48.050542+00:00'
+assignee: shanewilkins
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -25,7 +25,7 @@ git_commits: []
 completed_date: null
 ---
 
-# Advanced branch management and merging strategies
+# Test timezone-aware issue creation
 
 ## Description
 
@@ -36,7 +36,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

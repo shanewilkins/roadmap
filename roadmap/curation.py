@@ -8,6 +8,7 @@ from enum import Enum
 
 from roadmap.core import RoadmapCore
 from roadmap.models import Issue, Milestone, Priority, Status, IssueType, MilestoneStatus
+from roadmap.timezone_utils import now_utc, ensure_timezone_aware
 import yaml
 
 
@@ -150,11 +151,12 @@ class RoadmapCurator:
         """Detect issues that are orphaned."""
         orphaned = []
         milestone_names = {m.name for m in milestones}
-        now = datetime.now()
+        now = now_utc()
         
         for issue in issues:
-            # Skip if age filters don't match
-            age_days = (now - issue.created).days
+            # Skip if age filters don't match - ensure both datetimes are timezone-aware
+            issue_created = ensure_timezone_aware(issue.created)
+            age_days = (now - issue_created).days
             if age_days < min_age_days:
                 continue
             if max_age_days is not None and age_days > max_age_days:
@@ -210,10 +212,11 @@ class RoadmapCurator:
                                    max_age_days: Optional[int]) -> List[OrphanedItem]:
         """Detect milestones that are orphaned (no assigned issues)."""
         orphaned = []
-        now = datetime.now()
+        now = now_utc()
         
         for milestone in milestones:
-            age_days = (now - milestone.created).days
+            milestone_created = ensure_timezone_aware(milestone.created)
+            age_days = (now - milestone_created).days
             if age_days < min_age_days:
                 continue
             if max_age_days is not None and age_days > max_age_days:
@@ -253,10 +256,11 @@ class RoadmapCurator:
         """Detect issues that reference non-existent milestones."""
         invalid = []
         milestone_names = {m.name for m in milestones}
-        now = datetime.now()
+        now = now_utc()
         
         for issue in issues:
-            age_days = (now - issue.created).days
+            issue_created = ensure_timezone_aware(issue.created)
+            age_days = (now - issue_created).days
             if age_days < min_age_days:
                 continue
             if max_age_days is not None and age_days > max_age_days:
@@ -301,13 +305,14 @@ class RoadmapCurator:
                                     max_age_days: Optional[int]) -> List[OrphanedItem]:
         """Detect milestones that are not assigned to any roadmap (legacy method - use _detect_problematic_milestones)."""
         unassigned = []
-        now = datetime.now()
+        now = now_utc()
         
         # Get all milestones assigned to roadmaps
         assigned_milestone_names = self._get_roadmap_assigned_milestones()
         
         for milestone in milestones:
-            age_days = (now - milestone.created).days
+            milestone_created = ensure_timezone_aware(milestone.created)
+            age_days = (now - milestone_created).days
             if age_days < min_age_days:
                 continue
             if max_age_days is not None and age_days > max_age_days:
@@ -343,13 +348,14 @@ class RoadmapCurator:
                                      max_age_days: Optional[int]) -> List[OrphanedItem]:
         """Detect milestones with structural problems (empty, unassigned, etc.)."""
         problematic = {}  # Use dict to consolidate milestones by name
-        now = datetime.now()
+        now = now_utc()
         
         # Get all milestones assigned to roadmaps
         assigned_milestone_names = self._get_roadmap_assigned_milestones()
         
         for milestone in milestones:
-            age_days = (now - milestone.created).days
+            milestone_created = ensure_timezone_aware(milestone.created)
+            age_days = (now - milestone_created).days
             if age_days < min_age_days:
                 continue
             if max_age_days is not None and age_days > max_age_days:
