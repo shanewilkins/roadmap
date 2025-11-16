@@ -463,7 +463,7 @@ class RoadmapCurator:
             recommendations.append("Features can be assigned to future milestones")
             
         # Due date recommendations
-        recent_milestones = [m for m in open_milestones if m.due_date and m.due_date > datetime.now()]
+        recent_milestones = [m for m in open_milestones if m.due_date and m.due_date > now_utc()]
         if recent_milestones:
             next_milestone = min(recent_milestones, key=lambda m: m.due_date)
             recommendations.append(f"Consider assigning to '{next_milestone.name}' (next due: {next_milestone.due_date.strftime('%Y-%m-%d')})")

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
 import requests
+from .datetime_parser import parse_github_datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -539,12 +540,8 @@ class GitHubClient:
                 issue_id=str(issue_number),
                 author=comment_data["user"]["login"],
                 body=comment_data["body"],
-                created_at=datetime.fromisoformat(
-                    comment_data["created_at"].replace("Z", "+00:00")
-                ),
-                updated_at=datetime.fromisoformat(
-                    comment_data["updated_at"].replace("Z", "+00:00")
-                ),
+                created_at=parse_github_datetime(comment_data["created_at"]),
+                updated_at=parse_github_datetime(comment_data["updated_at"]),
                 github_url=comment_data["html_url"],
             )
             comments.append(comment)
@@ -577,12 +574,8 @@ class GitHubClient:
             issue_id=str(issue_number),
             author=comment_data["user"]["login"],
             body=comment_data["body"],
-            created_at=datetime.fromisoformat(
-                comment_data["created_at"].replace("Z", "+00:00")
-            ),
-            updated_at=datetime.fromisoformat(
-                comment_data["updated_at"].replace("Z", "+00:00")
-            ),
+            created_at=parse_github_datetime(comment_data["created_at"]),
+            updated_at=parse_github_datetime(comment_data["updated_at"]),
             github_url=comment_data["html_url"],
         )
 
@@ -612,12 +605,8 @@ class GitHubClient:
             issue_id="",  # We don't get issue number from this endpoint
             author=comment_data["user"]["login"],
             body=comment_data["body"],
-            created_at=datetime.fromisoformat(
-                comment_data["created_at"].replace("Z", "+00:00")
-            ),
-            updated_at=datetime.fromisoformat(
-                comment_data["updated_at"].replace("Z", "+00:00")
-            ),
+            created_at=parse_github_datetime(comment_data["created_at"]),
+            updated_at=parse_github_datetime(comment_data["updated_at"]),
             github_url=comment_data["html_url"],
         )
 

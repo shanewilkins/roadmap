@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 
+from .datetime_parser import parse_datetime
 from .models import Issue, Milestone, MilestoneStatus, Priority, Status
 
 
@@ -132,7 +133,7 @@ class YAMLRecoveryManager:
             if field in frontmatter and frontmatter[field] is not None:
                 if isinstance(frontmatter[field], str):
                     try:
-                        datetime.fromisoformat(frontmatter[field])
+                        parse_datetime(frontmatter[field], "file")
                     except ValueError:
                         errors.append(
                             f"Invalid datetime format for {field}: {frontmatter[field]}"

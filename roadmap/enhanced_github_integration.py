@@ -7,6 +7,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
+from .datetime_parser import parse_github_datetime
 from urllib.parse import urlparse
 
 import requests
@@ -114,7 +115,7 @@ class EnhancedGitHubIntegration:
             else:  # bidirectional
                 # Use timestamp comparison to determine direction
                 roadmap_updated = roadmap_issue.updated
-                github_updated = datetime.fromisoformat(github_issue["updated_at"].replace("Z", "+00:00"))
+                github_updated = parse_github_datetime(github_issue["updated_at"])
                 
                 if roadmap_updated > github_updated:
                     return self._update_github_from_roadmap(roadmap_issue, github_issue)
@@ -191,7 +192,7 @@ class EnhancedGitHubIntegration:
                 commit = GitCommit(
                     hash=commit_hash,
                     author=commit_data.get("author", {}).get("name", ""),
-                    date=datetime.fromisoformat(commit_data.get("timestamp", "").replace("Z", "+00:00")),
+                    date=parse_github_datetime(commit_data.get("timestamp", "")),
                     message=message,
                     files_changed=[]
                 )

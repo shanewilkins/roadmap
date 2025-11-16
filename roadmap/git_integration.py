@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from .datetime_parser import parse_datetime
 from .models import Issue
 
 
@@ -227,7 +228,7 @@ class GitIntegration:
 
             try:
                 hash_val, author, date_str, message = line.split("|", 3)
-                date = datetime.fromisoformat(date_str.replace(" ", "T"))
+                date = parse_datetime(date_str.replace(" ", "T"), "iso")
 
                 # Get file statistics for this commit
                 stat_output = self._run_git_command(

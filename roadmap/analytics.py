@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from .datetime_parser import parse_datetime
 
 from .core import RoadmapCore
 from .git_integration import GitCommit, GitIntegration
@@ -90,11 +91,11 @@ class GitHistoryAnalyzer:
         for issue in completed_issues:
             if hasattr(issue, "git_commits") and issue.git_commits:
                 start_time = min(
-                    datetime.fromisoformat(commit["date"])
+                    parse_datetime(commit["date"], "iso")
                     for commit in issue.git_commits
                 )
                 if issue.completed_date:
-                    end_time = datetime.fromisoformat(issue.completed_date)
+                    end_time = parse_datetime(issue.completed_date, "iso")
                     duration = (end_time - start_time).total_seconds() / 3600  # hours
                     completion_times.append(duration)
 
@@ -167,7 +168,7 @@ class GitHistoryAnalyzer:
                     and hasattr(issue, "completed_date")
                     and issue.completed_date
                     and start_date
-                    <= datetime.fromisoformat(issue.completed_date)
+                    <= parse_datetime(issue.completed_date, "iso")
                     <= end_date
                 )
             ]

@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from .analytics import DeveloperMetrics, GitHistoryAnalyzer
 from .core import RoadmapCore
+from .datetime_parser import parse_datetime
 from .models import Issue, Priority, Status
 
 
@@ -303,7 +304,7 @@ class IssueEstimator:
             for commit in issue.git_commits:
                 if isinstance(commit, dict) and "date" in commit:
                     try:
-                        commit_date = datetime.fromisoformat(commit["date"])
+                        commit_date = parse_datetime(commit["date"], "iso")
                         commit_dates.append(commit_date)
                     except (ValueError, TypeError):
                         continue

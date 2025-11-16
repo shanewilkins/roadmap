@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+from .datetime_parser import parse_github_datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from .bulk_operations import BulkOperationResult, bulk_operations
@@ -364,12 +365,8 @@ class HighPerformanceSyncManager:
             "assignee": assignee,
             "labels": other_labels,
             "github_issue": github_issue["number"],
-            "created": datetime.fromisoformat(
-                github_issue["created_at"].replace("Z", "+00:00")
-            ),
-            "updated": datetime.fromisoformat(
-                github_issue["updated_at"].replace("Z", "+00:00")
-            ),
+            "created": parse_github_datetime(github_issue["created_at"]),
+            "updated": parse_github_datetime(github_issue["updated_at"]),
         }
 
     def _update_issue_from_data(self, issue: Issue, data: Dict):
@@ -416,9 +413,7 @@ class HighPerformanceSyncManager:
                     # Extract milestone data
                     due_date = None
                     if github_milestone["due_on"]:
-                        due_date = datetime.fromisoformat(
-                            github_milestone["due_on"].replace("Z", "+00:00")
-                        )
+                        due_date = parse_github_datetime(github_milestone["due_on"])
 
                     if local_milestone:
                         # Update existing

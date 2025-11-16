@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from .core import RoadmapCore
 from .credentials import CredentialManagerError, get_credential_manager, mask_token
 from .github_client import GitHubAPIError, GitHubClient
+from .datetime_parser import parse_github_datetime
 from .models import Issue, Milestone, MilestoneStatus, Priority, RoadmapConfig, Status
 from .parser import IssueParser, MilestoneParser
 
@@ -97,15 +98,7 @@ class SyncStrategy:
             return datetime.min
         
         # Handle malformed timestamps from tests (e.g., "2025-01-01T00:00:00+00:00Z")
-        if github_timestamp.endswith('Z') and '+00:00' in github_timestamp:
-            # Remove the trailing Z if there's already timezone info
-            github_timestamp = github_timestamp[:-1]
-        elif github_timestamp.endswith('Z'):
-            # Standard GitHub API format: replace Z with +00:00
-            github_timestamp = github_timestamp.replace("Z", "+00:00")
-        
-        # If it already has timezone info, parse directly
-        return datetime.fromisoformat(github_timestamp)
+        return parse_github_datetime(github_timestamp)
 
     def compare_timestamps(
         self, local_updated: datetime, github_updated_str: str
@@ -121,9 +114,7 @@ class SyncStrategy:
         """
         try:
             # Parse GitHub timestamp (ISO format)
-            if github_updated_str.endswith("Z"):
-                github_updated_str = github_updated_str[:-1] + "+00:00"
-            remote_updated = datetime.fromisoformat(github_updated_str)
+            remote_updated = parse_github_datetime(github_updated_str)
 
             # Convert local timestamp to UTC if it's naive
             if local_updated.tzinfo is None:

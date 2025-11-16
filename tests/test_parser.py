@@ -1,7 +1,7 @@
 """Tests for parser functionality."""
 
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
@@ -135,8 +135,8 @@ This is a test issue description.
         assert issue.status == Status.TODO
         assert issue.id == "12345678"
         assert issue.content == "This is a test issue description."
-        assert issue.created == datetime(2024, 1, 1, 0, 0, 0)
-        assert issue.updated == datetime(2024, 1, 1, 0, 0, 0)
+        assert issue.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        assert issue.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
     def test_parse_issue_file_with_all_fields(self):
         """Test parsing issue file with all fields."""
@@ -186,8 +186,8 @@ More details here.
             priority=Priority.HIGH,
             status=Status.TODO,
             content="This is a test issue.",
-            created=datetime(2024, 1, 1, 0, 0, 0),
-            updated=datetime(2024, 1, 1, 0, 0, 0),
+            created=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            updated=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -212,8 +212,8 @@ More details here.
             milestone="v2.0",
             labels=["test"],
             content="Test description",
-            created=datetime(2024, 1, 1, 12, 30, 45),
-            updated=datetime(2024, 1, 2, 15, 45, 30),
+            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=timezone.utc),
+            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=timezone.utc),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -293,7 +293,7 @@ Issue with invalid date format.
             f.write(content)
             f.flush()
 
-            with pytest.raises(ValueError, match="Invalid isoformat string"):
+            with pytest.raises(ValueError, match="Input should be a valid datetime"):
                 IssueParser.parse_issue_file(Path(f.name))
 
     def test_parse_issue_file_nonexistent(self):
@@ -361,8 +361,8 @@ This is the first release milestone.
         assert milestone.name == "v1.0"
         assert milestone.description == "First release"
         assert milestone.status == MilestoneStatus.OPEN
-        assert milestone.created == datetime(2024, 1, 1, 0, 0, 0)
-        assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0)
+        assert milestone.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         assert "Goals" in milestone.content
         assert "Feature A" in milestone.content
 
@@ -389,7 +389,7 @@ Second release content.
 
         assert milestone.name == "v2.0"
         assert milestone.status == MilestoneStatus.CLOSED
-        assert milestone.due_date == datetime(2024, 12, 31, 23, 59, 59)
+        assert milestone.due_date == datetime(2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
         assert milestone.github_milestone == 456
 
     def test_save_milestone_file(self):
@@ -399,8 +399,8 @@ Second release content.
             description="First release",
             status=MilestoneStatus.OPEN,
             content="Milestone content",
-            created=datetime(2024, 1, 1, 0, 0, 0),
-            updated=datetime(2024, 1, 1, 0, 0, 0),
+            created=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            updated=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -421,10 +421,10 @@ Second release content.
             name="v1.5",
             description="Patch release",
             status=MilestoneStatus.OPEN,
-            due_date=datetime(2024, 6, 15, 12, 0, 0),
+            due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
             content="Patch release content",
-            created=datetime(2024, 1, 1, 10, 0, 0),
-            updated=datetime(2024, 1, 2, 14, 30, 0),
+            created=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+            updated=datetime(2024, 1, 2, 14, 30, 0, tzinfo=timezone.utc),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:

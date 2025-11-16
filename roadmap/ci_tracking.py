@@ -9,6 +9,7 @@ actual code changes and deployments.
 import re
 import subprocess
 from datetime import datetime
+from .datetime_parser import parse_datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Any
 from dataclasses import dataclass, field
@@ -289,7 +290,7 @@ class CITracker:
                     if len(parts) >= 4:
                         sha, author, date_str, message = parts
                         try:
-                            date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                            date = parser.parse_github_datetime(date_str)
                         except ValueError:
                             date = datetime.now()
                         
