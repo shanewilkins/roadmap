@@ -2,13 +2,13 @@
 id: a3af7f22
 title: Implement semantic versioning enforcement and PyPI publication
 priority: high
-status: in-progress
+status: done
 issue_type: other
 milestone: v.0.4.0
 labels: []
 github_issue: 22
 created: '2025-10-14T15:46:41.872165'
-updated: '2025-11-16T13:24:20.841414'
+updated: '2025-11-16T13:30:38.589427'
 assignee: shanewilkins
 estimated_hours: 16.0
 due_date: null
