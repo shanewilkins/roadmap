@@ -1,0 +1,35 @@
+---
+name: v.0.9.0
+description: Performance and scalability improvements with hybrid storage architecture
+due_date: '2025-12-10T00:00:00'
+status: open
+github_milestone: 1
+created: '2025-10-12T08:47:11.048736'
+updated: '2025-11-16T12:35:06.446844'
+calculated_progress: 0.0
+last_progress_update: '2025-11-16T12:35:06.446829'
+completion_velocity: null
+risk_level: low
+actual_start_date: null
+actual_end_date: null
+---
+
+# v.0.9.0: Performance & Scalability
+
+## Description
+
+Performance and scalability improvements with hybrid storage architecture. Focus on optimizing system performance, improving sync reliability, and ensuring the platform can handle larger datasets and teams efficiently.
+
+## Goals
+
+- [x] Fix broken sync between GitHub issues and roadmap folder
+- [x] Enhance init command with automatic project setup
+- [x] Validate assignee is team member functionality
+- [x] Add comprehensive testing for git integration workflow
+- [x] Test finish command workflow and backward compatibility
+- [x] Investigate and resolve GitHub sync inconsistencies
+- [ ] Implement automatic milestone and project progress updates
+- [ ] Implement CI/CD integration for automatic issue tracking
+- [ ] Performance optimization strategy with hybrid storage and caching
+- [ ] Add milestone-level kanban board with status columns
+- [ ] Complete comprehensive testing and validation

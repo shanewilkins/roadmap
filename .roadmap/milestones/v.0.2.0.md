@@ -1,0 +1,31 @@
+---
+name: v.0.2.0
+description: Foundation & Project Setup - Core infrastructure, project initialization,
+  templates, and basic tooling
+due_date: '2025-10-17T07:00:00+00:00'
+status: closed
+github_milestone: 2
+created: '2025-10-12T08:51:53.831150'
+updated: '2025-11-16T12:35:06.447773'
+calculated_progress: 100.0
+last_progress_update: '2025-11-16T12:35:06.447770'
+completion_velocity: null
+risk_level: low
+actual_start_date: null
+actual_end_date: '2025-11-16T12:35:06.447780'
+---
+
+# v.0.2.0: Foundation & Project Setup
+
+## Description
+
+Establish core infrastructure and foundational tools for the roadmap project. This milestone focuses on project initialization, templates, basic automation, and essential tooling that supports all future development.
+
+## Goals
+
+- [x] Add project level template system
+- [x] Rename project commands for clearer terminology  
+- [x] Auto-create feature branches for new issues
+- [x] Enhance backup system with management and cleanup. *moved to backlog*
+- [x] Improve project initialization workflow
+- [x] Standardize project structure and conventions

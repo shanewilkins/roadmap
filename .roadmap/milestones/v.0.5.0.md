@@ -1,0 +1,38 @@
+---
+name: v.0.5.0
+description: Team Collaboration & Advanced Features - Team management, notifications,
+  assignee validation, and communication tools
+due_date: '2025-11-08T00:00:00'
+status: closed
+github_milestone: 5
+created: '2025-10-12T08:53:09.707375'
+updated: '2025-11-16T12:35:06.449356'
+calculated_progress: 100.0
+last_progress_update: '2025-11-16T12:35:06.449355'
+completion_velocity: null
+risk_level: low
+actual_start_date: null
+actual_end_date: '2025-11-16T12:35:06.449357'
+---
+
+# v.0.5.0: Team Collaboration & Demo Project
+
+## Description
+
+Enable effective team collaboration through robust team management features, intelligent notifications, and advanced communication tools. Critical milestone includes getting the demo project fully functional and demonstrating real-world usage scenarios.
+
+## Goals
+
+- [ ] Complete demo project implementation and validation
+- [ ] Demo project documentation and user guides
+- [ ] Real-world usage scenarios and example workflows
+- [ ] Demo project automated testing and CI/CD pipeline
+- [ ] Comprehensive assignee validation and team member management
+- [ ] Smart notification system for project updates
+- [ ] Team workload analysis and capacity planning
+- [ ] Advanced collaboration features and communication tools
+- [ ] Permission management and access control
+- [ ] Integration with team communication platforms
+- [ ] Archiving completed issues, milestones, roadmaps
+- [ ] Demo project showcase materials and presentations
+- [ ] User onboarding workflows based on demo project learnings
