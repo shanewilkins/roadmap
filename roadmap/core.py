@@ -706,7 +706,17 @@ Project notes and additional context.
             return None
 
         # Sort by due date and return the earliest
-        upcoming_milestones.sort(key=lambda x: x.due_date)
+        # Handle timezone-aware vs timezone-naive datetime comparison
+        def get_sortable_date(milestone):
+            due_date = milestone.due_date
+            if due_date is None:
+                return None
+            # Convert timezone-aware dates to naive for comparison
+            if due_date.tzinfo is not None:
+                return due_date.replace(tzinfo=None)
+            return due_date
+        
+        upcoming_milestones.sort(key=get_sortable_date)
         return upcoming_milestones[0]
 
     def _get_github_config(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
