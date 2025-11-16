@@ -450,7 +450,17 @@ Project notes and additional context.
             except Exception:
                 continue
 
-        milestones.sort(key=lambda x: x.created)
+        # Sort milestones by due date (earliest first), then by name
+        # Helper function to safely get sortable date
+        def get_sortable_date(milestone):
+            if milestone.due_date is None:
+                return datetime.max
+            # Convert timezone-aware to naive for comparison
+            if milestone.due_date.tzinfo is not None:
+                return milestone.due_date.replace(tzinfo=None)
+            return milestone.due_date
+        
+        milestones.sort(key=lambda x: (get_sortable_date(x), x.name))
         return milestones
 
     def get_milestone(self, name: str) -> Optional[Milestone]:
