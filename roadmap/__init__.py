@@ -1,6 +1,6 @@
 """Roadmap CLI - A command line tool for creating and managing roadmaps."""
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"
 
 from .core import RoadmapCore
 from .credentials import CredentialManager, CredentialManagerError

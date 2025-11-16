@@ -91,6 +91,23 @@ roadmap export issues --format excel
 - **[Security Guide](SECURITY.md)** - Security best practices
 - **[Architecture](architecture.md)** - Technical architecture overview
 
+### Developer Features
+- **[Git Hooks Integration](GIT_HOOKS.md)** - Automated workflow with Git hooks 🚧
+- **[CI/CD Integration](CI_CD.md)** - Continuous integration and deployment 🚧
+- **[Repository Scanner](REPOSITORY_SCANNER.md)** - High-performance repository analysis 🚧
+
+### Analytics & Intelligence
+- **[Predictive Analytics](PREDICTIVE_ANALYTICS.md)** - ML-powered forecasting and estimation 🚧
+- **[Enhanced Analytics](ENHANCED_ANALYTICS.md)** - Advanced reporting and insights 🚧
+- **[Visualization Features](VISUALIZATION_FEATURES.md)** - Charts and interactive dashboards
+
+### Team & Integration
+- **[Team Management](TEAM_MANAGEMENT.md)** - Advanced team collaboration features 🚧
+- **[Bulk Operations](BULK_OPERATIONS.md)** - Large-scale data operations 🚧
+- **[Webhook Server](WEBHOOK_SERVER.md)** - Real-time integrations and webhooks 🚧
+
+> 🚧 **Documentation Note:** Items marked with 🚧 are fully implemented features with stub documentation. These will be completed before v1.0 release.
+
 ## 💡 Key Concepts
 
 ### Projects

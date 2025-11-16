@@ -2,20 +2,20 @@
 id: eac994ae
 title: Interactive project dashboard with real-time updates
 priority: high
-status: in-progress
+status: done
 issue_type: other
 milestone: v.0.3.0
 labels: []
 github_issue: 13
 created: '2025-10-14T14:18:03.861258'
-updated: '2025-11-15T16:42:41.019647'
-assignee: ''
+updated: '2025-11-16T12:57:00.604869'
+assignee: shanewilkins
 estimated_hours: 8.0
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: 85
+progress_percentage: 85.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

@@ -636,13 +636,23 @@ Complete documentation is available in the [`/docs`](docs/) directory:
 
 | Document | Description |
 |----------|-------------|
+| **Core Documentation** | |
 | **[Installation Guide](docs/INSTALLATION.md)** | Complete setup and installation instructions |
 | **[User Workflows](docs/USER_WORKFLOWS.md)** | Step-by-step workflows for different scenarios |
 | **[CLI Reference](docs/CLI_REFERENCE.md)** | Complete command reference with examples |
+| **Feature Documentation** | |
 | **[Feature Showcase](docs/FEATURE_SHOWCASE.md)** | Technical deep-dive into advanced features |
+| **[Git Hooks Integration](docs/GIT_HOOKS.md)** | Automated workflow with Git hooks 🚧 |
+| **[CI/CD Integration](docs/CI_CD.md)** | Continuous integration and deployment 🚧 |
+| **[Predictive Analytics](docs/PREDICTIVE_ANALYTICS.md)** | ML-powered forecasting and estimation 🚧 |
+| **[Team Management](docs/TEAM_MANAGEMENT.md)** | Advanced team collaboration features 🚧 |
+| **[Visualization Features](docs/VISUALIZATION_FEATURES.md)** | Charts and interactive dashboards |
+| **Advanced Topics** | |
 | **[Performance Optimization](docs/PERFORMANCE_OPTIMIZATION.md)** | Performance analysis and optimization guide |
-| **[Troubleshooting](docs/TROUBLESHOOTING.md)** | Common issues and solutions |
 | **[Security Guide](docs/SECURITY.md)** | Security best practices and guidelines |
+| **[Troubleshooting](docs/TROUBLESHOOTING.md)** | Common issues and solutions |
+
+> 🚧 **Note:** Items marked with 🚧 are fully implemented features with documentation stubs that will be completed before v1.0.
 
 ## ️ Roadmap
 

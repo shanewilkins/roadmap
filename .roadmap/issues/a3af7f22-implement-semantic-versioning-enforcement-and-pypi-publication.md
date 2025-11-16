@@ -4,12 +4,12 @@ title: Implement semantic versioning enforcement and PyPI publication
 priority: high
 status: todo
 issue_type: other
-milestone: v.0.3.0
+milestone: v.0.4.0
 labels: []
 github_issue: 22
 created: '2025-10-14T15:46:41.872165'
-updated: '2025-11-15T15:08:28.245599'
-assignee: ''
+updated: '2025-11-16T12:57:52.965199'
+assignee: shanewilkins
 estimated_hours: 16.0
 depends_on: []
 blocks: []
