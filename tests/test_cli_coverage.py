@@ -182,11 +182,13 @@ class TestCLIExport:
 class TestCLISync:
     """Test sync command coverage."""
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_help(self, cli_runner):
         """Test sync command help."""
         result = cli_runner.invoke(main, ["sync", "--help"])
         assert result.exit_code == 0
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_basic(self, cli_runner):
         """Test basic sync command."""
         with cli_runner.isolated_filesystem():

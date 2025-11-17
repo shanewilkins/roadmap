@@ -472,6 +472,7 @@ def test_milestone_assign_without_roadmap(temp_dir):
 # Sync Commands Tests
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_help(cli_runner):
     """Test sync command help."""
     result = cli_runner.invoke(main, ["sync", "--help"])
@@ -479,6 +480,7 @@ def test_sync_help(cli_runner):
     assert "Synchronize with GitHub repository" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_setup_command(initialized_roadmap):
     """Test sync setup command."""
     runner = CliRunner()
@@ -498,6 +500,7 @@ def test_sync_setup_command(initialized_roadmap):
         assert "GitHub sync setup completed" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_setup_without_roadmap(temp_dir):
     """Test sync setup without initialized roadmap."""
     runner = CliRunner()
@@ -506,6 +509,7 @@ def test_sync_setup_without_roadmap(temp_dir):
     assert "Roadmap not initialized" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_setup_not_configured(initialized_roadmap):
     """Test sync setup when GitHub not configured."""
     runner = CliRunner()
@@ -515,6 +519,7 @@ def test_sync_setup_not_configured(initialized_roadmap):
     assert "GitHub client not configured" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_test_command(initialized_roadmap):
     """Test sync test command."""
     runner = CliRunner()
@@ -531,6 +536,7 @@ def test_sync_test_command(initialized_roadmap):
         assert "GitHub connection successful" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_test_failure(initialized_roadmap):
     """Test sync test with connection failure."""
     runner = CliRunner()
@@ -544,6 +550,7 @@ def test_sync_test_failure(initialized_roadmap):
         assert "GitHub connection failed" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_test_without_roadmap(temp_dir):
     """Test sync test without initialized roadmap."""
     runner = CliRunner()
@@ -552,6 +559,7 @@ def test_sync_test_without_roadmap(temp_dir):
     assert "Roadmap not initialized" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_test_not_configured(initialized_roadmap):
     """Test sync test when GitHub not configured."""
     runner = CliRunner()
@@ -561,6 +569,7 @@ def test_sync_test_not_configured(initialized_roadmap):
     assert "GitHub client not configured" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_push_command(initialized_roadmap):
     """Test sync push command."""
     runner = CliRunner()
@@ -576,6 +585,7 @@ def test_sync_push_command(initialized_roadmap):
         assert "push to GitHub" in result.output or "pushed" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_push_issues_only(initialized_roadmap):
     """Test sync push issues only."""
     runner = CliRunner()
@@ -590,6 +600,7 @@ def test_sync_push_issues_only(initialized_roadmap):
         assert "push to GitHub" in result.output or "pushed" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_push_without_roadmap(temp_dir):
     """Test sync push without initialized roadmap."""
     runner = CliRunner()
@@ -598,6 +609,7 @@ def test_sync_push_without_roadmap(temp_dir):
     assert "Roadmap not initialized" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_push_not_configured(initialized_roadmap):
     """Test sync push when GitHub not configured."""
     runner = CliRunner()
@@ -607,6 +619,7 @@ def test_sync_push_not_configured(initialized_roadmap):
     assert "GitHub integration not configured" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_pull_command(initialized_roadmap):
     """Test sync pull command."""
     runner = CliRunner()
@@ -622,6 +635,7 @@ def test_sync_pull_command(initialized_roadmap):
         assert "sync mode" in result.output or "pulled" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_pull_milestones_only(initialized_roadmap):
     """Test sync pull milestones only."""
     runner = CliRunner()
@@ -636,6 +650,7 @@ def test_sync_pull_milestones_only(initialized_roadmap):
         assert "sync mode" in result.output or "pulled" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_pull_without_roadmap(temp_dir):
     """Test sync pull without initialized roadmap."""
     runner = CliRunner()
@@ -644,6 +659,7 @@ def test_sync_pull_without_roadmap(temp_dir):
     assert "Roadmap not initialized" in result.output
 
 
+@pytest.mark.skip(reason="Legacy sync functionality removed")
 def test_sync_pull_not_configured(initialized_roadmap):
     """Test sync pull when GitHub not configured."""
     runner = CliRunner()
@@ -926,6 +942,7 @@ class TestSyncBidirectionalCommand:
             manager.bidirectional_sync.return_value = (5, 0, [], [])
             yield manager
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_success(self, initialized_roadmap, mock_sync_manager):
         """Test successful bidirectional sync."""
         runner = CliRunner()
@@ -940,6 +957,7 @@ class TestSyncBidirectionalCommand:
             assert "🔄 Starting bidirectional synchronization" in result.output
             assert "✅ Successfully synchronized 5 items" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_not_initialized(self, temp_dir):
         """Test bidirectional sync without initialized roadmap."""
         runner = CliRunner()
@@ -948,6 +966,7 @@ class TestSyncBidirectionalCommand:
         assert result.exit_code == 0
         assert "❌ Roadmap not initialized" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_not_configured(
         self, initialized_roadmap, mock_sync_manager
     ):
@@ -968,6 +987,7 @@ class TestSyncBidirectionalCommand:
             assert result.exit_code == 0
             assert "❌ GitHub integration not configured" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_with_strategy(
         self, initialized_roadmap, mock_sync_manager
     ):
@@ -992,6 +1012,7 @@ class TestSyncBidirectionalCommand:
             assert result.exit_code == 0
             assert "📋 Strategy: remote_wins" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_issues_only(
         self, initialized_roadmap, mock_sync_manager
     ):
@@ -1009,6 +1030,7 @@ class TestSyncBidirectionalCommand:
                 sync_issues=True, sync_milestones=False
             )
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_milestones_only(
         self, initialized_roadmap, mock_sync_manager
     ):
@@ -1026,6 +1048,7 @@ class TestSyncBidirectionalCommand:
                 sync_issues=False, sync_milestones=True
             )
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_with_conflicts(
         self, initialized_roadmap, mock_sync_manager
     ):
@@ -1035,22 +1058,22 @@ class TestSyncBidirectionalCommand:
         from datetime import datetime
 
         from roadmap.models import Issue
-        from roadmap.sync import SyncConflict
+        # from roadmap.sync import SyncConflict  # Legacy sync functionality removed
 
-        # Mock conflicts
-        conflict = SyncConflict(
-            "issue",
-            "1",
-            Issue(id="1", title="Test"),
-            {"number": 1},
-            datetime.now(),
-            datetime.now(),
-        )
+        # Mock conflicts - Legacy sync functionality removed
+        # conflict = SyncConflict(
+        #     "issue",
+        #     "1",
+        #     Issue(id="1", title="Test"),
+        #     {"number": 1},
+        #     datetime.now(),
+        #     datetime.now(),
+        # )
         mock_sync_manager.bidirectional_sync.return_value = (
             3,
             1,
             ["Error msg"],
-            [conflict],
+            [],  # [conflict] - Legacy sync functionality removed
         )
         mock_sync_manager.sync_strategy.resolve_conflict.return_value = "use_local"
 
@@ -1064,6 +1087,7 @@ class TestSyncBidirectionalCommand:
             assert "⚠️  1 conflicts detected and resolved" in result.output
             assert "❌ 1 errors occurred" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_dry_run(self, initialized_roadmap, mock_sync_manager):
         """Test bidirectional sync dry run mode."""
         runner = CliRunner()
@@ -1078,6 +1102,7 @@ class TestSyncBidirectionalCommand:
             assert "🔍 DRY RUN - No changes will be made" in result.output
             assert "⚠️  Dry run mode not yet implemented" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_bidirectional_exception_handling(
         self, initialized_roadmap, mock_sync_manager
     ):
@@ -1225,6 +1250,7 @@ class TestErrorHandlingCLI:
         assert result.exit_code == 0
         assert "❌ Roadmap not initialized" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_setup_without_init(self, temp_dir):
         """Test sync setup without roadmap initialization."""
         runner = CliRunner()
@@ -1233,6 +1259,7 @@ class TestErrorHandlingCLI:
         assert result.exit_code == 0
         assert "❌ Roadmap not initialized" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_push_without_init(self, temp_dir):
         """Test sync push without roadmap initialization."""
         runner = CliRunner()
@@ -1241,6 +1268,7 @@ class TestErrorHandlingCLI:
         assert result.exit_code == 0
         assert "❌ Roadmap not initialized" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_pull_without_init(self, temp_dir):
         """Test sync pull without roadmap initialization."""
         runner = CliRunner()
@@ -1249,6 +1277,7 @@ class TestErrorHandlingCLI:
         assert result.exit_code == 0
         assert "❌ Roadmap not initialized" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_test_without_init(self, temp_dir):
         """Test sync test without roadmap initialization."""
         runner = CliRunner()
@@ -1257,6 +1286,7 @@ class TestErrorHandlingCLI:
         assert result.exit_code == 0
         assert "❌ Roadmap not initialized" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_status_without_init(self, temp_dir):
         """Test sync status without roadmap initialization."""
         runner = CliRunner()
@@ -1302,6 +1332,7 @@ class TestErrorHandlingCLI:
 class TestSyncCommands:
     """Test additional sync command coverage."""
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_setup_success(self, initialized_roadmap):
         """Test successful sync setup."""
         runner = CliRunner()
@@ -1334,6 +1365,7 @@ class TestSyncCommands:
                 assert "✅ Token stored securely" in result.output
                 assert "✅ GitHub sync setup completed" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_test_success(self, initialized_roadmap):
         """Test successful sync test."""
         runner = CliRunner()
@@ -1353,6 +1385,7 @@ class TestSyncCommands:
                 assert result.exit_code == 0
                 assert "✅ Connection successful" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_test_failure(self, initialized_roadmap):
         """Test sync test failure."""
         runner = CliRunner()
@@ -1372,6 +1405,7 @@ class TestSyncCommands:
                 assert result.exit_code == 0
                 assert "❌ Connection failed" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_sync_status_configured(self, initialized_roadmap):
         """Test sync status when configured."""
         runner = CliRunner()

@@ -26,7 +26,6 @@ def cli_runner():
         "project",
         "smart-assign",
         "status",
-        "sync",
         "team",
         "user",
         "workload-analysis",
