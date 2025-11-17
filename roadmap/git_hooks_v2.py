@@ -229,15 +229,30 @@ def sync_after_commit():
             logger.info("Database not initialized, skipping sync")
             return
 
+        # Check for conflicts first
+        conflicts = state_manager.check_git_conflicts()
+        if conflicts:
+            logger.warning("Git conflicts detected, skipping sync", conflicts=conflicts)
+            return
+
         # Get current commit hash
         repo = Repo(Path.cwd())
         commit_hash = str(repo.head.commit)
+
+        # Perform smart sync
+        roadmap_dir = Path.cwd() / ".roadmap"
+        sync_stats = state_manager.smart_sync(roadmap_dir)
 
         # Update sync state
         state_manager.set_sync_state("last_commit_hash", commit_hash)
         state_manager.set_sync_state("last_sync_time", str(datetime.now()))
 
-        logger.info("Synced after commit", commit=commit_hash[:8])
+        logger.info(
+            "Auto-sync completed after commit",
+            commit=commit_hash[:8],
+            files_synced=sync_stats.get("files_synced", 0),
+            files_failed=sync_stats.get("files_failed", 0),
+        )
 
     except Exception as e:
         logger.error("Failed to sync after commit", error=str(e))
@@ -252,12 +267,25 @@ def sync_after_checkout(prev_head: str, new_head: str, branch_flag: str):
             logger.info("Database not initialized, skipping sync")
             return
 
+        # Check for conflicts
+        conflicts = state_manager.check_git_conflicts()
+        if conflicts:
+            logger.warning("Git conflicts detected after checkout", conflicts=conflicts)
+            return
+
+        # Perform smart sync (likely full rebuild after branch switch)
+        roadmap_dir = Path.cwd() / ".roadmap"
+        sync_stats = state_manager.smart_sync(roadmap_dir)
+
         # Update sync state
         state_manager.set_sync_state("current_branch", new_head)
         state_manager.set_sync_state("last_checkout_time", str(datetime.now()))
 
         logger.info(
-            "Synced after checkout", from_head=prev_head[:8], to_head=new_head[:8]
+            "Auto-sync completed after checkout",
+            from_head=prev_head[:8],
+            to_head=new_head[:8],
+            files_synced=sync_stats.get("files_synced", 0),
         )
 
     except Exception as e:
@@ -273,15 +301,29 @@ def sync_after_merge(merge_flag: str):
             logger.info("Database not initialized, skipping sync")
             return
 
+        # Check for conflicts (important after merge)
+        conflicts = state_manager.check_git_conflicts()
+        if conflicts:
+            logger.warning("Git conflicts detected after merge", conflicts=conflicts)
+            return
+
         # Get current commit hash
         repo = Repo(Path.cwd())
         commit_hash = str(repo.head.commit)
+
+        # Perform smart sync (likely full rebuild after merge)
+        roadmap_dir = Path.cwd() / ".roadmap"
+        sync_stats = state_manager.smart_sync(roadmap_dir)
 
         # Update sync state
         state_manager.set_sync_state("last_merge_commit", commit_hash)
         state_manager.set_sync_state("last_merge_time", str(datetime.now()))
 
-        logger.info("Synced after merge", commit=commit_hash[:8])
+        logger.info(
+            "Auto-sync completed after merge",
+            commit=commit_hash[:8],
+            files_synced=sync_stats.get("files_synced", 0),
+        )
 
     except Exception as e:
         logger.error("Failed to sync after merge", error=str(e))
