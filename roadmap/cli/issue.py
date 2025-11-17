@@ -10,6 +10,10 @@ from rich.text import Text
 from roadmap.core import RoadmapCore
 from roadmap.models import Priority, IssueType, Status
 from roadmap.cli.utils import get_console
+from roadmap.error_handling import (
+    ErrorHandler, handle_errors, with_error_handling,
+    ValidationError, FileOperationError, ErrorSeverity, ErrorCategory
+)
 
 console = get_console()
 
@@ -270,7 +274,15 @@ def list_issues(
                             console.print(f"  {status}: {data['count']} issues")
 
     except Exception as e:
-        console.print(f"❌ Failed to list issues: {e}", style="bold red")
+        error_handler = ErrorHandler()
+        error_handler.handle_error(
+            ValidationError(
+                "Failed to list issues",
+                context={'command': 'list'},
+                cause=e
+            ),
+            exit_on_critical=False
+        )
 
 @issue.command("create")
 @click.argument("title")
@@ -446,7 +458,15 @@ def create_issue(
         # Re-raise click.Abort to maintain proper exit code
         raise
     except Exception as e:
-        console.print(f"❌ Failed to create issue: {e}", style="bold red")
+        error_handler = ErrorHandler()
+        error_handler.handle_error(
+            ValidationError(
+                "Failed to create issue",
+                context={'command': 'create', 'title': title},
+                cause=e
+            ),
+            exit_on_critical=False
+        )
 
 @issue.command("update")
 @click.argument("issue_id")
@@ -554,7 +574,15 @@ def update_issue(
     except click.Abort:
         raise
     except Exception as e:
-        console.print(f"❌ Failed to update issue: {e}", style="bold red")
+        error_handler = ErrorHandler()
+        error_handler.handle_error(
+            ValidationError(
+                "Failed to update issue",
+                context={'command': 'update', 'issue_id': issue_id},
+                cause=e
+            ),
+            exit_on_critical=False
+        )
 
 @issue.command("done")
 @click.argument("issue_id")

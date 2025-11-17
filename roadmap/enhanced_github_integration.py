@@ -11,6 +11,10 @@ from .datetime_parser import parse_github_datetime
 from urllib.parse import urlparse
 
 import requests
+from .error_handling import (
+    ErrorHandler, handle_errors, NetworkError, GitOperationError,
+    ErrorSeverity, ErrorCategory
+)
 from .core import RoadmapCore
 from .git_integration import GitIntegration
 from .github_client import GitHubClient, GitHubAPIError
@@ -123,7 +127,16 @@ class EnhancedGitHubIntegration:
                     return self._update_roadmap_from_github(roadmap_issue, github_issue)
                     
         except Exception as e:
-            print(f"Sync failed for issue {issue_id}: {e}")
+            error_handler = ErrorHandler()
+            error_handler.handle_error(
+                NetworkError(
+                    f"Sync failed for issue {issue_id}",
+                    context={'issue_id': issue_id, 'operation': 'sync_issue'},
+                    cause=e
+                ),
+                show_traceback=False,
+                exit_on_critical=False
+            )
             return False
     
     def handle_pull_request_event(self, pr_data: Dict[str, Any], action: str) -> List[str]:
@@ -162,7 +175,16 @@ class EnhancedGitHubIntegration:
                     updated_issues.append(issue_id)
                     
         except Exception as e:
-            print(f"Error handling PR event: {e}")
+            error_handler = ErrorHandler()
+            error_handler.handle_error(
+                GitOperationError(
+                    "Error handling PR event",
+                    context={'action': action, 'operation': 'handle_pull_request_event'},
+                    cause=e
+                ),
+                show_traceback=False,
+                exit_on_critical=False
+            )
             
         return updated_issues
     

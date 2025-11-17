@@ -6,6 +6,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .error_handling import (
+    ErrorHandler, handle_errors, with_error_handling,
+    FileOperationError, ValidationError, ErrorSeverity, ErrorCategory
+)
 from .git_integration import GitIntegration
 from .models import (
     Issue,
@@ -365,7 +369,19 @@ Project notes and additional context.
 
                 issues.append(issue)
             except Exception as e:
-                # Skip malformed files
+                # Log parsing error but continue processing other files
+                error_handler = ErrorHandler()
+                error_handler.handle_error(
+                    FileOperationError(
+                        f"Skipping malformed issue file: {issue_file.name}",
+                        file_path=issue_file,
+                        operation="parse_issue",
+                        severity=ErrorSeverity.LOW,
+                        cause=e
+                    ),
+                    show_traceback=False,
+                    exit_on_critical=False
+                )
                 continue
 
         # Sort by priority then by creation date
@@ -949,6 +965,18 @@ Project notes and additional context.
             except Exception as fallback_error:
                 # If validation fails due to network/API issues, allow the assignment
                 # but log a warning that validation couldn't be performed
+                error_handler = ErrorHandler()
+                error_handler.handle_error(
+                    ValidationError(
+                        f"Could not validate assignee '{assignee}' - validation unavailable",
+                        field="assignee",
+                        value=assignee,
+                        severity=ErrorSeverity.WARNING,
+                        cause=fallback_error
+                    ),
+                    show_traceback=False,
+                    exit_on_critical=False
+                )
                 warning_msg = f"Warning: Could not validate assignee (validation unavailable): {str(fallback_error)}"
                 self._last_canonical_assignee = assignee
                 return True, warning_msg

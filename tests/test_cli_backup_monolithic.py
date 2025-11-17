@@ -1423,7 +1423,7 @@ class TestErrorHandlingCLI:
             result = runner.invoke(main, ["issue", "create", "Test Issue"])
 
             assert result.exit_code == 0
-            assert "❌ Failed to create issue" in result.output
+            assert "Failed to create issue" in result.output
 
     def test_milestone_commands_exception_handling(self, initialized_roadmap):
         """Test exception handling in milestone commands."""
