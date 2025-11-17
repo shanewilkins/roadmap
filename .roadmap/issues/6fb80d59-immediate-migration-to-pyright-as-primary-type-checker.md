@@ -50,7 +50,7 @@ Replace MyPy with Pyright as the primary type checker for the roadmap project, i
 ### Phase 2: Core Module Type Safety ✅
 
 - [x] Fix type errors in roadmap/core.py (highest priority) - 8 errors fixed
-- [x] Address type issues in roadmap/models.py - 3 errors fixed  
+- [x] Address type issues in roadmap/models.py - 3 errors fixed
 - [x] Clean up roadmap/cli/core.py type annotations - 14 errors fixed
 - [x] Resolve roadmap/persistence.py type problems - 3 errors fixed
 

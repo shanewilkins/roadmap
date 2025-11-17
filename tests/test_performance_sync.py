@@ -508,18 +508,10 @@ class TestHighPerformanceSyncManagerAdvanced:
 
         stats = SyncStats(start_time=datetime.now())
 
-        # Mock the safe_write_context and IssueParser
+        # Mock IssueParser
         with patch(
-            "roadmap.performance_sync.locked_file_ops"
-        ) as mock_locked_ops, patch(
             "roadmap.performance_sync.IssueParser"
         ) as mock_parser:
-
-            # Mock context manager
-            mock_context = Mock()
-            mock_context.__enter__ = Mock(return_value=Path("/tmp/temp_file"))
-            mock_context.__exit__ = Mock(return_value=None)
-            mock_locked_ops.safe_write_context.return_value = mock_context
 
             hp_sync_manager._bulk_write_issues(files_to_write, stats)
 
@@ -615,16 +607,8 @@ class TestHighPerformanceSyncManagerAdvanced:
         ]
 
         with patch(
-            "roadmap.performance_sync.locked_file_ops"
-        ) as mock_locked_ops, patch(
             "roadmap.performance_sync.MilestoneParser"
         ) as mock_parser:
-
-            # Mock context manager
-            mock_context = Mock()
-            mock_context.__enter__ = Mock(return_value=Path("/tmp/temp_file"))
-            mock_context.__exit__ = Mock(return_value=None)
-            mock_locked_ops.safe_write_context.return_value = mock_context
 
             hp_sync_manager._bulk_write_milestones(files_to_write)
 

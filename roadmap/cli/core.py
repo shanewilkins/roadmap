@@ -874,7 +874,7 @@ def _setup_github_integration(
             owner, repo = github_repo.split("/")
             github_client.set_repository(owner, repo)
             repo_info = github_client.test_repository_access()
-                
+
             repo_name = repo_info.get("full_name", github_repo)
             console.print(f"✅ Repository access: {repo_name}")
 

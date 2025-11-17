@@ -15,17 +15,23 @@ def test_init_uses_cli_token_and_stores_it(cli_runner):
                 # record the token used to construct the client
                 recorded['client_token'] = token
             def _make_request(self, *args, **kwargs):
-                return {'login': 'mockuser'}
-            def get_repository_info(self, owner, repo):
-                return {'full_name': f'{owner}/{repo}', 'permissions': {'admin': True}}
+                # Mock Response object with json() method
+                class MockResponse:
+                    def json(self):
+                        return {'login': 'mockuser'}
+                return MockResponse()
+            def set_repository(self, owner, repo):
+                pass
+            def test_repository_access(self):
+                return {'full_name': f'owner/repo', 'permissions': {'admin': True}}
 
         class DummyCredManager:
             def __init__(self):
                 recorded['cred_instance'] = self
                 self._stored = None
-            def get_github_token(self):
+            def get_token(self):
                 return None
-            def store_github_token(self, token):
+            def store_token(self, token):
                 self._stored = token
                 recorded['stored_token'] = token
 

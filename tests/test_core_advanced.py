@@ -351,7 +351,7 @@ class TestRoadmapCoreGitHubIntegration:
             # Mock credential manager
             with patch('roadmap.credentials.get_credential_manager') as mock_cred_mgr:
                 mock_manager = Mock()
-                mock_manager.get_credential.return_value = "test_token"
+                mock_manager.get_token.return_value = "test_token"
                 mock_cred_mgr.return_value = mock_manager
                 
                 token, owner, repo = core._get_github_config()
@@ -374,7 +374,7 @@ class TestRoadmapCoreGitHubIntegration:
             # Mock credential manager to return None (no stored token)
             with patch('roadmap.credentials.get_credential_manager') as mock_cred_mgr:
                 mock_manager = Mock()
-                mock_manager.get_credential.return_value = None
+                mock_manager.get_token.return_value = None
                 mock_cred_mgr.return_value = mock_manager
                 
                 token, owner, repo = core._get_github_config()

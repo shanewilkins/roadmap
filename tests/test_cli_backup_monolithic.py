@@ -1279,7 +1279,7 @@ class TestMilestoneUpdateCommand:
         """Test milestone update when milestone not found."""
         runner = CliRunner()
 
-        with patch("roadmap.cli.milestone.RoadmapCore") as mock_core_class:
+        with patch("roadmap.core.RoadmapCore") as mock_core_class:
             mock_core_instance = Mock()
             mock_core_class.return_value = mock_core_instance
             mock_core_instance.is_initialized.return_value = True

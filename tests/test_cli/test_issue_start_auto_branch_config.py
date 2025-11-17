@@ -29,9 +29,8 @@ def test_start_issue_respects_config_auto_branch(cli_runner):
 
         dummy_git = DummyGit()
 
-        with patch('roadmap.cli.issue.RoadmapCore') as MockCoreIssue, patch('roadmap.cli.RoadmapCore') as MockCoreMain:
-            core_inst = MockCoreIssue.return_value
-            MockCoreMain.return_value = core_inst
+        with patch('roadmap.cli.RoadmapCore') as MockCoreMain:
+            core_inst = MockCoreMain.return_value
             core_inst.is_initialized.return_value = True
             core_inst.get_issue.return_value = fake_issue
             core_inst.update_issue.return_value = True

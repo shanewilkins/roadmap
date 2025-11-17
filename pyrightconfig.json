@@ -14,35 +14,35 @@
   ],
   "pythonVersion": "3.10",
   "pythonPlatform": "All",
-  
+
   // Type checking settings - gradual migration approach
   "typeCheckingMode": "basic",
-  
+
   // Global settings - permissive during migration
   "reportMissingModuleSource": false,
   "reportMissingImports": "warning",
   "reportUndefinedVariable": "error",
   "reportAssertAlwaysTrue": "warning",
-  "reportUnusedImport": "information", 
+  "reportUnusedImport": "information",
   "reportUnusedVariable": "information",
   "reportDuplicateImport": "warning",
   "reportGeneralTypeIssues": "warning",
   "reportOptionalMemberAccess": "warning",
   "reportOptionalSubscript": "warning",
-  
+
   // Phase-based strictness overrides for gradual migration
   "overrides": [
     {
       // Phase 2: Core modules - stricter checking
       "include": [
         "roadmap/core.py",
-        "roadmap/models.py", 
+        "roadmap/models.py",
         "roadmap/cli/core.py",
         "roadmap/persistence.py"
       ],
       "typeCheckingMode": "standard",
       "reportUnknownArgumentType": "warning",
-      "reportUnknownVariableType": "warning", 
+      "reportUnknownVariableType": "warning",
       "reportUnknownMemberType": "warning",
       "reportMissingTypeStubs": "information"
     },
@@ -51,7 +51,7 @@
       "include": [
         "roadmap/analytics.py",
         "roadmap/github_client.py",
-        "roadmap/git_integration.py", 
+        "roadmap/git_integration.py",
         "roadmap/cli/*.py"
       ],
       "reportUnknownArgumentType": "information",
@@ -67,7 +67,7 @@
       "reportUnknownVariableType": false
     }
   ],
-  
+
   // Performance settings
   "useLibraryCodeForTypes": true,
   "autoSearchPaths": true,

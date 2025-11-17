@@ -26,9 +26,8 @@ def test_start_issue_creates_branch(cli_runner):
 
         # Patch RoadmapCore in both the issue module and the main CLI so
         # the created ctx.obj['core'] uses our mocked instance
-        with patch('roadmap.cli.issue.RoadmapCore') as MockCoreIssue, patch('roadmap.cli.RoadmapCore') as MockCoreMain:
-            core_inst = MockCoreIssue.return_value
-            MockCoreMain.return_value = core_inst
+        with patch('roadmap.cli.RoadmapCore') as MockCoreMain:
+            core_inst = MockCoreMain.return_value
             core_inst.is_initialized.return_value = True
             core_inst.get_issue.return_value = fake_issue
             core_inst.update_issue.return_value = True

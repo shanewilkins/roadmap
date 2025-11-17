@@ -563,6 +563,7 @@ Project notes and additional context.
 
         if status is not None:
             from .models import MilestoneStatus
+
             milestone.status = MilestoneStatus(status)
 
         from .timezone_utils import now_utc
@@ -746,6 +747,7 @@ Project notes and additional context.
             # due_date should not be None since we filtered above, but be safe
             if due_date is None:
                 from datetime import datetime
+
                 return datetime.max  # Put None dates at the end
             # Convert timezone-aware dates to naive for comparison
             if due_date.tzinfo is not None:
