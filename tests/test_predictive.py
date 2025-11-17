@@ -665,7 +665,7 @@ class TestPredictiveReportGenerator:
         # Verify file content
         import json
 
-        with open(filename, "r") as f:
+        with open(filename) as f:
             saved_report = json.load(f)
 
         assert saved_report["report_generated"] == report["report_generated"]

@@ -1,15 +1,16 @@
 """Test data factories for consistent and reusable test data generation."""
 
-import json
 import hashlib
 import hmac
+import json
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 from unittest.mock import Mock
+
 import pytest
 
-from roadmap.models import Issue, Milestone, RoadmapConfig
 from roadmap.core import RoadmapCore
+from roadmap.models import Issue, Milestone, RoadmapConfig
 
 # Mark all tests in this file as unit tests (no filesystem operations)
 pytestmark = pytest.mark.unit
@@ -17,7 +18,7 @@ pytestmark = pytest.mark.unit
 
 class TestDataFactory:
     """Factory for generating consistent test data across test suites."""
-    
+
     @staticmethod
     def create_mock_core(**kwargs) -> Mock:
         """Create a standardized mock RoadmapCore instance.
@@ -29,16 +30,16 @@ class TestDataFactory:
             Mock: Configured RoadmapCore mock
         """
         from pathlib import Path
-        
+
         core = Mock()
-        
+
         # Set up default behavior
         core.is_initialized.return_value = kwargs.get('is_initialized', True)
         core.root_path = kwargs.get('root_path', Path("/test"))
         core.roadmap_dir = kwargs.get('roadmap_dir', Path("/test/.roadmap"))
         core.issues_dir = kwargs.get('issues_dir', Path("/test/.roadmap/issues"))
         core.milestones_dir = kwargs.get('milestones_dir', Path("/test/.roadmap/milestones"))
-        
+
         # Mock methods with sensible defaults
         core.get_issues.return_value = kwargs.get('issues', [])
         core.get_milestones.return_value = kwargs.get('milestones', [])
@@ -46,9 +47,9 @@ class TestDataFactory:
         core.update_issue.return_value = kwargs.get('update_issue_return', True)
         core.delete_issue.return_value = kwargs.get('delete_issue_return', True)
         core.get_issue.return_value = kwargs.get('get_issue_return', None)
-        
+
         return core
-    
+
     @staticmethod
     def create_mock_issue(**kwargs) -> Mock:
         """Create a standardized mock Issue instance.
@@ -60,7 +61,7 @@ class TestDataFactory:
             Mock: Configured Issue mock
         """
         issue = Mock(spec=Issue)
-        
+
         # Set up default properties
         issue.id = kwargs.get('id', 1)
         issue.title = kwargs.get('title', 'Test Issue')
@@ -74,9 +75,9 @@ class TestDataFactory:
         issue.created_at = kwargs.get('created_at', datetime.now(timezone.utc))
         issue.updated_at = kwargs.get('updated_at', datetime.now(timezone.utc))
         issue.github_issue_number = kwargs.get('github_issue_number', None)
-        
+
         return issue
-    
+
     @staticmethod
     def create_mock_milestone(**kwargs) -> Mock:
         """Create a standardized mock Milestone instance.
@@ -88,7 +89,7 @@ class TestDataFactory:
             Mock: Configured Milestone mock
         """
         milestone = Mock(spec=Milestone)
-        
+
         milestone.id = kwargs.get('id', 1)
         milestone.title = kwargs.get('title', 'Test Milestone')
         milestone.description = kwargs.get('description', 'Test milestone description')
@@ -96,9 +97,9 @@ class TestDataFactory:
         milestone.status = kwargs.get('status', 'active')
         milestone.created_at = kwargs.get('created_at', datetime.now(timezone.utc))
         milestone.updated_at = kwargs.get('updated_at', datetime.now(timezone.utc))
-        
+
         return milestone
-    
+
     @staticmethod
     def create_mock_config(**kwargs) -> Mock:
         """Create a standardized mock RoadmapConfig instance.
@@ -110,7 +111,7 @@ class TestDataFactory:
             Mock: Configured RoadmapConfig mock
         """
         config = Mock(spec=RoadmapConfig)
-        
+
         # Default GitHub configuration
         config.github = kwargs.get('github', {
             'owner': 'test-owner',
@@ -118,18 +119,18 @@ class TestDataFactory:
             'token': 'test-token',
             'enabled': True
         })
-        
+
         # Default project configuration
         config.project = kwargs.get('project', {
             'name': 'Test Project',
             'version': '1.0.0',
             'description': 'Test project description'
         })
-        
+
         return config
-    
+
     @staticmethod
-    def create_github_webhook_payload(event_type: str, **kwargs) -> Dict[str, Any]:
+    def create_github_webhook_payload(event_type: str, **kwargs) -> dict[str, Any]:
         """Create realistic GitHub webhook payload data.
         
         Args:
@@ -147,7 +148,7 @@ class TestDataFactory:
             }),
             'sender': kwargs.get('sender', {'login': 'test-user'})
         }
-        
+
         if event_type == 'issues':
             base_payload.update({
                 'action': kwargs.get('action', 'opened'),
@@ -202,9 +203,9 @@ class TestDataFactory:
                     'title': 'Commented Issue'
                 })
             })
-        
+
         return base_payload
-    
+
     @staticmethod
     def create_webhook_signature(payload: str, secret: str) -> str:
         """Create GitHub webhook signature for testing.
@@ -222,9 +223,9 @@ class TestDataFactory:
             hashlib.sha256
         ).hexdigest()
         return f"sha256={signature}"
-    
+
     @staticmethod
-    def create_github_api_response(endpoint: str, **kwargs) -> Dict[str, Any]:
+    def create_github_api_response(endpoint: str, **kwargs) -> dict[str, Any]:
         """Create realistic GitHub API response data.
         
         Args:
@@ -264,11 +265,11 @@ class TestDataFactory:
                 'email': kwargs.get('email', 'test@example.com'),
                 'avatar_url': kwargs.get('avatar_url', 'https://github.com/images/test.png')
             }
-        
+
         return {}
-    
+
     @staticmethod
-    def create_cli_test_data(**kwargs) -> Dict[str, Any]:
+    def create_cli_test_data(**kwargs) -> dict[str, Any]:
         """Create test data for CLI command testing.
         
         Args:

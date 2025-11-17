@@ -232,7 +232,7 @@ poetry run mkdocs serve
     serve_script_path.write_text(serve_script)
     serve_script_path.chmod(0o755)
 
-    print(f"✅ Created automation scripts:")
+    print("✅ Created automation scripts:")
     print(f"   • {build_script_path}")
     print(f"   • {serve_script_path}")
 
@@ -257,14 +257,14 @@ def main():
     # Create automation scripts
     create_automation_scripts(project_root)
 
-    print(f"\n📊 Documentation Setup Summary:")
+    print("\n📊 Documentation Setup Summary:")
     print(f"   • Sphinx project: {sphinx_dir}")
     print(f"   • API docs: {source_dir}")
     print(f"   • Build output: {build_dir}")
-    print(f"\n🚀 Next steps:")
-    print(f"   1. Install doc dependencies: poetry install --with dev")
-    print(f"   2. Build all docs: ./scripts/build_docs.sh")
-    print(f"   3. Serve docs: ./scripts/serve_docs.sh")
+    print("\n🚀 Next steps:")
+    print("   1. Install doc dependencies: poetry install --with dev")
+    print("   2. Build all docs: ./scripts/build_docs.sh")
+    print("   3. Serve docs: ./scripts/serve_docs.sh")
 
 
 if __name__ == "__main__":

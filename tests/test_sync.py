@@ -63,7 +63,7 @@ class TestSyncManager:
     def test_initialization_with_missing_token(self, mock_credential_manager, mock_core, mock_config):
         """Test sync manager initialization with missing token."""
         mock_config.github["token"] = ""
-        
+
         # Mock credential manager to return None
         mock_credential_manager.return_value.is_available.return_value = False
         mock_credential_manager.return_value.get_token.return_value = None
@@ -530,7 +530,6 @@ class TestSyncStrategy:
 
     def test_compare_timestamps_local_newer(self):
         """Test timestamp comparison when local is newer."""
-        from roadmap.sync import SyncStrategy
 
         strategy = SyncStrategy()
 
@@ -542,7 +541,6 @@ class TestSyncStrategy:
 
     def test_compare_timestamps_remote_newer(self):
         """Test timestamp comparison when remote is newer."""
-        from roadmap.sync import SyncStrategy
 
         strategy = SyncStrategy()
 
@@ -554,7 +552,6 @@ class TestSyncStrategy:
 
     def test_compare_timestamps_same(self):
         """Test timestamp comparison when times are the same."""
-        from roadmap.sync import SyncStrategy
 
         strategy = SyncStrategy()
 
@@ -566,7 +563,6 @@ class TestSyncStrategy:
 
     def test_detect_issue_conflict(self):
         """Test issue conflict detection."""
-        from roadmap.sync import SyncStrategy
 
         strategy = SyncStrategy()
 
@@ -590,7 +586,6 @@ class TestSyncStrategy:
 
     def test_detect_milestone_conflict(self):
         """Test milestone conflict detection."""
-        from roadmap.sync import SyncStrategy
 
         strategy = SyncStrategy()
 
@@ -611,7 +606,7 @@ class TestSyncStrategy:
 
     def test_resolve_conflict_newer_wins_local(self):
         """Test conflict resolution with newer_wins strategy (local newer)."""
-        from roadmap.sync import SyncConflict, SyncConflictStrategy, SyncStrategy
+        from roadmap.sync import SyncConflictStrategy, SyncStrategy
 
         strategy = SyncStrategy(SyncConflictStrategy.NEWER_WINS)
 
@@ -632,7 +627,7 @@ class TestSyncStrategy:
 
     def test_resolve_conflict_newer_wins_remote(self):
         """Test conflict resolution with newer_wins strategy (remote newer)."""
-        from roadmap.sync import SyncConflict, SyncConflictStrategy, SyncStrategy
+        from roadmap.sync import SyncConflictStrategy, SyncStrategy
 
         strategy = SyncStrategy(SyncConflictStrategy.NEWER_WINS)
 
@@ -653,7 +648,7 @@ class TestSyncStrategy:
 
     def test_resolve_conflict_local_wins(self):
         """Test conflict resolution with local_wins strategy."""
-        from roadmap.sync import SyncConflict, SyncConflictStrategy, SyncStrategy
+        from roadmap.sync import SyncConflictStrategy, SyncStrategy
 
         strategy = SyncStrategy(SyncConflictStrategy.LOCAL_WINS)
 
@@ -674,7 +669,7 @@ class TestSyncStrategy:
 
     def test_resolve_conflict_remote_wins(self):
         """Test conflict resolution with remote_wins strategy."""
-        from roadmap.sync import SyncConflict, SyncConflictStrategy, SyncStrategy
+        from roadmap.sync import SyncConflictStrategy, SyncStrategy
 
         strategy = SyncStrategy(SyncConflictStrategy.REMOTE_WINS)
 
@@ -747,7 +742,6 @@ class TestBidirectionalSync:
         self, sync_manager_with_strategy, mock_core
     ):
         """Test bidirectional sync with conflict resolved to local."""
-        from roadmap.sync import SyncConflict
 
         local_issue = Issue(
             id="1",
@@ -914,7 +908,7 @@ class TestSyncEnhancements:
         """Test push_issue with conflict checking when conflict is detected."""
         # Set strategy to NEWER_WINS for this test to trigger the conflict
         sync_manager.sync_strategy.strategy = SyncConflictStrategy.NEWER_WINS
-        
+
         issue = Issue(
             id="1",
             title="Local Version",

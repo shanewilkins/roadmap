@@ -9,9 +9,9 @@ This script creates a realistic large-scale software project with:
 """
 
 import os
-import sys
 import random
 import subprocess
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Define team members
 DEVELOPERS = [
     "alex.chen",
-    "maria.rodriguez", 
+    "maria.rodriguez",
     "david.kim",
     "sarah.johnson",
     "michael.brown",
@@ -42,7 +42,7 @@ MILESTONES = [
         "due_date": "2024-01-15"
     },
     {
-        "title": "v1.7.0 - Real-time Collaboration Features", 
+        "title": "v1.7.0 - Real-time Collaboration Features",
         "description": "Live document editing, real-time sync improvements, and team collaboration tools",
         "due_date": "2024-03-30"
     },
@@ -141,7 +141,7 @@ def create_milestones():
     """Create all project milestones."""
     print("Creating milestones...")
     demo_dir = "/Users/shane/roadmap/demo-project"
-    
+
     for milestone in MILESTONES:
         command = f"""poetry run roadmap milestone create "{milestone['title']}" --due-date "{milestone['due_date']}" --description "{milestone['description']}" """
         if not run_command(command, cwd=demo_dir):
@@ -172,16 +172,16 @@ def create_issues():
     """Create a large number of realistic issues."""
     print("Creating issues...")
     demo_dir = "/Users/shane/roadmap/demo-project"
-    
+
     # Issue distribution per milestone
     milestone_issues = {
-        "v1.6.0": 350,  # Already "completed" 
+        "v1.6.0": 350,  # Already "completed"
         "v1.7.0": 280,  # In progress
         "v1.8.0": 220,  # Some started
         "v1.9.0": 180,  # Mostly planned
         "v2.0.0": 150   # All planned
     }
-    
+
     # Status distribution per milestone (more closed for earlier milestones)
     status_weights = {
         "v1.6.0": {"closed": 0.95, "in_progress": 0.03, "open": 0.02},
@@ -190,18 +190,18 @@ def create_issues():
         "v1.9.0": {"closed": 0.15, "in_progress": 0.20, "open": 0.65},
         "v2.0.0": {"closed": 0.05, "in_progress": 0.10, "open": 0.85}
     }
-    
+
     # Issue type distribution
     type_weights = {"feature": 0.5, "bug": 0.3, "task": 0.2}
-    
+
     issue_count = 0
-    
+
     for milestone_title, total_issues in milestone_issues.items():
         print(f"Creating {total_issues} issues for {milestone_title}...")
-        
+
         milestone_key = milestone_title.split(" -")[0]  # Extract version
         weights = status_weights[milestone_key]
-        
+
         for i in range(total_issues):
             # Determine issue type
             rand = random.random()
@@ -211,10 +211,10 @@ def create_issues():
                 issue_type = "bug"
             else:
                 issue_type = "task"
-            
+
             # Generate title
             title = generate_issue_title(issue_type, milestone_key)
-            
+
             # Determine status
             rand = random.random()
             if rand < weights["closed"]:
@@ -223,7 +223,7 @@ def create_issues():
                 status = "in_progress"
             else:
                 status = "open"
-            
+
             # Assign to team member (not all issues need assignment)
             assignee = ""
             if random.random() < 0.8:  # 80% of issues get assigned
@@ -231,18 +231,18 @@ def create_issues():
                     assignee = PRODUCT_OWNER  # PO occasionally gets assigned features
                 else:
                     assignee = random.choice(DEVELOPERS)
-            
+
             # Create the issue
             command = f"""poetry run roadmap issue create "{title}" --type {issue_type} --milestone "{milestone_title}" """
-            
+
             if assignee:
                 command += f'--assignee "{assignee}" '
-            
+
             if status == "closed":
                 command += "--status closed "
             elif status == "in_progress":
                 command += "--status in_progress "
-            
+
             # Add priority (random distribution)
             priority_rand = random.random()
             if priority_rand < 0.1:
@@ -253,23 +253,23 @@ def create_issues():
                 command += "--priority medium "
             else:
                 command += "--priority low "
-            
+
             if run_command(command, cwd=demo_dir):
                 issue_count += 1
                 if issue_count % 50 == 0:
                     print(f"  Created {issue_count} issues...")
             else:
                 print(f"Failed to create issue: {title}")
-        
+
         print(f"✅ Completed {milestone_title}: {total_issues} issues")
-    
+
     print(f"✅ Created {issue_count} total issues")
 
 def ensure_developer_assignments():
     """Ensure each developer has at least 5 assigned issues."""
     print("Ensuring minimum developer assignments...")
     demo_dir = "/Users/shane/roadmap/demo-project"
-    
+
     # This would require reading existing issues and updating assignments
     # For now, we'll trust our random assignment process hit the requirement
     # In a real implementation, we'd check and update assignments as needed
@@ -279,20 +279,20 @@ def main():
     """Main function to generate all demo data."""
     print("🚀 Generating CloudSync Enterprise Platform Demo Data")
     print("=" * 60)
-    
+
     # Create milestones first
     create_milestones()
-    
+
     print("\n" + "=" * 60)
-    
+
     # Create issues
     create_issues()
-    
+
     print("\n" + "=" * 60)
-    
+
     # Ensure proper assignments
     ensure_developer_assignments()
-    
+
     print("\n" + "=" * 60)
     print("🎉 Demo data generation complete!")
     print("\nYou can now explore the demo project with commands like:")

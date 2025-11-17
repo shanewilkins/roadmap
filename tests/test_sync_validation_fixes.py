@@ -3,15 +3,16 @@ Tests for sync validation fixes - assignee handling, label formatting, and datet
 These tests cover the specific fixes made to resolve GitHub API validation errors.
 """
 
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock, patch, call
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, call, patch
 
-from roadmap.models import Issue, Milestone, Priority, Status, MilestoneStatus
-from roadmap.sync import SyncManager
-from roadmap.performance_sync import HighPerformanceSyncManager
+import pytest
+
 from roadmap.github_client import GitHubAPIError
+from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
+from roadmap.performance_sync import HighPerformanceSyncManager
+from roadmap.sync import SyncManager
 
 pytestmark = pytest.mark.unit
 
@@ -81,7 +82,7 @@ class TestSyncValidationFixes:
         # Verify assignees parameter was passed correctly
         sync_manager.github_client.create_issue.assert_called_once()
         call_kwargs = sync_manager.github_client.create_issue.call_args[1]
-        
+
         assert "assignees" in call_kwargs
         assert call_kwargs["assignees"] == ["shanewilkins"]
         assert call_kwargs["title"] == "Test Issue with Assignee"
@@ -132,7 +133,7 @@ class TestSyncValidationFixes:
         # Verify assignees parameter in update call
         sync_manager.github_client.update_issue.assert_called_once()
         call_kwargs = sync_manager.github_client.update_issue.call_args[1]
-        
+
         assert "assignees" in call_kwargs
         assert call_kwargs["assignees"] == ["teamlead"]
         assert call_kwargs["issue_number"] == 50
@@ -159,12 +160,12 @@ class TestSyncValidationFixes:
         # Verify labels are passed as individual items
         call_kwargs = sync_manager.github_client.create_issue.call_args[1]
         labels = call_kwargs["labels"]
-        
+
         # Labels should contain the individual label strings, not comma-separated
         assert "automation" in labels
-        assert "git-integration" in labels  
+        assert "git-integration" in labels
         assert "workflow" in labels
-        
+
         # Should NOT contain comma-separated string
         assert "automation,git-integration,workflow" not in labels
 
@@ -189,7 +190,7 @@ class TestSyncValidationFixes:
         # Verify that due_date is properly formatted with timezone
         sync_manager.github_client.create_milestone.assert_called_once()
         call_kwargs = sync_manager.github_client.create_milestone.call_args[1]
-        
+
         assert call_kwargs["title"] == "v1.0.0"
         assert call_kwargs["description"] == "Test milestone"
         assert call_kwargs["due_date"] == due_date
@@ -199,7 +200,7 @@ class TestSyncValidationFixes:
         # Create milestone with timezone-aware datetime
         due_date = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
         milestone = Milestone(
-            name="v2.0.0", 
+            name="v2.0.0",
             description="Test milestone with timezone",
             due_date=due_date,
             status=MilestoneStatus.OPEN
@@ -228,7 +229,7 @@ class TestHighPerformanceSyncValidation:
         manager.core = Mock()
         manager.core.list_issues.return_value = []
         manager.core.list_milestones.return_value = []
-        
+
         # Mock GitHub client for high-performance sync
         manager.github_client = Mock()
         manager.github_client.get_milestones.return_value = [
@@ -236,7 +237,7 @@ class TestHighPerformanceSyncValidation:
             {"title": "v2.0", "number": 2}
         ]
         manager.github_client.get_issues.return_value = []
-        
+
         return manager
 
     @pytest.fixture
@@ -260,7 +261,7 @@ class TestHighPerformanceSyncValidation:
                 assignee="developer1"
             ),
             Issue(
-                id="hp_test2", 
+                id="hp_test2",
                 title="HP Test Issue 2",
                 priority=Priority.MEDIUM,
                 status=Status.IN_PROGRESS,
@@ -277,11 +278,11 @@ class TestHighPerformanceSyncValidation:
 
         # Verify that push_issue was called for each issue
         assert hp_sync_manager.sync_manager.push_issue.call_count == 2
-        
+
         # Verify the issues passed to push_issue have correct assignees
         calls = hp_sync_manager.sync_manager.push_issue.call_args_list
-        issue_calls = [call[0][0] for call in calls]  # Extract issue argument from each call
-        
+        issue_calls = [call_args[0][0] for call_args in calls]  # Extract issue argument from each call
+
         assignees = [issue.assignee for issue in issue_calls]
         assert "developer1" in assignees
         assert "developer2" in assignees
@@ -298,7 +299,7 @@ class TestHighPerformanceSyncValidation:
             ),
             Milestone(
                 name="v2.0",
-                description="Second release", 
+                description="Second release",
                 due_date=datetime(2025, 12, 1),
                 status=MilestoneStatus.OPEN
             )
@@ -324,7 +325,7 @@ class TestHighPerformanceSyncValidation:
         )
 
         hp_sync_manager.sync_manager.core.list_issues.return_value = [failing_issue]
-        
+
         # Mock push_issue to raise an exception
         hp_sync_manager.sync_manager.push_issue.side_effect = GitHubAPIError("Validation Failed")
 
@@ -364,7 +365,7 @@ class TestGitHubClientDateTimeFormatting:
         # Verify the API call included 'Z' suffix
         call_args = github_client._make_request.call_args
         json_data = call_args[1]["json"]
-        
+
         assert "due_on" in json_data
         assert json_data["due_on"] == "2025-12-31T23:59:59Z"
 
@@ -374,14 +375,14 @@ class TestGitHubClientDateTimeFormatting:
 
         github_client.create_milestone(
             title="Test Milestone",
-            description="Test description", 
+            description="Test description",
             due_date=tz_datetime
         )
 
         # Verify the API call preserves timezone info
         call_args = github_client._make_request.call_args
         json_data = call_args[1]["json"]
-        
+
         assert "due_on" in json_data
         # Should use the datetime's own isoformat() which includes +00:00
         assert json_data["due_on"] == tz_datetime.isoformat()
@@ -399,5 +400,5 @@ class TestGitHubClientDateTimeFormatting:
         # Verify the update API call
         call_args = github_client._make_request.call_args
         json_data = call_args[1]["json"]
-        
+
         assert json_data["due_on"] == "2025-06-15T12:00:00Z"

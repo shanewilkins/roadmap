@@ -1,6 +1,8 @@
-from unittest.mock import patch, Mock
-from click.testing import CliRunner
 from pathlib import Path
+from unittest.mock import Mock, patch
+
+from click.testing import CliRunner
+
 from roadmap.cli import main
 
 

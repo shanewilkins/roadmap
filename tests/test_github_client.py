@@ -42,7 +42,7 @@ class TestGitHubClient:
         """Test that missing token raises error."""
         # Mock credential manager to return None
         mock_credential_manager.return_value.get_token.return_value = None
-        
+
         with pytest.raises(GitHubAPIError, match="GitHub token is required"):
             GitHubClient()
 

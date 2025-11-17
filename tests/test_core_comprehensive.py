@@ -10,8 +10,14 @@ from unittest.mock import Mock, patch
 import pytest
 
 from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status, IssueType
-
+from roadmap.models import (
+    Issue,
+    IssueType,
+    Milestone,
+    MilestoneStatus,
+    Priority,
+    Status,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -31,7 +37,7 @@ class TestRoadmapCoreFindExisting:
         # Create and initialize a roadmap
         core = RoadmapCore(temp_dir)
         core.initialize()
-        
+
         # Now find it using the class method
         found_core = RoadmapCore.find_existing_roadmap(temp_dir)
         assert found_core is not None
@@ -49,11 +55,11 @@ class TestRoadmapCoreFindExisting:
         original_cwd = os.getcwd()
         try:
             os.chdir(temp_dir)
-            
+
             # Create roadmap in current directory
             core = RoadmapCore(temp_dir)
             core.initialize()
-            
+
             # Find without specifying path
             found_core = RoadmapCore.find_existing_roadmap()
             assert found_core is not None
@@ -67,7 +73,7 @@ class TestRoadmapCoreFindExisting:
         custom_name = "my-roadmap"
         core = RoadmapCore(temp_dir, roadmap_dir_name=custom_name)
         core.initialize()
-        
+
         # Should find it by searching all directories
         found_core = RoadmapCore.find_existing_roadmap(temp_dir)
         assert found_core is not None
@@ -78,11 +84,11 @@ class TestRoadmapCoreFindExisting:
         # Create some non-roadmap directories
         (temp_dir / "other_dir").mkdir()
         (temp_dir / "another_dir").mkdir()
-        
+
         # Create actual roadmap
         core = RoadmapCore(temp_dir)
         core.initialize()
-        
+
         # Should find the real roadmap
         found_core = RoadmapCore.find_existing_roadmap(temp_dir)
         assert found_core is not None
@@ -108,7 +114,7 @@ class TestRoadmapCoreMilestoneOperations:
             due_date=datetime.now() + timedelta(days=30)
         )
         assert milestone is not None
-        
+
         # Update milestone
         result = core.update_milestone(
             name="Test Milestone",
@@ -116,7 +122,7 @@ class TestRoadmapCoreMilestoneOperations:
             status=MilestoneStatus.OPEN
         )
         assert result is True
-        
+
         # Verify updates
         updated_milestone = core.get_milestone("Test Milestone")
         assert updated_milestone.description == "Updated description"
@@ -131,14 +137,14 @@ class TestRoadmapCoreMilestoneOperations:
             due_date=datetime.now() + timedelta(days=30)
         )
         assert milestone.due_date is not None
-        
+
         # Clear due date
         result = core.update_milestone(
             name="Test Milestone",
             clear_due_date=True
         )
         assert result is True
-        
+
         # Verify due date is cleared
         updated_milestone = core.get_milestone("Test Milestone")
         assert updated_milestone.due_date is None
@@ -154,7 +160,7 @@ class TestRoadmapCoreMilestoneOperations:
     def test_update_milestone_not_initialized(self, temp_dir):
         """Test updating milestone on uninitialized roadmap."""
         core = RoadmapCore(temp_dir)  # Not initialized
-        
+
         with pytest.raises(ValueError, match="Roadmap not initialized"):
             core.update_milestone(
                 name="Test Milestone",
@@ -169,11 +175,11 @@ class TestRoadmapCoreMilestoneOperations:
             description="Original description"
         )
         assert milestone is not None
-        
+
         # Mock parser to raise exception
         with patch('roadmap.parser.MilestoneParser.save_milestone_file') as mock_save:
             mock_save.side_effect = Exception("Save failed")
-            
+
             result = core.update_milestone(
                 name="Test Milestone",
                 description="Updated description"
@@ -202,11 +208,11 @@ class TestRoadmapCoreIssueAssignment:
             name="Test Milestone",
             description="Milestone description"
         )
-        
+
         # Assign issue to milestone
         result = core.assign_issue_to_milestone(issue.id, "Test Milestone")
         assert result is True
-        
+
         # Verify assignment
         updated_issue = core.get_issue(issue.id)
         assert updated_issue.milestone == "Test Milestone"
@@ -218,7 +224,7 @@ class TestRoadmapCoreIssueAssignment:
             name="Test Milestone",
             description="Milestone description"
         )
-        
+
         result = core.assign_issue_to_milestone("nonexistent-id", "Test Milestone")
         assert result is False
 
@@ -229,7 +235,7 @@ class TestRoadmapCoreIssueAssignment:
             title="Test Issue",
             priority=Priority.MEDIUM
         )
-        
+
         result = core.assign_issue_to_milestone(issue.id, "Nonexistent Milestone")
         assert result is False
 
@@ -256,34 +262,34 @@ class TestRoadmapCoreMilestoneProgress:
             name="Test Milestone",
             description="Milestone description"
         )
-        
+
         # Create issues with different statuses
         issue1 = core.create_issue(
             title="Issue 1",
             priority=Priority.HIGH
         )
         issue2 = core.create_issue(
-            title="Issue 2", 
+            title="Issue 2",
             priority=Priority.MEDIUM
         )
         issue3 = core.create_issue(
             title="Issue 3",
             priority=Priority.LOW
         )
-        
+
         # Update their statuses after creation
         core.update_issue(issue1.id, status=Status.DONE)
         core.update_issue(issue2.id, status=Status.IN_PROGRESS)
         core.update_issue(issue3.id, status=Status.TODO)
-        
+
         # Assign all issues to milestone
         core.assign_issue_to_milestone(issue1.id, "Test Milestone")
         core.assign_issue_to_milestone(issue2.id, "Test Milestone")
         core.assign_issue_to_milestone(issue3.id, "Test Milestone")
-        
+
         # Get progress
         progress = core.get_milestone_progress("Test Milestone")
-        
+
         assert progress["total"] == 3
         assert progress["completed"] == 1
         assert abs(progress["progress"] - (100.0 / 3)) < 0.01  # 1/3 * 100, approximately
@@ -298,9 +304,9 @@ class TestRoadmapCoreMilestoneProgress:
             name="Empty Milestone",
             description="No issues assigned"
         )
-        
+
         progress = core.get_milestone_progress("Empty Milestone")
-        
+
         assert progress["total"] == 0
         assert progress["completed"] == 0
         assert progress["progress"] == 0.0
@@ -309,7 +315,7 @@ class TestRoadmapCoreMilestoneProgress:
     def test_get_milestone_progress_nonexistent_milestone(self, core):
         """Test progress for nonexistent milestone."""
         progress = core.get_milestone_progress("Nonexistent Milestone")
-        
+
         # Should return empty progress dict
         assert progress["total"] == 0
         assert progress["completed"] == 0
@@ -334,7 +340,7 @@ class TestRoadmapCoreBacklogOperations:
             name="Test Milestone",
             description="Milestone description"
         )
-        
+
         # Create issues - some assigned, some not
         issue1 = core.create_issue(
             title="Assigned Issue",
@@ -345,16 +351,16 @@ class TestRoadmapCoreBacklogOperations:
             priority=Priority.MEDIUM
         )
         issue3 = core.create_issue(
-            title="Backlog Issue 2", 
+            title="Backlog Issue 2",
             priority=Priority.LOW
         )
-        
+
         # Assign one issue to milestone
         core.assign_issue_to_milestone(issue1.id, "Test Milestone")
-        
+
         # Get backlog
         backlog = core.get_backlog_issues()
-        
+
         # Should only contain unassigned issues
         assert len(backlog) == 2
         backlog_titles = [issue.title for issue in backlog]
@@ -366,17 +372,17 @@ class TestRoadmapCoreBacklogOperations:
         """Test getting backlog when all issues are assigned."""
         # Create milestone
         milestone = core.create_milestone(
-            name="Test Milestone", 
+            name="Test Milestone",
             description="Milestone description"
         )
-        
+
         # Create issue and assign it
         issue = core.create_issue(
             title="Assigned Issue",
             priority=Priority.HIGH
         )
         core.assign_issue_to_milestone(issue.id, "Test Milestone")
-        
+
         # Backlog should be empty
         backlog = core.get_backlog_issues()
         assert len(backlog) == 0
@@ -389,10 +395,10 @@ class TestRoadmapCoreBacklogOperations:
             description="First milestone"
         )
         milestone2 = core.create_milestone(
-            name="Milestone 2", 
+            name="Milestone 2",
             description="Second milestone"
         )
-        
+
         # Create issues
         issue1 = core.create_issue(
             title="Issue for M1",
@@ -406,19 +412,19 @@ class TestRoadmapCoreBacklogOperations:
             title="Another for M1",
             priority=Priority.LOW
         )
-        
+
         # Assign issues to milestones
         core.assign_issue_to_milestone(issue1.id, "Milestone 1")
         core.assign_issue_to_milestone(issue2.id, "Milestone 2")
         core.assign_issue_to_milestone(issue3.id, "Milestone 1")
-        
+
         # Get milestone 1 issues
         m1_issues = core.get_milestone_issues("Milestone 1")
         assert len(m1_issues) == 2
         m1_titles = [issue.title for issue in m1_issues]
         assert "Issue for M1" in m1_titles
         assert "Another for M1" in m1_titles
-        
+
         # Get milestone 2 issues
         m2_issues = core.get_milestone_issues("Milestone 2")
         assert len(m2_issues) == 1
@@ -431,13 +437,13 @@ class TestRoadmapCoreBacklogOperations:
             name="Empty Milestone",
             description="No issues assigned"
         )
-        
+
         # Create unassigned issue
         issue = core.create_issue(
             title="Unassigned Issue",
             priority=Priority.MEDIUM
         )
-        
+
         # Should return empty list
         issues = core.get_milestone_issues("Empty Milestone")
         assert len(issues) == 0
@@ -461,17 +467,17 @@ class TestRoadmapCoreErrorHandling:
     def test_operations_on_uninitialized_roadmap(self, temp_dir):
         """Test various operations on uninitialized roadmap."""
         core = RoadmapCore(temp_dir)  # Not initialized
-        
+
         # All these should raise ValueError
         with pytest.raises(ValueError, match="Roadmap not initialized"):
             core.create_issue("Test", "Description")
-            
+
         with pytest.raises(ValueError, match="Roadmap not initialized"):
             core.list_issues()
-            
+
         with pytest.raises(ValueError, match="Roadmap not initialized"):
             core.create_milestone("Test", "Description")
-            
+
         with pytest.raises(ValueError, match="Roadmap not initialized"):
             core.list_milestones()
 
@@ -480,15 +486,15 @@ class TestRoadmapCoreErrorHandling:
         # Create a directory we can't read
         restricted_dir = temp_dir / "restricted"
         restricted_dir.mkdir()
-        
+
         # Make it unreadable (on systems that support it)
         try:
             restricted_dir.chmod(0o000)
-            
+
             # Should handle permission error gracefully
             result = RoadmapCore.find_existing_roadmap(temp_dir)
             assert result is None  # Should not crash
-            
+
         except (OSError, PermissionError):
             # Some systems don't support chmod restrictions
             pass
@@ -504,7 +510,7 @@ class TestRoadmapCoreErrorHandling:
         # Create a corrupted issue file
         corrupted_file = core.issues_dir / "corrupted.md"
         corrupted_file.write_text("This is not valid issue content\nNo frontmatter here")
-        
+
         # Should handle gracefully and return valid issues only
         issues = core.list_issues()
         # The corrupted file should be ignored, empty list returned
@@ -515,7 +521,7 @@ class TestRoadmapCoreErrorHandling:
         # Create a corrupted milestone file
         corrupted_file = core.milestones_dir / "corrupted.md"
         corrupted_file.write_text("This is not valid milestone content")
-        
+
         # Should handle gracefully
         milestones = core.list_milestones()
         assert isinstance(milestones, list)
@@ -529,7 +535,7 @@ class TestRoadmapCoreFilteringAndSearch:
         """Create core with sample data for testing."""
         core = RoadmapCore(temp_dir)
         core.initialize()
-        
+
         # Create sample issues with various attributes
         issue1 = core.create_issue(
             title="Bug Fix",
@@ -538,7 +544,7 @@ class TestRoadmapCoreFilteringAndSearch:
             assignee="alice@example.com"
         )
         issue2 = core.create_issue(
-            title="New Feature", 
+            title="New Feature",
             priority=Priority.MEDIUM,
             issue_type=IssueType.FEATURE,
             assignee="bob@example.com"
@@ -549,12 +555,12 @@ class TestRoadmapCoreFilteringAndSearch:
             issue_type=IssueType.OTHER,
             assignee="alice@example.com"
         )
-        
+
         # Update statuses after creation
         core.update_issue(issue1.id, status=Status.IN_PROGRESS)
         core.update_issue(issue2.id, status=Status.TODO)
         core.update_issue(issue3.id, status=Status.DONE)
-        
+
         return core
 
     def test_list_issues_filter_by_priority(self, core_with_data):
@@ -562,7 +568,7 @@ class TestRoadmapCoreFilteringAndSearch:
         high_priority = core_with_data.list_issues(priority=Priority.HIGH)
         assert len(high_priority) == 1
         assert high_priority[0].title == "Bug Fix"
-        
+
         medium_priority = core_with_data.list_issues(priority=Priority.MEDIUM)
         assert len(medium_priority) == 1
         assert medium_priority[0].title == "New Feature"
@@ -572,7 +578,7 @@ class TestRoadmapCoreFilteringAndSearch:
         in_progress = core_with_data.list_issues(status=Status.IN_PROGRESS)
         assert len(in_progress) == 1
         assert in_progress[0].title == "Bug Fix"
-        
+
         completed = core_with_data.list_issues(status=Status.DONE)
         assert len(completed) == 1
         assert completed[0].title == "Documentation Update"
@@ -584,8 +590,8 @@ class TestRoadmapCoreFilteringAndSearch:
         alice_titles = [issue.title for issue in alice_issues]
         assert "Bug Fix" in alice_titles
         assert "Documentation Update" in alice_titles
-        
-        bob_issues = core_with_data.list_issues(assignee="bob@example.com") 
+
+        bob_issues = core_with_data.list_issues(assignee="bob@example.com")
         assert len(bob_issues) == 1
         assert bob_issues[0].title == "New Feature"
 
@@ -594,7 +600,7 @@ class TestRoadmapCoreFilteringAndSearch:
         bugs = core_with_data.list_issues(issue_type=IssueType.BUG)
         assert len(bugs) == 1
         assert bugs[0].title == "Bug Fix"
-        
+
         features = core_with_data.list_issues(issue_type=IssueType.FEATURE)
         assert len(features) == 1
         assert features[0].title == "New Feature"
@@ -608,7 +614,7 @@ class TestRoadmapCoreFilteringAndSearch:
         )
         assert len(alice_completed) == 1
         assert alice_completed[0].title == "Documentation Update"
-        
+
         # Filter with no matches
         no_matches = core_with_data.list_issues(
             assignee="alice@example.com",
@@ -638,7 +644,7 @@ class TestRoadmapCoreAdvancedOperations:
         custom_name = "my-custom-roadmap"
         core = RoadmapCore(temp_dir, roadmap_dir_name=custom_name)
         core.initialize()
-        
+
         assert core.roadmap_dir.name == custom_name
         assert core.roadmap_dir.exists()
         assert core.is_initialized()
@@ -665,6 +671,6 @@ class TestRoadmapCoreAdvancedOperations:
         """Test that security functions are used in operations."""
         # IssueParser.save_issue_file should be called during issue creation
         core.create_issue("Test Issue")
-        
+
         # Verify parser save function was called (which uses security functions)
         mock_save.assert_called_once()

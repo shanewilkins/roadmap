@@ -13,13 +13,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def run_command(command, description):
     """Run a command and display the output."""
     print(f"\n🔧 {description}")
     print("=" * len(description) + "===")
     print(f"Command: {command}")
     print("-" * 50)
-    
+
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd="/Users/shane/roadmap")
         if result.returncode == 0:
@@ -40,7 +41,7 @@ def main():
     print("  • Commit tracking and analysis")
     print("  • Branch-based issue management")
     print()
-    
+
     # Check if main project exists and is a Git repo
     roadmap_path = Path("/Users/shane/roadmap/.roadmap")
     git_path = Path("/Users/shane/roadmap/.git")
@@ -50,81 +51,81 @@ def main():
     if not git_path.exists():
         print("❌ Not a Git repository. Git integration requires a Git repo.")
         return
-    
+
     print("📋 GIT STATUS & OVERVIEW")
     print("-" * 24)
     print("Check current Git and roadmap synchronization:")
-    
+
     # Git status commands
     run_command("poetry run roadmap git-status", "Git repository and roadmap status")
     run_command("poetry run roadmap git-link --status", "Show current branch-issue links")
-    
+
     print()
     print("🌿 BRANCH MANAGEMENT")
     print("-" * 20)
     print("Create and manage Git branches for issues:")
-    
+
     # Branch management
     run_command("poetry run roadmap issue list | head -5", "List available issues")
     print("\n💡 To create a branch for an issue:")
     print("  poetry run roadmap git-branch ISSUE_ID")
     print("  # This creates a branch like: feature/ISSUE_ID-issue-title")
-    
+
     print()
     print("🔄 SYNCHRONIZATION")
     print("-" * 18)
     print("Sync issue status with Git activity:")
-    
+
     # Synchronization
     run_command("poetry run roadmap git-sync", "Sync issues with Git commits")
     run_command("poetry run roadmap workflow-sync-all", "Comprehensive workflow sync")
-    
+
     print()
     print("📝 COMMIT TRACKING")
     print("-" * 18)
     print("Track commits related to issues:")
-    
+
     # Commit tracking
     print("💡 View commits for an issue:")
     print("  poetry run roadmap git-commits ISSUE_ID")
     print("  # Shows all commits that reference the issue")
-    
+
     print()
     print("🪝 GIT HOOKS SETUP")
     print("-" * 18)
     print("Install automated Git hooks for workflow integration:")
-    
+
     # Git hooks
     run_command("poetry run roadmap git-hooks-install", "Install Git hooks")
-    
+
     print("""
     🔧 Installed Hooks:
     • pre-commit: Validates issue references in commit messages
     • post-commit: Updates issue status based on commit activity
     • pre-push: Ensures proper issue linking before pushing
     """)
-    
+
     print()
     print("⚙️ WORKFLOW AUTOMATION")
     print("-" * 23)
     print("Set up comprehensive workflow automation:")
-    
+
     # Workflow automation
     run_command("poetry run roadmap workflow-automation-setup", "Setup workflow automation")
-    
+
     print()
     print("📊 GIT ANALYTICS")
     print("-" * 17)
     print("Analyze Git activity and contributions:")
-    
+
     # Git analytics
     run_command("poetry run roadmap activity", "Recent team activity from Git")
-    
+
     print()
     print("🔧 EXAMPLE WORKFLOWS")
     print("-" * 20)
     print("Common Git + Roadmap workflows:")
-    
+
     print("""
     📋 NEW FEATURE WORKFLOW:
     1. Create issue: poetry run roadmap issue create "Add login feature"
@@ -146,7 +147,7 @@ def main():
     3. Sync changes: poetry run roadmap git-sync
     4. Review dashboard: poetry run roadmap dashboard
     """)
-    
+
     print()
     print("🎯 INTEGRATION FEATURES")
     print("-" * 24)
@@ -157,7 +158,7 @@ def main():
     print("✅ Activity tracking and team insights")
     print("✅ Workflow automation and triggers")
     print("✅ Branch protection and policy enforcement")
-    
+
     print()
     print("🔒 SECURITY & VALIDATION")
     print("-" * 25)
@@ -166,7 +167,7 @@ def main():
     print("  • Branch naming conventions")
     print("  • Issue reference verification")
     print("  • Secure hook installation")
-    
+
     print()
     print("🚀 NEXT STEPS")
     print("-" * 12)
@@ -177,7 +178,7 @@ def main():
     print("  poetry run roadmap git-sync")
     print("  poetry run roadmap activity")
     print()
-    
+
     print("💡 Advanced usage:")
     print("  # Link current branch to an issue")
     print("  poetry run roadmap git-link ISSUE_ID")
@@ -185,7 +186,7 @@ def main():
     print("  # View comprehensive Git status")
     print("  poetry run roadmap git-status --detailed")
     print()
-    
+
     print("📖 Learn more: https://roadmap-cli.readthedocs.io/en/latest/git-integration/")
 
 if __name__ == "__main__":

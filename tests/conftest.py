@@ -8,7 +8,12 @@ from unittest.mock import Mock, patch
 import pytest
 
 from .test_data_factory import TestDataFactory
-from .test_utils import strip_ansi, clean_cli_output, assert_in_output, assert_output_contains
+from .test_utils import (
+    assert_in_output,
+    assert_output_contains,
+    clean_cli_output,
+    strip_ansi,
+)
 
 
 @pytest.fixture
@@ -17,7 +22,7 @@ def strip_ansi_fixture():
     return strip_ansi
 
 
-@pytest.fixture 
+@pytest.fixture
 def clean_output():
     """Provide CLI output cleaning utility to tests."""
     return clean_cli_output
@@ -45,7 +50,7 @@ def isolate_roadmap_workspace(request, tmp_path):
         if request.node.get_closest_marker('unit'):
             yield
             return
-    
+
     # Store original state - ensure we have a valid working directory first
     try:
         original_cwd = os.getcwd()
@@ -53,9 +58,9 @@ def isolate_roadmap_workspace(request, tmp_path):
         # If current directory doesn't exist, use tmp_path as fallback
         original_cwd = str(tmp_path)
         os.chdir(original_cwd)
-    
+
     original_env = os.environ.copy()
-    
+
     try:
         # Clean up any existing .roadmap artifacts in current directory
         current_roadmap = Path.cwd() / ".roadmap"
@@ -65,10 +70,10 @@ def isolate_roadmap_workspace(request, tmp_path):
             if config_file.exists() and "Test Project" in config_file.read_text():
                 import shutil
                 shutil.rmtree(current_roadmap, ignore_errors=True)
-        
+
         # Yield control to the test
         yield
-        
+
     finally:
         # Always restore original working directory and environment
         try:
@@ -80,7 +85,7 @@ def isolate_roadmap_workspace(request, tmp_path):
         except (FileNotFoundError, OSError):
             # If all else fails, ensure we're in a valid directory
             os.chdir(str(tmp_path))
-        
+
         os.environ.clear()
         os.environ.update(original_env)
 
@@ -94,29 +99,29 @@ def roadmap_workspace():
     """
     # Store original state
     original_cwd = os.getcwd()
-    
+
     # Create temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
-        
+
         # Create .roadmap directory structure
         roadmap_dir = temp_path / ".roadmap"
         roadmap_dir.mkdir(exist_ok=True)
-        
+
         # Create subdirectories
         (roadmap_dir / "issues").mkdir(exist_ok=True)
         (roadmap_dir / "milestones").mkdir(exist_ok=True)
-        
+
         # Create basic config
         config_file = roadmap_dir / "config.yaml"
         config_file.write_text("""# Roadmap configuration
 project_name: "Test Project"
 version: "1.0.0"
 """)
-        
+
         # Change to temp directory
         os.chdir(temp_path)
-        
+
         try:
             yield temp_path
         finally:
@@ -150,7 +155,7 @@ def mock_issue():
 
 @pytest.fixture(scope="session")
 def mock_milestone():
-    """Create standardized mock Milestone instance.""" 
+    """Create standardized mock Milestone instance."""
     return TestDataFactory.create_mock_milestone()
 
 
@@ -178,20 +183,20 @@ def temp_workspace():
     with tempfile.TemporaryDirectory() as tmpdir:
         old_cwd = Path.cwd()
         os.chdir(tmpdir)
-        
+
         # Initialize basic roadmap structure
         roadmap_dir = Path(tmpdir) / '.roadmap'
         roadmap_dir.mkdir(exist_ok=True)
         (roadmap_dir / 'issues').mkdir(exist_ok=True)
         (roadmap_dir / 'milestones').mkdir(exist_ok=True)
-        
+
         # Create basic config
         config_file = roadmap_dir / 'config.yaml'
         config_file.write_text("""# Test Configuration
 project_name: "Test Project"
 version: "1.0.0"
 """)
-        
+
         try:
             yield Path(tmpdir)
         finally:
@@ -272,26 +277,26 @@ def temp_workspace_with_core():
     with tempfile.TemporaryDirectory() as tmpdir:
         old_cwd = Path.cwd()
         os.chdir(tmpdir)
-        
+
         # Initialize roadmap structure
         roadmap_dir = Path(tmpdir) / '.roadmap'
         roadmap_dir.mkdir(exist_ok=True)
         (roadmap_dir / 'issues').mkdir(exist_ok=True)
         (roadmap_dir / 'milestones').mkdir(exist_ok=True)
-        
+
         # Create basic config
         config_file = roadmap_dir / 'config.yaml'
         config_file.write_text("""# Test Configuration
 project_name: "Test Project"
 version: "1.0.0"
 """)
-        
+
         # Initialize roadmap core
         with patch('roadmap.core.RoadmapCore.initialize'):
             from roadmap.core import RoadmapCore
             core = RoadmapCore()
             core.is_initialized = Mock(return_value=True)
-        
+
         try:
             yield Path(tmpdir), core
         finally:
@@ -304,11 +309,11 @@ def patch_filesystem_operations():
     with patch('roadmap.core.RoadmapCore.initialize') as mock_init, \
          patch('pathlib.Path.mkdir') as mock_mkdir, \
          patch('pathlib.Path.write_text') as mock_write:
-        
+
         mock_init.return_value = True
         mock_mkdir.return_value = None
         mock_write.return_value = None
-        
+
         yield {
             'init': mock_init,
             'mkdir': mock_mkdir,

@@ -2,16 +2,17 @@
 Additional CLI tests for better coverage of internal functions and edge cases.
 """
 
-import pytest
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, Mock, MagicMock
-from click.testing import CliRunner
-from roadmap.cli import main
-from roadmap.cli import _detect_project_context, _get_current_user
-from roadmap.models import Issue, Milestone
 import json
 import os
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+from click.testing import CliRunner
+
+from roadmap.cli import _detect_project_context, _get_current_user, main
+from roadmap.models import Issue, Milestone
 
 
 @pytest.fixture
@@ -20,7 +21,7 @@ def cli_runner():
     return CliRunner()
 
 
-@pytest.fixture  
+@pytest.fixture
 def mock_roadmap_core():
     """Mock roadmap core for testing."""
     with patch('roadmap.cli.RoadmapCore') as mock_core:
@@ -44,7 +45,7 @@ class TestCLIInternalFunctions:
             os.system("git init >/dev/null 2>&1")
             os.system("git config user.name 'Test User' >/dev/null 2>&1")
             os.system("git config user.email 'test@example.com' >/dev/null 2>&1")
-            
+
             context = _detect_project_context()
             assert isinstance(context, dict)
             assert 'has_git' in context
@@ -54,7 +55,7 @@ class TestCLIInternalFunctions:
         """Test _detect_project_context with package.json."""
         with cli_runner.isolated_filesystem():
             Path("package.json").write_text('{"name": "test-package", "version": "1.0.0"}')
-            
+
             context = _detect_project_context()
             assert isinstance(context, dict)
             assert 'project_name' in context
@@ -67,7 +68,7 @@ class TestCLIInternalFunctions:
 name = "test-project"
 version = "0.1.0"
             """)
-            
+
             context = _detect_project_context()
             assert isinstance(context, dict)
             assert 'project_name' in context
@@ -139,7 +140,7 @@ class TestCLIInitCommandExtensive:
             result = cli_runner.invoke(main, [
                 'init',
                 '--github-repo', 'owner/repo',
-                '--project-name', 'Test Project',  
+                '--project-name', 'Test Project',
                 '--non-interactive'
             ])
             # Should handle shorthand GitHub notation
@@ -186,9 +187,9 @@ class TestCLIDashboardExtensive:
         mock_issue.priority = 'high'
         mock_issue.created = '2024-01-01'
         mock_issue.updated = '2024-01-02'
-        
+
         mock_roadmap_core.get_all_issues.return_value = [mock_issue]
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ['dashboard'])
             assert result.exit_code in [0, 1]
@@ -196,7 +197,7 @@ class TestCLIDashboardExtensive:
     def test_dashboard_with_assignee_filter(self, cli_runner, mock_roadmap_core):
         """Test dashboard with assignee filtering."""
         mock_roadmap_core.get_team_members.return_value = ['user1', 'user2']
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ['dashboard', '--assignee', 'user1'])
             assert result.exit_code in [0, 1]
@@ -245,7 +246,7 @@ class TestCLIIssueCommands:
     def test_issue_list_with_filters(self, cli_runner, mock_roadmap_core):
         """Test issue list with various filters."""
         mock_roadmap_core.get_all_issues.return_value = []
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, [
                 'issue', 'list',
@@ -258,7 +259,7 @@ class TestCLIIssueCommands:
     def test_issue_show_nonexistent(self, cli_runner, mock_roadmap_core):
         """Test showing a nonexistent issue."""
         mock_roadmap_core.get_issue.return_value = None
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ['issue', 'show', 'nonexistent-123'])
             assert result.exit_code in [0, 1, 2]  # Include Click error codes
@@ -282,7 +283,7 @@ class TestCLIMilestoneCommands:
     def test_milestone_list_with_status(self, cli_runner, mock_roadmap_core):
         """Test milestone listing with status filter."""
         mock_roadmap_core.get_all_milestones.return_value = []
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, [
                 'milestone', 'list',
@@ -298,7 +299,7 @@ class TestCLIExportCommands:
         """Test export in JSON format."""
         mock_roadmap_core.get_all_issues.return_value = []
         mock_roadmap_core.get_all_milestones.return_value = []
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, [
                 'export',
@@ -324,7 +325,7 @@ class TestCLIErrorHandlingEdgeCases:
     def test_command_with_invalid_issue_id(self, cli_runner, mock_roadmap_core):
         """Test commands with invalid issue IDs."""
         mock_roadmap_core.get_issue.return_value = None
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ['issue', 'show', ''])
             assert result.exit_code in [0, 1, 2]
@@ -343,7 +344,7 @@ class TestCLIErrorHandlingEdgeCases:
         """Test commands with very long input strings."""
         long_title = 'A' * 1000
         long_description = 'B' * 5000
-        
+
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, [
                 'issue', 'create',

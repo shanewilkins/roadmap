@@ -29,14 +29,14 @@ def test_deprecated_smart_assign_warning(initialized_roadmap):
     runner = CliRunner()
     # Create an issue first for testing
     issue_result = runner.invoke(main, ["issue", "create", "test-issue"])
-    
+
     # Extract issue ID
     issue_id = None
     for line in issue_result.output.split("\n"):
         if "ID:" in line:
             issue_id = line.split(":")[1].strip()
             break
-    
+
     if issue_id:
         result = runner.invoke(main, ["smart-assign", issue_id])
         assert result.exit_code == 0
@@ -65,16 +65,16 @@ def test_deprecated_notifications_warning(initialized_roadmap):
 def test_deprecated_commands_still_work(initialized_roadmap):
     """Test that deprecated commands still provide functionality."""
     runner = CliRunner()
-    
+
     # Test that deprecated commands actually execute their functionality
     # (not just show help)
     deprecated_commands = [
         ["capacity-forecast"],
-        ["workload-analysis"], 
+        ["workload-analysis"],
         ["dashboard"],
         ["notifications"]
     ]
-    
+
     for command in deprecated_commands:
         result = runner.invoke(main, command)
         assert result.exit_code == 0

@@ -1,8 +1,7 @@
 """CLI tests for milestone close convenience command."""
 
-from click.testing import CliRunner
-
 import pytest
+from click.testing import CliRunner
 
 from roadmap.cli import main
 

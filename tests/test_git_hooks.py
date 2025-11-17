@@ -135,8 +135,8 @@ class TestGitHookManager:
 
         mock_git.get_recent_commits.return_value = [mock_commit]
         mock_git.auto_update_issues_from_commits.return_value = {
-            "updated": [issue.id], 
-            "closed": [], 
+            "updated": [issue.id],
+            "closed": [],
             "errors": []
         }
         mock_git_integration.return_value = mock_git
@@ -167,7 +167,7 @@ class TestGitHookManager:
         mock_subprocess.side_effect = [
             # git branch --show-current
             Mock(stdout="feature/test-branch", stderr="", returncode=0, check=True),
-            # git config --get branch.feature/test-branch.remote 
+            # git config --get branch.feature/test-branch.remote
             Mock(stdout="origin", stderr="", returncode=0),
             # git config --get branch.feature/test-branch.merge
             Mock(stdout="refs/heads/main", stderr="", returncode=0),
@@ -551,7 +551,7 @@ class TestGitHooksIntegration:
         automation = WorkflowAutomation(core)
         # Reinitialize git integration with correct path
         automation.git_integration = GitIntegration(Path(temp_dir))
-        
+
         results = automation.setup_automation()
 
         # Verify all features enabled
@@ -601,7 +601,7 @@ class TestGitHooksIntegration:
         assert hasattr(updated_issue, 'git_commits')  # Should have git commit references
         assert len(updated_issue.git_commits) > 0  # Should have at least one commit tracked
         assert updated_issue.progress_percentage >= 75.0  # Should show significant progress
-        
+
         # Test workflow automation features are enabled
         assert results["git-hooks"] is True
         assert results["status-automation"] is True

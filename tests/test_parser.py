@@ -84,15 +84,6 @@ Content without closing frontmatter delimiter.
         assert frontmatter == {}
         assert "title: Test Issue" in body
 
-    def test_parse_content_without_frontmatter(self):
-        """Test parsing content without frontmatter."""
-        content = "Just plain content without frontmatter."
-
-        frontmatter, body = FrontmatterParser.parse_content(content)
-
-        assert frontmatter == {}
-        assert body == content
-
     def test_parse_content_invalid_yaml(self):
         """Test parsing content with invalid YAML."""
         content = """---

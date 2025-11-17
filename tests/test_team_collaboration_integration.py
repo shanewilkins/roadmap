@@ -562,7 +562,7 @@ class TestTeamCollaborationBenchmarks:
             assert filter_time < 1.0  # Filtering should take < 1 second
             assert workload_time < 2.0  # Workload calculation should take < 2 seconds
 
-            print(f"\nPerformance Benchmark Results:")
+            print("\nPerformance Benchmark Results:")
             print(f"Create 100 issues: {create_time:.2f}s")
             print(f"List all issues: {list_time:.2f}s")
             print(f"Filter by assignee: {filter_time:.2f}s")

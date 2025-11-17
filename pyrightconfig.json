@@ -1,5 +1,4 @@
 {
-  // Pyright configuration for the roadmap project
   "include": [
     "roadmap/**/*.py",
     "tests/**/*.py"
@@ -14,26 +13,19 @@
   ],
   "pythonVersion": "3.10",
   "pythonPlatform": "All",
-
-  // Type checking settings - gradual migration approach
   "typeCheckingMode": "basic",
-
-  // Global settings - permissive during migration
   "reportMissingModuleSource": false,
   "reportMissingImports": "warning",
   "reportUndefinedVariable": "error",
   "reportAssertAlwaysTrue": "warning",
-  "reportUnusedImport": "information",
+  "reportUnusedImport": "information",    
   "reportUnusedVariable": "information",
   "reportDuplicateImport": "warning",
   "reportGeneralTypeIssues": "warning",
   "reportOptionalMemberAccess": "warning",
   "reportOptionalSubscript": "warning",
-
-  // Phase-based strictness overrides for gradual migration
   "overrides": [
     {
-      // Phase 2: Core modules - stricter checking
       "include": [
         "roadmap/core.py",
         "roadmap/models.py",
@@ -47,7 +39,6 @@
       "reportMissingTypeStubs": "information"
     },
     {
-      // Phase 3: Extended modules - moderate checking
       "include": [
         "roadmap/analytics.py",
         "roadmap/github_client.py",
@@ -59,7 +50,6 @@
       "reportGeneralTypeIssues": "information"
     },
     {
-      // Test files - minimal checking to avoid blocking
       "include": ["tests/**/*.py"],
       "typeCheckingMode": "basic",
       "reportMissingImports": false,
@@ -67,8 +57,6 @@
       "reportUnknownVariableType": false
     }
   ],
-
-  // Performance settings
   "useLibraryCodeForTypes": true,
   "autoSearchPaths": true,
   "extraPaths": [

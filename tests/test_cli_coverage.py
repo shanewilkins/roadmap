@@ -5,11 +5,13 @@ This module focuses on testing CLI commands that aren't covered by existing test
 using a simpler approach that works with the existing codebase.
 """
 
-import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+import pytest
 from click.testing import CliRunner
+
 from roadmap.cli import main
 
 
@@ -221,14 +223,14 @@ class TestCLIHelperFunctions:
     def test_get_current_user_with_mock(self, cli_runner):
         """Test _get_current_user function with mocked environment."""
         from roadmap.cli import _get_current_user
-        
+
         with patch('os.getenv') as mock_getenv, \
              patch('getpass.getuser') as mock_getuser:
-            
+
             # Test environment variable first
             mock_getenv.return_value = "test_user"
             mock_getuser.return_value = "fallback_user"
-            
+
             user = _get_current_user()
             # Should return either the mocked value or actual system value
             assert user is not None
@@ -237,10 +239,10 @@ class TestCLIHelperFunctions:
     def test_detect_project_context_basic(self, cli_runner):
         """Test _detect_project_context function."""
         from roadmap.cli import _detect_project_context
-        
+
         with cli_runner.isolated_filesystem():
             context = _detect_project_context()
-            
+
             assert isinstance(context, dict)
             assert 'project_name' in context
             assert 'has_git' in context
@@ -253,7 +255,7 @@ class TestCLIInitAdvanced:
         """Test init with template option."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, [
-                'init', 
+                'init',
                 '--template', 'basic',
                 '--non-interactive',
                 '--skip-github'
@@ -265,7 +267,7 @@ class TestCLIInitAdvanced:
         """Test init with dry-run option."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, [
-                'init', 
+                'init',
                 '--dry-run',
                 '--non-interactive'
             ])

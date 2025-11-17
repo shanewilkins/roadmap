@@ -484,7 +484,7 @@ class TestAnalyticsReportGenerator:
         # Verify file content
         import json
 
-        with open(saved_path, "r") as f:
+        with open(saved_path) as f:
             loaded_report = json.load(f)
 
         assert loaded_report["test_data"] == "test_value"
@@ -564,14 +564,14 @@ class TestAnalyticsIntegration:
 
         # First, let's get all commits to see what we have
         all_commits = analyzer.git_integration.get_recent_commits(count=100)
-        
+
         # Find the actual developer name from commits
         developers = {c.author for c in all_commits if c.author}
         assert len(developers) > 0, f"No developers found in commits: {all_commits}"
-        
+
         # Use the first developer we find (should be "Test Developer")
         test_developer = next(iter(developers))
-        
+
         # Test developer analysis with a longer time window to be safe
         metrics = analyzer.analyze_developer_productivity(test_developer, days=365)
 

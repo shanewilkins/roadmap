@@ -46,12 +46,12 @@ def test_user_show_notifications_with_options(initialized_roadmap):
 def test_user_commands_without_roadmap(temp_dir):
     """Test user commands without initialized roadmap."""
     runner = CliRunner()
-    
+
     commands = [
         ["user", "show-dashboard"],
         ["user", "show-notifications"],
     ]
-    
+
     for command in commands:
         result = runner.invoke(main, command)
         # Should handle gracefully - some may work without roadmap, others may not

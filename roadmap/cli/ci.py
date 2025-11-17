@@ -514,8 +514,8 @@ def uninstall():
         rprint(f"❌ Error uninstalling git hooks: {e}")
 
 
-@hooks.command()
-def status():
+@hooks.command(name="status")
+def hooks_status():
     """Show git hooks installation status."""
     try:
         from ..git_hooks import GitHookManager
@@ -601,86 +601,7 @@ def logs(lines: int):
         rprint(f"❌ Error reading hook logs: {e}")
 
 
-@ci.command()
-@click.option("--number", type=int, required=True, help="Pull request number")
-@click.option("--title", required=True, help="Pull request title")
-@click.option("--branch", required=True, help="Pull request branch name")
-@click.option(
-    "--state",
-    type=click.Choice(["open", "closed", "merged"]),
-    required=True,
-    help="Pull request state",
-)
-@click.option("--base-branch", default="main", help="Target branch for the PR")
-def track_pr(number: int, title: str, branch: str, state: str, base_branch: str):
-    """Track a pull request for issue associations.
 
-    This command processes PR events from GitHub Actions and associates
-    them with roadmap issues based on branch names and PR content.
-    """
-    try:
-        # Initialize components
-        roadmap_core = RoadmapCore()
-        config = CITrackingConfig()
-        tracker = CITracker(roadmap_core, config)
-        automation = CIAutomation(roadmap_core, tracker)
-
-        rprint(f"🔀 Tracking PR #{number}: [cyan]{title}[/cyan]")
-        rprint(f"🌿 Branch: [yellow]{branch}[/yellow] → [green]{base_branch}[/green]")
-        rprint(f"📊 State: [bold]{state}[/bold]")
-
-        # Track the branch first
-        branch_results = tracker.track_branch(branch)
-
-        # Handle different PR states
-        actions_taken = []
-
-        if state == "open":
-            # PR opened - just track associations
-            if branch_results:
-                for issue_id, branch_actions in branch_results.items():
-                    actions_taken.extend(
-                        [f"Associated PR with issue {issue_id}"] + branch_actions
-                    )
-            else:
-                actions_taken.append("No issue associations found in branch name")
-
-        elif state == "merged":
-            # PR merged - simulate merge behavior
-            pr_info = {
-                "number": number,
-                "title": title,
-                "head_branch": branch,
-                "base_branch": base_branch,
-            }
-
-            # Use automation system to handle merge
-            if base_branch in config.main_branches:
-                merge_results = automation.on_pull_request_merged(pr_info)
-                if merge_results.get("actions"):
-                    actions_taken.extend(merge_results["actions"])
-                else:
-                    actions_taken.append("Processed PR merge to main branch")
-            else:
-                actions_taken.append(f"PR merged to feature branch ({base_branch})")
-
-        elif state == "closed":
-            # PR closed without merge
-            actions_taken.append("PR closed without merge - no status changes")
-
-        # Display results
-        if actions_taken:
-            rprint("\n📋 Actions taken:")
-            for action in actions_taken:
-                rprint(f"  • {action}")
-        else:
-            rprint("ℹ️  No actions required for this PR event")
-
-        rprint(f"\n✅ PR #{number} tracking complete")
-
-    except Exception as e:
-        rprint(f"❌ Error tracking pull request: {e}")
-        raise click.ClickException(str(e))
 
 
 @ci.command()

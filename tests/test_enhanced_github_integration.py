@@ -13,15 +13,15 @@ import json
 import os
 import tempfile
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import requests
 
-from roadmap.enhanced_github_integration import EnhancedGitHubIntegration
 from roadmap.core import RoadmapCore
-from roadmap.github_client import GitHubClient, GitHubAPIError
+from roadmap.enhanced_github_integration import EnhancedGitHubIntegration
+from roadmap.github_client import GitHubAPIError, GitHubClient
 from roadmap.models import Issue, Priority, Status
 
 pytestmark = pytest.mark.unit
@@ -34,7 +34,7 @@ class TestEnhancedGitHubIntegrationInitialization:
         """Test initialization with provided GitHub client."""
         mock_github_client = Mock(spec=GitHubClient)
         integration = EnhancedGitHubIntegration(mock_core, mock_github_client)
-        
+
         assert integration.core == mock_core
         assert integration.github_client == mock_github_client
         assert integration.is_github_enabled() is True
@@ -43,9 +43,9 @@ class TestEnhancedGitHubIntegrationInitialization:
         """Test initialization without GitHub client."""
         with patch('roadmap.enhanced_github_integration.GitIntegration') as mock_git_integration:
             mock_git_integration.return_value.get_repository_info.return_value = {}
-            
+
             integration = EnhancedGitHubIntegration(mock_core)
-            
+
             assert integration.core == mock_core
             assert integration.github_client is None
             assert integration.is_github_enabled() is False
@@ -56,19 +56,19 @@ class TestEnhancedGitHubIntegrationInitialization:
             "github_owner": "test-owner",
             "github_repo": "test-repo"
         }
-        
+
         with patch('roadmap.enhanced_github_integration.GitIntegration') as mock_git_integration:
             mock_git_integration.return_value.get_repository_info.return_value = repo_info
-            
+
             with patch('roadmap.enhanced_github_integration.GitHubClient') as mock_github_client_class:
                 mock_client = Mock()
                 mock_github_client_class.return_value = mock_client
-                
+
                 integration = EnhancedGitHubIntegration(mock_core)
-                
+
                 assert integration.github_client == mock_client
                 mock_github_client_class.assert_called_once_with(
-                    owner="test-owner", 
+                    owner="test-owner",
                     repo="test-repo"
                 )
 
@@ -78,15 +78,15 @@ class TestEnhancedGitHubIntegrationInitialization:
             "github_owner": "test-owner",
             "github_repo": "test-repo"
         }
-        
+
         with patch('roadmap.enhanced_github_integration.GitIntegration') as mock_git_integration:
             mock_git_integration.return_value.get_repository_info.return_value = repo_info
-            
+
             with patch('roadmap.enhanced_github_integration.GitHubClient') as mock_github_client_class:
                 mock_github_client_class.side_effect = GitHubAPIError("No token")
-                
+
                 integration = EnhancedGitHubIntegration(mock_core)
-                
+
                 assert integration.github_client is None
                 assert integration.is_github_enabled() is False
 
@@ -102,7 +102,7 @@ class TestGitHubIssueCreation:
         mock_github_client.repo = "test-repo"
         return EnhancedGitHubIntegration(mock_core, mock_github_client)
 
-    @pytest.fixture 
+    @pytest.fixture
     def sample_issue(self):
         """Create a sample roadmap issue for testing."""
         return Issue(
@@ -124,14 +124,14 @@ class TestGitHubIssueCreation:
             "body": "Test issue content",
             "state": "open"
         }
-        
+
         mock_integration.github_client.create_issue.return_value = github_issue_data
-        
+
         result = mock_integration.create_github_issue_from_roadmap(sample_issue)
-        
+
         assert result == github_issue_data
         mock_integration.github_client.create_issue.assert_called_once()
-        
+
         # Verify issue data was formatted correctly
         call_args = mock_integration.github_client.create_issue.call_args[1]
         assert call_args["title"] == "Test Issue"
@@ -141,23 +141,23 @@ class TestGitHubIssueCreation:
     def test_create_github_issue_without_client(self, mock_core, sample_issue):
         """Test issue creation when GitHub client is not available."""
         integration = EnhancedGitHubIntegration(mock_core, None)
-        
+
         result = integration.create_github_issue_from_roadmap(sample_issue)
-        
+
         assert result is None
 
     def test_create_github_issue_api_error(self, mock_integration, sample_issue):
         """Test GitHub issue creation with API error."""
         mock_integration.github_client.create_issue.side_effect = GitHubAPIError("API error")
-        
+
         result = mock_integration.create_github_issue_from_roadmap(sample_issue)
-        
+
         assert result is None
 
     def test_format_issue_body_for_github(self, mock_integration, sample_issue):
         """Test issue body formatting for GitHub."""
         formatted_body = mock_integration._format_issue_body_for_github(sample_issue)
-        
+
         assert "Test issue content" in formatted_body
         assert "**Roadmap ID:** `test123`" in formatted_body
         assert "**Priority:** high" in formatted_body
@@ -175,12 +175,12 @@ class TestGitHubIssueCreation:
         """Test GitHub assignee extraction."""
         # Test with email
         issue_with_email = Issue(
-            id="test1", title="Test", priority=Priority.MEDIUM, 
+            id="test1", title="Test", priority=Priority.MEDIUM,
             status=Status.TODO, assignee="user@example.com"
         )
         assignees = mock_integration._get_github_assignees(issue_with_email)
         assert assignees == ["user"]
-        
+
         # Test with username
         issue_with_username = Issue(
             id="test2", title="Test", priority=Priority.MEDIUM,
@@ -188,7 +188,7 @@ class TestGitHubIssueCreation:
         )
         assignees = mock_integration._get_github_assignees(issue_with_username)
         assert assignees == ["username"]
-        
+
         # Test without assignee
         issue_no_assignee = Issue(
             id="test3", title="Test", priority=Priority.MEDIUM,
@@ -220,12 +220,12 @@ class TestIssueSynchronization:
         mock_issue.progress_percentage = 0
         mock_issue.milestone = None
         mock_integration_with_setup.core.get_issue.return_value = mock_issue
-        
+
         github_issue_data = {"id": 123, "number": 456}
         mock_integration_with_setup.github_client.create_issue.return_value = github_issue_data
-        
+
         result = mock_integration_with_setup.sync_issue_with_github("test123", "to_github")
-        
+
         assert result is True
         mock_integration_with_setup.github_client.create_issue.assert_called_once()
 
@@ -233,15 +233,15 @@ class TestIssueSynchronization:
         """Test syncing existing GitHub issue to roadmap."""
         mock_integration_with_setup.core.get_issue.return_value = mock_issue
         mock_issue.github_issue = 456  # Already linked to GitHub
-        
+
         github_issue_data = {
             "id": 123, "number": 456, "title": "Updated Title",
             "body": "Updated content", "state": "open"
         }
         mock_integration_with_setup.github_client.get_issue.return_value = github_issue_data
-        
+
         result = mock_integration_with_setup.sync_issue_with_github("test123", "from_github")
-        
+
         assert result is True
         mock_integration_with_setup.github_client.get_issue.assert_called_once_with(456)
 
@@ -254,32 +254,32 @@ class TestIssueSynchronization:
         mock_issue.content = "Test content"
         mock_issue.title = "Test Issue"
         mock_integration_with_setup.core.get_issue.return_value = mock_issue
-        
+
         github_issue_data = {
             "id": 123, "number": 456, "title": "GitHub Title",
-            "body": "GitHub content", "state": "open", 
+            "body": "GitHub content", "state": "open",
             "updated_at": "2023-01-01T12:00:00Z"
         }
         mock_integration_with_setup.github_client.get_issue.return_value = github_issue_data
-        
+
         result = mock_integration_with_setup.sync_issue_with_github("test123", "bidirectional")
-        
+
         assert result is True
 
     def test_sync_issue_without_github_client(self, mock_core, mock_issue):
         """Test sync when GitHub client is not available."""
         integration = EnhancedGitHubIntegration(mock_core, None)
-        
+
         result = integration.sync_issue_with_github("test123")
-        
+
         assert result is False
 
     def test_sync_nonexistent_issue(self, mock_integration_with_setup):
         """Test sync with nonexistent roadmap issue."""
         mock_integration_with_setup.core.get_issue.return_value = None
-        
+
         result = mock_integration_with_setup.sync_issue_with_github("nonexistent")
-        
+
         assert result is False
 
 
@@ -288,7 +288,7 @@ class TestWebhookEventHandling:
 
     @pytest.fixture
     def mock_integration(self, mock_core):
-        """Create integration for webhook testing.""" 
+        """Create integration for webhook testing."""
         mock_github_client = Mock(spec=GitHubClient)
         mock_github_client.owner = "test-owner"
         mock_github_client.repo = "test-repo"
@@ -326,7 +326,7 @@ class TestWebhookEventHandling:
                     "timestamp": "2023-01-01T12:00:00Z"
                 },
                 {
-                    "id": "commit2", 
+                    "id": "commit2",
                     "message": "Complete roadmap:abc12345 implementation",
                     "author": {"name": "Test User"},
                     "timestamp": "2023-01-01T12:30:00Z"
@@ -361,14 +361,14 @@ class TestWebhookEventHandling:
         with patch.object(mock_integration, '_update_issue_from_commit_event', return_value=True):
             result = mock_integration.handle_push_event(sample_push_data)
 
-            assert "abc12345" in result    
-    
+            assert "abc12345" in result
+
     def test_extract_issue_references_from_text(self, mock_integration):
         """Test issue reference extraction from text."""
         text = "Fix issue #abc12345 and resolve #def67890. Also fixes roadmap:12ab34cd"
-        
+
         references = mock_integration._extract_issue_references_from_text(text)
-        
+
         expected = {"abc12345", "def67890", "12ab34cd"}
         assert references == expected
 
@@ -377,28 +377,28 @@ class TestWebhookEventHandling:
         mock_response = Mock()
         mock_response.status_code = 201
         mock_integration.github_client._make_request.return_value = mock_response
-        
+
         result = mock_integration.setup_github_webhook("https://example.com/webhook")
-        
+
         assert result is True
         mock_integration.github_client._make_request.assert_called_once()
 
     def test_webhook_setup_failure(self, mock_integration):
         """Test webhook setup failure."""
         mock_integration.github_client._make_request.side_effect = GitHubAPIError("Failed")
-        
+
         result = mock_integration.setup_github_webhook("https://example.com/webhook")
-        
+
         assert result is False
 
     def test_webhook_setup_without_github_client(self, mock_core):
-        """Test webhook setup when GitHub client is not available.""" 
+        """Test webhook setup when GitHub client is not available."""
         with patch('roadmap.enhanced_github_integration.GitIntegration') as mock_git_integration:
             mock_git_integration.return_value.get_repository_info.return_value = {}
             integration = EnhancedGitHubIntegration(mock_core, None)
-            
+
             result = integration.setup_github_webhook("https://example.com/webhook")
-            
+
             assert result is False
 
 
@@ -429,7 +429,7 @@ class TestCICDStatusValidation:
             ci_status = {"state": "success", "statuses": []}
             with patch.object(mock_integration, '_get_commit_status', return_value=ci_status):
                 result = mock_integration.validate_ci_cd_status("test123")
-                
+
                 assert result["issue_id"] == "test123"
                 assert result["has_pr"] is True
                 assert result["checks_passing"] is True
@@ -438,7 +438,7 @@ class TestCICDStatusValidation:
     def test_validate_ci_cd_status_failing_checks(self, mock_integration, mock_issue):
         """Test CI/CD status validation with failing checks."""
         mock_integration.core.get_issue.return_value = mock_issue
-        
+
         pr_data = [{
             "number": 123,
             "state": "open",
@@ -449,7 +449,7 @@ class TestCICDStatusValidation:
             ci_status = {"state": "failure", "statuses": []}
             with patch.object(mock_integration, '_get_commit_status', return_value=ci_status):
                 result = mock_integration.validate_ci_cd_status("test123")
-                
+
                 assert result["checks_passing"] is False
                 assert result["deployable"] is False
 
@@ -458,7 +458,7 @@ class TestCICDStatusValidation:
         mock_integration.core.get_issue.return_value = mock_issue
         with patch.object(mock_integration, '_find_prs_for_issue', return_value=[]):
             result = mock_integration.validate_ci_cd_status("test123")
-            
+
             assert result["has_pr"] is False
             assert result["deployable"] is False
 
@@ -471,33 +471,33 @@ class TestCICDStatusValidation:
                 {"state": "success", "context": "ci/build"}
             ]
         }
-        
+
         mock_response = Mock()
         mock_response.json.return_value = status_data
         mock_integration.github_client._make_request.return_value = mock_response
-        
+
         result = mock_integration._get_commit_status("abc123")
-        
+
         assert result == status_data
 
     def test_find_prs_for_issue(self, mock_integration, mock_issue):
         """Test finding PRs associated with an issue."""
         mock_integration.github_client.owner = "test-owner"
         mock_integration.github_client.repo = "test-repo"
-        
+
         search_results = {
             "items": [
                 {"number": 123, "title": "Fix test123"},
                 {"number": 124, "title": "Another PR"}
             ]
         }
-        
+
         mock_response = Mock()
         mock_response.json.return_value = search_results
         mock_integration.github_client._make_request.return_value = mock_response
-        
+
         result = mock_integration._find_prs_for_issue(mock_issue)
-        
+
         assert len(result) == 2
         assert result[0]["number"] == 123
 
@@ -528,16 +528,16 @@ class TestBranchPolicyEnforcement:
     def test_enforce_branch_policy_invalid_naming(self, mock_integration):
         """Test branch policy validation for invalid naming."""
         result = mock_integration.enforce_branch_policy("random-branch-name")
-        
+
         assert len(result["warnings"]) > 0
         assert "naming pattern" in result["warnings"][0]
 
     def test_enforce_branch_policy_nonexistent_issue(self, mock_integration):
-        """Test branch policy with nonexistent issue reference.""" 
+        """Test branch policy with nonexistent issue reference."""
         mock_integration.core.get_issue.return_value = None
-        
+
         result = mock_integration.enforce_branch_policy("feature/abc12345-test")
-        
+
         assert result["valid"] is False
         assert len(result["errors"]) > 0
 
@@ -557,13 +557,13 @@ class TestBranchPolicyEnforcement:
             "ahead_by": 5,
             "behind_by": 2
         }
-        
+
         mock_response = Mock()
         mock_response.json.return_value = compare_data
         mock_integration.github_client._make_request.return_value = mock_response
-        
+
         result = mock_integration._check_merge_conflicts("feature/test-branch")
-        
+
         assert result["conflicts"] is True
         assert result["ahead_by"] == 5
         assert result["behind_by"] == 2
@@ -576,13 +576,13 @@ class TestIntegrationErrorHandling:
         """Test handling of various GitHub API errors."""
         mock_github_client = Mock(spec=GitHubClient)
         mock_github_client.create_issue.side_effect = GitHubAPIError("Rate limit exceeded")
-        
+
         integration = EnhancedGitHubIntegration(mock_core, mock_github_client)
-        
+
         issue = Issue(
             id="test123", title="Test", priority=Priority.MEDIUM, status=Status.TODO
         )
-        
+
         result = integration.create_github_issue_from_roadmap(issue)
         assert result is None
 
@@ -594,7 +594,7 @@ class TestIntegrationErrorHandling:
         mock_github_client._make_request.side_effect = requests.exceptions.ConnectionError()
 
         integration = EnhancedGitHubIntegration(mock_core, mock_github_client)
-        
+
         # ConnectionError should be raised since implementation doesn't catch it
         with pytest.raises(requests.exceptions.ConnectionError):
             integration.setup_github_webhook("https://example.com/webhook")
@@ -603,12 +603,12 @@ class TestIntegrationErrorHandling:
         """Test handling of malformed webhook data."""
         mock_github_client = Mock(spec=GitHubClient)
         integration = EnhancedGitHubIntegration(mock_core, mock_github_client)
-        
+
         # Test with missing required fields
         malformed_pr_data = {"title": "Test PR"}  # Missing number, state, etc.
-        
+
         result = integration.handle_pull_request_event(malformed_pr_data, "opened")
-        
+
         # Should handle gracefully and return empty list
         assert result == []
 
@@ -616,12 +616,12 @@ class TestIntegrationErrorHandling:
         """Test handling of empty webhook events."""
         mock_github_client = Mock(spec=GitHubClient)
         integration = EnhancedGitHubIntegration(mock_core, mock_github_client)
-        
+
         # Test empty PR event
         result = integration.handle_pull_request_event({}, "opened")
         assert result == []
-        
-        # Test empty push event  
+
+        # Test empty push event
         result = integration.handle_push_event({})
         assert result == []
 
@@ -635,7 +635,7 @@ class TestRealWorldScenarios:
         # This would test a full workflow:
         # 1. Create roadmap issue
         # 2. Sync to GitHub
-        # 3. Create PR  
+        # 3. Create PR
         # 4. Handle PR events
         # 5. Merge PR
         # 6. Update issue status

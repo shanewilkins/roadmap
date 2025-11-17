@@ -332,21 +332,7 @@ except Exception as e:
         except Exception:
             pass
 
-    def handle_post_checkout(self):
-        """Handle post-checkout hook - set context for new branch."""
-        try:
-            current_branch = self.git_integration.get_current_branch()
-            if current_branch:
-                # Check if branch is linked to an issue
-                linked_issues = self.git_integration.get_branch_linked_issues(
-                    current_branch.name
-                )
-                if linked_issues:
-                    # Store context for CLI commands
-                    self._set_branch_context(current_branch.name, linked_issues[0])
 
-        except Exception:
-            pass
 
     def _update_issue_from_commit(
         self, issue_id: str, commit: GitCommit, progress: float | None

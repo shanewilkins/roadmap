@@ -660,44 +660,6 @@ class CITracker:
 
         return commit_count
 
-    def scan_repository_history(self, max_commits: int = 1000) -> dict[str, int]:
-        """Scan repository history for issue associations.
-
-        Args:
-            max_commits: Maximum number of commits to scan
-
-        Returns:
-            Summary of associations created per issue
-        """
-        if not self.config.scan_commit_history:
-            logger.info("Commit history scanning is disabled")
-            return {}
-
-        commit_count = {}
-
-        try:
-            # Get recent commit history
-            result = subprocess.run(
-                ["git", "log", f"--max-count={max_commits}", "--format=%H|%s"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            for line in result.stdout.strip().split("\n"):
-                if "|" in line:
-                    sha, message = line.split("|", 1)
-                    issue_ids = self.extract_issue_ids_from_commit(message)
-
-                    for issue_id in issue_ids:
-                        if self.add_commit_to_issue(issue_id, sha, message):
-                            commit_count[issue_id] = commit_count.get(issue_id, 0) + 1
-
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            logger.warning("Could not scan repository history")
-
-        return commit_count
-
 
 class CIAutomation:
     """Handles automatic issue status updates based on CI/CD events."""

@@ -18,11 +18,11 @@ def reset_cli_state():
     # Clear any cached Click contexts and CLI state
     import os
     import sys
-    
+
     # Store original environment
     original_cwd = os.getcwd()
     original_env = os.environ.copy()
-    
+
     # Clear Click-related caches if they exist
     if hasattr(main, 'make_context'):
         try:
@@ -30,13 +30,13 @@ def reset_cli_state():
             ctx.reset()
         except:
             pass
-    
+
     # Clear any module-level state
     if hasattr(sys.modules.get('roadmap.cli'), '_cached_core'):
         delattr(sys.modules['roadmap.cli'], '_cached_core')
-    
+
     yield
-    
+
     # Restore original state
     os.chdir(original_cwd)
     os.environ.clear()
@@ -72,11 +72,11 @@ def cli_isolated_fs():
 def initialized_roadmap(temp_dir):
     """Provide a temporary directory with an initialized roadmap."""
     from roadmap.core import RoadmapCore
-    
+
     # Initialize the roadmap
     manager = RoadmapCore()
     manager.initialize()  # The correct method name
-    
+
     yield temp_dir
 
 
@@ -115,7 +115,7 @@ def sample_milestone():
     from roadmap.models import Milestone
     return Milestone(
         id="milestone-1",
-        title="Sample Milestone", 
+        title="Sample Milestone",
         description="A sample milestone for testing",
         due_date="2024-12-31"
     )

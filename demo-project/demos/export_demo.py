@@ -13,13 +13,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def run_command(command, description):
     """Run a command and display the output."""
     print(f"\n🔧 {description}")
     print("=" * len(description) + "===")
     print(f"Command: {command}")
     print("-" * 50)
-    
+
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd="/Users/shane/roadmap")
         if result.returncode == 0:
@@ -39,46 +40,46 @@ def main():
     print("  • Excel files for business reporting")
     print("  • Filtered exports for specific needs")
     print()
-    
+
     # Check if main project exists
     roadmap_path = Path("/Users/shane/roadmap/.roadmap")
     if not roadmap_path.exists():
         print("❌ Main roadmap project not found. Please ensure you're in the roadmap project directory.")
         return
-    
+
     print("📋 BASIC EXPORTS")
     print("-" * 17)
     print("Export all data in different formats:")
-    
+
     # Basic exports
     run_command("poetry run roadmap export issues --format csv", "Export all issues to CSV")
     run_command("poetry run roadmap export issues --format json", "Export all issues to JSON")
     run_command("poetry run roadmap export milestones --format json", "Export milestones to JSON")
-    
+
     print()
     print("🔍 FILTERED EXPORTS")
     print("-" * 20)
     print("Export specific subsets of data:")
-    
+
     # Filtered exports
     run_command("poetry run roadmap export issues --format csv --milestone 'v1.0.0'", "Export issues for specific milestone")
     run_command("poetry run roadmap export issues --format json --priority critical", "Export critical priority issues")
     run_command("poetry run roadmap export issues --format csv --status done", "Export completed issues")
-    
+
     print()
     print("📈 ANALYTICS EXPORTS")
     print("-" * 21)
     print("Export analytical data and reports:")
-    
+
     # Analytics exports
     run_command("poetry run roadmap analytics enhanced --export analysis.json", "Export enhanced analytics")
     run_command("poetry run roadmap report generate --format json", "Generate comprehensive report")
-    
+
     print()
     print("📁 EXPORT ORGANIZATION")
     print("-" * 23)
     print("Files are automatically organized in the artifacts directory:")
-    
+
     # Show artifacts structure
     artifacts_path = Path("/Users/shane/roadmap/.roadmap/artifacts")
     if artifacts_path.exists():
@@ -93,20 +94,20 @@ def main():
                     print(f"    • {file.name}")
                 if len(files) > 3:
                     print(f"    ... and {len(files) - 3} more")
-    
+
     print()
     print("🔧 ADVANCED USAGE")
     print("-" * 18)
     print("Custom output paths and batch processing:")
-    
+
     # Advanced examples
     run_command("poetry run roadmap export issues --format csv --output custom-export.csv", "Custom output filename")
-    
+
     print()
     print("💻 PROGRAMMATIC ACCESS")
     print("-" * 23)
     print("Use exported JSON data in your applications:")
-    
+
     # Show how to use exported data
     print("""
     import json
@@ -124,7 +125,7 @@ def main():
     open_issues = len([i for i in issues if i['status'] != 'done'])
     print(f"Total: {total_issues}, Open: {open_issues}")
     """)
-    
+
     print()
     print("🎯 KEY FEATURES DEMONSTRATED")
     print("-" * 30)
@@ -135,7 +136,7 @@ def main():
     print("✅ Custom output paths and filenames")
     print("✅ Programmatic data access patterns")
     print("✅ Batch processing capabilities")
-    
+
     print()
     print("🚀 NEXT STEPS")
     print("-" * 12)
@@ -145,7 +146,7 @@ def main():
     print("  poetry run roadmap analytics enhanced --export detailed-analysis.json")
     print("  poetry run roadmap timeline --format json")
     print()
-    
+
     print("📖 Learn more: https://roadmap-cli.readthedocs.io/en/latest/exports/")
 
 if __name__ == "__main__":

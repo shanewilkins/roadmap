@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from roadmap.git_integration import GitIntegration
 from roadmap.models import Issue, RoadmapConfig
 

@@ -11,7 +11,6 @@ from roadmap.core import RoadmapCore
 from roadmap.models import Issue, Priority, Status
 
 
-
 @pytest.fixture
 def initialized_core(temp_dir):
     """Create an initialized roadmap core."""

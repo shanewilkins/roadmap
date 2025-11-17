@@ -6,7 +6,7 @@ import re
 from typing import Union
 
 
-def strip_ansi(text: Union[str, bytes]) -> str:
+def strip_ansi(text: str | bytes) -> str:
     """
     Remove ANSI escape sequences from text.
     
@@ -27,7 +27,7 @@ def strip_ansi(text: Union[str, bytes]) -> str:
     """
     if isinstance(text, bytes):
         text = text.decode('utf-8', errors='replace')
-    
+
     # Comprehensive ANSI escape sequence patterns
     ansi_patterns = [
         r'\x1b\[[0-9;]*[mGKHJABCDEFnuslh]',  # Standard ANSI sequences
@@ -39,17 +39,17 @@ def strip_ansi(text: Union[str, bytes]) -> str:
         r'\x1b[HJ]',                         # Clear screen variants
         r'\x1b7\x1b8',                       # Save/restore cursor position
     ]
-    
+
     # Combine all patterns into one
     combined_pattern = '|'.join(ansi_patterns)
     ansi_escape = re.compile(combined_pattern)
-    
+
     # Remove ANSI sequences
     clean_text = ansi_escape.sub('', text)
-    
+
     # Clean up any remaining control characters except newlines and tabs
     clean_text = re.sub(r'[\x00-\x08\x0b-\x1f\x7f-\x9f]', '', clean_text)
-    
+
     return clean_text
 
 
@@ -123,5 +123,5 @@ def assert_output_contains(expected_lines: list[str], actual_output: str, clean:
         cleaned_output = clean_cli_output(actual_output)
     else:
         cleaned_output = actual_output
-    
+
     return all(line in cleaned_output for line in expected_lines)

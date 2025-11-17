@@ -256,7 +256,7 @@ class TestCrossPlatformCLIWorkflows:
                             "--token",
                             f"test_token_{platform_name.lower()}",
                             "--repo",
-                            f"user/repo",
+                            "user/repo",
                             "--insecure",
                         ],
                     )
@@ -286,7 +286,7 @@ class TestCrossPlatformCLIWorkflows:
                     mock_instance = Mock()
                     mock_instance.store_token_secure.return_value = (
                         False,
-                        f"Secure credential storage not available on this system",
+                        "Secure credential storage not available on this system",
                     )
                     mock_sync_class.return_value = mock_instance
 

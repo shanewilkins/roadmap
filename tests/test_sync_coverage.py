@@ -2,17 +2,25 @@
 Working comprehensive tests for sync module to improve coverage.
 """
 
-import pytest
 import os
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
-from roadmap.sync import SyncManager, SyncConflict, SyncStrategy, SyncConflictStrategy
-from roadmap.models import Issue, Milestone, RoadmapConfig, Status, Priority, MilestoneStatus  
+import pytest
+
 from roadmap.core import RoadmapCore
-from roadmap.github_client import GitHubAPIError
 from roadmap.credentials import CredentialManagerError
+from roadmap.github_client import GitHubAPIError
+from roadmap.models import (
+    Issue,
+    Milestone,
+    MilestoneStatus,
+    Priority,
+    RoadmapConfig,
+    Status,
+)
+from roadmap.sync import SyncConflict, SyncConflictStrategy, SyncManager, SyncStrategy
 
 
 @pytest.fixture
@@ -29,7 +37,7 @@ def mock_config():
     config = RoadmapConfig()
     config.github = {
         "owner": "test_owner",
-        "repo": "test_repo", 
+        "repo": "test_repo",
         "token": "test_token"
     }
     return config
@@ -42,10 +50,10 @@ class TestSyncConflictEdgeCases:
         """Test get_newer_item with proper datetime objects."""
         # Test with datetime objects (as the function expects)
         conflict = SyncConflict(
-            "issue", "test-123", Mock(), {}, 
+            "issue", "test-123", Mock(), {},
             datetime(2024, 1, 1), datetime(2024, 1, 2)
         )
-        
+
         # Should return "remote" since remote is newer
         result = conflict.get_newer_item()
         assert result == "remote"
@@ -57,24 +65,24 @@ class TestSyncStrategyEdgeCases:
     def test_resolve_conflict_local_wins_strategy(self):
         """Test conflict resolution with local wins strategy."""
         strategy = SyncStrategy(SyncConflictStrategy.LOCAL_WINS)
-        
+
         conflict = SyncConflict(
-            "issue", "test-123", Mock(), {}, 
+            "issue", "test-123", Mock(), {},
             datetime(2024, 1, 1), datetime(2024, 1, 2)
         )
-        
+
         result = strategy.resolve_conflict(conflict)
         assert result == "use_local"
 
     def test_resolve_conflict_remote_wins_strategy(self):
         """Test conflict resolution with remote wins strategy."""
         strategy = SyncStrategy(SyncConflictStrategy.REMOTE_WINS)
-        
+
         conflict = SyncConflict(
             "issue", "test-123", Mock(), {},
             datetime(2024, 1, 2), datetime(2024, 1, 1)
         )
-        
+
         result = strategy.resolve_conflict(conflict)
         assert result == "use_remote"
 
@@ -87,40 +95,40 @@ class TestSyncManagerCredentialHandling:
         """Test token retrieval when credential manager is unavailable."""
         config = RoadmapConfig()
         config.github = {"owner": "test", "repo": "test"}
-        
+
         # Mock credential manager unavailable
         mock_manager = Mock()
         mock_manager.is_available.return_value = False
         mock_credential_manager.return_value = mock_manager
-        
+
         sync_manager = SyncManager(mock_core, config)
-        
+
         with patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"}):
             token = sync_manager._get_token_secure(config.github)
             assert token == "env_token"
 
-    @patch("roadmap.sync.get_credential_manager") 
+    @patch("roadmap.sync.get_credential_manager")
     def test_store_token_secure_credential_manager_unavailable(self, mock_credential_manager, mock_core, mock_config):
         """Test token storage when credential manager is unavailable."""
         mock_manager = Mock()
         mock_manager.is_available.return_value = False
         mock_credential_manager.return_value = mock_manager
-        
+
         sync_manager = SyncManager(mock_core, mock_config)
-        
+
         success, message = sync_manager.store_token_secure("test_token", "github")
         assert success is False
         assert "not available" in message.lower()
 
     @patch("roadmap.sync.get_credential_manager")
     def test_delete_token_secure_credential_manager_unavailable(self, mock_credential_manager, mock_core, mock_config):
-        """Test token deletion when credential manager is unavailable.""" 
+        """Test token deletion when credential manager is unavailable."""
         mock_manager = Mock()
         mock_manager.is_available.return_value = False
         mock_credential_manager.return_value = mock_manager
-        
+
         sync_manager = SyncManager(mock_core, mock_config)
-        
+
         success, message = sync_manager.delete_token_secure()
         assert success is False
         assert "not available" in message.lower()
@@ -133,7 +141,7 @@ class TestSyncManagerGitHubIntegration:
         """Test GitHub client initialization with missing owner."""
         config = RoadmapConfig()
         config.github = {"repo": "test_repo", "token": "test_token"}
-        
+
         sync_manager = SyncManager(mock_core, config)
         assert sync_manager.github_client is None
 
@@ -141,7 +149,7 @@ class TestSyncManagerGitHubIntegration:
         """Test GitHub client initialization with missing repo."""
         config = RoadmapConfig()
         config.github = {"owner": "test_owner", "token": "test_token"}
-        
+
         sync_manager = SyncManager(mock_core, config)
         assert sync_manager.github_client is None
 
@@ -149,7 +157,7 @@ class TestSyncManagerGitHubIntegration:
         """Test GitHub client initialization with missing token."""
         config = RoadmapConfig()
         config.github = {"owner": "test_owner", "repo": "test_repo"}
-        
+
         with patch.dict(os.environ, {}, clear=True), \
              patch("roadmap.sync.get_credential_manager") as mock_credential_manager:
             # Mock credential manager to return None
@@ -157,7 +165,7 @@ class TestSyncManagerGitHubIntegration:
             mock_manager.is_available.return_value = True
             mock_manager.get_token.return_value = None
             mock_credential_manager.return_value = mock_manager
-            
+
             sync_manager = SyncManager(mock_core, config)
             assert sync_manager.github_client is None
 
@@ -167,10 +175,10 @@ class TestSyncManagerGitHubIntegration:
         mock_client = Mock()
         mock_client.test_authentication.side_effect = GitHubAPIError("Authentication failed")
         mock_client_class.return_value = mock_client
-        
+
         with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token"}):
             sync_manager = SyncManager(mock_core, mock_config)
-            
+
             success, message = sync_manager.test_connection()
             assert success is False
             assert "authentication failed" in message.lower()
@@ -181,16 +189,16 @@ class TestSyncManagerGitHubIntegration:
         with patch("roadmap.sync.GitHubClient", side_effect=ImportError("No module named github")), \
              patch("roadmap.sync.os.getenv", return_value=None), \
              patch("roadmap.sync.get_credential_manager") as mock_credential_manager:
-            
+
             # Mock credential manager to return None
             mock_manager = Mock()
             mock_manager.is_available.return_value = True
             mock_manager.get_token.return_value = None
             mock_credential_manager.return_value = mock_manager
-            
+
             # Remove token from config to force using environment/credential manager
             mock_config.github = {"owner": "test_owner", "repo": "test_repo"}
-            
+
             sync_manager = SyncManager(mock_core, mock_config)
             # Should handle missing GitHubClient gracefully
             assert sync_manager.github_client is None
@@ -204,12 +212,12 @@ class TestSyncManagerTokenInfo:
         """Test getting token info when no token is available."""
         config = RoadmapConfig()
         config.github = {"owner": "test", "repo": "test"}
-        
+
         mock_manager = Mock()
         mock_manager.is_available.return_value = True
         mock_manager.get_token.return_value = None
         mock_credential_manager.return_value = mock_manager
-        
+
         # Clear environment variables and create sync manager
         with patch.dict(os.environ, {}, clear=True):
             sync_manager = SyncManager(mock_core, config)
@@ -224,12 +232,12 @@ class TestSyncManagerTokenInfo:
         """Test getting token info from environment variable."""
         config = RoadmapConfig()
         config.github = {"owner": "test", "repo": "test"}
-        
+
         mock_manager = Mock()
         mock_manager.is_available.return_value = True
         mock_manager.get_token.return_value = None
         mock_credential_manager.return_value = mock_manager
-        
+
         with patch.dict(os.environ, {"GITHUB_TOKEN": "env_token_12345"}):
             sync_manager = SyncManager(mock_core, config)
             info = sync_manager.get_token_info()
@@ -245,7 +253,7 @@ class TestSyncManagerRepositoryOperations:
         """Test repository setup when no GitHub client is available."""
         sync_manager = SyncManager(mock_core, mock_config)
         sync_manager.github_client = None
-        
+
         success, message = sync_manager.setup_repository()
         assert success is False
         assert "not configured" in message.lower()
@@ -256,10 +264,10 @@ class TestSyncManagerRepositoryOperations:
         mock_client = Mock()
         mock_client.setup_default_labels.side_effect = GitHubAPIError("Label setup failed")
         mock_client_class.return_value = mock_client
-        
+
         with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token"}):
             sync_manager = SyncManager(mock_core, mock_config)
-            
+
             success, message = sync_manager.setup_repository()
             assert success is False
             assert "failed" in message.lower()
@@ -272,7 +280,7 @@ class TestSyncManagerEdgeCases:
         """Test is_configured with partially configured GitHub settings."""
         config = RoadmapConfig()
         config.github = {"owner": "test"}  # Missing repo and token
-        
+
         sync_manager = SyncManager(mock_core, config)
         # Should be false since client creation would fail
         assert sync_manager.is_configured() is False
@@ -284,7 +292,7 @@ class TestSyncManagerEdgeCases:
         config1.github = {}
         sync1 = SyncManager(mock_core, config1)
         assert sync1.github_client is None
-        
+
         # None github config
         config2 = RoadmapConfig()
         config2.github = None
@@ -296,7 +304,7 @@ class TestSyncManagerEdgeCases:
         """Test handling of credential manager exceptions."""
         # Make credential manager raise exception on creation
         mock_credential_manager.side_effect = Exception("Credential manager error")
-        
+
         # Should handle gracefully and not crash
         sync_manager = SyncManager(mock_core, mock_config)
         assert hasattr(sync_manager, 'github_client')
@@ -308,7 +316,7 @@ class TestSyncManagerStringRepresentation:
     def test_sync_manager_string_methods(self, mock_core, mock_config):
         """Test string representation methods."""
         sync_manager = SyncManager(mock_core, mock_config)
-        
+
         # Test that object can be converted to string without errors
         str_repr = str(sync_manager)
         assert isinstance(str_repr, str)
@@ -321,10 +329,10 @@ class TestSyncConflictStringMethods:
     def test_sync_conflict_string_representation(self):
         """Test SyncConflict string representation."""
         conflict = SyncConflict(
-            "issue", "test-123", Mock(), {}, 
+            "issue", "test-123", Mock(), {},
             datetime(2024, 1, 1), datetime(2024, 1, 2)
         )
-        
+
         str_repr = str(conflict)
         assert isinstance(str_repr, str)
         assert "test-123" in str_repr or "SyncConflict" in str_repr or "object" in str_repr
@@ -336,7 +344,7 @@ class TestSyncStrategyStringMethods:
     def test_sync_strategy_string_representation(self):
         """Test SyncStrategy string representation."""
         strategy = SyncStrategy(SyncConflictStrategy.NEWER_WINS)
-        
+
         str_repr = str(strategy)
         assert isinstance(str_repr, str)
         assert "SyncStrategy" in str_repr or "object" in str_repr

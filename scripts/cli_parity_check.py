@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+import glob
 import re
 from pathlib import Path
-import glob
 
 ROOT = Path(__file__).resolve().parents[1]
 monolith = ROOT / 'roadmap' / 'cli_backup_original.py'
@@ -47,6 +47,7 @@ for f in modular_files:
 # Extract canonical names: prefer explicit name in decorator, else function name
 import re
 
+
 def canonical_name(entry):
     for d in entry['decorators']:
         m = re.search(r"\.command\s*\(\s*['\"]([^'\"]+)['\"]", d)
@@ -64,7 +65,9 @@ mono_names = sorted(set(canonical_name(e) for e in monolith_cmds))
 mod_names = sorted(set(canonical_name(e) for e in modular_cmds))
 
 # Also introspect live Click group if importable
-import importlib, sys
+import importlib
+import sys
+
 sys.path.insert(0, str(ROOT))
 
 live_names = []
@@ -72,7 +75,7 @@ try:
     main = importlib.import_module('roadmap.cli').main
     if hasattr(main, 'commands'):
         live_names = sorted(list(main.commands.keys()))
-except Exception as e:
+except Exception:
     live_names = []
 
 report = {
@@ -84,4 +87,5 @@ report = {
 }
 
 import json
+
 print(json.dumps(report, indent=2))

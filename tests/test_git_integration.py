@@ -349,12 +349,12 @@ class TestGitIntegrationCore:
         subprocess.run(["git", "init"], check=True, capture_output=True)
         subprocess.run(["git", "config", "user.name", "Test User"], check=True)
         subprocess.run(["git", "config", "user.email", "test@example.com"], check=True)
-        
+
         # Create initial commit so git has a HEAD
         Path("README.md").write_text("# Test Repository")
         subprocess.run(["git", "add", "README.md"], check=True)
         subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
-        
+
         # Refresh git integration after git repo is created
         from roadmap.git_integration import GitIntegration
         self.core.git = GitIntegration(self.core.root_path)

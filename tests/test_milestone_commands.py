@@ -10,8 +10,6 @@ from roadmap.cli import main
 from tests.test_utils import strip_ansi
 
 
-
-
 @pytest.fixture
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""

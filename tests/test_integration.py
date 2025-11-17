@@ -509,7 +509,7 @@ class TestPerformanceAndStress:
                     issue_id = line.split("ID:")[1].strip().split()[0]
                     issue_ids.append(issue_id)
                     break
-            
+
             # Only assign to milestone if we successfully extracted the ID
             if issue_id:
                 milestone_name = milestone_names[i % len(milestone_names)]
@@ -519,7 +519,7 @@ class TestPerformanceAndStress:
         result = runner.invoke(main, ["status"])
         assert result.exit_code == 0
         assert f"todo           {num_issues}" in result.output
-        assert f"Milestones:" in result.output
+        assert "Milestones:" in result.output
 
         # Test filtering
         result = runner.invoke(main, ["issue", "list", "--priority", "high"])

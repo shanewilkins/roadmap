@@ -3,13 +3,13 @@
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 import pytest
 
 from roadmap.enhanced_analytics import EnhancedAnalyzer
-from roadmap.models import Issue, Priority, Status, Milestone, MilestoneStatus
+from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
 
 # Mark all tests as unit tests
 pytestmark = pytest.mark.unit
@@ -23,7 +23,7 @@ class TestEnhancedAnalyzerInitialization:
         """Create mock RoadmapCore for testing."""
         return Mock()
 
-    @pytest.fixture 
+    @pytest.fixture
     def enhanced_analyzer(self, mock_core):
         """Create EnhancedAnalyzer for testing."""
         with patch('roadmap.enhanced_analytics.GitIntegration'), \
@@ -37,7 +37,7 @@ class TestEnhancedAnalyzerInitialization:
              patch('roadmap.enhanced_analytics.DataFrameAdapter'), \
              patch('roadmap.enhanced_analytics.DataAnalyzer'):
             analyzer = EnhancedAnalyzer(mock_core)
-        
+
         assert analyzer.core == mock_core
         assert analyzer.git_integration is not None
         assert analyzer.data_adapter is not None
@@ -49,7 +49,7 @@ class TestEnhancedAnalyzerInitialization:
              patch('roadmap.enhanced_analytics.DataFrameAdapter'), \
              patch('roadmap.enhanced_analytics.DataAnalyzer'):
             analyzer = EnhancedAnalyzer(None)
-        
+
         assert analyzer.core is None
 
 
@@ -79,7 +79,7 @@ class TestDataFrameGeneration:
                 assignee="alice@example.com"
             ),
             Issue(
-                id="issue2", 
+                id="issue2",
                 title="Bug Fix",
                 content="Fix critical bug",
                 priority=Priority.CRITICAL,
@@ -91,7 +91,7 @@ class TestDataFrameGeneration:
 
     @pytest.fixture
     def sample_milestones(self):
-        """Create sample milestones for testing.""" 
+        """Create sample milestones for testing."""
         return [
             Milestone(
                 name="v1.0 Release",
@@ -100,7 +100,7 @@ class TestDataFrameGeneration:
                 status=MilestoneStatus.OPEN
             ),
             Milestone(
-                name="v1.1 Features", 
+                name="v1.1 Features",
                 description="Feature additions",
                 due_date=datetime.now() + timedelta(days=60),
                 status=MilestoneStatus.OPEN
@@ -112,9 +112,9 @@ class TestDataFrameGeneration:
         enhanced_analyzer.core.list_issues.return_value = sample_issues
         mock_df = pd.DataFrame({'id': ['issue1', 'issue2'], 'title': ['Feature', 'Bug']})
         enhanced_analyzer.data_adapter.issues_to_dataframe.return_value = mock_df
-        
+
         result = enhanced_analyzer.get_issues_dataframe()
-        
+
         assert isinstance(result, pd.DataFrame)
         enhanced_analyzer.core.list_issues.assert_called_once()
         enhanced_analyzer.data_adapter.issues_to_dataframe.assert_called_once_with(sample_issues)
@@ -124,9 +124,9 @@ class TestDataFrameGeneration:
         enhanced_analyzer.core.list_issues.return_value = []
         mock_df = pd.DataFrame()
         enhanced_analyzer.data_adapter.issues_to_dataframe.return_value = mock_df
-        
+
         result = enhanced_analyzer.get_issues_dataframe()
-        
+
         assert isinstance(result, pd.DataFrame)
         assert result.empty
 
@@ -136,9 +136,9 @@ class TestDataFrameGeneration:
         enhanced_analyzer.core.list_issues.return_value = sample_issues
         mock_df = pd.DataFrame({'name': ['v1.0', 'v1.1'], 'status': ['open', 'open']})
         enhanced_analyzer.data_adapter.milestones_to_dataframe.return_value = mock_df
-        
+
         result = enhanced_analyzer.get_milestones_dataframe()
-        
+
         assert isinstance(result, pd.DataFrame)
         enhanced_analyzer.core.list_milestones.assert_called_once()
         enhanced_analyzer.core.list_issues.assert_called_once()
@@ -169,7 +169,7 @@ class TestCompletionTrends:
         })
 
     def test_analyze_completion_trends_success(self, enhanced_analyzer, mock_completion_df):
-        """Test successful completion trends analysis.""" 
+        """Test successful completion trends analysis."""
         # Mock issues DataFrame with required columns for completion trends
         now = datetime.now()
         mock_issues_df = pd.DataFrame({
@@ -182,25 +182,25 @@ class TestCompletionTrends:
             'priority': ['high', 'medium', 'low']
         })
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=mock_issues_df)
-        
+
         result = enhanced_analyzer.analyze_completion_trends(period="W", months=3)
-        
+
         assert isinstance(result, pd.DataFrame)
         enhanced_analyzer.get_issues_dataframe.assert_called_once()
 
     def test_analyze_completion_trends_empty_data(self, enhanced_analyzer):
         """Test completion trends analysis with empty data."""
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_completion_trends()
-        
+
         assert isinstance(result, pd.DataFrame)
 
     def test_analyze_completion_trends_custom_period(self, enhanced_analyzer):
         """Test completion trends analysis with custom period."""
         now = datetime.now()
         mock_df = pd.DataFrame({
-            'id': ['1', '2'], 
+            'id': ['1', '2'],
             'status': ['done', 'done'],
             'actual_end_date': [now - timedelta(days=30), now - timedelta(days=60)],
             'estimated_hours': [8.0, 12.0],
@@ -209,9 +209,9 @@ class TestCompletionTrends:
             'priority': ['high', 'medium']
         })
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=mock_df)
-        
+
         result = enhanced_analyzer.analyze_completion_trends(period="M", months=6)
-        
+
         assert isinstance(result, pd.DataFrame)
 
 
@@ -252,17 +252,17 @@ class TestWorkloadDistribution:
             'is_overdue': [False, True, False, False]
         })
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=workload_df)
-            
+
         result = enhanced_analyzer.analyze_workload_distribution()
-        
+
         assert isinstance(result, pd.DataFrame)
 
     def test_analyze_workload_distribution_empty_data(self, enhanced_analyzer):
         """Test workload distribution with empty data."""
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_workload_distribution()
-        
+
         assert isinstance(result, pd.DataFrame)
         assert result.empty
 
@@ -279,9 +279,9 @@ class TestWorkloadDistribution:
             'is_overdue': [False]
         })
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=single_assignee_df)
-        
+
         result = enhanced_analyzer.analyze_workload_distribution()
-        
+
         assert isinstance(result, pd.DataFrame)
 
 
@@ -300,7 +300,7 @@ class TestMilestoneProgress:
     def test_analyze_milestone_progress_success(self, enhanced_analyzer):
         """Test successful milestone progress analysis."""
         mock_df = pd.DataFrame({
-            'milestone': ['v1.0', 'v1.1'], 
+            'milestone': ['v1.0', 'v1.1'],
             'total_issues': [10, 5],
             'completed_issues': [8, 2],
             'progress_percentage': [80.0, 40.0],
@@ -309,18 +309,18 @@ class TestMilestoneProgress:
         })
         enhanced_analyzer.get_milestones_dataframe = Mock(return_value=mock_df)
         enhanced_analyzer.analyzer.analyze_milestone_health = Mock(return_value=mock_df)
-        
+
         result = enhanced_analyzer.analyze_milestone_progress()
-        
+
         assert isinstance(result, pd.DataFrame)
         enhanced_analyzer.get_milestones_dataframe.assert_called_once()
 
     def test_analyze_milestone_progress_empty_data(self, enhanced_analyzer):
         """Test milestone progress with no milestones."""
         enhanced_analyzer.get_milestones_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_milestone_progress()
-        
+
         assert isinstance(result, pd.DataFrame)
         assert result.empty
 
@@ -335,9 +335,9 @@ class TestMilestoneProgress:
         })
         enhanced_analyzer.get_milestones_dataframe = Mock(return_value=empty_milestone_df)
         enhanced_analyzer.analyzer.analyze_milestone_health = Mock(return_value=empty_milestone_df)
-        
+
         result = enhanced_analyzer.analyze_milestone_progress()
-        
+
         assert isinstance(result, pd.DataFrame)
 
 
@@ -372,20 +372,20 @@ class TestIssueLifecycle:
     def test_analyze_issue_lifecycle_success(self, enhanced_analyzer, lifecycle_issues_df):
         """Test successful issue lifecycle analysis."""
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=lifecycle_issues_df)
-        
+
         with patch('roadmap.enhanced_analytics.datetime') as mock_datetime:
             mock_datetime.now.return_value = datetime.now()
             result = enhanced_analyzer.analyze_issue_lifecycle()
-        
+
         assert isinstance(result, pd.DataFrame)
         enhanced_analyzer.get_issues_dataframe.assert_called_once()
 
     def test_analyze_issue_lifecycle_empty_data(self, enhanced_analyzer):
         """Test issue lifecycle analysis with empty data."""
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_issue_lifecycle()
-        
+
         assert isinstance(result, pd.DataFrame)
         assert result.empty
 
@@ -403,9 +403,9 @@ class TestIssueLifecycle:
             'priority': ['medium', 'low']
         })
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=single_status_df)
-        
+
         result = enhanced_analyzer.analyze_issue_lifecycle()
-        
+
         assert isinstance(result, pd.DataFrame)
 
 
@@ -434,9 +434,9 @@ class TestVelocityConsistency:
         """Test successful velocity consistency analysis."""
         enhanced_analyzer.analyzer.analyze_velocity_trends = Mock(return_value=mock_velocity_df)
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_velocity_consistency(weeks=6)
-        
+
         assert isinstance(result, dict)
         assert 'weeks_analyzed' in result
         assert 'avg_velocity_score' in result
@@ -447,9 +447,9 @@ class TestVelocityConsistency:
         """Test velocity consistency with no data."""
         enhanced_analyzer.analyzer.analyze_velocity_trends = Mock(return_value=pd.DataFrame())
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_velocity_consistency()
-        
+
         assert isinstance(result, dict)
         assert 'error' in result
         assert result['weeks_analyzed'] == 0
@@ -458,9 +458,9 @@ class TestVelocityConsistency:
         """Test velocity consistency with custom weeks parameter."""
         enhanced_analyzer.analyzer.analyze_velocity_trends = Mock(return_value=mock_velocity_df)
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_velocity_consistency(weeks=4)
-        
+
         assert isinstance(result, dict)
         assert result['weeks_analyzed'] <= 4
 
@@ -473,9 +473,9 @@ class TestVelocityConsistency:
         })
         enhanced_analyzer.analyzer.analyze_velocity_trends = Mock(return_value=consistent_df)
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.analyze_velocity_consistency()
-        
+
         assert result['consistency_rating'] == "Very Consistent"
 
 
@@ -517,9 +517,9 @@ class TestProductivityInsights:
             'workload_score': [15.0, 8.0]
         }))
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={})
-        
+
         result = enhanced_analyzer.generate_productivity_insights(days=30)
-        
+
         assert isinstance(result, dict)
         assert 'summary' in result
         assert 'team_performance' in result
@@ -531,9 +531,9 @@ class TestProductivityInsights:
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
         enhanced_analyzer.analyze_workload_distribution = Mock(return_value=pd.DataFrame())
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={})
-        
+
         result = enhanced_analyzer.generate_productivity_insights()
-        
+
         assert isinstance(result, dict)
         assert 'error' in result
         assert result['error'] == 'No issues data available'
@@ -555,9 +555,9 @@ class TestProductivityInsights:
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=high_blocked_df)
         enhanced_analyzer.analyze_workload_distribution = Mock(return_value=pd.DataFrame())
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={'overloaded_assignees': ['alice']})
-        
+
         result = enhanced_analyzer.generate_productivity_insights()
-        
+
         assert isinstance(result, dict)
         assert 'recommendations' in result
         assert len(result['recommendations']) > 0
@@ -596,9 +596,9 @@ class TestPeriodComparison:
     def test_compare_periods_success(self, enhanced_analyzer, comparison_issues_df):
         """Test successful period comparison."""
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=comparison_issues_df)
-        
+
         result = enhanced_analyzer.compare_periods(period1_days=30, period2_days=60)
-        
+
         assert isinstance(result, dict)
         assert 'period1_metrics' in result
         assert 'period2_metrics' in result
@@ -609,9 +609,9 @@ class TestPeriodComparison:
     def test_compare_periods_empty_data(self, enhanced_analyzer):
         """Test period comparison with empty data."""
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         result = enhanced_analyzer.compare_periods()
-        
+
         assert isinstance(result, dict)
         assert 'error' in result
         assert result['error'] == 'No issues data available'
@@ -619,9 +619,9 @@ class TestPeriodComparison:
     def test_compare_periods_custom_ranges(self, enhanced_analyzer, comparison_issues_df):
         """Test period comparison with custom date ranges."""
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=comparison_issues_df)
-        
+
         result = enhanced_analyzer.compare_periods(period1_days=14, period2_days=45)
-        
+
         assert isinstance(result, dict)
         assert result['period1_description'] == "Last 14 days"
         assert result['period2_description'] == "Previous 31 days"
@@ -640,9 +640,9 @@ class TestPeriodComparison:
             'created': [now - timedelta(days=5), now - timedelta(days=3)]
         })
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=recent_only_df)
-        
+
         result = enhanced_analyzer.compare_periods()
-        
+
         assert isinstance(result, dict)
         assert 'changes' in result
 
@@ -662,14 +662,14 @@ class TestErrorHandling:
     def test_analyze_with_core_exception(self, enhanced_analyzer):
         """Test handling of core exceptions."""
         enhanced_analyzer.core.list_issues.side_effect = Exception("Database error")
-        
+
         with pytest.raises(Exception):
             enhanced_analyzer.get_issues_dataframe()
 
     def test_analyze_with_pandas_exception(self, enhanced_analyzer):
         """Test handling of pandas exceptions."""
         enhanced_analyzer.get_issues_dataframe = Mock(side_effect=pd.errors.EmptyDataError("No data"))
-        
+
         with pytest.raises(pd.errors.EmptyDataError):
             enhanced_analyzer.analyze_completion_trends()
 
@@ -677,10 +677,10 @@ class TestErrorHandling:
         """Test velocity analysis with invalid weeks parameter."""
         enhanced_analyzer.analyzer.analyze_velocity_trends = Mock(return_value=pd.DataFrame())
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=pd.DataFrame())
-        
+
         # Should handle gracefully
         result = enhanced_analyzer.analyze_velocity_consistency(weeks=0)
-        
+
         assert isinstance(result, dict)
         assert 'error' in result
 
@@ -694,7 +694,7 @@ class TestErrorHandling:
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=malformed_df)
         enhanced_analyzer.analyze_workload_distribution = Mock(return_value=pd.DataFrame())
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={})
-        
+
         # Should raise KeyError for missing 'created' column
         with pytest.raises(KeyError):
             enhanced_analyzer.generate_productivity_insights()
@@ -727,20 +727,20 @@ class TestIntegration:
             'is_overdue': [False] * 8 + [True] * 2,
             'created': [now - timedelta(days=i) for i in range(1, 11)]
         })
-        
+
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=comprehensive_df)
         enhanced_analyzer.analyzer.analyze_velocity_trends = Mock(return_value=pd.DataFrame({
             'velocity_score': [45.0, 50.0, 40.0],
             'issues_completed': [3, 4, 2]
         }))
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={})
-        
+
         # Test multiple analysis methods work together
         workload = enhanced_analyzer.analyze_workload_distribution()
         insights = enhanced_analyzer.generate_productivity_insights()
         velocity = enhanced_analyzer.analyze_velocity_consistency()
         comparison = enhanced_analyzer.compare_periods()
-        
+
         # All should return valid results
         assert isinstance(workload, pd.DataFrame)
         assert isinstance(insights, dict)
@@ -762,14 +762,14 @@ class TestIntegration:
             'is_overdue': [False, False, True],
             'created': [now - timedelta(days=i) for i in range(1, 4)]
         })
-        
+
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=consistent_df)
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={})
-        
+
         # Multiple analyses should be consistent
         workload = enhanced_analyzer.analyze_workload_distribution()
         insights = enhanced_analyzer.generate_productivity_insights()
-        
+
         # Both should process the same base data
         assert enhanced_analyzer.get_issues_dataframe.call_count >= 2
 
@@ -788,12 +788,12 @@ class TestIntegration:
             'is_overdue': [i % 5 == 0 for i in range(1000)],  # 20% overdue
             'created': [now - timedelta(days=i % 365) for i in range(1000)]
         })
-        
+
         enhanced_analyzer.get_issues_dataframe = Mock(return_value=large_df)
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={})
-        
+
         # Should handle large datasets efficiently
         result = enhanced_analyzer.generate_productivity_insights()
-        
+
         assert isinstance(result, dict)
         assert 'summary' in result

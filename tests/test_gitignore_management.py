@@ -17,12 +17,12 @@ class TestGitignoreManagement:
         """Test .gitignore creation when no .gitignore exists."""
         core = RoadmapCore()
         core.initialize()
-        
+
         gitignore_path = Path('.gitignore')
         assert gitignore_path.exists()
-        
+
         content = gitignore_path.read_text()
-        
+
         # Check all roadmap patterns are present
         required_patterns = [
             '.roadmap/artifacts/',
@@ -30,10 +30,10 @@ class TestGitignoreManagement:
             '.roadmap/*.tmp',
             '.roadmap/*.lock'
         ]
-        
+
         for pattern in required_patterns:
             assert pattern in content, f"Pattern {pattern} not found in .gitignore"
-            
+
         # Check comment is present
         assert "Roadmap local data" in content
 
@@ -47,24 +47,24 @@ __pycache__/
 node_modules/
 """
         Path('.gitignore').write_text(existing_content)
-        
+
         core = RoadmapCore()
         core.initialize()
-        
+
         gitignore_content = Path('.gitignore').read_text()
-        
+
         # Check existing content is preserved
         assert "*.pyc" in gitignore_content
         assert "node_modules/" in gitignore_content
-        
+
         # Check roadmap patterns were added
         required_patterns = [
             '.roadmap/artifacts/',
-            '.roadmap/backups/', 
+            '.roadmap/backups/',
             '.roadmap/*.tmp',
             '.roadmap/*.lock'
         ]
-        
+
         for pattern in required_patterns:
             assert pattern in gitignore_content
 
@@ -82,21 +82,21 @@ node_modules/
 node_modules/
 """
         Path('.gitignore').write_text(existing_content)
-        
+
         core = RoadmapCore()
         core.initialize()
-        
+
         gitignore_content = Path('.gitignore').read_text()
         lines = gitignore_content.splitlines()
-        
+
         # Check no duplication
         pattern_counts = {}
         check_patterns = ['.roadmap/artifacts/', '.roadmap/backups/', '.roadmap/*.tmp', '.roadmap/*.lock']
-        
+
         for pattern in check_patterns:
             count = sum(1 for line in lines if line.strip() == pattern)
             pattern_counts[pattern] = count
-            
+
         # All patterns should appear exactly once
         for pattern, count in pattern_counts.items():
             assert count == 1, f"Pattern {pattern} appears {count} times (should be 1)"
@@ -109,12 +109,12 @@ node_modules/
 .roadmap/artifacts/
 """
         Path('.gitignore').write_text(existing_content)
-        
+
         core = RoadmapCore()
         core.initialize()
-        
+
         gitignore_content = Path('.gitignore').read_text()
-        
+
         # Check all patterns are now present
         required_patterns = [
             '.roadmap/artifacts/',  # Was already there
@@ -122,10 +122,10 @@ node_modules/
             '.roadmap/*.tmp',       # Should be added
             '.roadmap/*.lock'       # Should be added
         ]
-        
+
         for pattern in required_patterns:
             assert pattern in gitignore_content
-            
+
         # Check no duplication of existing pattern
         lines = gitignore_content.splitlines()
         artifacts_count = sum(1 for line in lines if line.strip() == '.roadmap/artifacts/')
@@ -136,9 +136,9 @@ node_modules/
         # Test with custom roadmap directory name
         core = RoadmapCore(roadmap_dir_name="custom_roadmap")
         core.initialize()
-        
+
         gitignore_content = Path('.gitignore').read_text()
-        
+
         # Check patterns use custom directory name
         expected_patterns = [
             'custom_roadmap/artifacts/',
@@ -146,7 +146,7 @@ node_modules/
             'custom_roadmap/*.tmp',
             'custom_roadmap/*.lock'
         ]
-        
+
         for pattern in expected_patterns:
             assert pattern in gitignore_content
 
@@ -165,23 +165,23 @@ build/
 .idea/
 """
         Path('.gitignore').write_text(existing_content)
-        
+
         core = RoadmapCore()
         core.initialize()
-        
+
         gitignore_content = Path('.gitignore').read_text()
-        
+
         # Check original content and formatting preserved
         assert "# Project .gitignore" in gitignore_content
         assert "# Build artifacts" in gitignore_content
         assert "# IDE files" in gitignore_content
-        
+
         # Check roadmap patterns were appended correctly
         assert "# Roadmap local data" in gitignore_content
-        
+
         # Verify structure: should have original content, then blank line, then roadmap content
         lines = gitignore_content.splitlines()
         roadmap_comment_index = next(i for i, line in enumerate(lines) if "Roadmap local data" in line)
-        
+
         # Should have blank line before roadmap section
         assert lines[roadmap_comment_index - 1].strip() == ""

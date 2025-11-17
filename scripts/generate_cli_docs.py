@@ -29,7 +29,7 @@ class CLIDocGenerator:
         self.runner = CliRunner()
         self.commands_data = {}
 
-    def extract_command_info(self, command_path: List[str] = None) -> Dict[str, Any]:
+    def extract_command_info(self, command_path: list[str] = None) -> dict[str, Any]:
         """Extract information from a Click command."""
         if command_path is None:
             command_path = []
@@ -108,7 +108,7 @@ class CLIDocGenerator:
 
         return info
 
-    def discover_commands(self, command_path: List[str] = None) -> List[List[str]]:
+    def discover_commands(self, command_path: list[str] = None) -> list[list[str]]:
         """Discover all available commands recursively."""
         if command_path is None:
             command_path = []
@@ -125,7 +125,7 @@ class CLIDocGenerator:
 
         return commands
 
-    def generate_command_examples(self, command_path: List[str]) -> List[str]:
+    def generate_command_examples(self, command_path: list[str]) -> list[str]:
         """Generate realistic examples for a command based on its options."""
         examples = []
         cmd_str = "roadmap " + " ".join(command_path) if command_path else "roadmap"
@@ -228,7 +228,7 @@ class CLIDocGenerator:
 
         return "\n".join(content)
 
-    def _format_command_section(self, key: str, info: Dict[str, Any]) -> List[str]:
+    def _format_command_section(self, key: str, info: dict[str, Any]) -> list[str]:
         """Format a single command section."""
         content = []
 
@@ -274,7 +274,7 @@ class CLIDocGenerator:
             content.append("**Examples:**")
             content.append("")
             for example in info["examples"]:
-                content.append(f"```bash")
+                content.append("```bash")
                 content.append(example)
                 content.append("```")
                 content.append("")
@@ -315,7 +315,7 @@ def main():
     print(f"✅ Generated CLI reference: {output_file}")
 
     # Show summary
-    print(f"\n📊 Documentation Summary:")
+    print("\n📊 Documentation Summary:")
     print(f"   • Commands documented: {len(generator.commands_data)}")
     print(f"   • Output file: {output_file.name}")
     print(f"   • Size: {output_file.stat().st_size} bytes")

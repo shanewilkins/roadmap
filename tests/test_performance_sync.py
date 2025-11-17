@@ -3,11 +3,11 @@
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
+from roadmap.models import Issue, Milestone, Priority, Status
 from roadmap.performance_sync import HighPerformanceSyncManager, SyncCache, SyncStats
 from roadmap.sync import SyncManager
 
@@ -496,7 +496,6 @@ class TestHighPerformanceSyncManagerAdvanced:
 
     def test_bulk_write_issues(self, hp_sync_manager):
         """Test bulk write operations for issues."""
-        from pathlib import Path
 
         # Create test data
         issue1 = Issue(id="test1", title="Test Issue 1")
@@ -509,10 +508,7 @@ class TestHighPerformanceSyncManagerAdvanced:
         stats = SyncStats(start_time=datetime.now())
 
         # Mock IssueParser
-        with patch(
-            "roadmap.performance_sync.IssueParser"
-        ) as mock_parser:
-
+        with patch("roadmap.performance_sync.IssueParser") as mock_parser:
             hp_sync_manager._bulk_write_issues(files_to_write, stats)
 
             # Verify the correct save methods were called
@@ -597,7 +593,6 @@ class TestHighPerformanceSyncManagerAdvanced:
 
     def test_bulk_write_milestones(self, hp_sync_manager):
         """Test bulk milestone writing."""
-        from pathlib import Path
 
         milestone1 = Milestone(name="v1.0", description="First release")
         milestone2 = Milestone(name="v2.0", description="Second release")
@@ -606,10 +601,7 @@ class TestHighPerformanceSyncManagerAdvanced:
             (milestone2, Path("/tmp/v2.0.md")),
         ]
 
-        with patch(
-            "roadmap.performance_sync.MilestoneParser"
-        ) as mock_parser:
-
+        with patch("roadmap.performance_sync.MilestoneParser") as mock_parser:
             hp_sync_manager._bulk_write_milestones(files_to_write)
 
             # Verify the correct save methods were called

@@ -83,11 +83,11 @@ class TestBulkOperations:
         self.temp_dir = Path(tempfile.mkdtemp())
         self.old_cwd = os.getcwd()
         os.chdir(self.temp_dir)
-        
+
         # Create .roadmap directory structure in temp dir
         roadmap_dir = self.temp_dir / ".roadmap"
         roadmap_dir.mkdir(exist_ok=True)
-        
+
         self.bulk_ops = BulkOperations(max_workers=2)
 
         # Create test directory structure

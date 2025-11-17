@@ -74,7 +74,7 @@ def test_list_all_issues(temp_roadmap):
     assert "5 all issues" in result.output
     # Check for actual issue titles in the output
     assert "Todo" in result.output  # "Open Todo Issue"
-    assert "Blocked" in result.output  # "Blocked Issue" 
+    assert "Blocked" in result.output  # "Blocked Issue"
     assert "Done" in result.output  # "Done Issue"
     assert "Backlog" in result.output  # "Backlog Issue"
     assert "Future" in result.output  # "Future Issue"

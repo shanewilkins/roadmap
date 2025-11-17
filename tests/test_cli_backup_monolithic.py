@@ -9,7 +9,6 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
-from roadmap.models import Priority, Status
 
 
 @pytest.fixture(autouse=True)
@@ -18,25 +17,25 @@ def reset_cli_state():
     # Clear any cached Click contexts and CLI state
     import os
     import sys
-    
+
     # Store original environment
     original_cwd = os.getcwd()
     original_env = os.environ.copy()
-    
+
     # Clear Click-related caches if they exist
-    if hasattr(main, 'make_context'):
+    if hasattr(main, "make_context"):
         try:
-            ctx = main.make_context('main', [])
+            ctx = main.make_context("main", [])
             ctx.reset()
         except:
             pass
-    
+
     # Clear any module-level state
-    if hasattr(sys.modules.get('roadmap.cli'), '_cached_core'):
-        delattr(sys.modules['roadmap.cli'], '_cached_core')
-    
+    if hasattr(sys.modules.get("roadmap.cli"), "_cached_core"):
+        delattr(sys.modules["roadmap.cli"], "_cached_core")
+
     yield
-    
+
     # Restore original state
     os.chdir(original_cwd)
     os.environ.clear()
@@ -47,6 +46,7 @@ def reset_cli_state():
 def cli_runner():
     """Create an isolated CLI runner for testing."""
     from click.testing import CliRunner
+
     return CliRunner()
 
 
@@ -58,12 +58,21 @@ def cli_isolated_fs():
         yield Path.cwd()
 
 
-@pytest.fixture  
+@pytest.fixture
 def initialized_roadmap():
     """Create a temporary directory with initialized roadmap using CliRunner isolation."""
     runner = CliRunner()
     with runner.isolated_filesystem():
-        result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
+        result = runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "Test Project",
+            ],
+        )
         assert result.exit_code == 0
         yield Path.cwd()
 
@@ -86,7 +95,16 @@ def test_cli_help(cli_runner):
 def test_init_command(cli_isolated_fs):
     """Test the init command."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
+    result = runner.invoke(
+        main,
+        [
+            "init",
+            "--non-interactive",
+            "--skip-github",
+            "--project-name",
+            "Test Project",
+        ],
+    )
     assert result.exit_code == 0
     assert "Roadmap CLI Initialization" in result.output
     assert "Setup Complete!" in result.output
@@ -95,7 +113,16 @@ def test_init_command(cli_isolated_fs):
 def test_init_command_already_initialized(initialized_roadmap):
     """Test init command when roadmap is already initialized."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
+    result = runner.invoke(
+        main,
+        [
+            "init",
+            "--non-interactive",
+            "--skip-github",
+            "--project-name",
+            "Test Project",
+        ],
+    )
     assert result.exit_code == 0
     assert "Roadmap already initialized" in result.output
 
@@ -318,189 +345,6 @@ def test_issue_delete_without_roadmap(temp_dir):
 # Issue Commands Tests
 
 
-def test_issue_create_command(initialized_roadmap):
-    """Test creating an issue."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "create", "test-issue"])
-    assert result.exit_code == 0
-    assert "Created issue: test-issue" in result.output
-
-
-def test_issue_create_with_options(initialized_roadmap):
-    """Test creating an issue with all options."""
-    runner = CliRunner()
-    result = runner.invoke(
-        main,
-        [
-            "issue",
-            "create",
-            "test-issue",
-            "--priority",
-            "high",
-            "--milestone",
-            "v1.0",
-            "--labels",
-            "bug",
-            "--labels",
-            "urgent",
-        ],
-    )
-    assert result.exit_code == 0
-    assert "Created issue: test-issue" in result.output
-    assert "Priority: high" in result.output
-    # Check for milestone parts due to ANSI color codes
-    assert "Milestone:" in result.output and "v1.0" in result.output
-
-
-def test_issue_create_without_roadmap(temp_dir):
-    """Test creating issue without initialized roadmap."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "create", "test-issue"])
-    assert result.exit_code == 0
-    assert "Roadmap not initialized" in result.output
-
-
-def test_issue_create_with_error(initialized_roadmap):
-    """Test issue creation with error."""
-    runner = CliRunner()
-    with patch("roadmap.core.RoadmapCore.create_issue") as mock_create:
-        mock_create.side_effect = Exception("Test error")
-        result = runner.invoke(main, ["issue", "create", "test-issue"])
-        assert result.exit_code == 0
-        assert "Failed to create issue" in result.output
-
-
-def test_issue_list_command_empty(initialized_roadmap):
-    """Test listing issues when none exist."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "list"])
-    assert result.exit_code == 0
-    assert "No all issues found" in result.output
-
-
-def test_issue_list_command_with_issues(initialized_roadmap):
-    """Test listing issues when they exist."""
-    runner = CliRunner()
-
-    # Create some issues first
-    runner.invoke(main, ["issue", "create", "issue-1", "--priority", "high"])
-    runner.invoke(main, ["issue", "create", "issue-2", "--priority", "low"])
-
-    result = runner.invoke(main, ["issue", "list"])
-    assert result.exit_code == 0
-    assert "issue-1" in result.output
-    assert "issue-2" in result.output
-
-
-def test_issue_list_with_filters(initialized_roadmap):
-    """Test listing issues with filters."""
-    runner = CliRunner()
-
-    # Create issues with different attributes
-    runner.invoke(main, ["issue", "create", "high-issue", "--priority", "high"])
-    runner.invoke(main, ["issue", "create", "low-issue", "--priority", "low"])
-
-    # Test priority filter
-    result = runner.invoke(main, ["issue", "list", "--priority", "high"])
-    assert result.exit_code == 0
-    assert "high-issue" in result.output
-    assert "low-issue" not in result.output
-
-
-def test_issue_list_without_roadmap(temp_dir):
-    """Test listing issues without initialized roadmap."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "list"])
-    assert result.exit_code == 0
-    assert "Roadmap not initialized" in result.output
-
-
-def test_issue_list_with_error(initialized_roadmap):
-    """Test issue listing with error."""
-    runner = CliRunner()
-    with patch("roadmap.core.RoadmapCore.list_issues") as mock_list:
-        mock_list.side_effect = Exception("Test error")
-        result = runner.invoke(main, ["issue", "list"])
-        assert result.exit_code == 0
-        assert "Failed to list issues" in result.output
-
-
-def test_issue_update_command(initialized_roadmap):
-    """Test updating an issue."""
-    runner = CliRunner()
-
-    # Create issue first
-    result = runner.invoke(main, ["issue", "create", "test-issue"])
-    issue_id = None
-    for line in result.output.split("\n"):
-        if "ID:" in line:
-            issue_id = line.split(":")[1].strip()
-            break
-
-    assert issue_id is not None
-
-    # Update the issue
-    result = runner.invoke(
-        main,
-        ["issue", "update", issue_id, "--status", "in-progress", "--priority", "high"],
-    )
-    assert result.exit_code == 0
-    assert "Updated issue" in result.output
-
-
-def test_issue_update_not_found(initialized_roadmap):
-    """Test updating non-existent issue."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "update", "nonexistent", "--status", "done"])
-    assert result.exit_code == 0
-    assert "Issue not found" in result.output
-
-
-def test_issue_update_without_roadmap(temp_dir):
-    """Test updating issue without initialized roadmap."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "update", "test-id", "--status", "done"])
-    assert result.exit_code == 0
-    assert "Roadmap not initialized" in result.output
-
-
-def test_issue_delete_command(initialized_roadmap):
-    """Test deleting an issue."""
-    runner = CliRunner()
-
-    # Create issue first
-    result = runner.invoke(main, ["issue", "create", "test-issue"])
-    issue_id = None
-    for line in result.output.split("\n"):
-        if "ID:" in line:
-            issue_id = line.split(":")[1].strip()
-            break
-
-    assert issue_id is not None
-
-    # Delete the issue (provide 'y' as input to confirmation prompt)
-    result = runner.invoke(main, ["issue", "delete", issue_id], input="y\n")
-    assert result.exit_code == 0
-    assert "Permanently deleted issue" in result.output
-
-
-def test_issue_delete_not_found(initialized_roadmap):
-    """Test deleting non-existent issue."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "delete", "nonexistent"], input="y\n")
-    assert result.exit_code == 0
-    assert "Issue not found" in result.output
-
-
-def test_issue_delete_without_roadmap(temp_dir):
-    """Test deleting issue without initialized roadmap."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "delete", "test-id"], input="y\n")
-    assert result.exit_code == 0
-    assert "Roadmap not initialized" in result.output
-
-
-# Milestone Commands Tests
 
 
 def test_milestone_help(cli_runner):
@@ -976,7 +820,16 @@ def test_issue_update_with_reason(initialized_roadmap):
 
     # Update with reason
     result = runner.invoke(
-        main, ["issue", "update", issue_id, "--status", "done", "--reason", "Feature complete"]
+        main,
+        [
+            "issue",
+            "update",
+            issue_id,
+            "--status",
+            "done",
+            "--reason",
+            "Feature complete",
+        ],
     )
     assert result.exit_code == 0
     assert "✅ Updated issue: test-issue" in result.output
@@ -1103,7 +956,10 @@ class TestSyncBidirectionalCommand:
         """Test bidirectional sync without GitHub configuration."""
         runner = CliRunner()
         mock_sync_manager.is_configured.return_value = False
-        mock_sync_manager.test_connection.return_value = (False, "GitHub integration not configured")
+        mock_sync_manager.test_connection.return_value = (
+            False,
+            "GitHub integration not configured",
+        )
 
         with patch("roadmap.cli.RoadmapCore") as mock_core:
             mock_core.return_value.is_initialized.return_value = True
@@ -1285,7 +1141,9 @@ class TestMilestoneUpdateCommand:
             mock_core_instance.is_initialized.return_value = True
             mock_core_instance.get_milestone.return_value = None
 
-            result = runner.invoke(main, ["milestone", "update", "NonExistent", "--description", "Test"])
+            result = runner.invoke(
+                main, ["milestone", "update", "NonExistent", "--description", "Test"]
+            )
 
             assert result.exit_code == 0
             assert "❌ Milestone not found: NonExistent" in result.output
@@ -1432,7 +1290,9 @@ class TestErrorHandlingCLI:
         with patch("roadmap.cli.RoadmapCore") as mock_core:
             mock_core_instance = Mock()
             mock_core_instance.is_initialized.return_value = True
-            mock_core_instance.create_milestone.side_effect = Exception("Database error")
+            mock_core_instance.create_milestone.side_effect = Exception(
+                "Database error"
+            )
             mock_core.return_value = mock_core_instance
 
             result = runner.invoke(main, ["milestone", "create", "Test Milestone"])
@@ -1575,12 +1435,13 @@ class TestRoadmapCommands:
             try:
                 # Change to temp directory
                 os.chdir(temp_dir)
-                
+
                 # Initialize roadmap in temp directory
                 from roadmap.core import RoadmapCore
+
                 core = RoadmapCore()
                 core.initialize()
-                
+
                 yield temp_dir
             finally:
                 # Always restore original directory
@@ -1596,18 +1457,14 @@ class TestRoadmapCommands:
 
     def test_roadmap_create_command(self, cli_runner, isolated_roadmap_dir):
         """Test project create command with restored functionality."""
-        result = cli_runner.invoke(main, [
-            "project", "create", "test-roadmap"
-        ])
+        result = cli_runner.invoke(main, ["project", "create", "test-roadmap"])
         assert result.exit_code == 0
         assert "Created project:" in result.output
         assert "Name: test-roadmap" in result.output
 
     def test_roadmap_create_with_all_options(self, cli_runner, isolated_roadmap_dir):
         """Test project create command with restored functionality."""
-        result = cli_runner.invoke(main, [
-            "project", "create", "full-roadmap"
-        ])
+        result = cli_runner.invoke(main, ["project", "create", "full-roadmap"])
         assert result.exit_code == 0
         assert "Created project:" in result.output
         assert "Name: full-roadmap" in result.output
@@ -1618,13 +1475,14 @@ class TestRoadmapCommands:
             original_cwd = os.getcwd()
             try:
                 os.chdir(temp_dir)
-                result = cli_runner.invoke(main, [
-                    "project", "create", "test-project"
-                ])
+                result = cli_runner.invoke(main, ["project", "create", "test-project"])
                 # The command might succeed if it creates a project automatically
                 # or fail if it requires manual initialization
                 if result.exit_code != 0:
-                    assert "not initialized" in result.output.lower() or "error" in result.output.lower()
+                    assert (
+                        "not initialized" in result.output.lower()
+                        or "error" in result.output.lower()
+                    )
             finally:
                 os.chdir(original_cwd)
 
@@ -1644,42 +1502,55 @@ class TestRoadmapCommands:
                 result = cli_runner.invoke(main, ["project", "overview"])
                 # Command should either fail gracefully or handle missing projects
                 if result.exit_code != 0 and result.output:
-                    assert "not initialized" in result.output.lower() or "error" in result.output.lower()
+                    assert (
+                        "not initialized" in result.output.lower()
+                        or "error" in result.output.lower()
+                    )
             finally:
                 os.chdir(original_cwd)
 
     def test_roadmap_create_invalid_priority(self, cli_runner, isolated_roadmap_dir):
         """Test project create with invalid priority."""
-        result = cli_runner.invoke(main, [
-            "project", "create", "invalid-priority-project",
-            "--priority", "invalid"
-        ])
+        result = cli_runner.invoke(
+            main,
+            ["project", "create", "invalid-priority-project", "--priority", "invalid"],
+        )
         assert result.exit_code != 0
 
     def test_roadmap_create_invalid_date_format(self, cli_runner, isolated_roadmap_dir):
         """Test project create with invalid date format."""
-        result = cli_runner.invoke(main, [
-            "project", "create", "invalid-date-project",
-            "--start-date", "invalid-date"
-        ])
+        result = cli_runner.invoke(
+            main,
+            [
+                "project",
+                "create",
+                "invalid-date-project",
+                "--start-date",
+                "invalid-date",
+            ],
+        )
         # The command might succeed if it gracefully handles invalid dates
         # or fail with validation error - both are acceptable
         if result.exit_code != 0:
-            assert "error" in result.output.lower() or "invalid" in result.output.lower()
+            assert (
+                "error" in result.output.lower() or "invalid" in result.output.lower()
+            )
 
     def test_roadmap_update_command(self, cli_runner, isolated_roadmap_dir):
         """Test project create and list commands with restored functionality."""
         # Test creating a project
-        create_result = cli_runner.invoke(main, [
-            "project", "create", "update-test"
-        ])
+        create_result = cli_runner.invoke(main, ["project", "create", "update-test"])
         assert create_result.exit_code == 0
         assert "Created project:" in create_result.output
-        
+
         # Test listing projects
         result = cli_runner.invoke(main, ["project", "list"])
         assert result.exit_code == 0
-        assert "Projects" in result.output or "update-test" in result.output or "No projects found" in result.output
+        assert (
+            "Projects" in result.output
+            or "update-test" in result.output
+            or "No projects found" in result.output
+        )
 
     def test_roadmap_list_command(self, cli_runner, isolated_roadmap_dir):
         """Test roadmap list command with restored functionality."""
@@ -1694,8 +1565,8 @@ class TestRoadmapCommands:
         create_result = cli_runner.invoke(main, ["project", "create", "delete-test"])
         assert create_result.exit_code == 0
         assert "Created project:" in create_result.output
-        
-        # Test that delete functionality is available but project not found 
+
+        # Test that delete functionality is available but project not found
         result = cli_runner.invoke(main, ["project", "delete", "some-id", "--confirm"])
         assert result.exit_code == 0
         assert "Project some-id not found" in result.output
