@@ -1,18 +1,17 @@
 """Git history analytics for tracking developer productivity and project evolution."""
 
 import json
-import os
 import statistics
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-from .datetime_parser import parse_datetime
+from typing import Any
 
 from .core import RoadmapCore
+from .datetime_parser import parse_datetime
 from .git_integration import GitCommit, GitIntegration
-from .models import Issue, Priority, Status
+from .models import Issue, Status
 
 
 @dataclass
@@ -25,7 +24,7 @@ class DeveloperMetrics:
     avg_commits_per_day: float
     avg_completion_time_hours: float
     productivity_score: float
-    specialization_areas: List[str]
+    specialization_areas: list[str]
     collaboration_score: float
 
 
@@ -50,10 +49,10 @@ class TeamInsights:
 
     total_developers: int
     avg_team_velocity: float
-    bottleneck_areas: List[str]
-    top_performers: List[str]
-    collaboration_patterns: Dict[str, Any]
-    recommended_actions: List[str]
+    bottleneck_areas: list[str]
+    top_performers: list[str]
+    collaboration_patterns: dict[str, Any]
+    recommended_actions: list[str]
 
 
 class GitHistoryAnalyzer:
@@ -132,7 +131,7 @@ class GitHistoryAnalyzer:
 
     def analyze_project_velocity(
         self, period: str = "week", num_periods: int = 12
-    ) -> List[ProjectVelocity]:
+    ) -> list[ProjectVelocity]:
         """Analyze project velocity trends over time."""
         if not self.git_integration.is_git_repository():
             raise ValueError("Not in a Git repository")
@@ -257,7 +256,7 @@ class GitHistoryAnalyzer:
             recommended_actions=recommendations,
         )
 
-    def analyze_code_quality_trends(self, days: int = 90) -> Dict[str, Any]:
+    def analyze_code_quality_trends(self, days: int = 90) -> dict[str, Any]:
         """Analyze code quality trends from commit patterns."""
         if not self.git_integration.is_git_repository():
             raise ValueError("Not in a Git repository")
@@ -327,7 +326,7 @@ class GitHistoryAnalyzer:
             ),
         }
 
-    def _analyze_commit_frequency(self, commits: List[GitCommit], days: int) -> float:
+    def _analyze_commit_frequency(self, commits: list[GitCommit], days: int) -> float:
         """Calculate average commits per day for a developer."""
         if not commits or days <= 0:
             return 0.0
@@ -358,8 +357,8 @@ class GitHistoryAnalyzer:
         return min(total_score, 100)
 
     def _analyze_specialization(
-        self, commits: List[GitCommit], issues: List[Issue]
-    ) -> List[str]:
+        self, commits: list[GitCommit], issues: list[Issue]
+    ) -> list[str]:
         """Identify developer's specialization areas."""
         specializations = []
 
@@ -402,7 +401,7 @@ class GitHistoryAnalyzer:
         return list(set(specializations))[:3]  # Return top 3 unique specializations
 
     def _calculate_collaboration_score(
-        self, dev_commits: List[GitCommit], all_commits: List[GitCommit]
+        self, dev_commits: list[GitCommit], all_commits: list[GitCommit]
     ) -> float:
         """Calculate collaboration score based on shared files and timing."""
         if not dev_commits or not all_commits:
@@ -431,7 +430,7 @@ class GitHistoryAnalyzer:
 
     def _get_commits_in_period(
         self, start_date: datetime, end_date: datetime
-    ) -> List[GitCommit]:
+    ) -> list[GitCommit]:
         """Get commits within a specific time period."""
         all_commits = self.git_integration.get_recent_commits(count=1000)
 
@@ -468,7 +467,7 @@ class GitHistoryAnalyzer:
         return commit_score + issue_score + code_score + refactor_bonus
 
     def _determine_trend_direction(
-        self, previous_velocities: List[ProjectVelocity], current_score: float
+        self, previous_velocities: list[ProjectVelocity], current_score: float
     ) -> str:
         """Determine if velocity is trending up, down, or stable."""
         if len(previous_velocities) < 2:
@@ -489,8 +488,8 @@ class GitHistoryAnalyzer:
         return "stable"
 
     def _identify_bottlenecks(
-        self, dev_metrics: List[DeveloperMetrics], commits: List[GitCommit]
-    ) -> List[str]:
+        self, dev_metrics: list[DeveloperMetrics], commits: list[GitCommit]
+    ) -> list[str]:
         """Identify potential bottleneck areas in the team."""
         bottlenecks = []
 
@@ -517,8 +516,8 @@ class GitHistoryAnalyzer:
         return bottlenecks[:3]  # Return top 3 bottlenecks
 
     def _analyze_collaboration_patterns(
-        self, commits: List[GitCommit], developers: List[str]
-    ) -> Dict[str, Any]:
+        self, commits: list[GitCommit], developers: list[str]
+    ) -> dict[str, Any]:
         """Analyze team collaboration patterns."""
         # File sharing analysis
         file_collaborations = defaultdict(set)
@@ -551,8 +550,8 @@ class GitHistoryAnalyzer:
         }
 
     def _generate_recommendations(
-        self, dev_metrics: List[DeveloperMetrics], bottlenecks: List[str]
-    ) -> List[str]:
+        self, dev_metrics: list[DeveloperMetrics], bottlenecks: list[str]
+    ) -> list[str]:
         """Generate actionable recommendations for team improvement."""
         recommendations = []
 
@@ -616,7 +615,7 @@ class GitHistoryAnalyzer:
 
     def _get_quality_recommendations(
         self, bug_ratio: float, large_commits_ratio: float, refactor_ratio: float
-    ) -> List[str]:
+    ) -> list[str]:
         """Get code quality improvement recommendations."""
         recommendations = []
 
@@ -644,7 +643,7 @@ class AnalyticsReportGenerator:
     def __init__(self, analyzer: GitHistoryAnalyzer):
         self.analyzer = analyzer
 
-    def generate_team_report(self, days: int = 30) -> Dict[str, Any]:
+    def generate_team_report(self, days: int = 30) -> dict[str, Any]:
         """Generate comprehensive team analytics report."""
         try:
             insights = self.analyzer.generate_team_insights(days)
@@ -708,7 +707,7 @@ class AnalyticsReportGenerator:
             }
 
     def save_report_to_file(
-        self, report: Dict[str, Any], filename: Optional[str] = None
+        self, report: dict[str, Any], filename: str | None = None
     ) -> str:
         """Save analytics report to JSON file."""
         if not filename:

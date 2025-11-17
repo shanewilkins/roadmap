@@ -9,10 +9,9 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Lock
-from typing import Any, ContextManager, Dict, Optional
+from typing import Any, ContextManager
 
 from .file_utils import ensure_directory_exists
-from .models import Issue, Milestone
 
 
 class FileLockError(Exception):
@@ -79,7 +78,7 @@ class FileLock:
                 self.acquired = True
                 return True
 
-            except (IOError, OSError) as e:
+            except OSError as e:
                 if e.errno in (errno.EAGAIN, errno.EACCES):
                     # Lock is already held, wait and retry
                     if self.lock_file:
@@ -128,22 +127,22 @@ class FileLock:
 
         try:
             # Try to open and lock the file
-            with open(self.lock_path, "r") as f:
+            with open(self.lock_path) as f:
                 fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
             return False  # No lock held
-        except (IOError, OSError):
+        except OSError:
             return True  # Lock is held
 
-    def get_lock_info(self) -> Optional[Dict[str, Any]]:
+    def get_lock_info(self) -> dict[str, Any] | None:
         """Get information about the current lock holder."""
         if not self.lock_path.exists():
             return None
 
         try:
-            with open(self.lock_path, "r") as f:
+            with open(self.lock_path) as f:
                 return json.load(f)
-        except (IOError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError):
             return None
 
     def force_unlock(self) -> bool:
@@ -161,11 +160,11 @@ class LockManager:
 
     def __init__(self, default_timeout: float = 30.0):
         self.default_timeout = default_timeout
-        self.active_locks: Dict[str, FileLock] = {}
+        self.active_locks: dict[str, FileLock] = {}
         self._global_lock = Lock()  # Thread safety
 
     def lock_file(
-        self, file_path: Path, timeout: Optional[float] = None
+        self, file_path: Path, timeout: float | None = None
     ) -> ContextManager[FileLock]:
         """Get a context manager for file locking."""
         timeout = timeout or self.default_timeout
@@ -186,7 +185,7 @@ class LockManager:
         lock = FileLock(file_path)
         return lock.is_locked()
 
-    def get_lock_info(self, file_path: Path) -> Optional[Dict[str, Any]]:
+    def get_lock_info(self, file_path: Path) -> dict[str, Any] | None:
         """Get lock information for a file."""
         lock = FileLock(file_path)
         return lock.get_lock_info()
@@ -219,8 +218,8 @@ class LockManager:
         return cleaned
 
     def get_all_locks(
-        self, search_dir: Optional[Path] = None
-    ) -> Dict[str, Dict[str, Any]]:
+        self, search_dir: Path | None = None
+    ) -> dict[str, dict[str, Any]]:
         """Get information about all current locks."""
         locks = {}
         search_path = search_dir or Path(".")
@@ -241,10 +240,10 @@ class LockManager:
 class LockedFileOperations:
     """File operations with automatic locking."""
 
-    def __init__(self, lock_manager: Optional[LockManager] = None):
+    def __init__(self, lock_manager: LockManager | None = None):
         self.lock_manager = lock_manager or LockManager()
 
-    def read_file_locked(self, file_path: Path, timeout: Optional[float] = None) -> str:
+    def read_file_locked(self, file_path: Path, timeout: float | None = None) -> str:
         """Read a file with locking."""
         with self.lock_manager.lock_file(file_path, timeout):
             return file_path.read_text(encoding="utf-8")
@@ -253,7 +252,7 @@ class LockedFileOperations:
         self,
         file_path: Path,
         content: str,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         backup: bool = True,
     ) -> bool:
         """Write a file with locking and optional backup."""
@@ -292,7 +291,7 @@ class LockedFileOperations:
                 raise FileLockError(f"Failed to write file: {e}")
 
     def update_file_locked(
-        self, file_path: Path, updater_func, timeout: Optional[float] = None
+        self, file_path: Path, updater_func, timeout: float | None = None
     ) -> Any:
         """Update a file using an updater function with locking."""
         with self.lock_manager.lock_file(file_path, timeout):

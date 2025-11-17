@@ -2,15 +2,15 @@
 
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import requests
-from .datetime_parser import parse_github_datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .credentials import get_credential_manager, mask_token
-from .models import Comment, Issue, Milestone, MilestoneStatus, Priority, Status
+from .credentials import get_credential_manager
+from .datetime_parser import parse_github_datetime
+from .models import Comment, Priority, Status
 
 
 class GitHubAPIError(Exception):
@@ -26,9 +26,9 @@ class GitHubClient:
 
     def __init__(
         self,
-        token: Optional[str] = None,
-        owner: Optional[str] = None,
-        repo: Optional[str] = None,
+        token: str | None = None,
+        owner: str | None = None,
+        repo: str | None = None,
     ):
         """Initialize GitHub client.
 
@@ -78,7 +78,7 @@ class GitHubClient:
             }
         )
 
-    def _get_token_secure(self) -> Optional[str]:
+    def _get_token_secure(self) -> str | None:
         """Get token from secure sources (environment variable or credential manager)."""
         # First try environment variable
         env_token = os.getenv("GITHUB_TOKEN")
@@ -131,12 +131,12 @@ class GitHubClient:
         except requests.exceptions.RequestException as e:
             raise GitHubAPIError(f"Request failed: {e}")
 
-    def test_authentication(self) -> Dict[str, Any]:
+    def test_authentication(self) -> dict[str, Any]:
         """Test authentication and get user info."""
         response = self._make_request("GET", "/user")
         return response.json()
 
-    def test_repository_access(self) -> Dict[str, Any]:
+    def test_repository_access(self) -> dict[str, Any]:
         """Test repository access."""
         self._check_repository()
         response = self._make_request("GET", f"/repos/{self.owner}/{self.repo}")
@@ -147,11 +147,11 @@ class GitHubClient:
     def get_issues(
         self,
         state: str = "all",
-        labels: Optional[List[str]] = None,
-        milestone: Optional[str] = None,
-        assignee: Optional[str] = None,
+        labels: list[str] | None = None,
+        milestone: str | None = None,
+        assignee: str | None = None,
         per_page: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get issues from the repository."""
         self._check_repository()
 
@@ -174,7 +174,7 @@ class GitHubClient:
         )
         return response.json()
 
-    def get_issue(self, issue_number: int) -> Dict[str, Any]:
+    def get_issue(self, issue_number: int) -> dict[str, Any]:
         """Get a specific issue by number."""
         self._check_repository()
         response = self._make_request(
@@ -185,11 +185,11 @@ class GitHubClient:
     def create_issue(
         self,
         title: str,
-        body: Optional[str] = None,
-        labels: Optional[List[str]] = None,
-        assignees: Optional[List[str]] = None,
-        milestone: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        body: str | None = None,
+        labels: list[str] | None = None,
+        assignees: list[str] | None = None,
+        milestone: int | None = None,
+    ) -> dict[str, Any]:
         """Create a new issue."""
         self._check_repository()
 
@@ -212,13 +212,13 @@ class GitHubClient:
     def update_issue(
         self,
         issue_number: int,
-        title: Optional[str] = None,
-        body: Optional[str] = None,
-        state: Optional[str] = None,
-        labels: Optional[List[str]] = None,
-        assignees: Optional[List[str]] = None,
-        milestone: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        title: str | None = None,
+        body: str | None = None,
+        state: str | None = None,
+        labels: list[str] | None = None,
+        assignees: list[str] | None = None,
+        milestone: int | None = None,
+    ) -> dict[str, Any]:
         """Update an existing issue."""
         self._check_repository()
 
@@ -242,17 +242,17 @@ class GitHubClient:
         )
         return response.json()
 
-    def close_issue(self, issue_number: int) -> Dict[str, Any]:
+    def close_issue(self, issue_number: int) -> dict[str, Any]:
         """Close an issue."""
         return self.update_issue(issue_number, state="closed")
 
-    def reopen_issue(self, issue_number: int) -> Dict[str, Any]:
+    def reopen_issue(self, issue_number: int) -> dict[str, Any]:
         """Reopen an issue."""
         return self.update_issue(issue_number, state="open")
 
     # Milestone Management
 
-    def get_milestones(self, state: str = "open") -> List[Dict[str, Any]]:
+    def get_milestones(self, state: str = "open") -> list[dict[str, Any]]:
         """Get milestones from the repository."""
         self._check_repository()
 
@@ -262,7 +262,7 @@ class GitHubClient:
         )
         return response.json()
 
-    def get_milestone(self, milestone_number: int) -> Dict[str, Any]:
+    def get_milestone(self, milestone_number: int) -> dict[str, Any]:
         """Get a specific milestone by number."""
         self._check_repository()
         response = self._make_request(
@@ -273,10 +273,10 @@ class GitHubClient:
     def create_milestone(
         self,
         title: str,
-        description: Optional[str] = None,
-        due_date: Optional[datetime] = None,
+        description: str | None = None,
+        due_date: datetime | None = None,
         state: str = "open",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new milestone."""
         self._check_repository()
 
@@ -300,11 +300,11 @@ class GitHubClient:
     def update_milestone(
         self,
         milestone_number: int,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        due_date: Optional[datetime] = None,
-        state: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        title: str | None = None,
+        description: str | None = None,
+        due_date: datetime | None = None,
+        state: str | None = None,
+    ) -> dict[str, Any]:
         """Update an existing milestone."""
         self._check_repository()
 
@@ -340,15 +340,15 @@ class GitHubClient:
 
     # Label Management
 
-    def get_labels(self) -> List[Dict[str, Any]]:
+    def get_labels(self) -> list[dict[str, Any]]:
         """Get repository labels."""
         self._check_repository()
         response = self._make_request("GET", f"/repos/{self.owner}/{self.repo}/labels")
         return response.json()
 
     def create_label(
-        self, name: str, color: str, description: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, name: str, color: str, description: str | None = None
+    ) -> dict[str, Any]:
         """Create a new label."""
         self._check_repository()
 
@@ -365,10 +365,10 @@ class GitHubClient:
     def update_label(
         self,
         label_name: str,
-        new_name: Optional[str] = None,
-        color: Optional[str] = None,
-        description: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        new_name: str | None = None,
+        color: str | None = None,
+        description: str | None = None,
+    ) -> dict[str, Any]:
         """Update an existing label."""
         self._check_repository()
 
@@ -395,7 +395,7 @@ class GitHubClient:
 
     # Utility Methods
 
-    def priority_to_labels(self, priority: Priority) -> List[str]:
+    def priority_to_labels(self, priority: Priority) -> list[str]:
         """Convert priority to GitHub labels."""
         priority_labels = {
             Priority.CRITICAL: ["priority:critical"],
@@ -405,7 +405,7 @@ class GitHubClient:
         }
         return priority_labels.get(priority, [])
 
-    def status_to_labels(self, status: Status) -> List[str]:
+    def status_to_labels(self, status: Status) -> list[str]:
         """Convert status to GitHub labels."""
         status_labels = {
             Status.TODO: ["status:todo"],
@@ -416,7 +416,7 @@ class GitHubClient:
         }
         return status_labels.get(status, [])
 
-    def labels_to_priority(self, labels: List[str]) -> Optional[Priority]:
+    def labels_to_priority(self, labels: list[str]) -> Priority | None:
         """Extract priority from GitHub labels."""
         label_names = [
             label.get("name", label) if isinstance(label, dict) else label
@@ -435,7 +435,7 @@ class GitHubClient:
 
         return None
 
-    def labels_to_status(self, labels: List[str]) -> Optional[Status]:
+    def labels_to_status(self, labels: list[str]) -> Status | None:
         """Extract status from GitHub labels."""
         label_names = [
             label.get("name", label) if isinstance(label, dict) else label
@@ -518,7 +518,7 @@ class GitHubClient:
                     # Label might already exist, continue
                     continue
 
-    def get_issue_comments(self, issue_number: int) -> List[Comment]:
+    def get_issue_comments(self, issue_number: int) -> list[Comment]:
         """Get all comments for a specific issue.
 
         Args:
@@ -629,7 +629,7 @@ class GitHubClient:
         response = self._make_request("GET", "/user")
         return response.json()["login"]
 
-    def get_repository_collaborators(self) -> List[str]:
+    def get_repository_collaborators(self) -> list[str]:
         """Get all collaborators for the repository.
 
         Returns:
@@ -662,7 +662,7 @@ class GitHubClient:
 
         return sorted(collaborators)
 
-    def get_repository_contributors(self) -> List[str]:
+    def get_repository_contributors(self) -> list[str]:
         """Get all contributors to the repository.
 
         Returns:
@@ -694,7 +694,7 @@ class GitHubClient:
 
         return sorted(contributors)
 
-    def get_team_members(self) -> List[str]:
+    def get_team_members(self) -> list[str]:
         """Get all team members (collaborators and contributors combined).
 
         Returns:
@@ -709,10 +709,10 @@ class GitHubClient:
 
     def validate_user_exists(self, username: str) -> bool:
         """Check if a GitHub user exists.
-        
+
         Args:
             username: GitHub username to validate
-            
+
         Returns:
             True if user exists, False otherwise
         """
@@ -724,10 +724,10 @@ class GitHubClient:
 
     def validate_user_has_repository_access(self, username: str) -> bool:
         """Check if a user has access to the repository (is collaborator or contributor).
-        
+
         Args:
             username: GitHub username to validate
-            
+
         Returns:
             True if user has repository access, False otherwise
         """
@@ -739,10 +739,10 @@ class GitHubClient:
 
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:
         """Validate an assignee for issue assignment.
-        
+
         Args:
             assignee: Username to validate
-            
+
         Returns:
             Tuple of (is_valid, error_message)
             - (True, "") if valid
@@ -759,6 +759,9 @@ class GitHubClient:
 
         # Then check if they have repository access
         if not self.validate_user_has_repository_access(assignee):
-            return False, f"User '{assignee}' does not have access to repository {self.owner}/{self.repo}"
+            return (
+                False,
+                f"User '{assignee}' does not have access to repository {self.owner}/{self.repo}",
+            )
 
         return True, ""

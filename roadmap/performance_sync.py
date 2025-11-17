@@ -1,19 +1,13 @@
 """High-performance sync system with optimizations for large-scale operations."""
 
-import asyncio
 import logging
-import time
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from .datetime_parser import parse_github_datetime
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
-from .bulk_operations import BulkOperationResult, bulk_operations
-from .file_locking import locked_file_ops
-from .github_client import GitHubAPIError
+from .datetime_parser import parse_github_datetime
 from .models import Issue, Milestone, MilestoneStatus, Priority, Status
 from .parser import IssueParser, MilestoneParser
 from .sync import SyncManager
@@ -26,7 +20,7 @@ class SyncStats:
     """Statistics for sync operations."""
 
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
 
     issues_processed: int = 0
     issues_created: int = 0
@@ -42,7 +36,7 @@ class SyncStats:
     cache_hits: int = 0
     disk_writes: int = 0
 
-    errors: List[str] = None
+    errors: list[str] = None
 
     def __post_init__(self):
         if self.errors is None:
@@ -94,12 +88,12 @@ class SyncCache:
 
     def __init__(self, ttl_seconds: int = 300):  # 5-minute TTL
         self.ttl_seconds = ttl_seconds
-        self._milestones: Optional[Tuple[datetime, List[Dict]]] = None
-        self._issues: Optional[Tuple[datetime, List[Dict]]] = None
-        self._milestone_map: Dict[str, int] = {}
+        self._milestones: tuple[datetime, list[dict]] | None = None
+        self._issues: tuple[datetime, list[dict]] | None = None
+        self._milestone_map: dict[str, int] = {}
         self._last_clear = datetime.now()
 
-    def get_milestones(self, github_client) -> List[Dict]:
+    def get_milestones(self, github_client) -> list[dict]:
         """Get cached milestones or fetch from GitHub."""
         now = datetime.now()
 
@@ -118,7 +112,7 @@ class SyncCache:
 
         return milestones
 
-    def get_issues(self, github_client) -> List[Dict]:
+    def get_issues(self, github_client) -> list[dict]:
         """Get cached issues or fetch from GitHub."""
         now = datetime.now()
 
@@ -131,9 +125,7 @@ class SyncCache:
 
         return issues
 
-    def find_milestone_number(
-        self, milestone_name: str, github_client
-    ) -> Optional[int]:
+    def find_milestone_number(self, milestone_name: str, github_client) -> int | None:
         """Find milestone number by name using cache."""
         # Ensure milestones are cached
         if not self._milestone_map:
@@ -258,7 +250,7 @@ class HighPerformanceSyncManager:
         return self.stats
 
     def _process_issue_batch(
-        self, github_issues: List[Dict], local_issues: Dict[int, Issue], batch_idx: int
+        self, github_issues: list[dict], local_issues: dict[int, Issue], batch_idx: int
     ) -> SyncStats:
         """Process a batch of GitHub issues."""
         batch_stats = SyncStats(start_time=datetime.now())
@@ -310,7 +302,7 @@ class HighPerformanceSyncManager:
         return batch_stats
 
     def _bulk_write_issues(
-        self, files_to_write: List[Tuple[Issue, Path]], stats: SyncStats
+        self, files_to_write: list[tuple[Issue, Path]], stats: SyncStats
     ):
         """Write multiple issues to disk efficiently."""
         for issue, file_path in files_to_write:
@@ -322,7 +314,7 @@ class HighPerformanceSyncManager:
                 stats.errors.append(f"Write error for {file_path.name}: {e}")
                 logger.exception(f"Failed to write issue file {file_path}")
 
-    def _extract_issue_data(self, github_issue: Dict) -> Dict:
+    def _extract_issue_data(self, github_issue: dict) -> dict:
         """Extract issue data from GitHub API response."""
         # Extract priority and status from labels
         labels = github_issue["labels"]
@@ -369,7 +361,7 @@ class HighPerformanceSyncManager:
             "updated": parse_github_datetime(github_issue["updated_at"]),
         }
 
-    def _update_issue_from_data(self, issue: Issue, data: Dict):
+    def _update_issue_from_data(self, issue: Issue, data: dict):
         """Update an existing issue with new data."""
         issue.title = data["title"]
         issue.content = data["content"]
@@ -468,7 +460,7 @@ class HighPerformanceSyncManager:
 
         return self.stats
 
-    def _bulk_write_milestones(self, files_to_write: List[Tuple[Milestone, Path]]):
+    def _bulk_write_milestones(self, files_to_write: list[tuple[Milestone, Path]]):
         """Write multiple milestones to disk efficiently."""
         for milestone, file_path in files_to_write:
             try:
@@ -579,7 +571,7 @@ class HighPerformanceSyncManager:
         if self.progress_callback:
             self.progress_callback(message)
 
-    def get_performance_report(self) -> Dict[str, Any]:
+    def get_performance_report(self) -> dict[str, Any]:
         """Get a comprehensive performance report."""
         return {
             "duration_seconds": self.stats.duration,

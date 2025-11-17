@@ -3,17 +3,18 @@ Sync management CLI commands.
 """
 
 import click
-import os
-from roadmap.sync import SyncManager, SyncConflictStrategy
-from roadmap.credentials import CredentialManager
+
 from roadmap.cli.utils import get_console
+from roadmap.sync import SyncConflictStrategy, SyncManager
 
 console = get_console()
+
 
 @click.group()
 def sync():
     """Synchronize with GitHub repository."""
     pass
+
 
 @sync.command("setup")
 @click.option("--token", help="GitHub token for authentication")
@@ -72,7 +73,7 @@ def sync_setup(ctx: click.Context, token: str, repo: str, insecure: bool):
                 success, message = temp_sync.store_token_secure(token, repo_info)
 
                 if success:
-                    console.print(f"✅ Token stored securely", style="bold green")
+                    console.print("✅ Token stored securely", style="bold green")
                     # Don't store in config file when using secure storage
                 else:
                     console.print(f"❌ {message}", style="bold red")
@@ -111,7 +112,7 @@ def sync_setup(ctx: click.Context, token: str, repo: str, insecure: bool):
         # Set up repository
         success, message = sync_manager.setup_repository()
         if success:
-            console.print(f"✅ GitHub sync setup completed", style="bold green")
+            console.print("✅ GitHub sync setup completed", style="bold green")
         else:
             console.print(f"❌ {message}", style="bold red")
 
@@ -177,8 +178,12 @@ def sync_status(ctx: click.Context):
             console.print("\nToken Sources:", style="bold")
             console.print(f"  - Config file: {token_info.get('config_file')}")
             console.print(f"  - Environment: {token_info.get('environment')}")
-            console.print(f"  - Credential Manager: {token_info.get('credential_manager')}")
-            console.print(f"  - Credential Manager Available: {token_info.get('credential_manager_available')}")
+            console.print(
+                f"  - Credential Manager: {token_info.get('credential_manager')}"
+            )
+            console.print(
+                f"  - Credential Manager Available: {token_info.get('credential_manager_available')}"
+            )
             console.print(f"  - Active Source: {token_info.get('active_source')}")
         except Exception:
             # token_info may not be available on mocks
@@ -186,13 +191,12 @@ def sync_status(ctx: click.Context):
 
         # If credential manager is available, show guidance
         try:
-            if token_info.get('credential_manager_available'):
+            if token_info.get("credential_manager_available"):
                 console.print("\nCredential Manager: Available", style="cyan")
             else:
                 console.print("\nCredential Manager: Not available", style="yellow")
         except Exception:
             pass
-
 
     except Exception as e:
         console.print(f"❌ Failed to get sync status: {e}", style="bold red")
@@ -203,14 +207,26 @@ def sync_status(ctx: click.Context):
 @click.option("--milestones", is_flag=True, help="Push only milestones")
 @click.option("--batch-size", default=50, help="Batch size for bulk operations")
 @click.option("--workers", default=8, help="Number of concurrent workers")
-@click.option("--dry-run", is_flag=True, help="Show what would change without making any remote mutations")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would change without making any remote mutations",
+)
 @click.option(
     "--close-orphaned",
     is_flag=True,
     help="Close remote GitHub issues that were created by roadmap but deleted locally",
 )
 @click.pass_context
-def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int, dry_run: bool, close_orphaned: bool):
+def sync_push(
+    ctx: click.Context,
+    issues: bool,
+    milestones: bool,
+    batch_size: int,
+    workers: int,
+    dry_run: bool,
+    close_orphaned: bool,
+):
     """Push local changes to GitHub."""
     core = ctx.obj["core"]
 
@@ -252,7 +268,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
                 remote_issues = sync_manager.github_client.get_issues(state="all")
 
                 # Build lookups
-                remote_by_number = {i["number"]: i for i in remote_issues if "pull_request" not in i}
+                remote_by_number = {
+                    i["number"]: i for i in remote_issues if "pull_request" not in i
+                }
 
                 actions = []
 
@@ -265,7 +283,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
                             actions.append(("github_missing", li.id, li.github_issue))
                         else:
                             gh_updated = gh.get("updated_at")
-                            comp = sync_manager.sync_strategy.compare_timestamps(li.updated, gh_updated)
+                            comp = sync_manager.sync_strategy.compare_timestamps(
+                                li.updated, gh_updated
+                            )
                             if comp == "local_newer":
                                 actions.append(("push_update", li.id, li.github_issue))
                             elif comp == "remote_newer":
@@ -277,7 +297,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
                     found = any(li.github_issue == num for li in local_issues)
                     if not found:
                         body = gh.get("body") or ""
-                        if "*Created by roadmap CLI*" in body and bool(config.sync.get("close_orphaned", False)):
+                        if "*Created by roadmap CLI*" in body and bool(
+                            config.sync.get("close_orphaned", False)
+                        ):
                             actions.append(("close_orphan", num, gh.get("title")))
                         else:
                             actions.append(("create_local", num, gh.get("title")))
@@ -290,7 +312,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
                 console.print("\nDRY-RUN REPORT", style="bold")
                 console.print("─" * 30)
                 console.print(f"Total local issues: {len(local_issues)}")
-                console.print(f"Total remote issues (excluding PRs): {len(remote_by_number)}")
+                console.print(
+                    f"Total remote issues (excluding PRs): {len(remote_by_number)}"
+                )
                 console.print("\nAction summary:")
                 for k, v in counts.items():
                     console.print(f"  {k}: {v}")
@@ -298,19 +322,33 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
                 console.print("\nDetails:")
                 for kind, id_or_num, title in actions:
                     if kind == "create_github":
-                        console.print(f"Would CREATE on GitHub: local issue {id_or_num} - {title}")
+                        console.print(
+                            f"Would CREATE on GitHub: local issue {id_or_num} - {title}"
+                        )
                     elif kind == "push_update":
-                        console.print(f"Would PUSH update to GitHub: local {id_or_num} -> GitHub #{title}")
+                        console.print(
+                            f"Would PUSH update to GitHub: local {id_or_num} -> GitHub #{title}"
+                        )
                     elif kind == "pull_update":
-                        console.print(f"Would PULL update from GitHub: local {id_or_num} <- GitHub #{title}")
+                        console.print(
+                            f"Would PULL update from GitHub: local {id_or_num} <- GitHub #{title}"
+                        )
                     elif kind == "github_missing":
-                        console.print(f"GitHub issue missing for local {id_or_num}: expected GitHub #{title}")
+                        console.print(
+                            f"GitHub issue missing for local {id_or_num}: expected GitHub #{title}"
+                        )
                     elif kind == "create_local":
-                        console.print(f"Would CREATE local from GitHub: GitHub #{id_or_num} - {title}")
+                        console.print(
+                            f"Would CREATE local from GitHub: GitHub #{id_or_num} - {title}"
+                        )
                     elif kind == "close_orphan":
-                        console.print(f"Would CLOSE remote orphaned GitHub issue: #{id_or_num} - {title}")
+                        console.print(
+                            f"Would CLOSE remote orphaned GitHub issue: #{id_or_num} - {title}"
+                        )
                     elif kind == "noop":
-                        console.print(f"No action needed for local {id_or_num} / GitHub #{title}")
+                        console.print(
+                            f"No action needed for local {id_or_num} / GitHub #{title}"
+                        )
 
             except Exception as e:
                 console.print(f"❌ Dry-run failed: {e}", style="bold red")
@@ -335,7 +373,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
             """Normalize sync result into (success_count, error_count, messages_list)."""
             if isinstance(r, dict):
                 # Support older dict-shaped returns used in some tests/mocks
-                pushed = r.get("pushed") or r.get("success") or r.get("success_count") or 0
+                pushed = (
+                    r.get("pushed") or r.get("success") or r.get("success_count") or 0
+                )
                 failed = r.get("failed") or r.get("errors") or r.get("error_count") or 0
                 msgs = r.get("messages") or r.get("error_messages") or []
                 return int(pushed), int(failed), list(msgs)
@@ -364,7 +404,10 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
 
         # Summary
         if total_success > 0:
-            console.print(f"✅ Successfully synchronized {total_success} items", style="bold green")
+            console.print(
+                f"✅ Successfully synchronized {total_success} items",
+                style="bold green",
+            )
 
         if total_errors > 0:
             console.print(f"❌ {total_errors} errors occurred:", style="bold red")
@@ -383,7 +426,9 @@ def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: in
 @click.option("--batch-size", default=50, help="Batch size for bulk operations")
 @click.option("--workers", default=8, help="Number of concurrent workers")
 @click.pass_context
-def sync_pull(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int):
+def sync_pull(
+    ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int
+):
     """Pull changes from GitHub."""
     core = ctx.obj["core"]
 
@@ -480,7 +525,9 @@ def sync_bidirectional(
                 "remote_wins": SyncConflictStrategy.REMOTE_WINS,
                 "newer_wins": SyncConflictStrategy.NEWER_WINS,
             }
-            sync_manager.sync_strategy.strategy = strategy_map.get(strategy, sync_manager.sync_strategy.strategy)
+            sync_manager.sync_strategy.strategy = strategy_map.get(
+                strategy, sync_manager.sync_strategy.strategy
+            )
         except Exception:
             # If mapping fails, continue with existing strategy
             pass
@@ -493,7 +540,9 @@ def sync_bidirectional(
 
         # Determine what to sync
         sync_issues = issues or not milestones  # Default to issues if nothing specified
-        sync_milestones = milestones or not issues  # Default to milestones if nothing specified
+        sync_milestones = (
+            milestones or not issues
+        )  # Default to milestones if nothing specified
 
         if dry_run:
             console.print("🔍 DRY RUN - No changes will be made", style="bold yellow")
@@ -508,7 +557,9 @@ def sync_bidirectional(
                 local_issues = core.list_issues()
                 remote_issues = sync_manager.github_client.get_issues(state="all")
 
-                remote_by_number = {i["number"]: i for i in remote_issues if "pull_request" not in i}
+                remote_by_number = {
+                    i["number"]: i for i in remote_issues if "pull_request" not in i
+                }
 
                 actions = []
                 conflicts = []
@@ -528,7 +579,9 @@ def sync_bidirectional(
                     conflict = sync_manager.sync_strategy.detect_issue_conflict(li, gh)
                     if conflict:
                         conflicts.append(conflict)
-                        resolution = sync_manager.sync_strategy.resolve_conflict(conflict)
+                        resolution = sync_manager.sync_strategy.resolve_conflict(
+                            conflict
+                        )
                         if resolution == "use_local":
                             actions.append(("push_update", li.id, li.github_issue))
                         elif resolution == "use_remote":
@@ -543,7 +596,9 @@ def sync_bidirectional(
                     found = any(li.github_issue == num for li in local_issues)
                     if not found:
                         body = gh.get("body") or ""
-                        if "*Created by roadmap CLI*" in body and bool(config.sync.get("close_orphaned", False)):
+                        if "*Created by roadmap CLI*" in body and bool(
+                            config.sync.get("close_orphaned", False)
+                        ):
                             actions.append(("close_orphan", num, gh.get("title")))
                         else:
                             actions.append(("create_local", num, gh.get("title")))
@@ -556,33 +611,53 @@ def sync_bidirectional(
                 console.print("\nDRY-RUN BIDIRECTIONAL REPORT", style="bold")
                 console.print("─" * 30)
                 console.print(f"Total local issues: {len(local_issues)}")
-                console.print(f"Total remote issues (excluding PRs): {len(remote_by_number)}")
+                console.print(
+                    f"Total remote issues (excluding PRs): {len(remote_by_number)}"
+                )
                 console.print("\nAction summary:")
                 for k, v in counts.items():
                     console.print(f"  {k}: {v}")
 
                 if conflicts:
-                    console.print(f"\nConflicts detected: {len(conflicts)}", style="bold yellow")
+                    console.print(
+                        f"\nConflicts detected: {len(conflicts)}", style="bold yellow"
+                    )
                     for c in conflicts:
                         chosen = sync_manager.sync_strategy.resolve_conflict(c)
-                        console.print(f"  • {c.item_type} {c.item_id}: will resolve -> {chosen}")
+                        console.print(
+                            f"  • {c.item_type} {c.item_id}: will resolve -> {chosen}"
+                        )
 
                 console.print("\nDetails:")
                 for kind, id_or_num, title in actions:
                     if kind == "create_github":
-                        console.print(f"Would CREATE on GitHub: local issue {id_or_num} - {title}")
+                        console.print(
+                            f"Would CREATE on GitHub: local issue {id_or_num} - {title}"
+                        )
                     elif kind == "push_update":
-                        console.print(f"Would PUSH update to GitHub: local {id_or_num} -> GitHub #{title}")
+                        console.print(
+                            f"Would PUSH update to GitHub: local {id_or_num} -> GitHub #{title}"
+                        )
                     elif kind == "pull_update":
-                        console.print(f"Would PULL update from GitHub: local {id_or_num} <- GitHub #{title}")
+                        console.print(
+                            f"Would PULL update from GitHub: local {id_or_num} <- GitHub #{title}"
+                        )
                     elif kind == "github_missing":
-                        console.print(f"GitHub issue missing for local {id_or_num}: expected GitHub #{title}")
+                        console.print(
+                            f"GitHub issue missing for local {id_or_num}: expected GitHub #{title}"
+                        )
                     elif kind == "create_local":
-                        console.print(f"Would CREATE local from GitHub: GitHub #{id_or_num} - {title}")
+                        console.print(
+                            f"Would CREATE local from GitHub: GitHub #{id_or_num} - {title}"
+                        )
                     elif kind == "close_orphan":
-                        console.print(f"Would CLOSE remote orphaned GitHub issue: #{id_or_num} - {title}")
+                        console.print(
+                            f"Would CLOSE remote orphaned GitHub issue: #{id_or_num} - {title}"
+                        )
                     elif kind == "noop":
-                        console.print(f"No action needed for local {id_or_num} / GitHub #{title}")
+                        console.print(
+                            f"No action needed for local {id_or_num} / GitHub #{title}"
+                        )
                     elif kind == "skip":
                         console.print(f"Would SKIP syncing {id_or_num} due to strategy")
 

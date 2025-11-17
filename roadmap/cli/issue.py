@@ -2,18 +2,19 @@
 Issue management CLI commands.
 """
 
-import click
 import os
 import subprocess
+
+import click
 from rich.table import Table
 from rich.text import Text
-from roadmap.core import RoadmapCore
-from roadmap.models import Priority, IssueType, Status
+
 from roadmap.cli.utils import get_console
 from roadmap.error_handling import (
-    ErrorHandler, handle_errors, with_error_handling,
-    ValidationError, FileOperationError, ErrorSeverity, ErrorCategory
+    ErrorHandler,
+    ValidationError,
 )
+from roadmap.models import IssueType, Priority, Status
 
 console = get_console()
 
@@ -36,10 +37,12 @@ def _safe_create_branch(git, issue, checkout=True, force=False):
             except Exception:
                 return False
 
+
 @click.group()
 def issue():
     """Manage issues."""
     pass
+
 
 # Basic issue commands - full implementation would be extracted from main CLI
 @issue.command("list")
@@ -226,15 +229,15 @@ def list_issues(
         # Show time aggregation for assignee filters
         if assignee or my_issues:
             assignee_name = assignee if assignee else "you"
-            
+
             # Calculate totals
             total_hours = sum(issue.estimated_hours or 0 for issue in issues)
             remaining_hours = sum(
-                issue.estimated_hours or 0 
-                for issue in issues 
+                issue.estimated_hours or 0
+                for issue in issues
                 if issue.status.value != "done"
             )
-            
+
             if total_hours > 0:
                 # Format total time display
                 if total_hours < 1:
@@ -243,13 +246,13 @@ def list_issues(
                     total_display = f"{total_hours:.1f}h"
                 else:
                     total_display = f"{total_hours / 8:.1f}d"
-                
+
                 console.print()
                 console.print(
                     f"Total estimated time for {assignee_name}: {total_display}",
                     style="bold blue",
                 )
-                
+
                 # Show status breakdown
                 status_counts = {}
                 for issue in issues:
@@ -269,7 +272,9 @@ def list_issues(
                                 time_display = f"{data['hours']:.1f}h"
                             else:
                                 time_display = f"{data['hours'] / 8:.1f}d"
-                            console.print(f"  {status}: {data['count']} issues ({time_display})")
+                            console.print(
+                                f"  {status}: {data['count']} issues ({time_display})"
+                            )
                         else:
                             console.print(f"  {status}: {data['count']} issues")
 
@@ -277,12 +282,11 @@ def list_issues(
         error_handler = ErrorHandler()
         error_handler.handle_error(
             ValidationError(
-                "Failed to list issues",
-                context={'command': 'list'},
-                cause=e
+                "Failed to list issues", context={"command": "list"}, cause=e
             ),
-            exit_on_critical=False
+            exit_on_critical=False,
         )
+
 
 @issue.command("create")
 @click.argument("title")
@@ -316,7 +320,9 @@ def list_issues(
     help="Checkout the branch after creation (with --git-branch)",
 )
 @click.option("--branch-name", default=None, help="Override suggested branch name")
-@click.option("--force", is_flag=True, help="Force branch creation even if working tree is dirty")
+@click.option(
+    "--force", is_flag=True, help="Force branch creation even if working tree is dirty"
+)
 @click.pass_context
 def create_issue(
     ctx: click.Context,
@@ -366,7 +372,10 @@ def create_issue(
             else:
                 canonical_assignee = core.get_canonical_assignee(assignee)
                 if canonical_assignee != assignee:
-                    console.print(f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim")
+                    console.print(
+                        f"🔄 Resolved '{assignee}' to '{canonical_assignee}'",
+                        style="dim",
+                    )
 
         issue = core.create_issue(
             title=title,
@@ -398,17 +407,28 @@ def create_issue(
 
         # Create Git branch if requested
         if git_branch:
-            if hasattr(core, 'git') and core.git.is_git_repository():
+            if hasattr(core, "git") and core.git.is_git_repository():
                 # Determine resolved branch name early so fallbacks use the same name
-                resolved_branch_name = branch_name or core.git.suggest_branch_name(issue)
-                branch_success = _safe_create_branch(core.git, issue, checkout=checkout, force=force)
+                resolved_branch_name = branch_name or core.git.suggest_branch_name(
+                    issue
+                )
+                branch_success = _safe_create_branch(
+                    core.git, issue, checkout=checkout, force=force
+                )
                 if branch_success:
-                    console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                    console.print(
+                        f"🌿 Created Git branch: {resolved_branch_name}", style="green"
+                    )
                     if checkout:
-                        console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                        console.print(
+                            f"✅ Checked out branch: {resolved_branch_name}",
+                            style="green",
+                        )
                 else:
                     # Determine likely reason for failure
-                    status_output = core.git._run_git_command(["status", "--porcelain"]) or ""
+                    status_output = (
+                        core.git._run_git_command(["status", "--porcelain"]) or ""
+                    )
                     if status_output.strip():
                         console.print(
                             "⚠️  Working tree has uncommitted changes — branch creation skipped. Use --force to override.",
@@ -416,41 +436,74 @@ def create_issue(
                         )
                     else:
                         # Try fallback direct git command
-                        fallback = core.git._run_git_command(["checkout", "-b", resolved_branch_name])
+                        fallback = core.git._run_git_command(
+                            ["checkout", "-b", resolved_branch_name]
+                        )
                         if fallback is not None:
-                            console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                            console.print(
+                                f"🌿 Created Git branch: {resolved_branch_name}",
+                                style="green",
+                            )
                             if checkout:
-                                console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                                console.print(
+                                    f"✅ Checked out branch: {resolved_branch_name}",
+                                    style="green",
+                                )
                         else:
                             # Final check: maybe branch exists already; verify via rev-parse
                             exists = None
                             try:
-                                if hasattr(core, 'git'):
-                                    exists = core.git._run_git_command(["rev-parse", "--verify", resolved_branch_name])
+                                if hasattr(core, "git"):
+                                    exists = core.git._run_git_command(
+                                        ["rev-parse", "--verify", resolved_branch_name]
+                                    )
                             except Exception:
                                 exists = None
 
                             if exists:
-                                console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                                console.print(
+                                    f"🌿 Created Git branch: {resolved_branch_name}",
+                                    style="green",
+                                )
                                 if checkout:
-                                    console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                                    console.print(
+                                        f"✅ Checked out branch: {resolved_branch_name}",
+                                        style="green",
+                                    )
                             else:
                                 # As a last resort try running git directly in the repo root
                                 try:
-                                    subprocess.run([
-                                        "git",
-                                        "checkout",
-                                        "-b",
-                                        resolved_branch_name,
-                                    ], cwd=getattr(core, 'root_path', None) or os.getcwd(), check=True, capture_output=True, text=True)
-                                    console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                                    subprocess.run(
+                                        [
+                                            "git",
+                                            "checkout",
+                                            "-b",
+                                            resolved_branch_name,
+                                        ],
+                                        cwd=getattr(core, "root_path", None)
+                                        or os.getcwd(),
+                                        check=True,
+                                        capture_output=True,
+                                        text=True,
+                                    )
+                                    console.print(
+                                        f"🌿 Created Git branch: {resolved_branch_name}",
+                                        style="green",
+                                    )
                                     if checkout:
-                                        console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                                        console.print(
+                                            f"✅ Checked out branch: {resolved_branch_name}",
+                                            style="green",
+                                        )
                                 except Exception:
-                                    console.print("⚠️  Failed to create or checkout branch. See git for details.", style="yellow")
+                                    console.print(
+                                        "⚠️  Failed to create or checkout branch. See git for details.",
+                                        style="yellow",
+                                    )
             else:
                 console.print(
-                    "⚠️  Not in a Git repository, skipping branch creation", style="yellow"
+                    "⚠️  Not in a Git repository, skipping branch creation",
+                    style="yellow",
                 )
 
         console.print(f"   File: .roadmap/issues/{issue.filename}", style="dim")
@@ -462,11 +515,12 @@ def create_issue(
         error_handler.handle_error(
             ValidationError(
                 "Failed to create issue",
-                context={'command': 'create', 'title': title},
-                cause=e
+                context={"command": "create", "title": title},
+                cause=e,
             ),
-            exit_on_critical=False
+            exit_on_critical=False,
         )
+
 
 @issue.command("update")
 @click.argument("issue_id")
@@ -541,7 +595,10 @@ def update_issue(
                 else:
                     canonical_assignee = core.get_canonical_assignee(assignee)
                     if canonical_assignee != assignee:
-                        console.print(f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim")
+                        console.print(
+                            f"🔄 Resolved '{assignee}' to '{canonical_assignee}'",
+                            style="dim",
+                        )
                     updates["assignee"] = canonical_assignee
         if milestone:
             updates["milestone"] = milestone
@@ -556,21 +613,28 @@ def update_issue(
 
         # Update the issue
         updated_issue = core.update_issue(issue_id, **updates)
-        
+
         console.print(f"✅ Updated issue: {updated_issue.title}", style="bold green")
         console.print(f"   ID: {updated_issue.id}", style="cyan")
-        
+
         # Show what was updated
         for field, value in updates.items():
             if field == "estimated_hours":
                 display_value = updated_issue.estimated_time_display
                 console.print(f"   estimate: {display_value}", style="cyan")
-            elif field in ["title", "priority", "status", "assignee", "milestone", "description"]:
+            elif field in [
+                "title",
+                "priority",
+                "status",
+                "assignee",
+                "milestone",
+                "description",
+            ]:
                 console.print(f"   {field}: {value}", style="cyan")
-        
+
         if reason:
             console.print(f"   reason: {reason}", style="dim")
-            
+
     except click.Abort:
         raise
     except Exception as e:
@@ -578,11 +642,12 @@ def update_issue(
         error_handler.handle_error(
             ValidationError(
                 "Failed to update issue",
-                context={'command': 'update', 'issue_id': issue_id},
-                cause=e
+                context={"command": "update", "issue_id": issue_id},
+                cause=e,
             ),
-            exit_on_critical=False
+            exit_on_critical=False,
         )
+
 
 @issue.command("done")
 @click.argument("issue_id")
@@ -611,13 +676,13 @@ def done_issue(
 
         # Update status to done
         updated_issue = core.update_issue(issue_id, status="done")
-        
+
         console.print(f"✅ Finished: {updated_issue.title}", style="bold green")
         console.print(f"   ID: {updated_issue.id}", style="cyan")
-        
+
         if reason:
             console.print(f"   Reason: {reason}", style="dim")
-            
+
     except click.Abort:
         raise
     except Exception as e:
@@ -629,12 +694,15 @@ def done_issue(
 @click.option("--reason", "-r", help="Reason for finishing the issue")
 @click.option("--date", help="Completion date (YYYY-MM-DD HH:MM, defaults to now)")
 @click.option(
-    "--record-time", "-t",
+    "--record-time",
+    "-t",
     is_flag=True,
-    help="Record actual completion time and duration (like old 'complete' command)"
+    help="Record actual completion time and duration (like old 'complete' command)",
 )
 @click.pass_context
-def finish_issue(ctx: click.Context, issue_id: str, reason: str, date: str, record_time: bool):
+def finish_issue(
+    ctx: click.Context, issue_id: str, reason: str, date: str, record_time: bool
+):
     """Finish an issue (record completion time, reason).
 
     Behaves like the original monolithic `issue finish` command.
@@ -727,7 +795,7 @@ def finish_issue(ctx: click.Context, issue_id: str, reason: str, date: str, reco
                         else:
                             console.print("   ✅ Right on estimate!", style="green")
 
-            console.print(f"   Status: Done", style="green")
+            console.print("   Status: Done", style="green")
         else:
             console.print(f"❌ Failed to finish issue: {issue_id}", style="bold red")
 
@@ -755,7 +823,10 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
-        if issue.status and getattr(issue.status, 'value', str(issue.status)) != "blocked":
+        if (
+            issue.status
+            and getattr(issue.status, "value", str(issue.status)) != "blocked"
+        ):
             console.print(
                 f"⚠️  Issue is not blocked (current status: {issue.status.value if hasattr(issue.status, 'value') else issue.status})",
                 style="yellow",
@@ -765,14 +836,15 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
         success = core.update_issue(
             issue_id,
             status="in-progress",
-            content=(issue.content or "") + (f"\n\n**Unblocked:** {reason}" if reason else ""),
+            content=(issue.content or "")
+            + (f"\n\n**Unblocked:** {reason}" if reason else ""),
         )
 
         if success:
             updated = core.get_issue(issue_id)
             console.print(f"✅ Unblocked issue: {updated.title}", style="bold green")
             console.print(f"   ID: {issue_id}", style="cyan")
-            console.print(f"   Status: 🔄 In Progress", style="yellow")
+            console.print("   Status: 🔄 In Progress", style="yellow")
             if reason:
                 console.print(f"   Reason: {reason}", style="cyan")
         else:
@@ -780,6 +852,7 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
 
     except Exception as e:
         console.print(f"❌ Failed to unblock issue: {e}", style="bold red")
+
 
 @issue.command("block")
 @click.argument("issue_id")
@@ -808,18 +881,19 @@ def block_issue(
 
         # Update status to blocked
         updated_issue = core.update_issue(issue_id, status="blocked")
-        
+
         console.print(f"🚫 Blocked issue: {updated_issue.title}", style="bold red")
         console.print(f"   ID: {updated_issue.id}", style="cyan")
         console.print("   Status: 🚫 Blocked", style="red")
-        
+
         if reason:
             console.print(f"   Reason: {reason}", style="dim")
-            
+
     except click.Abort:
         raise
     except Exception as e:
         console.print(f"❌ Failed to block issue: {e}", style="bold red")
+
 
 @issue.command("delete")
 @click.argument("issue_id")
@@ -848,16 +922,20 @@ def delete_issue(
 
         # Confirm deletion if not using --yes flag
         if not yes:
-            if not click.confirm(f"Are you sure you want to delete issue '{issue.title}'?"):
+            if not click.confirm(
+                f"Are you sure you want to delete issue '{issue.title}'?"
+            ):
                 console.print("❌ Issue deletion cancelled.", style="yellow")
                 return
 
         # Delete the issue
         core.delete_issue(issue_id)
-        
-        console.print(f"✅ Permanently deleted issue: {issue.title}", style="bold green")
+
+        console.print(
+            f"✅ Permanently deleted issue: {issue.title}", style="bold green"
+        )
         console.print(f"   ID: {issue_id}", style="cyan")
-            
+
     except click.Abort:
         raise
     except Exception as e:
@@ -867,12 +945,30 @@ def delete_issue(
 @issue.command("start")
 @click.argument("issue_id")
 @click.option("--date", help="Start date (YYYY-MM-DD HH:MM, defaults to now)")
-@click.option("--git-branch/--no-git-branch", default=False, help="Create a Git branch for this issue when starting")
-@click.option("--checkout/--no-checkout", default=True, help="Checkout the created branch (when --git-branch is used)")
+@click.option(
+    "--git-branch/--no-git-branch",
+    default=False,
+    help="Create a Git branch for this issue when starting",
+)
+@click.option(
+    "--checkout/--no-checkout",
+    default=True,
+    help="Checkout the created branch (when --git-branch is used)",
+)
 @click.option("--branch-name", default=None, help="Override suggested branch name")
-@click.option("--force", is_flag=True, help="Force branch creation even if working tree is dirty")
+@click.option(
+    "--force", is_flag=True, help="Force branch creation even if working tree is dirty"
+)
 @click.pass_context
-def start_issue(ctx: click.Context, issue_id: str, date: str, git_branch: bool, checkout: bool, branch_name: str, force: bool):
+def start_issue(
+    ctx: click.Context,
+    issue_id: str,
+    date: str,
+    git_branch: bool,
+    checkout: bool,
+    branch_name: str,
+    force: bool,
+):
     """Start work on an issue by recording the actual start date."""
     core = ctx.obj["core"]
 
@@ -884,8 +980,9 @@ def start_issue(ctx: click.Context, issue_id: str, date: str, git_branch: bool, 
 
     try:
         from datetime import datetime
+
         from roadmap.models import Status
-        
+
         # Parse start date
         if date:
             try:
@@ -921,11 +1018,16 @@ def start_issue(ctx: click.Context, issue_id: str, date: str, git_branch: bool, 
             console.print(
                 f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
             )
-            console.print(f"   Status: In Progress", style="yellow")
+            console.print("   Status: In Progress", style="yellow")
             # Determine git-branch behavior: CLI flag overrides, otherwise check config
             try:
                 from roadmap.models import RoadmapConfig
-                cfg = RoadmapConfig.load_from_file(core.config_file) if core.config_file.exists() else RoadmapConfig()
+
+                cfg = (
+                    RoadmapConfig.load_from_file(core.config_file)
+                    if core.config_file.exists()
+                    else RoadmapConfig()
+                )
                 config_auto_branch = bool(cfg.defaults.get("auto_branch", False))
             except Exception:
                 config_auto_branch = False
@@ -936,26 +1038,47 @@ def start_issue(ctx: click.Context, issue_id: str, date: str, git_branch: bool, 
             # Optionally create a git branch for the issue
             try:
                 if git_branch:
-                    if hasattr(core, 'git') and core.git.is_git_repository():
-                        resolved_branch_name = branch_name or core.git.suggest_branch_name(issue)
-                        branch_success = _safe_create_branch(core.git, issue, checkout=checkout, force=force)
+                    if hasattr(core, "git") and core.git.is_git_repository():
+                        resolved_branch_name = (
+                            branch_name or core.git.suggest_branch_name(issue)
+                        )
+                        branch_success = _safe_create_branch(
+                            core.git, issue, checkout=checkout, force=force
+                        )
                         if branch_success:
-                            console.print(f"🌿 Created Git branch: {resolved_branch_name}", style="green")
+                            console.print(
+                                f"🌿 Created Git branch: {resolved_branch_name}",
+                                style="green",
+                            )
                             if checkout:
-                                console.print(f"✅ Checked out branch: {resolved_branch_name}", style="green")
+                                console.print(
+                                    f"✅ Checked out branch: {resolved_branch_name}",
+                                    style="green",
+                                )
                         else:
-                            status_output = core.git._run_git_command(["status", "--porcelain"]) or ""
+                            status_output = (
+                                core.git._run_git_command(["status", "--porcelain"])
+                                or ""
+                            )
                             if status_output.strip():
                                 console.print(
                                     "⚠️  Working tree has uncommitted changes — branch creation skipped. Use --force to override.",
                                     style="yellow",
                                 )
                             else:
-                                console.print("⚠️  Failed to create or checkout branch. See git for details.", style="yellow")
+                                console.print(
+                                    "⚠️  Failed to create or checkout branch. See git for details.",
+                                    style="yellow",
+                                )
                     else:
-                        console.print("⚠️  Not in a Git repository, skipping branch creation", style="yellow")
+                        console.print(
+                            "⚠️  Not in a Git repository, skipping branch creation",
+                            style="yellow",
+                        )
             except Exception as e:
-                console.print(f"⚠️  Git branch creation skipped due to error: {e}", style="yellow")
+                console.print(
+                    f"⚠️  Git branch creation skipped due to error: {e}", style="yellow"
+                )
         else:
             console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
 
@@ -1011,7 +1134,7 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
                 if issue.status == Status.TODO:
                     core.update_issue(issue_id, status=Status.IN_PROGRESS)
                     console.print(
-                        f"   Status: Auto-updated to In Progress", style="yellow"
+                        "   Status: Auto-updated to In Progress", style="yellow"
                     )
         else:
             console.print(f"❌ Failed to update progress: {issue_id}", style="bold red")
@@ -1050,7 +1173,9 @@ def add_dependency(ctx: click.Context, issue_id: str, dependency_id: str):
         # Check if dependency issue exists
         dependency_issue = core.get_issue(dependency_id)
         if not dependency_issue:
-            console.print(f"❌ Dependency issue not found: {dependency_id}", style="bold red")
+            console.print(
+                f"❌ Dependency issue not found: {dependency_id}", style="bold red"
+            )
             return
 
         # Add dependency
@@ -1058,10 +1183,14 @@ def add_dependency(ctx: click.Context, issue_id: str, dependency_id: str):
         if dependency_id not in current_deps:
             current_deps.append(dependency_id)
             core.update_issue(issue_id, depends_on=current_deps)
-            console.print(f"✅ Added dependency: {dependency_issue.title}", style="bold green")
-            console.print(f"   {issue.title} now depends on {dependency_issue.title}", style="dim")
+            console.print(
+                f"✅ Added dependency: {dependency_issue.title}", style="bold green"
+            )
+            console.print(
+                f"   {issue.title} now depends on {dependency_issue.title}", style="dim"
+            )
         else:
-            console.print(f"⚠️ Dependency already exists", style="yellow")
+            console.print("⚠️ Dependency already exists", style="yellow")
 
     except Exception as e:
         console.print(f"❌ Failed to add dependency: {e}", style="bold red")

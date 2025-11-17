@@ -1,18 +1,16 @@
 """Main CLI module for the roadmap tool."""
 
+import getpass
+import os
 import statistics
 import subprocess
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, Tuple
-import re
-import os
-import getpass
-import yaml
 
 import click
 import pandas as pd
+import yaml
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, TextColumn
@@ -24,14 +22,13 @@ from roadmap.core import RoadmapCore
 from roadmap.data_utils import DataAnalyzer, DataFrameAdapter, QueryBuilder
 from roadmap.enhanced_analytics import EnhancedAnalyzer
 from roadmap.github_client import GitHubClient
-from roadmap.models import Comment, IssueType, Priority, Status
+from roadmap.models import IssueType, Priority, Status
 from roadmap.performance_sync import HighPerformanceSyncManager
 from roadmap.security import (
     configure_security_logging,
     create_secure_file,
     log_security_event,
     sanitize_filename,
-    validate_export_size,
     validate_path,
 )
 from roadmap.sync import SyncManager
@@ -103,9 +100,9 @@ def main(ctx: click.Context) -> None:
 def init(
     ctx: click.Context,
     name: str,
-    project_name: Optional[str],
-    description: Optional[str],
-    github_repo: Optional[str],
+    project_name: str | None,
+    description: str | None,
+    github_repo: str | None,
     skip_github: bool,
     skip_project: bool,
     interactive: bool,
@@ -120,7 +117,7 @@ def init(
         roadmap init --github-repo owner/repo    # Specify GitHub repository
         roadmap init --template software         # Use software project template
     """
-    
+
     # Create a new core instance with the custom directory name
     custom_core = RoadmapCore(roadmap_dir_name=name)
 
@@ -143,14 +140,19 @@ def init(
         else:
             console.print("  Git repository: Not detected", style="dim")
             if interactive:
-                console.print("    💡 Consider running 'git init' to enable advanced features", style="yellow")
+                console.print(
+                    "    💡 Consider running 'git init' to enable advanced features",
+                    style="yellow",
+                )
         if detected_info["project_name"]:
             console.print(f"  Project name: {detected_info['project_name']}")
         console.print(f"  Directory: {Path.cwd()}")
         console.print()
 
         # Step 2: Basic roadmap initialization
-        console.print(f"🗂️  Creating roadmap structure in {name}/...", style="bold green")
+        console.print(
+            f"🗂️  Creating roadmap structure in {name}/...", style="bold green"
+        )
         custom_core.initialize()
 
         # Update the context to use the custom core
@@ -159,10 +161,17 @@ def init(
         # Step 3: Project creation (unless skipped)
         if not skip_project:
             project_info = _setup_main_project(
-                custom_core, project_name, description, detected_info, interactive, template
+                custom_core,
+                project_name,
+                description,
+                detected_info,
+                interactive,
+                template,
             )
-            console.print(f"✅ Created main project: {project_info['name']} (ID: {project_info['id'][:8]})")
-        
+            console.print(
+                f"✅ Created main project: {project_info['name']} (ID: {project_info['id'][:8]})"
+            )
+
         # Step 4: GitHub integration (unless skipped)
         github_configured = False
         if not skip_github and (detected_info["git_repo"] or github_repo):
@@ -171,37 +180,48 @@ def init(
             )
 
         # Step 5: Success summary and next steps
-        _show_success_summary(name, github_configured, project_info if not skip_project else None, detected_info)
+        _show_success_summary(
+            name,
+            github_configured,
+            project_info if not skip_project else None,
+            detected_info,
+        )
 
     except Exception as e:
         console.print(f"❌ Failed to initialize roadmap: {e}", style="bold red")
         # Cleanup on failure
         if custom_core.roadmap_dir.exists():
             import shutil
+
             shutil.rmtree(custom_core.roadmap_dir)
 
 
 def _detect_project_context() -> dict:
     """Detect project context from git repository and directory structure."""
-    context = {"git_repo": None, "project_name": None, "git_user": None, "has_git": False}
-    
+    context = {
+        "git_repo": None,
+        "project_name": None,
+        "git_user": None,
+        "has_git": False,
+    }
+
     try:
         # Check if we're in a git repository
         git_check = subprocess.run(
             ["git", "rev-parse", "--is-inside-work-tree"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
         context["has_git"] = git_check.returncode == 0
-        
+
         if context["has_git"]:
             # Try to get git repository info
             result = subprocess.run(
                 ["git", "remote", "get-url", "origin"],
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5,
             )
             if result.returncode == 0:
                 origin_url = result.stdout.strip()
@@ -209,36 +229,44 @@ def _detect_project_context() -> dict:
                 if "github.com" in origin_url:
                     # Handle both SSH and HTTPS URLs
                     if origin_url.startswith("git@github.com:"):
-                        repo_part = origin_url.replace("git@github.com:", "").replace(".git", "")
+                        repo_part = origin_url.replace("git@github.com:", "").replace(
+                            ".git", ""
+                        )
                     elif "github.com/" in origin_url:
-                        repo_part = origin_url.split("github.com/")[1].replace(".git", "")
+                        repo_part = origin_url.split("github.com/")[1].replace(
+                            ".git", ""
+                        )
                     else:
                         repo_part = None
-                    
+
                     if repo_part and "/" in repo_part:
                         context["git_repo"] = repo_part
                         context["project_name"] = repo_part.split("/")[1]
-            
+
             # Get git user info
             try:
                 user_result = subprocess.run(
                     ["git", "config", "user.name"],
                     capture_output=True,
                     text=True,
-                    timeout=5
+                    timeout=5,
                 )
                 if user_result.returncode == 0:
                     context["git_user"] = user_result.stdout.strip()
             except:
                 pass
-            
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+    ):
         pass
-    
+
     # Fallback to directory name if no git repo detected
     if not context["project_name"]:
         context["project_name"] = Path.cwd().name
-    
+
     # Try to detect from package files
     if not context["project_name"] or context["project_name"] == ".":
         for config_file in ["pyproject.toml", "package.json", "Cargo.toml"]:
@@ -247,86 +275,84 @@ def _detect_project_context() -> dict:
                     content = Path(config_file).read_text()
                     if config_file == "pyproject.toml":
                         import re
+
                         match = re.search(r'name\s*=\s*["\']([^"\']+)["\']', content)
                         if match:
                             context["project_name"] = match.group(1)
                             break
                     elif config_file == "package.json":
                         import json
+
                         data = json.loads(content)
                         if "name" in data:
                             context["project_name"] = data["name"]
                             break
                 except:
                     pass
-    
+
     return context
 
 
 def _setup_main_project(
-    core: RoadmapCore, 
-    project_name: Optional[str], 
-    description: Optional[str],
+    core: RoadmapCore,
+    project_name: str | None,
+    description: str | None,
     detected_info: dict,
     interactive: bool,
-    template: str
+    template: str,
 ) -> dict:
     """Set up the main project document."""
-    
+
     # Determine project name
     if not project_name:
         if interactive:
             suggested_name = detected_info.get("project_name", Path.cwd().name)
             project_name = click.prompt(
-                f"Project name", 
-                default=suggested_name,
-                show_default=True
+                "Project name", default=suggested_name, show_default=True
             )
         else:
             project_name = detected_info.get("project_name", Path.cwd().name)
-    
+
     # Determine description
     if not description and interactive:
-        default_desc = f"A project managed with Roadmap CLI"
+        default_desc = "A project managed with Roadmap CLI"
         if detected_info.get("git_repo"):
             default_desc = f"Project repository: {detected_info['git_repo']}"
         description = click.prompt(
-            "Project description",
-            default=default_desc,
-            show_default=True
+            "Project description", default=default_desc, show_default=True
         )
     elif not description:
-        description = f"A project managed with Roadmap CLI"
-    
+        description = "A project managed with Roadmap CLI"
+
     # Create project using core functionality
     console.print("📋 Creating main project...", style="bold blue")
-    
+
     # Generate project content based on template
-    project_content = _generate_project_template(project_name, description, template, detected_info)
-    
+    project_content = _generate_project_template(
+        project_name, description, template, detected_info
+    )
+
     # Save project file
     project_id = core._generate_id()[:8]
     project_filename = f"{project_id}-{core._normalize_filename(project_name)}.md"
     project_file = core.roadmap_dir / "projects" / project_filename
-    
+
     # Ensure projects directory exists
     (core.roadmap_dir / "projects").mkdir(exist_ok=True)
-    
+
     project_file.write_text(project_content)
-    
-    return {
-        "id": project_id,
-        "name": project_name,
-        "filename": project_filename
-    }
+
+    return {"id": project_id, "name": project_name, "filename": project_filename}
 
 
-def _generate_project_template(project_name: str, description: str, template: str, detected_info: dict) -> str:
+def _generate_project_template(
+    project_name: str, description: str, template: str, detected_info: dict
+) -> str:
     """Generate project content based on template."""
-    
+
     current_date = datetime.now().isoformat()
     owner = detected_info.get("git_user", getpass.getuser())
-    
+
     # Base project content
     content = f"""---
 name: {project_name}
@@ -337,26 +363,34 @@ status: active
 created: {current_date}
 updated: {current_date}
 """
-    
+
     if detected_info.get("git_repo"):
         content += f"github_repo: {detected_info['git_repo']}\n"
-    
-    content += """timeline:
-  start_date: """ + current_date + """
+
+    content += (
+        """timeline:
+  start_date: """
+        + current_date
+        + """
   target_end_date: null
 tags: []
 ---
 
-# """ + project_name + """
+# """
+        + project_name
+        + """
 
 ## Overview
 
-""" + description + """
+"""
+        + description
+        + """
 
 ## Project Goals
 
 """
-    
+    )
+
     # Template-specific content
     if template == "software":
         content += """
@@ -390,7 +424,7 @@ tags: []
 - Documentation
 - Production deployment
 """
-    
+
     elif template == "research":
         content += """
 - [ ] Literature review
@@ -416,7 +450,7 @@ tags: []
 - **Phase 3**: Analysis (4 weeks)
 - **Phase 4**: Writing (4 weeks)
 """
-    
+
     elif template == "team":
         content += """
 - [ ] Team onboarding
@@ -446,7 +480,7 @@ tags: []
 4. Testing and validation
 5. Deployment and monitoring
 """
-    
+
     else:  # basic template
         content += """
 - [ ] Define project scope
@@ -482,35 +516,43 @@ tags: []
 
 [Additional project notes and context]
 """
-    
+
     return content
 
 
-def _setup_github_integration(core: RoadmapCore, github_repo: str, interactive: bool) -> bool:
+def _setup_github_integration(
+    core: RoadmapCore, github_repo: str, interactive: bool
+) -> bool:
     """Set up GitHub integration with credential flow."""
-    
+
     console.print("🔗 GitHub Integration Setup", style="bold blue")
-    
+
     if interactive:
         console.print(f"\nRepository: {github_repo}")
         console.print("\nTo sync with GitHub, you'll need a personal access token.")
         console.print("→ Open: https://github.com/settings/tokens")
-        console.print("→ Create token with 'repo' scope (or 'public_repo' for public repos)")
-        console.print("→ Required permissions: Issues, Pull requests, Repository metadata")
+        console.print(
+            "→ Create token with 'repo' scope (or 'public_repo' for public repos)"
+        )
+        console.print(
+            "→ Required permissions: Issues, Pull requests, Repository metadata"
+        )
         console.print()
-        
+
         if not click.confirm("Do you want to set up GitHub integration now?"):
-            console.print("⏭️  Skipping GitHub integration (you can set this up later with 'roadmap sync setup')")
+            console.print(
+                "⏭️  Skipping GitHub integration (you can set this up later with 'roadmap sync setup')"
+            )
             return False
-    
+
     try:
-        from roadmap.github_client import GitHubClient
         from roadmap.credentials import CredentialManager
-        
+        from roadmap.github_client import GitHubClient
+
         # Check if credentials already exist
         cred_manager = CredentialManager()
         existing_token = None
-        
+
         try:
             existing_token = cred_manager.get_github_token()
             if existing_token and interactive:
@@ -521,21 +563,23 @@ def _setup_github_integration(core: RoadmapCore, github_repo: str, interactive: 
                     existing_token = None
         except:
             pass  # No existing credentials
-        
+
         # Get token from user if not using existing
         if not existing_token:
             if interactive:
                 token = click.prompt("Paste your GitHub token", hide_input=True)
             else:
-                console.print("❌ Non-interactive mode requires existing GitHub credentials or --skip-github flag")
+                console.print(
+                    "❌ Non-interactive mode requires existing GitHub credentials or --skip-github flag"
+                )
                 return False
         else:
             token = existing_token
-        
+
         # Test the connection with comprehensive validation
         console.print("🔍 Testing GitHub connection...", style="yellow")
         github_client = GitHubClient(token)
-        
+
         # Validate user authentication
         try:
             user_info = github_client._make_request("GET", "/user")
@@ -546,75 +590,84 @@ def _setup_github_integration(core: RoadmapCore, github_repo: str, interactive: 
                 return False
             else:
                 raise
-        
+
         # Validate repository access
         try:
             owner, repo = github_repo.split("/")
             repo_info = github_client.get_repository_info(owner, repo)
-            repo_name = repo_info.get('full_name', github_repo)
+            repo_name = repo_info.get("full_name", github_repo)
             console.print(f"✅ Repository access: {repo_name}")
-            
+
             # Check permissions
-            permissions = repo_info.get('permissions', {})
-            if permissions.get('admin') or permissions.get('push'):
+            permissions = repo_info.get("permissions", {})
+            if permissions.get("admin") or permissions.get("push"):
                 console.print("✅ Write access: Available")
-            elif permissions.get('pull'):
-                console.print("⚠️  Read-only access: Limited sync capabilities", style="yellow")
+            elif permissions.get("pull"):
+                console.print(
+                    "⚠️  Read-only access: Limited sync capabilities", style="yellow"
+                )
             else:
                 console.print("❌ No repository access detected", style="red")
-                
+
         except Exception as e:
             console.print(f"⚠️  Repository validation warning: {e}", style="yellow")
             if interactive:
                 if not click.confirm("Continue with GitHub integration anyway?"):
                     return False
             # Continue anyway for non-interactive mode
-        
+
         # Store credentials securely (only if new token)
         if not existing_token:
             cred_manager.store_github_token(token)
             console.print("🔒 Credentials stored securely")
-        
+
         # Save GitHub repository configuration
         config_file = core.roadmap_dir / "config.yaml"
-        
+
         if config_file.exists():
-            with open(config_file, 'r') as f:
+            with open(config_file) as f:
                 config = yaml.safe_load(f) or {}
         else:
             config = {}
-        
+
         # Enhanced GitHub configuration
-        config['github'] = {
-            'repository': github_repo,
-            'enabled': True,
-            'sync_enabled': True,
-            'webhook_secret': None,  # Can be set up later
-            'sync_settings': {
-                'bidirectional': True,
-                'auto_close': True,
-                'sync_labels': True,
-                'sync_milestones': True
-            }
+        config["github"] = {
+            "repository": github_repo,
+            "enabled": True,
+            "sync_enabled": True,
+            "webhook_secret": None,  # Can be set up later
+            "sync_settings": {
+                "bidirectional": True,
+                "auto_close": True,
+                "sync_labels": True,
+                "sync_milestones": True,
+            },
         }
-        
+
         # Save configuration
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             yaml.dump(config, f, default_flow_style=False, sort_keys=False)
-        
+
         console.print("⚙️  Configuration saved")
-        
+
         # Test a basic API call to ensure everything works
         try:
-            issues = github_client._make_request("GET", f"/repos/{github_repo}/issues", params={"state": "open", "per_page": 1})
+            issues = github_client._make_request(
+                "GET",
+                f"/repos/{github_repo}/issues",
+                params={"state": "open", "per_page": 1},
+            )
             console.print(f"✅ API test successful ({len(issues)} issue(s) found)")
         except Exception as e:
             console.print(f"⚠️  API test warning: {e}", style="yellow")
-        
+
         return True
-        
+
     except ImportError as e:
-        console.print(f"⚠️  GitHub integration not available: Missing dependencies ({e})", style="yellow")
+        console.print(
+            f"⚠️  GitHub integration not available: Missing dependencies ({e})",
+            style="yellow",
+        )
         console.print("Install with: pip install requests keyring", style="dim")
         return False
     except Exception as e:
@@ -625,13 +678,15 @@ def _setup_github_integration(core: RoadmapCore, github_repo: str, interactive: 
             raise
 
 
-def _show_success_summary(name: str, github_configured: bool, project_info: Optional[dict], detected_info: dict) -> None:
+def _show_success_summary(
+    name: str, github_configured: bool, project_info: dict | None, detected_info: dict
+) -> None:
     """Show success summary and next steps."""
-    
+
     console.print()
     console.print("✅ Setup Complete!", style="bold green")
     console.print()
-    
+
     # Show what was created
     console.print("📁 Created:", style="bold cyan")
     console.print(f"  ✓ Roadmap structure: {name}/")
@@ -641,27 +696,29 @@ def _show_success_summary(name: str, github_configured: bool, project_info: Opti
     console.print("    ├── templates/    (document templates)")
     console.print("    ├── artifacts/    (generated content)")
     console.print("    └── config.yaml   (configuration)")
-    
+
     if project_info:
-        console.print(f"  ✓ Main project: {project_info['name']} (ID: {project_info['id']})")
+        console.print(
+            f"  ✓ Main project: {project_info['name']} (ID: {project_info['id']})"
+        )
     if github_configured:
         console.print("  ✓ GitHub integration: Connected and configured")
         console.print("    • Bidirectional sync enabled")
         console.print("    • Automatic issue linking")
         console.print("    • Webhook support ready")
     console.print("  ✓ Security: Secure file permissions and credential storage")
-    
+
     console.print()
     console.print("🚀 Next Steps:", style="bold yellow")
-    
+
     if project_info:
         console.print(f"  → roadmap project show {project_info['id'][:8]}")
-    console.print("  → roadmap issue create \"Your first issue\"")
+    console.print('  → roadmap issue create "Your first issue"')
     if github_configured:
         console.print("  → roadmap sync bidirectional        # Sync with GitHub")
         console.print("  → roadmap git setup                 # Configure git hooks")
     console.print("  → roadmap dashboard                  # View your dashboard")
-    
+
     console.print()
     console.print("📚 Learn More:", style="bold cyan")
     console.print("  → roadmap --help                    # All available commands")
@@ -671,22 +728,28 @@ def _show_success_summary(name: str, github_configured: bool, project_info: Opti
         console.print("  → roadmap git --help                 # Git integration")
     console.print("  → roadmap project --help             # Project management")
     console.print("  → roadmap milestone --help           # Milestone tracking")
-    
+
     console.print()
     console.print("💡 Pro Tips:", style="bold magenta")
     console.print("  • Use 'roadmap dashboard' for daily task overview")
-    
+
     if detected_info.get("has_git"):
-        console.print("  • Set up git hooks with 'roadmap git setup' for automatic updates")
+        console.print(
+            "  • Set up git hooks with 'roadmap git setup' for automatic updates"
+        )
         if github_configured:
-            console.print("  • Try 'roadmap sync bidirectional' to sync existing GitHub issues")
+            console.print(
+                "  • Try 'roadmap sync bidirectional' to sync existing GitHub issues"
+            )
     else:
         console.print("  • Initialize git with 'git init' to enable advanced features:")
         console.print("    - Automatic issue updates from commit messages")
         console.print("    - Git hooks for seamless integration")
         console.print("    - GitHub synchronization capabilities")
-    
-    console.print("  • Create templates in .roadmap/templates/ for consistent formatting")
+
+    console.print(
+        "  • Create templates in .roadmap/templates/ for consistent formatting"
+    )
 
 
 # Original implementation (no longer a command)
@@ -721,7 +784,7 @@ def _original_dashboard(ctx: click.Context, assignee: str, days: int):
         console.print(f"❌ Failed to show dashboard: {e}", style="bold red")
 
 
-def _get_current_user() -> Optional[str]:
+def _get_current_user() -> str | None:
     """Get current user from git config or environment."""
     from .git_integration import GitIntegration
 
@@ -732,7 +795,6 @@ def _get_current_user() -> Optional[str]:
         return user
 
     # Fallback to environment variable
-    import os
 
     return os.environ.get("USER") or os.environ.get("USERNAME")
 
@@ -1143,7 +1205,6 @@ def _get_notifications_for_user(core, assignee: str, since_date) -> list:
             core.get_issue(dep_id) and core.get_issue(dep_id).assignee == assignee
             for dep_id in issue.depends_on
         ):
-
             # Check if someone is waiting on me
             blocking_issues = [
                 core.get_issue(dep_id)
@@ -1229,7 +1290,6 @@ def _store_team_update(
     """Store a team update for later retrieval."""
     import datetime
     import json
-    from pathlib import Path
 
     # Store updates in .roadmap/updates.json
     updates_file = core.roadmap_dir / "updates.json"
@@ -1240,7 +1300,7 @@ def _store_team_update(
         try:
             # Validate the path first
             validate_path(str(updates_file))
-            with open(updates_file, "r") as f:
+            with open(updates_file) as f:
                 updates = json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             updates = []
@@ -1278,7 +1338,7 @@ def _get_team_activity(core, since_date, assignee_filter: str = None) -> list:
         try:
             # Validate the path first
             validate_path(str(updates_file))
-            with open(updates_file, "r") as f:
+            with open(updates_file) as f:
                 updates = json.load(f)
 
             for update in updates:
@@ -1533,7 +1593,7 @@ def handoff_context(ctx: click.Context, issue_id: str):
             console.print(f"   👤 To: {issue.assignee}", style="green")
 
             if issue.handoff_notes:
-                console.print(f"   📝 Notes:", style="bold white")
+                console.print("   📝 Notes:", style="bold white")
                 # Word wrap the notes for better display
                 import textwrap
 
@@ -1732,7 +1792,7 @@ def handoff_list(ctx: click.Context, assignee: str, show_completed: bool):
         console.print(f"❌ Failed to list handoffs: {e}", style="bold red")
 
 
-# Original implementation (no longer a command)  
+# Original implementation (no longer a command)
 def _original_workload_analysis(
     ctx: click.Context, assignee: str, include_estimates: bool, suggest_rebalance: bool
 ):
@@ -2121,7 +2181,6 @@ def _get_smart_assignment_suggestion(
     issue, all_issues: list, consider_skills: bool, consider_availability: bool
 ) -> dict:
     """Generate smart assignment suggestion for an issue."""
-    from collections import defaultdict
 
     # Get all potential assignees
     assignees = set()
@@ -2234,7 +2293,7 @@ def _generate_assignment_reasoning(
 
 def _display_assignment_suggestion(issue, suggestion: dict, suggest_only: bool):
     """Display the assignment suggestion to the user."""
-    console.print(f"🎯 Smart Assignment Suggestion", style="bold blue")
+    console.print("🎯 Smart Assignment Suggestion", style="bold blue")
     console.print(f"   📋 Issue: {issue.title}", style="cyan")
     console.print()
 
@@ -2379,40 +2438,40 @@ def git():
 @click.option(
     "--hooks",
     multiple=True,
-    type=click.Choice(["post-commit", "pre-push", "post-merge", "post-checkout", "all"]),
+    type=click.Choice(
+        ["post-commit", "pre-push", "post-merge", "post-checkout", "all"]
+    ),
     default=["all"],
-    help="Git hooks to install (default: all)"
+    help="Git hooks to install (default: all)",
 )
 @click.option(
-    "--force", "-f",
-    is_flag=True,
-    help="Force installation, overwriting existing hooks"
+    "--force", "-f", is_flag=True, help="Force installation, overwriting existing hooks"
 )
 def git_setup(hooks, force):
     """Set up git integration and install hooks."""
     from .git_hooks import GitHookManager
-    
+
     # Initialize
     core = RoadmapCore()
     hook_manager = GitHookManager(core)
-    
+
     if not hook_manager.git_integration.is_git_repository():
         click.echo("❌ Not in a git repository", err=True)
         return
-        
+
     # Determine which hooks to install
     hooks_to_install = list(hooks)
     if "all" in hooks_to_install:
         hooks_to_install = ["post-commit", "pre-push", "post-merge", "post-checkout"]
-    
+
     click.echo(f"Installing git hooks: {', '.join(hooks_to_install)}")
-    
+
     if force:
         # Remove existing hooks first
         hook_manager.uninstall_hooks()
-    
+
     success = hook_manager.install_hooks(hooks_to_install)
-    
+
     if success:
         click.echo("✅ Git hooks installed successfully")
         click.echo("\nFeatures enabled:")
@@ -2428,35 +2487,37 @@ def git_setup(hooks, force):
 
 @git.command("sync")
 @click.option(
-    "--commits", "-c",
+    "--commits",
+    "-c",
     default=10,
-    help="Number of recent commits to process (default: 10)"
+    help="Number of recent commits to process (default: 10)",
 )
 @click.option(
-    "--dry-run", "-n",
+    "--dry-run",
+    "-n",
     is_flag=True,
-    help="Show what would be updated without making changes"
+    help="Show what would be updated without making changes",
 )
 def git_sync(commits, dry_run):
     """Synchronize issues with recent git commits."""
     from .git_integration import GitIntegration
-    
+
     # Initialize
     core = RoadmapCore()
     git_integration = GitIntegration()
-    
+
     if not git_integration.is_git_repository():
         click.echo("❌ Not in a git repository", err=True)
         return
-        
+
     click.echo(f"Analyzing last {commits} commits...")
-    
+
     # Get recent commits
     recent_commits = git_integration.get_recent_commits(count=commits)
     if not recent_commits:
         click.echo("No commits found")
         return
-        
+
     # Process commits
     if dry_run:
         click.echo("\n🔍 Dry run - showing what would be updated:")
@@ -2470,13 +2531,17 @@ def git_sync(commits, dry_run):
                     click.echo(f"   Updates: {updates}")
     else:
         results = git_integration.auto_update_issues_from_commits(core, recent_commits)
-        
+
         if results["updated"] or results["closed"] or results["errors"]:
             click.echo("\n📊 Synchronization results:")
             if results["updated"]:
-                click.echo(f"✅ Updated {len(results['updated'])} issues: {', '.join(results['updated'])}")
+                click.echo(
+                    f"✅ Updated {len(results['updated'])} issues: {', '.join(results['updated'])}"
+                )
             if results["closed"]:
-                click.echo(f"🎯 Closed {len(results['closed'])} issues: {', '.join(results['closed'])}")
+                click.echo(
+                    f"🎯 Closed {len(results['closed'])} issues: {', '.join(results['closed'])}"
+                )
             if results["errors"]:
                 click.echo(f"❌ Errors: {len(results['errors'])}")
                 for error in results["errors"]:
@@ -2487,27 +2552,26 @@ def git_sync(commits, dry_run):
 
 @git.command("status")
 @click.option(
-    "--branch", "-b",
-    help="Show status for specific branch (default: current branch)"
+    "--branch", "-b", help="Show status for specific branch (default: current branch)"
 )
 def git_status(branch):
     """Show git integration status and linked issues."""
     from .git_integration import GitIntegration
-    
+
     # Initialize
     core = RoadmapCore()
     git_integration = GitIntegration()
-    
+
     if not git_integration.is_git_repository():
         click.echo("❌ Not in a git repository", err=True)
         return
-        
+
     # Get repository info
     repo_info = git_integration.get_repository_info()
-    
+
     click.echo("🔧 Git Integration Status")
     click.echo("=" * 40)
-    
+
     # Repository info
     if "origin_url" in repo_info:
         click.echo(f"Repository: {repo_info['origin_url']}")
@@ -2515,17 +2579,17 @@ def git_status(branch):
         click.echo(f"Current branch: {repo_info['current_branch']}")
     if "total_commits" in repo_info:
         click.echo(f"Total commits: {repo_info['total_commits']}")
-        
+
     # Branch-specific info
     target_branch = branch or repo_info.get("current_branch")
     if target_branch:
         click.echo(f"\n📋 Branch: {target_branch}")
-        
+
         # Check for linked issues
         linked_issues = git_integration.get_branch_linked_issues(target_branch)
         if linked_issues:
             click.echo(f"Linked issues: {', '.join(linked_issues)}")
-            
+
             # Show issue details
             for issue_id in linked_issues:
                 try:
@@ -2536,25 +2600,32 @@ def git_status(branch):
                     click.echo(f"  • {issue_id} [not found]")
         else:
             click.echo("No linked issues found")
-            
+
         # Suggest creating issue if none exists
-        if not linked_issues and target_branch not in ["main", "master", "develop", "dev"]:
-            click.echo("\n💡 Tip: Run 'roadmap git create-issue' to create an issue for this branch")
-    
+        if not linked_issues and target_branch not in [
+            "main",
+            "master",
+            "develop",
+            "dev",
+        ]:
+            click.echo(
+                "\n💡 Tip: Run 'roadmap git create-issue' to create an issue for this branch"
+            )
+
     # Hook status
-    click.echo(f"\n🪝 Git Hooks")
+    click.echo("\n🪝 Git Hooks")
     hooks_dir = Path(".git/hooks")
     if hooks_dir.exists():
         hook_files = ["post-commit", "pre-push", "post-merge", "post-checkout"]
         installed_hooks = []
-        
+
         for hook_name in hook_files:
             hook_file = hooks_dir / hook_name
             if hook_file.exists():
                 content = hook_file.read_text()
                 if "roadmap-hook" in content:
                     installed_hooks.append(hook_name)
-                    
+
         if installed_hooks:
             click.echo(f"Installed: {', '.join(installed_hooks)}")
         else:
@@ -2566,29 +2637,22 @@ def git_status(branch):
 
 @git.command("create-issue")
 @click.option(
-    "--branch", "-b",
-    help="Create issue for specific branch (default: current branch)"
+    "--branch", "-b", help="Create issue for specific branch (default: current branch)"
 )
-@click.option(
-    "--title", "-t",
-    help="Override auto-generated title"
-)
-@click.option(
-    "--assignee", "-a",
-    help="Override auto-detected assignee"
-)
+@click.option("--title", "-t", help="Override auto-generated title")
+@click.option("--assignee", "-a", help="Override auto-detected assignee")
 def git_create_issue(branch, title, assignee):
     """Create an issue for a git branch."""
     from .git_integration import GitIntegration
-    
+
     # Initialize
     core = RoadmapCore()
     git_integration = GitIntegration()
-    
+
     if not git_integration.is_git_repository():
         click.echo("❌ Not in a git repository", err=True)
         return
-        
+
     # Determine target branch
     if branch:
         target_branch = branch
@@ -2598,37 +2662,42 @@ def git_create_issue(branch, title, assignee):
             click.echo("❌ No current branch found", err=True)
             return
         target_branch = current_branch.name
-        
+
     # Check if issue already exists
     existing_issues = git_integration.get_branch_linked_issues(target_branch)
     if existing_issues:
         click.echo(f"❌ Branch already has linked issues: {', '.join(existing_issues)}")
         return
-        
+
     # Create issue
     if title or assignee:
         # Manual creation with overrides
         from .git_integration import GitBranch
+
         branch_obj = GitBranch(target_branch)
-        
-        issue_title = title or git_integration._extract_title_from_branch_name(target_branch)
+
+        issue_title = title or git_integration._extract_title_from_branch_name(
+            target_branch
+        )
         if not issue_title:
-            click.echo("❌ Could not determine title from branch name. Please use --title")
+            click.echo(
+                "❌ Could not determine title from branch name. Please use --title"
+            )
             return
-            
+
         issue_assignee = assignee or git_integration.get_current_user() or "Unknown"
         issue_type = branch_obj.suggests_issue_type() or "feature"
-        
+
         content = f"Created for branch: `{target_branch}`\n\nThis issue was manually created for the git branch `{target_branch}`."
-        
+
         issue = core.create_issue(
             title=issue_title,
             content=content,
             assignee=issue_assignee,
             priority="medium",
-            status="in_progress"
+            status="in_progress",
         )
-        
+
         click.echo(f"✅ Created issue {issue.id}: {issue.title}")
     else:
         # Auto creation
@@ -2641,39 +2710,41 @@ def git_create_issue(branch, title, assignee):
 
 
 @git.command("github-sync")
+@click.option("--issue-id", "-i", help="Sync specific issue by ID")
 @click.option(
-    "--issue-id", "-i",
-    help="Sync specific issue by ID"
-)
-@click.option(
-    "--direction", "-d",
+    "--direction",
+    "-d",
     type=click.Choice(["to_github", "from_github", "bidirectional"]),
     default="bidirectional",
-    help="Sync direction (default: bidirectional)"
+    help="Sync direction (default: bidirectional)",
 )
 @click.option(
-    "--create-missing", "-c",
+    "--create-missing",
+    "-c",
     is_flag=True,
-    help="Create GitHub issues for roadmap issues that don't have them"
+    help="Create GitHub issues for roadmap issues that don't have them",
 )
 @click.option(
-    "--dry-run", "-n",
+    "--dry-run",
+    "-n",
     is_flag=True,
-    help="Show what would be synced without making changes"
+    help="Show what would be synced without making changes",
 )
 def git_github_sync(issue_id, direction, create_missing, dry_run):
     """Synchronize issues with GitHub."""
     from .enhanced_github_integration import EnhancedGitHubIntegration
-    
+
     # Initialize
     core = RoadmapCore()
     github_integration = EnhancedGitHubIntegration(core)
-    
+
     if not github_integration.is_github_enabled():
         click.echo("❌ GitHub integration not available", err=True)
-        click.echo("Set GITHUB_TOKEN environment variable and ensure repository is configured")
+        click.echo(
+            "Set GITHUB_TOKEN environment variable and ensure repository is configured"
+        )
         return
-        
+
     if issue_id:
         # Sync specific issue
         if dry_run:
@@ -2688,25 +2759,29 @@ def git_github_sync(issue_id, direction, create_missing, dry_run):
     else:
         # Sync all issues
         click.echo("🔄 Syncing all issues with GitHub...")
-        
+
         # Get all issues
         issues = core.get_all_issues()
         synced_count = 0
         created_count = 0
         error_count = 0
-        
+
         for issue in issues:
             try:
                 if dry_run:
                     if issue.github_issue:
                         click.echo(f"🔍 Would sync {issue.id}: {issue.title}")
                     elif create_missing:
-                        click.echo(f"🔍 Would create GitHub issue for {issue.id}: {issue.title}")
+                        click.echo(
+                            f"🔍 Would create GitHub issue for {issue.id}: {issue.title}"
+                        )
                     continue
-                    
+
                 if issue.github_issue:
                     # Existing GitHub issue - sync it
-                    success = github_integration.sync_issue_with_github(issue.id, direction)
+                    success = github_integration.sync_issue_with_github(
+                        issue.id, direction
+                    )
                     if success:
                         synced_count += 1
                         click.echo(f"✅ Synced {issue.id}: {issue.title}")
@@ -2715,21 +2790,25 @@ def git_github_sync(issue_id, direction, create_missing, dry_run):
                         click.echo(f"❌ Failed to sync {issue.id}")
                 elif create_missing:
                     # No GitHub issue - create one
-                    github_issue = github_integration.create_github_issue_from_roadmap(issue)
+                    github_issue = github_integration.create_github_issue_from_roadmap(
+                        issue
+                    )
                     if github_issue:
                         created_count += 1
-                        click.echo(f"🆕 Created GitHub issue #{github_issue['number']} for {issue.id}: {issue.title}")
+                        click.echo(
+                            f"🆕 Created GitHub issue #{github_issue['number']} for {issue.id}: {issue.title}"
+                        )
                     else:
                         error_count += 1
                         click.echo(f"❌ Failed to create GitHub issue for {issue.id}")
-                        
+
             except Exception as e:
                 error_count += 1
                 click.echo(f"❌ Error processing {issue.id}: {e}")
-                
+
         # Summary
         if not dry_run:
-            click.echo(f"\n📊 Sync Summary:")
+            click.echo("\n📊 Sync Summary:")
             click.echo(f"✅ Synced: {synced_count}")
             click.echo(f"🆕 Created: {created_count}")
             click.echo(f"❌ Errors: {error_count}")
@@ -2738,29 +2817,30 @@ def git_github_sync(issue_id, direction, create_missing, dry_run):
 @git.command("webhook")
 @click.argument("webhook_url")
 @click.option(
-    "--events", "-e",
+    "--events",
+    "-e",
     multiple=True,
     type=click.Choice(["push", "pull_request", "issues", "issue_comment"]),
     default=["push", "pull_request", "issues"],
-    help="Events to subscribe to (default: push, pull_request, issues)"
+    help="Events to subscribe to (default: push, pull_request, issues)",
 )
 def git_webhook(webhook_url, events):
     """Set up GitHub webhook for real-time synchronization."""
     from .enhanced_github_integration import EnhancedGitHubIntegration
-    
+
     # Initialize
     core = RoadmapCore()
     github_integration = EnhancedGitHubIntegration(core)
-    
+
     if not github_integration.is_github_enabled():
         click.echo("❌ GitHub integration not available", err=True)
         return
-        
+
     click.echo(f"🪝 Setting up webhook: {webhook_url}")
     click.echo(f"📋 Events: {', '.join(events)}")
-    
+
     success = github_integration.setup_github_webhook(webhook_url, list(events))
-    
+
     if success:
         click.echo("✅ Webhook created successfully")
         click.echo("\n🔔 Your webhook endpoint should handle these events:")
@@ -2772,28 +2852,25 @@ def git_webhook(webhook_url, events):
 
 @git.command("validate")
 @click.option(
-    "--branch", "-b",
-    help="Validate specific branch (default: current branch)"
+    "--branch", "-b", help="Validate specific branch (default: current branch)"
 )
 @click.option(
-    "--check-ci", "-c",
-    is_flag=True,
-    help="Check CI/CD status for associated issues"
+    "--check-ci", "-c", is_flag=True, help="Check CI/CD status for associated issues"
 )
 def git_validate(branch, check_ci):
     """Validate branch policy and CI/CD status."""
     from .enhanced_github_integration import EnhancedGitHubIntegration
     from .git_integration import GitIntegration
-    
+
     # Initialize
     core = RoadmapCore()
     git_integration = GitIntegration()
     github_integration = EnhancedGitHubIntegration(core)
-    
+
     if not git_integration.is_git_repository():
         click.echo("❌ Not in a git repository", err=True)
         return
-        
+
     # Determine branch to validate
     if branch:
         target_branch = branch
@@ -2803,43 +2880,45 @@ def git_validate(branch, check_ci):
             click.echo("❌ No current branch found", err=True)
             return
         target_branch = current_branch.name
-        
+
     click.echo(f"🔍 Validating branch: {target_branch}")
-    
+
     # Validate branch policy
     validation = github_integration.enforce_branch_policy(target_branch)
-    
+
     if validation["valid"]:
         click.echo("✅ Branch policy validation passed")
     else:
         click.echo("❌ Branch policy validation failed")
-        
+
     # Show warnings and suggestions
     for warning in validation.get("warnings", []):
         click.echo(f"⚠️  {warning}")
-        
+
     for error in validation.get("errors", []):
         click.echo(f"❌ {error}")
-        
+
     for suggestion in validation.get("suggestions", []):
         click.echo(f"💡 {suggestion}")
-        
+
     # Check CI/CD status if requested
     if check_ci:
-        click.echo(f"\n🔧 Checking CI/CD status...")
-        
+        click.echo("\n🔧 Checking CI/CD status...")
+
         # Find linked issues
         linked_issues = git_integration.get_branch_linked_issues(target_branch)
-        
+
         if not linked_issues:
             click.echo("ℹ️  No linked issues found for CI/CD status check")
         else:
             for issue_id in linked_issues:
                 ci_status = github_integration.validate_ci_cd_status(issue_id)
-                
+
                 click.echo(f"\n📋 Issue {issue_id}:")
                 if ci_status.get("has_pr"):
-                    click.echo(f"  🔗 PR Status: {ci_status.get('pr_status', 'unknown')}")
+                    click.echo(
+                        f"  🔗 PR Status: {ci_status.get('pr_status', 'unknown')}"
+                    )
                     if ci_status.get("ci_status"):
                         ci_state = ci_status["ci_status"].get("state", "unknown")
                         if ci_state == "success":
@@ -2850,50 +2929,48 @@ def git_validate(branch, check_ci):
                             click.echo("  🟡 CI checks pending")
                         else:
                             click.echo(f"  ❓ CI status: {ci_state}")
-                            
+
                     if ci_status.get("deployable"):
                         click.echo("  🚀 Ready for deployment")
                     else:
                         click.echo("  ⏸️  Not ready for deployment")
                 else:
                     click.echo("  ❓ No associated pull request found")
-                    
+
                 if "error" in ci_status:
                     click.echo(f"  ❌ Error: {ci_status['error']}")
 
 
 @git.command("serve-webhook")
 @click.option(
-    "--host", "-h",
-    default="0.0.0.0",
-    help="Host to bind to (default: 0.0.0.0)"
+    "--host", "-h", default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)"
 )
 @click.option(
-    "--port", "-p",
-    default=8080,
-    type=int,
-    help="Port to bind to (default: 8080)"
+    "--port", "-p", default=8080, type=int, help="Port to bind to (default: 8080)"
 )
 @click.option(
-    "--secret", "-s",
-    help="Webhook secret for signature verification (or set GITHUB_WEBHOOK_SECRET)"
+    "--secret",
+    "-s",
+    help="Webhook secret for signature verification (or set GITHUB_WEBHOOK_SECRET)",
 )
 def git_serve_webhook(host, port, secret):
     """Start webhook server for real-time GitHub integration."""
     try:
         from .webhook_server import WebhookCLI
-        
+
         click.echo(f"🚀 Starting webhook server on {host}:{port}")
         click.echo("📋 Supported events: push, pull_request, issues, issue_comment")
         click.echo(f"🔗 Webhook URL: http://{host}:{port}/webhook/github")
-        
+
         if secret:
             click.echo("🔐 Signature verification enabled")
         else:
-            click.echo("⚠️  No webhook secret configured - signatures will not be verified")
-            
+            click.echo(
+                "⚠️  No webhook secret configured - signatures will not be verified"
+            )
+
         WebhookCLI.start_server(host, port, secret)
-        
+
     except ImportError:
         click.echo("❌ Webhook server requires aiohttp package", err=True)
         click.echo("Install with: pip install aiohttp")
@@ -2987,7 +3064,10 @@ def create_issue(
             else:
                 canonical_assignee = core.get_canonical_assignee(assignee)
                 if canonical_assignee != assignee:
-                    console.print(f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim")
+                    console.print(
+                        f"🔄 Resolved '{assignee}' to '{canonical_assignee}'",
+                        style="dim",
+                    )
 
         issue = core.create_issue(
             title=title,
@@ -3311,7 +3391,11 @@ def list_issues(
 @click.option("--milestone", "-m", help="Update milestone")
 @click.option("--assignee", "-a", help="Update assignee")
 @click.option("--estimate", "-e", type=float, help="Update estimated time (in hours)")
-@click.option("--reason", "-r", help="Reason for the update (especially useful when changing status)")
+@click.option(
+    "--reason",
+    "-r",
+    help="Reason for the update (especially useful when changing status)",
+)
 @click.pass_context
 def update_issue(
     ctx: click.Context,
@@ -3354,7 +3438,10 @@ def update_issue(
                 else:
                     canonical_assignee = core.get_canonical_assignee(assignee)
                     if canonical_assignee != assignee:
-                        console.print(f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim")
+                        console.print(
+                            f"🔄 Resolved '{assignee}' to '{canonical_assignee}'",
+                            style="dim",
+                        )
                     updates["assignee"] = canonical_assignee
             else:
                 updates["assignee"] = None
@@ -3375,7 +3462,7 @@ def update_issue(
             if not current_issue:
                 console.print(f"❌ Issue not found: {issue_id}", style="bold red")
                 return
-            
+
             # Append reason to content
             reason_text = f"\n\n**Update:** {reason}"
             if status == "done":
@@ -3397,7 +3484,7 @@ def update_issue(
                 continue
             else:
                 console.print(f"   {field}: {value}", style="cyan")
-        
+
         # Show reason if provided
         if reason:
             console.print(f"   reason: {reason}", style="cyan")
@@ -3413,17 +3500,20 @@ def update_issue(
 @click.option("--reason", "-r", help="Reason for finishing the issue")
 @click.option("--date", help="Completion date (YYYY-MM-DD HH:MM, defaults to now)")
 @click.option(
-    "--record-time", "-t",
+    "--record-time",
+    "-t",
     is_flag=True,
-    help="Record actual completion time and duration (like old 'complete' command)"
+    help="Record actual completion time and duration (like old 'complete' command)",
 )
 @click.pass_context
-def finish_issue(ctx: click.Context, issue_id: str, reason: str, date: str, record_time: bool):
+def finish_issue(
+    ctx: click.Context, issue_id: str, reason: str, date: str, record_time: bool
+):
     """Finish an issue (replaces both 'done' and 'complete' commands).
 
     By default, this marks the issue as done with an optional reason.
     Use --record-time to also record actual completion date and calculate duration.
-    
+
     Examples:
         roadmap issue finish abc12345 --reason "Bug fixed"
         roadmap issue finish abc12345 --record-time --date "2025-01-15 14:30"
@@ -3466,7 +3556,7 @@ def finish_issue(ctx: click.Context, issue_id: str, reason: str, date: str, reco
                         return
             else:
                 end_date = datetime.now()
-            
+
             update_data["actual_end_date"] = end_date
 
         # Handle reason
@@ -3481,43 +3571,40 @@ def finish_issue(ctx: click.Context, issue_id: str, reason: str, date: str, reco
 
         if success:
             console.print(f"✅ Finished: {issue.title}", style="bold green")
-            
+
             if reason:
                 console.print(f"   Reason: {reason}", style="cyan")
-            
+
             if record_time:
                 end_date = update_data.get("actual_end_date", datetime.now())
                 console.print(
-                    f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}", 
-                    style="cyan"
+                    f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
                 )
-                
+
                 # Show duration if we have start date
                 if issue.actual_start_date:
                     duration = end_date - issue.actual_start_date
                     hours = duration.total_seconds() / 3600
                     console.print(f"   Duration: {hours:.1f} hours", style="cyan")
-                    
+
                     # Compare with estimate
                     if issue.estimated_hours:
                         diff = hours - issue.estimated_hours
                         if abs(diff) > 0.5:  # More than 30 minutes difference
                             if diff > 0:
                                 console.print(
-                                    f"   Over estimate by: {diff:.1f} hours", 
-                                    style="yellow"
+                                    f"   Over estimate by: {diff:.1f} hours",
+                                    style="yellow",
                                 )
                             else:
                                 console.print(
-                                    f"   Under estimate by: {abs(diff):.1f} hours", 
-                                    style="green"
+                                    f"   Under estimate by: {abs(diff):.1f} hours",
+                                    style="green",
                                 )
                         else:
-                            console.print(
-                                "   ✅ Right on estimate!", style="green"
-                            )
-                
-            console.print(f"   Status: Done", style="green")
+                            console.print("   ✅ Right on estimate!", style="green")
+
+            console.print("   Status: Done", style="green")
         else:
             console.print(f"❌ Failed to finish issue: {issue_id}", style="bold red")
 
@@ -3535,8 +3622,13 @@ def done_issue(ctx: click.Context, issue_id: str, reason: str):
 
     This is kept for backward compatibility. Consider using 'roadmap issue finish' instead.
     """
-    console.print("ℹ️  Note: 'done' is deprecated. Use 'roadmap issue finish' instead.", style="yellow")
-    ctx.invoke(finish_issue, issue_id=issue_id, reason=reason, date=None, record_time=False)
+    console.print(
+        "ℹ️  Note: 'done' is deprecated. Use 'roadmap issue finish' instead.",
+        style="yellow",
+    )
+    ctx.invoke(
+        finish_issue, issue_id=issue_id, reason=reason, date=None, record_time=False
+    )
 
 
 @issue.command("delete")
@@ -3568,7 +3660,7 @@ def delete_issue(ctx: click.Context, issue_id: str):
     try:
         issue = core.get_issue(issue_id)
         if issue:
-            console.print(f"\n🔍 Issue to be deleted:", style="yellow")
+            console.print("\n🔍 Issue to be deleted:", style="yellow")
             console.print(f"   ID: {issue.id}", style="cyan")
             console.print(f"   Title: {issue.title}", style="cyan")
             console.print(f"   Status: {issue.status.value}", style="cyan")
@@ -3628,7 +3720,7 @@ def block_issue(ctx: click.Context, issue_id: str, reason: str):
         if success:
             console.print(f"🚫 Blocked issue: {issue.title}", style="bold yellow")
             console.print(f"   ID: {issue_id}", style="cyan")
-            console.print(f"   Status: 🚫 Blocked", style="yellow")
+            console.print("   Status: 🚫 Blocked", style="yellow")
             if reason:
                 console.print(f"   Reason: {reason}", style="cyan")
             console.print(
@@ -3809,7 +3901,7 @@ def _display_all_dependencies(core):
                     )
 
     # Show individual dependencies
-    console.print(f"\n📋 Individual Dependencies:", style="bold")
+    console.print("\n📋 Individual Dependencies:", style="bold")
     for issue in issues_with_deps:
         status_emoji = {
             "todo": "📋",
@@ -3913,11 +4005,16 @@ def _build_dependency_chains(issues):
 @click.pass_context
 def complete_issue(ctx: click.Context, issue_id: str, date: str):
     """Complete work on an issue (alias for 'finish --record-time').
-    
+
     This is kept for backward compatibility. Consider using 'roadmap issue finish --record-time' instead.
     """
-    console.print("ℹ️  Note: 'complete' is deprecated. Use 'roadmap issue finish --record-time' instead.", style="yellow")
-    ctx.invoke(finish_issue, issue_id=issue_id, reason=None, date=date, record_time=True)
+    console.print(
+        "ℹ️  Note: 'complete' is deprecated. Use 'roadmap issue finish --record-time' instead.",
+        style="yellow",
+    )
+    ctx.invoke(
+        finish_issue, issue_id=issue_id, reason=None, date=date, record_time=True
+    )
 
 
 @issue.command("start")
@@ -3970,7 +4067,7 @@ def start_issue(ctx: click.Context, issue_id: str, date: str):
             console.print(
                 f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
             )
-            console.print(f"   Status: In Progress", style="yellow")
+            console.print("   Status: In Progress", style="yellow")
         else:
             console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
 
@@ -4028,7 +4125,7 @@ def complete_issue(ctx: click.Context, issue_id: str, date: str):
             console.print(
                 f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
             )
-            console.print(f"   Status: Done", style="green")
+            console.print("   Status: Done", style="green")
 
             # Show duration if we have start date
             if issue.actual_start_date:
@@ -4103,7 +4200,7 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
                 if issue.status == Status.TODO:
                     core.update_issue(issue_id, status=Status.IN_PROGRESS)
                     console.print(
-                        f"   Status: Auto-updated to In Progress", style="yellow"
+                        "   Status: Auto-updated to In Progress", style="yellow"
                     )
         else:
             console.print(f"❌ Failed to update progress: {issue_id}", style="bold red")
@@ -4153,7 +4250,7 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
         if success:
             console.print(f"✅ Unblocked issue: {issue.title}", style="bold green")
             console.print(f"   ID: {issue_id}", style="cyan")
-            console.print(f"   Status: 🔄 In Progress", style="yellow")
+            console.print("   Status: 🔄 In Progress", style="yellow")
             if reason:
                 console.print(f"   Reason: {reason}", style="cyan")
         else:
@@ -4462,7 +4559,7 @@ def delete_milestone(ctx: click.Context, milestone_name: str):
     try:
         milestone = core.get_milestone(milestone_name)
         if milestone:
-            console.print(f"\n🔍 Milestone to be deleted:", style="yellow")
+            console.print("\n🔍 Milestone to be deleted:", style="yellow")
             console.print(f"   Name: {milestone.name}", style="cyan")
             console.print(f"   Status: {milestone.status.value}", style="cyan")
             if milestone.description:
@@ -4775,7 +4872,7 @@ def sync_status(ctx: click.Context):
 
         # Show token information
         token_info = sync_manager.get_token_info()
-        console.print(f"\nToken Sources:", style="bold")
+        console.print("\nToken Sources:", style="bold")
 
         if token_info["credential_manager_available"]:
             status = "✅" if token_info["credential_manager"] else "❌"
@@ -4858,7 +4955,9 @@ def sync_delete_token(ctx: click.Context):
     help="Number of worker threads for high-performance sync (default: 8)",
 )
 @click.pass_context
-def sync_push(ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int):
+def sync_push(
+    ctx: click.Context, issues: bool, milestones: bool, batch_size: int, workers: int
+):
     """Push local changes to GitHub using high-performance sync."""
     core = ctx.obj["core"]
 
@@ -5393,7 +5492,7 @@ def create_comment(ctx: click.Context, issue_identifier: str, comment_text: str)
         console.print(f"💬 Creating comment on {issue_title}...", style="cyan")
         comment = client.create_issue_comment(github_issue_number, comment_text)
 
-        console.print(f"✅ Comment created successfully!", style="bold green")
+        console.print("✅ Comment created successfully!", style="bold green")
         console.print(f"   Author: {comment.author}", style="cyan")
         console.print(
             f"   Created: {comment.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
@@ -5451,7 +5550,7 @@ def edit_comment(ctx: click.Context, comment_id: int, new_text: str):
         console.print(f"✏️  Updating comment #{comment_id}...", style="cyan")
         comment = client.update_issue_comment(comment_id, new_text)
 
-        console.print(f"✅ Comment updated successfully!", style="bold green")
+        console.print("✅ Comment updated successfully!", style="bold green")
         console.print(f"   Author: {comment.author}", style="cyan")
         console.print(
             f"   Updated: {comment.updated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
@@ -5963,7 +6062,7 @@ def _export_timeline_html(issues, schedule, output_path, days):
             </tr>
             """
 
-    html_content += f"""
+    html_content += """
         </tbody>
     </table>
     
@@ -6471,24 +6570,40 @@ def show_team_workload(ctx: click.Context):
 @click.option("--name", help="Display name for the team member")
 @click.option("--github", help="GitHub username")
 @click.option("--email", help="Email address")
-@click.option("--alias", multiple=True, help="Alternative names/aliases (can be used multiple times)")
-@click.option("--role", multiple=True, help="Project roles (can be used multiple times)")
+@click.option(
+    "--alias",
+    multiple=True,
+    help="Alternative names/aliases (can be used multiple times)",
+)
+@click.option(
+    "--role", multiple=True, help="Project roles (can be used multiple times)"
+)
 @click.pass_context
-def add_team_member(ctx: click.Context, canonical_id: str, name: str, github: str, email: str, alias: tuple, role: tuple):
+def add_team_member(
+    ctx: click.Context,
+    canonical_id: str,
+    name: str,
+    github: str,
+    email: str,
+    alias: tuple,
+    role: tuple,
+):
     """Add a new team member with identity management."""
     from .identity import IdentityManager
-    
+
     core = ctx.obj["core"]
     if not core.is_initialized():
-        console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
         return
-    
+
     try:
         identity_manager = IdentityManager(core.root_path)
-        
+
         # Use canonical_id as display name if not provided
         display_name = name or canonical_id
-        
+
         profile = identity_manager.add_team_member(
             canonical_id=canonical_id,
             display_name=display_name,
@@ -6496,14 +6611,16 @@ def add_team_member(ctx: click.Context, canonical_id: str, name: str, github: st
             email=email,
             aliases=list(alias),
         )
-        
+
         # Add roles
         if role:
             profile.roles.update(role)
-        
+
         identity_manager.save_team_config()
-        
-        console.print(f"✅ Added team member: {display_name} ({canonical_id})", style="bold green")
+
+        console.print(
+            f"✅ Added team member: {display_name} ({canonical_id})", style="bold green"
+        )
         if github:
             console.print(f"   GitHub: {github}")
         if email:
@@ -6512,83 +6629,112 @@ def add_team_member(ctx: click.Context, canonical_id: str, name: str, github: st
             console.print(f"   Aliases: {', '.join(alias)}")
         if role:
             console.print(f"   Roles: {', '.join(role)}")
-            
+
     except Exception as e:
         console.print(f"❌ Failed to add team member: {e}", style="bold red")
 
 
 @team.command("identity")
-@click.option("--mode", type=click.Choice(["strict", "relaxed", "github-only", "local-only", "hybrid"]), 
-              help="Set validation mode")
-@click.option("--suggest", is_flag=True, help="Suggest identity mappings for existing assignees")
+@click.option(
+    "--mode",
+    type=click.Choice(["strict", "relaxed", "github-only", "local-only", "hybrid"]),
+    help="Set validation mode",
+)
+@click.option(
+    "--suggest", is_flag=True, help="Suggest identity mappings for existing assignees"
+)
 @click.option("--normalize", is_flag=True, help="Auto-normalize existing assignees")
 @click.pass_context
 def manage_identity(ctx: click.Context, mode: str, suggest: bool, normalize: bool):
     """Manage identity resolution and validation settings."""
     from .identity import IdentityManager
-    
+
     core = ctx.obj["core"]
     if not core.is_initialized():
-        console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
         return
-    
+
     try:
         identity_manager = IdentityManager(core.root_path)
-        
+
         if mode:
             identity_manager.config.validation_mode = mode
             identity_manager.save_team_config()
             console.print(f"✅ Set validation mode to: {mode}", style="bold green")
-        
+
         if suggest:
             # Get all assignees from existing issues
             issues = core.list_issues()
             assignee_names = [issue.assignee for issue in issues if issue.assignee]
-            
+
             if not assignee_names:
                 console.print("No assigned issues found to analyze.", style="yellow")
                 return
-            
+
             suggestions = identity_manager.suggest_identity_mappings(assignee_names)
-            
+
             if not suggestions:
                 console.print("✅ No identity conflicts detected.", style="green")
                 return
-            
+
             console.print("🔍 Identity mapping suggestions:", style="bold cyan")
             console.print()
-            
+
             for cluster_key, variants in suggestions.items():
-                console.print(f"Possible duplicates for '{cluster_key}':", style="yellow")
+                console.print(
+                    f"Possible duplicates for '{cluster_key}':", style="yellow"
+                )
                 for variant in variants:
                     console.print(f"  • {variant}")
                 console.print()
-                console.print("Consider creating a team member profile to unify these identities.")
+                console.print(
+                    "Consider creating a team member profile to unify these identities."
+                )
                 console.print()
-        
+
         if normalize:
             # This would implement auto-normalization logic
             console.print("🔄 Auto-normalization not yet implemented", style="yellow")
-            console.print("Use 'roadmap team identity --suggest' to see recommended mappings")
-        
+            console.print(
+                "Use 'roadmap team identity --suggest' to see recommended mappings"
+            )
+
         if not any([mode, suggest, normalize]):
             # Show current configuration
             console.print("👥 Identity Management Configuration", style="bold cyan")
             console.print()
             console.print(f"Validation Mode: {identity_manager.config.validation_mode}")
-            console.print(f"Auto-normalize: {identity_manager.config.auto_normalize_assignees}")
-            console.print(f"Require team membership: {identity_manager.config.require_team_membership}")
-            console.print(f"Allow identity learning: {identity_manager.config.allow_identity_learning}")
+            console.print(
+                f"Auto-normalize: {identity_manager.config.auto_normalize_assignees}"
+            )
+            console.print(
+                f"Require team membership: {identity_manager.config.require_team_membership}"
+            )
+            console.print(
+                f"Allow identity learning: {identity_manager.config.allow_identity_learning}"
+            )
             console.print()
             console.print(f"Team members configured: {len(identity_manager.profiles)}")
-            
+
             if identity_manager.profiles:
                 console.print("\nConfigured team members:")
                 for profile in identity_manager.profiles.values():
-                    aliases_text = f" (aliases: {', '.join(profile.aliases)})" if profile.aliases else ""
-                    github_text = f" [GitHub: {profile.github_username}]" if profile.github_username else ""
-                    console.print(f"  • {profile.display_name} ({profile.canonical_id}){github_text}{aliases_text}")
-            
+                    aliases_text = (
+                        f" (aliases: {', '.join(profile.aliases)})"
+                        if profile.aliases
+                        else ""
+                    )
+                    github_text = (
+                        f" [GitHub: {profile.github_username}]"
+                        if profile.github_username
+                        else ""
+                    )
+                    console.print(
+                        f"  • {profile.display_name} ({profile.canonical_id}){github_text}{aliases_text}"
+                    )
+
     except Exception as e:
         console.print(f"❌ Failed to manage identity: {e}", style="bold red")
 
@@ -6599,16 +6745,18 @@ def manage_identity(ctx: click.Context, mode: str, suggest: bool, normalize: boo
 def resolve_assignee(ctx: click.Context, name: str):
     """Test assignee name resolution."""
     from .identity import IdentityManager
-    
+
     core = ctx.obj["core"]
     if not core.is_initialized():
-        console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
         return
-    
+
     try:
         identity_manager = IdentityManager(core.root_path)
         is_valid, result, profile = identity_manager.resolve_assignee(name)
-        
+
         if is_valid:
             console.print(f"✅ '{name}' resolves to: {result}", style="bold green")
             if profile:
@@ -6625,7 +6773,7 @@ def resolve_assignee(ctx: click.Context, name: str):
                 console.print("   (No profile configured - using name as-is)")
         else:
             console.print(f"❌ '{name}' is not valid: {result}", style="bold red")
-            
+
     except Exception as e:
         console.print(f"❌ Failed to resolve assignee: {e}", style="bold red")
 
@@ -7678,7 +7826,7 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
         branch_name = core.suggest_branch_name_for_issue(issue_id)
         if not branch_name:
             console.print(
-                f"❌ Could not suggest branch name for issue", style="bold red"
+                "❌ Could not suggest branch name for issue", style="bold red"
             )
             return
 
@@ -7696,7 +7844,7 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
                 core.update_issue(issue_id, status=Status.IN_PROGRESS)
                 console.print("📊 Updated issue status to: in-progress", style="yellow")
         else:
-            console.print(f"❌ Failed to create branch", style="bold red")
+            console.print("❌ Failed to create branch", style="bold red")
 
     except Exception as e:
         console.print(f"❌ Failed to create Git branch: {e}", style="bold red")
@@ -7748,7 +7896,7 @@ def git_link(ctx: click.Context, issue_id: str):
 @click.argument("issue_id")
 @click.option("--since", help="Show commits since date (e.g., '1 week ago')")
 @click.pass_context
-def git_commits(ctx: click.Context, issue_id: str, since: Optional[str]):
+def git_commits(ctx: click.Context, issue_id: str, since: str | None):
     """Show Git commits that reference an issue."""
     core = ctx.obj["core"]
 
@@ -8223,7 +8371,9 @@ def analytics_developer(ctx: click.Context, developer_name: str, days: int, save
         score_style = (
             "bold green"
             if metrics.productivity_score >= 70
-            else "yellow" if metrics.productivity_score >= 40 else "red"
+            else "yellow"
+            if metrics.productivity_score >= 40
+            else "red"
         )
         console.print(
             f"🎯 Productivity Score: {metrics.productivity_score:.1f}/100",
@@ -8242,7 +8392,9 @@ def analytics_developer(ctx: click.Context, developer_name: str, days: int, save
         collab_style = (
             "green"
             if metrics.collaboration_score >= 50
-            else "yellow" if metrics.collaboration_score >= 25 else "red"
+            else "yellow"
+            if metrics.collaboration_score >= 25
+            else "red"
         )
         console.print(
             f"🤝 Collaboration Score: {metrics.collaboration_score:.1f}/100",
@@ -8349,7 +8501,7 @@ def analytics_team(ctx: click.Context, days: int, save: str, format: str):
                 console.print(f"❌ {report['error']}", style="bold red")
                 return
 
-            console.print(f"👥 Team Analytics Report", style="bold blue")
+            console.print("👥 Team Analytics Report", style="bold blue")
             console.print(f"📅 Period: {days} days", style="dim")
             console.print()
 
@@ -8399,7 +8551,9 @@ def analytics_team(ctx: click.Context, days: int, save: str, format: str):
             quality_style = (
                 "green"
                 if quality_score >= 70
-                else "yellow" if quality_score >= 40 else "red"
+                else "yellow"
+                if quality_score >= 40
+                else "red"
             )
             console.print(
                 f"   🎯 Quality Score: {quality_score:.1f}/100", style=quality_style
@@ -8944,7 +9098,7 @@ def analytics_enhanced(
         # Export functionality
         if export:
             console.print()
-            console.print(f"💾 Exporting enhanced analytics...", style="bold blue")
+            console.print("💾 Exporting enhanced analytics...", style="bold blue")
 
             export_data = {
                 "analysis_metadata": {
@@ -9091,7 +9245,7 @@ def predict_estimate(
         total_hours = 0
         high_uncertainty_count = 0
 
-        for issue, estimate in zip(issues, estimates):
+        for issue, estimate in zip(issues, estimates, strict=False):
             # Confidence styling
             conf_style = {
                 "very_high": "bright_green",
@@ -9104,7 +9258,9 @@ def predict_estimate(
             complexity_emoji = (
                 "🟢"
                 if estimate.complexity_score < 4
-                else "🟡" if estimate.complexity_score < 7 else "🔴"
+                else "🟡"
+                if estimate.complexity_score < 7
+                else "🔴"
             )
 
             table.add_row(
@@ -9632,7 +9788,9 @@ def predict_intelligence(ctx: click.Context, target: str, save: str):
             delay_style = (
                 "red"
                 if forecast["delay_probability"] > 0.6
-                else "yellow" if forecast["delay_probability"] > 0.3 else "green"
+                else "yellow"
+                if forecast["delay_probability"] > 0.3
+                else "green"
             )
             console.print(
                 f"   ⚠️  Delay Risk: [{delay_style}]{forecast['delay_probability']*100:.0f}%[/{delay_style}]"
@@ -9745,7 +9903,7 @@ def _get_file_extension(format: str) -> str:
 
 
 def _get_export_path(
-    core: RoadmapCore, output: Optional[str], prefix: str, format: str
+    core: RoadmapCore, output: str | None, prefix: str, format: str
 ) -> Path:
     """Generate export path, defaulting to artifacts directory if no output specified."""
     if output:
@@ -9787,7 +9945,7 @@ def _get_export_path(
     # Ensure artifacts directory and format subdirectory exist
     if core.is_initialized():
         core.artifacts_dir.mkdir(exist_ok=True)
-        
+
         # Create subdirectory based on format
         format_subdir = None
         if format in ["csv"]:
@@ -9799,7 +9957,7 @@ def _get_export_path(
         else:
             # Default to artifacts root for unknown formats
             format_subdir = core.artifacts_dir
-        
+
         format_subdir.mkdir(exist_ok=True)
         return format_subdir / filename
     else:
@@ -10679,7 +10837,7 @@ def visualize_dashboard(ctx: click.Context, output: str, milestone: str):
         console.print(f"✅ Dashboard generated: {output_path.name}", style="bold green")
         console.print(f"📁 Location: {output_path.absolute()}", style="dim")
         console.print(
-            f"📊 Includes: Status, Milestones, Velocity, Team Workload", style="cyan"
+            "📊 Includes: Status, Milestones, Velocity, Team Workload", style="cyan"
         )
         console.print(
             f"📋 Issues: {len(issues)}, Milestones: {len(milestones)}", style="cyan"
@@ -10718,28 +10876,32 @@ def visualize_dashboard(ctx: click.Context, output: str, milestone: str):
     help="Generate visualization charts with the analysis",
 )
 @click.pass_context
-def project_overview(ctx: click.Context, output: Optional[str], format: str, include_charts: bool) -> None:
+def project_overview(
+    ctx: click.Context, output: str | None, format: str, include_charts: bool
+) -> None:
     """Comprehensive project-level analysis and reporting.
-    
+
     Provides high-level insights into project progress, milestone progression,
     technical debt indicators, team workload, and overall project health.
     """
     try:
         core = ctx.obj.get("core")
         if not core:
-            console.print("❌ No roadmap found. Run 'roadmap init' first.", style="bold red")
+            console.print(
+                "❌ No roadmap found. Run 'roadmap init' first.", style="bold red"
+            )
             return
 
         console.print("🔍 Analyzing project...", style="bold blue")
-        
+
         # Get all data
         issues = core.list_issues()
         milestones = core.list_milestones()
-        
+
         if not issues:
             console.print("📝 No issues found in the project.", style="yellow")
             return
-            
+
         if not milestones:
             console.print("📅 No milestones found in the project.", style="yellow")
             return
@@ -10747,77 +10909,119 @@ def project_overview(ctx: click.Context, output: Optional[str], format: str, inc
         # Initialize analyzers
         analyzer = EnhancedAnalyzer(core)
         chart_gen = ChartGenerator(core.artifacts_dir)
-        
+
         # Project-level metrics
         total_issues = len(issues)
         closed_issues = len([i for i in issues if i.status == Status.DONE])
         open_issues = total_issues - closed_issues
-        completion_rate = (closed_issues / total_issues * 100) if total_issues > 0 else 0
-        
+        completion_rate = (
+            (closed_issues / total_issues * 100) if total_issues > 0 else 0
+        )
+
         # Issue type distribution
         issue_types = {}
         for issue in issues:
             issue_types[issue.issue_type] = issue_types.get(issue.issue_type, 0) + 1
-        
+
         # Technical debt indicators
-        bugs_open = len([i for i in issues if i.issue_type == IssueType.BUG and i.status != Status.DONE])
+        bugs_open = len(
+            [
+                i
+                for i in issues
+                if i.issue_type == IssueType.BUG and i.status != Status.DONE
+            ]
+        )
         bugs_total = len([i for i in issues if i.issue_type == IssueType.BUG])
         tech_debt_ratio = (bugs_open / bugs_total * 100) if bugs_total > 0 else 0
-        
+
         # Team workload
         assigned_issues = [i for i in issues if i.assignee and i.status != Status.DONE]
         assignee_workload = {}
         for issue in assigned_issues:
-            assignee_workload[issue.assignee] = assignee_workload.get(issue.assignee, 0) + 1
-        
+            assignee_workload[issue.assignee] = (
+                assignee_workload.get(issue.assignee, 0) + 1
+            )
+
         # Milestone progression analysis
         milestone_stats = []
         for milestone in sorted(milestones, key=lambda m: m.due_date or datetime.max):
             milestone_issues = [i for i in issues if i.milestone == milestone.name]
-            milestone_closed = len([i for i in milestone_issues if i.status == Status.DONE])
+            milestone_closed = len(
+                [i for i in milestone_issues if i.status == Status.DONE]
+            )
             milestone_total = len(milestone_issues)
-            milestone_completion = (milestone_closed / milestone_total * 100) if milestone_total > 0 else 0
-            
+            milestone_completion = (
+                (milestone_closed / milestone_total * 100) if milestone_total > 0 else 0
+            )
+
             # Issue type breakdown for this milestone
-            milestone_bugs = len([i for i in milestone_issues if i.issue_type == IssueType.BUG])
-            milestone_features = len([i for i in milestone_issues if i.issue_type == IssueType.FEATURE])
-            milestone_tasks = len([i for i in milestone_issues if i.issue_type == IssueType.OTHER])
-            
-            milestone_stats.append({
-                'milestone': milestone.name,
-                'due_date': milestone.due_date,
-                'completion': milestone_completion,
-                'total_issues': milestone_total,
-                'closed_issues': milestone_closed,
-                'bugs': milestone_bugs,
-                'features': milestone_features,
-                'tasks': milestone_tasks,
-                'status': 'completed' if milestone_completion == 100 else 'in_progress' if milestone_completion > 0 else 'planned'
-            })
+            milestone_bugs = len(
+                [i for i in milestone_issues if i.issue_type == IssueType.BUG]
+            )
+            milestone_features = len(
+                [i for i in milestone_issues if i.issue_type == IssueType.FEATURE]
+            )
+            milestone_tasks = len(
+                [i for i in milestone_issues if i.issue_type == IssueType.OTHER]
+            )
+
+            milestone_stats.append(
+                {
+                    "milestone": milestone.name,
+                    "due_date": milestone.due_date,
+                    "completion": milestone_completion,
+                    "total_issues": milestone_total,
+                    "closed_issues": milestone_closed,
+                    "bugs": milestone_bugs,
+                    "features": milestone_features,
+                    "tasks": milestone_tasks,
+                    "status": "completed"
+                    if milestone_completion == 100
+                    else "in_progress"
+                    if milestone_completion > 0
+                    else "planned",
+                }
+            )
 
         if format == "rich":
             # Display comprehensive project overview
-            console.print("\n" + "="*80, style="bold blue")
+            console.print("\n" + "=" * 80, style="bold blue")
             console.print("📊 PROJECT OVERVIEW", style="bold blue", justify="center")
-            console.print("="*80, style="bold blue")
-            
+            console.print("=" * 80, style="bold blue")
+
             # Overall stats panel
-            stats_table = Table(title="📈 Overall Project Statistics", show_header=True, header_style="bold magenta")
+            stats_table = Table(
+                title="📈 Overall Project Statistics",
+                show_header=True,
+                header_style="bold magenta",
+            )
             stats_table.add_column("Metric", style="cyan", min_width=20)
             stats_table.add_column("Value", style="white", min_width=15)
             stats_table.add_column("Indicator", style="green", min_width=10)
-            
+
             stats_table.add_row("Total Issues", str(total_issues), "📊")
-            stats_table.add_row("Completed", f"{closed_issues} ({completion_rate:.1f}%)", "✅" if completion_rate > 70 else "⚠️" if completion_rate > 40 else "❌")
+            stats_table.add_row(
+                "Completed",
+                f"{closed_issues} ({completion_rate:.1f}%)",
+                "✅" if completion_rate > 70 else "⚠️" if completion_rate > 40 else "❌",
+            )
             stats_table.add_row("Open Issues", str(open_issues), "📝")
-            stats_table.add_row("Open Bugs", f"{bugs_open} ({tech_debt_ratio:.1f}%)", "🐛" if tech_debt_ratio < 20 else "⚠️" if tech_debt_ratio < 40 else "🚨")
+            stats_table.add_row(
+                "Open Bugs",
+                f"{bugs_open} ({tech_debt_ratio:.1f}%)",
+                "🐛" if tech_debt_ratio < 20 else "⚠️" if tech_debt_ratio < 40 else "🚨",
+            )
             stats_table.add_row("Milestones", str(len(milestones)), "🎯")
-            
+
             console.print(stats_table)
             console.print()
-            
+
             # Milestone progression
-            milestone_table = Table(title="🎯 Milestone Progression", show_header=True, header_style="bold magenta")
+            milestone_table = Table(
+                title="🎯 Milestone Progression",
+                show_header=True,
+                header_style="bold magenta",
+            )
             milestone_table.add_column("Milestone", style="cyan", min_width=15)
             milestone_table.add_column("Due Date", style="white", min_width=12)
             milestone_table.add_column("Progress", style="white", min_width=15)
@@ -10826,56 +11030,89 @@ def project_overview(ctx: click.Context, output: Optional[str], format: str, inc
             milestone_table.add_column("Features", style="green", min_width=10)
             milestone_table.add_column("Tasks", style="blue", min_width=8)
             milestone_table.add_column("Status", style="white", min_width=12)
-            
+
             for stats in milestone_stats:
-                due_str = stats['due_date'].strftime('%Y-%m-%d') if stats['due_date'] else "No date"
+                due_str = (
+                    stats["due_date"].strftime("%Y-%m-%d")
+                    if stats["due_date"]
+                    else "No date"
+                )
                 progress_str = f"{stats['completion']:.1f}% ({stats['closed_issues']}/{stats['total_issues']})"
-                status_emoji = "✅" if stats['status'] == 'completed' else "🚧" if stats['status'] == 'in_progress' else "📋"
-                
+                status_emoji = (
+                    "✅"
+                    if stats["status"] == "completed"
+                    else "🚧"
+                    if stats["status"] == "in_progress"
+                    else "📋"
+                )
+
                 milestone_table.add_row(
-                    stats['milestone'],
+                    stats["milestone"],
                     due_str,
                     progress_str,
-                    str(stats['total_issues']),
-                    str(stats['bugs']),
-                    str(stats['features']),
-                    str(stats['tasks']),
-                    f"{status_emoji} {stats['status'].replace('_', ' ').title()}"
+                    str(stats["total_issues"]),
+                    str(stats["bugs"]),
+                    str(stats["features"]),
+                    str(stats["tasks"]),
+                    f"{status_emoji} {stats['status'].replace('_', ' ').title()}",
                 )
-            
+
             console.print(milestone_table)
             console.print()
-            
+
             # Team workload
             if assignee_workload:
-                workload_table = Table(title="👥 Team Workload (Open Issues)", show_header=True, header_style="bold magenta")
+                workload_table = Table(
+                    title="👥 Team Workload (Open Issues)",
+                    show_header=True,
+                    header_style="bold magenta",
+                )
                 workload_table.add_column("Team Member", style="cyan", min_width=20)
                 workload_table.add_column("Open Issues", style="white", min_width=15)
                 workload_table.add_column("Load Level", style="white", min_width=15)
-                
-                avg_workload = sum(assignee_workload.values()) / len(assignee_workload) if assignee_workload else 0
-                
-                for assignee, count in sorted(assignee_workload.items(), key=lambda x: x[1], reverse=True):
-                    load_indicator = "🔥 Heavy" if count > avg_workload * 1.5 else "⚖️ Balanced" if count > avg_workload * 0.5 else "🕊️ Light"
+
+                avg_workload = (
+                    sum(assignee_workload.values()) / len(assignee_workload)
+                    if assignee_workload
+                    else 0
+                )
+
+                for assignee, count in sorted(
+                    assignee_workload.items(), key=lambda x: x[1], reverse=True
+                ):
+                    load_indicator = (
+                        "🔥 Heavy"
+                        if count > avg_workload * 1.5
+                        else "⚖️ Balanced"
+                        if count > avg_workload * 0.5
+                        else "🕊️ Light"
+                    )
                     workload_table.add_row(assignee, str(count), load_indicator)
-                
+
                 console.print(workload_table)
                 console.print()
-            
+
             # Issue type distribution
-            type_table = Table(title="📋 Issue Type Distribution", show_header=True, header_style="bold magenta")
+            type_table = Table(
+                title="📋 Issue Type Distribution",
+                show_header=True,
+                header_style="bold magenta",
+            )
             type_table.add_column("Issue Type", style="cyan", min_width=15)
             type_table.add_column("Count", style="white", min_width=10)
             type_table.add_column("Percentage", style="white", min_width=12)
-            
-            for issue_type, count in sorted(issue_types.items(), key=lambda x: x[1], reverse=True):
+
+            for issue_type, count in sorted(
+                issue_types.items(), key=lambda x: x[1], reverse=True
+            ):
                 percentage = (count / total_issues * 100) if total_issues > 0 else 0
                 type_table.add_row(issue_type.value, str(count), f"{percentage:.1f}%")
-            
+
             console.print(type_table)
-            
+
         elif format == "json":
             import json
+
             project_data = {
                 "project_overview": {
                     "total_issues": total_issues,
@@ -10883,77 +11120,95 @@ def project_overview(ctx: click.Context, output: Optional[str], format: str, inc
                     "open_issues": open_issues,
                     "completion_rate": completion_rate,
                     "tech_debt_ratio": tech_debt_ratio,
-                    "milestone_count": len(milestones)
+                    "milestone_count": len(milestones),
                 },
                 "milestones": milestone_stats,
                 "team_workload": assignee_workload,
                 "issue_types": {k.value: v for k, v in issue_types.items()},
-                "generated_at": datetime.now().isoformat()
+                "generated_at": datetime.now().isoformat(),
             }
             console.print(json.dumps(project_data, indent=2))
-            
+
         elif format == "csv":
             # Export milestone data as CSV
             df_data = []
             for stats in milestone_stats:
-                df_data.append({
-                    "Milestone": stats['milestone'],
-                    "Due_Date": stats['due_date'].strftime('%Y-%m-%d') if stats['due_date'] else "",
-                    "Completion_Percent": stats['completion'],
-                    "Total_Issues": stats['total_issues'],
-                    "Closed_Issues": stats['closed_issues'],
-                    "Bugs": stats['bugs'],
-                    "Features": stats['features'],
-                    "Tasks": stats['tasks'],
-                    "Status": stats['status']
-                })
-            
+                df_data.append(
+                    {
+                        "Milestone": stats["milestone"],
+                        "Due_Date": stats["due_date"].strftime("%Y-%m-%d")
+                        if stats["due_date"]
+                        else "",
+                        "Completion_Percent": stats["completion"],
+                        "Total_Issues": stats["total_issues"],
+                        "Closed_Issues": stats["closed_issues"],
+                        "Bugs": stats["bugs"],
+                        "Features": stats["features"],
+                        "Tasks": stats["tasks"],
+                        "Status": stats["status"],
+                    }
+                )
+
             df = pd.DataFrame(df_data)
             csv_output = df.to_csv(index=False)
             console.print(csv_output)
-        
+
         # Generate visualization charts if requested
         if include_charts and format == "rich":
-            console.print("\n🎨 Generating project visualization charts...", style="bold blue")
-            
+            console.print(
+                "\n🎨 Generating project visualization charts...", style="bold blue"
+            )
+
             try:
                 # Milestone progression chart
                 chart_data = []
                 for stats in milestone_stats:
-                    chart_data.append({
-                        'milestone': stats['milestone'],
-                        'completion': stats['completion'],
-                        'bugs': stats['bugs'],
-                        'features': stats['features'],
-                        'tasks': stats['tasks']
-                    })
-                
+                    chart_data.append(
+                        {
+                            "milestone": stats["milestone"],
+                            "completion": stats["completion"],
+                            "bugs": stats["bugs"],
+                            "features": stats["features"],
+                            "tasks": stats["tasks"],
+                        }
+                    )
+
                 output_dir = Path(output) if output else core.artifacts_dir
                 output_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 # Generate milestone progression flow chart
-                chart_path = chart_gen.generate_milestone_progression_chart(chart_data, output_dir)
-                console.print(f"📊 Milestone progression chart: {chart_path.name}", style="green")
-                
+                chart_path = chart_gen.generate_milestone_progression_chart(
+                    chart_data, output_dir
+                )
+                console.print(
+                    f"📊 Milestone progression chart: {chart_path.name}", style="green"
+                )
+
                 # Generate project health dashboard
                 health_data = {
-                    'completion_rate': completion_rate,
-                    'tech_debt_ratio': tech_debt_ratio,
-                    'milestone_stats': milestone_stats,
-                    'team_workload': assignee_workload,
-                    'issue_types': {k.value: v for k, v in issue_types.items()}
+                    "completion_rate": completion_rate,
+                    "tech_debt_ratio": tech_debt_ratio,
+                    "milestone_stats": milestone_stats,
+                    "team_workload": assignee_workload,
+                    "issue_types": {k.value: v for k, v in issue_types.items()},
                 }
-                
-                health_path = chart_gen.generate_project_health_dashboard(health_data, output_dir)
-                console.print(f"📈 Project health dashboard: {health_path.name}", style="green")
-                
-                console.print(f"\n📁 Charts saved to: {output_dir.absolute()}", style="dim")
-                
+
+                health_path = chart_gen.generate_project_health_dashboard(
+                    health_data, output_dir
+                )
+                console.print(
+                    f"📈 Project health dashboard: {health_path.name}", style="green"
+                )
+
+                console.print(
+                    f"\n📁 Charts saved to: {output_dir.absolute()}", style="dim"
+                )
+
             except Exception as e:
                 console.print(f"⚠️ Could not generate charts: {e}", style="yellow")
-        
+
         console.print("\n✅ Project analysis complete!", style="bold green")
-        
+
     except Exception as e:
         console.print(f"❌ Failed to analyze project: {e}", style="bold red")
 
@@ -10961,6 +11216,7 @@ def project_overview(ctx: click.Context, output: Optional[str], format: str, inc
 # ============================================================================
 # Project Commands (GitHub-aligned terminology)
 # ============================================================================
+
 
 @main.group()
 def project():
@@ -10972,12 +11228,18 @@ def project():
 # Legacy Roadmap Commands (Deprecated - for backwards compatibility)
 # ============================================================================
 
+
 @main.group()
 def roadmap_cmd():
     """[DEPRECATED] Manage roadmaps - use 'roadmap project' instead."""
-    console.print("⚠️  DEPRECATION WARNING: 'roadmap roadmap' is deprecated.", style="yellow bold")
-    console.print("   Use 'roadmap project' instead for GitHub alignment.", style="yellow")
+    console.print(
+        "⚠️  DEPRECATION WARNING: 'roadmap roadmap' is deprecated.", style="yellow bold"
+    )
+    console.print(
+        "   Use 'roadmap project' instead for GitHub alignment.", style="yellow"
+    )
     pass
+
 
 # Register the legacy roadmap command group
 main.add_command(roadmap_cmd, name="roadmap")
@@ -11028,60 +11290,73 @@ main.add_command(roadmap_cmd, name="roadmap")
 def create_project(
     name: str,
     description: str,
-    owner: Optional[str],
+    owner: str | None,
     priority: str,
-    start_date: Optional[str],
-    target_end_date: Optional[str],
-    estimated_hours: Optional[float],
+    start_date: str | None,
+    target_end_date: str | None,
+    estimated_hours: float | None,
     milestones: tuple,
 ) -> None:
     """Create a new project."""
     try:
-        from datetime import datetime
         import uuid
-        from pathlib import Path
-        
+        from datetime import datetime
+
         core = RoadmapCore()
-        
+
         # Generate project ID
         project_id = str(uuid.uuid4())[:8]
-        
+
         # Parse dates
         parsed_start_date = None
         parsed_target_end_date = None
-        
+
         if start_date:
             try:
-                parsed_start_date = datetime.strptime(start_date, "%Y-%m-%d").isoformat()
+                parsed_start_date = datetime.strptime(
+                    start_date, "%Y-%m-%d"
+                ).isoformat()
             except ValueError:
-                console.print("❌ Invalid start date format. Use YYYY-MM-DD", style="bold red")
+                console.print(
+                    "❌ Invalid start date format. Use YYYY-MM-DD", style="bold red"
+                )
                 return
-                
+
         if target_end_date:
             try:
-                parsed_target_end_date = datetime.strptime(target_end_date, "%Y-%m-%d").isoformat()
+                parsed_target_end_date = datetime.strptime(
+                    target_end_date, "%Y-%m-%d"
+                ).isoformat()
             except ValueError:
-                console.print("❌ Invalid target end date format. Use YYYY-MM-DD", style="bold red")
+                console.print(
+                    "❌ Invalid target end date format. Use YYYY-MM-DD",
+                    style="bold red",
+                )
                 return
-        
+
         # Create projects directory if it doesn't exist (keep existing directory structure)
         projects_dir = core.roadmap_dir / "projects"
         projects_dir.mkdir(exist_ok=True)
-        
+
         # Load and process template
         template_path = core.templates_dir / "project.md"
         if not template_path.exists():
-            console.print("❌ Project template not found. Run 'roadmap init' first.", style="bold red")
+            console.print(
+                "❌ Project template not found. Run 'roadmap init' first.",
+                style="bold red",
+            )
             return
-            
+
         template_content = template_path.read_text()
-        
+
         # Replace template variables
         current_time = datetime.now().isoformat()
-        
+
         # Convert milestones tuple to list for template
-        milestone_list = list(milestones) if milestones else ["milestone_1", "milestone_2"]
-        
+        milestone_list = (
+            list(milestones) if milestones else ["milestone_1", "milestone_2"]
+        )
+
         replacements = {
             "{{ project_id }}": project_id,
             "{{ project_name }}": name,
@@ -11095,38 +11370,48 @@ def create_project(
             "{{ milestone_1 }}": milestone_list[0] if len(milestone_list) > 0 else "",
             "{{ milestone_2 }}": milestone_list[1] if len(milestone_list) > 1 else "",
         }
-        
+
         project_content = template_content
         for placeholder, value in replacements.items():
             project_content = project_content.replace(placeholder, value)
-        
+
         # Handle priority replacement (template has hardcoded "medium")
-        project_content = project_content.replace('priority: "medium"', f'priority: "{priority}"')
-        
+        project_content = project_content.replace(
+            'priority: "medium"', f'priority: "{priority}"'
+        )
+
         # Handle status replacement
-        project_content = project_content.replace('**Status:** {{ status }}', f'**Status:** planning')
-        
+        project_content = project_content.replace(
+            "**Status:** {{ status }}", "**Status:** planning"
+        )
+
         # Update content to use "project" terminology
         project_content = project_content.replace("# roadmap_project", f"# {name}")
         project_content = project_content.replace("Project description", description)
-        project_content = project_content.replace("## Project Overview", "## Project Overview")
-        project_content = project_content.replace("**Project Owner:**", "**Project Owner:**")
-        
+        project_content = project_content.replace(
+            "## Project Overview", "## Project Overview"
+        )
+        project_content = project_content.replace(
+            "**Project Owner:**", "**Project Owner:**"
+        )
+
         # Handle milestone list in YAML (more complex replacement)
         if milestones:
-            milestone_yaml = "\n".join([f'  - "{milestone}"' for milestone in milestones])
+            milestone_yaml = "\n".join(
+                [f'  - "{milestone}"' for milestone in milestones]
+            )
             project_content = project_content.replace(
                 'milestones:\n  - "{{ milestone_1}}"\n  - "{{ milestone_2}}"',
-                f"milestones:\n{milestone_yaml}"
+                f"milestones:\n{milestone_yaml}",
             )
-        
+
         # Save project file
         project_filename = f"{project_id}-{name.lower().replace(' ', '-')}.md"
         project_path = projects_dir / project_filename
-        
+
         with open(project_path, "w") as f:
             f.write(project_content)
-        
+
         console.print("✅ Created project:", style="bold green")
         console.print(f"   ID: {project_id}")
         console.print(f"   Name: {name}")
@@ -11136,7 +11421,7 @@ def create_project(
         if estimated_hours:
             console.print(f"   Estimated: {estimated_hours}h")
         console.print(f"   File: {project_path.relative_to(core.root_path)}")
-        
+
     except Exception as e:
         console.print(f"❌ Failed to create project: {e}", style="bold red")
 
@@ -11187,29 +11472,37 @@ def create_project(
 def create_roadmap(
     name: str,
     description: str,
-    owner: Optional[str],
+    owner: str | None,
     priority: str,
-    start_date: Optional[str],
-    target_end_date: Optional[str],
-    estimated_hours: Optional[float],
+    start_date: str | None,
+    target_end_date: str | None,
+    estimated_hours: float | None,
     milestones: tuple,
 ) -> None:
     """[DEPRECATED] Create a new roadmap - use 'roadmap project create' instead."""
-    console.print("⚠️  DEPRECATION WARNING: 'roadmap roadmap create' is deprecated.", style="yellow bold")
-    console.print("   Use 'roadmap project create' instead for GitHub alignment.", style="yellow")
-    
+    console.print(
+        "⚠️  DEPRECATION WARNING: 'roadmap roadmap create' is deprecated.",
+        style="yellow bold",
+    )
+    console.print(
+        "   Use 'roadmap project create' instead for GitHub alignment.", style="yellow"
+    )
+
     # Call the new project create function
     import click
+
     ctx = click.get_current_context()
-    ctx.invoke(create_project, 
-               name=name, 
-               description=description,
-               owner=owner,
-               priority=priority, 
-               start_date=start_date,
-               target_end_date=target_end_date,
-               estimated_hours=estimated_hours,
-               milestones=milestones)
+    ctx.invoke(
+        create_project,
+        name=name,
+        description=description,
+        owner=owner,
+        priority=priority,
+        start_date=start_date,
+        target_end_date=target_end_date,
+        estimated_hours=estimated_hours,
+        milestones=milestones,
+    )
 
 
 @project.command("list")
@@ -11227,23 +11520,29 @@ def create_roadmap(
     type=click.Choice(["critical", "high", "medium", "low"]),
     help="Filter by priority",
 )
-def list_projects(status: Optional[str], owner: Optional[str], priority: Optional[str]) -> None:
+def list_projects(status: str | None, owner: str | None, priority: str | None) -> None:
     """List all projects with optional filtering."""
     try:
         core = RoadmapCore()
         projects_dir = core.roadmap_dir / "projects"
-        
+
         if not projects_dir.exists():
-            console.print("No projects found. Create one with 'roadmap project create'", style="yellow")
+            console.print(
+                "No projects found. Create one with 'roadmap project create'",
+                style="yellow",
+            )
             return
-            
+
         # Get all project files
         project_files = list(projects_dir.glob("*.md"))
-        
+
         if not project_files:
-            console.print("No projects found. Create one with 'roadmap project create'", style="yellow")
+            console.print(
+                "No projects found. Create one with 'roadmap project create'",
+                style="yellow",
+            )
             return
-        
+
         # Parse and filter projects
         projects = []
         for file_path in project_files:
@@ -11254,9 +11553,10 @@ def list_projects(status: Optional[str], owner: Optional[str], priority: Optiona
                     yaml_end = content.find("---", 3)
                     if yaml_end != -1:
                         import yaml
+
                         yaml_content = content[3:yaml_end]
                         metadata = yaml.safe_load(yaml_content)
-                        
+
                         # Apply filters
                         if status and metadata.get("status") != status:
                             continue
@@ -11264,23 +11564,25 @@ def list_projects(status: Optional[str], owner: Optional[str], priority: Optiona
                             continue
                         if priority and metadata.get("priority") != priority:
                             continue
-                            
-                        projects.append({
-                            "id": metadata.get("id", "unknown"),
-                            "name": metadata.get("name", "Unnamed"),
-                            "status": metadata.get("status", "unknown"),
-                            "priority": metadata.get("priority", "medium"),
-                            "owner": metadata.get("owner", "Unassigned"),
-                            "file": file_path.name
-                        })
+
+                        projects.append(
+                            {
+                                "id": metadata.get("id", "unknown"),
+                                "name": metadata.get("name", "Unnamed"),
+                                "status": metadata.get("status", "unknown"),
+                                "priority": metadata.get("priority", "medium"),
+                                "owner": metadata.get("owner", "Unassigned"),
+                                "file": file_path.name,
+                            }
+                        )
             except Exception as e:
                 console.print(f"⚠️  Error reading {file_path.name}: {e}", style="yellow")
                 continue
-        
+
         if not projects:
             console.print("No projects match the specified filters.", style="yellow")
             return
-        
+
         # Display projects in a table
         table = Table(title="Projects")
         table.add_column("ID", style="cyan")
@@ -11288,19 +11590,19 @@ def list_projects(status: Optional[str], owner: Optional[str], priority: Optiona
         table.add_column("Status", style="magenta")
         table.add_column("Priority", style="yellow")
         table.add_column("Owner", style="green")
-        
+
         for project in sorted(projects, key=lambda x: x["name"]):
             table.add_row(
                 project["id"][:8],
                 project["name"],
                 project["status"],
                 project["priority"],
-                project["owner"]
+                project["owner"],
             )
-        
+
         console.print(table)
         console.print(f"\nFound {len(projects)} project(s)")
-        
+
     except Exception as e:
         console.print(f"❌ Failed to list projects: {e}", style="bold red")
 
@@ -11309,23 +11611,37 @@ def list_projects(status: Optional[str], owner: Optional[str], priority: Optiona
 @click.argument("project_id")
 @click.option("--description", "-d", help="Update project description")
 @click.option("--owner", "-o", help="Update project owner")
-@click.option("--priority", "-p", type=click.Choice(["critical", "high", "medium", "low"]), help="Update priority")
-@click.option("--status", "-s", type=click.Choice(["planning", "active", "on-hold", "completed", "cancelled"]), help="Update status")
+@click.option(
+    "--priority",
+    "-p",
+    type=click.Choice(["critical", "high", "medium", "low"]),
+    help="Update priority",
+)
+@click.option(
+    "--status",
+    "-s",
+    type=click.Choice(["planning", "active", "on-hold", "completed", "cancelled"]),
+    help="Update status",
+)
 @click.option("--start-date", help="Update start date (YYYY-MM-DD)")
 @click.option("--target-end-date", help="Update target end date (YYYY-MM-DD)")
 @click.option("--estimated-hours", type=float, help="Update estimated hours")
 @click.option("--add-milestone", multiple=True, help="Add milestone (can be repeated)")
-@click.option("--remove-milestone", multiple=True, help="Remove milestone (can be repeated)")
-@click.option("--set-milestones", multiple=True, help="Replace all milestones (can be repeated)")
+@click.option(
+    "--remove-milestone", multiple=True, help="Remove milestone (can be repeated)"
+)
+@click.option(
+    "--set-milestones", multiple=True, help="Replace all milestones (can be repeated)"
+)
 def update_project(
     project_id: str,
-    description: Optional[str],
-    owner: Optional[str],
-    priority: Optional[str],
-    status: Optional[str],
-    start_date: Optional[str],
-    target_end_date: Optional[str],
-    estimated_hours: Optional[float],
+    description: str | None,
+    owner: str | None,
+    priority: str | None,
+    status: str | None,
+    start_date: str | None,
+    target_end_date: str | None,
+    estimated_hours: float | None,
     add_milestone: tuple,
     remove_milestone: tuple,
     set_milestones: tuple,
@@ -11333,82 +11649,88 @@ def update_project(
     """Update an existing project."""
     try:
         from datetime import datetime
+
         import yaml
-        
+
         core = RoadmapCore()
         projects_dir = core.roadmap_dir / "projects"
-        
+
         # Find project file
         project_file = None
         for file_path in projects_dir.glob("*.md"):
             if file_path.name.startswith(project_id):
                 project_file = file_path
                 break
-        
+
         if not project_file:
             console.print(f"❌ Project {project_id} not found", style="bold red")
             return
-        
+
         # Read and parse current content
         content = project_file.read_text()
         if not content.startswith("---"):
-            console.print(f"❌ Invalid project file format", style="bold red")
+            console.print("❌ Invalid project file format", style="bold red")
             return
-        
+
         yaml_end = content.find("---", 3)
         if yaml_end == -1:
-            console.print(f"❌ Invalid project file format", style="bold red")
+            console.print("❌ Invalid project file format", style="bold red")
             return
-        
+
         yaml_content = content[3:yaml_end]
-        body_content = content[yaml_end + 3:]
+        body_content = content[yaml_end + 3 :]
         metadata = yaml.safe_load(yaml_content)
-        
+
         # Track changes
         changes = []
-        
+
         # Update fields
         if description is not None:
             metadata["description"] = description
             changes.append(f"description: {description}")
-        
+
         if owner is not None:
             metadata["owner"] = owner
             changes.append(f"owner: {owner}")
-        
+
         if priority is not None:
             metadata["priority"] = priority
             changes.append(f"priority: {priority}")
-        
+
         if status is not None:
             metadata["status"] = status
             changes.append(f"status: {status}")
-        
+
         if start_date is not None:
             try:
                 parsed_date = datetime.strptime(start_date, "%Y-%m-%d").isoformat()
                 metadata["start_date"] = parsed_date
                 changes.append(f"start_date: {start_date}")
             except ValueError:
-                console.print("❌ Invalid start date format. Use YYYY-MM-DD", style="bold red")
+                console.print(
+                    "❌ Invalid start date format. Use YYYY-MM-DD", style="bold red"
+                )
                 return
-        
+
         if target_end_date is not None:
             try:
                 parsed_date = datetime.strptime(target_end_date, "%Y-%m-%d").isoformat()
                 metadata["target_end_date"] = parsed_date
                 changes.append(f"target_end_date: {target_end_date}")
             except ValueError:
-                console.print("❌ Invalid target end date format. Use YYYY-MM-DD", style="bold red")
+                console.print(
+                    "❌ Invalid target end date format. Use YYYY-MM-DD",
+                    style="bold red",
+                )
                 return
-        
+
         if estimated_hours is not None:
             metadata["estimated_hours"] = estimated_hours
             changes.append(f"estimated_hours: {estimated_hours}")
-        
+
         # Handle milestone operations
         current_milestones = metadata.get("milestones", [])
-        
+
         if set_milestones:
             # Replace all milestones
             metadata["milestones"] = list(set_milestones)
@@ -11420,30 +11742,38 @@ def update_project(
                     if milestone not in current_milestones:
                         current_milestones.append(milestone)
                         changes.append(f"added milestone: {milestone}")
-            
+
             # Remove milestones
             if remove_milestone:
                 for milestone in remove_milestone:
                     if milestone in current_milestones:
                         current_milestones.remove(milestone)
                         changes.append(f"removed milestone: {milestone}")
-            
+
             metadata["milestones"] = current_milestones
-        
+
         # Update timestamp
         metadata["updated"] = datetime.now().isoformat()
-        
+
         # Write back to file
-        new_content = "---\n" + yaml.dump(metadata, default_flow_style=False) + "---" + body_content
+        new_content = (
+            "---\n"
+            + yaml.dump(metadata, default_flow_style=False)
+            + "---"
+            + body_content
+        )
         project_file.write_text(new_content)
-        
+
         if changes:
-            console.print(f"✅ Updated project: {metadata.get('name', project_id)}", style="bold green")
+            console.print(
+                f"✅ Updated project: {metadata.get('name', project_id)}",
+                style="bold green",
+            )
             for change in changes:
                 console.print(f"   {change}")
         else:
             console.print("No changes specified.", style="yellow")
-        
+
     except Exception as e:
         console.print(f"❌ Failed to update project: {e}", style="bold red")
 
@@ -11469,56 +11799,67 @@ def update_project(
     default=True,
     help="Generate visualization charts with the analysis",
 )
-def project_overview_cmd(project_id: Optional[str], output: Optional[str], format: str, include_charts: bool) -> None:
+def project_overview_cmd(
+    project_id: str | None, output: str | None, format: str, include_charts: bool
+) -> None:
     """Show project overview and analytics."""
     try:
         core = RoadmapCore()
-        
+
         if project_id:
             # Show specific project overview
             projects_dir = core.roadmap_dir / "projects"
             project_file = None
-            
+
             for file_path in projects_dir.glob("*.md"):
                 if file_path.name.startswith(project_id):
                     project_file = file_path
                     break
-            
+
             if not project_file:
                 console.print(f"❌ Project {project_id} not found", style="bold red")
                 return
-            
+
             # Parse project file
             content = project_file.read_text()
             if content.startswith("---"):
                 yaml_end = content.find("---", 3)
                 if yaml_end != -1:
                     import yaml
+
                     yaml_content = content[3:yaml_end]
                     metadata = yaml.safe_load(yaml_content)
-                    
+
                     # Display project overview
-                    console.print(f"\n📋 Project: {metadata.get('name', 'Unnamed')}", style="bold blue")
+                    console.print(
+                        f"\n📋 Project: {metadata.get('name', 'Unnamed')}",
+                        style="bold blue",
+                    )
                     console.print(f"ID: {metadata.get('id', 'unknown')}")
                     console.print(f"Status: {metadata.get('status', 'unknown')}")
                     console.print(f"Priority: {metadata.get('priority', 'medium')}")
                     console.print(f"Owner: {metadata.get('owner', 'Unassigned')}")
-                    console.print(f"Description: {metadata.get('description', 'No description')}")
-                    
-                    if metadata.get('milestones'):
-                        console.print(f"Milestones: {', '.join(metadata['milestones'])}")
-                    
-                    if metadata.get('estimated_hours'):
+                    console.print(
+                        f"Description: {metadata.get('description', 'No description')}"
+                    )
+
+                    if metadata.get("milestones"):
+                        console.print(
+                            f"Milestones: {', '.join(metadata['milestones'])}"
+                        )
+
+                    if metadata.get("estimated_hours"):
                         console.print(f"Estimated Hours: {metadata['estimated_hours']}")
         else:
             # Show all projects overview
             console.print("📋 Project Overview", style="bold blue")
-            
+
             # Call the existing project_overview function for comprehensive analysis
             from click import Context
+
             ctx = Context(project_overview_cmd)
             project_overview(ctx, output, format, include_charts)
-        
+
     except Exception as e:
         console.print(f"❌ Failed to show project overview: {e}", style="bold red")
 
@@ -11531,18 +11872,18 @@ def delete_project(project_id: str, confirm: bool) -> None:
     try:
         core = RoadmapCore()
         projects_dir = core.roadmap_dir / "projects"
-        
+
         # Find project file
         project_file = None
         for file_path in projects_dir.glob("*.md"):
             if file_path.name.startswith(project_id):
                 project_file = file_path
                 break
-        
+
         if not project_file:
             console.print(f"❌ Project {project_id} not found", style="bold red")
             return
-        
+
         # Get project name for confirmation
         content = project_file.read_text()
         project_name = "unknown"
@@ -11550,21 +11891,26 @@ def delete_project(project_id: str, confirm: bool) -> None:
             yaml_end = content.find("---", 3)
             if yaml_end != -1:
                 import yaml
+
                 yaml_content = content[3:yaml_end]
                 metadata = yaml.safe_load(yaml_content)
                 project_name = metadata.get("name", "unknown")
-        
+
         # Confirmation
         if not confirm:
-            response = click.confirm(f"Are you sure you want to delete project '{project_name}' ({project_id})?")
+            response = click.confirm(
+                f"Are you sure you want to delete project '{project_name}' ({project_id})?"
+            )
             if not response:
                 console.print("Deletion cancelled.", style="yellow")
                 return
-        
+
         # Delete file
         project_file.unlink()
-        console.print(f"✅ Deleted project: {project_name} ({project_id})", style="bold green")
-        
+        console.print(
+            f"✅ Deleted project: {project_name} ({project_id})", style="bold green"
+        )
+
     except Exception as e:
         console.print(f"❌ Failed to delete project: {e}", style="bold red")
 
@@ -11574,23 +11920,37 @@ def delete_project(project_id: str, confirm: bool) -> None:
 @click.argument("roadmap_id")
 @click.option("--description", "-d", help="Update roadmap description")
 @click.option("--owner", "-o", help="Update roadmap owner")
-@click.option("--priority", "-p", type=click.Choice(["critical", "high", "medium", "low"]), help="Update priority")
-@click.option("--status", "-s", type=click.Choice(["planning", "active", "on-hold", "completed", "cancelled"]), help="Update status")
+@click.option(
+    "--priority",
+    "-p",
+    type=click.Choice(["critical", "high", "medium", "low"]),
+    help="Update priority",
+)
+@click.option(
+    "--status",
+    "-s",
+    type=click.Choice(["planning", "active", "on-hold", "completed", "cancelled"]),
+    help="Update status",
+)
 @click.option("--start-date", help="Update start date (YYYY-MM-DD)")
 @click.option("--target-end-date", help="Update target end date (YYYY-MM-DD)")
 @click.option("--estimated-hours", type=float, help="Update estimated hours")
 @click.option("--add-milestone", multiple=True, help="Add milestone (can be repeated)")
-@click.option("--remove-milestone", multiple=True, help="Remove milestone (can be repeated)")
-@click.option("--set-milestones", multiple=True, help="Replace all milestones (can be repeated)")
+@click.option(
+    "--remove-milestone", multiple=True, help="Remove milestone (can be repeated)"
+)
+@click.option(
+    "--set-milestones", multiple=True, help="Replace all milestones (can be repeated)"
+)
 def update_roadmap(
     roadmap_id: str,
-    description: Optional[str],
-    owner: Optional[str],
-    priority: Optional[str],
-    status: Optional[str],
-    start_date: Optional[str],
-    target_end_date: Optional[str],
-    estimated_hours: Optional[float],
+    description: str | None,
+    owner: str | None,
+    priority: str | None,
+    status: str | None,
+    start_date: str | None,
+    target_end_date: str | None,
+    estimated_hours: float | None,
     add_milestone: tuple,
     remove_milestone: tuple,
     set_milestones: tuple,
@@ -11598,82 +11958,88 @@ def update_roadmap(
     """Update an existing roadmap."""
     try:
         from datetime import datetime
+
         import yaml
-        
+
         core = RoadmapCore()
         roadmaps_dir = core.roadmap_dir / "roadmaps"
-        
+
         # Find roadmap file
         roadmap_file = None
         for file_path in roadmaps_dir.glob("*.md"):
             if file_path.name.startswith(roadmap_id):
                 roadmap_file = file_path
                 break
-        
+
         if not roadmap_file:
             console.print(f"❌ Roadmap {roadmap_id} not found", style="bold red")
             return
-        
+
         # Read and parse current content
         content = roadmap_file.read_text()
         if not content.startswith("---"):
-            console.print(f"❌ Invalid roadmap file format", style="bold red")
+            console.print("❌ Invalid roadmap file format", style="bold red")
             return
-        
+
         yaml_end = content.find("---", 3)
         if yaml_end == -1:
-            console.print(f"❌ Invalid roadmap file format", style="bold red")
+            console.print("❌ Invalid roadmap file format", style="bold red")
             return
-        
+
         yaml_content = content[3:yaml_end]
-        body_content = content[yaml_end + 3:]
+        body_content = content[yaml_end + 3 :]
         metadata = yaml.safe_load(yaml_content)
-        
+
         # Track changes
         changes = []
-        
+
         # Update fields
         if description is not None:
             metadata["description"] = description
             changes.append(f"description: {description}")
-        
+
         if owner is not None:
             metadata["owner"] = owner
             changes.append(f"owner: {owner}")
-        
+
         if priority is not None:
             metadata["priority"] = priority
             changes.append(f"priority: {priority}")
-        
+
         if status is not None:
             metadata["status"] = status
             changes.append(f"status: {status}")
-        
+
         if start_date is not None:
             try:
                 parsed_date = datetime.strptime(start_date, "%Y-%m-%d").isoformat()
                 metadata["start_date"] = parsed_date
                 changes.append(f"start_date: {start_date}")
             except ValueError:
-                console.print("❌ Invalid start date format. Use YYYY-MM-DD", style="bold red")
+                console.print(
+                    "❌ Invalid start date format. Use YYYY-MM-DD", style="bold red"
+                )
                 return
-        
+
         if target_end_date is not None:
             try:
                 parsed_date = datetime.strptime(target_end_date, "%Y-%m-%d").isoformat()
                 metadata["target_end_date"] = parsed_date
                 changes.append(f"target_end_date: {target_end_date}")
             except ValueError:
-                console.print("❌ Invalid target end date format. Use YYYY-MM-DD", style="bold red")
+                console.print(
+                    "❌ Invalid target end date format. Use YYYY-MM-DD",
+                    style="bold red",
+                )
                 return
-        
+
         if estimated_hours is not None:
             metadata["estimated_hours"] = estimated_hours
             changes.append(f"estimated_hours: {estimated_hours}")
-        
+
         # Handle milestone operations
         current_milestones = metadata.get("milestones", [])
-        
+
         if set_milestones:
             # Replace all milestones
             metadata["milestones"] = list(set_milestones)
@@ -11685,30 +12051,38 @@ def update_roadmap(
                     if milestone not in current_milestones:
                         current_milestones.append(milestone)
                         changes.append(f"added milestone: {milestone}")
-            
+
             # Remove milestones
             if remove_milestone:
                 for milestone in remove_milestone:
                     if milestone in current_milestones:
                         current_milestones.remove(milestone)
                         changes.append(f"removed milestone: {milestone}")
-            
+
             metadata["milestones"] = current_milestones
-        
+
         # Update timestamp
         metadata["updated"] = datetime.now().isoformat()
-        
+
         # Write back to file
-        new_content = "---\n" + yaml.dump(metadata, default_flow_style=False) + "---" + body_content
+        new_content = (
+            "---\n"
+            + yaml.dump(metadata, default_flow_style=False)
+            + "---"
+            + body_content
+        )
         roadmap_file.write_text(new_content)
-        
+
         if changes:
-            console.print(f"✅ Updated roadmap: {metadata.get('name', roadmap_id)}", style="bold green")
+            console.print(
+                f"✅ Updated roadmap: {metadata.get('name', roadmap_id)}",
+                style="bold green",
+            )
             for change in changes:
                 console.print(f"   {change}")
         else:
             console.print("No changes specified.", style="yellow")
-        
+
     except Exception as e:
         console.print(f"❌ Failed to update roadmap: {e}", style="bold red")
 
@@ -11734,57 +12108,68 @@ def update_roadmap(
     default=True,
     help="Generate visualization charts with the analysis",
 )
-def overview_roadmap(roadmap_id: Optional[str], output: Optional[str], format: str, include_charts: bool) -> None:
+def overview_roadmap(
+    roadmap_id: str | None, output: str | None, format: str, include_charts: bool
+) -> None:
     """Show roadmap overview and analytics."""
     try:
         core = RoadmapCore()
-        
+
         if roadmap_id:
             # Show specific roadmap overview
             roadmaps_dir = core.roadmap_dir / "roadmaps"
             roadmap_file = None
-            
+
             for file_path in roadmaps_dir.glob("*.md"):
                 if file_path.name.startswith(roadmap_id):
                     roadmap_file = file_path
                     break
-            
+
             if not roadmap_file:
                 console.print(f"❌ Roadmap {roadmap_id} not found", style="bold red")
                 return
-            
+
             # Parse roadmap file
             content = roadmap_file.read_text()
             if content.startswith("---"):
                 yaml_end = content.find("---", 3)
                 if yaml_end != -1:
                     import yaml
+
                     yaml_content = content[3:yaml_end]
                     metadata = yaml.safe_load(yaml_content)
-                    
+
                     # Display roadmap overview
-                    console.print(f"\n🗺️  Roadmap: {metadata.get('name', 'Unnamed')}", style="bold blue")
+                    console.print(
+                        f"\n🗺️  Roadmap: {metadata.get('name', 'Unnamed')}",
+                        style="bold blue",
+                    )
                     console.print(f"ID: {metadata.get('id', 'unknown')}")
                     console.print(f"Status: {metadata.get('status', 'unknown')}")
                     console.print(f"Priority: {metadata.get('priority', 'medium')}")
                     console.print(f"Owner: {metadata.get('owner', 'Unassigned')}")
-                    console.print(f"Description: {metadata.get('description', 'No description')}")
-                    
-                    if metadata.get('milestones'):
-                        console.print(f"Milestones: {', '.join(metadata['milestones'])}")
-                    
-                    if metadata.get('estimated_hours'):
+                    console.print(
+                        f"Description: {metadata.get('description', 'No description')}"
+                    )
+
+                    if metadata.get("milestones"):
+                        console.print(
+                            f"Milestones: {', '.join(metadata['milestones'])}"
+                        )
+
+                    if metadata.get("estimated_hours"):
                         console.print(f"Estimated Hours: {metadata['estimated_hours']}")
         else:
             # Show all roadmaps overview (reuse existing project_overview logic but with roadmap terminology)
             console.print("🗺️  Roadmap Overview", style="bold blue")
             console.print("(Using existing project analysis with roadmap terminology)")
-            
+
             # For now, call the existing project overview but we'll update terminology
             from click import Context
+
             ctx = Context(overview_roadmap)
             project_overview(ctx, output, format, include_charts)
-        
+
     except Exception as e:
         console.print(f"❌ Failed to show roadmap overview: {e}", style="bold red")
 
@@ -11797,18 +12182,18 @@ def delete_roadmap(roadmap_id: str, confirm: bool) -> None:
     try:
         core = RoadmapCore()
         roadmaps_dir = core.roadmap_dir / "roadmaps"
-        
+
         # Find roadmap file
         roadmap_file = None
         for file_path in roadmaps_dir.glob("*.md"):
             if file_path.name.startswith(roadmap_id):
                 roadmap_file = file_path
                 break
-        
+
         if not roadmap_file:
             console.print(f"❌ Roadmap {roadmap_id} not found", style="bold red")
             return
-        
+
         # Get roadmap name for confirmation
         content = roadmap_file.read_text()
         roadmap_name = "unknown"
@@ -11816,21 +12201,26 @@ def delete_roadmap(roadmap_id: str, confirm: bool) -> None:
             yaml_end = content.find("---", 3)
             if yaml_end != -1:
                 import yaml
+
                 yaml_content = content[3:yaml_end]
                 metadata = yaml.safe_load(yaml_content)
                 roadmap_name = metadata.get("name", "unknown")
-        
+
         # Confirmation
         if not confirm:
-            response = click.confirm(f"Are you sure you want to delete roadmap '{roadmap_name}' ({roadmap_id})?")
+            response = click.confirm(
+                f"Are you sure you want to delete roadmap '{roadmap_name}' ({roadmap_id})?"
+            )
             if not response:
                 console.print("Deletion cancelled.", style="yellow")
                 return
-        
+
         # Delete file
         roadmap_file.unlink()
-        console.print(f"✅ Deleted roadmap: {roadmap_name} ({roadmap_id})", style="bold green")
-        
+        console.print(
+            f"✅ Deleted roadmap: {roadmap_name} ({roadmap_id})", style="bold green"
+        )
+
     except Exception as e:
         console.print(f"❌ Failed to delete roadmap: {e}", style="bold red")
 
@@ -11839,6 +12229,7 @@ def delete_roadmap(roadmap_id: str, confirm: bool) -> None:
 # Curation Commands
 # ============================================================================
 
+
 @main.group()
 def curate() -> None:
     """Curation tools for identifying and managing orphaned issues and milestones."""
@@ -11846,97 +12237,131 @@ def curate() -> None:
 
 
 @curate.command("orphaned")
-@click.option("--include-backlog", is_flag=True, help="Include backlog items as orphaned")
-@click.option("--min-age", default=0, help="Minimum age in days for items to be considered")
-@click.option("--max-age", default=None, help="Maximum age in days for items to be considered")
+@click.option(
+    "--include-backlog", is_flag=True, help="Include backlog items as orphaned"
+)
+@click.option(
+    "--min-age", default=0, help="Minimum age in days for items to be considered"
+)
+@click.option(
+    "--max-age", default=None, help="Maximum age in days for items to be considered"
+)
 @click.option("--export", help="Export report to file (JSON, CSV, or Markdown)")
 @click.option("--format", default="json", help="Export format (json, csv, markdown)")
-@click.option("--interactive", is_flag=True, help="Interactive mode for guided curation")
-def curate_orphaned(include_backlog: bool, min_age: int, max_age: Optional[int], 
-                   export: Optional[str], format: str, interactive: bool) -> None:
+@click.option(
+    "--interactive", is_flag=True, help="Interactive mode for guided curation"
+)
+def curate_orphaned(
+    include_backlog: bool,
+    min_age: int,
+    max_age: int | None,
+    export: str | None,
+    format: str,
+    interactive: bool,
+) -> None:
     """Scan for and display orphaned items (issues and milestones)."""
     try:
         from roadmap.curation import RoadmapCurator
-        
+
         core = RoadmapCore()
         if not core.is_initialized():
-            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            console.print(
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
+            )
             return
-            
+
         curator = RoadmapCurator(core)
-        
+
         with console.status("[bold green]Analyzing orphaned items..."):
             report = curator.analyze_orphaned_items(
                 include_backlog=include_backlog,
                 min_age_days=min_age,
-                max_age_days=max_age
+                max_age_days=max_age,
             )
-        
+
         # Display summary
         _display_curation_report(report)
-        
+
         # Export if requested
         if export:
             output_path = Path(export)
             curator.export_curation_report(report, output_path, format)
             console.print(f"✅ Report exported to {output_path}", style="bold green")
-        
+
         # Interactive mode
         if interactive:
             _interactive_curation_workflow(curator, report)
-            
+
     except Exception as e:
         console.print(f"❌ Failed to analyze orphaned items: {e}", style="bold red")
 
 
 @curate.command("issues")
-@click.option("--include-backlog", is_flag=True, help="Include backlog items as orphaned")
+@click.option(
+    "--include-backlog", is_flag=True, help="Include backlog items as orphaned"
+)
 @click.option("--min-age", default=0, help="Minimum age in days")
 @click.option("--max-age", default=None, help="Maximum age in days")
 @click.option("--priority", help="Filter by priority (critical, high, medium, low)")
 @click.option("--assignee", help="Filter by assignee")
 @click.option("--interactive", is_flag=True, help="Interactive assignment mode")
-def curate_issues(include_backlog: bool, min_age: int, max_age: Optional[int], 
-                 priority: Optional[str], assignee: Optional[str], interactive: bool) -> None:
+def curate_issues(
+    include_backlog: bool,
+    min_age: int,
+    max_age: int | None,
+    priority: str | None,
+    assignee: str | None,
+    interactive: bool,
+) -> None:
     """Show issues without milestone assignment."""
     try:
         from roadmap.curation import RoadmapCurator
-        
+
         core = RoadmapCore()
         if not core.is_initialized():
-            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            console.print(
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
+            )
             return
-            
+
         curator = RoadmapCurator(core)
-        
+
         with console.status("[bold green]Analyzing orphaned issues..."):
             report = curator.analyze_orphaned_items(
                 include_backlog=include_backlog,
                 min_age_days=min_age,
-                max_age_days=max_age
+                max_age_days=max_age,
             )
-        
+
         orphaned_issues = report.orphaned_issues + report.invalid_references
-        
+
         # Apply filters
         if priority:
             priority_filter = Priority(priority.upper())
-            orphaned_issues = [item for item in orphaned_issues if item.priority == priority_filter]
-            
+            orphaned_issues = [
+                item for item in orphaned_issues if item.priority == priority_filter
+            ]
+
         if assignee:
-            orphaned_issues = [item for item in orphaned_issues if item.assignee == assignee]
-        
+            orphaned_issues = [
+                item for item in orphaned_issues if item.assignee == assignee
+            ]
+
         if not orphaned_issues:
-            console.print("✅ No orphaned issues found matching criteria", style="bold green")
+            console.print(
+                "✅ No orphaned issues found matching criteria", style="bold green"
+            )
             return
-            
+
         # Display orphaned issues
         _display_orphaned_issues(orphaned_issues)
-        
+
         # Interactive mode
         if interactive:
             _interactive_issue_assignment(curator, orphaned_issues)
-            
+
     except Exception as e:
         console.print(f"❌ Failed to analyze orphaned issues: {e}", style="bold red")
 
@@ -11945,69 +12370,84 @@ def curate_issues(include_backlog: bool, min_age: int, max_age: Optional[int],
 @click.option("--min-age", default=0, help="Minimum age in days")
 @click.option("--max-age", default=None, help="Maximum age in days")
 @click.option("--status", help="Filter by status (open, closed)")
-def curate_milestones(min_age: int, max_age: Optional[int], status: Optional[str]) -> None:
+def curate_milestones(min_age: int, max_age: int | None, status: str | None) -> None:
     """Show milestones that need attention (empty, unassigned to roadmaps, etc.)."""
     try:
         from roadmap.curation import RoadmapCurator
-        
+
         core = RoadmapCore()
         if not core.is_initialized():
-            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            console.print(
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
+            )
             return
-            
+
         curator = RoadmapCurator(core)
-        
+
         with console.status("[bold green]Analyzing orphaned milestones..."):
             report = curator.analyze_orphaned_items(
-                include_backlog=False,
-                min_age_days=min_age,
-                max_age_days=max_age
+                include_backlog=False, min_age_days=min_age, max_age_days=max_age
             )
-        
+
         orphaned_milestones = report.orphaned_milestones
-        
+
         # Apply status filter
         if status:
             # Note: We'd need to get full milestone objects to filter by status
             # For now, just show the warning
             console.print("ℹ️  Status filtering not yet implemented", style="yellow")
-        
+
         if not orphaned_milestones:
             console.print("✅ No orphaned milestones found", style="bold green")
             return
-            
+
         # Display orphaned milestones
         _display_orphaned_milestones(orphaned_milestones)
-            
+
     except Exception as e:
-        console.print(f"❌ Failed to analyze orphaned milestones: {e}", style="bold red")
+        console.print(
+            f"❌ Failed to analyze orphaned milestones: {e}", style="bold red"
+        )
 
 
 @curate.command("assign")
 @click.argument("issue_ids", nargs=-1)
 @click.option("--milestone", help="Milestone name to assign to (omit for backlog)")
-@click.option("--bulk", is_flag=True, help="Bulk assign orphaned issues based on smart suggestions")
-def curate_assign(issue_ids: Tuple[str, ...], milestone: Optional[str], bulk: bool) -> None:
+@click.option(
+    "--bulk",
+    is_flag=True,
+    help="Bulk assign orphaned issues based on smart suggestions",
+)
+def curate_assign(
+    issue_ids: tuple[str, ...], milestone: str | None, bulk: bool
+) -> None:
     """Assign orphaned issues to milestones or backlog."""
     try:
         from roadmap.curation import RoadmapCurator
-        
+
         core = RoadmapCore()
         if not core.is_initialized():
-            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            console.print(
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
+            )
             return
-            
+
         curator = RoadmapCurator(core)
-        
+
         if bulk:
             # Get orphaned issues and suggest assignments
             report = curator.analyze_orphaned_items(include_backlog=True)
             suggestions = curator.suggest_milestone_assignments(report.orphaned_issues)
-            
+
             if not suggestions:
-                console.print("ℹ️  No orphaned issues found or no suitable milestones available", style="yellow")
+                console.print(
+                    "ℹ️  No orphaned issues found or no suitable milestones available",
+                    style="yellow",
+                )
                 return
-                
+
             console.print("🎯 Smart Assignment Suggestions:", style="bold cyan")
             for milestone_name, suggested_issue_ids in suggestions.items():
                 console.print(f"\n📍 {milestone_name}:")
@@ -12015,89 +12455,135 @@ def curate_assign(issue_ids: Tuple[str, ...], milestone: Optional[str], bulk: bo
                     issue = core.get_issue(issue_id)
                     if issue:
                         console.print(f"  • {issue_id}: {issue.title[:60]}...")
-                        
+
             if click.confirm("Apply these assignments?"):
                 total_assigned = 0
                 for milestone_name, suggested_issue_ids in suggestions.items():
-                    successful, failed = curator.bulk_assign_to_milestone(suggested_issue_ids, milestone_name)
+                    successful, failed = curator.bulk_assign_to_milestone(
+                        suggested_issue_ids, milestone_name
+                    )
                     total_assigned += len(successful)
-                    
+
                     if failed:
-                        console.print(f"⚠️  Failed to assign {len(failed)} issues to {milestone_name}", style="yellow")
-                        
-                console.print(f"✅ Successfully assigned {total_assigned} issues", style="bold green")
+                        console.print(
+                            f"⚠️  Failed to assign {len(failed)} issues to {milestone_name}",
+                            style="yellow",
+                        )
+
+                console.print(
+                    f"✅ Successfully assigned {total_assigned} issues",
+                    style="bold green",
+                )
             else:
                 console.print("Assignment cancelled", style="yellow")
-                
+
         elif issue_ids:
             # Assign specific issues
             if milestone:
-                successful, failed = curator.bulk_assign_to_milestone(list(issue_ids), milestone)
-                console.print(f"✅ Assigned {len(successful)} issues to '{milestone}'", style="bold green")
+                successful, failed = curator.bulk_assign_to_milestone(
+                    list(issue_ids), milestone
+                )
+                console.print(
+                    f"✅ Assigned {len(successful)} issues to '{milestone}'",
+                    style="bold green",
+                )
             else:
                 successful, failed = curator.bulk_move_to_backlog(list(issue_ids))
-                console.print(f"✅ Moved {len(successful)} issues to backlog", style="bold green")
-                
+                console.print(
+                    f"✅ Moved {len(successful)} issues to backlog", style="bold green"
+                )
+
             if failed:
-                console.print(f"⚠️  Failed to process {len(failed)} issues: {', '.join(failed)}", style="yellow")
+                console.print(
+                    f"⚠️  Failed to process {len(failed)} issues: {', '.join(failed)}",
+                    style="yellow",
+                )
         else:
-            console.print("❌ Please provide issue IDs or use --bulk flag", style="bold red")
-            
+            console.print(
+                "❌ Please provide issue IDs or use --bulk flag", style="bold red"
+            )
+
     except Exception as e:
         console.print(f"❌ Failed to assign issues: {e}", style="bold red")
 
 
 def _display_curation_report(report) -> None:
     """Display a comprehensive curation report."""
-    from roadmap.curation import CurationReport
-    
+
     console.print("\n🔍 Roadmap Curation Report", style="bold cyan")
     console.print(f"Generated: {report.generated_at.strftime('%Y-%m-%d %H:%M:%S')}")
-    
+
     # Summary stats
     table = Table(title="Summary Statistics", show_header=True)
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="bold")
-    
+
     table.add_row("Total Issues", str(report.total_issues))
     table.add_row("Total Milestones", str(report.total_milestones))
     table.add_row("Backlog Size", str(report.backlog_size))
-    table.add_row("Orphaned Items", f"{report.summary_stats['total_orphaned']} ({report.summary_stats['orphan_percentage']}%)")
-    table.add_row("Critical Orphans", str(report.summary_stats['critical_orphans']))
-    table.add_row("Avg Orphan Age", f"{report.summary_stats['average_orphan_age_days']} days")
-    
+    table.add_row(
+        "Orphaned Items",
+        f"{report.summary_stats['total_orphaned']} ({report.summary_stats['orphan_percentage']}%)",
+    )
+    table.add_row("Critical Orphans", str(report.summary_stats["critical_orphans"]))
+    table.add_row(
+        "Avg Orphan Age", f"{report.summary_stats['average_orphan_age_days']} days"
+    )
+
     console.print(table)
-    
+
     # Recommendations
     if report.recommendations:
         console.print("\n💡 Recommendations:", style="bold yellow")
         for rec in report.recommendations:
             console.print(f"  • {rec}")
-    
+
     # Orphaned items summary
     if report.orphaned_issues or report.invalid_references:
-        total_orphaned_issues = len(report.orphaned_issues) + len(report.invalid_references)
-        console.print(f"\n⚠️  Found {total_orphaned_issues} orphaned issues", style="bold yellow")
-        
+        total_orphaned_issues = len(report.orphaned_issues) + len(
+            report.invalid_references
+        )
+        console.print(
+            f"\n⚠️  Found {total_orphaned_issues} orphaned issues", style="bold yellow"
+        )
+
     if report.orphaned_milestones:
         # Count different types of problematic milestones
-        empty_count = len([item for item in report.orphaned_milestones 
-                          if hasattr(item, 'orphanage_reasons') and "empty" in item.orphanage_reasons])
-        unassigned_count = len([item for item in report.orphaned_milestones 
-                               if hasattr(item, 'orphanage_reasons') and "unassigned" in item.orphanage_reasons])
-        
-        console.print(f"⚠️  Found {len(report.orphaned_milestones)} problematic milestones", style="bold yellow")
+        empty_count = len(
+            [
+                item
+                for item in report.orphaned_milestones
+                if hasattr(item, "orphanage_reasons")
+                and "empty" in item.orphanage_reasons
+            ]
+        )
+        unassigned_count = len(
+            [
+                item
+                for item in report.orphaned_milestones
+                if hasattr(item, "orphanage_reasons")
+                and "unassigned" in item.orphanage_reasons
+            ]
+        )
+
+        console.print(
+            f"⚠️  Found {len(report.orphaned_milestones)} problematic milestones",
+            style="bold yellow",
+        )
         if empty_count > 0:
             console.print(f"📭 {empty_count} empty milestones", style="yellow")
         if unassigned_count > 0:
-            console.print(f"🔗 {unassigned_count} milestones not assigned to roadmaps", style="yellow")
+            console.print(
+                f"🔗 {unassigned_count} milestones not assigned to roadmaps",
+                style="yellow",
+            )
 
 
 def _display_orphaned_issues(orphaned_issues) -> None:
     """Display orphaned issues in a formatted table."""
     if not orphaned_issues:
         return
-        
+
     table = Table(title="Orphaned Issues", show_header=True)
     table.add_column("ID", style="cyan")
     table.add_column("Title", style="white", max_width=40)
@@ -12106,22 +12592,29 @@ def _display_orphaned_issues(orphaned_issues) -> None:
     table.add_column("Age", style="dim")
     table.add_column("Assignee", style="green")
     table.add_column("Top Recommendation", style="blue", max_width=30)
-    
+
     for item in orphaned_issues:
-        priority_style = "red" if item.priority and item.priority.value in ["critical", "high"] else "yellow"
+        priority_style = (
+            "red"
+            if item.priority and item.priority.value in ["critical", "high"]
+            else "yellow"
+        )
         age_str = f"{item.orphaned_days}d"
         top_rec = item.recommendations[0] if item.recommendations else ""
-        
+
         table.add_row(
             item.item_id,
             item.title,
             item.orphanage_type.value.replace("_", " ").title(),
-            Text(item.priority.value.title() if item.priority else "", style=priority_style),
+            Text(
+                item.priority.value.title() if item.priority else "",
+                style=priority_style,
+            ),
             age_str,
             item.assignee or "None",
-            top_rec
+            top_rec,
         )
-    
+
     console.print(table)
 
 
@@ -12129,20 +12622,20 @@ def _display_orphaned_milestones(orphaned_milestones) -> None:
     """Display orphaned milestones in a formatted table."""
     if not orphaned_milestones:
         return
-        
+
     table = Table(title="Orphaned Milestones", show_header=True)
     table.add_column("Name", style="cyan")
     table.add_column("Type", style="yellow")
     table.add_column("Issues", style="magenta")
     table.add_column("Age", style="dim")
     table.add_column("Top Recommendation", style="blue", max_width=40)
-    
+
     for item in orphaned_milestones:
         age_str = f"{item.orphaned_days}d"
         top_rec = item.recommendations[0] if item.recommendations else ""
-        
+
         # Create type display based on orphanage reasons
-        if hasattr(item, 'orphanage_reasons') and item.orphanage_reasons:
+        if hasattr(item, "orphanage_reasons") and item.orphanage_reasons:
             type_parts = []
             if "empty" in item.orphanage_reasons:
                 type_parts.append("Empty")
@@ -12154,51 +12647,63 @@ def _display_orphaned_milestones(orphaned_milestones) -> None:
         else:
             # Fallback for legacy orphanage types
             type_display = item.orphanage_type.value.replace("_", " ").title()
-        
+
         # Show orphanage issues as a summary
-        issues_display = ", ".join(item.orphanage_reasons) if hasattr(item, 'orphanage_reasons') and item.orphanage_reasons else "N/A"
-        
-        table.add_row(
-            item.item_id,
-            type_display,
-            issues_display,
-            age_str,
-            top_rec
+        issues_display = (
+            ", ".join(item.orphanage_reasons)
+            if hasattr(item, "orphanage_reasons") and item.orphanage_reasons
+            else "N/A"
         )
-    
+
+        table.add_row(item.item_id, type_display, issues_display, age_str, top_rec)
+
     console.print(table)
 
 
 def _interactive_curation_workflow(curator, report) -> None:
     """Interactive workflow for guided curation."""
     console.print("\n🎮 Interactive Curation Mode", style="bold cyan")
-    
-    total_orphaned = (len(report.orphaned_issues) + len(report.invalid_references) + 
-                     len(report.orphaned_milestones))
+
+    total_orphaned = (
+        len(report.orphaned_issues)
+        + len(report.invalid_references)
+        + len(report.orphaned_milestones)
+    )
     if total_orphaned == 0:
-        console.print("✅ No orphaned items found - your roadmap is well organized!", style="bold green")
+        console.print(
+            "✅ No orphaned items found - your roadmap is well organized!",
+            style="bold green",
+        )
         return
-    
+
     choices = []
     if report.orphaned_issues or report.invalid_references:
         choices.append("Assign orphaned issues to milestones")
     if report.orphaned_milestones:
         choices.append("Review problematic milestones")
     choices.extend(["Export detailed report", "Exit"])
-    
+
     choice = click.prompt(
-        "What would you like to do?",
-        type=click.Choice(choices, case_sensitive=False)
+        "What would you like to do?", type=click.Choice(choices, case_sensitive=False)
     )
-    
+
     if "assign" in choice.lower():
-        _interactive_issue_assignment(curator, report.orphaned_issues + report.invalid_references)
+        _interactive_issue_assignment(
+            curator, report.orphaned_issues + report.invalid_references
+        )
     elif "problematic milestones" in choice.lower():
         _display_orphaned_milestones(report.orphaned_milestones)
-        console.print("\n💡 Consider using 'roadmap milestone' and 'roadmap project' commands to manage milestones")
+        console.print(
+            "\n💡 Consider using 'roadmap milestone' and 'roadmap project' commands to manage milestones"
+        )
     elif "export" in choice.lower():
-        filename = click.prompt("Export filename", default=f"curation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-        format_choice = click.prompt("Format", type=click.Choice(["json", "csv", "markdown"]), default="json")
+        filename = click.prompt(
+            "Export filename",
+            default=f"curation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        )
+        format_choice = click.prompt(
+            "Format", type=click.Choice(["json", "csv", "markdown"]), default="json"
+        )
         curator.export_curation_report(report, Path(filename), format_choice)
         console.print(f"✅ Report exported to {filename}", style="bold green")
 
@@ -12208,143 +12713,170 @@ def _interactive_issue_assignment(curator, orphaned_issues) -> None:
     if not orphaned_issues:
         console.print("✅ No orphaned issues to assign", style="bold green")
         return
-    
+
     # Get available milestones
     milestones = curator.core.list_milestones()
     open_milestones = [m for m in milestones if m.status.value == "open"]
-    
+
     if not open_milestones:
         console.print("⚠️  No open milestones available for assignment", style="yellow")
         return
-    
+
     console.print(f"\n📋 Found {len(orphaned_issues)} orphaned issues")
-    
+
     # Show smart suggestions
     suggestions = curator.suggest_milestone_assignments(orphaned_issues)
     if suggestions:
         console.print("\n🎯 Smart Assignment Suggestions:", style="bold green")
         for milestone_name, suggested_ids in suggestions.items():
             console.print(f"  📍 {milestone_name}: {len(suggested_ids)} issues")
-        
+
         if click.confirm("Apply smart suggestions?"):
             total_assigned = 0
             for milestone_name, suggested_ids in suggestions.items():
-                successful, failed = curator.bulk_assign_to_milestone(suggested_ids, milestone_name)
+                successful, failed = curator.bulk_assign_to_milestone(
+                    suggested_ids, milestone_name
+                )
                 total_assigned += len(successful)
-            console.print(f"✅ Applied smart assignments for {total_assigned} issues", style="bold green")
+            console.print(
+                f"✅ Applied smart assignments for {total_assigned} issues",
+                style="bold green",
+            )
             return
-    
+
     # Manual assignment
     console.print("\n📝 Manual Assignment Mode")
     milestone_choices = [m.name for m in open_milestones] + ["Backlog", "Skip"]
-    
+
     assigned_count = 0
     for item in orphaned_issues[:10]:  # Limit to first 10 for interactivity
         console.print(f"\n🎯 Issue: {item.title}")
-        console.print(f"   Priority: {item.priority.value if item.priority else 'None'}")
+        console.print(
+            f"   Priority: {item.priority.value if item.priority else 'None'}"
+        )
         console.print(f"   Age: {item.orphaned_days} days")
-        
+
         if item.recommendations:
             console.print("   💡 Recommendations:")
             for rec in item.recommendations[:2]:  # Show top 2 recommendations
                 console.print(f"      • {rec}")
-        
+
         assignment = click.prompt(
             "Assign to",
             type=click.Choice(milestone_choices, case_sensitive=False),
-            default="Skip"
+            default="Skip",
         )
-        
+
         if assignment.lower() == "skip":
             continue
         elif assignment.lower() == "backlog":
             curator.bulk_move_to_backlog([item.item_id])
             assigned_count += 1
-            console.print(f"✅ Moved to backlog", style="green")
+            console.print("✅ Moved to backlog", style="green")
         else:
             curator.bulk_assign_to_milestone([item.item_id], assignment)
             assigned_count += 1
             console.print(f"✅ Assigned to {assignment}", style="green")
-    
+
     console.print(f"\n✅ Assigned {assigned_count} issues", style="bold green")
 
 
 @main.command()
-@click.option("--workspace", "-w", type=click.Path(exists=True), help="Workspace path (default: current directory)")
-def validate_naming(workspace: Optional[str] = None) -> None:
+@click.option(
+    "--workspace",
+    "-w",
+    type=click.Path(exists=True),
+    help="Workspace path (default: current directory)",
+)
+def validate_naming(workspace: str | None = None) -> None:
     """Validate milestone naming consistency between filenames and YAML name fields."""
     try:
         workspace_path = Path(workspace) if workspace else Path.cwd()
         core = RoadmapCore(workspace_path)
-        
+
         inconsistencies = core.validate_milestone_naming_consistency()
-        
+
         if not inconsistencies:
             console.print("✅ All milestone names are consistent!", style="bold green")
             return
-        
-        console.print(f"⚠️  Found {len(inconsistencies)} naming inconsistencies:", style="bold yellow")
-        
+
+        console.print(
+            f"⚠️  Found {len(inconsistencies)} naming inconsistencies:",
+            style="bold yellow",
+        )
+
         table = Table()
         table.add_column("File", style="cyan")
         table.add_column("Name Field", style="blue")
         table.add_column("Expected Filename", style="green")
         table.add_column("Issue Type", style="red")
-        
+
         for issue in inconsistencies:
             table.add_row(
-                issue["file"],
-                issue["name"],
-                issue["expected_filename"],
-                issue["type"]
+                issue["file"], issue["name"], issue["expected_filename"], issue["type"]
             )
-        
+
         console.print(table)
-        console.print("\n💡 Run 'roadmap fix-naming' to automatically fix filename mismatches", style="dim")
-        
+        console.print(
+            "\n💡 Run 'roadmap fix-naming' to automatically fix filename mismatches",
+            style="dim",
+        )
+
     except Exception as e:
         console.print(f"❌ Error validating naming: {e}", style="bold red")
         raise click.ClickException(str(e))
 
 
 @main.command()
-@click.option("--workspace", "-w", type=click.Path(exists=True), help="Workspace path (default: current directory)")
-@click.option("--dry-run", "-n", is_flag=True, help="Show what would be renamed without making changes")
-def fix_naming(workspace: Optional[str] = None, dry_run: bool = False) -> None:
+@click.option(
+    "--workspace",
+    "-w",
+    type=click.Path(exists=True),
+    help="Workspace path (default: current directory)",
+)
+@click.option(
+    "--dry-run",
+    "-n",
+    is_flag=True,
+    help="Show what would be renamed without making changes",
+)
+def fix_naming(workspace: str | None = None, dry_run: bool = False) -> None:
     """Fix milestone naming inconsistencies by renaming files to match YAML name fields."""
     try:
         workspace_path = Path(workspace) if workspace else Path.cwd()
         core = RoadmapCore(workspace_path)
-        
+
         if dry_run:
             inconsistencies = core.validate_milestone_naming_consistency()
-            rename_candidates = [i for i in inconsistencies if i["type"] == "filename_mismatch"]
-            
+            rename_candidates = [
+                i for i in inconsistencies if i["type"] == "filename_mismatch"
+            ]
+
             if not rename_candidates:
                 console.print("✅ No files need renaming!", style="bold green")
                 return
-            
+
             console.print("📋 Files that would be renamed:", style="bold blue")
             for issue in rename_candidates:
                 console.print(f"  {issue['file']} → {issue['expected_filename']}")
-            
+
             return
-        
+
         results = core.fix_milestone_naming_consistency()
-        
+
         if results["renamed"]:
             console.print("✅ Successfully renamed files:", style="bold green")
             for rename in results["renamed"]:
                 console.print(f"  {rename}")
-        
+
         if results["errors"]:
             console.print("\n❌ Errors encountered:", style="bold red")
             for error in results["errors"]:
                 console.print(f"  {error}")
-        
+
         if not results["renamed"] and not results["errors"]:
             console.print("✅ No files needed renaming!", style="bold green")
-        
+
     except Exception as e:
         console.print(f"❌ Error fixing naming: {e}", style="bold red")
         raise click.ClickException(str(e))
@@ -12353,6 +12885,7 @@ def fix_naming(workspace: Optional[str] = None, dry_run: bool = False) -> None:
 # ================================
 # NEW OBJECT-VERB COMMAND GROUPS
 # ================================
+
 
 @main.group()
 def team():
@@ -12372,10 +12905,14 @@ def team_forecast_capacity(ctx: click.Context, days: int, assignee: str):
 
 @team.command("analyze-workload")
 @click.option("--assignee", "-a", help="Analyze specific team member's workload")
-@click.option("--include-estimates", is_flag=True, help="Include time estimates in analysis")
+@click.option(
+    "--include-estimates", is_flag=True, help="Include time estimates in analysis"
+)
 @click.option("--suggest-rebalance", is_flag=True, help="Suggest workload rebalancing")
 @click.pass_context
-def team_analyze_workload(ctx: click.Context, assignee: str, include_estimates: bool, suggest_rebalance: bool):
+def team_analyze_workload(
+    ctx: click.Context, assignee: str, include_estimates: bool, suggest_rebalance: bool
+):
     """Analyze team workload and capacity distribution."""
     # Call the original implementation directly
     _original_workload_analysis(ctx, assignee, include_estimates, suggest_rebalance)
@@ -12390,6 +12927,7 @@ def team_broadcast(ctx: click.Context, message: str, assignee: str, issue: str):
     """Broadcast a status update to the team."""
     # For now, delegate to the existing function by finding and calling it
     from roadmap.cli import broadcast as original_broadcast
+
     ctx.invoke(original_broadcast, message=message, assignee=assignee, issue=issue)
 
 
@@ -12401,6 +12939,7 @@ def team_show_activity(ctx: click.Context, days: int, assignee: str):
     """Show recent team activity and updates."""
     # For now, delegate to the existing function by finding and calling it
     from roadmap.cli import activity as original_activity
+
     ctx.invoke(original_activity, days=days, assignee=assignee)
 
 
@@ -12409,12 +12948,28 @@ def team_show_activity(ctx: click.Context, days: int, assignee: str):
 @click.argument("assignee")
 @click.option("--notes", "-n", help="Handoff notes and context")
 @click.option("--status", help="Set issue status during handoff")
-@click.option("--suggest-only", is_flag=True, help="Only suggest handoff, don't execute")
+@click.option(
+    "--suggest-only", is_flag=True, help="Only suggest handoff, don't execute"
+)
 @click.pass_context
-def team_handoff(ctx: click.Context, issue_id: str, assignee: str, notes: str, status: str, suggest_only: bool):
+def team_handoff(
+    ctx: click.Context,
+    issue_id: str,
+    assignee: str,
+    notes: str,
+    status: str,
+    suggest_only: bool,
+):
     """Hand off an issue to another team member."""
     # Delegate to existing handoff function
-    ctx.invoke(handoff, issue_id=issue_id, assignee=assignee, notes=notes, status=status, suggest_only=suggest_only)
+    ctx.invoke(
+        handoff,
+        issue_id=issue_id,
+        assignee=assignee,
+        notes=notes,
+        status=status,
+        suggest_only=suggest_only,
+    )
 
 
 @team.command("show-handoff-context")
@@ -12438,14 +12993,24 @@ def team_list_handoffs(ctx: click.Context, assignee: str, show_completed: bool):
 
 @team.command("assign-smart")
 @click.argument("issue_id")
-@click.option("--suggest-only", is_flag=True, help="Only suggest assignment, don't execute")
+@click.option(
+    "--suggest-only", is_flag=True, help="Only suggest assignment, don't execute"
+)
 @click.option("--consider-workload", is_flag=True, help="Factor in current workload")
 @click.option("--consider-skills", is_flag=True, help="Factor in skill matching")
 @click.pass_context
-def team_assign_smart(ctx: click.Context, issue_id: str, suggest_only: bool, consider_workload: bool, consider_skills: bool):
+def team_assign_smart(
+    ctx: click.Context,
+    issue_id: str,
+    suggest_only: bool,
+    consider_workload: bool,
+    consider_skills: bool,
+):
     """Intelligently assign an issue to the best team member."""
     # Call the original implementation directly (map new options to old ones)
-    _original_smart_assign(ctx, issue_id, consider_skills, consider_workload, suggest_only)
+    _original_smart_assign(
+        ctx, issue_id, consider_skills, consider_workload, suggest_only
+    )
 
 
 @main.group()
@@ -12469,11 +13034,16 @@ def user_show_dashboard(ctx: click.Context, assignee: str, days: int):
 @click.option("--since", "-s", help="Show notifications since date (YYYY-MM-DD)")
 @click.option("--mark-read", is_flag=True, help="Mark notifications as read")
 @click.pass_context
-def user_show_notifications(ctx: click.Context, assignee: str, since: str, mark_read: bool):
+def user_show_notifications(
+    ctx: click.Context, assignee: str, since: str, mark_read: bool
+):
     """Show team notifications about issues and updates."""
     # For now, delegate to the existing function by finding and calling it
     from roadmap.cli import notifications as original_notifications
-    ctx.invoke(original_notifications, assignee=assignee, since=since, mark_read=mark_read)
+
+    ctx.invoke(
+        original_notifications, assignee=assignee, since=since, mark_read=mark_read
+    )
 
 
 @main.group()
@@ -12483,10 +13053,23 @@ def data():
 
 
 @data.command("export")
-@click.option("--format", "-f", type=click.Choice(["json", "csv", "xlsx", "yaml"]), default="json", help="Export format")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["json", "csv", "xlsx", "yaml"]),
+    default="json",
+    help="Export format",
+)
 @click.option("--output", "-o", help="Output file path")
-@click.option("--include-issues", is_flag=True, default=True, help="Include issues in export")
-@click.option("--include-milestones", is_flag=True, default=True, help="Include milestones in export")
+@click.option(
+    "--include-issues", is_flag=True, default=True, help="Include issues in export"
+)
+@click.option(
+    "--include-milestones",
+    is_flag=True,
+    default=True,
+    help="Include milestones in export",
+)
 @click.option("--include-comments", is_flag=True, help="Include comments in export")
 @click.option("--filter-assignee", help="Export only items for specific assignee")
 @click.option("--filter-status", help="Export only items with specific status")
@@ -12501,25 +13084,45 @@ def data_export(ctx: click.Context, **kwargs):
 
 
 @data.command("generate-report")
-@click.option("--type", "-t", type=click.Choice(["summary", "detailed", "milestone", "assignee"]), default="summary", help="Report type")
-@click.option("--format", "-f", type=click.Choice(["console", "html", "pdf", "json"]), default="console", help="Output format")
+@click.option(
+    "--type",
+    "-t",
+    type=click.Choice(["summary", "detailed", "milestone", "assignee"]),
+    default="summary",
+    help="Report type",
+)
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["console", "html", "pdf", "json"]),
+    default="console",
+    help="Output format",
+)
 @click.option("--output", "-o", help="Output file path (for html/pdf formats)")
 @click.option("--assignee", "-a", help="Focus report on specific assignee")
 @click.option("--milestone", "-m", help="Focus report on specific milestone")
-@click.option("--include-charts", is_flag=True, help="Include charts and visualizations")
+@click.option(
+    "--include-charts", is_flag=True, help="Include charts and visualizations"
+)
 @click.pass_context
 def data_generate_report(ctx: click.Context, **kwargs):
     """Generate detailed reports and analytics."""
     # This will delegate to the existing report command functionality
     # For now, we'll create a simple implementation that calls the core functionality
     core = ctx.obj["core"]
-    
+
     try:
         # Generate a basic report using existing functionality
         console.print("📊 Generating report...", style="bold blue")
-        console.print("⚠️  Full report generation coming soon. For now, use 'roadmap export' for data export.", style="yellow")
-        console.print("💡 Tip: Try 'roadmap user show-dashboard' for a quick overview.", style="dim")
-        
+        console.print(
+            "⚠️  Full report generation coming soon. For now, use 'roadmap export' for data export.",
+            style="yellow",
+        )
+        console.print(
+            "💡 Tip: Try 'roadmap user show-dashboard' for a quick overview.",
+            style="dim",
+        )
+
     except Exception as e:
         console.print(f"❌ Error generating report: {e}", style="bold red")
         raise click.ClickException(str(e))
@@ -12529,18 +13132,31 @@ def data_generate_report(ctx: click.Context, **kwargs):
 @analytics.command("generate-timeline")
 @click.option("--assignee", "-a", help="Filter by assignee")
 @click.option("--milestone", "-m", help="Filter by milestone")
-@click.option("--format", "-f", type=click.Choice(["text", "gantt"]), default="text", help="Output format")
-@click.option("--days", "-d", type=int, default=30, help="Number of days to show in timeline")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["text", "gantt"]),
+    default="text",
+    help="Output format",
+)
+@click.option(
+    "--days", "-d", type=int, default=30, help="Number of days to show in timeline"
+)
 @click.pass_context
-def analytics_generate_timeline(ctx: click.Context, assignee: str, milestone: str, format: str, days: int):
+def analytics_generate_timeline(
+    ctx: click.Context, assignee: str, milestone: str, format: str, days: int
+):
     """Generate project timelines and Gantt charts."""
     # Delegate to existing timeline functionality
-    ctx.invoke(show_timeline, assignee=assignee, milestone=milestone, format=format, days=days)
+    ctx.invoke(
+        show_timeline, assignee=assignee, milestone=milestone, format=format, days=days
+    )
 
 
 # ================================
 # DEPRECATION WARNINGS FOR OLD COMMANDS
 # ================================
+
 
 @main.command()
 @click.option("--days", "-d", default=30, help="Number of days to forecast")
@@ -12548,29 +13164,45 @@ def analytics_generate_timeline(ctx: click.Context, assignee: str, milestone: st
 @click.pass_context
 def capacity_forecast(ctx: click.Context, days: int, assignee: str):
     """[DEPRECATED] Forecast team capacity and bottlenecks.
-    
+
     ⚠️  DEPRECATION WARNING: Use 'roadmap team forecast-capacity' instead.
     """
-    console.print("⚠️  DEPRECATION WARNING: 'roadmap capacity-forecast' is deprecated.", style="yellow")
-    console.print("   Use 'roadmap team forecast-capacity' instead for better organization.", style="yellow")
-    
+    console.print(
+        "⚠️  DEPRECATION WARNING: 'roadmap capacity-forecast' is deprecated.",
+        style="yellow",
+    )
+    console.print(
+        "   Use 'roadmap team forecast-capacity' instead for better organization.",
+        style="yellow",
+    )
+
     # Call the actual implementation
     _original_capacity_forecast(ctx, days, assignee)
 
 
 @main.command()
 @click.option("--assignee", "-a", help="Analyze workload for specific assignee")
-@click.option("--include-estimates", is_flag=True, help="Include time estimates in analysis")
+@click.option(
+    "--include-estimates", is_flag=True, help="Include time estimates in analysis"
+)
 @click.option("--suggest-rebalance", is_flag=True, help="Suggest workload rebalancing")
 @click.pass_context
-def workload_analysis(ctx: click.Context, assignee: str, include_estimates: bool, suggest_rebalance: bool):
+def workload_analysis(
+    ctx: click.Context, assignee: str, include_estimates: bool, suggest_rebalance: bool
+):
     """[DEPRECATED] Analyze team workload and capacity.
-    
+
     ⚠️  DEPRECATION WARNING: Use 'roadmap team analyze-workload' instead.
     """
-    console.print("⚠️  DEPRECATION WARNING: 'roadmap workload-analysis' is deprecated.", style="yellow")
-    console.print("   Use 'roadmap team analyze-workload' instead for better organization.", style="yellow")
-    
+    console.print(
+        "⚠️  DEPRECATION WARNING: 'roadmap workload-analysis' is deprecated.",
+        style="yellow",
+    )
+    console.print(
+        "   Use 'roadmap team analyze-workload' instead for better organization.",
+        style="yellow",
+    )
+
     # Call the actual implementation
     _original_workload_analysis(ctx, assignee, include_estimates, suggest_rebalance)
 
@@ -12581,16 +13213,29 @@ def workload_analysis(ctx: click.Context, assignee: str, include_estimates: bool
 @click.option("--consider-availability", is_flag=True, help="Consider current workload")
 @click.option("--suggest-only", is_flag=True, help="Only suggest, don't assign")
 @click.pass_context
-def smart_assign(ctx: click.Context, issue_id: str, consider_skills: bool, consider_availability: bool, suggest_only: bool):
+def smart_assign(
+    ctx: click.Context,
+    issue_id: str,
+    consider_skills: bool,
+    consider_availability: bool,
+    suggest_only: bool,
+):
     """[DEPRECATED] Intelligently assign an issue to the best team member.
-    
+
     ⚠️  DEPRECATION WARNING: Use 'roadmap team assign-smart' instead.
     """
-    console.print("⚠️  DEPRECATION WARNING: 'roadmap smart-assign' is deprecated.", style="yellow")
-    console.print("   Use 'roadmap team assign-smart' instead for better organization.", style="yellow")
-    
+    console.print(
+        "⚠️  DEPRECATION WARNING: 'roadmap smart-assign' is deprecated.", style="yellow"
+    )
+    console.print(
+        "   Use 'roadmap team assign-smart' instead for better organization.",
+        style="yellow",
+    )
+
     # Call the actual implementation
-    _original_smart_assign(ctx, issue_id, consider_skills, consider_availability, suggest_only)
+    _original_smart_assign(
+        ctx, issue_id, consider_skills, consider_availability, suggest_only
+    )
 
 
 if __name__ == "__main__":

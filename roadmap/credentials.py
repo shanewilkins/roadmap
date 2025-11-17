@@ -1,11 +1,8 @@
 """Secure credential management for GitHub tokens."""
 
-import json
 import os
 import platform
 import subprocess
-from pathlib import Path
-from typing import Any, Dict, Optional
 
 
 class CredentialManagerError(Exception):
@@ -24,9 +21,7 @@ class CredentialManager:
         """Initialize credential manager."""
         self.system = platform.system().lower()
 
-    def store_token(
-        self, token: str, repo_info: Optional[Dict[str, str]] = None
-    ) -> bool:
+    def store_token(self, token: str, repo_info: dict[str, str] | None = None) -> bool:
         """Store GitHub token securely.
 
         Args:
@@ -49,7 +44,7 @@ class CredentialManager:
         except Exception as e:
             raise CredentialManagerError(f"Failed to store token: {e}")
 
-    def get_token(self) -> Optional[str]:
+    def get_token(self) -> str | None:
         """Retrieve GitHub token securely.
 
         Returns:
@@ -113,7 +108,7 @@ class CredentialManager:
 
     # macOS Keychain implementation
     def _store_token_keychain(
-        self, token: str, repo_info: Optional[Dict[str, str]] = None
+        self, token: str, repo_info: dict[str, str] | None = None
     ) -> bool:
         """Store token in macOS Keychain."""
         cmd = [
@@ -136,7 +131,7 @@ class CredentialManager:
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result.returncode == 0
 
-    def _get_token_keychain(self) -> Optional[str]:
+    def _get_token_keychain(self) -> str | None:
         """Get token from macOS Keychain."""
         cmd = [
             "security",
@@ -177,7 +172,7 @@ class CredentialManager:
 
     # Windows Credential Manager implementation
     def _store_token_wincred(
-        self, token: str, repo_info: Optional[Dict[str, str]] = None
+        self, token: str, repo_info: dict[str, str] | None = None
     ) -> bool:
         """Store token in Windows Credential Manager."""
         try:
@@ -195,7 +190,7 @@ class CredentialManager:
             # Fallback to cmdkey if keyring not available
             return self._store_token_cmdkey(token, repo_info)
 
-    def _get_token_wincred(self) -> Optional[str]:
+    def _get_token_wincred(self) -> str | None:
         """Get token from Windows Credential Manager."""
         try:
             import keyring
@@ -236,7 +231,7 @@ class CredentialManager:
                 return False
 
     def _store_token_cmdkey(
-        self, token: str, repo_info: Optional[Dict[str, str]] = None
+        self, token: str, repo_info: dict[str, str] | None = None
     ) -> bool:
         """Store token using Windows cmdkey."""
         target_name = self.SERVICE_NAME
@@ -252,7 +247,7 @@ class CredentialManager:
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result.returncode == 0
 
-    def _get_token_cmdkey(self) -> Optional[str]:
+    def _get_token_cmdkey(self) -> str | None:
         """Get token using Windows cmdkey (limited functionality)."""
         # cmdkey doesn't provide a way to retrieve passwords, only store/delete
         # This is a limitation of the cmdkey approach
@@ -266,7 +261,7 @@ class CredentialManager:
 
     # Linux Secret Service implementation
     def _store_token_secretservice(
-        self, token: str, repo_info: Optional[Dict[str, str]] = None
+        self, token: str, repo_info: dict[str, str] | None = None
     ) -> bool:
         """Store token in Linux Secret Service."""
         try:
@@ -284,7 +279,7 @@ class CredentialManager:
             # Fallback if keyring not available
             return self._store_token_fallback(token, repo_info)
 
-    def _get_token_secretservice(self) -> Optional[str]:
+    def _get_token_secretservice(self) -> str | None:
         """Get token from Linux Secret Service."""
         try:
             import keyring
@@ -324,13 +319,13 @@ class CredentialManager:
 
     # Fallback implementation for unsupported systems
     def _store_token_fallback(
-        self, token: str, repo_info: Optional[Dict[str, str]] = None
+        self, token: str, repo_info: dict[str, str] | None = None
     ) -> bool:
         """Fallback token storage (warns user to use environment variable)."""
         # Don't actually store - just return False to indicate secure storage unavailable
         return False
 
-    def _get_token_fallback(self) -> Optional[str]:
+    def _get_token_fallback(self) -> str | None:
         """Fallback token retrieval (environment variable only)."""
         return os.getenv("GITHUB_TOKEN")
 

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pandas as pd
 
@@ -13,7 +13,7 @@ class DataFrameAdapter:
     """Adapter for converting roadmap data to pandas DataFrames and handling exports."""
 
     @staticmethod
-    def issues_to_dataframe(issues: List[Issue]) -> pd.DataFrame:
+    def issues_to_dataframe(issues: list[Issue]) -> pd.DataFrame:
         """Convert a list of Issue objects to a pandas DataFrame.
 
         Args:
@@ -86,7 +86,7 @@ class DataFrameAdapter:
 
     @staticmethod
     def milestones_to_dataframe(
-        milestones: List[Milestone], issues: List[Issue]
+        milestones: list[Milestone], issues: list[Issue]
     ) -> pd.DataFrame:
         """Convert a list of Milestone objects to a pandas DataFrame.
 
@@ -177,11 +177,16 @@ class DataFrameAdapter:
         """
         # Convert timezone-aware datetimes to naive for Excel compatibility
         df_export = df.copy()
-        for col in df_export.select_dtypes(include=['datetime64[ns, UTC]', 'datetime64[ns]']).columns:
-            if hasattr(df_export[col].dtype, 'tz') and df_export[col].dtype.tz is not None:
+        for col in df_export.select_dtypes(
+            include=["datetime64[ns, UTC]", "datetime64[ns]"]
+        ).columns:
+            if (
+                hasattr(df_export[col].dtype, "tz")
+                and df_export[col].dtype.tz is not None
+            ):
                 # Convert timezone-aware to naive (removes timezone info)
                 df_export[col] = df_export[col].dt.tz_localize(None)
-        
+
         default_kwargs = {"index": False, "sheet_name": sheet_name}
         default_kwargs.update(kwargs)
 
@@ -203,7 +208,7 @@ class DataFrameAdapter:
 
     @staticmethod
     def export_multiple_sheets(
-        data_dict: Dict[str, pd.DataFrame], filepath: Path, **kwargs
+        data_dict: dict[str, pd.DataFrame], filepath: Path, **kwargs
     ) -> None:
         """Export multiple DataFrames to an Excel file with multiple sheets.
 
@@ -216,8 +221,13 @@ class DataFrameAdapter:
             for sheet_name, df in data_dict.items():
                 # Convert timezone-aware datetimes to naive for Excel compatibility
                 df_export = df.copy()
-                for col in df_export.select_dtypes(include=['datetime64[ns, UTC]', 'datetime64[ns]']).columns:
-                    if hasattr(df_export[col].dtype, 'tz') and df_export[col].dtype.tz is not None:
+                for col in df_export.select_dtypes(
+                    include=["datetime64[ns, UTC]", "datetime64[ns]"]
+                ).columns:
+                    if (
+                        hasattr(df_export[col].dtype, "tz")
+                        and df_export[col].dtype.tz is not None
+                    ):
                         # Convert timezone-aware to naive (removes timezone info)
                         df_export[col] = df_export[col].dt.tz_localize(None)
                 df_export.to_excel(writer, sheet_name=sheet_name, index=False)
@@ -407,7 +417,7 @@ class DataAnalyzer:
         return health_df
 
     @staticmethod
-    def find_bottlenecks(issues_df: pd.DataFrame) -> Dict[str, Any]:
+    def find_bottlenecks(issues_df: pd.DataFrame) -> dict[str, Any]:
         """Identify potential bottlenecks in the workflow.
 
         Args:
@@ -461,8 +471,8 @@ class QueryBuilder:
     def filter_by_date_range(
         df: pd.DataFrame,
         date_column: str,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> pd.DataFrame:
         """Filter DataFrame by date range.
 
@@ -517,7 +527,7 @@ class QueryBuilder:
 
     @staticmethod
     def search_text(
-        df: pd.DataFrame, search_term: str, columns: List[str] = None
+        df: pd.DataFrame, search_term: str, columns: list[str] = None
     ) -> pd.DataFrame:
         """Search for text across specified columns.
 

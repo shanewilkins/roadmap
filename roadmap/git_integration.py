@@ -1,12 +1,11 @@
 """Git integration module for enhanced Git workflow support."""
 
-import os
 import re
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .datetime_parser import parse_datetime
 from .models import Issue
@@ -20,7 +19,7 @@ class GitCommit:
     author: str
     date: datetime
     message: str
-    files_changed: List[str]
+    files_changed: list[str]
     insertions: int = 0
     deletions: int = 0
 
@@ -29,7 +28,7 @@ class GitCommit:
         """Get short commit hash."""
         return self.hash[:8]
 
-    def extract_roadmap_references(self) -> List[str]:
+    def extract_roadmap_references(self) -> list[str]:
         """Extract roadmap issue references from commit message."""
         # Enhanced patterns to support multiple formats:
         # 1. [roadmap:issue-id] or [closes roadmap:issue-id] (existing)
@@ -57,7 +56,7 @@ class GitCommit:
 
         return list(set(references))  # Remove duplicates
 
-    def extract_progress_info(self) -> Optional[float]:
+    def extract_progress_info(self) -> float | None:
         """Extract progress percentage from commit message."""
         # Pattern: [progress:25%] or [progress:25]
         patterns = [
@@ -79,10 +78,10 @@ class GitBranch:
 
     name: str
     current: bool = False
-    remote: Optional[str] = None
-    last_commit: Optional[str] = None
+    remote: str | None = None
+    last_commit: str | None = None
 
-    def extract_issue_id(self) -> Optional[str]:
+    def extract_issue_id(self) -> str | None:
         """Extract issue ID from branch name patterns."""
         # Common patterns:
         # feature/issue-abc12345-description
@@ -101,7 +100,7 @@ class GitBranch:
 
         return None
 
-    def suggests_issue_type(self) -> Optional[str]:
+    def suggests_issue_type(self) -> str | None:
         """Suggest issue type based on branch name."""
         if self.name.startswith(("feature/", "feat/")):
             return "feature"
@@ -120,14 +119,14 @@ class GitBranch:
 class GitIntegration:
     """Enhanced Git integration for roadmap workflow support."""
 
-    def __init__(self, repo_path: Optional[Path] = None, config: Optional[object] = None):
+    def __init__(self, repo_path: Path | None = None, config: object | None = None):
         """Initialize Git integration."""
         self.repo_path = repo_path or Path.cwd()
         self._git_dir = self._find_git_directory()
         # Optional roadmap configuration (RoadmapConfig) to influence behavior
         self.config = config
 
-    def _find_git_directory(self) -> Optional[Path]:
+    def _find_git_directory(self) -> Path | None:
         """Find the .git directory by walking up the directory tree."""
         current = self.repo_path.resolve()
 
@@ -146,9 +145,7 @@ class GitIntegration:
             self._git_dir = self._find_git_directory()
         return self._git_dir is not None
 
-    def _run_git_command(
-        self, args: List[str], cwd: Optional[Path] = None
-    ) -> Optional[str]:
+    def _run_git_command(self, args: list[str], cwd: Path | None = None) -> str | None:
         """Run a git command and return the output."""
         if not self.is_git_repository():
             return None
@@ -165,15 +162,15 @@ class GitIntegration:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return None
 
-    def get_current_user(self) -> Optional[str]:
+    def get_current_user(self) -> str | None:
         """Get current Git user name."""
         return self._run_git_command(["config", "user.name"])
 
-    def get_current_email(self) -> Optional[str]:
+    def get_current_email(self) -> str | None:
         """Get current Git user email."""
         return self._run_git_command(["config", "user.email"])
 
-    def get_current_branch(self) -> Optional[GitBranch]:
+    def get_current_branch(self) -> GitBranch | None:
         """Get information about the current branch."""
         branch_name = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
         if not branch_name or branch_name == "HEAD":
@@ -191,7 +188,7 @@ class GitIntegration:
             name=branch_name, current=True, remote=remote, last_commit=last_commit
         )
 
-    def get_all_branches(self) -> List[GitBranch]:
+    def get_all_branches(self) -> list[GitBranch]:
         """Get all local branches."""
         output = self._run_git_command(["branch", "--format=%(refname:short)|%(HEAD)"])
         if not output:
@@ -210,8 +207,8 @@ class GitIntegration:
         return branches
 
     def get_recent_commits(
-        self, count: int = 10, since: Optional[str] = None
-    ) -> List[GitCommit]:
+        self, count: int = 10, since: str | None = None
+    ) -> list[GitCommit]:
         """Get recent commits with detailed information."""
         args = ["log", f"-{count}", "--pretty=format:%H|%an|%ad|%s", "--date=iso"]
         if since:
@@ -268,8 +265,8 @@ class GitIntegration:
         return commits
 
     def get_commits_for_issue(
-        self, issue_id: str, since: Optional[str] = None
-    ) -> List[GitCommit]:
+        self, issue_id: str, since: str | None = None
+    ) -> list[GitCommit]:
         """Get all commits that reference a specific issue."""
         commits = self.get_recent_commits(count=100, since=since)
         return [
@@ -313,7 +310,9 @@ class GitIntegration:
 
         return f"{prefix}/{issue.id}-{title_slug}"
 
-    def create_branch_for_issue(self, issue: Issue, checkout: bool = True, force: bool = False) -> bool:
+    def create_branch_for_issue(
+        self, issue: Issue, checkout: bool = True, force: bool = False
+    ) -> bool:
         """Create a new branch for an issue.
 
         Handles edge cases:
@@ -338,7 +337,9 @@ class GitIntegration:
         # Try a couple of rev-parse forms to detect existing local branch
         existing = self._run_git_command(["rev-parse", "--verify", branch_name])
         if not existing:
-            existing = self._run_git_command(["rev-parse", "--verify", f"refs/heads/{branch_name}"])
+            existing = self._run_git_command(
+                ["rev-parse", "--verify", f"refs/heads/{branch_name}"]
+            )
         # If branch exists, optionally checkout it
         if existing:
             if checkout:
@@ -349,7 +350,9 @@ class GitIntegration:
                 return True
 
         # Remember current branch
-        current_branch = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"]) or None
+        current_branch = (
+            self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"]) or None
+        )
 
         # Create the branch
         result = self._run_git_command(["checkout", "-b", branch_name])
@@ -363,13 +366,15 @@ class GitIntegration:
 
         return True
 
-    def auto_create_issue_from_branch(self, roadmap_core, branch_name: Optional[str] = None) -> Optional[str]:
+    def auto_create_issue_from_branch(
+        self, roadmap_core, branch_name: str | None = None
+    ) -> str | None:
         """Automatically create an issue from a branch name if one doesn't exist.
-        
+
         Args:
             roadmap_core: RoadmapCore instance for issue operations
             branch_name: Branch name to analyze. If None, uses current branch.
-            
+
         Returns:
             Issue ID if created, None if not created or already exists
         """
@@ -378,34 +383,34 @@ class GitIntegration:
             if not current_branch:
                 return None
             branch_name = current_branch.name
-            
+
         # Don't create issues for main branches
         if branch_name in ["main", "master", "develop", "dev"]:
             return None
-            
+
         branch = GitBranch(branch_name)
-        
+
         # Check if branch already has an associated issue
         existing_issue_id = branch.extract_issue_id()
         if existing_issue_id:
             # Check if the issue actually exists
             if roadmap_core.load_issue(existing_issue_id):
                 return None  # Issue already exists
-            
+
         # Generate issue details from branch name
         issue_type = branch.suggests_issue_type() or "feature"
-        
+
         # Extract title from branch name
         title = self._extract_title_from_branch_name(branch_name)
         if not title:
             return None
-            
+
         # Create the issue
         try:
             assignee = self.get_current_user() or "Unknown"
-            
+
             content = f"Auto-created from branch: `{branch_name}`\n\nThis issue was automatically created when switching to the branch `{branch_name}`."
-            
+
             issue_data = {
                 "title": title,
                 "content": content,
@@ -413,38 +418,47 @@ class GitIntegration:
                 "priority": "medium",  # Default priority
                 "status": "in_progress",  # Since they're working on it
             }
-            
+
             # Add issue type if the models support it
-            if hasattr(roadmap_core, 'create_issue_with_type'):
+            if hasattr(roadmap_core, "create_issue_with_type"):
                 issue_data["issue_type"] = issue_type
-                
+
             issue = roadmap_core.create_issue(**issue_data)
             return issue.id
-            
+
         except Exception:
             return None
-            
-    def _extract_title_from_branch_name(self, branch_name: str) -> Optional[str]:
+
+    def _extract_title_from_branch_name(self, branch_name: str) -> str | None:
         """Extract a readable title from a branch name."""
         # Remove common prefixes
         name = branch_name
-        prefixes = ["feature/", "bugfix/", "hotfix/", "docs/", "test/", "feat/", "bug/", "fix/"]
+        prefixes = [
+            "feature/",
+            "bugfix/",
+            "hotfix/",
+            "docs/",
+            "test/",
+            "feat/",
+            "bug/",
+            "fix/",
+        ]
         for prefix in prefixes:
             if name.startswith(prefix):
-                name = name[len(prefix):]
+                name = name[len(prefix) :]
                 break
-                
+
         # Remove issue ID if present
         name = re.sub(r"^[a-f0-9]{8}-", "", name)
         name = re.sub(r"^issue-[a-f0-9]{8}-", "", name)
-        
+
         # Replace hyphens/underscores with spaces and title case
         name = re.sub(r"[-_]", " ", name)
         name = name.strip()
-        
+
         if not name:
             return None
-            
+
         # Title case
         words = name.split()
         title_words = []
@@ -453,10 +467,10 @@ class GitIntegration:
                 title_words.append(word.capitalize())
             else:  # Keep short words lowercase unless first word
                 title_words.append(word.lower() if title_words else word.capitalize())
-                
+
         return " ".join(title_words)
 
-    def get_repository_info(self) -> Dict[str, Any]:
+    def get_repository_info(self) -> dict[str, Any]:
         """Get general repository information."""
         if not self.is_git_repository():
             return {}
@@ -491,7 +505,7 @@ class GitIntegration:
 
         return info
 
-    def parse_commit_message_for_updates(self, commit: GitCommit) -> Dict[str, Any]:
+    def parse_commit_message_for_updates(self, commit: GitCommit) -> dict[str, Any]:
         """Parse commit message for roadmap updates."""
         updates = {}
 
@@ -536,33 +550,35 @@ class GitIntegration:
 
         return updates
 
-    def auto_update_issues_from_commits(self, roadmap_core, commits: Optional[List[GitCommit]] = None) -> Dict[str, List[str]]:
+    def auto_update_issues_from_commits(
+        self, roadmap_core, commits: list[GitCommit] | None = None
+    ) -> dict[str, list[str]]:
         """Automatically update issues based on commit messages.
-        
+
         Args:
             roadmap_core: RoadmapCore instance for issue operations
             commits: List of commits to process. If None, processes recent commits.
-            
+
         Returns:
             Dictionary with 'updated' and 'closed' issue lists
         """
         if commits is None:
             commits = self.get_recent_commits(count=10)
-            
+
         results = {"updated": [], "closed": [], "errors": []}
-        
+
         for commit in commits:
             try:
                 # Get referenced issues
                 issue_ids = commit.extract_roadmap_references()
                 if not issue_ids:
                     continue
-                    
+
                 # Parse updates from commit message
                 updates = self.parse_commit_message_for_updates(commit)
                 if not updates:
                     continue
-                    
+
                 for issue_id in issue_ids:
                     try:
                         # Load the issue
@@ -570,55 +586,63 @@ class GitIntegration:
                         if not issue:
                             results["errors"].append(f"Issue {issue_id} not found")
                             continue
-                            
+
                         # Apply updates
                         update_data = {}
                         if "status" in updates:
                             update_data["status"] = updates["status"]
                         if "progress_percentage" in updates:
-                            update_data["progress_percentage"] = updates["progress_percentage"]
-                            
+                            update_data["progress_percentage"] = updates[
+                                "progress_percentage"
+                            ]
+
                         # Add commit reference to content
                         commit_note = f"\n\n**Auto-updated from commit {commit.short_hash}:** {commit.message}"
                         if issue.content:
                             update_data["content"] = issue.content + commit_note
                         else:
                             update_data["content"] = commit_note.strip()
-                        
+
                         # Add commit to git_commits list if not already present
                         current_commits = issue.git_commits or []
                         commit_ref = {
                             "hash": commit.hash,
                             "message": commit.message,
-                            "date": commit.date.isoformat() if commit.date else None
+                            "date": commit.date.isoformat() if commit.date else None,
                         }
-                        if not any(c.get("hash") == commit.hash for c in current_commits):
+                        if not any(
+                            c.get("hash") == commit.hash for c in current_commits
+                        ):
                             current_commits.append(commit_ref)
                         update_data["git_commits"] = current_commits
-                            
+
                         # Update the issue
                         roadmap_core.update_issue(issue_id, **update_data)
-                        
+
                         if updates.get("status") == "done":
                             results["closed"].append(issue_id)
                         else:
                             results["updated"].append(issue_id)
-                            
+
                     except Exception as e:
-                        results["errors"].append(f"Error updating issue {issue_id}: {str(e)}")
-                        
+                        results["errors"].append(
+                            f"Error updating issue {issue_id}: {str(e)}"
+                        )
+
             except Exception as e:
-                results["errors"].append(f"Error processing commit {commit.short_hash}: {str(e)}")
-                
+                results["errors"].append(
+                    f"Error processing commit {commit.short_hash}: {str(e)}"
+                )
+
         return results
 
-    def get_branch_linked_issues(self, branch_name: str) -> List[str]:
+    def get_branch_linked_issues(self, branch_name: str) -> list[str]:
         """Get issue IDs linked to a specific branch."""
         try:
             # Create a GitBranch object and extract issue ID
             branch = GitBranch(branch_name)
             issue_id = branch.extract_issue_id()
-            
+
             if issue_id:
                 return [issue_id]
             else:

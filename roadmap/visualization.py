@@ -4,12 +4,9 @@ This module provides comprehensive visualization capabilities for generating
 charts and graphs from issue/milestone data for stakeholder reporting.
 """
 
-import json
-import os
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Suppress matplotlib warnings for cleaner output
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
@@ -19,7 +16,6 @@ import matplotlib.dates as mdates
 # Visualization libraries
 import matplotlib.pyplot as plt
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
 from plotly.subplots import make_subplots
@@ -27,7 +23,7 @@ from plotly.subplots import make_subplots
 from .data_utils import DataAnalyzer, DataFrameAdapter
 
 # Core data structures
-from .models import Issue, IssueType, Milestone, Priority, Status
+from .models import Issue, Milestone, Status
 
 # Set style configurations
 plt.style.use("default")
@@ -61,7 +57,7 @@ class ChartGenerator:
         plt.rcParams["font.size"] = 10
 
     def generate_status_distribution_chart(
-        self, issues: List[Issue], chart_type: str = "pie", output_format: str = "png"
+        self, issues: list[Issue], chart_type: str = "pie", output_format: str = "png"
     ) -> Path:
         """Generate status distribution chart.
 
@@ -158,7 +154,7 @@ class ChartGenerator:
                 )
 
             output_path = self.charts_dir / f"{filename}.html"
-            
+
             # Create properly structured HTML with validation compliance
             html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -194,8 +190,8 @@ class ChartGenerator:
     </div>
 </body>
 </html>"""
-            
-            with open(output_path, 'w', encoding='utf-8') as f:
+
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
 
         else:
@@ -266,8 +262,8 @@ class ChartGenerator:
 
     def generate_burndown_chart(
         self,
-        issues: List[Issue],
-        milestone_name: Optional[str] = None,
+        issues: list[Issue],
+        milestone_name: str | None = None,
         output_format: str = "png",
     ) -> Path:
         """Generate burndown chart showing work remaining over time.
@@ -293,7 +289,7 @@ class ChartGenerator:
         # Calculate burndown data
         burndown_data = self._calculate_burndown_data(issues_df)
 
-        filename = f"burndown_chart"
+        filename = "burndown_chart"
         if milestone_name:
             filename += f"_{milestone_name.replace(' ', '_')}"
         filename += f"_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -330,7 +326,7 @@ class ChartGenerator:
 
             fig.update_layout(
                 title={
-                    "text": f"Burndown Chart"
+                    "text": "Burndown Chart"
                     + (f" - {milestone_name}" if milestone_name else ""),
                     "x": 0.5,
                     "xanchor": "center",
@@ -382,7 +378,7 @@ class ChartGenerator:
             ax.set_xlabel("Date", fontsize=12)
             ax.set_ylabel("Issues Remaining", fontsize=12)
             ax.set_title(
-                f"Burndown Chart" + (f" - {milestone_name}" if milestone_name else ""),
+                "Burndown Chart" + (f" - {milestone_name}" if milestone_name else ""),
                 fontsize=14,
                 fontweight="bold",
             )
@@ -403,7 +399,7 @@ class ChartGenerator:
         return output_path
 
     def generate_velocity_chart(
-        self, issues: List[Issue], period: str = "W", output_format: str = "png"
+        self, issues: list[Issue], period: str = "W", output_format: str = "png"
     ) -> Path:
         """Generate velocity trend chart.
 
@@ -547,8 +543,8 @@ class ChartGenerator:
 
     def generate_milestone_progress_chart(
         self,
-        milestones: List[Milestone],
-        issues: List[Issue],
+        milestones: list[Milestone],
+        issues: list[Issue],
         output_format: str = "png",
     ) -> Path:
         """Generate milestone progress overview chart.
@@ -671,7 +667,7 @@ class ChartGenerator:
             bars = ax.barh(names, progress_values, color=colors)
 
             # Add progress labels
-            for i, (bar, data) in enumerate(zip(bars, milestone_data)):
+            for i, (bar, data) in enumerate(zip(bars, milestone_data, strict=False)):
                 width = bar.get_width()
                 ax.text(
                     width + 1,
@@ -702,7 +698,7 @@ class ChartGenerator:
         return output_path
 
     def generate_team_workload_chart(
-        self, issues: List[Issue], output_format: str = "png"
+        self, issues: list[Issue], output_format: str = "png"
     ) -> Path:
         """Generate team workload distribution chart.
 
@@ -845,7 +841,7 @@ class ChartGenerator:
 
         return output_path
 
-    def _calculate_burndown_data(self, issues_df: pd.DataFrame) -> Dict[str, List]:
+    def _calculate_burndown_data(self, issues_df: pd.DataFrame) -> dict[str, list]:
         """Calculate burndown chart data."""
         # Filter completed issues
         completed_issues = issues_df[issues_df["is_completed"]].copy()
@@ -888,278 +884,296 @@ class ChartGenerator:
         }
 
     def generate_milestone_progression_chart(
-        self, milestone_data: List[Dict], output_dir: Path
+        self, milestone_data: list[dict], output_dir: Path
     ) -> Path:
         """Generate milestone progression flow chart with issue type distribution.
-        
+
         Args:
             milestone_data: List of milestone statistics dictionaries
             output_dir: Directory to save the chart
-            
+
         Returns:
             Path to the generated chart file
         """
         try:
             # Create figure with subplots
             fig = make_subplots(
-                rows=2, cols=1,
+                rows=2,
+                cols=1,
                 subplot_titles=(
                     "Milestone Progression & Completion",
-                    "Issue Type Distribution by Milestone"
+                    "Issue Type Distribution by Milestone",
                 ),
                 vertical_spacing=0.12,
-                row_heights=[0.6, 0.4]
+                row_heights=[0.6, 0.4],
             )
-            
+
             # Extract data for progression chart
-            milestones = [m['milestone'] for m in milestone_data]
-            completions = [m['completion'] for m in milestone_data]
-            bugs = [m['bugs'] for m in milestone_data]
-            features = [m['features'] for m in milestone_data]
-            tasks = [m['tasks'] for m in milestone_data]
-            
+            milestones = [m["milestone"] for m in milestone_data]
+            completions = [m["completion"] for m in milestone_data]
+            bugs = [m["bugs"] for m in milestone_data]
+            features = [m["features"] for m in milestone_data]
+            tasks = [m["tasks"] for m in milestone_data]
+
             # Progress line chart
             fig.add_trace(
                 go.Scatter(
                     x=milestones,
                     y=completions,
-                    mode='lines+markers',
-                    name='Completion %',
-                    line=dict(color='#2E7D32', width=3),
-                    marker=dict(size=8, color='#4CAF50'),
-                    hovertemplate="<b>%{x}</b><br>Completion: %{y:.1f}%<extra></extra>"
+                    mode="lines+markers",
+                    name="Completion %",
+                    line=dict(color="#2E7D32", width=3),
+                    marker=dict(size=8, color="#4CAF50"),
+                    hovertemplate="<b>%{x}</b><br>Completion: %{y:.1f}%<extra></extra>",
                 ),
-                row=1, col=1
+                row=1,
+                col=1,
             )
-            
+
             # Issue type stacked bar chart
             fig.add_trace(
                 go.Bar(
                     x=milestones,
                     y=bugs,
-                    name='Bugs',
-                    marker_color='#F44336',
-                    hovertemplate="<b>%{x}</b><br>Bugs: %{y}<extra></extra>"
+                    name="Bugs",
+                    marker_color="#F44336",
+                    hovertemplate="<b>%{x}</b><br>Bugs: %{y}<extra></extra>",
                 ),
-                row=2, col=1
+                row=2,
+                col=1,
             )
-            
+
             fig.add_trace(
                 go.Bar(
                     x=milestones,
                     y=features,
-                    name='Features',
-                    marker_color='#2196F3',
-                    hovertemplate="<b>%{x}</b><br>Features: %{y}<extra></extra>"
+                    name="Features",
+                    marker_color="#2196F3",
+                    hovertemplate="<b>%{x}</b><br>Features: %{y}<extra></extra>",
                 ),
-                row=2, col=1
+                row=2,
+                col=1,
             )
-            
+
             fig.add_trace(
                 go.Bar(
                     x=milestones,
                     y=tasks,
-                    name='Tasks',
-                    marker_color='#FF9800',
-                    hovertemplate="<b>%{x}</b><br>Tasks: %{y}<extra></extra>"
+                    name="Tasks",
+                    marker_color="#FF9800",
+                    hovertemplate="<b>%{x}</b><br>Tasks: %{y}<extra></extra>",
                 ),
-                row=2, col=1
+                row=2,
+                col=1,
             )
-            
+
             # Update layout
             fig.update_layout(
                 title={
-                    'text': "Project Milestone Progression & Technical Debt Analysis",
-                    'x': 0.5,
-                    'xanchor': 'center',
-                    'font': {'size': 16, 'color': '#1F2937'}
+                    "text": "Project Milestone Progression & Technical Debt Analysis",
+                    "x": 0.5,
+                    "xanchor": "center",
+                    "font": {"size": 16, "color": "#1F2937"},
                 },
                 height=700,
                 showlegend=True,
                 legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1
+                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
                 ),
-                plot_bgcolor='white',
-                paper_bgcolor='white'
+                plot_bgcolor="white",
+                paper_bgcolor="white",
             )
-            
+
             # Update x-axes
             fig.update_xaxes(title_text="Milestones", row=1, col=1)
             fig.update_xaxes(title_text="Milestones", row=2, col=1)
-            
+
             # Update y-axes
-            fig.update_yaxes(title_text="Completion Percentage", row=1, col=1, range=[0, 100])
+            fig.update_yaxes(
+                title_text="Completion Percentage", row=1, col=1, range=[0, 100]
+            )
             fig.update_yaxes(title_text="Number of Issues", row=2, col=1)
-            
+
             # Make the second subplot a stacked bar chart
-            fig.update_layout(barmode='stack')
-            
+            fig.update_layout(barmode="stack")
+
             # Save chart
             output_path = output_dir / "milestone_progression_chart.html"
             fig.write_html(
-                str(output_path),
-                config={'displayModeBar': True, 'responsive': True}
+                str(output_path), config={"displayModeBar": True, "responsive": True}
             )
-            
+
             return output_path
-            
+
         except Exception as e:
-            raise VisualizationError(f"Failed to generate milestone progression chart: {e}")
+            raise VisualizationError(
+                f"Failed to generate milestone progression chart: {e}"
+            )
 
     def generate_project_health_dashboard(
-        self, health_data: Dict, output_dir: Path
+        self, health_data: dict, output_dir: Path
     ) -> Path:
         """Generate comprehensive project health dashboard.
-        
+
         Args:
             health_data: Dictionary containing project health metrics
             output_dir: Directory to save the dashboard
-            
+
         Returns:
             Path to the generated dashboard file
         """
         try:
             # Create subplots for health metrics
             fig = make_subplots(
-                rows=2, cols=2,
+                rows=2,
+                cols=2,
                 subplot_titles=(
                     "Project Completion Rate",
                     "Technical Debt Ratio",
                     "Team Workload Distribution",
-                    "Issue Type Breakdown"
+                    "Issue Type Breakdown",
                 ),
                 specs=[
                     [{"type": "indicator"}, {"type": "indicator"}],
-                    [{"type": "bar"}, {"type": "pie"}]
+                    [{"type": "bar"}, {"type": "pie"}],
                 ],
                 vertical_spacing=0.15,
-                horizontal_spacing=0.15
+                horizontal_spacing=0.15,
             )
-            
+
             # Project completion gauge
-            completion_rate = health_data['completion_rate']
-            completion_color = "green" if completion_rate > 70 else "orange" if completion_rate > 40 else "red"
-            
+            completion_rate = health_data["completion_rate"]
+            completion_color = (
+                "green"
+                if completion_rate > 70
+                else "orange"
+                if completion_rate > 40
+                else "red"
+            )
+
             fig.add_trace(
                 go.Indicator(
                     mode="gauge+number+delta",
                     value=completion_rate,
-                    title={'text': "Overall Progress"},
-                    domain={'x': [0, 1], 'y': [0, 1]},
+                    title={"text": "Overall Progress"},
+                    domain={"x": [0, 1], "y": [0, 1]},
                     gauge={
-                        'axis': {'range': [None, 100]},
-                        'bar': {'color': completion_color},
-                        'steps': [
-                            {'range': [0, 40], 'color': "lightgray"},
-                            {'range': [40, 70], 'color': "yellow"},
-                            {'range': [70, 100], 'color': "lightgreen"}
+                        "axis": {"range": [None, 100]},
+                        "bar": {"color": completion_color},
+                        "steps": [
+                            {"range": [0, 40], "color": "lightgray"},
+                            {"range": [40, 70], "color": "yellow"},
+                            {"range": [70, 100], "color": "lightgreen"},
                         ],
-                        'threshold': {
-                            'line': {'color': "red", 'width': 4},
-                            'thickness': 0.75,
-                            'value': 90
-                        }
-                    }
+                        "threshold": {
+                            "line": {"color": "red", "width": 4},
+                            "thickness": 0.75,
+                            "value": 90,
+                        },
+                    },
                 ),
-                row=1, col=1
+                row=1,
+                col=1,
             )
-            
+
             # Technical debt gauge
-            tech_debt = health_data['tech_debt_ratio']
-            debt_color = "red" if tech_debt > 40 else "orange" if tech_debt > 20 else "green"
-            
+            tech_debt = health_data["tech_debt_ratio"]
+            debt_color = (
+                "red" if tech_debt > 40 else "orange" if tech_debt > 20 else "green"
+            )
+
             fig.add_trace(
                 go.Indicator(
                     mode="gauge+number+delta",
                     value=tech_debt,
-                    title={'text': "Tech Debt (% Open Bugs)"},
-                    domain={'x': [0, 1], 'y': [0, 1]},
+                    title={"text": "Tech Debt (% Open Bugs)"},
+                    domain={"x": [0, 1], "y": [0, 1]},
                     gauge={
-                        'axis': {'range': [None, 100]},
-                        'bar': {'color': debt_color},
-                        'steps': [
-                            {'range': [0, 20], 'color': "lightgreen"},
-                            {'range': [20, 40], 'color': "yellow"},
-                            {'range': [40, 100], 'color': "lightcoral"}
+                        "axis": {"range": [None, 100]},
+                        "bar": {"color": debt_color},
+                        "steps": [
+                            {"range": [0, 20], "color": "lightgreen"},
+                            {"range": [20, 40], "color": "yellow"},
+                            {"range": [40, 100], "color": "lightcoral"},
                         ],
-                        'threshold': {
-                            'line': {'color': "darkred", 'width': 4},
-                            'thickness': 0.75,
-                            'value': 50
-                        }
-                    }
+                        "threshold": {
+                            "line": {"color": "darkred", "width": 4},
+                            "thickness": 0.75,
+                            "value": 50,
+                        },
+                    },
                 ),
-                row=1, col=2
+                row=1,
+                col=2,
             )
-            
+
             # Team workload bar chart
-            workload_data = health_data['team_workload']
+            workload_data = health_data["team_workload"]
             if workload_data:
                 members = list(workload_data.keys())
                 loads = list(workload_data.values())
-                
+
                 fig.add_trace(
                     go.Bar(
                         x=members,
                         y=loads,
-                        name='Open Issues',
-                        marker_color='#3F51B5',
-                        hovertemplate="<b>%{x}</b><br>Open Issues: %{y}<extra></extra>"
+                        name="Open Issues",
+                        marker_color="#3F51B5",
+                        hovertemplate="<b>%{x}</b><br>Open Issues: %{y}<extra></extra>",
                     ),
-                    row=2, col=1
+                    row=2,
+                    col=1,
                 )
-            
+
             # Issue type pie chart
-            issue_types = health_data['issue_types']
+            issue_types = health_data["issue_types"]
             if issue_types:
                 labels = list(issue_types.keys())
                 values = list(issue_types.values())
-                colors = ['#F44336', '#2196F3', '#FF9800', '#4CAF50', '#9C27B0']
-                
+                colors = ["#F44336", "#2196F3", "#FF9800", "#4CAF50", "#9C27B0"]
+
                 fig.add_trace(
                     go.Pie(
                         labels=labels,
                         values=values,
                         name="Issue Types",
-                        marker_colors=colors[:len(labels)],
-                        hovertemplate="<b>%{label}</b><br>Count: %{value}<br>Percentage: %{percent}<extra></extra>"
+                        marker_colors=colors[: len(labels)],
+                        hovertemplate="<b>%{label}</b><br>Count: %{value}<br>Percentage: %{percent}<extra></extra>",
                     ),
-                    row=2, col=2
+                    row=2,
+                    col=2,
                 )
-            
+
             # Update layout
             fig.update_layout(
                 title={
-                    'text': "Project Health Dashboard",
-                    'x': 0.5,
-                    'xanchor': 'center',
-                    'font': {'size': 18, 'color': '#1F2937'}
+                    "text": "Project Health Dashboard",
+                    "x": 0.5,
+                    "xanchor": "center",
+                    "font": {"size": 18, "color": "#1F2937"},
                 },
                 height=800,
                 showlegend=False,
-                plot_bgcolor='white',
-                paper_bgcolor='white'
+                plot_bgcolor="white",
+                paper_bgcolor="white",
             )
-            
+
             # Update axes for bar chart
             fig.update_xaxes(title_text="Team Members", row=2, col=1)
             fig.update_yaxes(title_text="Open Issues", row=2, col=1)
-            
+
             # Save dashboard
             output_path = output_dir / "project_health_dashboard.html"
             fig.write_html(
-                str(output_path),
-                config={'displayModeBar': True, 'responsive': True}
+                str(output_path), config={"displayModeBar": True, "responsive": True}
             )
-            
+
             return output_path
-            
+
         except Exception as e:
-            raise VisualizationError(f"Failed to generate project health dashboard: {e}")
+            raise VisualizationError(
+                f"Failed to generate project health dashboard: {e}"
+            )
 
 
 class DashboardGenerator:
@@ -1177,7 +1191,7 @@ class DashboardGenerator:
         self.chart_generator = ChartGenerator(artifacts_dir)
 
     def generate_stakeholder_dashboard(
-        self, issues: List[Issue], milestones: List[Milestone]
+        self, issues: list[Issue], milestones: list[Milestone]
     ) -> Path:
         """Generate comprehensive stakeholder dashboard.
 
@@ -1225,7 +1239,7 @@ class DashboardGenerator:
 
         # Read chart HTML content
         def read_chart_content(chart_path: Path) -> str:
-            with open(chart_path, "r", encoding="utf-8") as f:
+            with open(chart_path, encoding="utf-8") as f:
                 content = f.read()
                 # Extract the plotly div content
                 start = content.find("<div>")

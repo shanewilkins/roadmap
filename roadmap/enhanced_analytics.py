@@ -1,21 +1,13 @@
 """Enhanced analytics module with pandas integration for improved performance and capabilities."""
 
-import statistics
-from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pandas as pd
 
-from .analytics import (  # Import existing models
-    DeveloperMetrics,
-    ProjectVelocity,
-    TeamInsights,
-)
 from .core import RoadmapCore
 from .data_utils import DataAnalyzer, DataFrameAdapter
 from .git_integration import GitIntegration
-from .models import Issue, Priority, Status
 
 
 class EnhancedAnalyzer:
@@ -303,7 +295,7 @@ class EnhancedAnalyzer:
 
         return lifecycle_analysis.reset_index()
 
-    def analyze_velocity_consistency(self, weeks: int = 12) -> Dict[str, Any]:
+    def analyze_velocity_consistency(self, weeks: int = 12) -> dict[str, Any]:
         """Analyze velocity consistency and predictability."""
         velocity_df = self.analyzer.analyze_velocity_trends(
             self.get_issues_dataframe(), period="W"
@@ -358,7 +350,7 @@ class EnhancedAnalyzer:
 
         return analysis
 
-    def generate_productivity_insights(self, days: int = 30) -> Dict[str, Any]:
+    def generate_productivity_insights(self, days: int = 30) -> dict[str, Any]:
         """Generate comprehensive productivity insights using pandas analytics."""
         df = self.get_issues_dataframe()
 
@@ -437,7 +429,7 @@ class EnhancedAnalyzer:
 
     def compare_periods(
         self, period1_days: int = 30, period2_days: int = 60
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compare productivity metrics between two time periods."""
         df = self.get_issues_dataframe()
 
@@ -459,7 +451,7 @@ class EnhancedAnalyzer:
             (df["created"] >= period2_start) & (df["created"] <= period2_end)
         ]
 
-        def calculate_period_metrics(period_df: pd.DataFrame) -> Dict[str, float]:
+        def calculate_period_metrics(period_df: pd.DataFrame) -> dict[str, float]:
             if period_df.empty:
                 return {}
 

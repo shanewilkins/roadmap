@@ -3,11 +3,10 @@
 import logging
 import os
 import re
-import stat
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from .file_utils import ensure_directory_exists
 
@@ -29,7 +28,7 @@ class PathValidationError(SecurityError):
 
 @contextmanager
 def create_secure_file(
-    path: Union[str, Path], mode: str = "w", permissions: int = 0o600, **kwargs
+    path: str | Path, mode: str = "w", permissions: int = 0o600, **kwargs
 ):
     """Create a file with secure permissions as a context manager.
 
@@ -99,8 +98,8 @@ def create_secure_directory(path: Path, permissions: int = 0o700) -> None:
 
 
 def validate_path(
-    path: Union[str, Path],
-    base_dir: Optional[Union[str, Path]] = None,
+    path: str | Path,
+    base_dir: str | Path | None = None,
     allow_absolute: bool = False,
 ) -> Path:
     """Validate that a path is safe and within allowed boundaries.
@@ -144,7 +143,7 @@ def validate_path(
         if isinstance(base_dir, str):
             base_dir = Path(base_dir)
 
-                # Resolve the path to handle symlinks and .. references
+            # Resolve the path to handle symlinks and .. references
         try:
             resolved_path = path.resolve()
         except (FileNotFoundError, OSError):
@@ -153,7 +152,7 @@ def validate_path(
                 resolved_path = path
             else:
                 resolved_path = base_dir / path
-        
+
         try:
             resolved_base = base_dir.resolve()
         except (FileNotFoundError, OSError):
@@ -301,7 +300,7 @@ def secure_file_permissions(path: Path, permissions: int = 0o600) -> None:
         raise SecurityError(f"Failed to set secure permissions on {path}: {e}")
 
 
-def log_security_event(event_type: str, details: Dict[str, Any] = None) -> None:
+def log_security_event(event_type: str, details: dict[str, Any] = None) -> None:
     """Log a security event with structured data.
 
     Args:
@@ -323,10 +322,10 @@ def log_security_event(event_type: str, details: Dict[str, Any] = None) -> None:
         if security_logger.handlers:
             # Check if handlers are still valid
             for handler in security_logger.handlers:
-                if hasattr(handler, 'stream') and hasattr(handler.stream, 'closed'):
+                if hasattr(handler, "stream") and hasattr(handler.stream, "closed"):
                     if handler.stream.closed:
                         return  # Skip logging if stream is closed
-                        
+
         # Log as structured data
         security_logger.info(f"Security event: {event_type}", extra=log_data)
 
@@ -336,7 +335,7 @@ def log_security_event(event_type: str, details: Dict[str, Any] = None) -> None:
 
 
 def configure_security_logging(
-    log_level: str = "INFO", log_file: Optional[Path] = None
+    log_level: str = "INFO", log_file: Path | None = None
 ) -> None:
     """Configure security event logging.
 

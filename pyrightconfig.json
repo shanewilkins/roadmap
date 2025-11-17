@@ -1,0 +1,50 @@
+{
+  // Pyright configuration for the roadmap project
+  "include": [
+    "roadmap/**/*.py",
+    "tests/**/*.py"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "dist",
+    "build",
+    ".venv",
+    "htmlcov"
+  ],
+  "pythonVersion": "3.10",
+  "pythonPlatform": "All",
+  
+  // Type checking settings - start permissive, get stricter over time
+  "typeCheckingMode": "basic",
+  
+  // Enable these gradually
+  "reportMissingModuleSource": false,
+  "reportMissingImports": false,
+  "reportUndefinedVariable": "error",
+  "reportAssertAlwaysTrue": "warning",
+  "reportUnusedImport": "information",
+  "reportUnusedVariable": "information",
+  "reportDuplicateImport": "warning",
+  
+  // Strict settings for core modules only
+  "overrides": [
+    {
+      "include": [
+        "roadmap/core.py",
+        "roadmap/models.py",
+        "roadmap/cli/core.py"
+      ],
+      "reportUnknownArgumentType": "warning",
+      "reportUnknownVariableType": "warning",
+      "reportUnknownMemberType": "warning"
+    }
+  ],
+  
+  // Performance settings
+  "useLibraryCodeForTypes": true,
+  "autoSearchPaths": true,
+  "extraPaths": [
+    "./roadmap"
+  ]
+}

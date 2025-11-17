@@ -1,14 +1,14 @@
 """Core roadmap functionality."""
 
-import os
-import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from .error_handling import (
-    ErrorHandler, handle_errors, with_error_handling,
-    FileOperationError, ValidationError, ErrorSeverity, ErrorCategory
+    ErrorHandler,
+    ErrorSeverity,
+    FileOperationError,
+    ValidationError,
 )
 from .git_integration import GitIntegration
 from .models import (
@@ -18,7 +18,6 @@ from .models import (
     MilestoneStatus,
     Priority,
     Project,
-    ProjectStatus,
     RoadmapConfig,
     Status,
 )
@@ -26,10 +25,6 @@ from .parser import IssueParser, MilestoneParser, ProjectParser
 from .security import (
     create_secure_directory,
     create_secure_file,
-    log_security_event,
-    sanitize_filename,
-    secure_file_permissions,
-    validate_path,
 )
 
 
@@ -37,7 +32,7 @@ class RoadmapCore:
     """Core roadmap functionality."""
 
     def __init__(
-        self, root_path: Optional[Path] = None, roadmap_dir_name: str = ".roadmap"
+        self, root_path: Path | None = None, roadmap_dir_name: str = ".roadmap"
     ):
         """Initialize roadmap core with root path and custom roadmap directory name."""
         self.root_path = root_path or Path.cwd()
@@ -56,7 +51,7 @@ class RoadmapCore:
         # Cache for team members to avoid repeated API calls
         self._team_members_cache = None
         self._cache_timestamp = None
-        
+
         # Cache for canonical assignee resolution
         self._last_canonical_assignee = None
 
@@ -66,7 +61,7 @@ class RoadmapCore:
 
     @classmethod
     def find_existing_roadmap(
-        cls, root_path: Optional[Path] = None
+        cls, root_path: Path | None = None
     ) -> Optional["RoadmapCore"]:
         """Find an existing roadmap directory in the current path.
 
@@ -191,9 +186,7 @@ Define what success looks like for this milestone.
 
 Any additional notes or considerations for this milestone."""
 
-        with create_secure_file(
-            self.templates_dir / "milestone.md", "w", 0o644
-        ) as f:
+        with create_secure_file(self.templates_dir / "milestone.md", "w", 0o644) as f:
             f.write(milestone_template)
 
         # Project template
@@ -253,9 +246,7 @@ Project notes and additional context.
 ---
 *Last updated: {{ updated_date }}*"""
 
-        with create_secure_file(
-            self.templates_dir / "project.md", "w", 0o644
-        ) as f:
+        with create_secure_file(self.templates_dir / "project.md", "w", 0o644) as f:
             f.write(project_template)
 
     def _update_gitignore(self) -> None:
@@ -265,11 +256,13 @@ Project notes and additional context.
         # Define patterns to ignore relative to project root
         roadmap_patterns = [
             f"{self.roadmap_dir_name}/artifacts/",
-            f"{self.roadmap_dir_name}/backups/", 
+            f"{self.roadmap_dir_name}/backups/",
             f"{self.roadmap_dir_name}/*.tmp",
-            f"{self.roadmap_dir_name}/*.lock"
+            f"{self.roadmap_dir_name}/*.lock",
         ]
-        gitignore_comment = f"# Roadmap local data (generated exports, backups, temp files)"
+        gitignore_comment = (
+            "# Roadmap local data (generated exports, backups, temp files)"
+        )
 
         # Read existing .gitignore if it exists
         existing_lines = []
@@ -305,12 +298,12 @@ Project notes and additional context.
         title: str,
         priority: Priority = Priority.MEDIUM,
         issue_type: IssueType = IssueType.OTHER,
-        milestone: Optional[str] = None,
-        labels: Optional[List[str]] = None,
-        assignee: Optional[str] = None,
-        estimated_hours: Optional[float] = None,
-        depends_on: Optional[List[str]] = None,
-        blocks: Optional[List[str]] = None,
+        milestone: str | None = None,
+        labels: list[str] | None = None,
+        assignee: str | None = None,
+        estimated_hours: float | None = None,
+        depends_on: list[str] | None = None,
+        blocks: list[str] | None = None,
     ) -> Issue:
         """Create a new issue."""
         if not self.is_initialized():
@@ -336,12 +329,12 @@ Project notes and additional context.
 
     def list_issues(
         self,
-        milestone: Optional[str] = None,
-        status: Optional[Status] = None,
-        priority: Optional[Priority] = None,
-        issue_type: Optional[IssueType] = None,
-        assignee: Optional[str] = None,
-    ) -> List[Issue]:
+        milestone: str | None = None,
+        status: Status | None = None,
+        priority: Priority | None = None,
+        issue_type: IssueType | None = None,
+        assignee: str | None = None,
+    ) -> list[Issue]:
         """List issues with optional filtering."""
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
@@ -377,10 +370,10 @@ Project notes and additional context.
                         file_path=issue_file,
                         operation="parse_issue",
                         severity=ErrorSeverity.LOW,
-                        cause=e
+                        cause=e,
                     ),
                     show_traceback=False,
-                    exit_on_critical=False
+                    exit_on_critical=False,
                 )
                 continue
 
@@ -395,7 +388,7 @@ Project notes and additional context.
 
         return issues
 
-    def get_issue(self, issue_id: str) -> Optional[Issue]:
+    def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID."""
         for issue_file in self.issues_dir.glob(f"{issue_id}-*.md"):
             try:
@@ -404,7 +397,7 @@ Project notes and additional context.
                 continue
         return None
 
-    def update_issue(self, issue_id: str, **updates) -> Optional[Issue]:
+    def update_issue(self, issue_id: str, **updates) -> Issue | None:
         """Update an existing issue."""
         issue = self.get_issue(issue_id)
         if not issue:
@@ -417,6 +410,7 @@ Project notes and additional context.
 
         # Update timestamp
         from .timezone_utils import now_utc
+
         issue.updated = now_utc()
 
         # Save updated issue
@@ -436,7 +430,7 @@ Project notes and additional context.
         return False
 
     def create_milestone(
-        self, name: str, description: str = "", due_date: Optional[datetime] = None
+        self, name: str, description: str = "", due_date: datetime | None = None
     ) -> Milestone:
         """Create a new milestone."""
         if not self.is_initialized():
@@ -454,7 +448,7 @@ Project notes and additional context.
 
         return milestone
 
-    def list_milestones(self) -> List[Milestone]:
+    def list_milestones(self) -> list[Milestone]:
         """List all milestones."""
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
@@ -476,11 +470,11 @@ Project notes and additional context.
             if milestone.due_date.tzinfo is not None:
                 return milestone.due_date.replace(tzinfo=None)
             return milestone.due_date
-        
+
         milestones.sort(key=lambda x: (get_sortable_date(x), x.name))
         return milestones
 
-    def get_milestone(self, name: str) -> Optional[Milestone]:
+    def get_milestone(self, name: str) -> Milestone | None:
         """Get a specific milestone by name (searches by YAML name field, not filename)."""
         # Search through all milestone files to find one with matching name field
         for milestone_file in self.milestones_dir.glob("*.md"):
@@ -514,6 +508,7 @@ Project notes and additional context.
         for issue in issues:
             issue.milestone = None
             from .timezone_utils import now_utc
+
             issue.updated = now_utc()
             issue_path = self.issues_dir / issue.filename
             IssueParser.save_issue_file(issue, issue_path)
@@ -532,10 +527,10 @@ Project notes and additional context.
     def update_milestone(
         self,
         name: str,
-        description: Optional[str] = None,
-        due_date: Optional[datetime] = None,
+        description: str | None = None,
+        due_date: datetime | None = None,
         clear_due_date: bool = False,
-        status: Optional[str] = None,
+        status: str | None = None,
     ) -> bool:
         """Update a milestone's properties.
 
@@ -570,6 +565,7 @@ Project notes and additional context.
             milestone.status = status
 
         from .timezone_utils import now_utc
+
         milestone.updated = now_utc()
 
         # Save the updated milestone (find the actual file by searching)
@@ -595,6 +591,7 @@ Project notes and additional context.
 
         issue.milestone = milestone_name
         from .timezone_utils import now_utc
+
         issue.updated = now_utc()
 
         issue_path = self.issues_dir / issue.filename
@@ -602,7 +599,7 @@ Project notes and additional context.
 
         return True
 
-    def get_milestone_progress(self, milestone_name: str) -> Dict[str, Any]:
+    def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
         """Get progress statistics for a milestone."""
         issues = self.list_issues(milestone=milestone_name)
 
@@ -625,7 +622,7 @@ Project notes and additional context.
         }
 
     # Project management methods
-    def list_projects(self) -> List[Project]:
+    def list_projects(self) -> list[Project]:
         """List all projects."""
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
@@ -641,7 +638,7 @@ Project notes and additional context.
         projects.sort(key=lambda x: x.created)
         return projects
 
-    def get_project(self, project_id: str) -> Optional[Project]:
+    def get_project(self, project_id: str) -> Project | None:
         """Get a specific project by ID."""
         for project_file in self.projects_dir.glob("*.md"):
             try:
@@ -672,17 +669,17 @@ Project notes and additional context.
         ProjectParser.save_project_file(project, project_path)
         return True
 
-    def get_backlog_issues(self) -> List[Issue]:
+    def get_backlog_issues(self) -> list[Issue]:
         """Get all issues not assigned to any milestone (backlog)."""
         all_issues = self.list_issues()
         return [issue for issue in all_issues if issue.is_backlog]
 
-    def get_milestone_issues(self, milestone_name: str) -> List[Issue]:
+    def get_milestone_issues(self, milestone_name: str) -> list[Issue]:
         """Get all issues assigned to a specific milestone."""
         all_issues = self.list_issues()
         return [issue for issue in all_issues if issue.milestone == milestone_name]
 
-    def get_issues_by_milestone(self) -> Dict[str, List[Issue]]:
+    def get_issues_by_milestone(self) -> dict[str, list[Issue]]:
         """Get all issues grouped by milestone, including backlog."""
         all_issues = self.list_issues()
         grouped = {"Backlog": []}
@@ -700,7 +697,7 @@ Project notes and additional context.
         return grouped
 
     def move_issue_to_milestone(
-        self, issue_id: str, milestone_name: Optional[str]
+        self, issue_id: str, milestone_name: str | None
     ) -> bool:
         """Move an issue to a milestone or to backlog if milestone_name is None."""
         issue = self.get_issue(issue_id)
@@ -714,6 +711,7 @@ Project notes and additional context.
         # Update issue milestone
         issue.milestone = milestone_name
         from .timezone_utils import now_utc
+
         issue.updated = now_utc()
 
         # Save updated issue
@@ -722,7 +720,7 @@ Project notes and additional context.
 
         return True
 
-    def get_next_milestone(self) -> Optional[Milestone]:
+    def get_next_milestone(self) -> Milestone | None:
         """Get the next upcoming milestone based on due date."""
         milestones = self.list_milestones()
 
@@ -746,43 +744,44 @@ Project notes and additional context.
             if due_date.tzinfo is not None:
                 return due_date.replace(tzinfo=None)
             return due_date
-        
+
         upcoming_milestones.sort(key=get_sortable_date)
         return upcoming_milestones[0]
 
-    def _get_github_config(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    def _get_github_config(self) -> tuple[str | None, str | None, str | None]:
         """Get GitHub configuration from config file and credentials.
-        
+
         Returns:
             Tuple of (token, owner, repo) or (None, None, None) if not configured
         """
         try:
             from .credentials import get_credential_manager
-            
+
             config = self.load_config()
             github_config = config.github or {}
-            
+
             # Get owner and repo from config
             owner = github_config.get("owner")
             repo = github_config.get("repo")
-            
+
             if not owner or not repo:
                 return None, None, None
-                
+
             # Get token from credentials manager or environment
             credential_manager = get_credential_manager()
             token = credential_manager.get_credential("github", "token")
-            
+
             if not token:
                 import os
+
                 token = os.getenv("GITHUB_TOKEN")
-                
+
             return token, owner, repo
-            
+
         except Exception:
             return None, None, None
 
-    def get_team_members(self) -> List[str]:
+    def get_team_members(self) -> list[str]:
         """Get team members from GitHub repository.
 
         Returns:
@@ -802,7 +801,7 @@ Project notes and additional context.
             # Return empty list if GitHub is not configured or accessible
             return []
 
-    def get_current_user(self) -> Optional[str]:
+    def get_current_user(self) -> str | None:
         """Get the current GitHub user.
 
         Returns:
@@ -822,18 +821,18 @@ Project notes and additional context.
             # Return None if GitHub is not configured or accessible
             return None
 
-    def get_assigned_issues(self, assignee: str) -> List[Issue]:
+    def get_assigned_issues(self, assignee: str) -> list[Issue]:
         """Get all issues assigned to a specific user."""
         return self.list_issues(assignee=assignee)
 
-    def get_my_issues(self) -> List[Issue]:
+    def get_my_issues(self) -> list[Issue]:
         """Get all issues assigned to the current user."""
         current_user = self.get_current_user()
         if not current_user:
             return []
         return self.get_assigned_issues(current_user)
 
-    def get_all_assigned_issues(self) -> Dict[str, List[Issue]]:
+    def get_all_assigned_issues(self) -> dict[str, list[Issue]]:
         """Get all issues grouped by assignee.
 
         Returns:
@@ -850,32 +849,34 @@ Project notes and additional context.
 
         return assigned_issues
 
-    def _get_cached_team_members(self) -> List[str]:
+    def _get_cached_team_members(self) -> list[str]:
         """Get team members with caching (5 minute cache)."""
         from datetime import datetime, timedelta
-        
+
         # Check if cache is valid (5 minutes)
-        if (self._team_members_cache is not None and 
-            self._cache_timestamp is not None and 
-            datetime.now() - self._cache_timestamp < timedelta(minutes=5)):
+        if (
+            self._team_members_cache is not None
+            and self._cache_timestamp is not None
+            and datetime.now() - self._cache_timestamp < timedelta(minutes=5)
+        ):
             return self._team_members_cache
-            
+
         # Refresh cache
         team_members = self.get_team_members()
         self._team_members_cache = team_members
         self._cache_timestamp = datetime.now()
-        
+
         return team_members
 
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:
         """Validate an assignee using the identity management system.
-        
+
         This validation integrates with the identity management system while
         maintaining backward compatibility with the original API.
-        
+
         Args:
             assignee: Username to validate
-            
+
         Returns:
             Tuple of (is_valid, error_message)
             - (True, "") if valid (backward compatible)
@@ -889,27 +890,37 @@ Project notes and additional context.
         try:
             # Try identity management system first
             from .identity import IdentityManager
+
             identity_manager = IdentityManager(self.root_path)
             is_valid, result, profile = identity_manager.resolve_assignee(assignee)
-            
+
             if is_valid:
                 # Store canonical form for later retrieval but return empty string for compatibility
-                self._last_canonical_assignee = profile.canonical_id if profile else result
+                self._last_canonical_assignee = (
+                    profile.canonical_id if profile else result
+                )
                 return True, ""
             else:
                 # If identity system failed, check if we should fall back to GitHub validation
                 token, owner, repo = self._get_github_config()
-                
+
                 # If GitHub is configured and identity system suggests GitHub fallback
-                if token and owner and repo and identity_manager.config.validation_mode in ["hybrid", "github-only"]:
+                if (
+                    token
+                    and owner
+                    and repo
+                    and identity_manager.config.validation_mode
+                    in ["hybrid", "github-only"]
+                ):
                     # Fall back to GitHub validation for hybrid/github-only mode
                     team_members = self._get_cached_team_members()
                     if team_members and assignee in team_members:
                         self._last_canonical_assignee = assignee
                         return True, ""
-                    
+
                     # Do full validation via API
                     from .github_client import GitHubClient
+
                     client = GitHubClient(token=token, owner=owner, repo=repo)
                     github_valid, github_error = client.validate_assignee(assignee)
                     if github_valid:
@@ -917,21 +928,28 @@ Project notes and additional context.
                         return True, ""
                     else:
                         return False, github_error
-                
-                # If no GitHub config and identity system is in local/hybrid mode, 
+
+                # If no GitHub config and identity system is in local/hybrid mode,
                 # accept reasonable names (for local-only usage)
-                elif not (token and owner and repo) and identity_manager.config.validation_mode in ["local-only", "hybrid"]:
+                elif not (
+                    token and owner and repo
+                ) and identity_manager.config.validation_mode in [
+                    "local-only",
+                    "hybrid",
+                ]:
                     # Basic validation for local usage
-                    if len(assignee) >= 2 and not any(char in assignee for char in '<>{}[]()'):
+                    if len(assignee) >= 2 and not any(
+                        char in assignee for char in "<>{}[]()"
+                    ):
                         self._last_canonical_assignee = assignee
                         return True, ""
                     else:
                         return False, f"'{assignee}' is not a valid assignee name"
-                
+
                 # No fallback available, return identity system result
                 return False, result
 
-        except Exception as e:
+        except Exception:
             # If identity management fails, fall back to legacy validation
             try:
                 token, owner, repo = self._get_github_config()
@@ -942,18 +960,18 @@ Project notes and additional context.
                     return True, ""
 
                 # GitHub is configured - perform validation against repository access
-                
+
                 # First check against cached team members for performance
                 team_members = self._get_cached_team_members()
                 if team_members and assignee in team_members:
                     self._last_canonical_assignee = assignee
                     return True, ""
-                
+
                 # If not in cache or cache is empty, do full validation via API
                 from .github_client import GitHubClient
-                
+
                 client = GitHubClient(token=token, owner=owner, repo=repo)
-                
+
                 # This will do the full GitHub API validation
                 github_valid, github_error = client.validate_assignee(assignee)
                 if github_valid:
@@ -972,45 +990,46 @@ Project notes and additional context.
                         field="assignee",
                         value=assignee,
                         severity=ErrorSeverity.WARNING,
-                        cause=fallback_error
+                        cause=fallback_error,
                     ),
                     show_traceback=False,
-                    exit_on_critical=False
+                    exit_on_critical=False,
                 )
                 warning_msg = f"Warning: Could not validate assignee (validation unavailable): {str(fallback_error)}"
                 self._last_canonical_assignee = assignee
                 return True, warning_msg
-                
+
     def get_canonical_assignee(self, assignee: str) -> str:
         """Get the canonical form of an assignee name.
-        
+
         This method should be called after validate_assignee to get the canonical form.
-        
+
         Args:
             assignee: Input assignee name
-            
+
         Returns:
             Canonical assignee name (may be same as input if no mapping exists)
         """
         # Try to get from identity management system
         try:
             from .identity import IdentityManager
+
             identity_manager = IdentityManager(self.root_path)
             is_valid, result, profile = identity_manager.resolve_assignee(assignee)
-            
+
             if is_valid and profile:
                 return profile.canonical_id
             elif is_valid:
                 return result
         except Exception:
             pass
-            
+
         # Fallback to original assignee
         return assignee
 
     # Git Integration Methods
 
-    def get_git_context(self) -> Dict[str, Any]:
+    def get_git_context(self) -> dict[str, Any]:
         """Get Git repository context information."""
         if not self.git.is_git_repository():
             return {"is_git_repo": False}
@@ -1037,16 +1056,16 @@ Project notes and additional context.
 
         return context
 
-    def get_current_user_from_git(self) -> Optional[str]:
+    def get_current_user_from_git(self) -> str | None:
         """Get current user from Git configuration."""
         return self.git.get_current_user()
 
-    def create_issue_with_git_branch(self, title: str, **kwargs) -> Optional[Issue]:
+    def create_issue_with_git_branch(self, title: str, **kwargs) -> Issue | None:
         """Create an issue and optionally create a Git branch for it."""
         # Extract git-specific arguments
         auto_create_branch = kwargs.pop("auto_create_branch", False)
         checkout_branch = kwargs.pop("checkout_branch", True)
-        
+
         # Create the issue first
         issue = self.create_issue(title, **kwargs)
         if not issue:
@@ -1081,7 +1100,7 @@ Project notes and additional context.
         # Update the issue
         return self.update_issue(issue_id, git_branches=issue.git_branches) is not None
 
-    def get_commits_for_issue(self, issue_id: str, since: Optional[str] = None) -> List:
+    def get_commits_for_issue(self, issue_id: str, since: str | None = None) -> list:
         """Get Git commits that reference this issue."""
         if not self.git.is_git_repository():
             return []
@@ -1111,7 +1130,7 @@ Project notes and additional context.
 
         return False
 
-    def suggest_branch_name_for_issue(self, issue_id: str) -> Optional[str]:
+    def suggest_branch_name_for_issue(self, issue_id: str) -> str | None:
         """Suggest a branch name for an issue."""
         issue = self.get_issue(issue_id)
         if not issue or not self.git.is_git_repository():
@@ -1119,7 +1138,7 @@ Project notes and additional context.
 
         return self.git.suggest_branch_name(issue)
 
-    def get_branch_linked_issues(self) -> Dict[str, List[str]]:
+    def get_branch_linked_issues(self) -> dict[str, list[str]]:
         """Get mapping of branches to their linked issue IDs."""
         if not self.git.is_git_repository():
             return {}
@@ -1134,80 +1153,92 @@ Project notes and additional context.
 
         return branch_issues
 
-    def validate_milestone_naming_consistency(self) -> List[Dict[str, str]]:
+    def validate_milestone_naming_consistency(self) -> list[dict[str, str]]:
         """Check for inconsistencies between milestone filenames and name fields.
-        
+
         Returns:
             List of dictionaries with inconsistency details
         """
         inconsistencies = []
-        
+
         for milestone_file in self.milestones_dir.glob("*.md"):
             try:
                 milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 expected_filename = milestone.filename
                 actual_filename = milestone_file.name
-                
+
                 if expected_filename != actual_filename:
-                    inconsistencies.append({
-                        "file": actual_filename,
-                        "name": milestone.name,
-                        "expected_filename": expected_filename,
-                        "type": "filename_mismatch"
-                    })
+                    inconsistencies.append(
+                        {
+                            "file": actual_filename,
+                            "name": milestone.name,
+                            "expected_filename": expected_filename,
+                            "type": "filename_mismatch",
+                        }
+                    )
             except Exception as e:
-                inconsistencies.append({
-                    "file": milestone_file.name,
-                    "name": "PARSE_ERROR",
-                    "expected_filename": "N/A",
-                    "type": "parse_error",
-                    "error": str(e)
-                })
-        
+                inconsistencies.append(
+                    {
+                        "file": milestone_file.name,
+                        "name": "PARSE_ERROR",
+                        "expected_filename": "N/A",
+                        "type": "parse_error",
+                        "error": str(e),
+                    }
+                )
+
         return inconsistencies
 
-    def fix_milestone_naming_consistency(self) -> Dict[str, List[str]]:
+    def fix_milestone_naming_consistency(self) -> dict[str, list[str]]:
         """Fix milestone filename inconsistencies by renaming files to match name fields.
-        
+
         Returns:
             Dictionary with 'renamed' and 'errors' lists
         """
         results = {"renamed": [], "errors": []}
         inconsistencies = self.validate_milestone_naming_consistency()
-        
+
         for issue in inconsistencies:
             if issue["type"] == "filename_mismatch":
                 old_path = self.milestones_dir / issue["file"]
                 new_path = self.milestones_dir / issue["expected_filename"]
-                
+
                 try:
                     # Check if target filename already exists
                     if new_path.exists():
-                        results["errors"].append(f"Cannot rename {issue['file']} -> {issue['expected_filename']}: target exists")
+                        results["errors"].append(
+                            f"Cannot rename {issue['file']} -> {issue['expected_filename']}: target exists"
+                        )
                         continue
-                    
+
                     old_path.rename(new_path)
-                    results["renamed"].append(f"{issue['file']} -> {issue['expected_filename']}")
+                    results["renamed"].append(
+                        f"{issue['file']} -> {issue['expected_filename']}"
+                    )
                 except Exception as e:
-                    results["errors"].append(f"Failed to rename {issue['file']}: {str(e)}")
+                    results["errors"].append(
+                        f"Failed to rename {issue['file']}: {str(e)}"
+                    )
             else:
                 results["errors"].append(f"Cannot fix {issue['file']}: {issue['type']}")
-        
+
         return results
 
     def _generate_id(self) -> str:
         """Generate a unique ID for projects and issues."""
         import uuid
-        return str(uuid.uuid4()).replace('-', '')[:8]
+
+        return str(uuid.uuid4()).replace("-", "")[:8]
 
     def _normalize_filename(self, title: str) -> str:
         """Normalize a title for use as a filename."""
         import re
+
         # Replace non-alphanumeric characters with hyphens
-        normalized = re.sub(r'[^a-zA-Z0-9\s]', '', title)
+        normalized = re.sub(r"[^a-zA-Z0-9\s]", "", title)
         # Replace spaces with hyphens and convert to lowercase
-        normalized = re.sub(r'\s+', '-', normalized.strip()).lower()
+        normalized = re.sub(r"\s+", "-", normalized.strip()).lower()
         # Remove consecutive hyphens
-        normalized = re.sub(r'-+', '-', normalized)
+        normalized = re.sub(r"-+", "-", normalized)
         # Remove leading/trailing hyphens
-        return normalized.strip('-')
+        return normalized.strip("-")

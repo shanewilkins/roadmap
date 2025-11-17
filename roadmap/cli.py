@@ -15,17 +15,18 @@ from roadmap.core import RoadmapCore
 console = Console()
 
 # Import all the modular command groups
+from roadmap.cli.analytics import analytics
+from roadmap.cli.ci import ci
 from roadmap.cli.core import init, status
+from roadmap.cli.data import data
+from roadmap.cli.deprecated import register_deprecated_commands
+from roadmap.cli.git_integration import git
+from roadmap.cli.issue import issue
+from roadmap.cli.progress import progress_reports, recalculate_progress
+from roadmap.cli.project import project
 from roadmap.cli.team import team
 from roadmap.cli.user import user
-from roadmap.cli.data import data
-from roadmap.cli.project import project
-from roadmap.cli.issue import issue
-from roadmap.cli.git_integration import git
-from roadmap.cli.analytics import analytics
-from roadmap.cli.progress import recalculate_progress, progress_reports
-from roadmap.cli.ci import ci
-from roadmap.cli.deprecated import register_deprecated_commands
+
 
 @click.group(invoke_without_command=True)
 @click.version_option()
@@ -35,13 +36,14 @@ def main(ctx: click.Context):
     # Ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below)
     ctx.ensure_object(dict)
-    
+
     # Initialize core with default roadmap directory
     ctx.obj["core"] = RoadmapCore()
-    
+
     # If no subcommand was provided, show help
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
+
 
 # Register standalone commands
 main.add_command(init)

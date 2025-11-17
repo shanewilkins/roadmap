@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -90,32 +90,32 @@ class Issue(BaseModel):
     priority: Priority = Priority.MEDIUM
     status: Status = Status.TODO
     issue_type: IssueType = IssueType.OTHER
-    milestone: Optional[str] = None
-    labels: List[str] = Field(default_factory=list)
-    github_issue: Optional[int] = None
+    milestone: str | None = None
+    labels: list[str] = Field(default_factory=list)
+    github_issue: int | None = None
     created: datetime = Field(default_factory=now_utc)
     updated: datetime = Field(default_factory=now_utc)
-    assignee: Optional[str] = None
+    assignee: str | None = None
     content: str = ""  # Markdown content
-    estimated_hours: Optional[float] = None  # Estimated time to complete in hours
-    due_date: Optional[datetime] = None  # When the issue should be completed
-    depends_on: List[str] = Field(
+    estimated_hours: float | None = None  # Estimated time to complete in hours
+    due_date: datetime | None = None  # When the issue should be completed
+    depends_on: list[str] = Field(
         default_factory=list
     )  # List of issue IDs this depends on
-    blocks: List[str] = Field(default_factory=list)  # List of issue IDs this blocks
-    actual_start_date: Optional[datetime] = None  # When work actually started
-    actual_end_date: Optional[datetime] = None  # When work was completed
-    progress_percentage: Optional[float] = None  # Progress from 0.0 to 100.0
-    handoff_notes: Optional[str] = None  # Notes for task handoff
-    previous_assignee: Optional[str] = None  # Who was previously assigned
-    handoff_date: Optional[datetime] = None  # When the task was handed off
-    git_branches: List[str] = Field(
+    blocks: list[str] = Field(default_factory=list)  # List of issue IDs this blocks
+    actual_start_date: datetime | None = None  # When work actually started
+    actual_end_date: datetime | None = None  # When work was completed
+    progress_percentage: float | None = None  # Progress from 0.0 to 100.0
+    handoff_notes: str | None = None  # Notes for task handoff
+    previous_assignee: str | None = None  # Who was previously assigned
+    handoff_date: datetime | None = None  # When the task was handed off
+    git_branches: list[str] = Field(
         default_factory=list
     )  # Git branches linked to this issue
-    git_commits: List[Dict[str, Any]] = Field(
+    git_commits: list[dict[str, Any]] = Field(
         default_factory=list
     )  # Git commits referencing this issue
-    completed_date: Optional[str] = None  # ISO string when issue was completed via Git
+    completed_date: str | None = None  # ISO string when issue was completed via Git
 
     @property
     def is_backlog(self) -> bool:
@@ -165,7 +165,7 @@ class Issue(BaseModel):
         return f"{self.progress_percentage:.0f}%"
 
     @property
-    def actual_duration_hours(self) -> Optional[float]:
+    def actual_duration_hours(self) -> float | None:
         """Calculate actual duration if both start and end dates are set."""
         if self.actual_start_date and self.actual_end_date:
             delta = self.actual_end_date - self.actual_start_date
@@ -219,32 +219,34 @@ class Milestone(BaseModel):
 
     name: str
     description: str = ""
-    due_date: Optional[datetime] = None
+    due_date: datetime | None = None
     status: MilestoneStatus = MilestoneStatus.OPEN
-    github_milestone: Optional[int] = None
+    github_milestone: int | None = None
     created: datetime = Field(default_factory=now_utc)
     updated: datetime = Field(default_factory=now_utc)
     content: str = ""  # Markdown content
-    
-    # Automatic progress tracking fields
-    calculated_progress: Optional[float] = None  # Auto-calculated from issues
-    last_progress_update: Optional[datetime] = None
-    completion_velocity: Optional[float] = None  # Issues/week
-    risk_level: RiskLevel = RiskLevel.LOW
-    actual_start_date: Optional[datetime] = None
-    actual_end_date: Optional[datetime] = None
 
-    def get_issues(self, all_issues: List["Issue"]) -> List["Issue"]:
+    # Automatic progress tracking fields
+    calculated_progress: float | None = None  # Auto-calculated from issues
+    last_progress_update: datetime | None = None
+    completion_velocity: float | None = None  # Issues/week
+    risk_level: RiskLevel = RiskLevel.LOW
+    actual_start_date: datetime | None = None
+    actual_end_date: datetime | None = None
+
+    def get_issues(self, all_issues: list["Issue"]) -> list["Issue"]:
         """Get all issues assigned to this milestone."""
         return [issue for issue in all_issues if issue.milestone == self.name]
 
-    def get_issue_count(self, all_issues: List["Issue"]) -> int:
+    def get_issue_count(self, all_issues: list["Issue"]) -> int:
         """Get the count of issues assigned to this milestone."""
         return len(self.get_issues(all_issues))
 
-    def get_completion_percentage(self, all_issues: List["Issue"], method: str = "effort_weighted") -> float:
+    def get_completion_percentage(
+        self, all_issues: list["Issue"], method: str = "effort_weighted"
+    ) -> float:
         """Get the completion percentage of this milestone.
-        
+
         Args:
             all_issues: List of all issues in the system
             method: 'effort_weighted' or 'count_based'
@@ -263,20 +265,24 @@ class Milestone(BaseModel):
             # Effort-weighted calculation (preferred)
             total_effort = 0.0
             completed_effort = 0.0
-            
+
             for issue in milestone_issues:
-                effort = issue.estimated_hours or 1.0  # Default to 1 hour if not estimated
+                effort = (
+                    issue.estimated_hours or 1.0
+                )  # Default to 1 hour if not estimated
                 total_effort += effort
-                
+
                 if issue.status == Status.DONE:
                     completed_effort += effort
                 elif issue.progress_percentage is not None:
                     # Partial completion based on progress percentage
                     completed_effort += effort * (issue.progress_percentage / 100.0)
-            
-            return (completed_effort / total_effort) * 100.0 if total_effort > 0 else 0.0
 
-    def get_total_estimated_hours(self, all_issues: List["Issue"]) -> float:
+            return (
+                (completed_effort / total_effort) * 100.0 if total_effort > 0 else 0.0
+            )
+
+    def get_total_estimated_hours(self, all_issues: list["Issue"]) -> float:
         """Get the total estimated hours for all issues in this milestone."""
         milestone_issues = self.get_issues(all_issues)
         total_hours = 0.0
@@ -285,7 +291,7 @@ class Milestone(BaseModel):
                 total_hours += issue.estimated_hours
         return total_hours
 
-    def get_remaining_estimated_hours(self, all_issues: List["Issue"]) -> float:
+    def get_remaining_estimated_hours(self, all_issues: list["Issue"]) -> float:
         """Get the remaining estimated hours for incomplete issues in this milestone."""
         milestone_issues = self.get_issues(all_issues)
         remaining_hours = 0.0
@@ -294,7 +300,7 @@ class Milestone(BaseModel):
                 remaining_hours += issue.estimated_hours
         return remaining_hours
 
-    def get_estimated_time_display(self, all_issues: List["Issue"]) -> str:
+    def get_estimated_time_display(self, all_issues: list["Issue"]) -> str:
         """Get a human-readable display of total estimated time."""
         total_hours = self.get_total_estimated_hours(all_issues)
         if total_hours == 0:
@@ -306,7 +312,9 @@ class Milestone(BaseModel):
             days = total_hours / 8  # Assuming 8-hour work days
             return f"{days:.1f}d"
 
-    def update_automatic_fields(self, all_issues: List["Issue"], method: str = "effort_weighted") -> None:
+    def update_automatic_fields(
+        self, all_issues: list["Issue"], method: str = "effort_weighted"
+    ) -> None:
         """Update all automatic progress tracking fields."""
         self.calculated_progress = self.get_completion_percentage(all_issues, method)
         self.last_progress_update = datetime.now()
@@ -339,34 +347,40 @@ class Project(BaseModel):
     description: str = ""
     status: ProjectStatus = ProjectStatus.PLANNING
     priority: Priority = Priority.MEDIUM
-    owner: Optional[str] = None
-    start_date: Optional[datetime] = None
-    target_end_date: Optional[datetime] = None
-    actual_end_date: Optional[datetime] = None
+    owner: str | None = None
+    start_date: datetime | None = None
+    target_end_date: datetime | None = None
+    actual_end_date: datetime | None = None
     created: datetime = Field(default_factory=datetime.now)
     updated: datetime = Field(default_factory=datetime.now)
-    milestones: List[str] = Field(default_factory=list)  # List of milestone names
-    estimated_hours: Optional[float] = None
-    actual_hours: Optional[float] = None
+    milestones: list[str] = Field(default_factory=list)  # List of milestone names
+    estimated_hours: float | None = None
+    actual_hours: float | None = None
     content: str = ""  # Markdown content
-    
+
     # Automatic progress tracking fields
-    calculated_progress: Optional[float] = None  # Auto-calculated from milestones
-    last_progress_update: Optional[datetime] = None
-    projected_end_date: Optional[datetime] = None  # Auto-calculated
-    schedule_variance: Optional[int] = None  # Days ahead/behind
-    completion_velocity: Optional[float] = None  # Milestones/week
+    calculated_progress: float | None = None  # Auto-calculated from milestones
+    last_progress_update: datetime | None = None
+    projected_end_date: datetime | None = None  # Auto-calculated
+    schedule_variance: int | None = None  # Days ahead/behind
+    completion_velocity: float | None = None  # Milestones/week
     risk_level: RiskLevel = RiskLevel.LOW
 
-    def get_milestones(self, all_milestones: List["Milestone"]) -> List["Milestone"]:
+    def get_milestones(self, all_milestones: list["Milestone"]) -> list["Milestone"]:
         """Get all milestones assigned to this project."""
-        return [milestone for milestone in all_milestones if milestone.name in self.milestones]
+        return [
+            milestone
+            for milestone in all_milestones
+            if milestone.name in self.milestones
+        ]
 
-    def get_milestone_count(self, all_milestones: List["Milestone"]) -> int:
+    def get_milestone_count(self, all_milestones: list["Milestone"]) -> int:
         """Get the count of milestones assigned to this project."""
         return len(self.get_milestones(all_milestones))
 
-    def calculate_progress(self, all_milestones: List["Milestone"], all_issues: List["Issue"]) -> float:
+    def calculate_progress(
+        self, all_milestones: list["Milestone"], all_issues: list["Issue"]
+    ) -> float:
         """Calculate project progress from milestone completion (effort-weighted)."""
         project_milestones = self.get_milestones(all_milestones)
         if not project_milestones:
@@ -379,17 +393,21 @@ class Project(BaseModel):
         for milestone in project_milestones:
             milestone_weight = milestone.get_total_estimated_hours(all_issues) or 1.0
             total_weight += milestone_weight
-            
+
             if milestone.status == MilestoneStatus.CLOSED:
                 completed_weight += milestone_weight
             else:
                 # Partial completion based on milestone progress
-                milestone_progress = milestone.get_completion_percentage(all_issues) / 100.0
+                milestone_progress = (
+                    milestone.get_completion_percentage(all_issues) / 100.0
+                )
                 completed_weight += milestone_weight * milestone_progress
 
         return (completed_weight / total_weight) * 100.0 if total_weight > 0 else 0.0
 
-    def update_automatic_fields(self, all_milestones: List["Milestone"], all_issues: List["Issue"]) -> None:
+    def update_automatic_fields(
+        self, all_milestones: list["Milestone"], all_issues: list["Issue"]
+    ) -> None:
         """Update all automatic progress tracking fields."""
         self.calculated_progress = self.calculate_progress(all_milestones, all_issues)
         self.last_progress_update = datetime.now()
@@ -403,7 +421,7 @@ class Project(BaseModel):
         elif self.calculated_progress > 0:
             if self.status == ProjectStatus.PLANNING:
                 self.status = ProjectStatus.ACTIVE
-        
+
     @property
     def filename(self) -> str:
         """Generate filename for this project."""
@@ -423,7 +441,7 @@ class Comment(BaseModel):
     body: str  # Comment content (markdown)
     created_at: datetime
     updated_at: datetime
-    github_url: Optional[str] = None  # GitHub comment URL
+    github_url: str | None = None  # GitHub comment URL
 
     def __str__(self) -> str:
         """String representation."""
@@ -436,7 +454,12 @@ class RoadmapConfig(BaseModel):
     """Configuration model for roadmap."""
 
     github: dict = Field(default_factory=dict)
-    defaults: dict = Field(default_factory=lambda: {"auto_branch": False, "branch_name_template": "feature/{id}-{slug}"})
+    defaults: dict = Field(
+        default_factory=lambda: {
+            "auto_branch": False,
+            "branch_name_template": "feature/{id}-{slug}",
+        }
+    )
     milestones: dict = Field(default_factory=dict)
     sync: dict = Field(default_factory=dict)
     display: dict = Field(default_factory=dict)
@@ -452,7 +475,7 @@ class RoadmapConfig(BaseModel):
         # Validate the configuration file path for security
         validate_path(str(config_path))
 
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             data = yaml.safe_load(f) or {}
 
         return cls(**data)

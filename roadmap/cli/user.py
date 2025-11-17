@@ -2,24 +2,27 @@
 User-specific views and settings commands.
 """
 
-import click
-from rich.console import Console
-from typing import Optional
 import datetime
 import os
 
-from roadmap.models import Status, Priority
+import click
+from rich.console import Console
+
+from roadmap.models import Priority, Status
 
 console = Console()
+
 
 @click.group()
 def user():
     """User-specific views and settings."""
     pass
 
+
 # ================================
 # OBJECT-VERB PATTERN COMMANDS
 # ================================
+
 
 @user.command("show-dashboard")
 @click.option("--assignee", "-a", help="Show dashboard for specific user")
@@ -43,6 +46,7 @@ def show_notifications(ctx: click.Context, assignee: str, since: str, mark_read:
 # ================================
 # ORIGINAL IMPLEMENTATIONS
 # ================================
+
 
 def _original_dashboard(ctx: click.Context, assignee: str, days: int):
     """Original implementation of dashboard."""
@@ -75,7 +79,9 @@ def _original_dashboard(ctx: click.Context, assignee: str, days: int):
         console.print(f"❌ Failed to show dashboard: {e}", style="bold red")
 
 
-def _original_notifications(ctx: click.Context, assignee: str, since: str, mark_read: bool):
+def _original_notifications(
+    ctx: click.Context, assignee: str, since: str, mark_read: bool
+):
     """Original implementation of notifications."""
     core = ctx.obj["core"]
 
@@ -120,14 +126,18 @@ def _original_notifications(ctx: click.Context, assignee: str, since: str, mark_
             return
 
         # Display notifications
-        console.print(f"\n📋 {len(notifications)} notification{'s' if len(notifications) != 1 else ''} since {since_date}:")
+        console.print(
+            f"\n📋 {len(notifications)} notification{'s' if len(notifications) != 1 else ''} since {since_date}:"
+        )
 
         for notification in notifications:
             _display_notification(notification)
 
         # Mark as read if requested
         if mark_read:
-            console.print(f"\n✅ Marked {len(notifications)} notifications as read", style="green")
+            console.print(
+                f"\n✅ Marked {len(notifications)} notifications as read", style="green"
+            )
 
     except Exception as e:
         console.print(f"❌ Failed to show notifications: {e}", style="bold red")
@@ -137,21 +147,23 @@ def _original_notifications(ctx: click.Context, assignee: str, since: str, mark_
 # HELPER FUNCTIONS
 # ================================
 
-def _get_current_user() -> Optional[str]:
+
+def _get_current_user() -> str | None:
     """Get current user from git config or environment."""
     import subprocess
-    
+
     # Try git config first
     try:
         result = subprocess.run(
-            ["git", "config", "user.name"],
-            capture_output=True,
-            text=True,
-            timeout=5
+            ["git", "config", "user.name"], capture_output=True, text=True, timeout=5
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+    ):
         pass
 
     # Fall back to environment variables
@@ -189,7 +201,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
     for issue in active_issues:
         if issue.status == Status.BLOCKED:
             blocked_issues.append(issue)
-        elif hasattr(issue, 'is_overdue') and issue.is_overdue:
+        elif hasattr(issue, "is_overdue") and issue.is_overdue:
             overdue_issues.append(issue)
         elif issue.status == Status.IN_PROGRESS or issue.priority in [
             Priority.CRITICAL,
@@ -227,7 +239,9 @@ def _display_daily_dashboard(core, assignee: str, days: int):
         console.print("🎯 Today's Priorities", style="bold green")
 
         # Sort by priority and progress
-        today_issues.sort(key=lambda x: (x.priority.value, getattr(x, 'progress_percentage', 0) or 0))
+        today_issues.sort(
+            key=lambda x: (x.priority.value, getattr(x, "progress_percentage", 0) or 0)
+        )
 
         for issue in today_issues:
             priority_emoji = {
@@ -238,7 +252,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
             }.get(issue.priority, "📋")
 
             status_info = ""
-            if hasattr(issue, 'progress_percentage') and issue.progress_percentage:
+            if hasattr(issue, "progress_percentage") and issue.progress_percentage:
                 status_info = f" ({issue.progress_percentage:.0f}%)"
             elif issue.status == Status.IN_PROGRESS:
                 status_info = " (in progress)"
@@ -281,7 +295,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
     for issue in all_issues:
         if (
             issue.status == Status.BLOCKED
-            and hasattr(issue, 'depends_on')
+            and hasattr(issue, "depends_on")
             and issue.depends_on
             and any(
                 core.get_issue(dep_id) and core.get_issue(dep_id).assignee == assignee
@@ -304,7 +318,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
     # Issues blocking me
     blocking_me = []
     for issue in my_issues:
-        if hasattr(issue, 'depends_on') and issue.depends_on:
+        if hasattr(issue, "depends_on") and issue.depends_on:
             for dep_id in issue.depends_on:
                 dep_issue = core.get_issue(dep_id)
                 if dep_issue and dep_issue.status != Status.DONE:
@@ -334,7 +348,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
             i
             for i in my_issues
             if i.status == Status.DONE
-            and hasattr(i, 'actual_end_date')
+            and hasattr(i, "actual_end_date")
             and i.actual_end_date
             and i.actual_end_date == today
         ]
@@ -347,7 +361,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
 
     # Calculate total estimated time remaining
     remaining_hours = sum(
-        getattr(issue, 'estimated_hours', 0) or 0 for issue in active_issues
+        getattr(issue, "estimated_hours", 0) or 0 for issue in active_issues
     )
     if remaining_hours > 0:
         if remaining_hours >= 8:
@@ -393,89 +407,97 @@ def _display_daily_dashboard(core, assignee: str, days: int):
 
 def _get_user_notifications(core, assignee: str, since_date: datetime.date) -> list:
     """Get notifications for a user since a specific date."""
-    
+
     # This is a simplified implementation
     # In a real system, this would query a notifications database
-    
+
     notifications = []
     all_issues = core.list_issues()
-    
+
     # Simulate notifications based on issue activity
     user_issues = [i for i in all_issues if i.assignee == assignee]
-    
+
     for issue in user_issues:
         # Simulate various notification types
-        
+
         # New assignment notification
-        if hasattr(issue, 'assigned_date') and issue.assigned_date >= since_date:
-            notifications.append({
-                'type': 'assignment',
-                'title': 'New Issue Assigned',
-                'message': f"Issue {issue.id} '{issue.title}' has been assigned to you",
-                'issue_id': issue.id,
-                'timestamp': issue.assigned_date,
-                'priority': issue.priority.value
-            })
-        
+        if hasattr(issue, "assigned_date") and issue.assigned_date >= since_date:
+            notifications.append(
+                {
+                    "type": "assignment",
+                    "title": "New Issue Assigned",
+                    "message": f"Issue {issue.id} '{issue.title}' has been assigned to you",
+                    "issue_id": issue.id,
+                    "timestamp": issue.assigned_date,
+                    "priority": issue.priority.value,
+                }
+            )
+
         # High priority notification
-        if issue.priority in [Priority.CRITICAL, Priority.HIGH] and issue.status != Status.DONE:
-            notifications.append({
-                'type': 'priority',
-                'title': 'High Priority Issue',
-                'message': f"Issue {issue.id} '{issue.title}' is {issue.priority.value} priority",
-                'issue_id': issue.id,
-                'timestamp': datetime.date.today(),
-                'priority': issue.priority.value
-            })
-        
+        if (
+            issue.priority in [Priority.CRITICAL, Priority.HIGH]
+            and issue.status != Status.DONE
+        ):
+            notifications.append(
+                {
+                    "type": "priority",
+                    "title": "High Priority Issue",
+                    "message": f"Issue {issue.id} '{issue.title}' is {issue.priority.value} priority",
+                    "issue_id": issue.id,
+                    "timestamp": datetime.date.today(),
+                    "priority": issue.priority.value,
+                }
+            )
+
         # Blocked issue notification
         if issue.status == Status.BLOCKED:
-            notifications.append({
-                'type': 'blocked',
-                'title': 'Issue Blocked',
-                'message': f"Issue {issue.id} '{issue.title}' is blocked and needs attention",
-                'issue_id': issue.id,
-                'timestamp': datetime.date.today(),
-                'priority': 'high'
-            })
-    
+            notifications.append(
+                {
+                    "type": "blocked",
+                    "title": "Issue Blocked",
+                    "message": f"Issue {issue.id} '{issue.title}' is blocked and needs attention",
+                    "issue_id": issue.id,
+                    "timestamp": datetime.date.today(),
+                    "priority": "high",
+                }
+            )
+
     # Sort by timestamp (most recent first)
-    notifications.sort(key=lambda x: x['timestamp'], reverse=True)
-    
+    notifications.sort(key=lambda x: x["timestamp"], reverse=True)
+
     # Filter by since date
-    notifications = [n for n in notifications if n['timestamp'] >= since_date]
-    
+    notifications = [n for n in notifications if n["timestamp"] >= since_date]
+
     return notifications
 
 
 def _display_notification(notification: dict):
     """Display a single notification."""
-    
+
     # Choose emoji and style based on type
     type_config = {
-        'assignment': {'emoji': '📋', 'style': 'cyan'},
-        'priority': {'emoji': '🚨', 'style': 'red'},
-        'blocked': {'emoji': '🚫', 'style': 'yellow'},
-        'comment': {'emoji': '💬', 'style': 'blue'},
-        'mention': {'emoji': '👤', 'style': 'magenta'},
-        'deadline': {'emoji': '⏰', 'style': 'orange'},
+        "assignment": {"emoji": "📋", "style": "cyan"},
+        "priority": {"emoji": "🚨", "style": "red"},
+        "blocked": {"emoji": "🚫", "style": "yellow"},
+        "comment": {"emoji": "💬", "style": "blue"},
+        "mention": {"emoji": "👤", "style": "magenta"},
+        "deadline": {"emoji": "⏰", "style": "orange"},
     }
-    
-    config = type_config.get(notification['type'], {'emoji': '📢', 'style': 'white'})
-    
+
+    config = type_config.get(notification["type"], {"emoji": "📢", "style": "white"})
+
     # Format timestamp
-    if isinstance(notification['timestamp'], datetime.date):
-        time_str = notification['timestamp'].strftime('%Y-%m-%d')
+    if isinstance(notification["timestamp"], datetime.date):
+        time_str = notification["timestamp"].strftime("%Y-%m-%d")
     else:
-        time_str = str(notification['timestamp'])
-    
+        time_str = str(notification["timestamp"])
+
     # Display notification
     console.print(
-        f"\n{config['emoji']} {notification['title']}",
-        style=f"bold {config['style']}"
+        f"\n{config['emoji']} {notification['title']}", style=f"bold {config['style']}"
     )
     console.print(f"   {notification['message']}")
     console.print(f"   {time_str}", style="dim")
-    
-    if 'issue_id' in notification:
+
+    if "issue_id" in notification:
         console.print(f"   Issue: {notification['issue_id']}", style="dim")

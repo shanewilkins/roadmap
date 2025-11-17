@@ -3,16 +3,17 @@ Comment management CLI commands.
 """
 
 import click
-import os
-from roadmap.core import RoadmapCore
+
 from roadmap.cli.utils import get_console
 
 console = get_console()
+
 
 @click.group()
 def comment():
     """Manage comments on issues and milestones."""
     pass
+
 
 @comment.command("create")
 @click.argument("target_id")
@@ -36,6 +37,7 @@ def create_comment(ctx: click.Context, target_id: str, message: str, type: str):
         console.print(f"❌ Failed to create comment: {e}", style="bold red")
         raise click.Abort()
 
+
 @comment.command("list")
 @click.argument("target_id")
 @click.option("--type", default="issue", help="Type of target (issue, milestone)")
@@ -57,6 +59,7 @@ def list_comments(ctx: click.Context, target_id: str, type: str):
         console.print(f"❌ Failed to list comments: {e}", style="bold red")
         raise click.Abort()
 
+
 @comment.command("edit")
 @click.argument("comment_id")
 @click.argument("new_message")
@@ -77,6 +80,7 @@ def edit_comment(ctx: click.Context, comment_id: str, new_message: str):
     except Exception as e:
         console.print(f"❌ Failed to edit comment: {e}", style="bold red")
         raise click.Abort()
+
 
 @comment.command("delete")
 @click.argument("comment_id")

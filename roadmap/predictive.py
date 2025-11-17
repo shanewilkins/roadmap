@@ -14,16 +14,14 @@ Classes:
 """
 
 import json
-import math
-import random
 import statistics
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
-from .analytics import DeveloperMetrics, GitHistoryAnalyzer
+from .analytics import GitHistoryAnalyzer
 from .core import RoadmapCore
 from .datetime_parser import parse_datetime
 from .models import Issue, Priority, Status
@@ -55,10 +53,10 @@ class EstimationResult:
     estimated_hours: float
     confidence_level: ConfidenceLevel
     confidence_score: float
-    factors_considered: List[str]
-    similar_issues: List[str]
+    factors_considered: list[str]
+    similar_issues: list[str]
     complexity_score: float
-    uncertainty_range: Tuple[float, float]  # (min_hours, max_hours)
+    uncertainty_range: tuple[float, float]  # (min_hours, max_hours)
 
 
 @dataclass
@@ -71,10 +69,10 @@ class RiskAssessment:
     probability: float
     impact_score: float
     description: str
-    indicators: List[str]
-    mitigation_suggestions: List[str]
-    affected_issues: List[str]
-    deadline_impact_days: Optional[int]
+    indicators: list[str]
+    mitigation_suggestions: list[str]
+    affected_issues: list[str]
+    deadline_impact_days: int | None
 
 
 @dataclass
@@ -85,10 +83,10 @@ class DeadlineForecast:
     predicted_completion: datetime
     confidence_level: ConfidenceLevel
     delay_probability: float
-    critical_path_issues: List[str]
-    resource_constraints: List[str]
-    optimization_suggestions: List[str]
-    scenario_analysis: Dict[str, datetime]  # best/worst/likely case
+    critical_path_issues: list[str]
+    resource_constraints: list[str]
+    optimization_suggestions: list[str]
+    scenario_analysis: dict[str, datetime]  # best/worst/likely case
 
 
 @dataclass
@@ -100,24 +98,22 @@ class ResourceRecommendation:
     description: str
     impact_assessment: str
     implementation_effort: str
-    expected_benefits: List[str]
-    affected_developers: List[str]
-    timeline_improvement: Optional[float]
+    expected_benefits: list[str]
+    affected_developers: list[str]
+    timeline_improvement: float | None
 
 
 class IssueEstimator:
     """Machine learning-powered issue time estimation."""
 
-    def __init__(
-        self, core: RoadmapCore, analyzer: Optional[GitHistoryAnalyzer] = None
-    ):
+    def __init__(self, core: RoadmapCore, analyzer: GitHistoryAnalyzer | None = None):
         self.core = core
         self.analyzer = analyzer or GitHistoryAnalyzer(core)
         self._historical_data = self._load_historical_data()
         self._complexity_weights = self._initialize_complexity_weights()
 
     def estimate_issue_time(
-        self, issue: Issue, developer: Optional[str] = None
+        self, issue: Issue, developer: str | None = None
     ) -> EstimationResult:
         """Estimate completion time for an issue using ML algorithms."""
 
@@ -169,7 +165,7 @@ class IssueEstimator:
             uncertainty_range=(round(min_hours, 1), round(max_hours, 1)),
         )
 
-    def batch_estimate_issues(self, issues: List[Issue]) -> List[EstimationResult]:
+    def batch_estimate_issues(self, issues: list[Issue]) -> list[EstimationResult]:
         """Estimate time for multiple issues efficiently."""
         return [self.estimate_issue_time(issue) for issue in issues]
 
@@ -214,7 +210,7 @@ class IssueEstimator:
 
         return min(score, 10.0)
 
-    def _find_similar_issues(self, issue: Issue, limit: int = 10) -> List[Issue]:
+    def _find_similar_issues(self, issue: Issue, limit: int = 10) -> list[Issue]:
         """Find historically similar issues using text similarity and metadata."""
         all_issues = self.core.list_issues()
         completed_issues = [i for i in all_issues if i.status == Status.DONE]
@@ -264,7 +260,7 @@ class IssueEstimator:
         return score
 
     def _calculate_base_estimate(
-        self, issue: Issue, similar_issues: List[Issue]
+        self, issue: Issue, similar_issues: list[Issue]
     ) -> float:
         """Calculate base time estimate from similar issues."""
         if not similar_issues:
@@ -288,15 +284,15 @@ class IssueEstimator:
         if completion_times:
             # Use weighted average with more weight on more similar issues
             weights = [1.0 / (i + 1) for i in range(len(completion_times))]
-            weighted_avg = sum(t * w for t, w in zip(completion_times, weights)) / sum(
-                weights
-            )
+            weighted_avg = sum(
+                t * w for t, w in zip(completion_times, weights, strict=False)
+            ) / sum(weights)
             return weighted_avg
 
         # Fallback to priority-based estimation
         return self._calculate_base_estimate(issue, [])
 
-    def _get_issue_completion_time(self, issue: Issue) -> Optional[float]:
+    def _get_issue_completion_time(self, issue: Issue) -> float | None:
         """Extract actual completion time for an issue."""
         # Check if issue has git commits with timing data
         if hasattr(issue, "git_commits") and issue.git_commits:
@@ -370,7 +366,7 @@ class IssueEstimator:
         return factors.get(priority, 1.0)
 
     def _calculate_uncertainty(
-        self, similar_issues: List[Issue], complexity_score: float
+        self, similar_issues: list[Issue], complexity_score: float
     ) -> float:
         """Calculate estimation uncertainty as a percentage."""
         base_uncertainty = 0.3  # 30% base uncertainty
@@ -385,9 +381,9 @@ class IssueEstimator:
 
     def _calculate_confidence(
         self,
-        similar_issues: List[Issue],
+        similar_issues: list[Issue],
         complexity_score: float,
-        developer: Optional[str],
+        developer: str | None,
     ) -> float:
         """Calculate prediction confidence score (0-100)."""
         confidence = 50.0  # Base confidence
@@ -421,8 +417,8 @@ class IssueEstimator:
             return ConfidenceLevel.LOW
 
     def _identify_estimation_factors(
-        self, issue: Issue, developer: Optional[str], similar_issues: List[Issue]
-    ) -> List[str]:
+        self, issue: Issue, developer: str | None, similar_issues: list[Issue]
+    ) -> list[str]:
         """Identify factors that influenced the estimation."""
         factors = []
 
@@ -443,13 +439,13 @@ class IssueEstimator:
 
         return factors
 
-    def _load_historical_data(self) -> Dict[str, Any]:
+    def _load_historical_data(self) -> dict[str, Any]:
         """Load historical estimation data for ML training."""
         # This could load from a dedicated analytics database
         # For now, we'll use the existing issue data
         return {}
 
-    def _initialize_complexity_weights(self) -> Dict[str, float]:
+    def _initialize_complexity_weights(self) -> dict[str, float]:
         """Initialize ML weights for complexity calculation."""
         return {
             "description_length": 0.2,
@@ -462,14 +458,12 @@ class IssueEstimator:
 class RiskPredictor:
     """Proactive risk assessment and prediction system."""
 
-    def __init__(
-        self, core: RoadmapCore, analyzer: Optional[GitHistoryAnalyzer] = None
-    ):
+    def __init__(self, core: RoadmapCore, analyzer: GitHistoryAnalyzer | None = None):
         self.core = core
         self.analyzer = analyzer or GitHistoryAnalyzer(core)
         self.risk_patterns = self._initialize_risk_patterns()
 
-    def assess_project_risks(self, days_ahead: int = 30) -> List[RiskAssessment]:
+    def assess_project_risks(self, days_ahead: int = 30) -> list[RiskAssessment]:
         """Assess potential project risks for the coming period."""
         risks = []
 
@@ -485,7 +479,7 @@ class RiskPredictor:
 
         return risks
 
-    def predict_issue_risks(self, issue: Issue) -> List[RiskAssessment]:
+    def predict_issue_risks(self, issue: Issue) -> list[RiskAssessment]:
         """Predict risks specific to an individual issue."""
         risks = []
 
@@ -505,7 +499,7 @@ class RiskPredictor:
 
         return risks
 
-    def _assess_deadline_risks(self, days_ahead: int) -> List[RiskAssessment]:
+    def _assess_deadline_risks(self, days_ahead: int) -> list[RiskAssessment]:
         """Assess risks related to missing deadlines."""
         risks = []
 
@@ -560,7 +554,7 @@ class RiskPredictor:
 
         return risks
 
-    def _assess_resource_risks(self) -> List[RiskAssessment]:
+    def _assess_resource_risks(self) -> list[RiskAssessment]:
         """Assess risks related to resource allocation and availability."""
         risks = []
 
@@ -623,7 +617,7 @@ class RiskPredictor:
 
         return risks
 
-    def _assess_quality_risks(self) -> List[RiskAssessment]:
+    def _assess_quality_risks(self) -> list[RiskAssessment]:
         """Assess risks related to code quality and technical debt."""
         risks = []
 
@@ -681,7 +675,7 @@ class RiskPredictor:
 
         return risks
 
-    def _assess_dependency_risks(self) -> List[RiskAssessment]:
+    def _assess_dependency_risks(self) -> list[RiskAssessment]:
         """Assess risks related to issue dependencies."""
         risks = []
 
@@ -722,7 +716,7 @@ class RiskPredictor:
 
         return risks
 
-    def _assess_team_risks(self) -> List[RiskAssessment]:
+    def _assess_team_risks(self) -> list[RiskAssessment]:
         """Assess risks related to team dynamics and collaboration."""
         risks = []
 
@@ -812,7 +806,7 @@ class RiskPredictor:
 
     def _assess_assignee_risk(
         self, issue: Issue, assignee: str
-    ) -> Optional[RiskAssessment]:
+    ) -> RiskAssessment | None:
         """Assess risk based on assignee workload and performance."""
         try:
             metrics = self.analyzer.analyze_developer_productivity(assignee, 30)
@@ -875,7 +869,7 @@ class RiskPredictor:
             # Fallback estimation
             return days * 6  # Assume single developer, 6 hours/day
 
-    def _initialize_risk_patterns(self) -> Dict[str, Any]:
+    def _initialize_risk_patterns(self) -> dict[str, Any]:
         """Initialize risk detection patterns and thresholds."""
         return {
             "deadline_buffer": 0.2,  # 20% buffer for deadline risks
@@ -894,15 +888,15 @@ class DeadlineForecaster:
     def __init__(
         self,
         core: RoadmapCore,
-        estimator: Optional[IssueEstimator] = None,
-        risk_predictor: Optional[RiskPredictor] = None,
+        estimator: IssueEstimator | None = None,
+        risk_predictor: RiskPredictor | None = None,
     ):
         self.core = core
         self.estimator = estimator or IssueEstimator(core)
         self.risk_predictor = risk_predictor or RiskPredictor(core)
 
     def forecast_project_completion(
-        self, target_date: Optional[datetime] = None
+        self, target_date: datetime | None = None
     ) -> DeadlineForecast:
         """Forecast project completion date with scenario analysis."""
 
@@ -964,7 +958,7 @@ class DeadlineForecaster:
         )
 
     def forecast_milestone_completion(
-        self, milestone_issues: List[str]
+        self, milestone_issues: list[str]
     ) -> DeadlineForecast:
         """Forecast completion of a specific milestone."""
         issues = [
@@ -982,7 +976,7 @@ class DeadlineForecaster:
 
         return temp_forecaster.forecast_project_completion()
 
-    def _identify_critical_path(self, issues: List[Issue]) -> List[Issue]:
+    def _identify_critical_path(self, issues: list[Issue]) -> list[Issue]:
         """Identify the critical path through remaining issues."""
         # For now, use a simple heuristic: highest priority + longest estimated time
         # In a more sophisticated implementation, this would analyze dependencies
@@ -997,7 +991,7 @@ class DeadlineForecaster:
 
         # Score issues by priority and estimated time
         scored_issues = []
-        for issue, estimate in zip(issues, estimates):
+        for issue, estimate in zip(issues, estimates, strict=False):
             priority_score = issue_priorities.get(issue.priority, 1)
             time_score = estimate.estimated_hours / 10  # Normalize hours
             total_score = priority_score * 2 + time_score
@@ -1010,8 +1004,8 @@ class DeadlineForecaster:
         return [item[1] for item in scored_issues[:critical_count]]
 
     def _calculate_completion_scenarios(
-        self, total_hours: float, risks: List[RiskAssessment], issues: List[Issue]
-    ) -> Dict[str, datetime]:
+        self, total_hours: float, risks: list[RiskAssessment], issues: list[Issue]
+    ) -> dict[str, datetime]:
         """Calculate best/worst/likely case completion scenarios."""
 
         # Estimate team capacity (hours per day)
@@ -1042,7 +1036,7 @@ class DeadlineForecaster:
         self,
         target_date: datetime,
         predicted_date: datetime,
-        scenarios: Dict[str, datetime],
+        scenarios: dict[str, datetime],
     ) -> float:
         """Calculate probability of missing target date."""
 
@@ -1065,10 +1059,10 @@ class DeadlineForecaster:
 
     def _generate_optimization_suggestions(
         self,
-        issues: List[Issue],
-        estimates: List[EstimationResult],
-        risks: List[RiskAssessment],
-    ) -> List[str]:
+        issues: list[Issue],
+        estimates: list[EstimationResult],
+        risks: list[RiskAssessment],
+    ) -> list[str]:
         """Generate suggestions to optimize timeline."""
         suggestions = []
 
@@ -1105,7 +1099,7 @@ class DeadlineForecaster:
 
         return suggestions
 
-    def _identify_resource_constraints(self, risks: List[RiskAssessment]) -> List[str]:
+    def _identify_resource_constraints(self, risks: list[RiskAssessment]) -> list[str]:
         """Identify resource-related constraints affecting timeline."""
         constraints = []
 
@@ -1121,7 +1115,7 @@ class DeadlineForecaster:
         return constraints
 
     def _calculate_forecast_confidence(
-        self, estimates: List[EstimationResult], risks: List[RiskAssessment]
+        self, estimates: list[EstimationResult], risks: list[RiskAssessment]
     ) -> ConfidenceLevel:
         """Calculate overall confidence in the forecast."""
 
@@ -1162,7 +1156,7 @@ class DeadlineForecaster:
             return ConfidenceLevel.LOW
 
     def _create_no_work_forecast(
-        self, target_date: Optional[datetime]
+        self, target_date: datetime | None
     ) -> DeadlineForecast:
         """Create forecast when no work remains."""
         completion_date = datetime.now()
@@ -1182,7 +1176,7 @@ class DeadlineForecaster:
             },
         )
 
-    def _create_scoped_core(self, issues: List[Issue]) -> RoadmapCore:
+    def _create_scoped_core(self, issues: list[Issue]) -> RoadmapCore:
         """Create a temporary core instance scoped to specific issues."""
         # This is a simplified implementation
         # In practice, you might want a more sophisticated scoping mechanism
@@ -1199,8 +1193,8 @@ class PredictiveReportGenerator:
         self.forecaster = DeadlineForecaster(core, self.estimator, self.risk_predictor)
 
     def generate_intelligence_report(
-        self, target_date: Optional[datetime] = None, save_file: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, target_date: datetime | None = None, save_file: str | None = None
+    ) -> dict[str, Any]:
         """Generate comprehensive predictive intelligence report."""
 
         try:
@@ -1282,7 +1276,7 @@ class PredictiveReportGenerator:
                 "report_generated": datetime.now().isoformat(),
             }
 
-    def _summarize_risks(self, risks: List[RiskAssessment]) -> Dict[str, int]:
+    def _summarize_risks(self, risks: list[RiskAssessment]) -> dict[str, int]:
         """Summarize risks by type and level."""
         summary = {}
 
@@ -1301,7 +1295,7 @@ class PredictiveReportGenerator:
 
         return summary
 
-    def _risk_to_dict(self, risk: RiskAssessment) -> Dict[str, Any]:
+    def _risk_to_dict(self, risk: RiskAssessment) -> dict[str, Any]:
         """Convert risk assessment to dictionary."""
         return {
             "risk_id": risk.risk_id,
@@ -1316,7 +1310,7 @@ class PredictiveReportGenerator:
             "deadline_impact_days": risk.deadline_impact_days,
         }
 
-    def _estimate_to_dict(self, estimate: EstimationResult) -> Dict[str, Any]:
+    def _estimate_to_dict(self, estimate: EstimationResult) -> dict[str, Any]:
         """Convert estimation result to dictionary."""
         return {
             "issue_id": estimate.issue_id,
@@ -1342,7 +1336,7 @@ class PredictiveReportGenerator:
         }
         return mapping.get(level, 30)
 
-    def _save_report_to_file(self, report: Dict[str, Any], filename: str) -> str:
+    def _save_report_to_file(self, report: dict[str, Any], filename: str) -> str:
         """Save report to JSON file."""
         if not filename.endswith(".json"):
             filename += ".json"

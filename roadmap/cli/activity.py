@@ -2,20 +2,22 @@
 Activity tracking and collaboration CLI commands.
 """
 
-import click
-import os
 import json
+import os
 from datetime import datetime
-from pathlib import Path
-from roadmap.core import RoadmapCore
+
+import click
+
 from roadmap.cli.utils import get_console
 
 console = get_console()
+
 
 def _get_current_user():
     """Get current user from git config or environment."""
     try:
         from roadmap.git_integration import GitIntegration
+
         # Try Git integration first
         git = GitIntegration()
         user = git.get_current_user()
@@ -26,6 +28,7 @@ def _get_current_user():
 
     # Fallback to environment variable
     return os.environ.get("USER") or os.environ.get("USERNAME")
+
 
 def _store_team_update(
     core, sender: str, message: str, target_assignee: str = None, issue_id: str = None
@@ -38,13 +41,14 @@ def _store_team_update(
     updates = []
     if updates_file.exists():
         try:
-            with open(updates_file, "r") as f:
+            with open(updates_file) as f:
                 updates = json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             updates = []
 
     # Add new update
     from roadmap.timezone_utils import now_utc
+
     update = {
         "timestamp": now_utc().isoformat(),
         "sender": sender,
@@ -67,6 +71,7 @@ def _store_team_update(
     except Exception as e:
         console.print(f"⚠️ Warning: Could not store team update: {e}", style="yellow")
 
+
 @click.command()
 @click.option("--days", "-d", default=7, help="Number of days to show activity")
 @click.option("--assignee", "-a", help="Filter by assignee")
@@ -83,67 +88,91 @@ def activity(ctx: click.Context, days: int, assignee: str):
 
     try:
         import datetime
+
         since_date = datetime.date.today() - datetime.timedelta(days=days)
         activity_feed = _get_team_activity(core, since_date, assignee)
         _display_activity_feed(activity_feed, days)
     except Exception as e:
         console.print(f"❌ Failed to show activity: {e}", style="bold red")
 
+
 def _get_team_activity(core, since_date, assignee_filter: str = None) -> list:
     import datetime
     import json
+
     activity = []
     updates_file = core.roadmap_dir / "updates.json"
     if updates_file.exists():
         try:
-            with open(updates_file, "r") as f:
+            with open(updates_file) as f:
                 updates = json.load(f)
             for update in updates:
                 from roadmap.timezone_utils import ensure_timezone_aware
-                update_timestamp = ensure_timezone_aware(datetime.datetime.fromisoformat(update["timestamp"]))
+
+                update_timestamp = ensure_timezone_aware(
+                    datetime.datetime.fromisoformat(update["timestamp"])
+                )
                 update_date = update_timestamp.date()
                 if update_date >= since_date:
                     if not assignee_filter or update["sender"] == assignee_filter:
-                        activity.append({
-                            "type": "team_update",
-                            "timestamp": update_timestamp,
-                            "author": update["sender"],
-                            "message": update["message"],
-                            "issue_id": update.get("issue_id"),
-                        })
+                        activity.append(
+                            {
+                                "type": "team_update",
+                                "timestamp": update_timestamp,
+                                "author": update["sender"],
+                                "message": update["message"],
+                                "issue_id": update.get("issue_id"),
+                            }
+                        )
         except (json.JSONDecodeError, FileNotFoundError):
             pass
     issues = core.list_issues()
     from roadmap.timezone_utils import ensure_timezone_aware
+
     for issue in issues:
-        if issue.actual_end_date and ensure_timezone_aware(issue.actual_end_date).date() >= since_date and issue.assignee:
+        if (
+            issue.actual_end_date
+            and ensure_timezone_aware(issue.actual_end_date).date() >= since_date
+            and issue.assignee
+        ):
             if not assignee_filter or issue.assignee == assignee_filter:
-                activity.append({
-                    "type": "issue_completed",
-                    "timestamp": ensure_timezone_aware(issue.actual_end_date),
-                    "author": issue.assignee,
-                    "message": f"Completed: {issue.title}",
-                    "issue_id": issue.id,
-                })
-        if issue.actual_start_date and ensure_timezone_aware(issue.actual_start_date).date() >= since_date and issue.assignee:
+                activity.append(
+                    {
+                        "type": "issue_completed",
+                        "timestamp": ensure_timezone_aware(issue.actual_end_date),
+                        "author": issue.assignee,
+                        "message": f"Completed: {issue.title}",
+                        "issue_id": issue.id,
+                    }
+                )
+        if (
+            issue.actual_start_date
+            and ensure_timezone_aware(issue.actual_start_date).date() >= since_date
+            and issue.assignee
+        ):
             if not assignee_filter or issue.assignee == assignee_filter:
-                activity.append({
-                    "type": "issue_started",
-                    "timestamp": ensure_timezone_aware(issue.actual_start_date),
-                    "author": issue.assignee,
-                    "message": f"Started: {issue.title}",
-                    "issue_id": issue.id,
-                })
+                activity.append(
+                    {
+                        "type": "issue_started",
+                        "timestamp": ensure_timezone_aware(issue.actual_start_date),
+                        "author": issue.assignee,
+                        "message": f"Started: {issue.title}",
+                        "issue_id": issue.id,
+                    }
+                )
         if issue.created and ensure_timezone_aware(issue.created).date() >= since_date:
-            activity.append({
-                "type": "issue_created",
-                "timestamp": ensure_timezone_aware(issue.created),
-                "author": "system",
-                "message": f"Created: {issue.title}",
-                "issue_id": issue.id,
-            })
+            activity.append(
+                {
+                    "type": "issue_created",
+                    "timestamp": ensure_timezone_aware(issue.created),
+                    "author": "system",
+                    "message": f"Created: {issue.title}",
+                    "issue_id": issue.id,
+                }
+            )
     activity.sort(key=lambda x: x["timestamp"], reverse=True)
     return activity
+
 
 def _display_activity_feed(activity: list, days: int):
     if not activity:
@@ -154,6 +183,7 @@ def _display_activity_feed(activity: list, days: int):
     console.print()
     import datetime
     from collections import defaultdict
+
     by_date = defaultdict(list)
     for item in activity:
         date_key = item["timestamp"].date()
@@ -175,10 +205,14 @@ def _display_activity_feed(activity: list, days: int):
                 "issue_created": "📋",
                 "team_update": "📢",
             }.get(item["type"], "📝")
-            console.print(f"   {time_str} {icon} {item['author']}: {item['message']}", style="cyan")
+            console.print(
+                f"   {time_str} {icon} {item['author']}: {item['message']}",
+                style="cyan",
+            )
             if item.get("issue_id"):
                 console.print(f"        📌 {item['issue_id']}", style="dim")
         console.print()
+
 
 @click.command()
 @click.argument("message")
@@ -209,6 +243,7 @@ def broadcast(ctx: click.Context, message: str, issue: str):
 
     except Exception as e:
         console.print(f"❌ Failed to send update: {e}", style="bold red")
+
 
 @click.command()
 @click.argument("issue_id")
@@ -289,6 +324,7 @@ def handoff(
     except Exception as e:
         console.print(f"❌ Failed to hand off issue: {e}", style="bold red")
 
+
 @click.command()
 @click.pass_context
 def dashboard(ctx: click.Context):
@@ -308,6 +344,7 @@ def dashboard(ctx: click.Context):
         console.print(f"❌ Failed to show dashboard: {e}", style="bold red")
         raise click.Abort()
 
+
 @click.command()
 @click.pass_context
 def notifications(ctx: click.Context):
@@ -326,6 +363,7 @@ def notifications(ctx: click.Context):
     except Exception as e:
         console.print(f"❌ Failed to show notifications: {e}", style="bold red")
         raise click.Abort()
+
 
 @click.command("export")
 @click.option("--format", default="json", help="Export format (json, csv, md)")
@@ -349,6 +387,7 @@ def export_data(ctx: click.Context, format: str, output: str):
     except Exception as e:
         console.print(f"❌ Failed to export data: {e}", style="bold red")
         raise click.Abort()
+
 
 @click.command("handoff-context")
 @click.argument("issue_id")
@@ -383,18 +422,16 @@ def handoff_context(ctx: click.Context, issue_id: str):
         console.print()
 
         # Handoff history
-        if hasattr(issue, 'has_been_handed_off') and issue.has_been_handed_off:
+        if hasattr(issue, "has_been_handed_off") and issue.has_been_handed_off:
             console.print("🔄 Handoff History:", style="bold white")
-            if hasattr(issue, 'handoff_date') and issue.handoff_date:
+            if hasattr(issue, "handoff_date") and issue.handoff_date:
                 console.print(
                     f"   📅 Date: {issue.handoff_date.strftime('%Y-%m-%d %H:%M')}",
                     style="dim",
                 )
-            if hasattr(issue, 'previous_assignee') and issue.previous_assignee:
-                console.print(
-                    f"   👤 Previous: {issue.previous_assignee}", style="dim"
-                )
-            if hasattr(issue, 'handoff_notes') and issue.handoff_notes:
+            if hasattr(issue, "previous_assignee") and issue.previous_assignee:
+                console.print(f"   👤 Previous: {issue.previous_assignee}", style="dim")
+            if hasattr(issue, "handoff_notes") and issue.handoff_notes:
                 console.print(f"   📝 Notes: {issue.handoff_notes}", style="dim")
         else:
             console.print("🔄 Handoff History:", style="bold white")
@@ -402,6 +439,7 @@ def handoff_context(ctx: click.Context, issue_id: str):
 
     except Exception as e:
         console.print(f"❌ Failed to show handoff context: {e}", style="bold red")
+
 
 @click.command("handoff-list")
 @click.pass_context
@@ -421,6 +459,7 @@ def handoff_list(ctx: click.Context):
     except Exception as e:
         console.print(f"❌ Failed to list handoffs: {e}", style="bold red")
         raise click.Abort()
+
 
 @click.command("workload-analysis")
 @click.option("--assignee", "-a", help="Analyze workload for specific assignee")
@@ -444,6 +483,7 @@ def workload_analysis(ctx: click.Context, assignee: str):
         console.print(f"❌ Failed to analyze workload: {e}", style="bold red")
         raise click.Abort()
 
+
 @click.command("smart-assign")
 @click.argument("issue_id")
 @click.pass_context
@@ -463,6 +503,7 @@ def smart_assign(ctx: click.Context, issue_id: str):
     except Exception as e:
         console.print(f"❌ Failed to smart assign: {e}", style="bold red")
         raise click.Abort()
+
 
 @click.command("capacity-forecast")
 @click.option("--days", "-d", default=30, help="Number of days to forecast")

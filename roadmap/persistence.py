@@ -1,17 +1,16 @@
 """Enhanced YAML validation and recovery utilities for roadmap persistence."""
 
-import json
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import yaml
 
 from .datetime_parser import parse_datetime
 from .file_utils import ensure_directory_exists
-from .models import Issue, Milestone, MilestoneStatus, Priority, Status
+from .models import Issue, Milestone
+from .validation import validate_frontmatter_structure
 
 
 class YAMLValidationError(Exception):
@@ -20,8 +19,8 @@ class YAMLValidationError(Exception):
     def __init__(
         self,
         message: str,
-        file_path: Optional[Path] = None,
-        line_number: Optional[int] = None,
+        file_path: Path | None = None,
+        line_number: int | None = None,
     ):
         self.file_path = file_path
         self.line_number = line_number
@@ -31,7 +30,7 @@ class YAMLValidationError(Exception):
 class YAMLRecoveryManager:
     """Manages YAML file recovery and validation."""
 
-    def __init__(self, backup_dir: Optional[Path] = None):
+    def __init__(self, backup_dir: Path | None = None):
         self.backup_dir = backup_dir or Path(".roadmap/backups")
         ensure_directory_exists(self.backup_dir)
 
@@ -47,13 +46,13 @@ class YAMLRecoveryManager:
         shutil.copy2(file_path, backup_path)
         return backup_path
 
-    def list_backups(self, file_path: Path) -> List[Path]:
+    def list_backups(self, file_path: Path) -> list[Path]:
         """List all backups for a specific file."""
         pattern = f"{file_path.stem}_*.backup{file_path.suffix}"
         return sorted(self.backup_dir.glob(pattern), reverse=True)
 
     def restore_from_backup(
-        self, file_path: Path, backup_path: Optional[Path] = None
+        self, file_path: Path, backup_path: Path | None = None
     ) -> bool:
         """Restore a file from its most recent backup."""
         if backup_path is None:
@@ -69,8 +68,8 @@ class YAMLRecoveryManager:
         return True
 
     def validate_yaml_syntax(
-        self, content: str, file_path: Optional[Path] = None
-    ) -> Tuple[bool, Optional[str]]:
+        self, content: str, file_path: Path | None = None
+    ) -> tuple[bool, str | None]:
         """Validate YAML syntax and return error details if invalid."""
         try:
             yaml.safe_load(content)
@@ -84,51 +83,13 @@ class YAMLRecoveryManager:
             return False, error_msg
 
     def validate_frontmatter_structure(
-        self, frontmatter: Dict[str, Any], expected_type: str
-    ) -> Tuple[bool, List[str]]:
+        self, frontmatter: dict[str, Any], expected_type: str
+    ) -> tuple[bool, list[str]]:
         """Validate frontmatter structure for issues or milestones."""
-        errors = []
+        # Use unified validation framework
+        is_valid, errors = validate_frontmatter_structure(frontmatter, expected_type)
 
-        if expected_type == "issue":
-            required_fields = ["id", "title", "priority", "status"]
-            valid_priorities = [p.value for p in Priority]
-            valid_statuses = [s.value for s in Status]
-
-            # Check required fields
-            for field in required_fields:
-                if field not in frontmatter:
-                    errors.append(f"Missing required field: {field}")
-
-            # Validate enum values
-            if (
-                "priority" in frontmatter
-                and frontmatter["priority"] not in valid_priorities
-            ):
-                errors.append(
-                    f"Invalid priority: {frontmatter['priority']}. Valid values: {valid_priorities}"
-                )
-
-            if "status" in frontmatter and frontmatter["status"] not in valid_statuses:
-                errors.append(
-                    f"Invalid status: {frontmatter['status']}. Valid values: {valid_statuses}"
-                )
-
-        elif expected_type == "milestone":
-            required_fields = ["name", "status"]
-            valid_statuses = [s.value for s in MilestoneStatus]
-
-            # Check required fields
-            for field in required_fields:
-                if field not in frontmatter:
-                    errors.append(f"Missing required field: {field}")
-
-            # Validate enum values
-            if "status" in frontmatter and frontmatter["status"] not in valid_statuses:
-                errors.append(
-                    f"Invalid status: {frontmatter['status']}. Valid values: {valid_statuses}"
-                )
-
-        # Validate datetime fields
+        # Add datetime validation (specific to persistence layer)
         datetime_fields = ["created", "updated", "due_date"]
         for field in datetime_fields:
             if field in frontmatter and frontmatter[field] is not None:
@@ -139,10 +100,11 @@ class YAMLRecoveryManager:
                         errors.append(
                             f"Invalid datetime format for {field}: {frontmatter[field]}"
                         )
+                        is_valid = False
 
-        return len(errors) == 0, errors
+        return is_valid, errors
 
-    def attempt_recovery(self, file_path: Path) -> Tuple[bool, Optional[str]]:
+    def attempt_recovery(self, file_path: Path) -> tuple[bool, str | None]:
         """Attempt to recover a corrupted YAML file."""
         try:
             # Try to read the file
@@ -237,12 +199,12 @@ class YAMLRecoveryManager:
 class EnhancedYAMLPersistence:
     """Enhanced YAML persistence with validation and recovery."""
 
-    def __init__(self, recovery_manager: Optional[YAMLRecoveryManager] = None):
+    def __init__(self, recovery_manager: YAMLRecoveryManager | None = None):
         self.recovery_manager = recovery_manager or YAMLRecoveryManager()
 
     def safe_load_with_validation(
         self, file_path: Path, expected_type: str
-    ) -> Tuple[bool, Union[Dict[str, Any], str]]:
+    ) -> tuple[bool, dict[str, Any] | str]:
         """Safely load and validate a YAML file with recovery options."""
         try:
             if not file_path.exists():
@@ -298,8 +260,8 @@ class EnhancedYAMLPersistence:
             return False, f"Failed to load file: {e}"
 
     def safe_save_with_backup(
-        self, data: Union[Issue, Milestone], file_path: Path
-    ) -> Tuple[bool, str]:
+        self, data: Issue | Milestone, file_path: Path
+    ) -> tuple[bool, str]:
         """Safely save data with automatic backup."""
         try:
             # Create backup if file exists
@@ -344,7 +306,7 @@ class EnhancedYAMLPersistence:
         except Exception as e:
             return False, f"Failed to save file: {e}"
 
-    def _prepare_for_yaml(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_for_yaml(self, data: dict[str, Any]) -> dict[str, Any]:
         """Prepare data for YAML serialization."""
         prepared = {}
         for key, value in data.items():
@@ -362,7 +324,7 @@ class EnhancedYAMLPersistence:
 
     def get_file_health_report(
         self, directory: Path, expected_type: str = "issue"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a health report for all YAML files in a directory."""
         report = {
             "total_files": 0,

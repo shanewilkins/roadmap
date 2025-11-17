@@ -1,12 +1,11 @@
 """Git hooks and workflow automation for roadmap integration."""
 
 import json
-import os
 import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .core import RoadmapCore
 from .git_integration import GitCommit, GitIntegration
@@ -24,7 +23,7 @@ class GitHookManager:
             Path(".git/hooks") if self.git_integration.is_git_repository() else None
         )
 
-    def install_hooks(self, hooks: List[str] = None) -> bool:
+    def install_hooks(self, hooks: list[str] = None) -> bool:
         """Install roadmap Git hooks.
 
         Args:
@@ -68,18 +67,18 @@ class GitHookManager:
         except Exception:
             return False
 
-    def get_hooks_status(self) -> Dict[str, Dict[str, Any]]:
+    def get_hooks_status(self) -> dict[str, dict[str, Any]]:
         """Get the status of all installed roadmap hooks.
-        
+
         Returns:
             Dictionary with hook names as keys and status information as values.
         """
         if not self.hooks_dir or not self.hooks_dir.exists():
             return {}
-        
+
         hook_names = ["post-commit", "pre-push", "post-merge", "post-checkout"]
         status = {}
-        
+
         for hook_name in hook_names:
             hook_file = self.hooks_dir / hook_name
             hook_status = {
@@ -87,9 +86,9 @@ class GitHookManager:
                 "is_roadmap_hook": False,
                 "executable": False,
                 "file_exists": hook_file.exists(),
-                "file_path": str(hook_file) if hook_file.exists() else None
+                "file_path": str(hook_file) if hook_file.exists() else None,
             }
-            
+
             if hook_file.exists():
                 hook_status["installed"] = True
                 try:
@@ -98,14 +97,14 @@ class GitHookManager:
                     hook_status["executable"] = bool(hook_file.stat().st_mode & 0o111)
                 except Exception:
                     pass
-            
+
             status[hook_name] = hook_status
-        
+
         return status
 
-    def get_hook_config(self) -> Optional[Dict[str, Any]]:
+    def get_hook_config(self) -> dict[str, Any] | None:
         """Get the current hook configuration.
-        
+
         Returns:
             Dictionary with hook configuration settings or None if not available.
         """
@@ -113,13 +112,18 @@ class GitHookManager:
             "hooks_directory": str(self.hooks_dir) if self.hooks_dir else None,
             "repository_root": str(Path.cwd()),
             "git_repository": self.git_integration.is_git_repository(),
-            "available_hooks": ["post-commit", "pre-push", "post-merge", "post-checkout"],
+            "available_hooks": [
+                "post-commit",
+                "pre-push",
+                "post-merge",
+                "post-checkout",
+            ],
             "core_initialized": self.core is not None,
         }
-        
+
         # Add status for each hook
         config["hooks_status"] = self.get_hooks_status()
-        
+
         return config
 
     def _install_hook(self, hook_name: str):
@@ -170,23 +174,20 @@ except Exception as e:
         try:
             # Use the new CI tracking system for commit handling
             from .ci_tracking import CITracker, CITrackingConfig
-            
+
             # Get the latest commit SHA
             result = subprocess.run(
-                ['git', 'rev-parse', 'HEAD'], 
-                capture_output=True, 
-                text=True, 
-                check=True
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
             )
             latest_commit_sha = result.stdout.strip()
-            
+
             if not latest_commit_sha:
                 return
 
             # Initialize CI tracker
             config = CITrackingConfig()
             tracker = CITracker(self.core, config)
-            
+
             # Track the commit automatically
             results = tracker.track_commit(latest_commit_sha)
 
@@ -196,7 +197,7 @@ except Exception as e:
                 timestamp = datetime.now().isoformat()
                 updated_issues = list(results.keys())
                 log_entry = f"{timestamp}: Post-commit hook tracked commit {latest_commit_sha[:8]} -> issues: {', '.join(updated_issues)}\n"
-                
+
                 try:
                     with open(log_file, "a") as f:
                         f.write(log_entry)
@@ -212,23 +213,23 @@ except Exception as e:
         try:
             # Use the new CI tracking system for branch handling
             from .ci_tracking import CITracker, CITrackingConfig
-            
+
             # Get current branch
             result = subprocess.run(
-                ['git', 'branch', '--show-current'], 
-                capture_output=True, 
-                text=True, 
-                check=True
+                ["git", "branch", "--show-current"],
+                capture_output=True,
+                text=True,
+                check=True,
             )
             branch_name = result.stdout.strip()
-            
+
             if not branch_name:
                 return
 
             # Initialize CI tracker
             config = CITrackingConfig()
             tracker = CITracker(self.core, config)
-            
+
             # Track the branch automatically
             results = tracker.track_branch(branch_name)
 
@@ -240,9 +241,9 @@ except Exception as e:
                 actions_summary = []
                 for issue_id, actions in results.items():
                     actions_summary.append(f"{issue_id}({len(actions)} actions)")
-                
+
                 log_entry = f"{timestamp}: Post-checkout hook tracked branch '{branch_name}' -> {', '.join(actions_summary)}\n"
-                
+
                 try:
                     with open(log_file, "a") as f:
                         f.write(log_entry)
@@ -258,60 +259,60 @@ except Exception as e:
         try:
             # Use CI automation system to simulate PR behavior
             from .ci_tracking import CIAutomation, CITracker, CITrackingConfig
-            
+
             # Get current branch
             result = subprocess.run(
-                ['git', 'branch', '--show-current'], 
-                capture_output=True, 
-                text=True, 
-                check=True
+                ["git", "branch", "--show-current"],
+                capture_output=True,
+                text=True,
+                check=True,
             )
             current_branch = result.stdout.strip()
-            
+
             if not current_branch:
                 return
-            
+
             # Check if pushing to main branch (simulate merge)
             # Get the remote we're pushing to
             try:
                 remote_result = subprocess.run(
-                    ['git', 'config', '--get', f'branch.{current_branch}.remote'], 
-                    capture_output=True, 
-                    text=True
+                    ["git", "config", "--get", f"branch.{current_branch}.remote"],
+                    capture_output=True,
+                    text=True,
                 )
-                remote = remote_result.stdout.strip() or 'origin'
-                
+                remote = remote_result.stdout.strip() or "origin"
+
                 merge_result = subprocess.run(
-                    ['git', 'config', '--get', f'branch.{current_branch}.merge'], 
-                    capture_output=True, 
-                    text=True
+                    ["git", "config", "--get", f"branch.{current_branch}.merge"],
+                    capture_output=True,
+                    text=True,
                 )
                 merge_ref = merge_result.stdout.strip()
-                target_branch = merge_ref.split('/')[-1] if merge_ref else 'main'
+                target_branch = merge_ref.split("/")[-1] if merge_ref else "main"
             except:
-                target_branch = 'main'
-            
+                target_branch = "main"
+
             # Initialize CI automation
             config = CITrackingConfig()
             tracker = CITracker(self.core, config)
             automation = CIAutomation(self.core, tracker)
-            
+
             # If pushing to main branch, simulate PR merge
             if target_branch in config.main_branches:
                 pr_info = {
-                    'number': 0,  # Local push doesn't have PR number
-                    'head_branch': current_branch,
-                    'base_branch': target_branch
+                    "number": 0,  # Local push doesn't have PR number
+                    "head_branch": current_branch,
+                    "base_branch": target_branch,
                 }
-                
+
                 results = automation.on_pull_request_merged(pr_info)
-                
+
                 # Log results
-                if results.get('actions'):
+                if results.get("actions"):
                     log_file = Path(".git/roadmap-hooks.log")
                     timestamp = datetime.now().isoformat()
                     log_entry = f"{timestamp}: Pre-push hook simulated PR merge {current_branch} -> {target_branch}: {', '.join(results['actions'])}\n"
-                    
+
                     try:
                         with open(log_file, "a") as f:
                             f.write(log_entry)
@@ -348,7 +349,7 @@ except Exception as e:
             pass
 
     def _update_issue_from_commit(
-        self, issue_id: str, commit: GitCommit, progress: Optional[float]
+        self, issue_id: str, commit: GitCommit, progress: float | None
     ):
         """Update an issue based on commit information."""
         try:
@@ -478,7 +479,7 @@ class WorkflowAutomation:
         self.hook_manager = GitHookManager(roadmap_core)
         self.git_integration = GitIntegration()
 
-    def setup_automation(self, features: List[str] = None) -> Dict[str, bool]:
+    def setup_automation(self, features: list[str] = None) -> dict[str, bool]:
         """Setup automated workflow features.
 
         Args:
@@ -572,7 +573,7 @@ class WorkflowAutomation:
         except Exception:
             return False
 
-    def sync_all_issues_with_git(self) -> Dict[str, Any]:
+    def sync_all_issues_with_git(self) -> dict[str, Any]:
         """Sync all issues with their Git activity."""
         results = {"synced_issues": 0, "updated_issues": [], "errors": []}
 
@@ -613,7 +614,7 @@ class WorkflowAutomation:
 
         return results
 
-    def _sync_issue_with_commits(self, issue: Issue, commits: List[GitCommit]) -> bool:
+    def _sync_issue_with_commits(self, issue: Issue, commits: list[GitCommit]) -> bool:
         """Sync a single issue with its Git commits."""
         updated = False
 

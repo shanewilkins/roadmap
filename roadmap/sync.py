@@ -3,13 +3,12 @@
 import os
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 from .core import RoadmapCore
 from .credentials import CredentialManagerError, get_credential_manager, mask_token
-from .github_client import GitHubAPIError, GitHubClient
 from .datetime_parser import parse_github_datetime
+from .github_client import GitHubAPIError, GitHubClient
 from .models import Issue, Milestone, MilestoneStatus, Priority, RoadmapConfig, Status
 from .parser import IssueParser, MilestoneParser
 
@@ -30,7 +29,7 @@ class SyncConflict:
         self,
         item_type: str,
         item_id: str,
-        local_item: Union[Issue, Milestone],
+        local_item: Issue | Milestone,
         remote_item: dict,
         local_updated: datetime,
         remote_updated: datetime,
@@ -90,13 +89,13 @@ class SyncStrategy:
         # causing subsequent bidirectional syncs with NEWER_WINS to prefer GitHub
         # and potentially override the local changes we just pushed.
         self.strategy = strategy
-        self.conflicts_found: List[SyncConflict] = []
+        self.conflicts_found: list[SyncConflict] = []
 
     def _parse_github_timestamp(self, github_timestamp: str) -> datetime:
         """Safely parse GitHub timestamp, handling both Z and +00:00 formats."""
         if not github_timestamp:
             return datetime.min
-        
+
         # Handle malformed timestamps from tests (e.g., "2025-01-01T00:00:00+00:00Z")
         return parse_github_datetime(github_timestamp)
 
@@ -141,7 +140,7 @@ class SyncStrategy:
 
     def detect_issue_conflict(
         self, local_issue: Issue, github_issue: dict
-    ) -> Optional[SyncConflict]:
+    ) -> SyncConflict | None:
         """Detect if there's a conflict between local and GitHub issue."""
         local_updated = local_issue.updated
         github_updated = github_issue.get("updated_at", "")
@@ -164,7 +163,7 @@ class SyncStrategy:
 
     def detect_milestone_conflict(
         self, local_milestone: Milestone, github_milestone: dict
-    ) -> Optional[SyncConflict]:
+    ) -> SyncConflict | None:
         """Detect if there's a conflict between local and GitHub milestone."""
         local_updated = local_milestone.updated
         github_updated = github_milestone.get("updated_at", "")
@@ -228,9 +227,9 @@ class SyncManager:
         sync_strategy: SyncConflictStrategy = SyncConflictStrategy.LOCAL_WINS,
     ):
         """Initialize sync manager.
-        
+
         Default sync strategy is LOCAL_WINS to prevent GitHub timestamp race conditions
-        where pushing local changes updates GitHub's timestamp, causing subsequent 
+        where pushing local changes updates GitHub's timestamp, causing subsequent
         bidirectional syncs to prefer remote and override local changes.
         """
         self.core = core
@@ -266,7 +265,7 @@ class SyncManager:
             # Explicitly don't create client if no token available
             self.github_client = None
 
-    def _get_token_secure(self, github_config: dict) -> Optional[str]:
+    def _get_token_secure(self, github_config: dict) -> str | None:
         """Get token from secure sources.
 
         Priority order:
@@ -303,8 +302,8 @@ class SyncManager:
         return self.github_client is not None
 
     def store_token_secure(
-        self, token: str, repo_info: Optional[Dict[str, str]] = None
-    ) -> Tuple[bool, str]:
+        self, token: str, repo_info: dict[str, str] | None = None
+    ) -> tuple[bool, str]:
         """Store GitHub token securely using credential manager.
 
         Args:
@@ -337,7 +336,7 @@ class SyncManager:
         except Exception as e:
             return False, f"Unexpected error storing token: {e}"
 
-    def delete_token_secure(self) -> Tuple[bool, str]:
+    def delete_token_secure(self) -> tuple[bool, str]:
         """Delete stored GitHub token from credential manager.
 
         Returns:
@@ -363,7 +362,7 @@ class SyncManager:
         except Exception as e:
             return False, f"Unexpected error deleting token: {e}"
 
-    def get_token_info(self) -> Dict[str, Any]:
+    def get_token_info(self) -> dict[str, Any]:
         """Get information about stored tokens.
 
         Returns:
@@ -402,7 +401,7 @@ class SyncManager:
 
         return info
 
-    def test_connection(self) -> Tuple[bool, str]:
+    def test_connection(self) -> tuple[bool, str]:
         """Test GitHub connection and authentication."""
         if not self.github_client:
             return False, "GitHub client not configured. Check config.yaml settings."
@@ -422,7 +421,7 @@ class SyncManager:
         except GitHubAPIError as e:
             return False, str(e)
 
-    def setup_repository(self) -> Tuple[bool, str]:
+    def setup_repository(self) -> tuple[bool, str]:
         """Set up repository with default labels and configuration."""
         if not self.github_client:
             return False, "GitHub client not configured."
@@ -437,7 +436,7 @@ class SyncManager:
 
     def push_issue(
         self, issue: Issue, check_conflicts: bool = False
-    ) -> Tuple[bool, str, Optional[int]]:
+    ) -> tuple[bool, str, int | None]:
         """Push a local issue to GitHub with optional conflict detection."""
         if not self.github_client:
             return False, "GitHub client not configured.", None
@@ -458,13 +457,13 @@ class SyncManager:
                             if resolution == "use_remote":
                                 return (
                                     False,
-                                    f"Conflict detected: Remote version is newer. Use pull to get remote changes.",
+                                    "Conflict detected: Remote version is newer. Use pull to get remote changes.",
                                     None,
                                 )
                             elif resolution == "skip":
                                 return (
                                     False,
-                                    f"Conflict detected: Skipping update due to sync strategy.",
+                                    "Conflict detected: Skipping update due to sync strategy.",
                                     None,
                                 )
                             # If "use_local", continue with update
@@ -489,15 +488,19 @@ class SyncManager:
             body = issue.content
 
             # Add metadata to body
-            body += f"\n\n---\n*Created by roadmap CLI*"
-            
+            body += "\n\n---\n*Created by roadmap CLI*"
+
             # Prepare assignees list for GitHub API
             assignees = []
             if issue.assignee:
                 assignees = [issue.assignee]
 
             github_issue = self.github_client.create_issue(
-                title=issue.title, body=body, labels=labels, milestone=milestone_number, assignees=assignees
+                title=issue.title,
+                body=body,
+                labels=labels,
+                milestone=milestone_number,
+                assignees=assignees,
             )
 
             # Update local issue with GitHub issue number
@@ -517,7 +520,7 @@ class SyncManager:
         except GitHubAPIError as e:
             return False, f"Failed to create GitHub issue: {e}", None
 
-    def update_github_issue(self, issue: Issue) -> Tuple[bool, str, Optional[int]]:
+    def update_github_issue(self, issue: Issue) -> tuple[bool, str, int | None]:
         """Update an existing GitHub issue."""
         if not self.github_client or not issue.github_issue:
             return False, "GitHub client not configured or issue not linked.", None
@@ -567,7 +570,7 @@ class SyncManager:
 
     def pull_issue(
         self, github_issue_number: int, check_conflicts: bool = False
-    ) -> Tuple[bool, str, Optional[Issue]]:
+    ) -> tuple[bool, str, Issue | None]:
         """Pull a GitHub issue and create/update local issue with optional conflict detection."""
         if not self.github_client:
             return False, "GitHub client not configured.", None
@@ -592,13 +595,13 @@ class SyncManager:
                     if resolution == "use_local":
                         return (
                             False,
-                            f"Conflict detected: Local version is newer. Use push to send local changes.",
+                            "Conflict detected: Local version is newer. Use push to send local changes.",
                             local_issue,
                         )
                     elif resolution == "skip":
                         return (
                             False,
-                            f"Conflict detected: Skipping update due to sync strategy.",
+                            "Conflict detected: Skipping update due to sync strategy.",
                             local_issue,
                         )
                     # If "use_remote", continue with update
@@ -674,7 +677,7 @@ class SyncManager:
 
     def push_milestone(
         self, milestone: Milestone, check_conflicts: bool = False
-    ) -> Tuple[bool, str, Optional[int]]:
+    ) -> tuple[bool, str, int | None]:
         """Push a local milestone to GitHub with optional conflict detection."""
         if not self.github_client:
             return False, "GitHub client not configured.", None
@@ -697,13 +700,13 @@ class SyncManager:
                             if resolution == "use_remote":
                                 return (
                                     False,
-                                    f"Conflict detected: Remote version is newer. Use pull to get remote changes.",
+                                    "Conflict detected: Remote version is newer. Use pull to get remote changes.",
                                     None,
                                 )
                             elif resolution == "skip":
                                 return (
                                     False,
-                                    f"Conflict detected: Skipping update due to sync strategy.",
+                                    "Conflict detected: Skipping update due to sync strategy.",
                                     None,
                                 )
                             # If "use_local", continue with update
@@ -742,7 +745,7 @@ class SyncManager:
 
     def update_github_milestone(
         self, milestone: Milestone
-    ) -> Tuple[bool, str, Optional[int]]:
+    ) -> tuple[bool, str, int | None]:
         """Update an existing GitHub milestone."""
         if not self.github_client or not milestone.github_milestone:
             return False, "GitHub client not configured or milestone not linked.", None
@@ -772,7 +775,7 @@ class SyncManager:
         except GitHubAPIError as e:
             return False, f"Failed to update GitHub milestone: {e}", None
 
-    def _find_github_milestone(self, milestone_name: str) -> Optional[int]:
+    def _find_github_milestone(self, milestone_name: str) -> int | None:
         """Find GitHub milestone number by name."""
         if not self.github_client:
             return None
@@ -787,7 +790,7 @@ class SyncManager:
 
         return None
 
-    def _close_remote_orphaned_issues(self) -> Tuple[int, int, List[str]]:
+    def _close_remote_orphaned_issues(self) -> tuple[int, int, list[str]]:
         """Close remote GitHub issues that were created by roadmap but no longer exist locally.
 
         Returns:
@@ -795,7 +798,7 @@ class SyncManager:
         """
         closed_count = 0
         error_count = 0
-        error_messages: List[str] = []
+        error_messages: list[str] = []
 
         if not self.github_client:
             return closed_count, error_count, ["GitHub client not configured."]
@@ -835,7 +838,8 @@ class SyncManager:
                         self.github_client.update_issue(
                             issue_number=gh_number,
                             title=gh.get("title", ""),
-                            body=body + "\n\n(Closed by roadmap CLI due to missing local issue)",
+                            body=body
+                            + "\n\n(Closed by roadmap CLI due to missing local issue)",
                             state="closed",
                             labels=[l["name"] for l in gh.get("labels", [])],
                             assignees=assignees_list,
@@ -844,7 +848,9 @@ class SyncManager:
                         closed_count += 1
                     except GitHubAPIError as e:
                         error_count += 1
-                        error_messages.append(f"Failed to close issue #{gh_number}: {e}")
+                        error_messages.append(
+                            f"Failed to close issue #{gh_number}: {e}"
+                        )
 
         except GitHubAPIError as e:
             error_count += 1
@@ -852,7 +858,7 @@ class SyncManager:
 
         return closed_count, error_count, error_messages
 
-    def sync_all_issues(self, direction: str = "push") -> Tuple[int, int, List[str]]:
+    def sync_all_issues(self, direction: str = "push") -> tuple[int, int, list[str]]:
         """Sync all issues between local and GitHub.
 
         Args:
@@ -893,7 +899,9 @@ class SyncManager:
                     error_messages.extend(close_msgs)
                 except Exception as e:
                     error_count += 1
-                    error_messages.append(f"Failed checking remote orphaned issues: {e}")
+                    error_messages.append(
+                        f"Failed checking remote orphaned issues: {e}"
+                    )
 
         elif direction == "pull":
             if not self.github_client:
@@ -923,7 +931,7 @@ class SyncManager:
 
     def sync_all_milestones(
         self, direction: str = "push"
-    ) -> Tuple[int, int, List[str]]:
+    ) -> tuple[int, int, list[str]]:
         """Sync all milestones between local and GitHub.
 
         Args:
@@ -963,8 +971,10 @@ class SyncManager:
                         )
                         local_milestone.github_milestone = github_milestone["number"]
                         if github_milestone["due_on"]:
-                            local_milestone.due_date = self.sync_strategy._parse_github_timestamp(
-                                github_milestone["due_on"]
+                            local_milestone.due_date = (
+                                self.sync_strategy._parse_github_timestamp(
+                                    github_milestone["due_on"]
+                                )
                             )
                         local_milestone.status = (
                             MilestoneStatus.CLOSED
@@ -1016,7 +1026,7 @@ class SyncManager:
 
     def bidirectional_sync(
         self, sync_issues: bool = True, sync_milestones: bool = True
-    ) -> Tuple[int, int, List[str], List[SyncConflict]]:
+    ) -> tuple[int, int, list[str], list[SyncConflict]]:
         """Perform intelligent bidirectional synchronization between local and GitHub.
 
         This method:
@@ -1069,7 +1079,7 @@ class SyncManager:
 
     def _bidirectional_sync_issues(
         self,
-    ) -> Tuple[int, int, List[str], List[SyncConflict]]:
+    ) -> tuple[int, int, list[str], list[SyncConflict]]:
         """Perform bidirectional sync for issues."""
         success_count = 0
         error_count = 0
@@ -1169,7 +1179,7 @@ class SyncManager:
 
     def _bidirectional_sync_milestones(
         self,
-    ) -> Tuple[int, int, List[str], List[SyncConflict]]:
+    ) -> tuple[int, int, list[str], list[SyncConflict]]:
         """Perform bidirectional sync for milestones."""
         success_count = 0
         error_count = 0
@@ -1221,8 +1231,10 @@ class SyncManager:
                                 github_milestone["description"] or ""
                             )
                             if github_milestone["due_on"]:
-                                local_milestone.due_date = self.sync_strategy._parse_github_timestamp(
-                                    github_milestone["due_on"]
+                                local_milestone.due_date = (
+                                    self.sync_strategy._parse_github_timestamp(
+                                        github_milestone["due_on"]
+                                    )
                                 )
                             else:
                                 local_milestone.due_date = None

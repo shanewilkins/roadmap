@@ -7,10 +7,12 @@ from rich.console import Console
 
 console = Console()
 
+
 @click.group()
 def git():
     """Git integration and workflow management."""
     pass
+
 
 # Basic git commands - full implementation would be extracted from main CLI
 @git.command("setup")
@@ -19,11 +21,13 @@ def setup_git(ctx: click.Context):
     """Setup Git integration."""
     console.print("⚙️ Git setup functionality will be implemented", style="green")
 
+
 @git.command("sync")
 @click.pass_context
 def sync_git(ctx: click.Context):
     """Sync with Git repository."""
     console.print("🔄 Git sync functionality will be implemented", style="green")
+
 
 @git.command("status")
 @click.pass_context
@@ -117,6 +121,7 @@ def git_status(ctx: click.Context):
     except Exception as e:
         console.print(f"❌ Failed to get Git status: {e}", style="bold red")
 
+
 @git.command("branch")
 @click.argument("issue_id")
 @click.option(
@@ -146,7 +151,7 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
         branch_name = core.suggest_branch_name_for_issue(issue_id)
         if not branch_name:
             console.print(
-                f"❌ Could not suggest branch name for issue", style="bold red"
+                "❌ Could not suggest branch name for issue", style="bold red"
             )
             return
 
@@ -178,16 +183,21 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
             if fallback is not None:
                 console.print(f"🌿 Created branch: {branch_name}", style="bold green")
                 if checkout:
-                    console.print(f"✅ Checked out branch: {branch_name}", style="green")
+                    console.print(
+                        f"✅ Checked out branch: {branch_name}", style="green"
+                    )
                 console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
                 if issue.status == "todo":
                     core.update_issue(issue_id, status="in-progress")
-                    console.print("📊 Updated issue status to: in-progress", style="yellow")
+                    console.print(
+                        "📊 Updated issue status to: in-progress", style="yellow"
+                    )
             else:
-                console.print(f"❌ Failed to create branch", style="bold red")
+                console.print("❌ Failed to create branch", style="bold red")
 
     except Exception as e:
         console.print(f"❌ Failed to create Git branch: {e}", style="bold red")
+
 
 @git.command("link")
 @click.argument("issue_id")
@@ -221,11 +231,13 @@ def git_link(ctx: click.Context, issue_id: str):
         success = core.link_issue_to_branch(issue_id, current_branch)
 
         if success:
-            console.print(f"🔗 Linked issue to branch: {current_branch}", style="bold green")
+            console.print(
+                f"🔗 Linked issue to branch: {current_branch}", style="bold green"
+            )
             console.print(f"📋 Issue: {issue.title}", style="cyan")
             console.print(f"🆔 ID: {issue_id}", style="dim")
         else:
-            console.print(f"❌ Failed to link issue to branch", style="bold red")
+            console.print("❌ Failed to link issue to branch", style="bold red")
 
     except Exception as e:
         console.print(f"❌ Failed to link issue to Git branch: {e}", style="bold red")

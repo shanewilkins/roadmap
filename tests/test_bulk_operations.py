@@ -97,8 +97,8 @@ class TestBulkOperations:
         self.milestones_dir.mkdir()
 
         # Create valid issue files
-        self.create_test_issue("ISS-001", "Test Issue 1", "high", "todo")
-        self.create_test_issue("ISS-002", "Test Issue 2", "medium", "in-progress")
+        self.create_test_issue("a1b2c3d4", "Test Issue 1", "high", "todo")
+        self.create_test_issue("e5f6a7b8", "Test Issue 2", "medium", "in-progress")
 
         # Create valid milestone files
         self.create_test_milestone("Version 1.0", "open")
@@ -107,7 +107,7 @@ class TestBulkOperations:
         # Create invalid file
         invalid_file = self.issues_dir / "invalid.md"
         invalid_content = """---
-id: ISS-INVALID
+id: invalid-id
 title: Invalid Issue
 ---
 

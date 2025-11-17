@@ -1,10 +1,9 @@
 """Data management CLI commands."""
 
-import click
-import json
 import csv
-import os
-from typing import List
+import json
+
+import click
 
 from roadmap.cli.utils import get_console
 from roadmap.models import Issue
@@ -84,7 +83,9 @@ def export(ctx: click.Context, format: str, output: str, filter: str):
             key, val = filter.split("=", 1)
             key = key.strip()
             val = val.strip()
-            issues = [i for i in issues if str(getattr(i, key, "")).lower() == val.lower()]
+            issues = [
+                i for i in issues if str(getattr(i, key, "")).lower() == val.lower()
+            ]
         except Exception:
             console.print("⚠️  Unable to parse filter, ignoring.", style="yellow")
 
@@ -100,7 +101,17 @@ def export(ctx: click.Context, format: str, output: str, filter: str):
 
         elif format == "csv":
             # Choose a canonical set of fields
-            fields = ["id", "title", "status", "assignee", "priority", "estimated_hours", "milestone", "created", "updated"]
+            fields = [
+                "id",
+                "title",
+                "status",
+                "assignee",
+                "priority",
+                "estimated_hours",
+                "milestone",
+                "created",
+                "updated",
+            ]
             # Build CSV lines in-memory
             from io import StringIO
 
@@ -114,19 +125,27 @@ def export(ctx: click.Context, format: str, output: str, filter: str):
             out_text = buf.getvalue()
 
         else:  # markdown
-            lines: List[str] = []
+            lines: list[str] = []
             lines.append("| id | title | status | assignee | milestone | estimated |")
             lines.append("|---|---|---:|---|---|---:|")
             for i in issues:
-                est = i.estimated_time_display if hasattr(i, "estimated_time_display") else (i.estimated_hours or "")
-                lines.append(f"| {i.id} | {i.title} | {i.status.value if hasattr(i.status, 'value') else i.status} | {i.assignee or ''} | {i.milestone or ''} | {est} |")
+                est = (
+                    i.estimated_time_display
+                    if hasattr(i, "estimated_time_display")
+                    else (i.estimated_hours or "")
+                )
+                lines.append(
+                    f"| {i.id} | {i.title} | {i.status.value if hasattr(i.status, 'value') else i.status} | {i.assignee or ''} | {i.milestone or ''} | {est} |"
+                )
             out_text = "\n".join(lines)
 
         # Write to file or print
         if output:
             with open(output, "w", encoding="utf-8") as f:
                 f.write(out_text)
-            console.print(f"✅ Exported {len(issues)} issues to {output}", style="bold green")
+            console.print(
+                f"✅ Exported {len(issues)} issues to {output}", style="bold green"
+            )
         else:
             console.print(out_text)
 
@@ -147,4 +166,6 @@ def generate_report(ctx: click.Context, type: str, output: str):
     """Generate detailed reports and analytics."""
     console.print(f"📈 Generating {type} report...", style="bold blue")
     # Implementation would go here
-    console.print("✅ Report generation functionality will be implemented", style="green")
+    console.print(
+        "✅ Report generation functionality will be implemented", style="green"
+    )

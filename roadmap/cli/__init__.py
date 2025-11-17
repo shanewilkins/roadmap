@@ -5,41 +5,58 @@ This module provides the main CLI entry point and lazy-loads command groups
 to improve performance and maintainability.
 """
 
-import click
-from typing import Optional
 import os
+from typing import Optional
+
+import click
 
 # Initialize console for rich output
 from roadmap.cli.utils import get_console
+
 console = get_console()
 
 # Import core classes for backward compatibility with tests
 from roadmap.core import RoadmapCore
 from roadmap.sync import SyncManager
 
+
 # Import functions that tests expect to be available
 # These are imported for backward compatibility and should be considered deprecated
 @click.command()
-@click.option("--include-backlog", is_flag=True, help="Include backlog items as orphaned")
-@click.option("--min-age", default=0, help="Minimum age in days for items to be considered")
-@click.option("--max-age", default=None, help="Maximum age in days for items to be considered")
+@click.option(
+    "--include-backlog", is_flag=True, help="Include backlog items as orphaned"
+)
+@click.option(
+    "--min-age", default=0, help="Minimum age in days for items to be considered"
+)
+@click.option(
+    "--max-age", default=None, help="Maximum age in days for items to be considered"
+)
 @click.option("--export", help="Export report to file (JSON, CSV, or Markdown)")
 @click.option("--format", default="json", help="Export format (json, csv, markdown)")
-@click.option("--interactive", is_flag=True, help="Interactive mode for guided curation")
-def curate_orphaned(include_backlog: bool, min_age: int, max_age, export, format: str, interactive: bool):
+@click.option(
+    "--interactive", is_flag=True, help="Interactive mode for guided curation"
+)
+def curate_orphaned(
+    include_backlog: bool, min_age: int, max_age, export, format: str, interactive: bool
+):
     """Scan for and display orphaned items (issues and milestones)."""
     try:
         # Use module-level RoadmapCore so tests that patch roadmap.cli.RoadmapCore
         # are effective. Import the curator from the curation module at runtime
         # so tests patching roadmap.curation.RoadmapCurator still work.
-        from roadmap.curation import RoadmapCurator
         from rich.console import Console
+
+        from roadmap.curation import RoadmapCurator
 
         console = Console()
         core = RoadmapCore()
 
         if not core.is_initialized():
-            console.print("❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red")
+            console.print(
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
+            )
             return
 
         curator = RoadmapCurator(core)
@@ -69,27 +86,31 @@ def curate_orphaned(include_backlog: bool, min_age: int, max_age, export, format
 
         console.print(f"📊 Found {len(orphaned_issues)} orphaned issues")
         console.print(f"📊 Found {len(orphaned_milestones)} orphaned milestones")
-        
+
         # Export if requested
         if export:
             from pathlib import Path
+
             output_path = Path(export)
             curator.export_curation_report(report, output_path, format)
             console.print(f"✅ Report exported to {output_path}", style="bold green")
-        
+
         # Interactive mode
         if interactive:
-            console.print("🔧 Interactive curation mode not yet implemented", style="yellow")
-            
+            console.print(
+                "🔧 Interactive curation mode not yet implemented", style="yellow"
+            )
+
     except Exception as e:
         from rich.console import Console
+
         console = Console()
         console.print(f"❌ Failed to analyze orphaned items: {e}", style="bold red")
 
 
 def register_git_commands():
     """Register git commands for backward compatibility."""
-    
+
     @main.command("git-status")
     @click.pass_context
     def git_status(ctx: click.Context):
@@ -98,7 +119,8 @@ def register_git_commands():
 
         if not core.is_initialized():
             console.print(
-                "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
             )
             return
 
@@ -133,10 +155,14 @@ def register_git_commands():
                     console.print("🔗 Linked issue:", style="bold")
                     console.print(f"   📋 {linked_issue['title']}", style="cyan")
                     console.print(f"   🆔 {linked_issue['id']}", style="dim")
-                    console.print(f"   📊 Status: {linked_issue['status']}", style="yellow")
+                    console.print(
+                        f"   📊 Status: {linked_issue['status']}", style="yellow"
+                    )
                     console.print(
                         f"   ⚡ Priority: {linked_issue['priority']}",
-                        style="red" if linked_issue["priority"] == "critical" else "yellow",
+                        style="red"
+                        if linked_issue["priority"] == "critical"
+                        else "yellow",
                     )
                 else:
                     console.print("   💡 No linked issue found", style="dim")
@@ -185,7 +211,9 @@ def register_git_commands():
     @main.command("git-branch")
     @click.argument("issue_id")
     @click.option(
-        "--checkout/--no-checkout", default=True, help="Checkout the branch after creation"
+        "--checkout/--no-checkout",
+        default=True,
+        help="Checkout the branch after creation",
     )
     @click.pass_context
     def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
@@ -194,7 +222,8 @@ def register_git_commands():
 
         if not core.is_initialized():
             console.print(
-                "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
             )
             return
 
@@ -211,7 +240,7 @@ def register_git_commands():
             branch_name = core.suggest_branch_name_for_issue(issue_id)
             if not branch_name:
                 console.print(
-                    f"❌ Could not suggest branch name for issue", style="bold red"
+                    "❌ Could not suggest branch name for issue", style="bold red"
                 )
                 return
 
@@ -230,26 +259,36 @@ def register_git_commands():
             if success:
                 console.print(f"🌿 Created branch: {branch_name}", style="bold green")
                 if checkout:
-                    console.print(f"✅ Checked out branch: {branch_name}", style="green")
+                    console.print(
+                        f"✅ Checked out branch: {branch_name}", style="green"
+                    )
                 console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
 
                 # Update issue status to in-progress if it's todo
                 if issue.status == "todo":
                     core.update_issue(issue_id, status="in-progress")
-                    console.print("📊 Updated issue status to: in-progress", style="yellow")
+                    console.print(
+                        "📊 Updated issue status to: in-progress", style="yellow"
+                    )
             else:
                 # Fallback: try direct git checkout -b
                 fallback = core.git._run_git_command(["checkout", "-b", branch_name])
                 if fallback is not None:
-                    console.print(f"🌿 Created branch: {branch_name}", style="bold green")
+                    console.print(
+                        f"🌿 Created branch: {branch_name}", style="bold green"
+                    )
                     if checkout:
-                        console.print(f"✅ Checked out branch: {branch_name}", style="green")
+                        console.print(
+                            f"✅ Checked out branch: {branch_name}", style="green"
+                        )
                     console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
                     if issue.status == "todo":
                         core.update_issue(issue_id, status="in-progress")
-                        console.print("📊 Updated issue status to: in-progress", style="yellow")
+                        console.print(
+                            "📊 Updated issue status to: in-progress", style="yellow"
+                        )
                 else:
-                    console.print(f"❌ Failed to create branch", style="bold red")
+                    console.print("❌ Failed to create branch", style="bold red")
 
         except Exception as e:
             console.print(f"❌ Failed to create Git branch: {e}", style="bold red")
@@ -263,7 +302,8 @@ def register_git_commands():
 
         if not core.is_initialized():
             console.print(
-                "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+                "❌ Roadmap not initialized. Run 'roadmap init' first.",
+                style="bold red",
             )
             return
 
@@ -286,28 +326,33 @@ def register_git_commands():
             success = core.link_issue_to_current_branch(issue_id)
 
             if success:
-                console.print(f"🔗 Linked issue to branch: {current_branch.name}", style="bold green")
+                console.print(
+                    f"🔗 Linked issue to branch: {current_branch.name}",
+                    style="bold green",
+                )
                 console.print(f"📋 Issue: {issue.title}", style="cyan")
                 console.print(f"🆔 ID: {issue_id}", style="dim")
             else:
-                console.print(f"❌ Failed to link issue to branch", style="bold red")
+                console.print("❌ Failed to link issue to branch", style="bold red")
 
         except Exception as e:
-            console.print(f"❌ Failed to link issue to Git branch: {e}", style="bold red")
+            console.print(
+                f"❌ Failed to link issue to Git branch: {e}", style="bold red"
+            )
 
 
 # Import utility functions that tests need
-import os
 try:
     import git
 except ImportError:
     git = None
 
+
 def _get_current_user():
     """Get current user from git config."""
     if git is None:
-        return os.environ.get('USER') or os.environ.get('USERNAME')
-        
+        return os.environ.get("USER") or os.environ.get("USERNAME")
+
     try:
         repo = git.Repo(search_parent_directories=True)
         try:
@@ -317,46 +362,47 @@ def _get_current_user():
             pass
     except Exception:
         pass
-    
+
     # Fallback to environment variables
-    return os.environ.get('USER') or os.environ.get('USERNAME')
+    return os.environ.get("USER") or os.environ.get("USERNAME")
 
 
 def _detect_project_context():
     """Detect project context from current directory."""
     import pathlib
-    
+
     current_dir = pathlib.Path.cwd()
-    
+
     # Look for common project indicators
     indicators = [
-        '.git',
-        'package.json',
-        'pyproject.toml',
-        'Cargo.toml',
-        'pom.xml',
-        'build.gradle',
-        'composer.json'
+        ".git",
+        "package.json",
+        "pyproject.toml",
+        "Cargo.toml",
+        "pom.xml",
+        "build.gradle",
+        "composer.json",
     ]
-    
+
     for indicator in indicators:
         if (current_dir / indicator).exists():
             return {
-                'project_name': current_dir.name,
-                'has_git': (current_dir / '.git').exists(),
-                'type': indicator,
-                'path': str(current_dir),
-                'name': current_dir.name
+                "project_name": current_dir.name,
+                "has_git": (current_dir / ".git").exists(),
+                "type": indicator,
+                "path": str(current_dir),
+                "name": current_dir.name,
             }
-    
+
     # Return default context if no project indicators found
     return {
-        'project_name': current_dir.name,
-        'has_git': (current_dir / '.git').exists(),
-        'type': 'unknown',
-        'path': str(current_dir),
-        'name': current_dir.name
+        "project_name": current_dir.name,
+        "has_git": (current_dir / ".git").exists(),
+        "type": "unknown",
+        "path": str(current_dir),
+        "name": current_dir.name,
     }
+
 
 @click.group(invoke_without_command=True)
 @click.version_option()
@@ -366,10 +412,10 @@ def main(ctx: click.Context):
     # Ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below)
     ctx.ensure_object(dict)
-    
+
     # Initialize core with default roadmap directory
     ctx.obj["core"] = RoadmapCore()
-    
+
     # If no subcommand was provided, show help
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
@@ -382,31 +428,41 @@ def register_commands():
     """
     # Register standalone commands
     from .core import init, status
+
     main.add_command(init)
     main.add_command(status)
-    
+
     # Register command groups with lazy loading
-    from .team import team
-    from .user import user
-    from .data import data
-    from .project import project
-    from .issue import issue
-    from .milestone import milestone
-    from .sync import sync
-    from .git_integration import git
-    from .analytics import analytics
-    from .comment import comment
-    from .release import release_group
-    from .timezone import timezone_group
-    from .deprecated import register_deprecated_commands
-    
     # Register activity and utility commands
     from .activity import (
-        activity, broadcast, handoff, dashboard, notifications, export_data,
-        handoff_context, handoff_list, workload_analysis, smart_assign, capacity_forecast
+        activity,
+        broadcast,
+        capacity_forecast,
+        dashboard,
+        export_data,
+        handoff,
+        handoff_context,
+        handoff_list,
+        notifications,
+        smart_assign,
+        workload_analysis,
     )
+    from .analytics import analytics
+    from .comment import comment
+    from .data import data
+    from .deprecated import register_deprecated_commands
+    from .git_integration import git
+    from .issue import issue
+    from .milestone import milestone
+    from .project import project
+    from .release import release_group
+    from .sync import sync
+    from .team import team
+    from .timezone import timezone_group
+    from .user import user
+
     main.add_command(activity)
-    main.add_command(broadcast) 
+    main.add_command(broadcast)
     main.add_command(handoff)
     main.add_command(dashboard)
     main.add_command(notifications)
@@ -416,7 +472,7 @@ def register_commands():
     main.add_command(workload_analysis)
     main.add_command(smart_assign)
     main.add_command(capacity_forecast)
-    
+
     main.add_command(team)
     main.add_command(user)
     main.add_command(data)
@@ -429,17 +485,18 @@ def register_commands():
     main.add_command(comment)
     main.add_command(release_group)
     main.add_command(timezone_group)
-    
+
     # Register progress and CI commands
-    from .progress import recalculate_progress, progress_reports
     from .ci import ci
+    from .progress import progress_reports, recalculate_progress
+
     main.add_command(recalculate_progress)
     main.add_command(progress_reports)
     main.add_command(ci)
-    
+
     # Register git commands for backward compatibility
     register_git_commands()
-    
+
     # Register deprecated commands for backward compatibility
     register_deprecated_commands(main)
 

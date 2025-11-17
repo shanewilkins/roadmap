@@ -3,14 +3,23 @@
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import yaml
 
 from .datetime_parser import parse_datetime
 from .file_utils import ensure_directory_exists, file_exists_check
-from .models import Issue, IssueType, Milestone, MilestoneStatus, Priority, Project, ProjectStatus, Status
-from .persistence import YAMLValidationError, enhanced_persistence
+from .models import (
+    Issue,
+    IssueType,
+    Milestone,
+    MilestoneStatus,
+    Priority,
+    Project,
+    ProjectStatus,
+    Status,
+)
+from .persistence import enhanced_persistence
 from .timezone_utils import now_utc
 
 
@@ -20,7 +29,7 @@ class FrontmatterParser:
     FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.DOTALL)
 
     @classmethod
-    def parse_file(cls, file_path: Path) -> Tuple[Dict[str, Any], str]:
+    def parse_file(cls, file_path: Path) -> tuple[dict[str, Any], str]:
         """Parse a markdown file and return frontmatter and content."""
         if not file_exists_check(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -29,7 +38,7 @@ class FrontmatterParser:
         return cls.parse_content(content)
 
     @classmethod
-    def parse_content(cls, content: str) -> Tuple[Dict[str, Any], str]:
+    def parse_content(cls, content: str) -> tuple[dict[str, Any], str]:
         """Parse markdown content and return frontmatter and body."""
         match = cls.FRONTMATTER_PATTERN.match(content)
 
@@ -48,7 +57,7 @@ class FrontmatterParser:
 
     @classmethod
     def serialize_file(
-        cls, frontmatter: Dict[str, Any], content: str, file_path: Path
+        cls, frontmatter: dict[str, Any], content: str, file_path: Path
     ) -> None:
         """Write frontmatter and content to a markdown file."""
         ensure_directory_exists(file_path.parent)
@@ -66,8 +75,8 @@ class FrontmatterParser:
 
     @classmethod
     def _prepare_frontmatter_for_yaml(
-        cls, frontmatter: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        cls, frontmatter: dict[str, Any]
+    ) -> dict[str, Any]:
         """Prepare frontmatter for YAML serialization."""
         prepared = {}
         for key, value in frontmatter.items():
@@ -142,7 +151,7 @@ class IssueParser:
     @classmethod
     def parse_issue_file_safe(
         cls, file_path: Path
-    ) -> Tuple[bool, Optional[Issue], Optional[str]]:
+    ) -> tuple[bool, Issue | None, str | None]:
         """Safely parse an issue file with enhanced validation and recovery.
 
         Returns:
@@ -184,7 +193,7 @@ class IssueParser:
             return False, None, f"Error creating Issue object: {e}"
 
     @classmethod
-    def save_issue_file_safe(cls, issue: Issue, file_path: Path) -> Tuple[bool, str]:
+    def save_issue_file_safe(cls, issue: Issue, file_path: Path) -> tuple[bool, str]:
         """Safely save an issue file with automatic backup."""
         try:
             cls.save_issue_file(issue, file_path)
@@ -193,7 +202,7 @@ class IssueParser:
             return False, f"Error saving issue: {e}"
 
     @classmethod
-    def _parse_datetime(cls, value: Any) -> Optional[datetime]:
+    def _parse_datetime(cls, value: Any) -> datetime | None:
         """Parse datetime from various formats with timezone awareness."""
         return parse_datetime(value, source_type="file", assumed_timezone="UTC")
 
@@ -231,7 +240,7 @@ class MilestoneParser:
     @classmethod
     def parse_milestone_file_safe(
         cls, file_path: Path
-    ) -> Tuple[bool, Optional[Milestone], Optional[str]]:
+    ) -> tuple[bool, Milestone | None, str | None]:
         """Safely parse a milestone file with enhanced validation and recovery.
 
         Returns:
@@ -270,7 +279,7 @@ class MilestoneParser:
     @classmethod
     def save_milestone_file_safe(
         cls, milestone: Milestone, file_path: Path
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Safely save a milestone file with automatic backup."""
         try:
             cls.save_milestone_file(milestone, file_path)
@@ -279,7 +288,7 @@ class MilestoneParser:
             return False, f"Error saving milestone: {e}"
 
     @classmethod
-    def _parse_datetime(cls, value: Any) -> Optional[datetime]:
+    def _parse_datetime(cls, value: Any) -> datetime | None:
         """Parse datetime from various formats with timezone awareness."""
         return parse_datetime(value, source_type="file", assumed_timezone="UTC")
 
@@ -310,8 +319,12 @@ class ProjectParser:
             actual_hours=frontmatter.get("actual_hours"),
             content=content,
             calculated_progress=frontmatter.get("calculated_progress"),
-            last_progress_update=cls._parse_datetime(frontmatter.get("last_progress_update")),
-            projected_end_date=cls._parse_datetime(frontmatter.get("projected_end_date")),
+            last_progress_update=cls._parse_datetime(
+                frontmatter.get("last_progress_update")
+            ),
+            projected_end_date=cls._parse_datetime(
+                frontmatter.get("projected_end_date")
+            ),
             schedule_variance=frontmatter.get("schedule_variance"),
             completion_velocity=frontmatter.get("completion_velocity"),
             risk_level=frontmatter.get("risk_level", "low"),
@@ -330,17 +343,27 @@ class ProjectParser:
             "status": project.status.value,
             "priority": project.priority.value,
             "owner": project.owner,
-            "start_date": project.start_date.isoformat() if project.start_date else None,
-            "target_end_date": project.target_end_date.isoformat() if project.target_end_date else None,
-            "actual_end_date": project.actual_end_date.isoformat() if project.actual_end_date else None,
+            "start_date": project.start_date.isoformat()
+            if project.start_date
+            else None,
+            "target_end_date": project.target_end_date.isoformat()
+            if project.target_end_date
+            else None,
+            "actual_end_date": project.actual_end_date.isoformat()
+            if project.actual_end_date
+            else None,
             "created": project.created.isoformat(),
             "updated": project.updated.isoformat(),
             "milestones": project.milestones,
             "estimated_hours": project.estimated_hours,
             "actual_hours": project.actual_hours,
             "calculated_progress": project.calculated_progress,
-            "last_progress_update": project.last_progress_update.isoformat() if project.last_progress_update else None,
-            "projected_end_date": project.projected_end_date.isoformat() if project.projected_end_date else None,
+            "last_progress_update": project.last_progress_update.isoformat()
+            if project.last_progress_update
+            else None,
+            "projected_end_date": project.projected_end_date.isoformat()
+            if project.projected_end_date
+            else None,
             "schedule_variance": project.schedule_variance,
             "completion_velocity": project.completion_velocity,
             "risk_level": project.risk_level.value,
@@ -352,6 +375,6 @@ class ProjectParser:
         FrontmatterParser.serialize_file(frontmatter, project.content, file_path)
 
     @classmethod
-    def _parse_datetime(cls, value: Any) -> Optional[datetime]:
+    def _parse_datetime(cls, value: Any) -> datetime | None:
         """Parse datetime from various formats with timezone awareness."""
         return parse_datetime(value, source_type="file", assumed_timezone="UTC")

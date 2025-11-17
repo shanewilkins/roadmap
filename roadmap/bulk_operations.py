@@ -1,13 +1,12 @@
 """Bulk operations for YAML roadmap files."""
 
 import json
-import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
-from .models import Issue, Milestone, MilestoneStatus, Priority, Status
+from .models import Issue, Milestone
 from .parser import IssueParser, MilestoneParser
 from .persistence import YAMLRecoveryManager, enhanced_persistence
 
@@ -19,15 +18,13 @@ class BulkOperationResult:
         self.total_files = 0
         self.successful = 0
         self.failed = 0
-        self.errors: List[str] = []
-        self.warnings: List[str] = []
-        self.results: List[Dict[str, Any]] = []
+        self.errors: list[str] = []
+        self.warnings: list[str] = []
+        self.results: list[dict[str, Any]] = []
         self.start_time = datetime.now()
         self.end_time = None
 
-    def add_success(
-        self, file_path: Path, result_data: Optional[Dict[str, Any]] = None
-    ):
+    def add_success(self, file_path: Path, result_data: dict[str, Any] | None = None):
         """Add a successful operation result."""
         self.successful += 1
         self.results.append(
@@ -74,7 +71,7 @@ class BulkOperationResult:
             return 0.0
         return (self.successful / self.total_files) * 100
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert result to dictionary."""
         return {
             "total_files": self.total_files,
@@ -211,13 +208,14 @@ class BulkOperations:
                 all_files = list(directory.rglob("*.md"))
             else:
                 all_files = list(directory.glob("*.md"))
-            
+
             # Filter out backup files (*.backup.md) and files in backup directories
             files = [
-                f for f in all_files 
-                if not f.name.endswith('.backup.md') 
-                and '.roadmap/backups' not in str(f)
-                and 'backup' not in f.name
+                f
+                for f in all_files
+                if not f.name.endswith(".backup.md")
+                and ".roadmap/backups" not in str(f)
+                and "backup" not in f.name
             ]
 
             result.total_files = len(files)
@@ -293,8 +291,8 @@ class BulkOperations:
         return result
 
     def generate_comprehensive_report(
-        self, directory: Path, output_file: Optional[Path] = None
-    ) -> Dict[str, Any]:
+        self, directory: Path, output_file: Path | None = None
+    ) -> dict[str, Any]:
         """Generate a comprehensive health and analytics report."""
         report = {
             "scan_time": datetime.now().isoformat(),
@@ -367,7 +365,7 @@ class BulkOperations:
         field_name: str,
         field_value: Any,
         file_type: str = "issue",
-        condition: Optional[Callable] = None,
+        condition: Callable | None = None,
         dry_run: bool = False,
     ) -> BulkOperationResult:
         """Update a specific field across multiple files."""
