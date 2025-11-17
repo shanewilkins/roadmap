@@ -189,7 +189,6 @@ def init(
 
         # Prepare an init manifest to record created paths for potential rollback
         manifest = {"created": []}
-        manifest_path = Path.cwd() / name / ".init_manifest.json"
 
         # Step 1: Context Detection
         detected_info = _detect_project_context()
@@ -348,9 +347,37 @@ def status(ctx: click.Context) -> None:
     try:
         console.print("📊 Roadmap Status", style="bold blue")
 
-        # Get all issues and milestones
-        issues = core.list_issues()
-        milestones = core.list_milestones()
+        # Get all issues and milestones from database
+        issues = core.db.get_all_issues()
+        milestones = core.db.get_all_milestones()
+
+        # Convert database results to compatible format
+        issues = [
+            type(
+                "Issue",
+                (),
+                {
+                    "id": issue["id"],
+                    "title": issue["title"],
+                    "status": issue["status"],
+                    "assignee": issue.get("assignee"),
+                    "milestone": issue.get("milestone_name", issue.get("milestone_id")),
+                },
+            )()
+            for issue in issues
+        ]
+
+        milestones = [
+            type(
+                "Milestone",
+                (),
+                {
+                    "name": ms["name"],
+                    "title": ms["title"],
+                },
+            )()
+            for ms in milestones
+        ]
 
         if not issues and not milestones:
             console.print("\n📝 No issues or milestones found.", style="yellow")
@@ -363,8 +390,8 @@ def status(ctx: click.Context) -> None:
         if milestones:
             console.print("\n🎯 Milestones:", style="bold cyan")
             for ms in milestones:
-                progress = core.get_milestone_progress(ms.name)
-                console.print(f"\n  {ms.name}")
+                progress = core.db.get_milestone_progress(ms.title)
+                console.print(f"\n  {ms.title}")
 
                 if progress["total"] > 0:
                     with Progress(
@@ -374,7 +401,7 @@ def status(ctx: click.Context) -> None:
                         console=console,
                         transient=True,
                     ) as progress_bar:
-                        task = progress_bar.add_task(
+                        progress_bar.add_task(
                             f"    Progress ({progress['completed']}/{progress['total']})",
                             total=progress["total"],
                             completed=progress["completed"],
@@ -384,9 +411,7 @@ def status(ctx: click.Context) -> None:
 
         # Show issues by status
         console.print("\n📋 Issues by Status:", style="bold cyan")
-        status_counts = {}
-        for issue in issues:
-            status_counts[issue.status] = status_counts.get(issue.status, 0) + 1
+        status_counts = core.db.get_issues_by_status()
 
         if status_counts:
             status_table = Table(show_header=False, box=None)
@@ -475,7 +500,7 @@ def _detect_project_context() -> dict:
                 )
                 if user_result.returncode == 0:
                     context["git_user"] = user_result.stdout.strip()
-            except:
+            except Exception:
                 pass
 
     except (
@@ -509,7 +534,7 @@ def _detect_project_context() -> dict:
                         if "name" in data:
                             context["project_name"] = data["name"]
                             break
-                except:
+                except Exception:
                     pass
 
     return context
@@ -819,7 +844,7 @@ def _setup_github_integration(
                     console.print("✅ Using existing GitHub credentials")
                 else:
                     existing_token = None
-        except:
+        except Exception:
             pass  # No existing credentials
 
         # Prefer token provided via CLI, then environment, then stored

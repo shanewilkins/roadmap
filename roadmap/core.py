@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from .database import StateManager
 from .error_handling import (
     ErrorHandler,
     ErrorSeverity,
@@ -48,6 +49,9 @@ class RoadmapCore:
         # Initialize Git integration
         self.git = GitIntegration(self.root_path)
 
+        # Initialize database manager
+        self.db = StateManager(self.roadmap_dir / "state.db")
+
         # Cache for team members to avoid repeated API calls
         self._team_members_cache = None
         self._cache_timestamp = None
@@ -58,6 +62,97 @@ class RoadmapCore:
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
         return self.roadmap_dir.exists() and self.config_file.exists()
+
+    def ensure_database_synced(
+        self, force_rebuild: bool = False, show_progress: bool = True
+    ) -> None:
+        """Ensure database is synced with .roadmap/ files.
+
+        This is called automatically on CLI startup to keep SQLite in sync with git files.
+
+        Args:
+            force_rebuild: Force a full rebuild even if database exists
+            show_progress: Show progress indicators during sync
+        """
+        from rich.console import Console
+        from rich.progress import Progress, SpinnerColumn, TextColumn
+
+        console = Console()
+
+        if not self.is_initialized():
+            # If not initialized, don't auto-sync
+            return
+
+        # Install git hooks on first database initialization
+        first_time_setup = not self.db.database_exists()
+
+        # Check if database needs sync
+        if first_time_setup or force_rebuild:
+            if show_progress:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn(
+                        "[bold blue]Initializing database from .roadmap/ files..."
+                    ),
+                    transient=True,
+                ) as progress:
+                    progress.add_task("sync", total=None)
+                    sync_result = self.db.smart_sync()
+            else:
+                sync_result = self.db.smart_sync()
+
+            if show_progress and sync_result:
+                files_synced = sync_result.get("files_synced", 0)
+                total_files = sync_result.get("total_files", 0)
+                console.print(
+                    f"✅ Database initialized: {files_synced}/{total_files} files synced"
+                )
+
+            # Install git hooks on first setup
+            if first_time_setup and self.git.is_git_repository():
+                self._ensure_git_hooks_installed(console, show_progress)
+
+        else:
+            # Check if files have changed since last sync
+            if self.db.has_file_changes():
+                if show_progress:
+                    with Progress(
+                        SpinnerColumn(),
+                        TextColumn(
+                            "[bold green]Updating database with recent changes..."
+                        ),
+                        transient=True,
+                    ) as progress:
+                        progress.add_task("sync", total=None)
+                        sync_result = self.db.smart_sync()
+                else:
+                    sync_result = self.db.smart_sync()
+
+                if show_progress and sync_result:
+                    files_synced = sync_result.get("files_synced", 0)
+                    console.print(f"✅ Database updated: {files_synced} files synced")
+
+    def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
+        """Ensure git hooks are installed for automatic sync."""
+        try:
+            from .git_hooks import GitHookManager
+
+            hook_manager = GitHookManager(self)
+
+            if show_progress:
+                console.print("[dim]Installing git hooks for automatic sync...[/dim]")
+
+            success = hook_manager.install_hooks()
+
+            if show_progress:
+                if success:
+                    console.print("✅ Git hooks installed successfully")
+                else:
+                    console.print("[yellow]⚠️  Git hooks installation failed[/yellow]")
+
+        except Exception as e:
+            if show_progress:
+                console.print(f"[yellow]⚠️  Git hooks setup failed: {e}[/yellow]")
 
     @classmethod
     def find_existing_roadmap(
