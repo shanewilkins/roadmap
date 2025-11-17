@@ -248,17 +248,19 @@ class GitIntegration:
                             if numbers:
                                 deletions = int(numbers[0])
 
-                commits.append(
-                    GitCommit(
-                        hash=hash_val,
-                        author=author,
-                        date=date,
-                        message=message,
-                        files_changed=files_changed,
-                        insertions=insertions,
-                        deletions=deletions,
+                # Only create commit if we have a valid date
+                if date is not None:
+                    commits.append(
+                        GitCommit(
+                            hash=hash_val,
+                            author=author,
+                            date=date,
+                            message=message,
+                            files_changed=files_changed,
+                            insertions=insertions,
+                            deletions=deletions,
+                        )
                     )
-                )
             except (ValueError, IndexError):
                 continue
 
@@ -295,8 +297,10 @@ class GitIntegration:
         # Use branch name template from config if provided
         template = None
         try:
-            if self.config and hasattr(self.config, "defaults"):
-                template = self.config.defaults.get("branch_name_template")
+            if self.config:
+                defaults = getattr(self.config, "defaults", None)
+                if defaults and hasattr(defaults, "get"):
+                    template = defaults.get("branch_name_template")
         except Exception:
             template = None
 

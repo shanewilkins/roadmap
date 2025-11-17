@@ -89,14 +89,21 @@ class GitHistoryAnalyzer:
         completion_times = []
         for issue in completed_issues:
             if hasattr(issue, "git_commits") and issue.git_commits:
-                start_time = min(
+                # Filter out None values before passing to min()
+                commit_times = [
                     parse_datetime(commit["date"], "iso")
                     for commit in issue.git_commits
-                )
-                if issue.completed_date:
-                    end_time = parse_datetime(issue.completed_date, "iso")
-                    duration = (end_time - start_time).total_seconds() / 3600  # hours
-                    completion_times.append(duration)
+                ]
+                valid_times = [t for t in commit_times if t is not None]
+                if valid_times:
+                    start_time = min(valid_times)
+                    if issue.completed_date:
+                        end_time = parse_datetime(issue.completed_date, "iso")
+                        if end_time is not None:
+                            duration = (
+                                end_time - start_time
+                            ).total_seconds() / 3600  # hours
+                            completion_times.append(duration)
 
         avg_completion_time = (
             statistics.mean(completion_times) if completion_times else 0
@@ -159,18 +166,19 @@ class GitHistoryAnalyzer:
 
             # Get issues completed in this period
             issues = self.core.list_issues()
-            completed_issues = [
-                issue
-                for issue in issues
+            completed_issues = []
+            for issue in issues:
                 if (
                     issue.status == Status.DONE
                     and hasattr(issue, "completed_date")
                     and issue.completed_date
-                    and start_date
-                    <= parse_datetime(issue.completed_date, "iso")
-                    <= end_date
-                )
-            ]
+                ):
+                    completed_date_parsed = parse_datetime(issue.completed_date, "iso")
+                    if (
+                        completed_date_parsed is not None
+                        and start_date <= completed_date_parsed <= end_date
+                    ):
+                        completed_issues.append(issue)
 
             # Calculate metrics
             total_lines_added = sum(c.insertions for c in commits)

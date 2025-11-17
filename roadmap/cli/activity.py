@@ -31,7 +31,11 @@ def _get_current_user():
 
 
 def _store_team_update(
-    core, sender: str, message: str, target_assignee: str = None, issue_id: str = None
+    core,
+    sender: str,
+    message: str,
+    target_assignee: str | None = None,
+    issue_id: str | None = None,
 ):
     """Store a team update for later retrieval."""
     # Store updates in .roadmap/updates.json
@@ -96,7 +100,7 @@ def activity(ctx: click.Context, days: int, assignee: str):
         console.print(f"❌ Failed to show activity: {e}", style="bold red")
 
 
-def _get_team_activity(core, since_date, assignee_filter: str = None) -> list:
+def _get_team_activity(core, since_date, assignee_filter: str | None = None) -> list:
     import datetime
     import json
 

@@ -141,7 +141,13 @@ class BulkOperations:
                             },
                         )
                     else:
-                        result.add_failure(file_path, validation_result)
+                        # validation_result is either a dict or string error message
+                        error_msg = (
+                            str(validation_result)
+                            if isinstance(validation_result, (str, dict))
+                            else "Validation failed"
+                        )
+                        result.add_failure(file_path, error_msg)
 
                 except Exception as e:
                     result.add_failure(file_path, f"Exception during validation: {e}")
@@ -242,6 +248,13 @@ class BulkOperations:
 
                             # Convert to enhanced format by re-saving
                             if expected_type == "issue":
+                                # Ensure data is a dict before accessing it
+                                if not isinstance(data, dict):
+                                    result.add_failure(
+                                        file_path, f"Invalid data format: {type(data)}"
+                                    )
+                                    continue
+
                                 issue = Issue(
                                     **{k: v for k, v in data.items() if k != "content"}
                                 )
@@ -252,6 +265,13 @@ class BulkOperations:
                                     )
                                 )
                             else:
+                                # Ensure data is a dict before accessing it
+                                if not isinstance(data, dict):
+                                    result.add_failure(
+                                        file_path, f"Invalid data format: {type(data)}"
+                                    )
+                                    continue
+
                                 milestone = Milestone(
                                     **{k: v for k, v in data.items() if k != "content"}
                                 )
@@ -414,12 +434,27 @@ class BulkOperations:
                         if not dry_run:
                             setattr(item, field_name, field_value)
 
-                            # Save the updated item
+                            # Save the updated item (ensure item is not None)
+                            if item is None:
+                                result.add_failure(file_path, "Parsed item is None")
+                                continue
+
                             if file_type == "issue":
+                                if not isinstance(item, Issue):
+                                    result.add_failure(
+                                        file_path, f"Expected Issue, got {type(item)}"
+                                    )
+                                    continue
                                 save_success, message = (
                                     IssueParser.save_issue_file_safe(item, file_path)
                                 )
                             else:
+                                if not isinstance(item, Milestone):
+                                    result.add_failure(
+                                        file_path,
+                                        f"Expected Milestone, got {type(item)}",
+                                    )
+                                    continue
                                 save_success, message = (
                                     MilestoneParser.save_milestone_file_safe(
                                         item, file_path

@@ -76,7 +76,7 @@ class TestYAMLRecoveryManager:
         invalid_yaml = "title: Test\nstatus: [unclosed list"
         is_valid, error = self.recovery_manager.validate_yaml_syntax(invalid_yaml)
         assert not is_valid
-        assert "YAML syntax error" in error
+        assert error and "YAML syntax error" in error
 
     def test_validate_frontmatter_structure_issue_valid(self):
         """Test frontmatter structure validation for valid issue."""
@@ -182,6 +182,7 @@ This is the issue content."""
             issue_file, "issue"
         )
         assert is_valid
+        assert isinstance(result, dict)
         assert result["id"] == "a1b2c3d4"
         assert result["title"] == "Test Issue"
         assert result["content"] == "This is the issue content."

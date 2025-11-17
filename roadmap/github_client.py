@@ -193,7 +193,7 @@ class GitHubClient:
         """Create a new issue."""
         self._check_repository()
 
-        data = {"title": title}
+        data: dict[str, Any] = {"title": title}
 
         if body:
             data["body"] = body

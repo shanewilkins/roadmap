@@ -62,16 +62,15 @@ def _original_dashboard(ctx: click.Context, assignee: str, days: int):
         # Determine which assignee to show
         if not assignee:
             # Try to get current user from git config or environment
-            assignee = _get_current_user()
-            if not assignee:
+            current_user = _get_current_user()
+            if not current_user:
                 console.print(
                     "❌ Could not determine current user. Use --assignee NAME",
                     style="bold red",
                 )
-                console.print(
-                    "Set git user with: git config user.name 'Your Name'", style="dim"
-                )
                 return
+            assignee = current_user
+        # If assignee is provided via -a parameter, use it directly
 
         _display_daily_dashboard(core, assignee, days)
 
@@ -94,13 +93,14 @@ def _original_notifications(
     try:
         # Determine which user's notifications to show
         if not assignee:
-            assignee = _get_current_user()
-            if not assignee:
+            current_user = _get_current_user()
+            if not current_user:
                 console.print(
                     "❌ Could not determine current user. Use --assignee NAME",
                     style="bold red",
                 )
                 return
+            assignee = current_user
 
         console.print(f"🔔 Notifications for {assignee}", style="bold blue")
 

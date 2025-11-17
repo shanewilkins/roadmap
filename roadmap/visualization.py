@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
 import seaborn as sns
+from matplotlib.patches import Circle
 from plotly.subplots import make_subplots
 
 from .data_utils import DataAnalyzer, DataFrameAdapter
@@ -203,7 +204,7 @@ class ChartGenerator:
             colors = [status_colors.get(label, "#6b7280") for label in labels]
 
             if chart_type == "pie" or chart_type == "donut":
-                wedges, texts, autotexts = ax.pie(
+                pie_result = ax.pie(
                     values,
                     labels=labels,
                     autopct="%1.1f%%",
@@ -212,9 +213,16 @@ class ChartGenerator:
                     pctdistance=0.85 if chart_type == "donut" else 0.6,
                 )
 
+                # Extract autotexts from pie result
+                if len(pie_result) >= 3:
+                    wedges, texts, autotexts = pie_result  # type: ignore[misc]
+                else:
+                    wedges, texts = pie_result[:2]  # type: ignore[misc]
+                    autotexts = []
+
                 if chart_type == "donut":
                     # Add center circle for donut
-                    centre_circle = plt.Circle((0, 0), 0.50, fc="white")
+                    centre_circle = Circle((0, 0), 0.50, fc="white")
                     ax.add_artist(centre_circle)
 
                 # Enhance text appearance

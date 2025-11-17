@@ -262,7 +262,7 @@ class DataProcessor:
                 "estimated_vs_actual": {
                     "estimated": stats["estimated_hours"]["total"],
                     "actual": stats["actual_hours"]["total"],
-                    "accuracy": self._calculate_estimation_accuracy(
+                    "accuracy": _calculate_estimation_accuracy(
                         stats["estimated_hours"]["total"],
                         stats["actual_hours"]["total"],
                     ),
@@ -301,7 +301,7 @@ class DataProcessor:
             return {"periods": [], "average_velocity": 0}
 
         # Sort by completion date
-        completed_issues.sort(key=lambda x: x.actual_end_date)
+        completed_issues.sort(key=lambda x: x.actual_end_date or datetime.min)
 
         # Create time periods
         start_date = completed_issues[0].actual_end_date
@@ -310,12 +310,12 @@ class DataProcessor:
         periods = []
         current_date = start_date
 
-        while current_date <= end_date:
+        while current_date and end_date and current_date <= end_date:
             period_end = current_date + timedelta(days=period_days)
             period_issues = [
                 i
                 for i in completed_issues
-                if current_date <= i.actual_end_date < period_end
+                if i.actual_end_date and current_date <= i.actual_end_date < period_end
             ]
 
             period_stats = {

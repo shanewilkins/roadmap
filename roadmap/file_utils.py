@@ -105,7 +105,9 @@ def SecureFileManager(file_path: str | Path, mode: str = "w", **kwargs):
                 os.unlink(temp_file.name)
             except OSError:
                 pass
-        raise FileOperationError(f"Secure file operation failed: {e}", file_path, mode)
+        raise FileOperationError(
+            f"Secure file operation failed: {e}", Path(file_path), mode
+        )
 
 
 def ensure_directory_exists(
@@ -140,7 +142,7 @@ def ensure_directory_exists(
 
     except OSError as e:
         raise DirectoryCreationError(
-            f"Failed to create directory: {e}", directory_path, "mkdir"
+            f"Failed to create directory: {e}", Path(directory_path), "mkdir"
         )
 
 
@@ -189,7 +191,7 @@ def safe_write_file(
         return file_path
 
     except Exception as e:
-        raise FileWriteError(f"Failed to write file: {e}", file_path, "write")
+        raise FileWriteError(f"Failed to write file: {e}", Path(file_path), "write")
 
 
 def safe_read_file(
@@ -226,7 +228,7 @@ def safe_read_file(
     except FileNotFoundError:
         raise
     except Exception as e:
-        raise FileReadError(f"Failed to read file: {e}", file_path, "read")
+        raise FileReadError(f"Failed to read file: {e}", Path(file_path), "read")
 
 
 def file_exists_check(
@@ -298,7 +300,9 @@ def get_file_size(file_path: str | Path) -> int:
         return size
 
     except Exception as e:
-        raise FileOperationError(f"Failed to get file size: {e}", file_path, "stat")
+        raise FileOperationError(
+            f"Failed to get file size: {e}", Path(file_path), "stat"
+        )
 
 
 def backup_file(
@@ -337,7 +341,9 @@ def backup_file(
         return backup_path
 
     except Exception as e:
-        raise FileOperationError(f"Failed to create backup: {e}", file_path, "backup")
+        raise FileOperationError(
+            f"Failed to create backup: {e}", Path(file_path), "backup"
+        )
 
 
 def cleanup_temp_files(directory: str | Path, pattern: str = "*.tmp") -> int:

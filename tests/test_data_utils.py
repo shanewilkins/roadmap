@@ -606,8 +606,8 @@ class TestDataAnalyzer:
         result = DataAnalyzer.analyze_milestone_health(milestone_health_df)
 
         # v1.0 with 80% completion should have higher health score than v1.1 with 45%
-        v1_0_health = result[result["name"] == "v1.0"]["health_score"].iloc[0]
-        v1_1_health = result[result["name"] == "v1.1"]["health_score"].iloc[0]
+        v1_0_health = result[result["name"] == "v1.0"]["health_score"].iloc[0]  # type: ignore[attr-defined]
+        v1_1_health = result[result["name"] == "v1.1"]["health_score"].iloc[0]  # type: ignore[attr-defined]
 
         assert v1_0_health > v1_1_health
 
@@ -888,7 +888,7 @@ class TestDataUtilsIntegration:
                 updated=now - timedelta(hours=i + 1),
                 estimated_hours=float(2 + i % 10),
                 progress_percentage=float(i * 5),
-                actual_duration_hours=float(1 + i % 8) if i % 3 == 0 else 0.0,
+                actual_hours=float(1 + i % 8) if i % 3 == 0 else 0.0,
             )
             if i % 5 == 0:  # Some completed issues
                 issue.actual_start_date = now - timedelta(days=15 - i // 2)

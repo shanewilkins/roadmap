@@ -275,9 +275,10 @@ def sync_github():
 
         # This would integrate with existing GitHub sync functionality
         # For now, just run the regular sync
-        from ..sync import sync_bidirectional
+        from ..sync import SyncManager
 
-        success = sync_bidirectional()
+        sync_manager = SyncManager(core=roadmap_core, config={})
+        success = sync_manager.bidirectional_sync()
 
         if success:
             rprint("✅ GitHub sync completed successfully")
@@ -406,7 +407,7 @@ def status(issue_id: str | None):
                 rprint(f"💻 Commits: {len(issue.git_commits)} associated")
                 # Show first few commits
                 for i, commit in enumerate(issue.git_commits[:3]):
-                    rprint(f"   • {commit[:8]}")
+                    rprint(f"   • {str(commit)[:8]}")
                 if len(issue.git_commits) > 3:
                     rprint(f"   ... and {len(issue.git_commits) - 3} more")
             else:

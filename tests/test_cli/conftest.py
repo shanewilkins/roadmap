@@ -26,7 +26,8 @@ def reset_cli_state():
     if hasattr(main, "make_context"):
         try:
             ctx = main.make_context("main", [])
-            ctx.reset()
+            # Context reset not available, skip
+            pass
         except:
             pass
 
@@ -102,17 +103,16 @@ def mock_github_client():
 @pytest.fixture
 def sample_issue():
     """Provide a sample issue for testing."""
-    from roadmap.models import Issue
+    from roadmap.models import Issue, IssueType
 
     return Issue(
         id="issue-1",
         title="Sample Issue",
-        description="A sample issue for testing",
-        status=Status.OPEN,
+        issue_type=IssueType.FEATURE,
+        status=Status.TODO,
         priority=Priority.MEDIUM,
         assignee="test-user",
         estimated_hours=5.0,
-        tags=["feature", "backend"],
     )
 
 
@@ -122,8 +122,6 @@ def sample_milestone():
     from roadmap.models import Milestone
 
     return Milestone(
-        id="milestone-1",
-        title="Sample Milestone",
-        description="A sample milestone for testing",
+        name="Sample Milestone",
         due_date="2024-12-31",
     )

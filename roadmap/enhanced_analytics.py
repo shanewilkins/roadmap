@@ -59,16 +59,16 @@ class EnhancedAnalyzer:
         cutoff_date = datetime.now() - timedelta(days=months * 30)
         completed_df = completed_df[completed_df["actual_end_date"] >= cutoff_date]
 
-        if completed_df.empty:
+        if completed_df.empty:  # type: ignore[attr-defined]
             return pd.DataFrame()
 
         # Group by time period
         completed_df["completion_period"] = completed_df[
             "actual_end_date"
-        ].dt.to_period(period)
+        ].dt.to_period(period)  # type: ignore[attr-defined]
 
         trend_analysis = (
-            completed_df.groupby("completion_period")
+            completed_df.groupby("completion_period")  # type: ignore[attr-defined]
             .agg(
                 {
                     "id": "count",  # Issues completed
@@ -109,7 +109,7 @@ class EnhancedAnalyzer:
         # Calculate efficiency ratio
         trend_analysis["efficiency_ratio"] = (
             trend_analysis["total_estimated_hours"]
-            / trend_analysis["total_actual_hours"].replace(0, 1)
+            / trend_analysis["total_actual_hours"].replace(0, 1)  # type: ignore[attr-defined]
         ).round(2)
 
         # Calculate velocity score
@@ -190,7 +190,8 @@ class EnhancedAnalyzer:
 
         # Sort by workload score descending
         workload_analysis = workload_analysis.sort_values(
-            "workload_score", ascending=False
+            "workload_score",
+            ascending=False,  # type: ignore[arg-type]
         )
 
         return workload_analysis.reset_index()
@@ -223,7 +224,8 @@ class EnhancedAnalyzer:
         ).round(1)
 
         health_df["estimated_completion_date"] = current_date + pd.to_timedelta(
-            health_df["estimated_completion_days"], unit="D"
+            health_df["estimated_completion_days"].astype(float),
+            unit="D",  # type: ignore[arg-type]
         )
 
         # Risk assessment
@@ -313,13 +315,16 @@ class EnhancedAnalyzer:
 
         analysis = {
             "weeks_analyzed": len(velocity_df),
-            "avg_velocity_score": velocity_scores.mean().round(2),
-            "velocity_std_dev": velocity_scores.std().round(2),
+            "avg_velocity_score": round(velocity_scores.mean(), 2),
+            "velocity_std_dev": round(velocity_scores.std(), 2),
             "velocity_coefficient_of_variation": (
                 velocity_scores.std() / velocity_scores.mean()
-            ).round(3),
-            "avg_issues_per_week": issues_completed.mean().round(1),
-            "issues_std_dev": issues_completed.std().round(2),
+            ),  # type: ignore[misc]
+            "velocity_coefficient_of_variation": round(
+                velocity_scores.std() / velocity_scores.mean(), 3
+            ),
+            "avg_issues_per_week": round(issues_completed.mean(), 1),
+            "issues_std_dev": round(issues_completed.std(), 2),
             "consistency_rating": "Unknown",
             "trend_direction": "Stable",
             "recent_weeks_performance": velocity_df.tail(4)["velocity_score"].tolist(),
@@ -446,10 +451,10 @@ class EnhancedAnalyzer:
         # Filter data for each period
         period1_df = df[
             (df["created"] >= period1_start) & (df["created"] <= current_date)
-        ]
+        ]  # type: ignore[assignment]
         period2_df = df[
             (df["created"] >= period2_start) & (df["created"] <= period2_end)
-        ]
+        ]  # type: ignore[assignment]
 
         def calculate_period_metrics(period_df: pd.DataFrame) -> dict[str, float]:
             if period_df.empty:

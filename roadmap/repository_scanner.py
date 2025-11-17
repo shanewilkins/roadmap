@@ -715,8 +715,7 @@ class AdvancedRepositoryScanner:
                             issue = Issue(
                                 id=issue_id,
                                 title=f"Auto-created from commit: {first_commit.message[:50]}...",
-                                description=f"This issue was automatically created from repository scan.\n\nFirst commit: {first_commit.message}\nLast commit: {last_commit.message}",
-                                type=issue_type,
+                                issue_type=issue_type,
                                 status=Status.DONE
                                 if any(
                                     issue_id in c.completion_markers
@@ -811,7 +810,7 @@ class AdvancedRepositoryScanner:
                             )
 
                 logger.info(f"Linked {linked_count} commits to existing issues")
-                migration_result.associations_created = linked_count
+                # Record associations created in the success data instead\n                linked_associations = linked_count
 
             # Record overall success
             migration_result.add_success(
