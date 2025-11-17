@@ -13,46 +13,46 @@ jobs:
   roadmap-basics:
     runs-on: ubuntu-latest
     name: 🗺️ Basic Roadmap Integration
-    
+
     steps:
     - name: 📥 Checkout Repository
       uses: actions/checkout@v4
-      
+
     - name: 🐍 Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+
     - name: 📦 Install Roadmap CLI
       run: |
         pip install --upgrade pip
         # TODO: Replace with actual PyPI package when published
         pip install roadmap-cli
-        
+
     - name: 🎯 Track Recent Changes
       run: |
         echo "🔍 Scanning for roadmap-related changes..."
-        
-        # Initialize roadmap if needed  
+
+        # Initialize roadmap if needed
         if [ ! -f ".roadmap/config.yaml" ]; then
           echo "🚀 First time setup - initializing roadmap..."
           roadmap init --name "${{ github.repository }}" --auto-confirm
         fi
-        
+
         # Track recent commits
         roadmap ci scan-repository --max-commits 5
-        
+
         # Show current status
         echo "📊 Current roadmap status:"
         roadmap status
-        
+
     - name: ✅ Validate Setup
       run: |
         echo "✅ Roadmap integration validated!"
         echo "🎉 Your project is now integrated with roadmap tracking."
         echo ""
         echo "💡 Next steps:"
-        echo "  - Use issue IDs in branch names: feature/12345678-new-feature"  
+        echo "  - Use issue IDs in branch names: feature/12345678-new-feature"
         echo "  - Add progress markers: git commit -m 'Fix bug [progress:50%]'"
         echo "  - Mark completion: git commit -m 'Done [closes roadmap:12345678]'"
         echo ""

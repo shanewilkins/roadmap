@@ -5,11 +5,10 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.analytics import GitHistoryAnalyzer
 from roadmap.core import RoadmapCore
 from roadmap.models import Issue, Priority, Status
 from roadmap.predictive import (

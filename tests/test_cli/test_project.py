@@ -1,8 +1,5 @@
 """Tests for project-related CLI commands."""
 
-from unittest.mock import patch
-
-import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main

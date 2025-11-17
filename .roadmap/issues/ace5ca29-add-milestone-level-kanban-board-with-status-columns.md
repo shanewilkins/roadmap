@@ -36,7 +36,7 @@ Implement a kanban board view at the milestone level that displays issues organi
 
 ## Requirements
 - **Overdue**: Issues past their due date that are not completed
-- **Blocked**: Issues with status 'blocked' or dependencies that prevent progress  
+- **Blocked**: Issues with status 'blocked' or dependencies that prevent progress
 - **In Progress**: Issues currently being worked on (status 'in-progress')
 - **Not Started**: Issues that haven't been started yet (status 'not-started')
 

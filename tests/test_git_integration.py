@@ -3,17 +3,16 @@
 import os
 import subprocess
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
 from roadmap.core import RoadmapCore
 from roadmap.git_integration import GitBranch, GitCommit, GitIntegration
-from roadmap.models import IssueType, Priority, Status
+from roadmap.models import IssueType, Priority
 
 
 class TestGitCommit:
@@ -51,7 +50,10 @@ class TestGitCommit:
             ("resolves #ghi13579", ["ghi13579"]),
             ("fix #jkl24680 and addresses #mno97531", ["jkl24680", "mno97531"]),
             ("refs #deadbeef", ["deadbeef"]),
-            ("Mixed formats: fixes #abc12345 and [roadmap:def67890]", ["abc12345", "def67890"]),
+            (
+                "Mixed formats: fixes #abc12345 and [roadmap:def67890]",
+                ["abc12345", "def67890"],
+            ),
         ]
 
         for message, expected in test_cases:
@@ -357,6 +359,7 @@ class TestGitIntegrationCore:
 
         # Refresh git integration after git repo is created
         from roadmap.git_integration import GitIntegration
+
         self.core.git = GitIntegration(self.core.root_path)
 
     def tearDown(self):

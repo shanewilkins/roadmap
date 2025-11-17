@@ -2,14 +2,13 @@
 
 import os
 import tempfile
-from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
 from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Milestone, Priority, Status
+from roadmap.models import Issue, Milestone, Status
 
 
 class TestEstimatedTimeModel:
@@ -126,7 +125,16 @@ class TestEstimatedTimeCLI:
     def initialized_roadmap(self, temp_dir):
         """Create a temporary directory with initialized roadmap."""
         runner = CliRunner()
-        result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
+        result = runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "Test Project",
+            ],
+        )
         assert result.exit_code == 0
         return temp_dir
 

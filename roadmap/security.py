@@ -300,7 +300,7 @@ def secure_file_permissions(path: Path, permissions: int = 0o600) -> None:
         raise SecurityError(f"Failed to set secure permissions on {path}: {e}")
 
 
-def log_security_event(event_type: str, details: dict[str, Any] = None) -> None:
+def log_security_event(event_type: str, details: dict[str, Any] | None = None) -> None:
     """Log a security event with structured data.
 
     Args:
@@ -322,8 +322,9 @@ def log_security_event(event_type: str, details: dict[str, Any] = None) -> None:
         if security_logger.handlers:
             # Check if handlers are still valid
             for handler in security_logger.handlers:
-                if hasattr(handler, "stream") and hasattr(handler.stream, "closed"):
-                    if handler.stream.closed:
+                if hasattr(handler, "stream") and hasattr(handler, "stream"):
+                    stream = getattr(handler, "stream", None)
+                    if stream and hasattr(stream, "closed") and stream.closed:
                         return  # Skip logging if stream is closed
 
         # Log as structured data

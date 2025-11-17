@@ -38,7 +38,7 @@ The current roadmap CLI uses timezone-naive datetime objects throughout the code
 - Users in different timezones interpret deadlines differently
 - 16-hour difference between earliest and latest possible interpretation
 
-#### 2. Activity Timeline Confusion  
+#### 2. Activity Timeline Confusion
 - Issue creation times appear incorrect to users in different timezones
 - Progress reports become meaningless across distributed teams
 - Historical analysis is skewed by timezone assumptions
@@ -58,7 +58,7 @@ The current roadmap CLI uses timezone-naive datetime objects throughout the code
 **Scenario A: Stay Naive → Future Migration = VERY HIGH PAIN 🔴**
 - Data Migration: All existing dates need timezone context (guesswork required)
 - User Impact: Historical dates could change meaning
-- Code Changes: ~500+ locations need updates  
+- Code Changes: ~500+ locations need updates
 - Testing: All datetime logic needs re-validation
 - Rollback Risk: Extremely difficult to reverse
 
@@ -66,7 +66,7 @@ The current roadmap CLI uses timezone-naive datetime objects throughout the code
 - Data Migration: Clean slate - interpret all existing as UTC
 - User Impact: Minimal (dates stay same, just become explicit)
 - Code Changes: ~100 key locations
-- Testing: New datetime logic validation  
+- Testing: New datetime logic validation
 - Rollback Risk: Manageable with proper migration
 
 ### Recommended Solution: Timezone-Aware Architecture
@@ -78,7 +78,7 @@ Adopt UTC-based timezone-aware datetime handling with user-local display:
 milestone.due_date = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
 
 # User sees their local time
-# London user: "Jan 1, 2026 12:59 AM GMT"  
+# London user: "Jan 1, 2026 12:59 AM GMT"
 # SF user: "Dec 31, 2025 3:59 PM PST"
 ```
 
@@ -88,7 +88,7 @@ milestone.due_date = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
 
 **1.1 Timezone Utilities**
 ```python
-from zoneinfo import ZoneInfo  
+from zoneinfo import ZoneInfo
 from datetime import timezone
 
 def now_utc():
@@ -107,7 +107,7 @@ def parse_user_input(date_str, user_timezone="UTC"):
 - Add timezone validation to Pydantic models
 - Create migration utilities for existing data
 
-**1.3 Parser Updates** 
+**1.3 Parser Updates**
 - Update `_parse_datetime` methods to preserve timezone information
 - Handle GitHub API datetime format properly
 - Ensure backward compatibility during transition
@@ -121,7 +121,7 @@ def migrate_roadmap_data():
     for issue in all_issues():
         if issue.created.tzinfo is None:
             issue.created = issue.created.replace(tzinfo=timezone.utc)
-        if issue.updated.tzinfo is None:  
+        if issue.updated.tzinfo is None:
             issue.updated = issue.updated.replace(tzinfo=timezone.utc)
         # Save updated issue
 ```
@@ -137,9 +137,9 @@ def migrate_roadmap_data():
 ```python
 class UserConfig:
     timezone: str = "UTC"  # Default to UTC
-    
+
 # CLI timezone display
-@click.option('--timezone', help='Display timezone')  
+@click.option('--timezone', help='Display timezone')
 def list_issues(timezone):
     user_tz = timezone or get_user_config().timezone
     for issue in issues:
@@ -153,7 +153,7 @@ def list_issues(timezone):
 - Support timezone-aware date input parsing
 
 **3.3 Configuration System**
-- Add user timezone configuration  
+- Add user timezone configuration
 - Default timezone detection from system
 - Timezone validation and error handling
 
@@ -161,11 +161,11 @@ def list_issues(timezone):
 
 ### Immediate Benefits
 - 🌍 **Global Team Ready**: Support distributed teams from day one
-- 🔗 **Perfect GitHub Sync**: No timezone conversion edge cases  
+- 🔗 **Perfect GitHub Sync**: No timezone conversion edge cases
 - 📅 **Clear Deadlines**: "End of day" has specific meaning
 - 📊 **Accurate Analytics**: Timeline analysis works across timezones
 
-### Long-term Benefits  
+### Long-term Benefits
 - 📈 **Enterprise Scalable**: Ready for large distributed organizations
 - 🎯 **Professional UX**: Each user sees times in their local zone
 - 🛡️ **Future-Proof**: No painful migration needed later
@@ -178,7 +178,7 @@ def list_issues(timezone):
 - Clear migration path from existing architecture
 - Extensive test coverage can validate changes
 
-**User Impact: LOW** 🟢  
+**User Impact: LOW** 🟢
 - Existing behavior preserved (dates display the same initially)
 - Gradual rollout possible with feature flags
 - Clear communication about timezone improvements
@@ -191,7 +191,7 @@ def list_issues(timezone):
 ## Acceptance Criteria
 
 - [ ] All datetime objects are timezone-aware (UTC storage)
-- [ ] User can configure display timezone preference  
+- [ ] User can configure display timezone preference
 - [ ] CLI commands show timezone context in outputs
 - [ ] GitHub API integration preserves timezone information
 - [ ] Existing data migrated without user-visible changes
@@ -208,7 +208,7 @@ def list_issues(timezone):
 ## Success Metrics
 
 - Zero timezone-related user complaints post-migration
-- Support for users in 3+ different timezones  
+- Support for users in 3+ different timezones
 - GitHub sync operations maintain correct timestamps
 - All existing functionality preserved
 - Performance benchmarks maintained

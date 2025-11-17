@@ -1,7 +1,6 @@
 """CLI tests for milestone close convenience command."""
 
 import pytest
-from click.testing import CliRunner
 
 from roadmap.cli import main
 
@@ -11,7 +10,18 @@ def test_milestone_close_convenience(cli_runner, initialized_roadmap):
     runner = cli_runner
 
     # Create a milestone first
-    result = runner.invoke(main, ["milestone", "create", "v.0.2.0", "--description", "desc", "--due-date", "2025-10-18"])
+    result = runner.invoke(
+        main,
+        [
+            "milestone",
+            "create",
+            "v.0.2.0",
+            "--description",
+            "desc",
+            "--due-date",
+            "2025-10-18",
+        ],
+    )
     assert result.exit_code == 0
     assert "Created milestone" in result.output or "Created milestone" in result.output
 

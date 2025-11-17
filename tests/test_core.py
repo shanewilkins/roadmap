@@ -1,15 +1,11 @@
 """Tests for core roadmap functionality."""
 
-import os
-import tempfile
 from datetime import datetime
-from pathlib import Path
 
 import pytest
 
 from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
-from roadmap.parser import IssueParser, MilestoneParser
+from roadmap.models import MilestoneStatus, Priority, Status
 
 
 class TestRoadmapCore:

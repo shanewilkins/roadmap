@@ -37,7 +37,7 @@ Currently, the issue YAML header includes `git_branches` and `git_commits` field
 ### Issue YAML Header Fields (Currently Manual)
 ```yaml
 git_branches: []     # Empty - should auto-populate
-git_commits: []      # Empty - should auto-populate  
+git_commits: []      # Empty - should auto-populate
 actual_start_date: null    # Could auto-detect from first commit
 actual_end_date: null      # Could auto-detect from issue closure
 completed_date: null       # Could auto-populate on status=done
@@ -56,7 +56,7 @@ completed_date: null       # Could auto-populate on status=done
 ```bash
 # Automatic detection of issue-related branches
 feature/ea4606b6-*           # Feature branches with issue ID
-bugfix/ea4606b6-*            # Bug fix branches  
+bugfix/ea4606b6-*            # Bug fix branches
 hotfix/ea4606b6-*            # Hotfix branches
 ea4606b6-*                   # Simple issue ID prefix
 */ea4606b6/*                 # Issue ID anywhere in branch path
@@ -66,7 +66,7 @@ ea4606b6-*                   # Simple issue ID prefix
 ```bash
 # Commit message patterns to associate with issues
 "feat: implement CI/CD integration (fixes #ea4606b6)"
-"fix: resolve sync issue ea4606b6" 
+"fix: resolve sync issue ea4606b6"
 "docs: update CI/CD guide for ea4606b6"
 "closes ea4606b6: add branch tracking"
 "related to ea4606b6: refactor sync logic"
@@ -81,7 +81,7 @@ on:
     branches: ["**"]
   pull_request:
     types: [opened, closed, merged]
-  
+
 jobs:
   track-issue-progress:
     runs-on: ubuntu-latest
@@ -120,7 +120,7 @@ roadmap issue branch add ea4606b6 feature/ci-cd-integration
 roadmap issue branch remove ea4606b6 old-branch-name
 roadmap issue branch list ea4606b6
 
-# Automatic branch detection  
+# Automatic branch detection
 roadmap ci scan-branches          # Scan all branches for issue patterns
 roadmap ci track-branch <branch>  # Track specific branch
 ```
@@ -135,7 +135,7 @@ def parse_commit_for_issues(commit_message, commit_sha):
         r'(\w{8})[:]\s',                              # "ea4606b6: commit message"
         r'(?:related to|refs?)\s+(\w{8})',           # "related to ea4606b6"
     ]
-    
+
     for pattern in patterns:
         for match in re.finditer(pattern, commit_message, re.IGNORECASE):
             issue_id = match.group(1)
@@ -149,7 +149,7 @@ def parse_commit_for_issues(commit_message, commit_sha):
 # .git/hooks/post-commit
 roadmap ci track-commit HEAD
 
-# Pre-push hook  
+# Pre-push hook
 #!/bin/sh
 # .git/hooks/pre-push
 roadmap ci sync-branch-tracking
@@ -201,11 +201,11 @@ def on_deployment_success(deployment_info):
     # Track which issues were deployed
     commits = get_commits_in_deployment(deployment_info)
     deployed_issues = set()
-    
+
     for commit in commits:
         issue_ids = get_issues_for_commit(commit.sha)
         deployed_issues.update(issue_ids)
-    
+
     for issue_id in deployed_issues:
         add_deployment_info_to_issue(issue_id, deployment_info)
 ```
@@ -219,7 +219,7 @@ def on_deployment_success(deployment_info):
 - [ ] Branch tracking in issue YAML header gets populated automatically
 - [ ] Integration with git hooks for real-time tracking
 
-### Commit Tracking  
+### Commit Tracking
 - [ ] Automatic parsing of commit messages for issue references
 - [ ] Support for multiple commit message patterns (fixes, closes, refs)
 - [ ] CLI commands to manually associate commits with issues
@@ -275,10 +275,10 @@ def on_deployment_success(deployment_info):
 class GitTracker:
     def get_branches_for_issue(self, issue_id: str) -> List[str]:
         """Find all branches containing issue ID"""
-        
+
     def get_commits_for_issue(self, issue_id: str) -> List[GitCommit]:
         """Find all commits mentioning issue ID"""
-        
+
     def scan_repository_history(self) -> Dict[str, List[str]]:
         """Scan entire repo for issue associations"""
 ```
@@ -290,7 +290,7 @@ roadmap config set ci.branch_patterns "feature/{issue_id}-*,{issue_id}-*"
 roadmap config set ci.auto_start_on_branch true
 roadmap config set ci.auto_close_on_merge true
 
-# Commit tracking configuration  
+# Commit tracking configuration
 roadmap config set ci.commit_patterns "fixes #{issue_id},closes {issue_id},{issue_id}:"
 roadmap config set ci.scan_commit_history false
 roadmap config set ci.track_all_commits false
@@ -321,27 +321,27 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Install roadmap CLI
         run: pip install roadmap-cli
-        
+
       - name: Configure credentials
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           roadmap config set github.owner ${{ github.repository_owner }}
           roadmap config set github.repo ${{ github.event.repository.name }}
-          
+
       - name: Track branch and commits
         run: |
           roadmap ci track-branch ${{ github.ref_name }}
           roadmap ci track-commit ${{ github.sha }}
-          
+
       - name: Handle PR events
         if: github.event_name == 'pull_request'
         run: |
           roadmap ci track-pr ${{ github.event.number }} --branch ${{ github.head_ref }}
-          
+
       - name: Sync with roadmap
         run: roadmap sync bidirectional
 ```

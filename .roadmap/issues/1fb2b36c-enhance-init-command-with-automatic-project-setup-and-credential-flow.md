@@ -97,18 +97,18 @@ def enhanced_init():
     # 1. Detect context
     project_name = detect_project_name()
     git_repo = detect_git_repository()
-    
+
     # 2. Create directory structure
     create_roadmap_structure()
-    
+
     # 3. Generate main project
     if not skip_project:
         create_main_project(project_name)
-    
+
     # 4. GitHub integration setup
     if git_repo and not skip_github:
         setup_github_integration(git_repo)
-    
+
     # 5. Validation and next steps
     validate_setup()
     show_getting_started_guide()
@@ -118,10 +118,10 @@ def enhanced_init():
 1. **Welcome & Context Detection**
    ```
    🚀 Roadmap CLI Initialization
-   
+
    Detected: Git repository "shanewilkins/roadmap"
    Current directory: /Users/shane/roadmap
-   
+
    We'll set up your roadmap with:
    ✓ Main project creation
    ✓ GitHub integration
@@ -131,7 +131,7 @@ def enhanced_init():
 2. **Project Setup**
    ```
    📋 Creating Main Project
-   
+
    Project name: [roadmap] (auto-detected)
    Description: [A powerful CLI tool for project roadmaps]
    Owner: [shane] (from git config)
@@ -141,9 +141,9 @@ def enhanced_init():
 3. **GitHub Integration**
    ```
    🔗 GitHub Integration Setup
-   
+
    Repository: shanewilkins/roadmap ✓
-   
+
    To sync with GitHub, you'll need a personal access token.
    → Open: https://github.com/settings/tokens
    → Create token with 'public_repo' scope
@@ -153,12 +153,12 @@ def enhanced_init():
 4. **Validation & Next Steps**
    ```
    ✅ Setup Complete!
-   
+
    Created:
    ✓ Main project: roadmap (ID: abc12345)
    ✓ GitHub connection: Connected as shanewilkins
    ✓ Credentials: Stored securely in keychain
-   
+
    Next steps:
    → roadmap project overview
    → roadmap issue create "Your first issue"

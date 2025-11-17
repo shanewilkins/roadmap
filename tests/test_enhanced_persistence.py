@@ -2,18 +2,13 @@
 
 import shutil
 import tempfile
-from datetime import datetime
 from pathlib import Path
-
-import pytest
 
 from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
 from roadmap.parser import IssueParser, MilestoneParser
 from roadmap.persistence import (
     EnhancedYAMLPersistence,
     YAMLRecoveryManager,
-    YAMLValidationError,
-    enhanced_persistence,
 )
 
 
@@ -110,8 +105,14 @@ class TestYAMLRecoveryManager:
         assert not is_valid
         # Check if the new validation framework is reporting the errors
         error_str = " ".join(errors) if errors else ""
-        assert ("Missing required field: priority" in error_str or "Field 'priority' is required" in error_str)
-        assert ("Missing required field: status" in error_str or "Field 'status' is required" in error_str)
+        assert (
+            "Missing required field: priority" in error_str
+            or "Field 'priority' is required" in error_str
+        )
+        assert (
+            "Missing required field: status" in error_str
+            or "Field 'status' is required" in error_str
+        )
 
     def test_validate_frontmatter_structure_issue_invalid_enum(self):
         """Test frontmatter structure validation for issue with invalid enum."""
@@ -333,7 +334,11 @@ Missing required fields"""
         assert not success
         assert issue is None
         assert error is not None
-        assert ("Missing required field" in error or "Field" in error or "is not a valid" in error)
+        assert (
+            "Missing required field" in error
+            or "Field" in error
+            or "is not a valid" in error
+        )
 
     def test_save_issue_file_safe(self):
         """Test safe saving of issue file."""

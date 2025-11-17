@@ -1,9 +1,7 @@
 """Tests for credential management."""
 
-import os
 import platform
-import subprocess
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

@@ -4,7 +4,7 @@ Tests for CI/CD integration and automatic issue tracking functionality.
 
 import subprocess
 from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -26,6 +26,7 @@ class TestCITracker:
     def mock_core(self):
         """Create a mock RoadmapCore for testing."""
         from pathlib import Path
+
         core = Mock(spec=RoadmapCore)
 
         # Add the issues_dir attribute that CI tracking expects
@@ -39,7 +40,7 @@ class TestCITracker:
             status=Status.TODO,
             issue_type=IssueType.FEATURE,
             git_branches=[],
-            git_commits=[]
+            git_commits=[],
         )
 
         issue2 = Issue(
@@ -49,7 +50,13 @@ class TestCITracker:
             status=Status.IN_PROGRESS,
             issue_type=IssueType.BUG,
             git_branches=["existing-branch"],
-            git_commits=[{"sha": "abc123", "message": "test commit", "date": "2025-11-15T12:00:00"}]
+            git_commits=[
+                {
+                    "sha": "abc123",
+                    "message": "test commit",
+                    "date": "2025-11-15T12:00:00",
+                }
+            ],
         )
 
         # Mock core methods
@@ -88,7 +95,9 @@ class TestCITracker:
 
         for branch_name, expected in test_cases:
             result = tracker.extract_issue_ids_from_branch(branch_name)
-            assert result == expected, f"Branch '{branch_name}' should extract {expected}, got {result}"
+            assert (
+                result == expected
+            ), f"Branch '{branch_name}' should extract {expected}, got {result}"
 
     def test_extract_issue_ids_from_commit(self, tracker):
         """Test extraction of issue IDs from commit messages."""
@@ -108,9 +117,11 @@ class TestCITracker:
 
         for commit_message, expected in test_cases:
             result = tracker.extract_issue_ids_from_commit(commit_message)
-            assert result == expected, f"Commit '{commit_message}' should extract {expected}, got {result}"
+            assert (
+                result == expected
+            ), f"Commit '{commit_message}' should extract {expected}, got {result}"
 
-    @patch('roadmap.ci_tracking.IssueParser')
+    @patch("roadmap.ci_tracking.IssueParser")
     def test_add_branch_to_issue(self, mock_issue_parser, mock_core, tracker):
         """Test adding branch association to issue."""
         core, issue1, issue2 = mock_core
@@ -133,7 +144,7 @@ class TestCITracker:
         result = tracker.add_branch_to_issue("nonexistent", "test-branch")
         assert result is False
 
-    @patch('roadmap.ci_tracking.IssueParser')
+    @patch("roadmap.ci_tracking.IssueParser")
     def test_add_commit_to_issue(self, mock_issue_parser, mock_core, tracker):
         """Test adding commit association to issue."""
         core, issue1, issue2 = mock_core
@@ -145,12 +156,18 @@ class TestCITracker:
         result = tracker.add_commit_to_issue("ea4606b6", "abc12345")
         assert result is True
         # Check that a commit dictionary was added
-        assert any(commit.get('sha') == 'abc12345' if isinstance(commit, dict) else commit == 'abc12345'
-                  for commit in issue1.git_commits)
+        assert any(
+            commit.get("sha") == "abc12345"
+            if isinstance(commit, dict)
+            else commit == "abc12345"
+            for commit in issue1.git_commits
+        )
         mock_issue_parser.save_issue_file.assert_called()
 
         # Test duplicate addition
-        issue1.git_commits = [{"sha": "abc12345", "message": "test", "date": "2025-11-15T12:00:00"}]
+        issue1.git_commits = [
+            {"sha": "abc12345", "message": "test", "date": "2025-11-15T12:00:00"}
+        ]
         result = tracker.add_commit_to_issue("ea4606b6", "abc12345")
         assert result is True
 
@@ -158,7 +175,7 @@ class TestCITracker:
         result = tracker.add_commit_to_issue("nonexistent", "def67890")
         assert result is False
 
-    @patch('roadmap.ci_tracking.IssueParser')
+    @patch("roadmap.ci_tracking.IssueParser")
     def test_remove_branch_from_issue(self, mock_issue_parser, mock_core, tracker):
         """Test removing branch association from issue."""
         core, issue1, issue2 = mock_core
@@ -173,14 +190,16 @@ class TestCITracker:
         result = tracker.remove_branch_from_issue("ea4606b6", "feature/ea4606b6-test")
         assert result is True
         assert "feature/ea4606b6-test" not in issue1.git_branches
-        assert "another-branch" in issue1.git_branches  # Should not affect other branches
+        assert (
+            "another-branch" in issue1.git_branches
+        )  # Should not affect other branches
         mock_issue_parser.save_issue_file.assert_called()
 
         # Test removing non-existent branch
         result = tracker.remove_branch_from_issue("ea4606b6", "non-existent-branch")
         assert result is True  # Should succeed even if not present
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_get_current_branch(self, mock_run, tracker):
         """Test getting current git branch."""
         # Test successful branch retrieval
@@ -191,11 +210,11 @@ class TestCITracker:
         assert result == "feature/ea4606b6-test"
 
         # Test git command failure
-        mock_run.side_effect = subprocess.CalledProcessError(1, 'git')
+        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
         result = tracker.get_current_branch()
         assert result is None
 
-    @patch('roadmap.ci_tracking.IssueParser')
+    @patch("roadmap.ci_tracking.IssueParser")
     def test_track_branch(self, mock_issue_parser, mock_core, tracker):
         """Test comprehensive branch tracking."""
         core, issue1, issue2 = mock_core
@@ -219,8 +238,8 @@ class TestCITracker:
         results = tracker.track_branch("random-branch-name")
         assert results == {}
 
-    @patch('roadmap.ci_tracking.IssueParser')
-    @patch('subprocess.run')
+    @patch("roadmap.ci_tracking.IssueParser")
+    @patch("subprocess.run")
     def test_track_commit(self, mock_run, mock_issue_parser, mock_core, tracker):
         """Test commit tracking functionality."""
         core, issue1, issue2 = mock_core
@@ -241,14 +260,14 @@ class TestCITracker:
 
         # Verify git log was called
         mock_run.assert_called_with(
-            ['git', 'log', '-1', '--format=%s', 'abc12345'],
+            ["git", "log", "-1", "--format=%s", "abc12345"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
 
-    @patch('roadmap.ci_tracking.IssueParser')
-    @patch('subprocess.run')
+    @patch("roadmap.ci_tracking.IssueParser")
+    @patch("subprocess.run")
     def test_scan_branches(self, mock_run, mock_issue_parser, mock_core, tracker):
         """Test scanning all branches for associations."""
         core, issue1, issue2 = mock_core
@@ -265,7 +284,7 @@ develop"""
 
         # Mock git log for last commit (called for each branch)
         def git_side_effect(*args, **kwargs):
-            if args[0][1] == 'log':
+            if args[0][1] == "log":
                 result = Mock()
                 result.stdout = "abc123"
                 result.returncode = 0
@@ -297,6 +316,7 @@ class TestCIAutomation:
     def mock_setup(self):
         """Create mocks for CI automation testing."""
         from pathlib import Path
+
         core = Mock(spec=RoadmapCore)
 
         # Add the issues_dir attribute that CI automation expects
@@ -314,7 +334,7 @@ class TestCIAutomation:
             status=Status.TODO,
             issue_type=IssueType.FEATURE,
             git_branches=[],
-            git_commits=[]
+            git_commits=[],
         )
 
         core.get_issue.return_value = issue
@@ -340,7 +360,7 @@ class TestCIAutomation:
         # Verify tracker was called
         tracker.track_branch.assert_called_with("feature/ea4606b6-test")
 
-    @patch('roadmap.ci_tracking.IssueParser')
+    @patch("roadmap.ci_tracking.IssueParser")
     def test_on_pull_request_opened(self, mock_issue_parser, mock_setup):
         """Test handling of PR opened event."""
         automation, core, tracker, issue = mock_setup
@@ -348,10 +368,7 @@ class TestCIAutomation:
         # Mock the IssueParser.save_issue_file method
         mock_issue_parser.save_issue_file = Mock()
 
-        pr_info = {
-            "number": 123,
-            "head_branch": "feature/ea4606b6-test"
-        }
+        pr_info = {"number": 123, "head_branch": "feature/ea4606b6-test"}
 
         results = automation.on_pull_request_opened(pr_info)
 
@@ -363,7 +380,7 @@ class TestCIAutomation:
         assert issue.actual_start_date is not None
         assert "Auto-started issue ea4606b6" in results["actions"]
 
-    @patch('roadmap.ci_tracking.IssueParser')
+    @patch("roadmap.ci_tracking.IssueParser")
     def test_on_pull_request_merged(self, mock_issue_parser, mock_setup):
         """Test handling of PR merged event."""
         automation, core, tracker, issue = mock_setup
@@ -377,7 +394,7 @@ class TestCIAutomation:
         pr_info = {
             "number": 123,
             "head_branch": "feature/ea4606b6-test",
-            "base_branch": "main"  # Merging to main branch
+            "base_branch": "main",  # Merging to main branch
         }
 
         results = automation.on_pull_request_merged(pr_info)
@@ -391,8 +408,10 @@ class TestCIAutomation:
         assert issue.completed_date is not None
         assert "Auto-completed issue ea4606b6" in results["actions"]
 
-    @patch('roadmap.ci_tracking.IssueParser')
-    def test_on_pull_request_merged_non_main_branch(self, mock_issue_parser, mock_setup):
+    @patch("roadmap.ci_tracking.IssueParser")
+    def test_on_pull_request_merged_non_main_branch(
+        self, mock_issue_parser, mock_setup
+    ):
         """Test PR merged to non-main branch doesn't auto-close."""
         automation, core, tracker, issue = mock_setup
 
@@ -405,7 +424,7 @@ class TestCIAutomation:
         pr_info = {
             "number": 123,
             "head_branch": "feature/ea4606b6-test",
-            "base_branch": "staging"  # Not a main branch (develop is in main_branches by default)
+            "base_branch": "staging",  # Not a main branch (develop is in main_branches by default)
         }
 
         results = automation.on_pull_request_merged(pr_info)
@@ -441,7 +460,7 @@ class TestCITrackingConfig:
         config = CITrackingConfig(
             branch_patterns=["custom-({issue_id})-.*"],
             auto_start_on_branch=False,
-            main_branches=["production"]
+            main_branches=["production"],
         )
 
         assert config.branch_patterns == ["custom-({issue_id})-.*"]
@@ -458,7 +477,7 @@ class TestGitCommitAndBranch:
             sha="abc12345",
             message="Test commit",
             author="Test User",
-            date=datetime.now()
+            date=datetime.now(),
         )
 
         assert commit.sha == "abc12345"
@@ -468,10 +487,7 @@ class TestGitCommitAndBranch:
 
     def test_git_branch_creation(self):
         """Test GitBranch dataclass."""
-        branch = GitBranch(
-            name="feature/test",
-            last_commit_sha="abc12345"
-        )
+        branch = GitBranch(name="feature/test", last_commit_sha="abc12345")
 
         assert branch.name == "feature/test"
         assert branch.last_commit_sha == "abc12345"

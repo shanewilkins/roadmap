@@ -4,12 +4,9 @@ Integration tests for the roadmap CLI tool.
 These tests verify end-to-end workflows and cross-module integration.
 """
 
-import json
 import os
-import shutil
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import yaml
@@ -17,8 +14,7 @@ from click.testing import CliRunner
 
 from roadmap.cli import main
 from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Milestone, Priority, Status
-from roadmap.sync import SyncManager
+from roadmap.models import Priority, Status
 
 pytestmark = pytest.mark.filesystem
 
@@ -59,7 +55,16 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Step 1: Initialize roadmap
-        result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Lifecycle"])
+        result = runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "Test Lifecycle",
+            ],
+        )
         assert result.exit_code == 0
         assert "Roadmap CLI Initialization" in result.output
         assert os.path.exists(".roadmap")
@@ -161,7 +166,16 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Initialize and create some data
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
         runner.invoke(main, ["issue", "create", "Test issue"])
         runner.invoke(main, ["milestone", "create", "Test milestone"])
 
@@ -193,7 +207,16 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Initialize roadmap
-        result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        result = runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
         assert result.exit_code == 0
 
         # Check config file exists and has correct structure
@@ -221,7 +244,16 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Setup
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
 
         # Create issues
         result = runner.invoke(main, ["issue", "create", "Issue 1"])
@@ -315,7 +347,16 @@ class TestEndToEndWorkflows:
         assert "Roadmap not initialized" in result.output
 
         # Initialize and test invalid operations
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
 
         # Try to update non-existent issue
         result = runner.invoke(
@@ -344,7 +385,16 @@ class TestSyncIntegration:
         runner = CliRunner()
 
         # Initialize roadmap
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
 
         # Test sync setup
         with patch("roadmap.cli.sync.SyncManager") as mock_sync_manager_class:
@@ -379,7 +429,16 @@ class TestSyncIntegration:
         runner = CliRunner()
 
         # Setup
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
 
         with patch("roadmap.cli.sync.SyncManager") as mock_sync_manager_class:
             mock_sync_manager = Mock()
@@ -421,7 +480,16 @@ class TestCrossModuleIntegration:
         runner = CliRunner()
 
         # Initialize and create data
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
         runner.invoke(main, ["issue", "create", "Test issue"])
 
         # Verify core can read what was created
@@ -442,7 +510,16 @@ class TestCrossModuleIntegration:
         runner = CliRunner()
 
         # Create data through CLI
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
         result = runner.invoke(
             main, ["issue", "create", "CLI Issue", "--priority", "high"]
         )
@@ -479,7 +556,16 @@ class TestPerformanceAndStress:
         runner = CliRunner()
 
         # Initialize
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
 
         # Create many issues and milestones
         num_issues = 50
@@ -551,7 +637,16 @@ class TestPerformanceAndStress:
         runner = CliRunner()
 
         # Initialize
-        runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+        runner.invoke(
+            main,
+            [
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "test-project",
+            ],
+        )
 
         # Simulate concurrent operations by creating multiple core instances
         cores = [RoadmapCore() for _ in range(3)]

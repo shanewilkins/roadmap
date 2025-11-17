@@ -50,10 +50,10 @@ Currently, users work directly on issues but must manually track and update mile
 
 ### Progress Flow Hierarchy
 ```
-Issues (individual work) 
+Issues (individual work)
     ↓ automatic aggregation
 Milestones (feature/release groupings)
-    ↓ automatic aggregation  
+    ↓ automatic aggregation
 Projects (top-level initiatives)
     ↓ automatic reporting
 Project Portfolio Dashboard
@@ -75,14 +75,14 @@ Project Portfolio Dashboard
 # Milestone progress based on assigned issues
 def calculate_milestone_progress(milestone_id):
     issues = get_issues_for_milestone(milestone_id)
-    
+
     if not issues:
         return 0.0
-    
+
     # Option 1: Simple count-based
     completed = len([i for i in issues if i.status == 'done'])
     return (completed / len(issues)) * 100
-    
+
     # Option 2: Effort-weighted (preferred)
     total_effort = sum(i.estimated_hours or 1 for i in issues)
     completed_effort = sum(i.estimated_hours or 1 for i in issues if i.status == 'done')
@@ -94,7 +94,7 @@ def calculate_milestone_progress(milestone_id):
 # Automatic milestone status updates
 def update_milestone_status(milestone_id):
     progress = calculate_milestone_progress(milestone_id)
-    
+
     if progress >= 100.0:
         milestone.status = 'completed'
         milestone.actual_end_date = datetime.now()
@@ -113,14 +113,14 @@ def update_milestone_status(milestone_id):
 # Project progress from milestone completion
 def calculate_project_progress(project_id):
     milestones = get_milestones_for_project(project_id)
-    
+
     if not milestones:
         return 0.0
-    
+
     # Weight by milestone importance/effort
     total_weight = sum(m.estimated_effort or 1 for m in milestones)
     completed_weight = sum(m.estimated_effort or 1 for m in milestones if m.status == 'completed')
-    
+
     return (completed_weight / total_weight) * 100
 ```
 
@@ -130,17 +130,17 @@ def calculate_project_progress(project_id):
 def update_project_timeline(project_id):
     project = get_project(project_id)
     milestones = get_milestones_for_project(project_id)
-    
+
     # Calculate velocity from completed work
     velocity = calculate_completion_velocity(milestones)
-    
+
     # Project remaining work based on incomplete milestones
     remaining_effort = sum(m.estimated_effort for m in milestones if m.status != 'completed')
-    
+
     # Update projected end date
     projected_completion = calculate_projected_date(velocity, remaining_effort)
     project.projected_end_date = projected_completion
-    
+
     # Risk assessment
     if projected_completion > project.target_end_date:
         project.risk_level = 'high'
@@ -159,8 +159,8 @@ def on_issue_updated(issue_id, changes):
         milestones = get_milestones_containing_issue(issue_id)
         for milestone in milestones:
             update_milestone_progress(milestone.id)
-            
-            # Find affected projects  
+
+            # Find affected projects
             projects = get_projects_containing_milestone(milestone.id)
             for project in projects:
                 update_project_progress(project.id)
@@ -171,7 +171,7 @@ def on_issue_updated(issue_id, changes):
 ```bash
 # CLI commands for manual recalculation
 roadmap recalculate milestone MILESTONE_ID
-roadmap recalculate project PROJECT_ID  
+roadmap recalculate project PROJECT_ID
 roadmap recalculate all
 
 # Status reporting
@@ -241,8 +241,8 @@ milestone:
   last_progress_update: datetime
   completion_velocity: float  # Issues/week
   risk_level: enum  # low, medium, high
-  
-# Enhanced project fields  
+
+# Enhanced project fields
 project:
   calculated_progress: float  # Auto-calculated from milestones
   projected_end_date: date    # Auto-calculated
@@ -258,7 +258,7 @@ roadmap config set progress.calculation_method "effort_weighted"  # or "count_ba
 roadmap config set progress.auto_update true
 roadmap config set progress.velocity_window_weeks 4
 
-# Timeline projection settings  
+# Timeline projection settings
 roadmap config set timeline.auto_adjust true
 roadmap config set timeline.risk_threshold_days 7
 roadmap config set timeline.velocity_smoothing 0.3
@@ -277,7 +277,7 @@ roadmap config set timeline.velocity_smoothing 0.3
 **I want** project progress to automatically update when team members complete issues
 **So that** I have real-time visibility into project health without manual tracking
 
-### Story 2: Team Lead - Milestone Tracking  
+### Story 2: Team Lead - Milestone Tracking
 **As a** team lead
 **I want** milestone progress to reflect the actual completion of assigned issues
 **So that** I can accurately communicate milestone status to stakeholders

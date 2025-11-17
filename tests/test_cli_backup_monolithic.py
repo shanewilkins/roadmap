@@ -345,8 +345,6 @@ def test_issue_delete_without_roadmap(temp_dir):
 # Issue Commands Tests
 
 
-
-
 def test_milestone_help(cli_runner):
     """Test milestone command help."""
     result = cli_runner.invoke(main, ["milestone", "--help"])

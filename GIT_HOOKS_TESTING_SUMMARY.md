@@ -7,7 +7,7 @@ Successfully created a comprehensive test suite for git hooks functionality with
 
 ### Final Combined Coverage: **68%**
 - **308** total statements in `roadmap.git_hooks.py`
-- **99** missed statements 
+- **99** missed statements
 - **209** covered statements
 
 ### Test Suite Components:

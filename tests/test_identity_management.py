@@ -11,12 +11,12 @@ This test suite covers the comprehensive identity management features:
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
 
-from roadmap.identity import IdentityManager, TeamConfig, UserProfile
+from roadmap.identity import IdentityManager, UserProfile
 
 
 @pytest.fixture
@@ -32,38 +32,38 @@ def temp_roadmap():
 def sample_team_config():
     """Sample team configuration for testing."""
     return {
-        'config': {
-            'validation_mode': 'hybrid',
-            'auto_normalize_assignees': True,
-            'require_team_membership': True,
-            'allow_identity_learning': True,
+        "config": {
+            "validation_mode": "hybrid",
+            "auto_normalize_assignees": True,
+            "require_team_membership": True,
+            "allow_identity_learning": True,
         },
-        'team_members': {
-            'shane.wilkins': {
-                'display_name': 'Shane Wilkins',
-                'email': 'shane@company.com',
-                'github_username': 'shanewilkins',
-                'aliases': ['shane', 'Shane', 'Shane Wilkins', 's.wilkins'],
-                'roles': ['admin', 'developer'],
-                'active': True
+        "team_members": {
+            "shane.wilkins": {
+                "display_name": "Shane Wilkins",
+                "email": "shane@company.com",
+                "github_username": "shanewilkins",
+                "aliases": ["shane", "Shane", "Shane Wilkins", "s.wilkins"],
+                "roles": ["admin", "developer"],
+                "active": True,
             },
-            'alice.cooper': {
-                'display_name': 'Alice Cooper',
-                'email': 'alice@company.com',
-                'github_username': 'alicecooper',
-                'aliases': ['alice', 'Alice', 'a.cooper'],
-                'roles': ['developer'],
-                'active': True
+            "alice.cooper": {
+                "display_name": "Alice Cooper",
+                "email": "alice@company.com",
+                "github_username": "alicecooper",
+                "aliases": ["alice", "Alice", "a.cooper"],
+                "roles": ["developer"],
+                "active": True,
             },
-            'bob.inactive': {
-                'display_name': 'Bob Inactive',
-                'email': 'bob@company.com',
-                'github_username': 'bobuser',
-                'aliases': ['bob', 'Bob'],
-                'roles': ['developer'],
-                'active': False
-            }
-        }
+            "bob.inactive": {
+                "display_name": "Bob Inactive",
+                "email": "bob@company.com",
+                "github_username": "bobuser",
+                "aliases": ["bob", "Bob"],
+                "roles": ["developer"],
+                "active": False,
+            },
+        },
     }
 
 
@@ -71,7 +71,7 @@ def sample_team_config():
 def identity_manager_with_team(temp_roadmap, sample_team_config):
     """Create an identity manager with sample team configuration."""
     team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-    with open(team_config_path, 'w') as f:
+    with open(team_config_path, "w") as f:
         yaml.dump(sample_team_config, f)
 
     return IdentityManager(temp_roadmap)
@@ -88,7 +88,7 @@ class TestUserProfile:
             email="shane@company.com",
             github_username="shanewilkins",
             aliases={"shane", "Shane", "s.wilkins"},
-            roles={"admin", "developer"}
+            roles={"admin", "developer"},
         )
 
         assert profile.canonical_id == "shane.wilkins"
@@ -106,7 +106,7 @@ class TestUserProfile:
             display_name="Shane Wilkins",
             email="shane@company.com",
             github_username="shanewilkins",
-            aliases={"shane", "Shane", "s.wilkins"}
+            aliases={"shane", "Shane", "s.wilkins"},
         )
 
         # Test exact matches (case-insensitive)
@@ -175,7 +175,7 @@ class TestIdentityManager:
             canonical_id="test.user",
             display_name="Test User",
             github_username="testuser",
-            aliases=["test", "tuser"]
+            aliases=["test", "tuser"],
         )
 
         # Save and reload
@@ -214,7 +214,9 @@ class TestAssigneeResolution:
         assert profile is not None
         assert profile.display_name == "Shane Wilkins"
 
-    def test_resolve_known_assignee_by_github_username(self, identity_manager_with_team):
+    def test_resolve_known_assignee_by_github_username(
+        self, identity_manager_with_team
+    ):
         """Test resolving by GitHub username."""
         manager = identity_manager_with_team
 
@@ -250,9 +252,9 @@ class TestValidationModes:
 
     def test_strict_validation_mode(self, temp_roadmap, sample_team_config):
         """Test strict validation mode."""
-        sample_team_config['config']['validation_mode'] = 'strict'
+        sample_team_config["config"]["validation_mode"] = "strict"
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(sample_team_config, f)
 
         manager = IdentityManager(temp_roadmap)
@@ -269,10 +271,10 @@ class TestValidationModes:
 
     def test_relaxed_validation_mode(self, temp_roadmap, sample_team_config):
         """Test relaxed validation mode."""
-        sample_team_config['config']['validation_mode'] = 'relaxed'
-        sample_team_config['config']['allow_identity_learning'] = True
+        sample_team_config["config"]["validation_mode"] = "relaxed"
+        sample_team_config["config"]["allow_identity_learning"] = True
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(sample_team_config, f)
 
         manager = IdentityManager(temp_roadmap)
@@ -287,12 +289,14 @@ class TestValidationModes:
         assert result == "newuser"
         assert profile is None
 
-    def test_relaxed_validation_with_suggestions(self, temp_roadmap, sample_team_config):
+    def test_relaxed_validation_with_suggestions(
+        self, temp_roadmap, sample_team_config
+    ):
         """Test relaxed validation with name suggestions."""
-        sample_team_config['config']['validation_mode'] = 'relaxed'
-        sample_team_config['config']['allow_identity_learning'] = False
+        sample_team_config["config"]["validation_mode"] = "relaxed"
+        sample_team_config["config"]["allow_identity_learning"] = False
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(sample_team_config, f)
 
         manager = IdentityManager(temp_roadmap)
@@ -305,12 +309,9 @@ class TestValidationModes:
 
     def test_github_validation_mode(self, temp_roadmap):
         """Test GitHub-only validation mode."""
-        config = {
-            'config': {'validation_mode': 'github-only'},
-            'team_members': {}
-        }
+        config = {"config": {"validation_mode": "github-only"}, "team_members": {}}
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(config, f)
 
         manager = IdentityManager(temp_roadmap)
@@ -327,12 +328,9 @@ class TestValidationModes:
 
     def test_local_validation_mode(self, temp_roadmap):
         """Test local-only validation mode."""
-        config = {
-            'config': {'validation_mode': 'local-only'},
-            'team_members': {}
-        }
+        config = {"config": {"validation_mode": "local-only"}, "team_members": {}}
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(config, f)
 
         manager = IdentityManager(temp_roadmap)
@@ -380,9 +378,15 @@ class TestIdentityLearning:
         manager = IdentityManager(temp_roadmap)
 
         assignee_names = [
-            "shane", "Shane", "Shane Wilkins", "shane@company.com",
-            "alice", "Alice", "a.cooper",
-            "bob", "different.user"
+            "shane",
+            "Shane",
+            "Shane Wilkins",
+            "shane@company.com",
+            "alice",
+            "Alice",
+            "a.cooper",
+            "bob",
+            "different.user",
         ]
 
         suggestions = manager.suggest_identity_mappings(assignee_names)
@@ -460,7 +464,7 @@ class TestTeamManagement:
             display_name="New User",
             github_username="newuser",
             email="new@company.com",
-            aliases=["new", "nu"]
+            aliases=["new", "nu"],
         )
 
         assert profile.canonical_id == "new.user"
@@ -480,18 +484,18 @@ class TestTeamManagement:
 
         # Test known user
         context = manager.get_user_dashboard_context("shane")
-        assert context['canonical_id'] == "shane.wilkins"
-        assert context['display_name'] == "Shane Wilkins"
-        assert context['github_username'] == "shanewilkins"
-        assert "admin" in context['roles']
-        assert "shane" in context['aliases']
+        assert context["canonical_id"] == "shane.wilkins"
+        assert context["display_name"] == "Shane Wilkins"
+        assert context["github_username"] == "shanewilkins"
+        assert "admin" in context["roles"]
+        assert "shane" in context["aliases"]
 
         # Test unknown user
         context = manager.get_user_dashboard_context("unknown")
-        assert context['canonical_id'] == "unknown"
-        assert context['display_name'] == "unknown"
-        assert context['github_username'] is None
-        assert len(context['roles']) == 0
+        assert context["canonical_id"] == "unknown"
+        assert context["display_name"] == "unknown"
+        assert context["github_username"] is None
+        assert len(context["roles"]) == 0
 
 
 class TestIntegrationScenarios:
@@ -501,24 +505,24 @@ class TestIntegrationScenarios:
         """Test scenario: Git project with GitHub integration."""
         # Configure for GitHub mode
         config = {
-            'config': {
-                'validation_mode': 'hybrid',
-                'require_team_membership': True,
-                'github_org': 'mycompany'
+            "config": {
+                "validation_mode": "hybrid",
+                "require_team_membership": True,
+                "github_org": "mycompany",
             },
-            'team_members': {
-                'shane.wilkins': {
-                    'display_name': 'Shane Wilkins',
-                    'github_username': 'shanewilkins',
-                    'aliases': ['shane'],
-                    'roles': ['admin'],
-                    'active': True
+            "team_members": {
+                "shane.wilkins": {
+                    "display_name": "Shane Wilkins",
+                    "github_username": "shanewilkins",
+                    "aliases": ["shane"],
+                    "roles": ["admin"],
+                    "active": True,
                 }
-            }
+            },
         }
 
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(config, f)
 
         manager = IdentityManager(temp_roadmap)
@@ -533,15 +537,15 @@ class TestIntegrationScenarios:
         """Test scenario: Local project without GitHub."""
         # Configure for local-only mode
         config = {
-            'config': {
-                'validation_mode': 'local-only',
-                'require_team_membership': False
+            "config": {
+                "validation_mode": "local-only",
+                "require_team_membership": False,
             },
-            'team_members': {}
+            "team_members": {},
         }
 
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(config, f)
 
         manager = IdentityManager(temp_roadmap)
@@ -561,7 +565,7 @@ class TestIntegrationScenarios:
         manager.add_team_member(
             canonical_id="consultant.external",
             display_name="External Consultant",
-            aliases=["consultant", "ext"]
+            aliases=["consultant", "ext"],
         )
 
         # GitHub user should work
@@ -582,7 +586,7 @@ class TestErrorCases:
     def test_corrupted_team_config(self, temp_roadmap):
         """Test handling corrupted team configuration file."""
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             f.write("invalid: yaml: content: [")
 
         # Should not crash, should use defaults
@@ -593,19 +597,16 @@ class TestErrorCases:
     def test_permission_denied_team_config(self, temp_roadmap):
         """Test handling when team config cannot be read."""
         # This is hard to test cross-platform, so we'll mock it
-        with patch('builtins.open', side_effect=PermissionError("Permission denied")):
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             manager = IdentityManager(temp_roadmap)
             assert manager.config.validation_mode == "hybrid"
             assert len(manager.profiles) == 0
 
     def test_unknown_validation_mode(self, temp_roadmap):
         """Test handling unknown validation mode."""
-        config = {
-            'config': {'validation_mode': 'unknown-mode'},
-            'team_members': {}
-        }
+        config = {"config": {"validation_mode": "unknown-mode"}, "team_members": {}}
         team_config_path = temp_roadmap / ".roadmap" / "team.yaml"
-        with open(team_config_path, 'w') as f:
+        with open(team_config_path, "w") as f:
             yaml.dump(config, f)
 
         manager = IdentityManager(temp_roadmap)

@@ -213,7 +213,7 @@ roadmap sync test
 **Required Token Permissions:**
 ```
 ✅ repo (for private repositories)
-✅ public_repo (for public repositories)  
+✅ public_repo (for public repositories)
 ✅ write:issues (to create and update issues)
 ✅ read:org (for organization repositories)
 ```

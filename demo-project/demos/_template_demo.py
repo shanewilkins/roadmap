@@ -14,7 +14,6 @@ Features demonstrated:
     - Feature 3
 """
 
-import os
 import sys
 from pathlib import Path
 

@@ -11,7 +11,7 @@ Advanced predictive analytics engine with machine learning algorithms for intell
 ### Issue Estimation
 
 - **ML-powered time estimation** - Intelligent effort prediction
-- **Similarity analysis** - Compare issues for better estimates  
+- **Similarity analysis** - Compare issues for better estimates
 - **Developer factors** - Account for team member expertise
 - **Confidence scoring** - Reliability indicators for estimates
 
@@ -50,7 +50,7 @@ roadmap risk-assessment --project myproject
 
 > **⚠️ DOCUMENTATION STUB** - Class documentation and examples needed
 
-### RiskPredictor  
+### RiskPredictor
 
 > **⚠️ DOCUMENTATION STUB** - Risk analysis patterns and usage needed
 
@@ -79,7 +79,7 @@ roadmap risk-assessment --project myproject
 ## Related Features
 
 - [Enhanced Analytics](ENHANCED_ANALYTICS.md)
-- [Data Analytics](DATA_ANALYTICS.md) 
+- [Data Analytics](DATA_ANALYTICS.md)
 - [Visualization Features](VISUALIZATION_FEATURES.md)
 
 ---

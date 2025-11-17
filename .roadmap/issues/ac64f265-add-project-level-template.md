@@ -34,7 +34,7 @@ Implement a comprehensive project-level template system that allows users to cre
 ## Acceptance Criteria
 
 - [x] Create project template file with comprehensive metadata structure
-- [x] Update core module to generate project template during initialization 
+- [x] Update core module to generate project template during initialization
 - [x] Add CLI command group for project management
 - [x] Implement project creation command with full option support
 - [x] Support multiple milestones per project
@@ -71,7 +71,7 @@ Implement a comprehensive project-level template system that allows users to cre
 # Basic project creation
 roadmap project create "My Project"
 
-# Full project with all options  
+# Full project with all options
 roadmap project create "Advanced Project" \
   --description "Complex project with milestones" \
   --owner "johnsmith" \

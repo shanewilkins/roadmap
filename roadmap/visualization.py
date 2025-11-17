@@ -163,21 +163,21 @@ class ChartGenerator:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Status Distribution Chart - Roadmap CLI</title>
     <style>
-        body {{ 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            background-color: #f8f9fa; 
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
         }}
-        .chart-container {{ 
-            background: white; 
-            border-radius: 8px; 
-            padding: 20px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        .chart-container {{
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }}
-        .chart-title {{ 
-            color: #333; 
-            margin-bottom: 20px; 
-            text-align: center; 
+        .chart-title {{
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
         }}
     </style>
 </head>

@@ -21,7 +21,7 @@ This document outlines the three key improvements made to our testing infrastruc
 # Common test infrastructure
 @pytest.fixture
 def mock_core()              # Standardized RoadmapCore mock
-def mock_config()            # Standardized RoadmapConfig mock  
+def mock_config()            # Standardized RoadmapConfig mock
 def mock_issue()             # Standardized Issue mock
 def mock_milestone()         # Standardized Milestone mock
 def temp_dir()               # Temporary directory with cleanup
@@ -58,7 +58,7 @@ def github_api_response()    # GitHub API response factory
 class TestDataFactory:
     @staticmethod
     def create_mock_core(**kwargs)
-    def create_mock_issue(**kwargs)  
+    def create_mock_issue(**kwargs)
     def create_mock_milestone(**kwargs)
     def create_mock_config(**kwargs)
     def create_github_webhook_payload(event_type, **kwargs)
@@ -71,13 +71,13 @@ class TestDataFactory:
 ```python
 def test_webhook_payload_handling(github_webhook_payload, webhook_signature_creator):
     # Generate realistic GitHub webhook data
-    payload = github_webhook_payload('issues', 
+    payload = github_webhook_payload('issues',
                                    action='opened',
                                    issue={'number': 123, 'title': 'Bug Fix'})
-    
+
     # Create valid signature for testing
     signature = webhook_signature_creator(json.dumps(payload), 'secret')
-    
+
     # Test with realistic, consistent data
     response = process_webhook(payload, signature)
     assert response.status_code == 200
@@ -126,7 +126,7 @@ def test_webhook_server(self):
         server = GitHubWebhookServer(core, github)
         # Test logic...
 
-# AFTER: Performance-optimized test  
+# AFTER: Performance-optimized test
 def test_webhook_server(lightweight_mock_core, patch_github_integration):
     # No real filesystem ops, minimal mocking
     server = GitHubWebhookServer(lightweight_mock_core)
@@ -174,7 +174,7 @@ def test_webhook_server(lightweight_mock_core, patch_github_integration):
 With these testing infrastructure improvements in place, we're ready to:
 
 1. **Continue with enhanced_github_integration tests** using the new fixtures and factories
-2. **Apply performance optimizations** to other heavy test modules  
+2. **Apply performance optimizations** to other heavy test modules
 3. **Migrate existing test files** to use centralized fixtures (optional, as-needed)
 4. **Expand TestDataFactory** with additional factories as new test patterns emerge
 

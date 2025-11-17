@@ -5,15 +5,10 @@ Tests the core progress calculation engine for milestones and projects
 as specified in issue 515a927c.
 """
 
-from datetime import datetime
-
-import pytest
-
 from roadmap.models import (
     Issue,
     Milestone,
     MilestoneStatus,
-    Priority,
     Project,
     ProjectStatus,
     Status,
@@ -30,9 +25,18 @@ class TestProgressCalculationEngine:
 
         # Create test issues
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.DONE, milestone="test-milestone"),
-            Issue(id="2", title="Issue 2", status=Status.IN_PROGRESS, milestone="test-milestone"),
-            Issue(id="3", title="Issue 3", status=Status.TODO, milestone="test-milestone"),
+            Issue(
+                id="1", title="Issue 1", status=Status.DONE, milestone="test-milestone"
+            ),
+            Issue(
+                id="2",
+                title="Issue 2",
+                status=Status.IN_PROGRESS,
+                milestone="test-milestone",
+            ),
+            Issue(
+                id="3", title="Issue 3", status=Status.TODO, milestone="test-milestone"
+            ),
         ]
 
         # Create test milestone
@@ -51,9 +55,27 @@ class TestProgressCalculationEngine:
 
         # Create test issues with different effort levels
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.DONE, milestone="test-milestone", estimated_hours=8.0),
-            Issue(id="2", title="Issue 2", status=Status.IN_PROGRESS, milestone="test-milestone", estimated_hours=4.0),
-            Issue(id="3", title="Issue 3", status=Status.TODO, milestone="test-milestone", estimated_hours=4.0),
+            Issue(
+                id="1",
+                title="Issue 1",
+                status=Status.DONE,
+                milestone="test-milestone",
+                estimated_hours=8.0,
+            ),
+            Issue(
+                id="2",
+                title="Issue 2",
+                status=Status.IN_PROGRESS,
+                milestone="test-milestone",
+                estimated_hours=4.0,
+            ),
+            Issue(
+                id="3",
+                title="Issue 3",
+                status=Status.TODO,
+                milestone="test-milestone",
+                estimated_hours=4.0,
+            ),
         ]
 
         # Create test milestone
@@ -71,12 +93,26 @@ class TestProgressCalculationEngine:
 
         # Create test issues - all complete
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.DONE, milestone="complete-milestone", estimated_hours=4.0),
-            Issue(id="2", title="Issue 2", status=Status.DONE, milestone="complete-milestone", estimated_hours=4.0),
+            Issue(
+                id="1",
+                title="Issue 1",
+                status=Status.DONE,
+                milestone="complete-milestone",
+                estimated_hours=4.0,
+            ),
+            Issue(
+                id="2",
+                title="Issue 2",
+                status=Status.DONE,
+                milestone="complete-milestone",
+                estimated_hours=4.0,
+            ),
         ]
 
         # Create test milestone
-        milestone = Milestone(name="complete-milestone", description="Complete milestone")
+        milestone = Milestone(
+            name="complete-milestone", description="Complete milestone"
+        )
 
         # Update milestone progress
         engine.update_milestone_progress(milestone, issues)
@@ -92,10 +128,34 @@ class TestProgressCalculationEngine:
 
         # Create test issues
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.DONE, milestone="m1", estimated_hours=8.0),
-            Issue(id="2", title="Issue 2", status=Status.TODO, milestone="m1", estimated_hours=8.0),
-            Issue(id="3", title="Issue 3", status=Status.DONE, milestone="m2", estimated_hours=4.0),
-            Issue(id="4", title="Issue 4", status=Status.DONE, milestone="m2", estimated_hours=4.0),
+            Issue(
+                id="1",
+                title="Issue 1",
+                status=Status.DONE,
+                milestone="m1",
+                estimated_hours=8.0,
+            ),
+            Issue(
+                id="2",
+                title="Issue 2",
+                status=Status.TODO,
+                milestone="m1",
+                estimated_hours=8.0,
+            ),
+            Issue(
+                id="3",
+                title="Issue 3",
+                status=Status.DONE,
+                milestone="m2",
+                estimated_hours=4.0,
+            ),
+            Issue(
+                id="4",
+                title="Issue 4",
+                status=Status.DONE,
+                milestone="m2",
+                estimated_hours=4.0,
+            ),
         ]
 
         # Create test milestones
@@ -113,7 +173,7 @@ class TestProgressCalculationEngine:
             id="test-project",
             name="Test Project",
             description="Test project",
-            milestones=["m1", "m2"]
+            milestones=["m1", "m2"],
         )
 
         # Update project progress
@@ -129,8 +189,12 @@ class TestProgressCalculationEngine:
 
         # Create completed milestones
         milestones = [
-            Milestone(name="m1", description="Milestone 1", status=MilestoneStatus.CLOSED),
-            Milestone(name="m2", description="Milestone 2", status=MilestoneStatus.CLOSED),
+            Milestone(
+                name="m1", description="Milestone 1", status=MilestoneStatus.CLOSED
+            ),
+            Milestone(
+                name="m2", description="Milestone 2", status=MilestoneStatus.CLOSED
+            ),
         ]
 
         # Mock the milestones to have 100% progress
@@ -142,7 +206,7 @@ class TestProgressCalculationEngine:
             id="complete-project",
             name="Complete Project",
             description="Complete project",
-            milestones=["m1", "m2"]
+            milestones=["m1", "m2"],
         )
 
         # Update project progress
@@ -158,9 +222,17 @@ class TestProgressCalculationEngine:
         engine = ProgressCalculationEngine(method="effort_weighted")
 
         # Create test data
-        issue = Issue(id="1", title="Test Issue", status=Status.DONE, milestone="test-milestone", estimated_hours=8.0)
+        issue = Issue(
+            id="1",
+            title="Test Issue",
+            status=Status.DONE,
+            milestone="test-milestone",
+            estimated_hours=8.0,
+        )
         milestone = Milestone(name="test-milestone", description="Test milestone")
-        project = Project(id="test-project", name="Test Project", milestones=["test-milestone"])
+        project = Project(
+            id="test-project", name="Test Project", milestones=["test-milestone"]
+        )
 
         all_issues = [issue]
         all_milestones = [milestone]
@@ -183,7 +255,13 @@ class TestProgressCalculationEngine:
 
         # Create test data
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.DONE, milestone="m1", estimated_hours=4.0),
+            Issue(
+                id="1",
+                title="Issue 1",
+                status=Status.DONE,
+                milestone="m1",
+                estimated_hours=4.0,
+            ),
         ]
         milestones = [
             Milestone(name="m1", description="Milestone 1"),
@@ -205,8 +283,21 @@ class TestProgressCalculationEngine:
 
         # Create test issues with progress percentages
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.DONE, milestone="test-milestone", estimated_hours=4.0),
-            Issue(id="2", title="Issue 2", status=Status.IN_PROGRESS, milestone="test-milestone", estimated_hours=4.0, progress_percentage=75.0),
+            Issue(
+                id="1",
+                title="Issue 1",
+                status=Status.DONE,
+                milestone="test-milestone",
+                estimated_hours=4.0,
+            ),
+            Issue(
+                id="2",
+                title="Issue 2",
+                status=Status.IN_PROGRESS,
+                milestone="test-milestone",
+                estimated_hours=4.0,
+                progress_percentage=75.0,
+            ),
         ]
 
         milestone = Milestone(name="test-milestone", description="Test milestone")
@@ -229,7 +320,12 @@ class TestEventSystem:
         event_system = ProgressEventSystem(engine)
 
         # Create test data
-        issue = Issue(id="1", title="Test Issue", status=Status.IN_PROGRESS, milestone="test-milestone")
+        issue = Issue(
+            id="1",
+            title="Test Issue",
+            status=Status.IN_PROGRESS,
+            milestone="test-milestone",
+        )
         milestone = Milestone(name="test-milestone", description="Test milestone")
 
         all_issues = [issue]
@@ -240,7 +336,9 @@ class TestEventSystem:
         changes = {"status": Status.DONE}
 
         # Handle the update event
-        results = event_system.on_issue_updated(issue, changes, all_issues, all_milestones, all_projects)
+        results = event_system.on_issue_updated(
+            issue, changes, all_issues, all_milestones, all_projects
+        )
 
         # Should return information about updates
         assert "milestones_updated" in results
@@ -254,7 +352,9 @@ class TestEventSystem:
         event_system = ProgressEventSystem(engine)
 
         # Create test data
-        issue = Issue(id="1", title="Test Issue", status=Status.TODO, milestone="test-milestone")
+        issue = Issue(
+            id="1", title="Test Issue", status=Status.TODO, milestone="test-milestone"
+        )
 
         # Simulate non-progress affecting change (title change)
         changes = {"title": "Updated Title"}

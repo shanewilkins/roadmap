@@ -77,7 +77,7 @@ roadmap status
 This guide covers five main workflow patterns for different use cases:
 
 - **Workflow A: Solo Developer** - Individual project management and personal productivity
-- **Workflow B: Team Development** - Collaborative development with team coordination  
+- **Workflow B: Team Development** - Collaborative development with team coordination
 - **Workflow C: Large Project Management** - Enterprise-scale projects with hundreds of issues
 - **Workflow D: Open Source Project** - Community-driven development with contributor management
 - **Workflow E: Time Estimation and Project Planning** - Sprint planning with time tracking and workload management
@@ -381,7 +381,7 @@ git checkout -b feature/user-management-system
 
 # Link multiple related issues
 roadmap git-link abc12345  # User authentication
-roadmap git-link def67890  # User profiles  
+roadmap git-link def67890  # User profiles
 roadmap git-link ghi13579  # User permissions
 
 # Work with specific issue references in commits

@@ -57,7 +57,7 @@ roadmap milestone status v090              # Relationship traversal
 
 ### Core Design Principles
 1. **Files remain source of truth** - Maintains git integration
-2. **SQLite for fast queries** - Indexed metadata for performance  
+2. **SQLite for fast queries** - Indexed metadata for performance
 3. **Lazy loading content** - Only load full issue when needed
 4. **Automatic sync** - Keep file and database in sync
 5. **Graceful degradation** - Falls back to file-only if DB issues
@@ -70,15 +70,15 @@ class HybridStorage:
         self.file_store = FileStore()           # Current implementation
         self.index_db = SQLiteIndex()           # New performance layer
         self.cache = InMemoryCache()            # Fast access cache
-        
+
     def list_issues(self, filters):
         # Fast: Query SQLite index
         return self.index_db.query(filters)
-        
+
     def get_issue(self, issue_id):
         # Full content: Always from file
         return self.file_store.load(issue_id)
-        
+
     def update_issue(self, issue_id, data):
         # Write to file, sync to index
         self.file_store.save(issue_id, data)
@@ -138,25 +138,25 @@ class SQLiteIndex:
         self.db_path = db_path
         self.conn = sqlite3.connect(db_path)
         self.init_schema()
-        
+
     def sync_from_files(self):
         """Full rebuild from all files"""
         for file_path in glob('.roadmap/issues/*.md'):
             self.update_from_file(file_path)
-            
+
     def update_from_file(self, file_path):
         """Update single file in index"""
         metadata = parse_yaml_header(file_path)
         mtime = os.path.getmtime(file_path)
-        
+
         self.conn.execute("""
-            INSERT OR REPLACE INTO issues 
-            (id, title, status, priority, assignee, milestone, 
-             estimated_hours, progress_percentage, created_date, 
+            INSERT OR REPLACE INTO issues
+            (id, title, status, priority, assignee, milestone,
+             estimated_hours, progress_percentage, created_date,
              updated_date, file_path, file_mtime)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (metadata['id'], metadata['title'], ...))
-        
+
     def is_stale(self, file_path):
         """Check if index needs update"""
         current_mtime = os.path.getmtime(file_path)
@@ -172,12 +172,12 @@ class InMemoryCache:
     def __init__(self, max_size=1000):
         self.metadata_cache = LRUCache(max_size)
         self.content_cache = LRUCache(max_size // 4)  # Smaller for full content
-        
+
     @lru_cache(maxsize=1000)
     def get_issue_metadata(self, issue_id, file_mtime):
         """Cache metadata keyed by file modification time"""
         return self.load_metadata_from_file(issue_id)
-        
+
     def invalidate_issue(self, issue_id):
         """Clear cache when file changes"""
         # Clear all cached versions of this issue
@@ -189,14 +189,14 @@ class FileWatcher:
     def __init__(self, storage):
         self.storage = storage
         self.observer = Observer()
-        
+
     def start_watching(self):
         """Watch .roadmap directory for changes"""
         handler = FileSystemEventHandler()
         handler.on_modified = self.on_file_changed
         self.observer.schedule(handler, '.roadmap', recursive=True)
         self.observer.start()
-        
+
     def on_file_changed(self, event):
         """Update index when files change"""
         if event.src_path.endswith('.md'):
@@ -213,19 +213,19 @@ class LazyIssue:
         self._metadata = metadata
         self._file_path = file_path
         self._content = None
-        
+
     @property
     def content(self):
         """Load full content only when accessed"""
         if self._content is None:
             self._content = load_full_issue(self._file_path)
         return self._content
-        
+
     # Fast access to indexed fields
     @property
     def status(self):
         return self._metadata['status']
-        
+
     @property
     def assignee(self):
         return self._metadata['assignee']
@@ -242,7 +242,7 @@ class BatchOperations:
                 self.storage.file_store.update_metadata(issue_id, {'status': new_status})
                 # Update index
                 self.storage.index_db.update_field(issue_id, 'status', new_status)
-                
+
     def bulk_assign_milestone(self, issue_ids, milestone):
         """Assign multiple issues to milestone"""
         # Similar batch processing
@@ -294,17 +294,17 @@ roadmap config set debug.profile_operations true
 def migrate_to_hybrid_storage():
     """One-time migration for existing installations"""
     print("🔄 Migrating to hybrid storage...")
-    
+
     # Create SQLite index
     index = SQLiteIndex()
     index.init_schema()
-    
+
     # Rebuild from all existing files
     index.sync_from_files()
-    
+
     # Update configuration
     config.set('storage.use_index', True)
-    
+
     print("✅ Migration complete!")
 ```
 
@@ -318,10 +318,10 @@ class PerformanceMonitor:
                 start = time.time()
                 result = func(*args, **kwargs)
                 duration = time.time() - start
-                
+
                 if duration > 1.0:  # Log slow operations
                     logger.warning(f"Slow operation: {operation_name} took {duration:.2f}s")
-                    
+
                 return result
             return wrapper
         return decorator

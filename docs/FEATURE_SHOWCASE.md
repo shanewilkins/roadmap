@@ -45,7 +45,7 @@ $ roadmap visualize status --milestone "v1.0" --chart-type bar --format png
 
 **Output Example**: Visual breakdown showing:
 - 40% Done (4 issues)
-- 30% In Progress (3 issues) 
+- 30% In Progress (3 issues)
 - 20% Todo (2 issues)
 - 10% Blocked (1 issue)
 
@@ -667,7 +667,7 @@ performance:
     workers: 16
     batch_size: 100
     cache_ttl: 300
-  
+
 validation:
   strict_mode: true
   auto_backup: true
@@ -692,12 +692,12 @@ custom_fields:
     min: 0
     max: 999
     default: null
-  
+
   complexity:
     type: enum
     values: ["simple", "moderate", "complex", "epic"]
     default: "moderate"
-  
+
   business_value:
     type: enum
     values: ["low", "medium", "high", "critical"]

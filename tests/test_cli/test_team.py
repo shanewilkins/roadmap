@@ -1,8 +1,5 @@
 """Tests for team-related CLI commands (Object-Verb pattern)."""
 
-from unittest.mock import Mock, patch
-
-import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
@@ -26,7 +23,9 @@ def test_team_forecast_capacity_command(initialized_roadmap):
 def test_team_forecast_capacity_with_options(initialized_roadmap):
     """Test team forecast-capacity with options."""
     runner = CliRunner()
-    result = runner.invoke(main, ["team", "forecast-capacity", "--days", "14", "--assignee", "test-user"])
+    result = runner.invoke(
+        main, ["team", "forecast-capacity", "--days", "14", "--assignee", "test-user"]
+    )
     assert result.exit_code == 0
 
 

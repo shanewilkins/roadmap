@@ -24,7 +24,7 @@ def run_timed_command(command: str, description: str) -> float:
             cwd="/Users/shane/roadmap/demo-project",
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
 
         end_time = time.time()

@@ -8,9 +8,7 @@ using the main roadmap project. It demonstrates automated workflow features,
 branch management, and synchronization between Git activity and issue tracking.
 """
 
-import os
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -22,13 +20,20 @@ def run_command(command, description):
     print("-" * 50)
 
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd="/Users/shane/roadmap")
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd="/Users/shane/roadmap",
+        )
         if result.returncode == 0:
             print(result.stdout)
         else:
             print(f"❌ Command failed: {result.stderr}")
     except Exception as e:
         print(f"❌ Error running command: {e}")
+
 
 def main():
     print("🔗 Git Integration Demo")
@@ -58,7 +63,9 @@ def main():
 
     # Git status commands
     run_command("poetry run roadmap git-status", "Git repository and roadmap status")
-    run_command("poetry run roadmap git-link --status", "Show current branch-issue links")
+    run_command(
+        "poetry run roadmap git-link --status", "Show current branch-issue links"
+    )
 
     print()
     print("🌿 BRANCH MANAGEMENT")
@@ -111,7 +118,9 @@ def main():
     print("Set up comprehensive workflow automation:")
 
     # Workflow automation
-    run_command("poetry run roadmap workflow-automation-setup", "Setup workflow automation")
+    run_command(
+        "poetry run roadmap workflow-automation-setup", "Setup workflow automation"
+    )
 
     print()
     print("📊 GIT ANALYTICS")
@@ -133,14 +142,14 @@ def main():
     3. Work on feature and commit with issue reference
     4. Push and create PR: git push origin feature/ISSUE_ID-add-login-feature
     5. Auto-sync: Issue status updates based on PR status
-    
+
     🐛 BUG FIX WORKFLOW:
     1. Create bug issue: poetry run roadmap issue create "Fix auth bug" --type bug
     2. Create hotfix branch: poetry run roadmap git-branch ISSUE_ID
     3. Fix bug with descriptive commits
     4. Issue automatically moves to 'in-progress' when commits are made
     5. Issue closes when PR is merged
-    
+
     🔄 DAILY SYNC WORKFLOW:
     1. Morning: poetry run roadmap git-status
     2. Check activity: poetry run roadmap activity
@@ -174,7 +183,9 @@ def main():
     print("Try these Git integration commands:")
     print("  poetry run roadmap git-hooks-install")
     print("  poetry run roadmap workflow-automation-setup")
-    print("  poetry run roadmap git-branch $(poetry run roadmap issue list | head -2 | tail -1 | cut -d' ' -f1)")
+    print(
+        "  poetry run roadmap git-branch $(poetry run roadmap issue list | head -2 | tail -1 | cut -d' ' -f1)"
+    )
     print("  poetry run roadmap git-sync")
     print("  poetry run roadmap activity")
     print()
@@ -187,7 +198,10 @@ def main():
     print("  poetry run roadmap git-status --detailed")
     print()
 
-    print("📖 Learn more: https://roadmap-cli.readthedocs.io/en/latest/git-integration/")
+    print(
+        "📖 Learn more: https://roadmap-cli.readthedocs.io/en/latest/git-integration/"
+    )
+
 
 if __name__ == "__main__":
     main()

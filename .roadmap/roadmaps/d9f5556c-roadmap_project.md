@@ -28,7 +28,7 @@ Project description
 
 **Project Owner:** Shane M. Wilkins
 **Status:** ongoing
-**Timeline:**  → 
+**Timeline:**  →
 
 ## Objectives
 
@@ -44,8 +44,8 @@ Project description
 
 ## Timeline Tracking
 
-- **Start Date:** 
-- **Target End Date:** 
+- **Start Date:**
+- **Target End Date:**
 - **Actual End Date:** {{ actual_end_date }}
 - **Estimated Hours:** 0
 - **Actual Hours:** {{ actual_hours }}

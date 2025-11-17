@@ -1,10 +1,9 @@
 """Unit tests for closing remote orphaned GitHub issues."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
-from roadmap.models import RoadmapConfig
 from roadmap.sync import SyncManager
 
 

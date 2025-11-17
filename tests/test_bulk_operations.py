@@ -3,14 +3,11 @@
 import json
 import shutil
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
-import pytest
-
-from roadmap.bulk_operations import BulkOperationResult, BulkOperations, bulk_operations
-from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
-from roadmap.parser import IssueParser, MilestoneParser
+from roadmap.bulk_operations import BulkOperationResult, BulkOperations
+from roadmap.models import Priority, Status
+from roadmap.parser import IssueParser
 
 
 class TestBulkOperationResult:
@@ -80,6 +77,7 @@ class TestBulkOperations:
     def setup_method(self):
         """Set up test environment."""
         import os
+
         self.temp_dir = Path(tempfile.mkdtemp())
         self.old_cwd = os.getcwd()
         os.chdir(self.temp_dir)
@@ -117,6 +115,7 @@ Missing required fields"""
     def teardown_method(self):
         """Clean up test environment."""
         import os
+
         os.chdir(self.old_cwd)
         shutil.rmtree(self.temp_dir)
 
@@ -327,7 +326,6 @@ This is {name} description."""
             if success_result[
                 "status"
             ] == "success" and "field_updated" in success_result.get("data", {}):
-
                 file_path = Path(success_result["file"])
                 success, issue, error = IssueParser.parse_issue_file_safe(file_path)
 

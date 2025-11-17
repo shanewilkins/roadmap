@@ -3,22 +3,16 @@ Working comprehensive tests for sync module to improve coverage.
 """
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from roadmap.core import RoadmapCore
-from roadmap.credentials import CredentialManagerError
 from roadmap.github_client import GitHubAPIError
 from roadmap.models import (
-    Issue,
-    Milestone,
-    MilestoneStatus,
-    Priority,
     RoadmapConfig,
-    Status,
 )
 from roadmap.sync import SyncConflict, SyncConflictStrategy, SyncManager, SyncStrategy
 
@@ -35,11 +29,7 @@ def mock_core():
 def mock_config():
     """Mock RoadmapConfig for testing."""
     config = RoadmapConfig()
-    config.github = {
-        "owner": "test_owner",
-        "repo": "test_repo",
-        "token": "test_token"
-    }
+    config.github = {"owner": "test_owner", "repo": "test_repo", "token": "test_token"}
     return config
 
 
@@ -50,8 +40,7 @@ class TestSyncConflictEdgeCases:
         """Test get_newer_item with proper datetime objects."""
         # Test with datetime objects (as the function expects)
         conflict = SyncConflict(
-            "issue", "test-123", Mock(), {},
-            datetime(2024, 1, 1), datetime(2024, 1, 2)
+            "issue", "test-123", Mock(), {}, datetime(2024, 1, 1), datetime(2024, 1, 2)
         )
 
         # Should return "remote" since remote is newer
@@ -67,8 +56,7 @@ class TestSyncStrategyEdgeCases:
         strategy = SyncStrategy(SyncConflictStrategy.LOCAL_WINS)
 
         conflict = SyncConflict(
-            "issue", "test-123", Mock(), {},
-            datetime(2024, 1, 1), datetime(2024, 1, 2)
+            "issue", "test-123", Mock(), {}, datetime(2024, 1, 1), datetime(2024, 1, 2)
         )
 
         result = strategy.resolve_conflict(conflict)
@@ -79,8 +67,7 @@ class TestSyncStrategyEdgeCases:
         strategy = SyncStrategy(SyncConflictStrategy.REMOTE_WINS)
 
         conflict = SyncConflict(
-            "issue", "test-123", Mock(), {},
-            datetime(2024, 1, 2), datetime(2024, 1, 1)
+            "issue", "test-123", Mock(), {}, datetime(2024, 1, 2), datetime(2024, 1, 1)
         )
 
         result = strategy.resolve_conflict(conflict)
@@ -91,7 +78,9 @@ class TestSyncManagerCredentialHandling:
     """Test credential handling in SyncManager."""
 
     @patch("roadmap.sync.get_credential_manager")
-    def test_get_token_secure_credential_manager_unavailable(self, mock_credential_manager, mock_core):
+    def test_get_token_secure_credential_manager_unavailable(
+        self, mock_credential_manager, mock_core
+    ):
         """Test token retrieval when credential manager is unavailable."""
         config = RoadmapConfig()
         config.github = {"owner": "test", "repo": "test"}
@@ -108,7 +97,9 @@ class TestSyncManagerCredentialHandling:
             assert token == "env_token"
 
     @patch("roadmap.sync.get_credential_manager")
-    def test_store_token_secure_credential_manager_unavailable(self, mock_credential_manager, mock_core, mock_config):
+    def test_store_token_secure_credential_manager_unavailable(
+        self, mock_credential_manager, mock_core, mock_config
+    ):
         """Test token storage when credential manager is unavailable."""
         mock_manager = Mock()
         mock_manager.is_available.return_value = False
@@ -121,7 +112,9 @@ class TestSyncManagerCredentialHandling:
         assert "not available" in message.lower()
 
     @patch("roadmap.sync.get_credential_manager")
-    def test_delete_token_secure_credential_manager_unavailable(self, mock_credential_manager, mock_core, mock_config):
+    def test_delete_token_secure_credential_manager_unavailable(
+        self, mock_credential_manager, mock_core, mock_config
+    ):
         """Test token deletion when credential manager is unavailable."""
         mock_manager = Mock()
         mock_manager.is_available.return_value = False
@@ -158,8 +151,10 @@ class TestSyncManagerGitHubIntegration:
         config = RoadmapConfig()
         config.github = {"owner": "test_owner", "repo": "test_repo"}
 
-        with patch.dict(os.environ, {}, clear=True), \
-             patch("roadmap.sync.get_credential_manager") as mock_credential_manager:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("roadmap.sync.get_credential_manager") as mock_credential_manager,
+        ):
             # Mock credential manager to return None
             mock_manager = Mock()
             mock_manager.is_available.return_value = True
@@ -170,10 +165,14 @@ class TestSyncManagerGitHubIntegration:
             assert sync_manager.github_client is None
 
     @patch("roadmap.sync.GitHubClient")
-    def test_test_connection_authentication_failure(self, mock_client_class, mock_core, mock_config):
+    def test_test_connection_authentication_failure(
+        self, mock_client_class, mock_core, mock_config
+    ):
         """Test connection test with authentication failure."""
         mock_client = Mock()
-        mock_client.test_authentication.side_effect = GitHubAPIError("Authentication failed")
+        mock_client.test_authentication.side_effect = GitHubAPIError(
+            "Authentication failed"
+        )
         mock_client_class.return_value = mock_client
 
         with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token"}):
@@ -186,10 +185,14 @@ class TestSyncManagerGitHubIntegration:
     def test_init_github_client_import_error(self, mock_core, mock_config):
         """Test GitHub client initialization with import error."""
         # Simulate scenario where GitHubClient initialization fails
-        with patch("roadmap.sync.GitHubClient", side_effect=ImportError("No module named github")), \
-             patch("roadmap.sync.os.getenv", return_value=None), \
-             patch("roadmap.sync.get_credential_manager") as mock_credential_manager:
-
+        with (
+            patch(
+                "roadmap.sync.GitHubClient",
+                side_effect=ImportError("No module named github"),
+            ),
+            patch("roadmap.sync.os.getenv", return_value=None),
+            patch("roadmap.sync.get_credential_manager") as mock_credential_manager,
+        ):
             # Mock credential manager to return None
             mock_manager = Mock()
             mock_manager.is_available.return_value = True
@@ -208,7 +211,9 @@ class TestSyncManagerTokenInfo:
     """Test token information methods."""
 
     @patch("roadmap.sync.get_credential_manager")
-    def test_get_token_info_no_token_available(self, mock_credential_manager, mock_core):
+    def test_get_token_info_no_token_available(
+        self, mock_credential_manager, mock_core
+    ):
         """Test getting token info when no token is available."""
         config = RoadmapConfig()
         config.github = {"owner": "test", "repo": "test"}
@@ -259,10 +264,14 @@ class TestSyncManagerRepositoryOperations:
         assert "not configured" in message.lower()
 
     @patch("roadmap.sync.GitHubClient")
-    def test_setup_repository_with_api_error(self, mock_client_class, mock_core, mock_config):
+    def test_setup_repository_with_api_error(
+        self, mock_client_class, mock_core, mock_config
+    ):
         """Test repository setup with API error during label setup."""
         mock_client = Mock()
-        mock_client.setup_default_labels.side_effect = GitHubAPIError("Label setup failed")
+        mock_client.setup_default_labels.side_effect = GitHubAPIError(
+            "Label setup failed"
+        )
         mock_client_class.return_value = mock_client
 
         with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token"}):
@@ -300,14 +309,16 @@ class TestSyncManagerEdgeCases:
         assert sync2.github_client is None
 
     @patch("roadmap.sync.get_credential_manager")
-    def test_credential_manager_exception_handling(self, mock_credential_manager, mock_core, mock_config):
+    def test_credential_manager_exception_handling(
+        self, mock_credential_manager, mock_core, mock_config
+    ):
         """Test handling of credential manager exceptions."""
         # Make credential manager raise exception on creation
         mock_credential_manager.side_effect = Exception("Credential manager error")
 
         # Should handle gracefully and not crash
         sync_manager = SyncManager(mock_core, mock_config)
-        assert hasattr(sync_manager, 'github_client')
+        assert hasattr(sync_manager, "github_client")
 
 
 class TestSyncManagerStringRepresentation:
@@ -329,13 +340,14 @@ class TestSyncConflictStringMethods:
     def test_sync_conflict_string_representation(self):
         """Test SyncConflict string representation."""
         conflict = SyncConflict(
-            "issue", "test-123", Mock(), {},
-            datetime(2024, 1, 1), datetime(2024, 1, 2)
+            "issue", "test-123", Mock(), {}, datetime(2024, 1, 1), datetime(2024, 1, 2)
         )
 
         str_repr = str(conflict)
         assert isinstance(str_repr, str)
-        assert "test-123" in str_repr or "SyncConflict" in str_repr or "object" in str_repr
+        assert (
+            "test-123" in str_repr or "SyncConflict" in str_repr or "object" in str_repr
+        )
 
 
 class TestSyncStrategyStringMethods:

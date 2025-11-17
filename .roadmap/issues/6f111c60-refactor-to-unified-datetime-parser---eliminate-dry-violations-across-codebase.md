@@ -54,7 +54,7 @@ Create a single, centralized datetime parsing system that eliminates all duplica
 1. **Create `roadmap/datetime_parser.py`** with UnifiedDateTimeParser class
 2. **Single source of truth** for all datetime parsing needs:
    - `parse_any_datetime()` - Universal parser for all sources
-   - `parse_github_timestamp()` - Specialized GitHub API handling  
+   - `parse_github_timestamp()` - Specialized GitHub API handling
    - `parse_file_datetime()` - Frontmatter/file parsing
 3. **Replace all duplicate implementations** across:
    - parser.py (3x _parse_datetime methods)

@@ -1,17 +1,14 @@
 """Tests for sync manager."""
 
-import os
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 # Mark all tests in this file as unit tests (primarily mock-based)
 pytestmark = pytest.mark.unit
 
-from roadmap.core import RoadmapCore
 from roadmap.github_client import GitHubAPIError
 from roadmap.models import (
     Issue,
@@ -60,7 +57,9 @@ class TestSyncManager:
         assert sync_manager.github_client is None
 
     @patch("roadmap.sync.get_credential_manager")
-    def test_initialization_with_missing_token(self, mock_credential_manager, mock_core, mock_config):
+    def test_initialization_with_missing_token(
+        self, mock_credential_manager, mock_core, mock_config
+    ):
         """Test sync manager initialization with missing token."""
         mock_config.github["token"] = ""
 

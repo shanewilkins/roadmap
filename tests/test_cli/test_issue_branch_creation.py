@@ -1,5 +1,3 @@
-from click.testing import CliRunner
-
 from roadmap.cli import main
 
 
@@ -11,11 +9,11 @@ def test_create_issue_with_git_branch_flag(cli_runner):
         result = runner.invoke(
             main,
             [
-                'issue',
-                'create',
-                'Test branch creation',
-                '--git-branch',
-                '--no-checkout',
+                "issue",
+                "create",
+                "Test branch creation",
+                "--git-branch",
+                "--no-checkout",
             ],
         )
         # The CLI should exit gracefully even if git isn't present

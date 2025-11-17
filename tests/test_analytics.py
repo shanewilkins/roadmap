@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -21,7 +21,7 @@ from roadmap.analytics import (
 )
 from roadmap.core import RoadmapCore
 from roadmap.git_integration import GitCommit
-from roadmap.models import Issue, Priority, Status
+from roadmap.models import Priority, Status
 
 
 class TestGitHistoryAnalyzer:
@@ -576,7 +576,9 @@ class TestAnalyticsIntegration:
         metrics = analyzer.analyze_developer_productivity(test_developer, days=365)
 
         assert metrics.name == test_developer
-        assert metrics.total_commits > 0, f"No commits found for {test_developer}. All commits: {[(c.author, c.date) for c in all_commits]}"
+        assert (
+            metrics.total_commits > 0
+        ), f"No commits found for {test_developer}. All commits: {[(c.author, c.date) for c in all_commits]}"
         assert metrics.productivity_score > 0
         assert metrics.avg_commits_per_day >= 0
 

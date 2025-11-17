@@ -1,8 +1,6 @@
 """Tests for team collaboration features."""
 
-import os
-import tempfile
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
@@ -16,7 +14,16 @@ from roadmap.models import Issue, Priority, Status
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
+    result = runner.invoke(
+        main,
+        [
+            "init",
+            "--non-interactive",
+            "--skip-github",
+            "--project-name",
+            "Test Project",
+        ],
+    )
     assert result.exit_code == 0
     return temp_dir
 
@@ -232,7 +239,8 @@ class TestCLITeamCommands:
             assert result.exit_code == 0
             # Should show team assignments (strip ANSI codes for cleaner matching)
             import re
-            clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+
+            clean_output = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
             assert "bob (1 issue)" in clean_output
 
     def test_team_workload_command(self, mock_core, sample_issues, initialized_roadmap):

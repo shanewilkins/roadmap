@@ -292,15 +292,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-      
+
       - name: Install Roadmap CLI
         run: pip install roadmap-cli
-      
+
       - name: Setup GitHub integration
         env:
           GITHUB_TOKEN: ${{ secrets.ROADMAP_GITHUB_TOKEN }}
@@ -308,13 +308,13 @@ jobs:
           roadmap sync setup \
             --token "$GITHUB_TOKEN" \
             --repo "${{ github.repository }}"
-      
+
       - name: Sync roadmap
         run: roadmap sync pull --high-performance
-      
+
       - name: Validate roadmap
         run: roadmap bulk validate .roadmap/
-      
+
       - name: Commit changes
         run: |
           git config --local user.email "action@github.com"

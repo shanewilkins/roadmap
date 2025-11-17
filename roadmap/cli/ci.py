@@ -601,9 +601,6 @@ def logs(lines: int):
         rprint(f"❌ Error reading hook logs: {e}")
 
 
-
-
-
 @ci.command()
 @click.option(
     "--format",

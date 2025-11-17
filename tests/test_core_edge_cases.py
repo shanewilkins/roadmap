@@ -1,14 +1,12 @@
 """Tests for core edge cases and error handling."""
 
 import os
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Priority, Status
+from roadmap.models import Priority, Status
 
 
 @pytest.fixture

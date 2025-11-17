@@ -5,7 +5,7 @@ These tests cover the specific fixes made to resolve GitHub API validation error
 
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -35,7 +35,7 @@ class TestSyncValidationFixes:
         config.github = {
             "owner": "testowner",
             "repo": "testrepo",
-            "token": "test_token"
+            "token": "test_token",
         }
         return config
 
@@ -57,7 +57,9 @@ class TestSyncValidationFixes:
                 manager.github_client = mock_github_client
                 return manager
 
-    def test_push_issue_with_assignee_creates_assignees_list(self, sync_manager, mock_core):
+    def test_push_issue_with_assignee_creates_assignees_list(
+        self, sync_manager, mock_core
+    ):
         """Test that pushing issue with assignee properly formats assignees parameter."""
         # Create issue with assignee
         issue = Issue(
@@ -66,7 +68,7 @@ class TestSyncValidationFixes:
             priority=Priority.MEDIUM,
             status=Status.TODO,
             assignee="shanewilkins",
-            content="Test content"
+            content="Test content",
         )
 
         # Mock GitHub responses
@@ -87,7 +89,9 @@ class TestSyncValidationFixes:
         assert call_kwargs["assignees"] == ["shanewilkins"]
         assert call_kwargs["title"] == "Test Issue with Assignee"
 
-    def test_push_issue_without_assignee_empty_assignees_list(self, sync_manager, mock_core):
+    def test_push_issue_without_assignee_empty_assignees_list(
+        self, sync_manager, mock_core
+    ):
         """Test that pushing issue without assignee sends empty assignees list."""
         # Create issue without assignee
         issue = Issue(
@@ -96,7 +100,7 @@ class TestSyncValidationFixes:
             priority=Priority.LOW,
             status=Status.TODO,
             assignee="",  # Empty assignee
-            content="Test content"
+            content="Test content",
         )
 
         sync_manager.github_client.create_issue.return_value = {"number": 43}
@@ -120,7 +124,7 @@ class TestSyncValidationFixes:
             status=Status.IN_PROGRESS,
             assignee="teamlead",
             github_issue=50,  # Existing GitHub issue
-            content="Updated content"
+            content="Updated content",
         )
 
         sync_manager.github_client.update_issue.return_value = {"number": 50}
@@ -138,7 +142,9 @@ class TestSyncValidationFixes:
         assert call_kwargs["assignees"] == ["teamlead"]
         assert call_kwargs["issue_number"] == 50
 
-    def test_label_formatting_prevents_comma_separated_strings(self, sync_manager, mock_core):
+    def test_label_formatting_prevents_comma_separated_strings(
+        self, sync_manager, mock_core
+    ):
         """Test that labels are properly formatted as separate items, not comma-separated strings."""
         # Create issue with multiple labels
         issue = Issue(
@@ -147,7 +153,7 @@ class TestSyncValidationFixes:
             priority=Priority.MEDIUM,
             status=Status.TODO,
             labels=["automation", "git-integration", "workflow"],  # Proper list format
-            content="Test content"
+            content="Test content",
         )
 
         sync_manager.github_client.create_issue.return_value = {"number": 44}
@@ -169,7 +175,9 @@ class TestSyncValidationFixes:
         # Should NOT contain comma-separated string
         assert "automation,git-integration,workflow" not in labels
 
-    def test_milestone_datetime_formatting_includes_timezone(self, sync_manager, mock_core):
+    def test_milestone_datetime_formatting_includes_timezone(
+        self, sync_manager, mock_core
+    ):
         """Test that milestone due dates are formatted with timezone for GitHub API."""
         # Create milestone with naive datetime (no timezone)
         due_date = datetime(2025, 12, 31, 23, 59, 59)  # Naive datetime
@@ -177,7 +185,7 @@ class TestSyncValidationFixes:
             name="v1.0.0",
             description="Test milestone",
             due_date=due_date,
-            status=MilestoneStatus.OPEN
+            status=MilestoneStatus.OPEN,
         )
 
         sync_manager.github_client.create_milestone.return_value = {"number": 1}
@@ -203,7 +211,7 @@ class TestSyncValidationFixes:
             name="v2.0.0",
             description="Test milestone with timezone",
             due_date=due_date,
-            status=MilestoneStatus.OPEN
+            status=MilestoneStatus.OPEN,
         )
 
         sync_manager.github_client.create_milestone.return_value = {"number": 2}
@@ -234,7 +242,7 @@ class TestHighPerformanceSyncValidation:
         manager.github_client = Mock()
         manager.github_client.get_milestones.return_value = [
             {"title": "v1.0", "number": 1},
-            {"title": "v2.0", "number": 2}
+            {"title": "v2.0", "number": 2},
         ]
         manager.github_client.get_issues.return_value = []
 
@@ -244,9 +252,7 @@ class TestHighPerformanceSyncValidation:
     def hp_sync_manager(self, mock_sync_manager):
         """Create HighPerformanceSyncManager for testing."""
         return HighPerformanceSyncManager(
-            sync_manager=mock_sync_manager,
-            max_workers=2,
-            batch_size=5
+            sync_manager=mock_sync_manager, max_workers=2, batch_size=5
         )
 
     def test_high_performance_push_issues_calls_standard_push(self, hp_sync_manager):
@@ -258,15 +264,15 @@ class TestHighPerformanceSyncValidation:
                 title="HP Test Issue 1",
                 priority=Priority.HIGH,
                 status=Status.TODO,
-                assignee="developer1"
+                assignee="developer1",
             ),
             Issue(
                 id="hp_test2",
                 title="HP Test Issue 2",
                 priority=Priority.MEDIUM,
                 status=Status.IN_PROGRESS,
-                assignee="developer2"
-            )
+                assignee="developer2",
+            ),
         ]
 
         # Mock the sync manager's list_issues and push_issue methods
@@ -281,13 +287,17 @@ class TestHighPerformanceSyncValidation:
 
         # Verify the issues passed to push_issue have correct assignees
         calls = hp_sync_manager.sync_manager.push_issue.call_args_list
-        issue_calls = [call_args[0][0] for call_args in calls]  # Extract issue argument from each call
+        issue_calls = [
+            call_args[0][0] for call_args in calls
+        ]  # Extract issue argument from each call
 
         assignees = [issue.assignee for issue in issue_calls]
         assert "developer1" in assignees
         assert "developer2" in assignees
 
-    def test_high_performance_push_milestones_calls_standard_push(self, hp_sync_manager):
+    def test_high_performance_push_milestones_calls_standard_push(
+        self, hp_sync_manager
+    ):
         """Test that high-performance milestone push delegates correctly."""
         # Create test milestones
         milestones = [
@@ -295,14 +305,14 @@ class TestHighPerformanceSyncValidation:
                 name="v1.0",
                 description="First release",
                 due_date=datetime(2025, 6, 1),
-                status=MilestoneStatus.OPEN
+                status=MilestoneStatus.OPEN,
             ),
             Milestone(
                 name="v2.0",
                 description="Second release",
                 due_date=datetime(2025, 12, 1),
-                status=MilestoneStatus.OPEN
-            )
+                status=MilestoneStatus.OPEN,
+            ),
         ]
 
         hp_sync_manager.sync_manager.core.list_milestones.return_value = milestones
@@ -321,13 +331,15 @@ class TestHighPerformanceSyncValidation:
             id="failing_issue",
             title="This Will Fail",
             priority=Priority.HIGH,
-            status=Status.TODO
+            status=Status.TODO,
         )
 
         hp_sync_manager.sync_manager.core.list_issues.return_value = [failing_issue]
 
         # Mock push_issue to raise an exception
-        hp_sync_manager.sync_manager.push_issue.side_effect = GitHubAPIError("Validation Failed")
+        hp_sync_manager.sync_manager.push_issue.side_effect = GitHubAPIError(
+            "Validation Failed"
+        )
 
         # Run sync and verify error handling
         stats = hp_sync_manager.sync_issues_optimized("push")
@@ -347,6 +359,7 @@ class TestGitHubClientDateTimeFormatting:
         """Create GitHubClient for testing."""
         with patch("roadmap.github_client.GitHubClient._make_request") as mock_request:
             from roadmap.github_client import GitHubClient
+
             client = GitHubClient("owner", "repo", "token")
             client._make_request = mock_request
             mock_request.return_value.json.return_value = {"number": 1}
@@ -359,7 +372,7 @@ class TestGitHubClientDateTimeFormatting:
         github_client.create_milestone(
             title="Test Milestone",
             description="Test description",
-            due_date=naive_datetime
+            due_date=naive_datetime,
         )
 
         # Verify the API call included 'Z' suffix
@@ -374,9 +387,7 @@ class TestGitHubClientDateTimeFormatting:
         tz_datetime = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
 
         github_client.create_milestone(
-            title="Test Milestone",
-            description="Test description",
-            due_date=tz_datetime
+            title="Test Milestone", description="Test description", due_date=tz_datetime
         )
 
         # Verify the API call preserves timezone info
@@ -392,9 +403,7 @@ class TestGitHubClientDateTimeFormatting:
         naive_datetime = datetime(2025, 6, 15, 12, 0, 0)
 
         github_client.update_milestone(
-            milestone_number=1,
-            title="Updated Milestone",
-            due_date=naive_datetime
+            milestone_number=1, title="Updated Milestone", due_date=naive_datetime
         )
 
         # Verify the update API call

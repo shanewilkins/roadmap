@@ -1,15 +1,8 @@
 """Cross-platform integration tests for credential management."""
 
-import os
-import platform
-import subprocess
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
-import pytest
-
-from roadmap.core import RoadmapCore
-from roadmap.credentials import CredentialManager, get_credential_manager
-from roadmap.models import RoadmapConfig
+from roadmap.credentials import CredentialManager
 from roadmap.sync import SyncManager
 
 
@@ -174,8 +167,6 @@ class TestCrossPlatformCredentials:
 
 class TestSyncManagerCrossPlatform:
     """Test SyncManager credential handling across platforms."""
-
-
 
     def test_sync_manager_macos_token_resolution(self, mock_core, mock_config):
         """Test SyncManager token resolution on macOS."""

@@ -4,7 +4,6 @@ Demo script showing the enhanced confirmation and safety features
 for delete operations in Roadmap CLI.
 """
 
-import os
 import sys
 from pathlib import Path
 

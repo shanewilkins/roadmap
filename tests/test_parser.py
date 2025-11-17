@@ -3,10 +3,8 @@
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import mock_open, patch
 
 import pytest
-import yaml
 
 from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
 from roadmap.parser import FrontmatterParser, IssueParser, MilestoneParser
@@ -380,7 +378,9 @@ Second release content.
 
         assert milestone.name == "v2.0"
         assert milestone.status == MilestoneStatus.CLOSED
-        assert milestone.due_date == datetime(2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        assert milestone.due_date == datetime(
+            2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc
+        )
         assert milestone.github_milestone == 456
 
     def test_save_milestone_file(self):

@@ -812,6 +812,12 @@ class SyncManager:
                     continue
 
                 gh_number = gh.get("number")
+                if gh_number is None:
+                    error_count += 1
+                    error_messages.append(
+                        f"GitHub issue missing number field: {gh.get('title', 'Unknown')}"
+                    )
+                    continue
 
                 # Determine if a local issue references this GitHub issue
                 found_local = False
@@ -1087,6 +1093,14 @@ class SyncManager:
         conflicts = []
 
         try:
+            if not self.github_client:
+                return (
+                    success_count,
+                    error_count + 1,
+                    ["GitHub client not configured."],
+                    conflicts,
+                )
+
             # Get all local issues and GitHub issues
             local_issues = {
                 issue.github_issue: issue
@@ -1196,6 +1210,14 @@ class SyncManager:
             local_milestones_no_github = [
                 ms for ms in self.core.list_milestones() if not ms.github_milestone
             ]
+
+            if not self.github_client:
+                return (
+                    success_count,
+                    error_count + 1,
+                    ["GitHub client not configured."],
+                    conflicts,
+                )
 
             github_milestones = self.github_client.get_milestones(state="all")
             github_milestones_dict = {ms["number"]: ms for ms in github_milestones}

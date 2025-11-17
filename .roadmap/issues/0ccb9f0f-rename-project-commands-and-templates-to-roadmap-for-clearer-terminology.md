@@ -47,13 +47,13 @@ roadmap project delete PROJECT_ID
 
 # Current terminology in code
 - Project class/model
-- project_* functions  
+- project_* functions
 - projects/ directory
 - "project" in documentation
 ```
 
 ### User Confusion Points
-- Tool is called "Roadmap CLI" but creates "projects" 
+- Tool is called "Roadmap CLI" but creates "projects"
 - Users naturally think in terms of "roadmaps" for planning
 - "Project" is overloaded (could mean git project, work project, etc.)
 - Documentation refers to "roadmap" but CLI uses "project"
@@ -64,7 +64,7 @@ roadmap project delete PROJECT_ID
 ```bash
 # New CLI commands (proposed)
 roadmap roadmap create "My Roadmap"     # was: roadmap project create
-roadmap roadmap list                    # was: roadmap project list  
+roadmap roadmap list                    # was: roadmap project list
 roadmap roadmap overview                # was: roadmap project overview
 roadmap roadmap update ROADMAP_ID       # was: roadmap project update
 roadmap roadmap delete ROADMAP_ID       # was: roadmap project delete
@@ -141,7 +141,7 @@ def create(title, **kwargs):
     # Implementation
 
 @roadmap.command()
-def list(**kwargs):  
+def list(**kwargs):
     """List all roadmaps."""
     # Implementation
 
@@ -159,11 +159,11 @@ def overview(roadmap_id=None, **kwargs):
     """Show roadmap overview and analytics."""
     # Implementation
 
-@roadmap.command() 
+@roadmap.command()
 def delete(roadmap_id, **kwargs):
     """Delete a roadmap."""
     # Implementation
-    
+
 # Backwards compatibility aliases
 @cli.group()
 def project():
@@ -243,12 +243,12 @@ def roadmap_cmd():  # Avoid conflict with @cli
     """Manage roadmaps."""
     pass
 
-# Option B: Subcommand approach  
+# Option B: Subcommand approach
 @cli.group()
 def roadmap():
     """Roadmap management commands."""
     pass
-    
+
 @roadmap.command()
 def create():
     pass
@@ -312,16 +312,16 @@ def update(roadmap_id, **kwargs):
     if not roadmap_file:
         click.echo(f"❌ Roadmap {roadmap_id} not found")
         return
-        
+
     roadmap_data = load_roadmap(roadmap_file)
-    
+
     # Update fields
     if kwargs.get('description'):
         roadmap_data['description'] = kwargs['description']
     if kwargs.get('owner'):
         roadmap_data['owner'] = kwargs['owner']
     # ... handle other fields
-    
+
     # Handle milestone operations
     if kwargs.get('set_milestones'):
         roadmap_data['milestones'] = list(kwargs['set_milestones'])
@@ -334,10 +334,10 @@ def update(roadmap_id, **kwargs):
             for milestone in kwargs['remove_milestone']:
                 if milestone in roadmap_data['milestones']:
                     roadmap_data['milestones'].remove(milestone)
-    
+
     # Update timestamp
     roadmap_data['updated'] = datetime.now().isoformat()
-    
+
     # Save changes
     save_roadmap(roadmap_file, roadmap_data)
     click.echo(f"✅ Updated roadmap: {roadmap_data['name']}")
@@ -350,7 +350,7 @@ def handle_legacy_project_command(ctx, command_name):
     click.echo("⚠️  DEPRECATED: 'project {command}' is deprecated.")
     click.echo(f"    Use: 'roadmap {command}' instead")
     click.echo()
-    
+
     # Execute new command
     ctx.invoke(roadmap_commands[command_name])
 ```
@@ -408,7 +408,7 @@ def handle_legacy_project_command(ctx, command_name):
 
 **Medium Priority** because:
 - **User experience**: Clear terminology improves tool adoption
-- **Brand consistency**: Tool name should match command terminology  
+- **Brand consistency**: Tool name should match command terminology
 - **Long-term maintenance**: Better to fix early than accumulate confusion
 - **Low risk**: Can implement with full backwards compatibility
 - **Quick win**: Relatively small change with high user experience impact

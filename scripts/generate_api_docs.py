@@ -5,10 +5,7 @@ API Documentation Generator
 Generates comprehensive API documentation using Sphinx autodoc.
 """
 
-import os
-import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 

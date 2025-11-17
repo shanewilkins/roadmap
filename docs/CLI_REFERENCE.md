@@ -519,7 +519,7 @@ Create a new comment on an issue.
 roadmap comment create issue-abc123 "This looks good to me!"
 
 # Create comment with markdown formatting
-roadmap comment create 42 "**Status Update:** Fixed the authentication bug. 
+roadmap comment create 42 "**Status Update:** Fixed the authentication bug.
 Ready for testing in staging environment."
 
 # Multi-line comment
@@ -685,7 +685,7 @@ roadmap milestone delete "Sprint 1"
 **What happens:**
 
 - Permanently deletes the milestone
-- Unassigns all issues from this milestone  
+- Unassigns all issues from this milestone
 - Moves all assigned issues back to the backlog
 - Shows affected issues before deletion
 
@@ -732,7 +732,7 @@ roadmap sync setup \
 
 1. **System Credential Manager** (Default & Recommended)
    - macOS: Keychain Access
-   - Windows: Windows Credential Manager  
+   - Windows: Windows Credential Manager
    - Linux: Secret Service API
    - Tokens stored securely, encrypted at rest
    - Use: `roadmap sync setup --token YOUR_TOKEN`
@@ -750,7 +750,7 @@ roadmap sync setup \
 **Options:**
 
 - `--token`: GitHub personal access token
-- `--repo`: Repository in format "owner/repo"  
+- `--repo`: Repository in format "owner/repo"
 - `--github-url`: Custom GitHub URL for enterprise
 - `--insecure`: Store token in config file (NOT RECOMMENDED)
 
@@ -761,7 +761,7 @@ roadmap sync setup \
 3. Name: "Roadmap CLI Tool"
 4. Select scopes:
    - ✅ `public_repo` (for public repositories)
-   - ✅ `repo` (for private repositories) 
+   - ✅ `repo` (for private repositories)
    - ✅ `write:issues` (to create/update issues)
 5. Click "Generate token"
 6. Copy token immediately (shown only once)
@@ -1308,7 +1308,7 @@ roadmap bulk backup .roadmap/
 
 # Standardize assignee naming
 --assignee "team-frontend"
---assignee "team-backend"  
+--assignee "team-backend"
 --assignee "team-devops"
 ```
 

@@ -35,7 +35,7 @@ While the GitHub sync authentication has been fixed, there are inconsistencies b
 
 ### Local vs GitHub Status Mismatch
 - **c0850c90** (Fix broken sync): Local = `done`, GitHub = needs verification
-- **ac64f265** (Add project template): Local = `done`, GitHub = needs verification  
+- **ac64f265** (Add project template): Local = `done`, GitHub = needs verification
 - **88d2e91d** (Test issue): Local = `done`, GitHub = needs verification
 
 ### Sync Authentication Working
@@ -93,7 +93,7 @@ While the GitHub sync authentication has been fixed, there are inconsistencies b
 ## Related Issues
 
 - c0850c90: Fix broken sync between GitHub issues and roadmap folder (completed locally)
-- ac64f265: Add project level template (completed locally)  
+- ac64f265: Add project level template (completed locally)
 - 88d2e91d: test issue to validate sync (completed locally)
 
 ## Next Steps for Tomorrow

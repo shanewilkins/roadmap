@@ -40,7 +40,7 @@ Implement comprehensive curation tools to help maintain roadmap data integrity b
 - **Categorization**: Group orphaned issues by type, priority, age, and assignee
 - **Reporting**: Generate reports showing orphaned items with actionable recommendations
 
-### Orphaned Milestones Detection  
+### Orphaned Milestones Detection
 - **Unlinked Milestones**: Milestones not assigned to any roadmap
 - **Analysis**: Identify patterns in orphaned milestones (completion status, dates, etc.)
 - **Suggestions**: Recommend which roadmaps might be appropriate for orphaned milestones

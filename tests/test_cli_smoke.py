@@ -39,7 +39,9 @@ def test_command_help(cli_runner: CliRunner, cmd: str):
     args = [] if cmd == "--help" else [cmd, "--help"]
     result = cli_runner.invoke(main, args)
     # Help should exit cleanly
-    assert result.exit_code == 0, f"Help failed for {cmd}: {result.output}\n{result.exception}"
+    assert (
+        result.exit_code == 0
+    ), f"Help failed for {cmd}: {result.output}\n{result.exception}"
 
 
 def test_data_export_help(cli_runner: CliRunner):

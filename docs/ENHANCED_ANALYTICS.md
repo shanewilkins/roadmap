@@ -35,7 +35,7 @@ Comprehensive analytics system providing detailed insights into team performance
 # Developer analytics
 roadmap analytics developer --assignee john
 
-# Team analytics  
+# Team analytics
 roadmap analytics team --team backend
 
 # Quality metrics

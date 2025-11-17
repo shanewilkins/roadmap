@@ -4,7 +4,6 @@ Demo script for the new comment functionality in Roadmap CLI.
 This script demonstrates the comment management features.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -14,7 +13,6 @@ sys.path.insert(0, str(project_root))
 
 from datetime import datetime
 
-from roadmap.github_client import GitHubClient
 from roadmap.models import Comment
 
 

@@ -332,8 +332,6 @@ except Exception as e:
         except Exception:
             pass
 
-
-
     def _update_issue_from_commit(
         self, issue_id: str, commit: GitCommit, progress: float | None
     ):

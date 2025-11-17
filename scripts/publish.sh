@@ -112,10 +112,10 @@ read -p "Choose an option (1-4): " choice
 case $choice in
     1)
         print_status "Publishing to TestPyPI..."
-        
+
         # Configure TestPyPI if not already configured
         poetry config repositories.test-pypi https://test.pypi.org/legacy/ 2>/dev/null || true
-        
+
         # Publish to TestPyPI
         if poetry publish -r test-pypi; then
             print_success "Successfully published to TestPyPI"
@@ -126,12 +126,12 @@ case $choice in
             exit 1
         fi
         ;;
-        
+
     2)
         print_status "Publishing to PyPI..."
         print_warning "This will publish to the PRODUCTION PyPI. Are you sure? (y/N)"
         read -p "" confirm
-        
+
         if [[ $confirm =~ ^[Yy]$ ]]; then
             if poetry publish; then
                 print_success "Successfully published to PyPI"
@@ -145,29 +145,29 @@ case $choice in
             print_status "Publication cancelled"
         fi
         ;;
-        
+
     3)
         print_status "Publishing to TestPyPI first..."
-        
+
         # Configure TestPyPI if not already configured
         poetry config repositories.test-pypi https://test.pypi.org/legacy/ 2>/dev/null || true
-        
+
         # Publish to TestPyPI
         if poetry publish -r test-pypi; then
             print_success "Successfully published to TestPyPI"
             print_status "Testing installation from TestPyPI..."
-            
+
             # Test installation
             if pip install --index-url https://test.pypi.org/simple/ roadmap-cli==$CURRENT_VERSION --force-reinstall; then
                 print_success "Test installation successful"
-                
+
                 # Test basic functionality
                 if roadmap --version; then
                     print_success "Basic functionality test passed"
-                    
+
                     print_warning "TestPyPI test successful. Proceed with PyPI publication? (y/N)"
                     read -p "" confirm
-                    
+
                     if [[ $confirm =~ ^[Yy]$ ]]; then
                         print_status "Publishing to PyPI..."
                         if poetry publish; then
@@ -193,12 +193,12 @@ case $choice in
             exit 1
         fi
         ;;
-        
+
     4)
         print_status "Publication cancelled"
         exit 0
         ;;
-        
+
     *)
         print_error "Invalid option"
         exit 1

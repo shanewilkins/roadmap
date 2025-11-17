@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.github_client import GitHubAPIError, GitHubClient
+from roadmap.github_client import GitHubClient
 from roadmap.models import Comment
 
 

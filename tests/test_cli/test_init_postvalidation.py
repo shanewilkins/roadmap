@@ -1,7 +1,3 @@
-from pathlib import Path
-
-from click.testing import CliRunner
-
 from roadmap.cli import main
 
 
@@ -12,16 +8,19 @@ def test_post_init_validation_warns_on_missing_project(cli_runner):
         result = runner.invoke(
             main,
             [
-                'init',
-                '--non-interactive',
-                '--skip-github',
-                '--skip-project',
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--skip-project",
             ],
         )
 
         assert result.exit_code == 0
         # Expect a warning about no project files
-        assert 'No project files found' in result.output or 'No project files' in result.output
+        assert (
+            "No project files found" in result.output
+            or "No project files" in result.output
+        )
 
 
 def test_post_init_validation_passes_with_project(cli_runner):
@@ -31,14 +30,14 @@ def test_post_init_validation_passes_with_project(cli_runner):
         result = runner.invoke(
             main,
             [
-                'init',
-                '--non-interactive',
-                '--skip-github',
-                '--project-name',
-                'Test Project',
+                "init",
+                "--non-interactive",
+                "--skip-github",
+                "--project-name",
+                "Test Project",
             ],
         )
 
         assert result.exit_code == 0
         # Should not show missing project warning
-        assert 'No project files found' not in result.output
+        assert "No project files found" not in result.output

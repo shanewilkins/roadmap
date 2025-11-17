@@ -8,9 +8,7 @@ using the main roadmap project. It demonstrates workload balancing, team insight
 communication features, and collaborative workflow management.
 """
 
-import os
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -22,7 +20,13 @@ def run_command(command, description):
     print("-" * 50)
 
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd="/Users/shane/roadmap")
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd="/Users/shane/roadmap",
+        )
         if result.returncode == 0:
             print(result.stdout)
         else:
@@ -64,8 +68,13 @@ def main():
 
     # Workload balancing
     run_command("poetry run roadmap workload", "Current workload distribution")
-    run_command("poetry run roadmap workload --balance", "Workload balancing suggestions")
-    run_command("poetry run roadmap workload --recommendations", "Smart assignment recommendations")
+    run_command(
+        "poetry run roadmap workload --balance", "Workload balancing suggestions"
+    )
+    run_command(
+        "poetry run roadmap workload --recommendations",
+        "Smart assignment recommendations",
+    )
 
     print()
     print("🎯 ASSIGNMENT MANAGEMENT")
@@ -91,7 +100,9 @@ def main():
     run_command("poetry run roadmap mention --list", "Your mentions and notifications")
 
     print("\n💬 Communication examples:")
-    print("  poetry run roadmap comment ISSUE_ID 'Making progress on the API integration @john'")
+    print(
+        "  poetry run roadmap comment ISSUE_ID 'Making progress on the API integration @john'"
+    )
     print("  poetry run roadmap mention @sarah 'Could you review the auth module?'")
     print("  poetry run roadmap feedback ISSUE_ID --rating 5 'Great implementation!'")
 
@@ -111,9 +122,13 @@ def main():
     print("Get insights on individual contributors:")
 
     # Individual insights
-    run_command("poetry run roadmap contributor-stats", "Individual contributor statistics")
+    run_command(
+        "poetry run roadmap contributor-stats", "Individual contributor statistics"
+    )
     run_command("poetry run roadmap my-tasks", "Your current tasks and assignments")
-    run_command("poetry run roadmap my-progress", "Your recent progress and achievements")
+    run_command(
+        "poetry run roadmap my-progress", "Your recent progress and achievements"
+    )
 
     print()
     print("� COLLABORATIVE WORKFLOWS")
@@ -122,7 +137,9 @@ def main():
 
     # Collaborative workflows
     run_command("poetry run roadmap workflow --team-review", "Team review workflow")
-    run_command("poetry run roadmap workflow --pair-programming", "Pair programming workflow")
+    run_command(
+        "poetry run roadmap workflow --pair-programming", "Pair programming workflow"
+    )
 
     print()
     print("📋 TEAM DASHBOARDS")
@@ -139,8 +156,14 @@ def main():
     print("Collaborate on milestone planning:")
 
     # Milestone collaboration
-    run_command("poetry run roadmap milestone --team-planning", "Collaborative milestone planning")
-    run_command("poetry run roadmap milestone --capacity-planning", "Team capacity for milestones")
+    run_command(
+        "poetry run roadmap milestone --team-planning",
+        "Collaborative milestone planning",
+    )
+    run_command(
+        "poetry run roadmap milestone --capacity-planning",
+        "Team capacity for milestones",
+    )
 
     print()
     print("🔧 COLLABORATION EXAMPLES")
@@ -154,19 +177,19 @@ def main():
     3. Plan assignments: poetry run roadmap assign --sprint-planning
     4. Set milestone: poetry run roadmap milestone create "Sprint 15"
     5. Track progress: poetry run roadmap burndown --real-time
-    
+
     👥 DAILY STANDUP WORKFLOW:
     1. Check team activity: poetry run roadmap activity --since yesterday
     2. Review blockers: poetry run roadmap issue list --blocked
     3. Update status: poetry run roadmap status-update --daily
     4. Share progress: poetry run roadmap standup-report
-    
+
     🔄 CODE REVIEW WORKFLOW:
     1. Request review: poetry run roadmap review-request ISSUE_ID @reviewer
     2. Track reviews: poetry run roadmap review --pending
     3. Provide feedback: poetry run roadmap feedback ISSUE_ID --review
     4. Approve/merge: poetry run roadmap approve ISSUE_ID
-    
+
     🎯 RETROSPECTIVE WORKFLOW:
     1. Generate insights: poetry run roadmap retrospective --data
     2. Team feedback: poetry run roadmap feedback --retrospective
@@ -180,9 +203,17 @@ def main():
     print("Advanced team analytics and insights:")
 
     # Team analytics
-    run_command("poetry run roadmap analytics --team-efficiency", "Team efficiency analysis")
-    run_command("poetry run roadmap analytics --collaboration-score", "Collaboration effectiveness")
-    run_command("poetry run roadmap analytics --communication-patterns", "Communication analysis")
+    run_command(
+        "poetry run roadmap analytics --team-efficiency", "Team efficiency analysis"
+    )
+    run_command(
+        "poetry run roadmap analytics --collaboration-score",
+        "Collaboration effectiveness",
+    )
+    run_command(
+        "poetry run roadmap analytics --communication-patterns",
+        "Communication analysis",
+    )
 
     print()
     print("⚡ REAL-TIME FEATURES")
@@ -195,13 +226,13 @@ def main():
     • Live activity feeds and notifications
     • Instant mention and comment alerts
     • Live dashboard updates
-    
+
     📱 Notifications:
     • Assignment notifications
     • Deadline reminders
     • Milestone updates
     • Team activity alerts
-    
+
     🤝 Shared Workspaces:
     • Shared project views
     • Collaborative filtering
@@ -254,6 +285,7 @@ def main():
     print("✅ Data-driven team insights")
     print("✅ Reduced coordination overhead")
     print("✅ Increased team productivity")
+
 
 if __name__ == "__main__":
     main()

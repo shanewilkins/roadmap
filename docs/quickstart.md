@@ -32,7 +32,7 @@ roadmap init --name my-project-roadmap
 
 This creates:
 - Project directory structure
-- Configuration files  
+- Configuration files
 - Templates for issues and milestones
 - Artifacts directory for exports
 - Updated .gitignore to exclude generated files
@@ -258,7 +258,7 @@ roadmap export issues --help
 ## Next Steps
 
 1. **Explore the [User Guide](user-guide/concepts.md)** for detailed feature explanations
-2. **Check the [CLI Reference](CLI_REFERENCE.md)** for complete command documentation  
+2. **Check the [CLI Reference](CLI_REFERENCE.md)** for complete command documentation
 3. **Read [Team Collaboration](user-guide/team.md)** for multi-user workflows
 4. **Review [Performance Optimization](PERFORMANCE_OPTIMIZATION.md)** for large projects
 

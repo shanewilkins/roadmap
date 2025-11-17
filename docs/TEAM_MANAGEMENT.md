@@ -18,11 +18,11 @@ Comprehensive team collaboration and management system with advanced assignment 
 ### Communication & Notifications
 
 - **User notification system** - Configurable alerts and updates
-- **Activity feeds** - Real-time project activity tracking  
+- **Activity feeds** - Real-time project activity tracking
 - **Handoff management** - Task handoff and context preservation
 - **Broadcasting** - Team-wide announcements and updates
 
-### Advanced Workflows  
+### Advanced Workflows
 
 - **Multi-assignee support** - Complex assignment patterns
 - **Role-based permissions** - Access control and security
@@ -74,7 +74,7 @@ roadmap handoff-list --pending
 ✅ **Fully Implemented**
 
 - Complete team management system
-- User notification engine  
+- User notification engine
 - Activity feed generation
 - Handoff workflow management
 - Identity resolution system

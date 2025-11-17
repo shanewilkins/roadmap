@@ -21,78 +21,78 @@ jobs:
   issue-lifecycle:
     runs-on: ubuntu-latest
     name: 🔄 Manage Issue Lifecycle
-    
+
     steps:
     - name: 📥 Checkout Repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
+
     - name: 🐍 Setup Environment
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+
     - name: 📦 Install Roadmap CLI
       run: |
         pip install --upgrade pip
         pip install -e .
-        
+
     - name: 🌿 Handle Branch Creation
       if: github.event_name == 'create' && github.event.ref_type == 'branch'
       run: |
         BRANCH_NAME="${{ github.event.ref }}"
         echo "🌿 New branch created: $BRANCH_NAME"
-        
+
         # Extract issue ID from branch name
         if [[ $BRANCH_NAME =~ ([a-f0-9]{8}) ]]; then
           ISSUE_ID="${BASH_REMATCH[1]}"
           echo "🎯 Found issue ID: $ISSUE_ID"
-          
+
           # Track branch creation and potentially start issue
           roadmap ci track-branch "$BRANCH_NAME"
-          
+
           echo "✅ Issue $ISSUE_ID associated with branch $BRANCH_NAME"
         else
           echo "ℹ️  Branch doesn't follow issue naming convention"
         fi
-        
+
     - name: 🗑️ Handle Branch Deletion
       if: github.event_name == 'delete' && github.event.ref_type == 'branch'
       run: |
         BRANCH_NAME="${{ github.event.ref }}"
         echo "🗑️  Branch deleted: $BRANCH_NAME"
-        
+
         # Clean up branch associations (but preserve commit history)
         echo "🧹 Cleaning up branch associations..."
         # Note: We'll implement branch cleanup in CI commands
-        
+
     - name: 📝 Handle Commit Activity
       if: github.event_name == 'push'
       run: |
         echo "📝 Processing commits from push event..."
-        
+
         # Get list of new commits
         COMMITS=$(git log --format="%H" ${{ github.event.before }}..${{ github.event.after }})
-        
+
         for COMMIT in $COMMITS; do
           echo "🔍 Processing commit: $COMMIT"
-          
+
           # Track commit and extract issue associations
           RESULT=$(roadmap ci track-commit "$COMMIT")
           echo "$RESULT"
-          
+
           # Check for progress updates or completion markers
           COMMIT_MSG=$(git log -1 --format="%s" "$COMMIT")
           echo "📄 Message: $COMMIT_MSG"
-          
+
           # Look for dependency updates or blockers
           if [[ $COMMIT_MSG =~ (unblock|depends|blocks) ]]; then
             echo "🔗 Dependency-related commit detected"
             # Future: Handle dependency resolution
           fi
         done
-        
+
     - name: 🔀 Handle Pull Request Events
       if: github.event_name == 'pull_request'
       run: |
@@ -100,55 +100,55 @@ jobs:
         PR_ACTION="${{ github.event.action }}"
         PR_TITLE="${{ github.event.pull_request.title }}"
         PR_BRANCH="${{ github.event.pull_request.head.ref }}"
-        
+
         echo "🔀 PR Event: #$PR_NUMBER ($PR_ACTION)"
         echo "📝 Title: $PR_TITLE"
         echo "🌿 Branch: $PR_BRANCH"
-        
+
         case "$PR_ACTION" in
           "opened"|"ready_for_review")
             echo "🎯 PR opened - checking for issue associations..."
-            
+
             # Extract issue IDs from PR branch, title, and body
             PR_TEXT="$PR_TITLE ${{ github.event.pull_request.body }}"
-            
+
             # Track PR and associate with issues
             roadmap ci track-pr \
               --number "$PR_NUMBER" \
               --title "$PR_TITLE" \
               --branch "$PR_BRANCH" \
               --state "open"
-              
+
             echo "✅ PR tracked in roadmap system"
             ;;
-            
+
           "synchronize")
             echo "🔄 PR updated - scanning new commits..."
-            
+
             # Get new commits in PR
             git fetch origin "$PR_BRANCH"
             NEW_COMMITS=$(git log --format="%H" HEAD..origin/$PR_BRANCH)
-            
+
             for COMMIT in $NEW_COMMITS; do
               roadmap ci track-commit "$COMMIT"
             done
             ;;
-            
+
           "closed")
             if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
               echo "🎉 PR merged! Processing completion logic..."
-              
+
               # Handle merged PR - potential issue completion
               roadmap ci track-pr \
                 --number "$PR_NUMBER" \
                 --title "$PR_TITLE" \
                 --branch "$PR_BRANCH" \
                 --state "merged"
-                
+
               # Scan merged commits for completion markers
               echo "🔍 Scanning merged commits for issue completion..."
               roadmap ci scan-repository --max-commits 20
-              
+
             else
               echo "❌ PR closed without merge"
               roadmap ci track-pr \
@@ -159,78 +159,78 @@ jobs:
             fi
             ;;
         esac
-        
+
     - name: 🎯 Update Issue States
       run: |
         echo "🎯 Checking for automated issue state transitions..."
-        
+
         # Get current branch (for push events)
         if [ "${{ github.event_name }}" == "push" ]; then
           CURRENT_BRANCH="${{ github.ref_name }}"
           echo "📍 Current branch: $CURRENT_BRANCH"
-          
+
           # Auto-transition issues based on branch activity
           if [[ $CURRENT_BRANCH =~ ^(feature|bugfix|hotfix)/ ]]; then
             echo "🔄 Feature branch activity - checking issue states..."
             roadmap ci track-branch "$CURRENT_BRANCH"
           fi
         fi
-        
+
     - name: 📊 Generate Activity Summary
       run: |
         echo "📊 Generating issue activity summary..."
-        
+
         {
           echo "# 🎯 Issue Activity Summary"
           echo "**Event**: ${{ github.event_name }}"
           echo "**Repository**: ${{ github.repository }}"
           echo "**Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo ""
-          
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "**PR**: #${{ github.event.number }} - ${{ github.event.pull_request.title }}"
             echo "**Branch**: ${{ github.event.pull_request.head.ref }}"
             echo "**Action**: ${{ github.event.action }}"
             echo ""
           fi
-          
+
           echo "## 🔄 Recent Activity"
           roadmap activity --limit 5 || echo "Activity log unavailable"
-          
+
           echo ""
           echo "## 🎯 Active Issues"
           roadmap issue list --status in-progress || echo "No active issues"
-          
-          echo ""  
+
+          echo ""
           echo "## 🏁 Recently Completed"
           roadmap issue list --status done --limit 3 || echo "No recent completions"
-          
+
         } > activity-summary.md
-        
+
         echo "📋 Activity Summary Generated:"
         cat activity-summary.md
-        
+
     - name: 📈 Update Metrics
       run: |
         echo "📈 Updating project metrics..."
-        
+
         # Recalculate progress for milestones
         roadmap recalculate-progress
-        
+
         # Show updated status
         echo "📊 Updated project status:"
         roadmap status
-        
+
         echo "🏆 Milestone progress:"
         roadmap milestone list
 
     - name: 🚨 Check for Blockers
       run: |
         echo "🚨 Checking for blocked issues or dependencies..."
-        
+
         # Future enhancement: dependency resolution
         echo "🔍 Dependency checking (future feature)"
-        
+
         # Check for overdue items
         echo "⏰ Checking for overdue items..."
         roadmap milestone list | grep -E "(overdue|late)" || echo "✅ No overdue items detected"

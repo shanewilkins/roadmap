@@ -14,11 +14,11 @@ copyright: Copyright &copy; 2025 Roadmap CLI Team
 # Configuration
 theme:
   name: material
-  
+
   # Static files
   static_templates:
     - 404.html
-  
+
   # Theme options
   palette:
     # Palette toggle for light mode
@@ -89,9 +89,7 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.details
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.emoji
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -112,13 +110,9 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
       combine_header_slug: true
-      slugify: !!python/object/apply:pymdownx.slugs.slugify
-        kwds:
-          case: lower
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
@@ -132,14 +126,14 @@ nav:
   - Home: index.md
   - Installation: INSTALLATION.md
   - Quick Start: quickstart.md
-  - CLI Reference: 
+  - CLI Reference:
     - Manual: CLI_REFERENCE.md
     - Auto-Generated: CLI_REFERENCE_AUTO.md
-  - Features: 
+  - Features:
     - Overview: FEATURE_SHOWCASE.md
     - Data Visualization: VISUALIZATION_FEATURES.md
   - Performance: PERFORMANCE_OPTIMIZATION.md
-  - Security: 
+  - Security:
     - Overview: SECURITY.md
     - Implementation: SECURITY_IMPLEMENTATION.md
     - Assessment: SECURITY_ASSESSMENT.md

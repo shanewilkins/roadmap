@@ -35,7 +35,7 @@ High-performance repository scanning engine for analyzing Git repositories, extr
 # Scan repository
 roadmap ci scan-repository --max-commits 1000
 
-# High-performance mode  
+# High-performance mode
 roadmap ci scan-repository --high-performance
 
 # Incremental scan

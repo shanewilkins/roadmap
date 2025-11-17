@@ -8,7 +8,6 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
-from roadmap.core import RoadmapCore
 
 
 class TestCrossPlatformCLIWorkflows:
@@ -20,7 +19,16 @@ class TestCrossPlatformCLIWorkflows:
         with tempfile.TemporaryDirectory() as temp_dir:
             os.chdir(temp_dir)
             runner = CliRunner()
-            result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            result = runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
             assert result.exit_code == 0
             yield temp_dir
 

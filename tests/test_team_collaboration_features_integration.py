@@ -1,16 +1,11 @@
 """Integration tests for all team collaboration features added."""
 
-import json
 import os
 import tempfile
-from datetime import datetime, timedelta
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
-from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Priority, Status
 
 
 class TestTeamCollaborationFeaturesIntegration:
@@ -23,7 +18,16 @@ class TestTeamCollaborationFeaturesIntegration:
             runner = CliRunner()
 
             # Initialize roadmap
-            result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            result = runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
             assert result.exit_code == 0
 
             # 1. Create issues with different assignees and dependencies
@@ -187,7 +191,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create a chain of dependencies
             runner.invoke(
@@ -214,7 +227,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create issues with dependencies
             result = runner.invoke(
@@ -245,7 +267,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create workload imbalance scenario
             # Heavy workload for alice
@@ -302,7 +333,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create issue and start work
             result = runner.invoke(
@@ -354,7 +394,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create various activities
             result = runner.invoke(
@@ -378,7 +427,8 @@ class TestTeamCollaborationFeaturesIntegration:
             assert result.exit_code == 0
             # Strip ANSI codes for cleaner matching
             import re
-            clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+
+            clean_output = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
             assert "Activity for last" in clean_output
 
             # Check filtered activity
@@ -391,7 +441,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create issues with estimates
             for i, estimate in enumerate([8, 16, 4, 12]):
@@ -427,7 +486,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create milestone
             runner.invoke(main, ["milestone", "create", "Sprint 1"])
@@ -472,7 +540,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Test commands with non-existent issues
             result = runner.invoke(main, ["handoff", "nonexistent", "alice"])
@@ -501,7 +578,16 @@ class TestTeamCollaborationFeaturesIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create many issues quickly
             assignees = ["alice", "bob", "charlie", "dave"]
@@ -544,7 +630,16 @@ class TestTeamCollaborationCLIIntegration:
             runner = CliRunner()
 
             # Initialize roadmap for commands that need it
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Test main help includes new commands
             result = runner.invoke(main, ["--help"])
@@ -575,7 +670,16 @@ class TestTeamCollaborationCLIIntegration:
             runner = CliRunner()
 
             # Initialize roadmap for commands that need it
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             commands_with_descriptions = {
                 "dashboard": "Show smart daily dashboard",
@@ -605,7 +709,16 @@ class TestTeamCollaborationCLIIntegration:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Test invalid options are handled gracefully
             result = runner.invoke(main, ["dashboard", "--invalid-option"])

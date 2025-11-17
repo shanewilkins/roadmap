@@ -60,7 +60,7 @@ This aligns our CLI terminology with GitHub's native project management concepts
 ### 🔄 Testing Results
 
 - ✅ `roadmap project create` - Creates projects successfully
-- ✅ `roadmap project list` - Lists projects in clean table format  
+- ✅ `roadmap project list` - Lists projects in clean table format
 - ✅ `roadmap project --help` - Shows proper command structure
 - ⚠️ `roadmap roadmap --help` - Shows deprecation warning as intended
 - ✅ CLI tests updated and passing for new commands
@@ -74,12 +74,12 @@ This aligns our CLI terminology with GitHub's native project management concepts
 - [x] Help text and documentation updated to reflect GitHub alignment
 - [x] Core CLI tests updated to use new command structure
 - [ ] Full test suite passes (some legacy tests still need updates)
-- [ ] Documentation files updated (README, docs/) 
+- [ ] Documentation files updated (README, docs/)
 
 ## GitHub Alignment Benefits
 
 - **Conceptual Clarity**: Users understand "projects" from GitHub experience
-- **API Consistency**: Matches GitHub's REST/GraphQL API terminology  
+- **API Consistency**: Matches GitHub's REST/GraphQL API terminology
 - **Sync Simplification**: Direct 1:1 mapping with GitHub Projects
 - **Industry Standard**: Aligns with established project management terminology
 

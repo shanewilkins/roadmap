@@ -10,7 +10,6 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 from roadmap.core import RoadmapCore
 from roadmap.models import Issue, IssueType, Priority, Status
@@ -34,9 +33,19 @@ class TestRepositoryScannerCore:
         self.original_cwd = os.getcwd()
 
         # Initialize git repo
-        subprocess.run(['git', 'init'], cwd=self.repo_path, check=True, capture_output=True)
-        subprocess.run(['git', 'config', 'user.name', 'Test Scanner'], cwd=self.repo_path, check=True)
-        subprocess.run(['git', 'config', 'user.email', 'scanner@test.com'], cwd=self.repo_path, check=True)
+        subprocess.run(
+            ["git", "init"], cwd=self.repo_path, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test Scanner"],
+            cwd=self.repo_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "scanner@test.com"],
+            cwd=self.repo_path,
+            check=True,
+        )
 
         # Change to test directory
         os.chdir(self.repo_path)
@@ -49,68 +58,122 @@ class TestRepositoryScannerCore:
         """Clean up after each test."""
         os.chdir(self.original_cwd)
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def create_test_commits(self):
         """Create a realistic commit history for testing."""
         commits_data = [
             # Basic commits
-            ('Initial commit', 'README.md', '# Test Repository\\n'),
-            ('Add project structure', 'src/__init__.py', '# Main package\\n'),
-
+            ("Initial commit", "README.md", "# Test Repository\\n"),
+            ("Add project structure", "src/__init__.py", "# Main package\\n"),
             # Conventional commits with issue references
-            ('feat: implement user authentication abc12345', 'src/auth.py', '# Authentication module\\n'),
-            ('fix: resolve login bug abc12345 [progress:25%]', 'src/auth.py', '# Authentication module\\n# Fixed login\\n'),
-            ('test: add authentication tests', 'tests/test_auth.py', '# Auth tests\\n'),
-            ('abc12345: complete authentication [progress:75%]', 'src/auth.py', '# Authentication module\\n# Complete implementation\\n'),
-
+            (
+                "feat: implement user authentication abc12345",
+                "src/auth.py",
+                "# Authentication module\\n",
+            ),
+            (
+                "fix: resolve login bug abc12345 [progress:25%]",
+                "src/auth.py",
+                "# Authentication module\\n# Fixed login\\n",
+            ),
+            ("test: add authentication tests", "tests/test_auth.py", "# Auth tests\\n"),
+            (
+                "abc12345: complete authentication [progress:75%]",
+                "src/auth.py",
+                "# Authentication module\\n# Complete implementation\\n",
+            ),
             # Different issue
-            ('def67890: start user management feature', 'src/users.py', '# User management\\n'),
-            ('feat(users): add user creation def67890', 'src/users.py', '# User management\\n# User creation\\n'),
-            ('def67890: implement user profiles [progress:50%]', 'src/users.py', '# User management\\n# Profiles\\n'),
-
+            (
+                "def67890: start user management feature",
+                "src/users.py",
+                "# User management\\n",
+            ),
+            (
+                "feat(users): add user creation def67890",
+                "src/users.py",
+                "# User management\\n# User creation\\n",
+            ),
+            (
+                "def67890: implement user profiles [progress:50%]",
+                "src/users.py",
+                "# User management\\n# Profiles\\n",
+            ),
             # Completion markers
-            ('abc12345: finalize authentication [closes roadmap:abc12345]', 'src/auth.py', '# Authentication module\\n# Final version\\n'),
-            ('def67890: complete user management [progress:100%]', 'src/users.py', '# User management\\n# Complete\\n'),
-
+            (
+                "abc12345: finalize authentication [closes roadmap:abc12345]",
+                "src/auth.py",
+                "# Authentication module\\n# Final version\\n",
+            ),
+            (
+                "def67890: complete user management [progress:100%]",
+                "src/users.py",
+                "# User management\\n# Complete\\n",
+            ),
             # Various commit types
-            ('docs: update API documentation', 'docs/api.md', '# API Documentation\\n'),
-            ('chore: update dependencies', 'requirements.txt', 'requests==2.28.0\\npytest==7.0.0\\n'),
-            ('refactor: improve code structure', 'src/utils.py', '# Utilities\\n'),
-            ('style: fix code formatting', 'src/auth.py', '# Authentication module\\n# Final version\\n# Formatted\\n'),
-
+            ("docs: update API documentation", "docs/api.md", "# API Documentation\\n"),
+            (
+                "chore: update dependencies",
+                "requirements.txt",
+                "requests==2.28.0\\npytest==7.0.0\\n",
+            ),
+            ("refactor: improve code structure", "src/utils.py", "# Utilities\\n"),
+            (
+                "style: fix code formatting",
+                "src/auth.py",
+                "# Authentication module\\n# Final version\\n# Formatted\\n",
+            ),
             # Breaking changes
-            ('feat!: redesign API interface 12345abc', 'src/api.py', '# New API design\n'),
-            ('12345abc: implement breaking changes [progress:60%]', 'src/api.py', '# New API design\n# Breaking changes\n'),
+            (
+                "feat!: redesign API interface 12345abc",
+                "src/api.py",
+                "# New API design\n",
+            ),
+            (
+                "12345abc: implement breaking changes [progress:60%]",
+                "src/api.py",
+                "# New API design\n# Breaking changes\n",
+            ),
         ]
 
         for message, filename, content in commits_data:
             file_path = self.repo_path / filename
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.write_text(content)
-            subprocess.run(['git', 'add', filename], cwd=self.repo_path, check=True)
-            subprocess.run(['git', 'commit', '-m', message], cwd=self.repo_path, check=True)
+            subprocess.run(["git", "add", filename], cwd=self.repo_path, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", message], cwd=self.repo_path, check=True
+            )
 
         return len(commits_data)
 
     def create_test_branches(self):
         """Create test branches with various naming patterns."""
         branches = [
-            ('feature/abc12345-authentication', 'abc12345: add OAuth integration'),
-            ('bugfix/def67890-user-validation', 'def67890: fix user validation bug'),
-            ('hotfix/critical-security-patch', 'fix: patch security vulnerability'),
-            ('feature/12345abc-api-redesign', '12345abc: implement new API endpoints'),
-            ('docs/update-readme', 'docs: comprehensive README update'),
-            ('chore/dependency-updates', 'chore: update all dependencies'),
+            ("feature/abc12345-authentication", "abc12345: add OAuth integration"),
+            ("bugfix/def67890-user-validation", "def67890: fix user validation bug"),
+            ("hotfix/critical-security-patch", "fix: patch security vulnerability"),
+            ("feature/12345abc-api-redesign", "12345abc: implement new API endpoints"),
+            ("docs/update-readme", "docs: comprehensive README update"),
+            ("chore/dependency-updates", "chore: update all dependencies"),
         ]
 
         for branch_name, commit_msg in branches:
-            subprocess.run(['git', 'checkout', '-b', branch_name], cwd=self.repo_path, check=True)
+            subprocess.run(
+                ["git", "checkout", "-b", branch_name], cwd=self.repo_path, check=True
+            )
             test_file = self.repo_path / f'{branch_name.replace("/", "_")}.txt'
-            test_file.write_text(f'Branch: {branch_name}\\n')
-            subprocess.run(['git', 'add', test_file.name], cwd=self.repo_path, check=True)
-            subprocess.run(['git', 'commit', '-m', commit_msg], cwd=self.repo_path, check=True)
-            subprocess.run(['git', 'checkout', 'master'], cwd=self.repo_path, check=True)
+            test_file.write_text(f"Branch: {branch_name}\\n")
+            subprocess.run(
+                ["git", "add", test_file.name], cwd=self.repo_path, check=True
+            )
+            subprocess.run(
+                ["git", "commit", "-m", commit_msg], cwd=self.repo_path, check=True
+            )
+            subprocess.run(
+                ["git", "checkout", "master"], cwd=self.repo_path, check=True
+            )
 
         return len(branches)
 
@@ -129,7 +192,7 @@ class TestRepositoryScannerCore:
 
         # Verify commit type detection
         commit_types = {c.commit_type for c in commits if c.commit_type}
-        expected_types = {'feat', 'fix', 'test', 'docs', 'chore', 'refactor', 'style'}
+        expected_types = {"feat", "fix", "test", "docs", "chore", "refactor", "style"}
         assert len(commit_types.intersection(expected_types)) >= 5
 
         # Verify issue ID extraction
@@ -140,9 +203,9 @@ class TestRepositoryScannerCore:
         all_issue_ids = set()
         for c in commits_with_issues:
             all_issue_ids.update(c.issue_ids)
-        assert 'abc12345' in all_issue_ids
-        assert 'def67890' in all_issue_ids
-        assert '12345abc' in all_issue_ids
+        assert "abc12345" in all_issue_ids
+        assert "def67890" in all_issue_ids
+        assert "12345abc" in all_issue_ids
 
         # Verify progress markers
         commits_with_progress = [c for c in commits if c.progress_markers]
@@ -172,7 +235,7 @@ class TestRepositoryScannerCore:
 
         # Verify branch type detection
         branch_types = {b.branch_type for b in branches if b.branch_type}
-        expected_types = {'feature', 'bugfix', 'docs', 'chore'}
+        expected_types = {"feature", "bugfix", "docs", "chore"}
         assert len(branch_types.intersection(expected_types)) >= 3
 
         # Verify issue ID extraction from branch names
@@ -183,14 +246,14 @@ class TestRepositoryScannerCore:
         branch_issue_ids = set()
         for b in branches_with_issues:
             branch_issue_ids.update(b.issue_ids)
-        assert 'abc12345' in branch_issue_ids
-        assert 'def67890' in branch_issue_ids
-        assert '12345abc' in branch_issue_ids
+        assert "abc12345" in branch_issue_ids
+        assert "def67890" in branch_issue_ids
+        assert "12345abc" in branch_issue_ids
 
         # Verify lifecycle stage detection
         lifecycle_stages = {b.lifecycle_stage for b in branches}
         # Should have main branch and other stages
-        assert 'main' in lifecycle_stages or 'merged' in lifecycle_stages
+        assert "main" in lifecycle_stages or "merged" in lifecycle_stages
 
     def test_comprehensive_scan_integration(self):
         """Test full comprehensive scanning functionality."""
@@ -202,7 +265,7 @@ class TestRepositoryScannerCore:
             max_branches=15,
             use_parallel_processing=False,
             analyze_commit_patterns=True,
-            analyze_branch_patterns=True
+            analyze_branch_patterns=True,
         )
 
         scanner = AdvancedRepositoryScanner(self.core, config)
@@ -237,7 +300,7 @@ class TestRepositoryScannerCore:
             title="Authentication Feature",
             priority=Priority.HIGH,
             type=IssueType.FEATURE,
-            status=Status.IN_PROGRESS
+            status=Status.IN_PROGRESS,
         )
         auth_issue_path = self.core.issues_dir / "abc12345.yaml"
         IssueParser.save_issue_file(auth_issue, auth_issue_path)
@@ -247,15 +310,13 @@ class TestRepositoryScannerCore:
             title="User Management",
             priority=Priority.MEDIUM,
             type=IssueType.FEATURE,
-            status=Status.IN_PROGRESS
+            status=Status.IN_PROGRESS,
         )
         user_issue_path = self.core.issues_dir / "def67890.yaml"
         IssueParser.save_issue_file(user_issue, user_issue_path)
 
         config = RepositoryScanConfig(
-            max_commits=20,
-            create_missing_issues=True,
-            auto_link_issues=True
+            max_commits=20, create_missing_issues=True, auto_link_issues=True
         )
 
         scanner = AdvancedRepositoryScanner(self.core, config)
@@ -304,7 +365,7 @@ class TestRepositoryScannerCore:
         scan_result = scanner.perform_comprehensive_scan()
 
         # Test export to temporary file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             export_path = Path(f.name)
 
         try:
@@ -317,45 +378,56 @@ class TestRepositoryScannerCore:
                 data = json.load(f)
 
             # Check required sections
-            required_sections = ['scan_metadata', 'statistics', 'commits', 'branches', 'associations']
+            required_sections = [
+                "scan_metadata",
+                "statistics",
+                "commits",
+                "branches",
+                "associations",
+            ]
             for section in required_sections:
                 assert section in data
 
             # Verify metadata
-            metadata = data['scan_metadata']
-            assert 'scan_date' in metadata
-            assert 'repository_path' in metadata
-            assert 'scan_duration_seconds' in metadata
+            metadata = data["scan_metadata"]
+            assert "scan_date" in metadata
+            assert "repository_path" in metadata
+            assert "scan_duration_seconds" in metadata
 
             # Verify statistics
-            stats = data['statistics']
-            assert stats['total_commits_scanned'] > 0
-            assert stats['total_branches_scanned'] > 0
+            stats = data["statistics"]
+            assert stats["total_commits_scanned"] > 0
+            assert stats["total_branches_scanned"] > 0
 
             # Verify commits data
-            commits = data['commits']
+            commits = data["commits"]
             assert len(commits) > 0
 
             # Check commit structure
             commit = commits[0]
-            required_commit_fields = ['sha', 'message', 'author', 'date', 'issue_ids']
+            required_commit_fields = ["sha", "message", "author", "date", "issue_ids"]
             for field in required_commit_fields:
                 assert field in commit
 
             # Verify branches data
-            branches = data['branches']
+            branches = data["branches"]
             assert len(branches) > 0
 
             # Check branch structure
             branch = branches[0]
-            required_branch_fields = ['name', 'issue_ids', 'branch_type', 'lifecycle_stage']
+            required_branch_fields = [
+                "name",
+                "issue_ids",
+                "branch_type",
+                "lifecycle_stage",
+            ]
             for field in required_branch_fields:
                 assert field in branch
 
             # Verify associations
-            associations = data['associations']
-            assert 'issue_to_commits' in associations
-            assert 'commit_to_issues' in associations
+            associations = data["associations"]
+            assert "issue_to_commits" in associations
+            assert "commit_to_issues" in associations
 
         finally:
             if export_path.exists():
@@ -367,9 +439,7 @@ class TestRepositoryScannerCore:
 
         # Test with minimal configuration
         minimal_config = RepositoryScanConfig(
-            max_commits=5,
-            max_branches=3,
-            use_parallel_processing=False
+            max_commits=5, max_branches=3, use_parallel_processing=False
         )
 
         scanner = AdvancedRepositoryScanner(self.core, minimal_config)
@@ -384,7 +454,7 @@ class TestRepositoryScannerCore:
         recent_config = RepositoryScanConfig(
             max_commits=50,
             since_date=datetime.now() - timedelta(days=1),  # Only recent commits
-            use_parallel_processing=False
+            use_parallel_processing=False,
         )
 
         scanner = AdvancedRepositoryScanner(self.core, recent_config)
@@ -396,9 +466,9 @@ class TestRepositoryScannerCore:
         # Test with custom patterns
         custom_config = RepositoryScanConfig(
             max_commits=20,
-            custom_patterns=[r'custom-pattern-\\d+'],
-            ignore_patterns=[r'^Merge\\s+', r'^WIP'],
-            use_parallel_processing=False
+            custom_patterns=[r"custom-pattern-\\d+"],
+            ignore_patterns=[r"^Merge\\s+", r"^WIP"],
+            use_parallel_processing=False,
         )
 
         scanner = AdvancedRepositoryScanner(self.core, custom_config)
@@ -439,14 +509,11 @@ class TestRepositoryScannerCore:
 
         # Test sequential vs parallel processing (when applicable)
         sequential_config = RepositoryScanConfig(
-            max_commits=20,
-            use_parallel_processing=False
+            max_commits=20, use_parallel_processing=False
         )
 
         parallel_config = RepositoryScanConfig(
-            max_commits=20,
-            use_parallel_processing=True,
-            max_workers=2
+            max_commits=20, use_parallel_processing=True, max_workers=2
         )
 
         scanner_seq = AdvancedRepositoryScanner(self.core, sequential_config)

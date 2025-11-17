@@ -18,7 +18,7 @@
   "reportMissingImports": "warning",
   "reportUndefinedVariable": "error",
   "reportAssertAlwaysTrue": "warning",
-  "reportUnusedImport": "information",    
+  "reportUnusedImport": "information",
   "reportUnusedVariable": "information",
   "reportDuplicateImport": "warning",
   "reportGeneralTypeIssues": "warning",
@@ -30,7 +30,11 @@
         "roadmap/core.py",
         "roadmap/models.py",
         "roadmap/cli/core.py",
-        "roadmap/persistence.py"
+        "roadmap/persistence.py",
+        "roadmap/parser.py",
+        "roadmap/sync.py",
+        "roadmap/security.py",
+        "roadmap/timezone_utils.py"
       ],
       "typeCheckingMode": "standard",
       "reportUnknownArgumentType": "warning",

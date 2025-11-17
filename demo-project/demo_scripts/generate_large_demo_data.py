@@ -6,8 +6,6 @@ Creates 1000+ realistic issues across multiple milestones with proper distributi
 
 import random
 import subprocess
-import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -19,7 +17,7 @@ def run_command(command, suppress_output=True):
             shell=True,
             capture_output=suppress_output,
             text=True,
-            cwd="/Users/shane/roadmap/demo-project"
+            cwd="/Users/shane/roadmap/demo-project",
         )
         return result.returncode == 0
     except Exception:
@@ -38,28 +36,79 @@ def generate_issues_batch(milestone, count, developers, issue_templates):
 
         # Customize the issue title
         components = [
-            "API gateway", "web interface", "mobile app", "database", "authentication service",
-            "file storage system", "sync engine", "notification service", "analytics engine",
-            "admin dashboard", "search service", "user management", "backup system",
-            "collaboration tools", "performance monitor", "security module", "audit system"
+            "API gateway",
+            "web interface",
+            "mobile app",
+            "database",
+            "authentication service",
+            "file storage system",
+            "sync engine",
+            "notification service",
+            "analytics engine",
+            "admin dashboard",
+            "search service",
+            "user management",
+            "backup system",
+            "collaboration tools",
+            "performance monitor",
+            "security module",
+            "audit system",
         ]
 
         actions = [
-            "Implement", "Fix", "Optimize", "Refactor", "Setup", "Configure", "Update",
-            "Debug", "Create", "Build", "Add", "Address", "Develop", "Enhance", "Correct"
+            "Implement",
+            "Fix",
+            "Optimize",
+            "Refactor",
+            "Setup",
+            "Configure",
+            "Update",
+            "Debug",
+            "Create",
+            "Build",
+            "Add",
+            "Address",
+            "Develop",
+            "Enhance",
+            "Correct",
         ]
 
         features = [
-            "real-time collaboration", "two-factor authentication", "role-based permissions",
-            "disaster recovery", "mobile synchronization", "offline mode", "version history",
-            "audit logging", "performance monitoring", "encryption at rest", "OAuth 2.0",
-            "search functionality", "notification system", "analytics dashboard",
-            "user management", "conflict resolution", "backup automation", "live document editing",
-            "metadata extraction", "team workspaces", "usage metrics", "tagging system",
-            "multi-region deployment", "error handling", "logging configuration",
-            "database migration", "dependency updates", "security review", "test coverage",
-            "code cleanup", "documentation", "monitoring setup", "performance optimization",
-            "deployment scripts", "configuration management"
+            "real-time collaboration",
+            "two-factor authentication",
+            "role-based permissions",
+            "disaster recovery",
+            "mobile synchronization",
+            "offline mode",
+            "version history",
+            "audit logging",
+            "performance monitoring",
+            "encryption at rest",
+            "OAuth 2.0",
+            "search functionality",
+            "notification system",
+            "analytics dashboard",
+            "user management",
+            "conflict resolution",
+            "backup automation",
+            "live document editing",
+            "metadata extraction",
+            "team workspaces",
+            "usage metrics",
+            "tagging system",
+            "multi-region deployment",
+            "error handling",
+            "logging configuration",
+            "database migration",
+            "dependency updates",
+            "security review",
+            "test coverage",
+            "code cleanup",
+            "documentation",
+            "monitoring setup",
+            "performance optimization",
+            "deployment scripts",
+            "configuration management",
         ]
 
         # Generate varied issue titles
@@ -69,21 +118,34 @@ def generate_issues_batch(milestone, count, developers, issue_templates):
 
         if template["type"] == "bug":
             bug_issues = [
-                "memory leak", "slow query performance", "authentication failures",
-                "sync conflicts", "permission errors", "timeout issues", "race condition",
-                "data corruption", "download interruptions", "validation bypasses",
-                "connection timeouts", "file corruption", "session expiry",
-                "deadlock detection", "cache invalidation", "API rate limiting"
+                "memory leak",
+                "slow query performance",
+                "authentication failures",
+                "sync conflicts",
+                "permission errors",
+                "timeout issues",
+                "race condition",
+                "data corruption",
+                "download interruptions",
+                "validation bypasses",
+                "connection timeouts",
+                "file corruption",
+                "session expiry",
+                "deadlock detection",
+                "cache invalidation",
+                "API rate limiting",
             ]
             issue_title = f"{action} {random.choice(bug_issues)} in {component}"
         else:
             issue_title = f"{action} {feature} for {component}"
 
         # Select assignee and priority
-        assignee = random.choice(developers) if random.random() < 0.85 else None  # 85% assigned
+        assignee = (
+            random.choice(developers) if random.random() < 0.85 else None
+        )  # 85% assigned
         priority = random.choices(
             ["critical", "high", "medium", "low"],
-            weights=[0.1, 0.25, 0.5, 0.15]  # Realistic priority distribution
+            weights=[0.1, 0.25, 0.5, 0.15],  # Realistic priority distribution
         )[0]
 
         # Build command
@@ -91,11 +153,11 @@ def generate_issues_batch(milestone, count, developers, issue_templates):
             "poetry run roadmap issue create",
             f'"{issue_title}"',
             f"--type {template['type']}",
-            f"--priority {priority}"
+            f"--priority {priority}",
         ]
 
         if milestone:
-            command_parts.append(f"--milestone \"{milestone}\"")
+            command_parts.append(f'--milestone "{milestone}"')
 
         if assignee:
             command_parts.append(f"--assignee {assignee}")
@@ -144,17 +206,29 @@ def main():
 
     # Team members (same as before plus a few more)
     developers = [
-        "alex.chen", "sarah.johnson", "michael.brown", "emily.davis",
-        "david.kim", "lisa.taylor", "james.wilson", "maria.rodriguez",
-        "robert.anderson", "jennifer.thomas", "karen.miller", "chris.lee",
-        "amanda.white", "ryan.garcia", "nicole.thompson", "brandon.martinez"
+        "alex.chen",
+        "sarah.johnson",
+        "michael.brown",
+        "emily.davis",
+        "david.kim",
+        "lisa.taylor",
+        "james.wilson",
+        "maria.rodriguez",
+        "robert.anderson",
+        "jennifer.thomas",
+        "karen.miller",
+        "chris.lee",
+        "amanda.white",
+        "ryan.garcia",
+        "nicole.thompson",
+        "brandon.martinez",
     ]
 
     # Issue type templates with realistic distribution
     issue_templates = [
         {"type": "feature", "weight": 6},  # 60% features
-        {"type": "bug", "weight": 3},      # 30% bugs
-        {"type": "other", "weight": 1}     # 10% other
+        {"type": "bug", "weight": 3},  # 30% bugs
+        {"type": "other", "weight": 1},  # 10% other
     ]
 
     # Expand templates based on weights
@@ -169,7 +243,7 @@ def main():
         ("v1.8.0 - Advanced Analytics Dashboard", 200),
         ("v1.9.0 - Mobile Applications & API Enhancement", 250),
         ("v2.0.0 - AI-Powered Features & Enterprise Scale", 200),
-        (None, 100)  # Backlog items
+        (None, 100),  # Backlog items
     ]
 
     total_issues_to_create = sum(count for _, count in milestone_distribution)
@@ -186,7 +260,7 @@ def main():
         shell=True,
         capture_output=True,
         text=True,
-        cwd="/Users/shane/roadmap/demo-project"
+        cwd="/Users/shane/roadmap/demo-project",
     )
 
     current_count = 0
@@ -204,7 +278,9 @@ def main():
         milestone_display = milestone or "Backlog"
         print(f"🔧 Generating issues for: {milestone_display}")
 
-        created = generate_issues_batch(milestone, count, developers, weighted_templates)
+        created = generate_issues_batch(
+            milestone, count, developers, weighted_templates
+        )
         total_created += created
         print()
 
@@ -222,7 +298,7 @@ def main():
         shell=True,
         capture_output=True,
         text=True,
-        cwd="/Users/shane/roadmap/demo-project"
+        cwd="/Users/shane/roadmap/demo-project",
     )
 
     if result.returncode == 0:
@@ -235,4 +311,5 @@ def main():
 
 if __name__ == "__main__":
     import time
+
     main()

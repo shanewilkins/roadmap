@@ -10,7 +10,6 @@ import pytest
 
 from roadmap.core import RoadmapCore
 from roadmap.git_hooks import GitHookManager
-from roadmap.models import IssueType, Priority
 
 
 class TestGitHooksSpecificCoverage:
@@ -25,14 +24,24 @@ class TestGitHooksSpecificCoverage:
 
             try:
                 # Initialize git repository
-                subprocess.run(['git', 'init'], cwd=repo_path, check=True, capture_output=True)
-                subprocess.run(['git', 'config', 'user.name', 'Test'], cwd=repo_path, check=True)
-                subprocess.run(['git', 'config', 'user.email', 'test@test.com'], cwd=repo_path, check=True)
+                subprocess.run(
+                    ["git", "init"], cwd=repo_path, check=True, capture_output=True
+                )
+                subprocess.run(
+                    ["git", "config", "user.name", "Test"], cwd=repo_path, check=True
+                )
+                subprocess.run(
+                    ["git", "config", "user.email", "test@test.com"],
+                    cwd=repo_path,
+                    check=True,
+                )
 
                 # Create initial commit
-                (repo_path / 'README.md').write_text('# Test\\n')
-                subprocess.run(['git', 'add', 'README.md'], cwd=repo_path, check=True)
-                subprocess.run(['git', 'commit', '-m', 'Initial commit'], cwd=repo_path, check=True)
+                (repo_path / "README.md").write_text("# Test\\n")
+                subprocess.run(["git", "add", "README.md"], cwd=repo_path, check=True)
+                subprocess.run(
+                    ["git", "commit", "-m", "Initial commit"], cwd=repo_path, check=True
+                )
 
                 os.chdir(repo_path)
 
@@ -74,18 +83,18 @@ class TestGitHooksSpecificCoverage:
         hook_manager = GitHookManager(core)
 
         # Install only specific hooks
-        result = hook_manager.install_hooks(['post-commit', 'pre-push'])
+        result = hook_manager.install_hooks(["post-commit", "pre-push"])
         assert result
 
-        hooks_dir = repo_path / '.git' / 'hooks'
+        hooks_dir = repo_path / ".git" / "hooks"
 
         # Should have installed requested hooks
-        assert (hooks_dir / 'post-commit').exists()
-        assert (hooks_dir / 'pre-push').exists()
+        assert (hooks_dir / "post-commit").exists()
+        assert (hooks_dir / "pre-push").exists()
 
         # Should not have installed other hooks
-        assert not (hooks_dir / 'post-checkout').exists()
-        assert not (hooks_dir / 'post-merge').exists()
+        assert not (hooks_dir / "post-checkout").exists()
+        assert not (hooks_dir / "post-merge").exists()
 
     def test_hook_manager_install_invalid_hooks(self, minimal_git_repo):
         """Test installing invalid hook names."""
@@ -94,26 +103,26 @@ class TestGitHooksSpecificCoverage:
         hook_manager = GitHookManager(core)
 
         # Install mix of valid and invalid hooks
-        result = hook_manager.install_hooks(['post-commit', 'invalid-hook', 'pre-push'])
+        result = hook_manager.install_hooks(["post-commit", "invalid-hook", "pre-push"])
         assert result  # Should still succeed for valid hooks
 
-        hooks_dir = repo_path / '.git' / 'hooks'
+        hooks_dir = repo_path / ".git" / "hooks"
 
         # Should have installed valid hooks
-        assert (hooks_dir / 'post-commit').exists()
-        assert (hooks_dir / 'pre-push').exists()
+        assert (hooks_dir / "post-commit").exists()
+        assert (hooks_dir / "pre-push").exists()
 
         # Should not have created invalid hook
-        assert not (hooks_dir / 'invalid-hook').exists()
+        assert not (hooks_dir / "invalid-hook").exists()
 
     def test_uninstall_hooks_non_roadmap_hooks(self, minimal_git_repo):
         """Test uninstalling when non-roadmap hooks exist."""
         core, repo_path = minimal_git_repo
 
-        hooks_dir = repo_path / '.git' / 'hooks'
+        hooks_dir = repo_path / ".git" / "hooks"
 
         # Create a non-roadmap hook
-        non_roadmap_hook = hooks_dir / 'post-commit'
+        non_roadmap_hook = hooks_dir / "post-commit"
         non_roadmap_hook.write_text('#!/bin/bash\\necho "Non-roadmap hook"\\n')
         non_roadmap_hook.chmod(0o755)
 
@@ -125,28 +134,34 @@ class TestGitHooksSpecificCoverage:
 
         # Non-roadmap hook should still exist
         assert non_roadmap_hook.exists()
-        assert 'roadmap-hook' not in non_roadmap_hook.read_text()
+        assert "roadmap-hook" not in non_roadmap_hook.read_text()
 
-    @patch('subprocess.run')
-    def test_handle_post_commit_no_latest_commit(self, mock_subprocess, minimal_git_repo):
+    @patch("subprocess.run")
+    def test_handle_post_commit_no_latest_commit(
+        self, mock_subprocess, minimal_git_repo
+    ):
         """Test post-commit handler when no latest commit available."""
         core, repo_path = minimal_git_repo
 
         # Mock git command to return empty
-        mock_subprocess.return_value = Mock(stdout='', stderr='', returncode=0, check=True)
+        mock_subprocess.return_value = Mock(
+            stdout="", stderr="", returncode=0, check=True
+        )
 
         hook_manager = GitHookManager(core)
 
         # Should handle gracefully when no commit SHA
         hook_manager.handle_post_commit()  # Should not raise exception
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_handle_pre_push_no_current_branch(self, mock_subprocess, minimal_git_repo):
         """Test pre-push handler when no current branch available."""
         core, repo_path = minimal_git_repo
 
         # Mock git command to return empty branch
-        mock_subprocess.return_value = Mock(stdout='', stderr='', returncode=0, check=True)
+        mock_subprocess.return_value = Mock(
+            stdout="", stderr="", returncode=0, check=True
+        )
 
         hook_manager = GitHookManager(core)
 
@@ -171,23 +186,22 @@ class TestGitHooksSpecificCoverage:
         # Should handle gracefully
         hook_manager.handle_post_merge()  # Should not raise exception
 
-    @patch('subprocess.run')
-    def test_handle_post_commit_ci_tracking_error(self, mock_subprocess, minimal_git_repo):
+    @patch("subprocess.run")
+    def test_handle_post_commit_ci_tracking_error(
+        self, mock_subprocess, minimal_git_repo
+    ):
         """Test post-commit handler when CI tracking fails."""
         core, repo_path = minimal_git_repo
 
         # Mock successful git command
         mock_subprocess.return_value = Mock(
-            stdout='abc123def456\\n',
-            stderr='',
-            returncode=0,
-            check=True
+            stdout="abc123def456\\n", stderr="", returncode=0, check=True
         )
 
         hook_manager = GitHookManager(core)
 
         # Should handle CI tracking errors gracefully
-        with patch('roadmap.ci_tracking.CITracker') as mock_ci_tracker:
+        with patch("roadmap.ci_tracking.CITracker") as mock_ci_tracker:
             mock_ci_tracker.side_effect = Exception("CI tracking failed")
 
             # Should not raise exception even if CI tracking fails
@@ -198,19 +212,19 @@ class TestGitHooksSpecificCoverage:
         core, repo_path = minimal_git_repo
 
         hook_manager = GitHookManager(core)
-        hook_manager.install_hooks(['post-commit'])
+        hook_manager.install_hooks(["post-commit"])
 
-        hook_file = repo_path / '.git' / 'hooks' / 'post-commit'
+        hook_file = repo_path / ".git" / "hooks" / "post-commit"
         assert hook_file.exists()
 
         content = hook_file.read_text()
 
         # Verify hook script contains expected content
-        assert '#!/bin/bash' in content
-        assert 'roadmap-hook' in content
-        assert 'GitHookManager' in content
-        assert 'handle_post_commit' in content
-        assert 'sys.path.insert(0' in content
+        assert "#!/bin/bash" in content
+        assert "roadmap-hook" in content
+        assert "GitHookManager" in content
+        assert "handle_post_commit" in content
+        assert "sys.path.insert(0" in content
 
     def test_hook_file_permissions(self, minimal_git_repo):
         """Test that installed hooks have correct permissions."""
@@ -219,8 +233,8 @@ class TestGitHooksSpecificCoverage:
         hook_manager = GitHookManager(core)
         hook_manager.install_hooks()
 
-        hooks_dir = repo_path / '.git' / 'hooks'
-        hook_names = ['post-commit', 'pre-push', 'post-checkout', 'post-merge']
+        hooks_dir = repo_path / ".git" / "hooks"
+        hook_names = ["post-commit", "pre-push", "post-checkout", "post-merge"]
 
         for hook_name in hook_names:
             hook_file = hooks_dir / hook_name
@@ -237,7 +251,7 @@ class TestGitHooksSpecificCoverage:
         hook_manager = GitHookManager(core)
 
         # Make hooks directory read-only to cause installation error
-        hooks_dir = repo_path / '.git' / 'hooks'
+        hooks_dir = repo_path / ".git" / "hooks"
         original_mode = hooks_dir.stat().st_mode
 
         try:
@@ -256,14 +270,14 @@ class TestGitHooksSpecificCoverage:
         core, repo_path = minimal_git_repo
 
         hook_manager = GitHookManager(core)
-        hooks_dir = repo_path / '.git' / 'hooks'
+        hooks_dir = repo_path / ".git" / "hooks"
 
         for cycle in range(3):
             # Install hooks
             assert hook_manager.install_hooks()
 
             # Verify installation
-            for hook_name in ['post-commit', 'pre-push', 'post-checkout', 'post-merge']:
+            for hook_name in ["post-commit", "pre-push", "post-checkout", "post-merge"]:
                 hook_file = hooks_dir / hook_name
                 assert hook_file.exists()
 
@@ -271,8 +285,8 @@ class TestGitHooksSpecificCoverage:
             assert hook_manager.uninstall_hooks()
 
             # Verify uninstallation (roadmap hooks should be removed)
-            for hook_name in ['post-commit', 'pre-push', 'post-checkout', 'post-merge']:
+            for hook_name in ["post-commit", "pre-push", "post-checkout", "post-merge"]:
                 hook_file = hooks_dir / hook_name
                 if hook_file.exists():
                     content = hook_file.read_text()
-                    assert 'roadmap-hook' not in content
+                    assert "roadmap-hook" not in content

@@ -1,5 +1,4 @@
 import subprocess
-from pathlib import Path
 
 from roadmap.git_integration import GitIntegration
 from roadmap.models import Issue
@@ -9,8 +8,12 @@ def test_untracked_files_do_not_block_branch_creation(tmp_path):
     # Initialize a real git repo
     repo_path = tmp_path
     subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.name", "Test User"], cwd=repo_path, check=True)
-    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo_path, check=True)
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"], cwd=repo_path, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"], cwd=repo_path, check=True
+    )
 
     # Create and commit a file so repo has a HEAD
     (repo_path / "README.md").write_text("# Repo")

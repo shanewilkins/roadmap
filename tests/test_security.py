@@ -12,7 +12,6 @@ This module tests all security functions including:
 
 import logging
 import os
-import stat
 import tempfile
 import time
 from contextlib import contextmanager
@@ -47,6 +46,7 @@ def safe_working_directory(directory):
         except (FileNotFoundError, OSError):
             # Last resort - go to home directory
             os.chdir(os.path.expanduser("~"))
+
 
 from roadmap.security import (
     PathValidationError,
@@ -176,7 +176,7 @@ class TestCreateSecureFile:
             with create_secure_file(invalid_path):
                 pass
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_create_secure_file_logging(self, mock_log):
         """Test that security events are logged properly."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -190,9 +190,7 @@ class TestCreateSecureFile:
         call_args = mock_log.call_args_list
 
         # Find the file_created event
-        creation_logged = any(
-            call[0][0] == "file_created" for call in call_args
-        )
+        creation_logged = any(call[0][0] == "file_created" for call in call_args)
         assert creation_logged
 
 
@@ -246,11 +244,13 @@ class TestCreateSecureDirectory:
     def test_create_secure_directory_invalid_path(self):
         """Test directory creation with invalid path."""
         # Try to create directory in a read-only location (simulate)
-        with patch('pathlib.Path.mkdir', side_effect=PermissionError("Access denied")):
-            with pytest.raises(SecurityError, match="Failed to create secure directory"):
+        with patch("pathlib.Path.mkdir", side_effect=PermissionError("Access denied")):
+            with pytest.raises(
+                SecurityError, match="Failed to create secure directory"
+            ):
                 create_secure_directory(Path("/invalid/path"))
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_create_secure_directory_logging(self, mock_log):
         """Test directory creation logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -259,8 +259,7 @@ class TestCreateSecureDirectory:
             create_secure_directory(test_dir)
 
         mock_log.assert_called_with(
-            "directory_created",
-            {"path": str(test_dir), "permissions": "0o700"}
+            "directory_created", {"path": str(test_dir), "permissions": "0o700"}
         )
 
 
@@ -297,7 +296,10 @@ class TestValidatePath:
             ]
 
             for bad_path in traversal_paths:
-                with pytest.raises(PathValidationError, match="outside allowed directory|directory traversal"):
+                with pytest.raises(
+                    PathValidationError,
+                    match="outside allowed directory|directory traversal",
+                ):
                     validate_path(bad_path, base_dir)
 
     def test_validate_path_absolute_not_allowed(self):
@@ -338,12 +340,15 @@ class TestValidatePath:
             # These should be blocked due to dangerous components or directory traversal
             dangerous_paths = [
                 "subdir/../file.txt",  # Contains .. - should be blocked by traversal check
-                "./file.txt",          # Contains . - may be blocked
-                "~/file.txt",          # Contains ~ - may be blocked
+                "./file.txt",  # Contains . - may be blocked
+                "~/file.txt",  # Contains ~ - may be blocked
             ]
 
             for dangerous_path in dangerous_paths:
-                with pytest.raises(PathValidationError, match="dangerous components|outside allowed directory"):
+                with pytest.raises(
+                    PathValidationError,
+                    match="dangerous components|outside allowed directory",
+                ):
                     validate_path(dangerous_path, base_dir)
 
     def test_validate_path_string_input(self):
@@ -360,7 +365,7 @@ class TestValidatePath:
                 result = validate_path("safe_file.txt", str(base_dir))
                 assert result.name == "safe_file.txt"
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_validate_path_logging_success(self, mock_log):
         """Test successful path validation logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -373,6 +378,7 @@ class TestValidatePath:
 
             # Change to temp directory to ensure relative paths work correctly
             import os
+
             original_dir = os.getcwd()
             try:
                 os.chdir(temp_dir)
@@ -387,7 +393,7 @@ class TestValidatePath:
             )
             assert success_logged
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_validate_path_logging_failure(self, mock_log):
         """Test failed path validation logging."""
         with pytest.raises(PathValidationError):
@@ -469,14 +475,18 @@ class TestSanitizeFilename:
     def test_sanitize_filename_only_dangerous(self):
         """Test filename with only dangerous characters."""
         result = sanitize_filename("...")
-        assert result == "_"  # ".." replaced with "_", then remaining "." stripped, leaves "_"
+        assert (
+            result == "_"
+        )  # ".." replaced with "_", then remaining "." stripped, leaves "_"
 
         result = sanitize_filename("..")
         assert result == "_"  # ".." becomes "_", no further stripping needed
 
         # Test case that becomes safe_filename
         result = sanitize_filename(".")
-        assert result == "safe_filename"  # Single "." gets stripped, becomes empty, then safe_filename
+        assert (
+            result == "safe_filename"
+        )  # Single "." gets stripped, becomes empty, then safe_filename
 
     def test_sanitize_filename_null_bytes(self):
         """Test handling of null bytes."""
@@ -484,15 +494,14 @@ class TestSanitizeFilename:
         assert "\0" not in result
         assert result == "file_name.txt"
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_sanitize_filename_logging(self, mock_log):
         """Test filename sanitization logging."""
         original = "dangerous<file>.txt"
         result = sanitize_filename(original)
 
         mock_log.assert_called_with(
-            "filename_sanitized",
-            {"original": original, "sanitized": result}
+            "filename_sanitized", {"original": original, "sanitized": result}
         )
 
 
@@ -541,22 +550,21 @@ class TestCreateSecureTempFile:
         finally:
             temp_file.unlink()
 
-    @patch('tempfile.mkstemp', side_effect=OSError("No space left"))
+    @patch("tempfile.mkstemp", side_effect=OSError("No space left"))
     def test_create_secure_temp_file_failure(self, mock_mkstemp):
         """Test temp file creation failure handling."""
-        with pytest.raises(SecurityError, match="Failed to create secure temporary file"):
+        with pytest.raises(
+            SecurityError, match="Failed to create secure temporary file"
+        ):
             create_secure_temp_file()
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_create_secure_temp_file_logging(self, mock_log):
         """Test temp file creation logging."""
         temp_file = create_secure_temp_file()
 
         try:
-            mock_log.assert_called_with(
-                "temp_file_created",
-                {"path": str(temp_file)}
-            )
+            mock_log.assert_called_with("temp_file_created", {"path": str(temp_file)})
         finally:
             temp_file.unlink()
 
@@ -598,7 +606,7 @@ class TestSecureFilePermissions:
         with pytest.raises(SecurityError, match="File does not exist"):
             secure_file_permissions(nonexistent)
 
-    @patch('pathlib.Path.chmod', side_effect=PermissionError("Access denied"))
+    @patch("pathlib.Path.chmod", side_effect=PermissionError("Access denied"))
     def test_secure_file_permissions_failure(self, mock_chmod):
         """Test permission setting failure."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -608,7 +616,7 @@ class TestSecureFilePermissions:
             with pytest.raises(SecurityError, match="Failed to set secure permissions"):
                 secure_file_permissions(test_file)
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_secure_file_permissions_logging(self, mock_log):
         """Test permission setting logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -618,8 +626,7 @@ class TestSecureFilePermissions:
             secure_file_permissions(test_file, permissions=0o640)
 
             mock_log.assert_called_with(
-                "permissions_set",
-                {"path": str(test_file), "permissions": "0o640"}
+                "permissions_set", {"path": str(test_file), "permissions": "0o640"}
             )
 
 
@@ -633,8 +640,10 @@ class TestLogSecurityEvent:
         mock_handler.stream = MagicMock()
         mock_handler.stream.closed = False
 
-        with patch.object(security_logger, 'handlers', [mock_handler]), \
-             patch.object(security_logger, 'info') as mock_info:
+        with (
+            patch.object(security_logger, "handlers", [mock_handler]),
+            patch.object(security_logger, "info") as mock_info,
+        ):
             log_security_event("test_event", {"key": "value"})
 
             mock_info.assert_called_once()
@@ -652,8 +661,10 @@ class TestLogSecurityEvent:
         mock_handler.stream = MagicMock()
         mock_handler.stream.closed = False
 
-        with patch.object(security_logger, 'handlers', [mock_handler]), \
-             patch.object(security_logger, 'info') as mock_info:
+        with (
+            patch.object(security_logger, "handlers", [mock_handler]),
+            patch.object(security_logger, "info") as mock_info,
+        ):
             log_security_event("simple_event")
 
             mock_info.assert_called_once()
@@ -667,8 +678,10 @@ class TestLogSecurityEvent:
         mock_handler.stream = MagicMock()
         mock_handler.stream.closed = False
 
-        with patch.object(security_logger, 'handlers', [mock_handler]), \
-             patch.object(security_logger, 'info') as mock_info:
+        with (
+            patch.object(security_logger, "handlers", [mock_handler]),
+            patch.object(security_logger, "info") as mock_info,
+        ):
             log_security_event("timed_event")
 
             args, kwargs = mock_info.call_args
@@ -681,8 +694,12 @@ class TestLogSecurityEvent:
 
     def test_log_security_event_exception_handling(self):
         """Test that logging exceptions don't break functionality."""
-        with patch.object(security_logger, 'handlers', [MagicMock()]), \
-             patch.object(security_logger, 'info', side_effect=Exception("Logging failed")):
+        with (
+            patch.object(security_logger, "handlers", [MagicMock()]),
+            patch.object(
+                security_logger, "info", side_effect=Exception("Logging failed")
+            ),
+        ):
             # Should not raise exception
             log_security_event("failing_event")
 
@@ -693,8 +710,10 @@ class TestLogSecurityEvent:
         mock_handler.stream = Mock()
         mock_handler.stream.closed = True
 
-        with patch.object(security_logger, 'handlers', [mock_handler]), \
-             patch.object(security_logger, 'info') as mock_info:
+        with (
+            patch.object(security_logger, "handlers", [mock_handler]),
+            patch.object(security_logger, "info") as mock_info,
+        ):
             log_security_event("closed_handler_event")
 
             # Should not call info when handler is closed
@@ -774,8 +793,13 @@ class TestConfigureSecurityLogging:
 
         # Test formatter format
         log_record = logging.LogRecord(
-            name="test", level=logging.INFO, pathname="", lineno=0,
-            msg="test message", args=(), exc_info=None
+            name="test",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="test message",
+            args=(),
+            exc_info=None,
         )
 
         formatted = formatter.format(log_record)
@@ -821,7 +845,7 @@ class TestValidateExportSize:
 
             validate_export_size(empty_file, max_size_mb=1)
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_validate_export_size_logging_large_file(self, mock_log):
         """Test logging of large file detection."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -859,13 +883,15 @@ class TestCleanupOldBackups:
 
             # Mock the glob function to return our files and patch os.stat for timestamps
             old_time = time.time() - (35 * 24 * 60 * 60)  # 35 days ago
-            new_time = time.time() - (1 * 24 * 60 * 60)   # 1 day ago
+            new_time = time.time() - (1 * 24 * 60 * 60)  # 1 day ago
 
-            with patch('pathlib.Path.glob') as mock_glob:
+            with patch("pathlib.Path.glob") as mock_glob:
                 mock_glob.return_value = [old_backup, new_backup]
 
                 # Mock os.stat to return different times for different files
-                def mock_stat(path, **kwargs):  # Accept arbitrary kwargs like follow_symlinks
+                def mock_stat(
+                    path, **kwargs
+                ):  # Accept arbitrary kwargs like follow_symlinks
                     mock_stat_result = Mock()
                     if "old.backup" in str(path):
                         mock_stat_result.st_mtime = old_time
@@ -873,7 +899,7 @@ class TestCleanupOldBackups:
                         mock_stat_result.st_mtime = new_time
                     return mock_stat_result
 
-                with patch('os.stat', side_effect=mock_stat):
+                with patch("os.stat", side_effect=mock_stat):
                     # Instead of mocking unlink, use a real test with actual files
                     # and test the function without the mock interference
 
@@ -925,10 +951,10 @@ class TestCleanupOldBackups:
             old_time = time.time() - (35 * 24 * 60 * 60)
 
             # Mock all files to be old
-            with patch('pathlib.Path.glob') as mock_glob:
+            with patch("pathlib.Path.glob") as mock_glob:
                 mock_glob.return_value = [old_backup, old_backup2]
 
-                with patch.object(Path, 'stat') as mock_stat:
+                with patch.object(Path, "stat") as mock_stat:
                     mock_stat.return_value.st_mtime = old_time
 
                     result = cleanup_old_backups(backup_dir, retention_days=30)
@@ -947,10 +973,10 @@ class TestCleanupOldBackups:
 
             old_time = time.time() - (35 * 24 * 60 * 60)
 
-            with patch('pathlib.Path.glob') as mock_glob:
+            with patch("pathlib.Path.glob") as mock_glob:
                 mock_glob.return_value = [old_backup]
 
-                with patch('os.stat') as mock_stat:
+                with patch("os.stat") as mock_stat:
                     mock_stat.return_value.st_mtime = old_time
 
                     # Test exception handling by creating a scenario where cleanup might fail
@@ -962,7 +988,7 @@ class TestCleanupOldBackups:
                     # The important thing is it doesn't crash
                     assert result >= 0  # Should return a non-negative count
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_cleanup_old_backups_logging(self, mock_log):
         """Test backup cleanup logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -974,10 +1000,10 @@ class TestCleanupOldBackups:
 
             old_time = time.time() - (35 * 24 * 60 * 60)
 
-            with patch('pathlib.Path.glob') as mock_glob:
+            with patch("pathlib.Path.glob") as mock_glob:
                 mock_glob.return_value = [old_backup]
 
-                with patch('os.stat') as mock_stat:
+                with patch("os.stat") as mock_stat:
                     mock_stat.return_value.st_mtime = old_time
 
                     # Just test that the function runs and logs appropriately
@@ -1020,10 +1046,13 @@ class TestSecurityIntegration:
 
             # Now validate the path that actually exists
             import os
+
             original_dir = os.getcwd()
             try:
                 os.chdir(temp_dir)
-                validated_path = validate_path(final_path.relative_to(base_dir), base_dir)
+                validated_path = validate_path(
+                    final_path.relative_to(base_dir), base_dir
+                )
             finally:
                 os.chdir(original_dir)
 
@@ -1072,6 +1101,7 @@ class TestSecurityIntegration:
 
             # Change to test directory for relative path validation
             import os
+
             original_dir = os.getcwd()
             try:
                 os.chdir(test_dir)
@@ -1113,7 +1143,7 @@ class TestSecurityIntegration:
 
             assert safe_file.exists()
 
-    @patch('roadmap.security.log_security_event')
+    @patch("roadmap.security.log_security_event")
     def test_comprehensive_logging_coverage(self, mock_log):
         """Test that all major security operations log events."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1132,6 +1162,7 @@ class TestSecurityIntegration:
 
             # Change to temp directory for relative path validation
             import os
+
             original_dir = os.getcwd()
             try:
                 os.chdir(temp_dir)
@@ -1156,7 +1187,7 @@ class TestSecurityIntegration:
                 "path_validated",
                 "filename_sanitized",
                 "temp_file_created",
-                "permissions_set"
+                "permissions_set",
             ]
 
             for event in expected_events:
@@ -1173,6 +1204,7 @@ class TestSecurityPerformance:
 
         # Should complete quickly and not consume excessive memory
         import time
+
         start_time = time.time()
         result = sanitize_filename(long_filename, max_length=255)
         end_time = time.time()
@@ -1194,10 +1226,12 @@ class TestSecurityPerformance:
             paths_to_validate = [f"file_{i}.txt" for i in range(10)]
 
             import time
+
             start_time = time.time()
 
             # Change to temp directory for relative path validation
             import os
+
             original_dir = os.getcwd()
             try:
                 os.chdir(temp_dir)

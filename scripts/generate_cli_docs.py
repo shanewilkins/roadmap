@@ -6,14 +6,12 @@ This script generates comprehensive CLI documentation by extracting help informa
 from Click commands and creating formatted markdown documentation.
 """
 
-import os
 import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
-import click
 from click.testing import CliRunner
 
 # Add the roadmap module to the path

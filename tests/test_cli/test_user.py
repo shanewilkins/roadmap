@@ -1,8 +1,5 @@
 """Tests for user-related CLI commands (Object-Verb pattern)."""
 
-from unittest.mock import Mock, patch
-
-import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
@@ -39,7 +36,9 @@ def test_user_show_notifications_command(initialized_roadmap):
 def test_user_show_notifications_with_options(initialized_roadmap):
     """Test user show-notifications with options."""
     runner = CliRunner()
-    result = runner.invoke(main, ["user", "show-notifications", "--assignee", "test-user", "--mark-read"])
+    result = runner.invoke(
+        main, ["user", "show-notifications", "--assignee", "test-user", "--mark-read"]
+    )
     assert result.exit_code == 0
 
 

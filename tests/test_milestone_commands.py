@@ -1,8 +1,5 @@
 """Tests for milestone CLI commands."""
 
-import os
-import tempfile
-
 import pytest
 from click.testing import CliRunner
 
@@ -14,7 +11,16 @@ from tests.test_utils import strip_ansi
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
     runner = CliRunner()
-    result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Test Project"])
+    result = runner.invoke(
+        main,
+        [
+            "init",
+            "--non-interactive",
+            "--skip-github",
+            "--project-name",
+            "Test Project",
+        ],
+    )
     assert result.exit_code == 0
     return temp_dir
 
@@ -115,10 +121,14 @@ def test_milestone_assign_command(initialized_roadmap):
     result = runner.invoke(main, ["milestone", "assign", issue_id, "v1.0"])
     assert result.exit_code == 0
     # Check that the assignment was successful using the dynamic issue ID
-    assert f"✅ Assigned issue {issue_id} to milestone 'v1.0'" in strip_ansi(result.output)
+    assert f"✅ Assigned issue {issue_id} to milestone 'v1.0'" in strip_ansi(
+        result.output
+    )
 
 
-def test_milestone_assign_command_nonexistent_milestone(initialized_roadmap, strip_ansi_fixture):
+def test_milestone_assign_command_nonexistent_milestone(
+    initialized_roadmap, strip_ansi_fixture
+):
     """Test assigning an issue to a non-existent milestone."""
     runner = CliRunner()
 
@@ -136,7 +146,9 @@ def test_milestone_assign_command_nonexistent_milestone(initialized_roadmap, str
     assert "❌ Failed to assign" in clean_output and "nonexistent" in clean_output
 
 
-def test_milestone_assign_command_nonexistent_issue(initialized_roadmap, strip_ansi_fixture):
+def test_milestone_assign_command_nonexistent_issue(
+    initialized_roadmap, strip_ansi_fixture
+):
     """Test assigning a non-existent issue to a milestone."""
     runner = CliRunner()
 

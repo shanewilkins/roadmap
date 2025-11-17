@@ -20,7 +20,7 @@ The visualization system provides:
 # Interactive donut chart
 roadmap visualize status --chart-type donut --format html
 
-# Bar chart for specific milestone  
+# Bar chart for specific milestone
 roadmap visualize status --chart-type bar --milestone "v1.0"
 
 # PNG chart for specific assignee
@@ -253,7 +253,7 @@ The visualization system builds on the existing analytics foundation:
 - **Capacity Planning**: Track velocity trends
 - **Bottleneck Identification**: Monitor blocked/in-progress ratios
 
-### Executives/Stakeholders  
+### Executives/Stakeholders
 - **Executive Dashboards**: Comprehensive project overview
 - **Milestone Tracking**: Visual progress reports
 - **Performance Metrics**: Team productivity insights

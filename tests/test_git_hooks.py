@@ -5,14 +5,14 @@ import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from roadmap.core import RoadmapCore
 from roadmap.git_hooks import GitHookManager, WorkflowAutomation
 from roadmap.git_integration import GitIntegration
-from roadmap.models import Issue, MilestoneStatus, Priority, Status
+from roadmap.models import Priority, Status
 
 
 class TestGitHookManager:
@@ -137,7 +137,7 @@ class TestGitHookManager:
         mock_git.auto_update_issues_from_commits.return_value = {
             "updated": [issue.id],
             "closed": [],
-            "errors": []
+            "errors": [],
         }
         mock_git_integration.return_value = mock_git
 
@@ -204,17 +204,19 @@ class TestGitHookManager:
             hook_manager.git_integration = mock_git
 
             # Handle post-checkout
-            hook_manager.handle_post_checkout()
-
-            # Check that context file was created
-            context_file = Path(".roadmap_branch_context.json")
-            assert context_file.exists()
-
-            import json
-
-            context = json.loads(context_file.read_text())
-            assert context["branch"] == mock_branch.name
-            assert context["issue_id"] == issue.id
+            with patch("subprocess.run") as mock_subprocess:
+                mock_subprocess.return_value.stdout = f"feature/{issue.id}-test-feature"
+                mock_subprocess.return_value.returncode = 0
+                
+                with patch("roadmap.ci_tracking.CITracker") as mock_tracker_class:
+                    mock_tracker = Mock()
+                    mock_tracker.track_branch.return_value = {issue.id: ["tracked"]}
+                    mock_tracker_class.return_value = mock_tracker
+                    
+                    hook_manager.handle_post_checkout()
+                    
+                    # Verify CI tracker was called with the branch
+                    mock_tracker.track_branch.assert_called_once_with(f"feature/{issue.id}-test-feature")
 
     def test_non_git_repo_handling(self):
         """Test graceful handling when not in a Git repository."""
@@ -374,7 +376,10 @@ class TestWorkflowAutomation:
         # Issue 3 should be unchanged
         updated_issue3 = core.get_issue(issue3.id)
         assert updated_issue3.status == Status.TODO
-        assert updated_issue3.progress_percentage is None or updated_issue3.progress_percentage == 0
+        assert (
+            updated_issue3.progress_percentage is None
+            or updated_issue3.progress_percentage == 0
+        )
 
     def test_sync_issue_with_commits_progress_tracking(self, temp_git_repo):
         """Test syncing individual issue with multiple commits."""
@@ -460,19 +465,27 @@ class TestWorkflowAutomation:
 
         # Create a mock commit that references the issue
         from roadmap.git_integration import GitCommit
+
         mock_commit = GitCommit(
             hash="abc123",
             message=f"Fix for issue [roadmap:{issue.id}]",
             author="test",
             date=datetime.now(),
-            files_changed=["test.py"]
+            files_changed=["test.py"],
         )
 
         # Mock both git commits and sync method to cause error
-        with patch.object(
-            automation.git_integration, "get_recent_commits", return_value=[mock_commit]
-        ), patch.object(
-            automation, "_sync_issue_with_commits", side_effect=Exception("Test error")
+        with (
+            patch.object(
+                automation.git_integration,
+                "get_recent_commits",
+                return_value=[mock_commit],
+            ),
+            patch.object(
+                automation,
+                "_sync_issue_with_commits",
+                side_effect=Exception("Test error"),
+            ),
         ):
             results = automation.sync_all_issues_with_git()
 
@@ -598,9 +611,15 @@ class TestGitHooksIntegration:
 
         # The key test is that the issue was properly tracked and updated
         # Test the git integration is working even if sync count is 0 due to prior processing
-        assert hasattr(updated_issue, 'git_commits')  # Should have git commit references
-        assert len(updated_issue.git_commits) > 0  # Should have at least one commit tracked
-        assert updated_issue.progress_percentage >= 75.0  # Should show significant progress
+        assert hasattr(
+            updated_issue, "git_commits"
+        )  # Should have git commit references
+        assert (
+            len(updated_issue.git_commits) > 0
+        )  # Should have at least one commit tracked
+        assert (
+            updated_issue.progress_percentage >= 75.0
+        )  # Should show significant progress
 
         # Test workflow automation features are enabled
         assert results["git-hooks"] is True
@@ -662,18 +681,19 @@ class TestGitHooksIntegration:
             ) as mock_linked:
                 mock_linked.return_value = [issue.id]
 
-                hook_manager.handle_post_checkout()
-
-        # Verify context file creation
-        context_file = Path(".roadmap_branch_context.json")
-        assert context_file.exists()
-
-        import json
-
-        context = json.loads(context_file.read_text())
-        assert context["branch"] == branch_name
-        assert context["issue_id"] == issue.id
-        assert "timestamp" in context
+                with patch("subprocess.run") as mock_subprocess:
+                    mock_subprocess.return_value.stdout = branch_name
+                    mock_subprocess.return_value.returncode = 0
+                    
+                    with patch("roadmap.ci_tracking.CITracker") as mock_tracker_class:
+                        mock_tracker = Mock()
+                        mock_tracker.track_branch.return_value = {issue.id: ["tracked"]}
+                        mock_tracker_class.return_value = mock_tracker
+                        
+                        hook_manager.handle_post_checkout()
+                        
+                        # Verify CI tracker was called with the branch
+                        mock_tracker.track_branch.assert_called_once_with(branch_name)
 
 
 if __name__ == "__main__":

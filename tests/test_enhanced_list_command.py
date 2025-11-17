@@ -9,7 +9,7 @@ from click.testing import CliRunner
 
 from roadmap.cli import main
 from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
+from roadmap.models import Milestone, MilestoneStatus, Priority, Status
 
 
 @pytest.fixture

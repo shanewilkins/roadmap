@@ -10,12 +10,8 @@ import pytest
 from roadmap.core import RoadmapCore
 from roadmap.curation import CurationReport, OrphanageType, OrphanedItem, RoadmapCurator
 from roadmap.models import (
-    Issue,
     IssueType,
-    Milestone,
-    MilestoneStatus,
     Priority,
-    Status,
 )
 
 
@@ -48,11 +44,19 @@ def sample_issues(temp_roadmap):
     milestone2 = core.create_milestone("Sprint 2", "Second sprint")
 
     # Create issues - some orphaned, some assigned
-    issue1 = core.create_issue("Assigned Issue", priority=Priority.HIGH)  # Will be assigned
-    issue2 = core.create_issue("Orphaned High Priority", priority=Priority.HIGH)  # Orphaned
-    issue3 = core.create_issue("Orphaned Bug", priority=Priority.MEDIUM, issue_type=IssueType.BUG)  # Orphaned
+    issue1 = core.create_issue(
+        "Assigned Issue", priority=Priority.HIGH
+    )  # Will be assigned
+    issue2 = core.create_issue(
+        "Orphaned High Priority", priority=Priority.HIGH
+    )  # Orphaned
+    issue3 = core.create_issue(
+        "Orphaned Bug", priority=Priority.MEDIUM, issue_type=IssueType.BUG
+    )  # Orphaned
     issue4 = core.create_issue("Old Orphan", priority=Priority.LOW)  # Old orphan
-    issue5 = core.create_issue("Invalid Milestone Ref", priority=Priority.MEDIUM)  # Invalid milestone
+    issue5 = core.create_issue(
+        "Invalid Milestone Ref", priority=Priority.MEDIUM
+    )  # Invalid milestone
 
     # Assign some issues
     core.assign_issue_to_milestone(issue1.id, "Sprint 1")
@@ -108,7 +112,11 @@ class TestRoadmapCurator:
         all_milestones = curator.core.list_milestones()
 
         orphaned = curator._detect_orphaned_issues(
-            all_issues, all_milestones, include_backlog=True, min_age_days=0, max_age_days=None
+            all_issues,
+            all_milestones,
+            include_backlog=True,
+            min_age_days=0,
+            max_age_days=None,
         )
 
         # Should find orphaned issues (not assigned to milestones)
@@ -117,7 +125,11 @@ class TestRoadmapCurator:
         # Check that orphaned items have correct properties
         for item in orphaned:
             assert item.item_type == "issue"
-            assert item.orphanage_type in [OrphanageType.UNASSIGNED_ISSUE, OrphanageType.OLD_ORPHAN, OrphanageType.INVALID_MILESTONE]
+            assert item.orphanage_type in [
+                OrphanageType.UNASSIGNED_ISSUE,
+                OrphanageType.OLD_ORPHAN,
+                OrphanageType.INVALID_MILESTONE,
+            ]
             assert len(item.recommendations) > 0
 
     def test_detect_invalid_milestone_references(self, curator, sample_issues):
@@ -273,7 +285,9 @@ milestones:
         )
 
         milestones = curator.core.list_milestones()
-        recommendations = curator._get_issue_assignment_recommendations(high_priority_issue, milestones)
+        recommendations = curator._get_issue_assignment_recommendations(
+            high_priority_issue, milestones
+        )
 
         # High priority issues should get next milestone recommendation
         assert any("next milestone" in rec.lower() for rec in recommendations)
@@ -289,6 +303,7 @@ milestones:
 
         # Verify JSON content
         import json
+
         with open(output_path) as f:
             data = json.load(f)
 
@@ -308,12 +323,23 @@ milestones:
 
         # Verify CSV content
         import csv
+
         with open(output_path) as f:
             reader = csv.reader(f)
             headers = next(reader)
 
-        expected_headers = ["Type", "ID", "Title", "Orphanage Type", "Priority", "Status",
-                          "Assignee", "Milestone", "Orphaned Days", "Recommendations"]
+        expected_headers = [
+            "Type",
+            "ID",
+            "Title",
+            "Orphanage Type",
+            "Priority",
+            "Status",
+            "Assignee",
+            "Milestone",
+            "Orphaned Days",
+            "Recommendations",
+        ]
         assert headers == expected_headers
 
     def test_export_markdown_report(self, curator, sample_issues, tmp_path):
@@ -336,21 +362,21 @@ milestones:
         report = curator.analyze_orphaned_items(include_backlog=True)
 
         # Test basic properties
-        assert hasattr(report, 'total_issues')
-        assert hasattr(report, 'total_milestones')
-        assert hasattr(report, 'orphaned_issues')
-        assert hasattr(report, 'orphaned_milestones')
-        assert hasattr(report, 'backlog_size')
-        assert hasattr(report, 'recommendations')
-        assert hasattr(report, 'generated_at')
-        assert hasattr(report, 'summary_stats')
+        assert hasattr(report, "total_issues")
+        assert hasattr(report, "total_milestones")
+        assert hasattr(report, "orphaned_issues")
+        assert hasattr(report, "orphaned_milestones")
+        assert hasattr(report, "backlog_size")
+        assert hasattr(report, "recommendations")
+        assert hasattr(report, "generated_at")
+        assert hasattr(report, "summary_stats")
 
         # Test summary stats
         stats = report.summary_stats
-        assert 'total_orphaned' in stats
-        assert 'orphan_percentage' in stats
-        assert 'average_orphan_age_days' in stats
-        assert 'critical_orphans' in stats
+        assert "total_orphaned" in stats
+        assert "orphan_percentage" in stats
+        assert "average_orphan_age_days" in stats
+        assert "critical_orphans" in stats
 
     def test_orphaned_item_dataclass(self):
         """Test OrphanedItem dataclass functionality."""
@@ -362,7 +388,7 @@ milestones:
             created=datetime.now(),
             updated=datetime.now(),
             priority=Priority.HIGH,
-            orphaned_days=5
+            orphaned_days=5,
         )
 
         assert item.item_type == "issue"
@@ -382,8 +408,8 @@ milestones:
 class TestCurationCLI:
     """Test curation CLI commands."""
 
-    @patch('roadmap.cli.RoadmapCore')
-    @patch('roadmap.curation.RoadmapCurator')
+    @patch("roadmap.cli.RoadmapCore")
+    @patch("roadmap.curation.RoadmapCurator")
     def test_curate_orphaned_command(self, mock_curator_class, mock_core_class):
         """Test the curate orphaned CLI command."""
         from click.testing import CliRunner
@@ -411,10 +437,10 @@ class TestCurationCLI:
         mock_report.recommendations = ["Test recommendation"]
         mock_report.generated_at = datetime.now()
         mock_report.summary_stats = {
-            'total_orphaned': 2,
-            'orphan_percentage': 10.0,
-            'critical_orphans': 0,
-            'average_orphan_age_days': 5.0
+            "total_orphaned": 2,
+            "orphan_percentage": 10.0,
+            "critical_orphans": 0,
+            "average_orphan_age_days": 5.0,
         }
 
         mock_curator.analyze_orphaned_items.return_value = mock_report
@@ -425,9 +451,12 @@ class TestCurationCLI:
         assert result.exit_code == 0
         # Check that the curator was called and some analysis output is shown
         mock_curator.analyze_orphaned_items.assert_called_once()
-        assert "Found 0 orphaned issues" in result.output or "Found 0 orphaned milestones" in result.output
+        assert (
+            "Found 0 orphaned issues" in result.output
+            or "Found 0 orphaned milestones" in result.output
+        )
 
-    @patch('roadmap.cli.RoadmapCore')
+    @patch("roadmap.cli.RoadmapCore")
     def test_curate_uninitialized_roadmap(self, mock_core_class):
         """Test curation commands with uninitialized roadmap."""
         from click.testing import CliRunner
@@ -459,7 +488,9 @@ class TestCurationCLI:
 
         # Test bulk assignment
         orphaned_ids = [item.item_id for item in report.orphaned_issues]
-        successful, failed = curator.bulk_assign_to_milestone(orphaned_ids, "Test Milestone")
+        successful, failed = curator.bulk_assign_to_milestone(
+            orphaned_ids, "Test Milestone"
+        )
 
         assert len(successful) == len(orphaned_ids)
         assert len(failed) == 0
@@ -480,22 +511,52 @@ class TestCurationIntegration:
 
         # Create a realistic roadmap structure
         milestones = [
-            core.create_milestone("Sprint 1", "Current sprint", due_date=datetime.now() + timedelta(days=7)),
-            core.create_milestone("Sprint 2", "Next sprint", due_date=datetime.now() + timedelta(days=14)),
-            core.create_milestone("Backlog Planning", "Future work", due_date=datetime.now() + timedelta(days=30))
+            core.create_milestone(
+                "Sprint 1",
+                "Current sprint",
+                due_date=datetime.now() + timedelta(days=7),
+            ),
+            core.create_milestone(
+                "Sprint 2", "Next sprint", due_date=datetime.now() + timedelta(days=14)
+            ),
+            core.create_milestone(
+                "Backlog Planning",
+                "Future work",
+                due_date=datetime.now() + timedelta(days=30),
+            ),
         ]
 
         # Create various types of issues
         issues = [
-            core.create_issue("Critical Bug Fix", priority=Priority.CRITICAL, issue_type=IssueType.BUG),
-            core.create_issue("High Priority Feature", priority=Priority.HIGH, issue_type=IssueType.FEATURE),
-            core.create_issue("Medium Priority Task", priority=Priority.MEDIUM, issue_type=IssueType.OTHER),
-            core.create_issue("Low Priority Enhancement", priority=Priority.LOW, issue_type=IssueType.OTHER),
-            core.create_issue("Documentation Update", priority=Priority.MEDIUM, issue_type=IssueType.OTHER),
+            core.create_issue(
+                "Critical Bug Fix", priority=Priority.CRITICAL, issue_type=IssueType.BUG
+            ),
+            core.create_issue(
+                "High Priority Feature",
+                priority=Priority.HIGH,
+                issue_type=IssueType.FEATURE,
+            ),
+            core.create_issue(
+                "Medium Priority Task",
+                priority=Priority.MEDIUM,
+                issue_type=IssueType.OTHER,
+            ),
+            core.create_issue(
+                "Low Priority Enhancement",
+                priority=Priority.LOW,
+                issue_type=IssueType.OTHER,
+            ),
+            core.create_issue(
+                "Documentation Update",
+                priority=Priority.MEDIUM,
+                issue_type=IssueType.OTHER,
+            ),
         ]
 
         # Assign only some issues to milestones
-        core.assign_issue_to_milestone(issues[0].id, "Sprint 1")  # Critical bug to current sprint
+        core.assign_issue_to_milestone(
+            issues[0].id, "Sprint 1"
+        )  # Critical bug to current sprint
 
         # Run curation analysis
         report = curator.analyze_orphaned_items(include_backlog=True)
@@ -515,7 +576,9 @@ class TestCurationIntegration:
 
         # Apply smart suggestions
         for milestone_name, issue_ids in suggestions.items():
-            successful, failed = curator.bulk_assign_to_milestone(issue_ids, milestone_name)
+            successful, failed = curator.bulk_assign_to_milestone(
+                issue_ids, milestone_name
+            )
             assert len(failed) == 0
 
         # Verify final state

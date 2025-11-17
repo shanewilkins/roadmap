@@ -2,7 +2,6 @@
 
 import shutil
 import tempfile
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -328,7 +327,9 @@ class TestLockedFileOperations:
             try:
                 content = f"Content from thread {thread_id}"
                 success = self.locked_ops.write_file_locked(
-                    self.test_file, content, timeout=5.0  # Increased timeout
+                    self.test_file,
+                    content,
+                    timeout=5.0,  # Increased timeout
                 )
                 if success:
                     results.append(f"Thread {thread_id} wrote successfully")

@@ -8,9 +8,7 @@ using real data from the main roadmap project. It demonstrates how to generate
 interactive charts, dashboards, and visual reports.
 """
 
-import os
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -22,13 +20,20 @@ def run_command(command, description):
     print("-" * 50)
 
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd="/Users/shane/roadmap")
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd="/Users/shane/roadmap",
+        )
         if result.returncode == 0:
             print(result.stdout)
         else:
             print(f"❌ Command failed: {result.stderr}")
     except Exception as e:
         print(f"❌ Error running command: {e}")
+
 
 def main():
     print("🎨 Visualization & Charts Demo")
@@ -45,7 +50,9 @@ def main():
     # Check if main project exists
     roadmap_path = Path("/Users/shane/roadmap/.roadmap")
     if not roadmap_path.exists():
-        print("❌ Main roadmap project not found. Please ensure you're in the roadmap project directory.")
+        print(
+            "❌ Main roadmap project not found. Please ensure you're in the roadmap project directory."
+        )
         return
 
     print("📊 BASIC VISUALIZATIONS")
@@ -53,7 +60,9 @@ def main():
     print("Generate core charts and graphs:")
 
     # Basic visualizations
-    run_command("poetry run roadmap visualize create", "Generate standard visualization suite")
+    run_command(
+        "poetry run roadmap visualize create", "Generate standard visualization suite"
+    )
     run_command("poetry run roadmap timeline", "Create project timeline")
     run_command("poetry run roadmap project", "Project analytics with charts")
 
@@ -65,7 +74,10 @@ def main():
     # Advanced dashboards
     run_command("poetry run roadmap dashboard", "Personal daily dashboard")
     run_command("poetry run roadmap dashboard --team", "Team collaboration dashboard")
-    run_command("poetry run roadmap analytics enhanced --visualize", "Enhanced analytics with charts")
+    run_command(
+        "poetry run roadmap analytics enhanced --visualize",
+        "Enhanced analytics with charts",
+    )
 
     print()
     print("🎯 TARGETED VISUALIZATIONS")
@@ -75,7 +87,9 @@ def main():
     # Targeted charts
     run_command("poetry run roadmap workload-analysis", "Team workload analysis")
     run_command("poetry run roadmap capacity-forecast", "Capacity forecasting charts")
-    run_command("poetry run roadmap report generate --format html", "Visual HTML reports")
+    run_command(
+        "poetry run roadmap report generate --format html", "Visual HTML reports"
+    )
 
     print()
     print("📁 CHART ORGANIZATION")
@@ -113,7 +127,9 @@ def main():
     if artifacts_path.exists():
         charts_dir = artifacts_path / "charts"
         if charts_dir.exists() and list(charts_dir.glob("*.html")):
-            latest_chart = max(charts_dir.glob("*.html"), key=lambda p: p.stat().st_mtime)
+            latest_chart = max(
+                charts_dir.glob("*.html"), key=lambda p: p.stat().st_mtime
+            )
             print(f"💡 Open latest chart: file://{latest_chart.absolute()}")
 
     print("""
@@ -148,7 +164,10 @@ def main():
     print("  • Select team members or milestones")
     print("  • Combine multiple chart types")
 
-    run_command("poetry run roadmap visualize create --milestone 'v1.0.0'", "Charts for specific milestone")
+    run_command(
+        "poetry run roadmap visualize create --milestone 'v1.0.0'",
+        "Charts for specific milestone",
+    )
 
     print()
     print("🎯 KEY FEATURES DEMONSTRATED")
@@ -177,6 +196,7 @@ def main():
     print()
 
     print("📖 Learn more: https://roadmap-cli.readthedocs.io/en/latest/visualization/")
+
 
 if __name__ == "__main__":
     main()

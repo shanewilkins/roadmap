@@ -67,7 +67,7 @@ roadmap sync pull --high-performance --workers 12 --batch-size 25
 # Issues only
 roadmap sync pull --issues --high-performance
 
-# Milestones only  
+# Milestones only
 roadmap sync pull --milestones --high-performance
 ```
 
@@ -83,7 +83,7 @@ roadmap sync pull --milestones --high-performance
 **After (High-Performance Sync)**:
 - ⚡ **1.3 seconds** completion time
 - 📞 **2 API calls** total
-- 🚀 **81 items/second** throughput  
+- 🚀 **81 items/second** throughput
 - ✅ Real-time progress updates
 - 😊 **40x faster** experience
 

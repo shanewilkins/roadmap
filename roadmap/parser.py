@@ -1,6 +1,7 @@
 """Parser for roadmap markdown files with YAML frontmatter."""
 
 import re
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -162,11 +163,13 @@ class IssueParser:
         )
 
         if not is_valid:
-            return False, None, result
+            # result is a string error message
+            return False, None, str(result)
 
         try:
             # Convert the validated data to an Issue
-            data = result
+            # At this point, result must be a dict since is_valid is True
+            data = result if isinstance(result, dict) else {}
 
             # Handle datetime fields - set defaults if None
             now = now_utc()
@@ -175,11 +178,14 @@ class IssueParser:
             due_date = cls._parse_datetime(data.get("due_date"))
 
             issue = Issue(
-                id=data.get("id"),
-                title=data.get("title"),
-                description=data.get("description", ""),
-                priority=Priority(data.get("priority")),
-                status=Status(data.get("status")),
+                id=data.get("id") or str(uuid.uuid4())[:8],
+                title=data.get("title") or "Untitled Issue",
+                priority=Priority(data.get("priority"))
+                if data.get("priority")
+                else Priority.MEDIUM,
+                status=Status(data.get("status"))
+                if data.get("status")
+                else Status.TODO,
                 assignee=data.get("assignee"),
                 milestone=data.get("milestone"),
                 labels=data.get("labels", []),
@@ -251,11 +257,13 @@ class MilestoneParser:
         )
 
         if not is_valid:
-            return False, None, result
+            # result is a string error message
+            return False, None, str(result)
 
         try:
             # Convert the validated data to a Milestone
-            data = result
+            # At this point, result must be a dict since is_valid is True
+            data = result if isinstance(result, dict) else {}
 
             # Handle datetime fields - set defaults if None
             now = now_utc()
@@ -264,9 +272,11 @@ class MilestoneParser:
             due_date = cls._parse_datetime(data.get("due_date"))
 
             milestone = Milestone(
-                name=data.get("name"),
+                name=data.get("name") or "Untitled Milestone",
                 description=data.get("description", ""),
-                status=MilestoneStatus(data.get("status")),
+                status=MilestoneStatus(data.get("status"))
+                if data.get("status")
+                else MilestoneStatus.OPEN,
                 created=created,
                 updated=updated,
                 due_date=due_date,

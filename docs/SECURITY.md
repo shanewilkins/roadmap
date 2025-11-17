@@ -63,18 +63,18 @@ roadmap sync test
 ## 🛡️ Security Improvements
 
 ### **Before (Security Issues)**
-❌ Plain text token storage in config files  
-❌ Risk of accidentally committing tokens to git  
-❌ No token masking in output  
-❌ Single storage method  
+❌ Plain text token storage in config files
+❌ Risk of accidentally committing tokens to git
+❌ No token masking in output
+❌ Single storage method
 
 ### **After (Secure Implementation)**
-✅ Encrypted storage in OS credential managers  
-✅ Environment variable priority  
-✅ Token masking in all output  
-✅ Multiple secure storage options  
-✅ Clear security warnings for legacy methods  
-✅ Comprehensive credential status reporting  
+✅ Encrypted storage in OS credential managers
+✅ Environment variable priority
+✅ Token masking in all output
+✅ Multiple secure storage options
+✅ Clear security warnings for legacy methods
+✅ Comprehensive credential status reporting
 
 ## 📖 Usage Examples
 
@@ -198,7 +198,7 @@ poetry run pytest tests/test_credentials.py -v
 
 - **GitHub Token Scopes**: `repo` (private repos) or `public_repo` (public repos)
 - **Optional Dependencies**: `keyring` library for enhanced Windows/Linux support
-- **System Requirements**: 
+- **System Requirements**:
   - macOS: Built-in Keychain Services
   - Windows: Windows Credential Manager
   - Linux: GNOME Keyring or KDE Wallet

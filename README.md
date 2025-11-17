@@ -52,7 +52,7 @@ Roadmap implements project-management-as-code through a three-tier hierarchy:
 
 ```
 📋 ROADMAP LEVEL    → Strategic planning & stakeholder reporting
-  ├── 🎯 MILESTONE LEVEL → Sprint planning & feature grouping  
+  ├── 🎯 MILESTONE LEVEL → Sprint planning & feature grouping
       └── 🐛 ISSUE LEVEL     → Task execution & developer workflow
 ```
 
@@ -172,7 +172,7 @@ cd demo-project
 
 # Explore the complete project
 roadmap issue list                              # Browse issues
-roadmap milestone list                          # View milestones  
+roadmap milestone list                          # View milestones
 roadmap dashboard                              # Interactive charts
 roadmap export csv                             # Data export
 
@@ -214,7 +214,7 @@ roadmap sync pull --high-performance --workers 12 --batch-size 25
 roadmap init
 roadmap sync setup --token "token" --repo "user/project"
 
-# Daily workflow  
+# Daily workflow
 roadmap issue create "Fix login bug" --priority high
 roadmap sync push --issues
 roadmap issue update "Fix login bug" --status done

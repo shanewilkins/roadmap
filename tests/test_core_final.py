@@ -1,18 +1,14 @@
 """Final targeted tests for core roadmap functionality - covering remaining uncovered lines."""
 
-import os
 import tempfile
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from roadmap.core import RoadmapCore
 from roadmap.models import (
-    Issue,
     IssueType,
-    Milestone,
     MilestoneStatus,
     Priority,
     Status,
@@ -45,19 +41,19 @@ class TestRoadmapCoreUncoveredLines:
             title="High Priority Issue",
             priority=Priority.HIGH,
             assignee="alice@example.com",
-            issue_type=IssueType.BUG
+            issue_type=IssueType.BUG,
         )
         issue2 = core.create_issue(
             title="Medium Priority Feature",
             priority=Priority.MEDIUM,
             assignee="bob@example.com",
-            issue_type=IssueType.FEATURE
+            issue_type=IssueType.FEATURE,
         )
         issue3 = core.create_issue(
             title="Low Priority Task",
             priority=Priority.LOW,
             assignee="alice@example.com",
-            issue_type=IssueType.OTHER
+            issue_type=IssueType.OTHER,
         )
 
         # Update statuses after creation
@@ -67,8 +63,7 @@ class TestRoadmapCoreUncoveredLines:
 
         # Test with priority and assignee filters (hits duplicate filter lines)
         filtered_issues = core.list_issues(
-            priority=Priority.HIGH,
-            assignee="alice@example.com"
+            priority=Priority.HIGH, assignee="alice@example.com"
         )
         assert len(filtered_issues) == 1
         assert filtered_issues[0].title == "High Priority Issue"
@@ -78,7 +73,7 @@ class TestRoadmapCoreUncoveredLines:
             priority=Priority.MEDIUM,
             status=Status.TODO,
             assignee="bob@example.com",
-            issue_type=IssueType.FEATURE
+            issue_type=IssueType.FEATURE,
         )
         assert len(filtered_issues) == 1
         assert filtered_issues[0].title == "Medium Priority Feature"
@@ -90,7 +85,7 @@ class TestRoadmapCoreUncoveredLines:
         milestone_file.write_text("corrupted content that will cause parser to fail")
 
         # Mock parser to raise exception on this file
-        with patch('roadmap.parser.MilestoneParser.parse_milestone_file') as mock_parse:
+        with patch("roadmap.parser.MilestoneParser.parse_milestone_file") as mock_parse:
             mock_parse.side_effect = Exception("Parse error")
 
             milestone = core.get_milestone("corrupted_milestone")
@@ -103,14 +98,10 @@ class TestRoadmapCoreUncoveredLines:
 
         # Create and assign issues to the milestone
         issue1 = core.create_issue(
-            title="Issue 1",
-            priority=Priority.HIGH,
-            milestone="Test Milestone"
+            title="Issue 1", priority=Priority.HIGH, milestone="Test Milestone"
         )
         issue2 = core.create_issue(
-            title="Issue 2",
-            priority=Priority.MEDIUM,
-            milestone="Test Milestone"
+            title="Issue 2", priority=Priority.MEDIUM, milestone="Test Milestone"
         )
 
         # Verify issues are assigned
@@ -138,18 +129,18 @@ class TestRoadmapCoreUncoveredLines:
     def test_create_issue_with_git_branch(self, core):
         """Test create_issue_with_git_branch functionality."""
         # Mock git repository
-        with patch.object(core.git, 'is_git_repository') as mock_is_git:
+        with patch.object(core.git, "is_git_repository") as mock_is_git:
             mock_is_git.return_value = True
 
             # Mock branch creation
-            with patch.object(core.git, 'create_branch_for_issue') as mock_create_branch:
+            with patch.object(
+                core.git, "create_branch_for_issue"
+            ) as mock_create_branch:
                 mock_create_branch.return_value = True
 
                 # Create issue with auto branch creation
                 issue = core.create_issue_with_git_branch(
-                    "Test Issue",
-                    priority=Priority.HIGH,
-                    auto_create_branch=True
+                    "Test Issue", priority=Priority.HIGH, auto_create_branch=True
                 )
 
                 assert issue is not None
@@ -159,14 +150,12 @@ class TestRoadmapCoreUncoveredLines:
     def test_create_issue_with_git_branch_no_git(self, core):
         """Test create_issue_with_git_branch when not in git repository."""
         # Mock no git repository
-        with patch.object(core.git, 'is_git_repository') as mock_is_git:
+        with patch.object(core.git, "is_git_repository") as mock_is_git:
             mock_is_git.return_value = False
 
             # Create issue with auto branch creation (should still work)
             issue = core.create_issue_with_git_branch(
-                "Test Issue",
-                priority=Priority.HIGH,
-                auto_create_branch=True
+                "Test Issue", priority=Priority.HIGH, auto_create_branch=True
             )
 
             assert issue is not None
@@ -178,14 +167,14 @@ class TestRoadmapCoreUncoveredLines:
         issue = core.create_issue(title="Test Issue", priority=Priority.HIGH)
 
         # Mock git repository with branch that contains issue ID
-        with patch.object(core.git, 'is_git_repository') as mock_is_git:
+        with patch.object(core.git, "is_git_repository") as mock_is_git:
             mock_is_git.return_value = True
 
             # Mock repository info
-            with patch.object(core.git, 'get_repository_info') as mock_repo_info:
+            with patch.object(core.git, "get_repository_info") as mock_repo_info:
                 mock_repo_info.return_value = {
                     "remote_url": "https://github.com/test/repo.git",
-                    "branch_count": 5
+                    "branch_count": 5,
                 }
 
                 # Mock current branch with issue ID
@@ -193,7 +182,9 @@ class TestRoadmapCoreUncoveredLines:
                 mock_branch.name = f"feature-{issue.id}-test-branch"
                 mock_branch.extract_issue_id.return_value = issue.id
 
-                with patch.object(core.git, 'get_current_branch') as mock_current_branch:
+                with patch.object(
+                    core.git, "get_current_branch"
+                ) as mock_current_branch:
                     mock_current_branch.return_value = mock_branch
 
                     context = core.get_git_context()
@@ -208,11 +199,11 @@ class TestRoadmapCoreUncoveredLines:
     def test_get_git_context_no_linked_issue(self, core):
         """Test get_git_context with branch that has no linked issue."""
         # Mock git repository
-        with patch.object(core.git, 'is_git_repository') as mock_is_git:
+        with patch.object(core.git, "is_git_repository") as mock_is_git:
             mock_is_git.return_value = True
 
             # Mock repository info
-            with patch.object(core.git, 'get_repository_info') as mock_repo_info:
+            with patch.object(core.git, "get_repository_info") as mock_repo_info:
                 mock_repo_info.return_value = {"remote_url": "origin"}
 
                 # Mock current branch without issue ID
@@ -220,7 +211,9 @@ class TestRoadmapCoreUncoveredLines:
                 mock_branch.name = "main"
                 mock_branch.extract_issue_id.return_value = None
 
-                with patch.object(core.git, 'get_current_branch') as mock_current_branch:
+                with patch.object(
+                    core.git, "get_current_branch"
+                ) as mock_current_branch:
                     mock_current_branch.return_value = mock_branch
 
                     context = core.get_git_context()
@@ -232,15 +225,17 @@ class TestRoadmapCoreUncoveredLines:
     def test_get_git_context_no_current_branch(self, core):
         """Test get_git_context when no current branch."""
         # Mock git repository
-        with patch.object(core.git, 'is_git_repository') as mock_is_git:
+        with patch.object(core.git, "is_git_repository") as mock_is_git:
             mock_is_git.return_value = True
 
             # Mock repository info
-            with patch.object(core.git, 'get_repository_info') as mock_repo_info:
+            with patch.object(core.git, "get_repository_info") as mock_repo_info:
                 mock_repo_info.return_value = {"status": "detached"}
 
                 # Mock no current branch
-                with patch.object(core.git, 'get_current_branch') as mock_current_branch:
+                with patch.object(
+                    core.git, "get_current_branch"
+                ) as mock_current_branch:
                     mock_current_branch.return_value = None
 
                     context = core.get_git_context()
@@ -251,7 +246,7 @@ class TestRoadmapCoreUncoveredLines:
 
     def test_get_current_user_from_git(self, core):
         """Test get_current_user_from_git method."""
-        with patch.object(core.git, 'get_current_user') as mock_git_user:
+        with patch.object(core.git, "get_current_user") as mock_git_user:
             mock_git_user.return_value = "git_user@example.com"
 
             user = core.get_current_user_from_git()
@@ -260,21 +255,25 @@ class TestRoadmapCoreUncoveredLines:
     def test_validate_assignee_with_cached_team_members(self, core):
         """Test validate_assignee using cached team members."""
         # Mock identity manager to allow the identity system to handle validation
-        with patch('roadmap.identity.IdentityManager') as mock_identity_class:
+        with patch("roadmap.identity.IdentityManager") as mock_identity_class:
             mock_identity = Mock()
             mock_identity.config.validation_mode = "hybrid"
             mock_identity.resolve_assignee.side_effect = [
                 (True, "alice@example.com", None),  # Valid user
-                (False, "No team configuration found. Falling back to GitHub validation.", None)  # Unknown user
+                (
+                    False,
+                    "No team configuration found. Falling back to GitHub validation.",
+                    None,
+                ),  # Unknown user
             ]
             mock_identity_class.return_value = mock_identity
 
             # Mock GitHub config
-            with patch.object(core, '_get_github_config') as mock_config:
+            with patch.object(core, "_get_github_config") as mock_config:
                 mock_config.return_value = ("token", "owner", "repo")
 
                 # Mock cached team members
-                with patch.object(core, '_get_cached_team_members') as mock_cached:
+                with patch.object(core, "_get_cached_team_members") as mock_cached:
                     mock_cached.return_value = ["alice@example.com", "bob@example.com"]
 
                     # Test valid assignee - identity system will handle it
@@ -283,9 +282,12 @@ class TestRoadmapCoreUncoveredLines:
                     assert error == ""
 
                     # Test invalid assignee - falls back to GitHub validation
-                    with patch('roadmap.github_client.GitHubClient') as mock_github:
+                    with patch("roadmap.github_client.GitHubClient") as mock_github:
                         mock_client = Mock()
-                        mock_client.validate_assignee.return_value = (False, "User not found")
+                        mock_client.validate_assignee.return_value = (
+                            False,
+                            "User not found",
+                        )
                         mock_github.return_value = mock_client
 
                         is_valid, error = core.validate_assignee("unknown@example.com")
@@ -305,7 +307,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_validate_assignee_no_github_config(self, core):
         """Test validate_assignee when GitHub is not configured."""
         # Mock no GitHub config
-        with patch.object(core, '_get_github_config') as mock_config:
+        with patch.object(core, "_get_github_config") as mock_config:
             mock_config.return_value = (None, None, None)
 
             # Should allow any assignee without validation
@@ -316,28 +318,34 @@ class TestRoadmapCoreUncoveredLines:
     def test_validate_assignee_with_exception(self, core):
         """Test validate_assignee when GitHub validation raises exception."""
         # Mock identity manager to fall back to GitHub
-        with patch('roadmap.identity.IdentityManager') as mock_identity_class:
+        with patch("roadmap.identity.IdentityManager") as mock_identity_class:
             mock_identity = Mock()
             mock_identity.config.validation_mode = "hybrid"
-            mock_identity.resolve_assignee.return_value = (False, "No team configuration found. Falling back to GitHub validation.", None)
+            mock_identity.resolve_assignee.return_value = (
+                False,
+                "No team configuration found. Falling back to GitHub validation.",
+                None,
+            )
             mock_identity_class.return_value = mock_identity
 
             # Mock GitHub config
-            with patch.object(core, '_get_github_config') as mock_config:
+            with patch.object(core, "_get_github_config") as mock_config:
                 mock_config.return_value = ("token", "owner", "repo")
 
                 # Mock cached team members (empty)
-                with patch.object(core, '_get_cached_team_members') as mock_cached:
+                with patch.object(core, "_get_cached_team_members") as mock_cached:
                     mock_cached.return_value = []
 
                     # Mock GitHub client to raise exception
-                    with patch('roadmap.github_client.GitHubClient') as mock_github:
+                    with patch("roadmap.github_client.GitHubClient") as mock_github:
                         mock_github.side_effect = Exception("Network error")
 
                         # Should fall back to legacy validation which allows any assignee when GitHub fails
                         is_valid, error = core.validate_assignee("test@example.com")
                         assert is_valid is True  # Should allow with fallback
-                        assert "Warning" in error  # Should have warning about validation failure
+                        assert (
+                            "Warning" in error
+                        )  # Should have warning about validation failure
                         assert "Network error" in error
 
     def test_issue_operations_not_initialized(self, temp_dir):
@@ -356,13 +364,11 @@ class TestRoadmapCoreUncoveredLines:
     def test_create_issue_failed_return(self, core):
         """Test create_issue_with_git_branch when issue creation fails."""
         # Mock create_issue to return None
-        with patch.object(core, 'create_issue') as mock_create:
+        with patch.object(core, "create_issue") as mock_create:
             mock_create.return_value = None
 
             result = core.create_issue_with_git_branch(
-                "Failed Issue",
-                priority=Priority.HIGH,
-                auto_create_branch=True
+                "Failed Issue", priority=Priority.HIGH, auto_create_branch=True
             )
 
             assert result is None
@@ -370,10 +376,9 @@ class TestRoadmapCoreUncoveredLines:
     def test_security_and_logging_integration(self, core):
         """Test security logging integration in various operations."""
         # Test issue creation with security logging
-        with patch('roadmap.security.log_security_event') as mock_log:
+        with patch("roadmap.security.log_security_event") as mock_log:
             issue = core.create_issue(
-                title="Security Test Issue",
-                priority=Priority.HIGH
+                title="Security Test Issue", priority=Priority.HIGH
             )
 
             # Security logging should be called during file operations
@@ -402,8 +407,11 @@ class TestRoadmapCoreUncoveredLines:
         # Update milestone2 to closed status
         if milestone2:
             milestone2.status = MilestoneStatus.CLOSED
-            milestone_file = core.milestones_dir / f"{milestone2.name.lower().replace(' ', '_')}.md"
+            milestone_file = (
+                core.milestones_dir / f"{milestone2.name.lower().replace(' ', '_')}.md"
+            )
             from roadmap.parser import MilestoneParser
+
             MilestoneParser.save_milestone_file(milestone2, milestone_file)
 
         # Test get_next_milestone only returns open milestones
@@ -419,9 +427,15 @@ class TestRoadmapCoreUncoveredLines:
 
         # Create issues with various assignments
         issue1 = core.create_issue(title="Issue 1", priority=Priority.HIGH)
-        issue2 = core.create_issue(title="Issue 2", priority=Priority.MEDIUM, milestone="Sprint 1")
-        issue3 = core.create_issue(title="Issue 3", priority=Priority.LOW, milestone="Sprint 2")
-        issue4 = core.create_issue(title="Issue 4", priority=Priority.HIGH, milestone="Sprint 1")
+        issue2 = core.create_issue(
+            title="Issue 2", priority=Priority.MEDIUM, milestone="Sprint 1"
+        )
+        issue3 = core.create_issue(
+            title="Issue 3", priority=Priority.LOW, milestone="Sprint 2"
+        )
+        issue4 = core.create_issue(
+            title="Issue 4", priority=Priority.HIGH, milestone="Sprint 1"
+        )
         issue5 = core.create_issue(title="Issue 5", priority=Priority.MEDIUM)  # Backlog
 
         # Get grouped issues
@@ -433,7 +447,9 @@ class TestRoadmapCoreUncoveredLines:
         assert "Sprint 2" in grouped
 
         # Verify counts
-        backlog_issues = [i for i in grouped["Backlog"] if not i.milestone or i.milestone == ""]
+        backlog_issues = [
+            i for i in grouped["Backlog"] if not i.milestone or i.milestone == ""
+        ]
         assert len(backlog_issues) >= 2  # issue1 and issue5
         assert len(grouped["Sprint 1"]) == 2  # issue2 and issue4
         assert len(grouped["Sprint 2"]) == 1  # issue3

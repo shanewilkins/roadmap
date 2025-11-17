@@ -1,6 +1,5 @@
 """Tests for deprecated CLI commands to ensure backward compatibility."""
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
@@ -72,7 +71,7 @@ def test_deprecated_commands_still_work(initialized_roadmap):
         ["capacity-forecast"],
         ["workload-analysis"],
         ["dashboard"],
-        ["notifications"]
+        ["notifications"],
     ]
 
     for command in deprecated_commands:

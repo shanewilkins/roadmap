@@ -1,19 +1,16 @@
 """Comprehensive tests for core roadmap functionality - targeting 85%+ coverage."""
 
 import os
-import shutil
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from roadmap.core import RoadmapCore
 from roadmap.models import (
-    Issue,
     IssueType,
-    Milestone,
     MilestoneStatus,
     Priority,
     Status,
@@ -111,7 +108,7 @@ class TestRoadmapCoreMilestoneOperations:
         milestone = core.create_milestone(
             name="Test Milestone",
             description="Original description",
-            due_date=datetime.now() + timedelta(days=30)
+            due_date=datetime.now() + timedelta(days=30),
         )
         assert milestone is not None
 
@@ -119,7 +116,7 @@ class TestRoadmapCoreMilestoneOperations:
         result = core.update_milestone(
             name="Test Milestone",
             description="Updated description",
-            status=MilestoneStatus.OPEN
+            status=MilestoneStatus.OPEN,
         )
         assert result is True
 
@@ -134,15 +131,12 @@ class TestRoadmapCoreMilestoneOperations:
         milestone = core.create_milestone(
             name="Test Milestone",
             description="Description",
-            due_date=datetime.now() + timedelta(days=30)
+            due_date=datetime.now() + timedelta(days=30),
         )
         assert milestone.due_date is not None
 
         # Clear due date
-        result = core.update_milestone(
-            name="Test Milestone",
-            clear_due_date=True
-        )
+        result = core.update_milestone(name="Test Milestone", clear_due_date=True)
         assert result is True
 
         # Verify due date is cleared
@@ -152,8 +146,7 @@ class TestRoadmapCoreMilestoneOperations:
     def test_update_milestone_nonexistent(self, core):
         """Test updating nonexistent milestone."""
         result = core.update_milestone(
-            name="Nonexistent Milestone",
-            description="New description"
+            name="Nonexistent Milestone", description="New description"
         )
         assert result is False
 
@@ -162,27 +155,22 @@ class TestRoadmapCoreMilestoneOperations:
         core = RoadmapCore(temp_dir)  # Not initialized
 
         with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.update_milestone(
-                name="Test Milestone",
-                description="Description"
-            )
+            core.update_milestone(name="Test Milestone", description="Description")
 
     def test_update_milestone_save_error(self, core):
         """Test milestone update with save error."""
         # Create milestone first
         milestone = core.create_milestone(
-            name="Test Milestone",
-            description="Original description"
+            name="Test Milestone", description="Original description"
         )
         assert milestone is not None
 
         # Mock parser to raise exception
-        with patch('roadmap.parser.MilestoneParser.save_milestone_file') as mock_save:
+        with patch("roadmap.parser.MilestoneParser.save_milestone_file") as mock_save:
             mock_save.side_effect = Exception("Save failed")
 
             result = core.update_milestone(
-                name="Test Milestone",
-                description="Updated description"
+                name="Test Milestone", description="Updated description"
             )
             assert result is False
 
@@ -200,13 +188,9 @@ class TestRoadmapCoreIssueAssignment:
     def test_assign_issue_to_milestone_success(self, core):
         """Test successful issue assignment to milestone."""
         # Create issue and milestone
-        issue = core.create_issue(
-            title="Test Issue",
-            priority=Priority.MEDIUM
-        )
+        issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
         milestone = core.create_milestone(
-            name="Test Milestone",
-            description="Milestone description"
+            name="Test Milestone", description="Milestone description"
         )
 
         # Assign issue to milestone
@@ -221,8 +205,7 @@ class TestRoadmapCoreIssueAssignment:
         """Test assigning nonexistent issue to milestone."""
         # Create milestone
         milestone = core.create_milestone(
-            name="Test Milestone",
-            description="Milestone description"
+            name="Test Milestone", description="Milestone description"
         )
 
         result = core.assign_issue_to_milestone("nonexistent-id", "Test Milestone")
@@ -231,17 +214,16 @@ class TestRoadmapCoreIssueAssignment:
     def test_assign_issue_to_milestone_milestone_not_found(self, core):
         """Test assigning issue to nonexistent milestone."""
         # Create issue
-        issue = core.create_issue(
-            title="Test Issue",
-            priority=Priority.MEDIUM
-        )
+        issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
 
         result = core.assign_issue_to_milestone(issue.id, "Nonexistent Milestone")
         assert result is False
 
     def test_assign_issue_to_milestone_both_not_found(self, core):
         """Test assigning nonexistent issue to nonexistent milestone."""
-        result = core.assign_issue_to_milestone("nonexistent-id", "Nonexistent Milestone")
+        result = core.assign_issue_to_milestone(
+            "nonexistent-id", "Nonexistent Milestone"
+        )
         assert result is False
 
 
@@ -259,23 +241,13 @@ class TestRoadmapCoreMilestoneProgress:
         """Test milestone progress calculation with various issue states."""
         # Create milestone
         milestone = core.create_milestone(
-            name="Test Milestone",
-            description="Milestone description"
+            name="Test Milestone", description="Milestone description"
         )
 
         # Create issues with different statuses
-        issue1 = core.create_issue(
-            title="Issue 1",
-            priority=Priority.HIGH
-        )
-        issue2 = core.create_issue(
-            title="Issue 2",
-            priority=Priority.MEDIUM
-        )
-        issue3 = core.create_issue(
-            title="Issue 3",
-            priority=Priority.LOW
-        )
+        issue1 = core.create_issue(title="Issue 1", priority=Priority.HIGH)
+        issue2 = core.create_issue(title="Issue 2", priority=Priority.MEDIUM)
+        issue3 = core.create_issue(title="Issue 3", priority=Priority.LOW)
 
         # Update their statuses after creation
         core.update_issue(issue1.id, status=Status.DONE)
@@ -292,7 +264,9 @@ class TestRoadmapCoreMilestoneProgress:
 
         assert progress["total"] == 3
         assert progress["completed"] == 1
-        assert abs(progress["progress"] - (100.0 / 3)) < 0.01  # 1/3 * 100, approximately
+        assert (
+            abs(progress["progress"] - (100.0 / 3)) < 0.01
+        )  # 1/3 * 100, approximately
         assert progress["by_status"]["done"] == 1
         assert progress["by_status"]["in-progress"] == 1
         assert progress["by_status"]["todo"] == 1
@@ -301,8 +275,7 @@ class TestRoadmapCoreMilestoneProgress:
         """Test milestone progress with no assigned issues."""
         # Create milestone with no issues
         milestone = core.create_milestone(
-            name="Empty Milestone",
-            description="No issues assigned"
+            name="Empty Milestone", description="No issues assigned"
         )
 
         progress = core.get_milestone_progress("Empty Milestone")
@@ -337,23 +310,13 @@ class TestRoadmapCoreBacklogOperations:
         """Test getting backlog (unassigned) issues."""
         # Create milestone
         milestone = core.create_milestone(
-            name="Test Milestone",
-            description="Milestone description"
+            name="Test Milestone", description="Milestone description"
         )
 
         # Create issues - some assigned, some not
-        issue1 = core.create_issue(
-            title="Assigned Issue",
-            priority=Priority.HIGH
-        )
-        issue2 = core.create_issue(
-            title="Backlog Issue 1",
-            priority=Priority.MEDIUM
-        )
-        issue3 = core.create_issue(
-            title="Backlog Issue 2",
-            priority=Priority.LOW
-        )
+        issue1 = core.create_issue(title="Assigned Issue", priority=Priority.HIGH)
+        issue2 = core.create_issue(title="Backlog Issue 1", priority=Priority.MEDIUM)
+        issue3 = core.create_issue(title="Backlog Issue 2", priority=Priority.LOW)
 
         # Assign one issue to milestone
         core.assign_issue_to_milestone(issue1.id, "Test Milestone")
@@ -372,15 +335,11 @@ class TestRoadmapCoreBacklogOperations:
         """Test getting backlog when all issues are assigned."""
         # Create milestone
         milestone = core.create_milestone(
-            name="Test Milestone",
-            description="Milestone description"
+            name="Test Milestone", description="Milestone description"
         )
 
         # Create issue and assign it
-        issue = core.create_issue(
-            title="Assigned Issue",
-            priority=Priority.HIGH
-        )
+        issue = core.create_issue(title="Assigned Issue", priority=Priority.HIGH)
         core.assign_issue_to_milestone(issue.id, "Test Milestone")
 
         # Backlog should be empty
@@ -391,27 +350,16 @@ class TestRoadmapCoreBacklogOperations:
         """Test getting issues for specific milestone."""
         # Create milestones
         milestone1 = core.create_milestone(
-            name="Milestone 1",
-            description="First milestone"
+            name="Milestone 1", description="First milestone"
         )
         milestone2 = core.create_milestone(
-            name="Milestone 2",
-            description="Second milestone"
+            name="Milestone 2", description="Second milestone"
         )
 
         # Create issues
-        issue1 = core.create_issue(
-            title="Issue for M1",
-            priority=Priority.HIGH
-        )
-        issue2 = core.create_issue(
-            title="Issue for M2",
-            priority=Priority.MEDIUM
-        )
-        issue3 = core.create_issue(
-            title="Another for M1",
-            priority=Priority.LOW
-        )
+        issue1 = core.create_issue(title="Issue for M1", priority=Priority.HIGH)
+        issue2 = core.create_issue(title="Issue for M2", priority=Priority.MEDIUM)
+        issue3 = core.create_issue(title="Another for M1", priority=Priority.LOW)
 
         # Assign issues to milestones
         core.assign_issue_to_milestone(issue1.id, "Milestone 1")
@@ -434,15 +382,11 @@ class TestRoadmapCoreBacklogOperations:
         """Test getting issues for milestone with no assignments."""
         # Create milestone
         milestone = core.create_milestone(
-            name="Empty Milestone",
-            description="No issues assigned"
+            name="Empty Milestone", description="No issues assigned"
         )
 
         # Create unassigned issue
-        issue = core.create_issue(
-            title="Unassigned Issue",
-            priority=Priority.MEDIUM
-        )
+        issue = core.create_issue(title="Unassigned Issue", priority=Priority.MEDIUM)
 
         # Should return empty list
         issues = core.get_milestone_issues("Empty Milestone")
@@ -509,7 +453,9 @@ class TestRoadmapCoreErrorHandling:
         """Test issue listing with file system errors."""
         # Create a corrupted issue file
         corrupted_file = core.issues_dir / "corrupted.md"
-        corrupted_file.write_text("This is not valid issue content\nNo frontmatter here")
+        corrupted_file.write_text(
+            "This is not valid issue content\nNo frontmatter here"
+        )
 
         # Should handle gracefully and return valid issues only
         issues = core.list_issues()
@@ -541,19 +487,19 @@ class TestRoadmapCoreFilteringAndSearch:
             title="Bug Fix",
             priority=Priority.HIGH,
             issue_type=IssueType.BUG,
-            assignee="alice@example.com"
+            assignee="alice@example.com",
         )
         issue2 = core.create_issue(
             title="New Feature",
             priority=Priority.MEDIUM,
             issue_type=IssueType.FEATURE,
-            assignee="bob@example.com"
+            assignee="bob@example.com",
         )
         issue3 = core.create_issue(
             title="Documentation Update",
             priority=Priority.LOW,
             issue_type=IssueType.OTHER,
-            assignee="alice@example.com"
+            assignee="alice@example.com",
         )
 
         # Update statuses after creation
@@ -609,16 +555,14 @@ class TestRoadmapCoreFilteringAndSearch:
         """Test filtering issues with multiple criteria."""
         # Filter by assignee and status
         alice_completed = core_with_data.list_issues(
-            assignee="alice@example.com",
-            status=Status.DONE
+            assignee="alice@example.com", status=Status.DONE
         )
         assert len(alice_completed) == 1
         assert alice_completed[0].title == "Documentation Update"
 
         # Filter with no matches
         no_matches = core_with_data.list_issues(
-            assignee="alice@example.com",
-            priority=Priority.MEDIUM
+            assignee="alice@example.com", priority=Priority.MEDIUM
         )
         assert len(no_matches) == 0
 
@@ -663,10 +607,10 @@ class TestRoadmapCoreAdvancedOperations:
         """Test that git integration is properly initialized."""
         assert core.git is not None
         # Check if git integration has the repository path
-        assert hasattr(core.git, 'repo_path')
+        assert hasattr(core.git, "repo_path")
         assert core.git.repo_path == core.root_path
 
-    @patch('roadmap.parser.IssueParser.save_issue_file')
+    @patch("roadmap.parser.IssueParser.save_issue_file")
     def test_security_integration(self, mock_save, core):
         """Test that security functions are used in operations."""
         # IssueParser.save_issue_file should be called during issue creation

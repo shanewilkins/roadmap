@@ -4,12 +4,9 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
-from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Priority, Status
 
 
 class TestTeamCollaborationIntegration:
@@ -22,7 +19,16 @@ class TestTeamCollaborationIntegration:
             runner = CliRunner()
 
             # Step 1: Initialize roadmap
-            result = runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "Team Collaboration Test"])
+            result = runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "Team Collaboration Test",
+                ],
+            )
             assert result.exit_code == 0
             assert "Roadmap CLI Initialization" in result.output
 
@@ -120,7 +126,16 @@ class TestTeamCollaborationIntegration:
             runner = CliRunner()
 
             # Initialize and create test issues
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create issues with different statuses and assignees
             runner.invoke(main, ["issue", "create", "Task 1", "--assignee", "alice"])
@@ -132,7 +147,8 @@ class TestTeamCollaborationIntegration:
             assert result.exit_code == 0
             # Strip ANSI codes for cleaner matching
             import re
-            clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+
+            clean_output = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
             assert "alice (2 issues)" in clean_output
             assert "bob (1 issue)" in clean_output
 
@@ -148,7 +164,16 @@ class TestTeamCollaborationIntegration:
             runner = CliRunner()
 
             # Initialize and create an issue
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             result = runner.invoke(
                 main, ["issue", "create", "Test task", "--assignee", "alice"]
@@ -183,7 +208,16 @@ class TestTeamCollaborationIntegration:
             runner = CliRunner()
 
             # Initialize and create an assigned issue
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             result = runner.invoke(
                 main, ["issue", "create", "Test task", "--assignee", "alice"]
@@ -223,7 +257,16 @@ class TestTeamCollaborationIntegration:
             runner = CliRunner()
 
             # Initialize roadmap
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create issues with different statuses
             result = runner.invoke(
@@ -274,7 +317,16 @@ class TestTeamCollaborationIntegration:
 
             # Session 1: Create issues with assignees
             runner1 = CliRunner()
-            runner1.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner1.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
             runner1.invoke(
                 main, ["issue", "create", "Persistent task", "--assignee", "alice"]
             )
@@ -315,7 +367,16 @@ class TestTeamCollaborationIntegration:
             # Should handle gracefully
 
             # Initialize for remaining tests
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Test with special characters in assignee names
             result = runner.invoke(
@@ -356,7 +417,16 @@ class TestTeamCollaborationPerformance:
             runner = CliRunner()
 
             # Initialize roadmap
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create many issues with different assignees
             assignees = [f"user{i}" for i in range(10)]
@@ -391,7 +461,16 @@ class TestTeamCollaborationPerformance:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create 20 issues for the same assignee
             for i in range(20):
@@ -424,7 +503,16 @@ class TestTeamCollaborationCompatibility:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create a milestone
             runner.invoke(main, ["milestone", "create", "v1.0"])
@@ -460,7 +548,16 @@ class TestTeamCollaborationCompatibility:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create issue with both assignee and labels
             result = runner.invoke(
@@ -491,7 +588,16 @@ class TestTeamCollaborationCompatibility:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Create issue with assignee
             result = runner.invoke(
@@ -526,7 +632,16 @@ class TestTeamCollaborationBenchmarks:
             os.chdir(temp_dir)
             runner = CliRunner()
 
-            runner.invoke(main, ["init", "--non-interactive", "--skip-github", "--project-name", "test-project"])
+            runner.invoke(
+                main,
+                [
+                    "init",
+                    "--non-interactive",
+                    "--skip-github",
+                    "--project-name",
+                    "test-project",
+                ],
+            )
 
             # Benchmark: Create 100 issues with assignees
             start_time = time.time()

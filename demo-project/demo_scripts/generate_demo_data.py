@@ -8,11 +8,9 @@ This script creates a realistic large-scale software project with:
 - Proper issue assignments and status distribution
 """
 
-import os
 import random
 import subprocess
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
 # Add the parent directory to Python path so we can import roadmap modules
@@ -29,7 +27,7 @@ DEVELOPERS = [
     "james.wilson",
     "lisa.taylor",
     "robert.anderson",
-    "jennifer.thomas"
+    "jennifer.thomas",
 ]
 
 PRODUCT_OWNER = "karen.miller"
@@ -39,28 +37,28 @@ MILESTONES = [
     {
         "title": "v1.6.0 - Enhanced Security & Authentication",
         "description": "Major security improvements, OAuth 2.0 integration, and enhanced user authentication system",
-        "due_date": "2024-01-15"
+        "due_date": "2024-01-15",
     },
     {
         "title": "v1.7.0 - Real-time Collaboration Features",
         "description": "Live document editing, real-time sync improvements, and team collaboration tools",
-        "due_date": "2024-03-30"
+        "due_date": "2024-03-30",
     },
     {
         "title": "v1.8.0 - Advanced Analytics Dashboard",
         "description": "Comprehensive analytics, usage metrics, and business intelligence features",
-        "due_date": "2024-06-15"
+        "due_date": "2024-06-15",
     },
     {
         "title": "v1.9.0 - Mobile Applications & API Enhancement",
         "description": "Native mobile apps for iOS/Android and comprehensive REST API improvements",
-        "due_date": "2024-09-01"
+        "due_date": "2024-09-01",
     },
     {
         "title": "v2.0.0 - AI-Powered Features & Enterprise Scale",
         "description": "Machine learning integration, AI-powered recommendations, and enterprise-scale infrastructure",
-        "due_date": "2024-12-20"
-    }
+        "due_date": "2024-12-20",
+    },
 ]
 
 # Issue templates for different types
@@ -69,7 +67,7 @@ FEATURE_TEMPLATES = [
     "Add {feature} functionality to {component}",
     "Create {feature} system for {component}",
     "Develop {feature} feature in {component}",
-    "Build {feature} capability for {component}"
+    "Build {feature} capability for {component}",
 ]
 
 BUG_TEMPLATES = [
@@ -77,7 +75,7 @@ BUG_TEMPLATES = [
     "Resolve {issue} bug affecting {component}",
     "Debug {issue} error in {component}",
     "Correct {issue} behavior in {component}",
-    "Address {issue} issue with {component}"
+    "Address {issue} issue with {component}",
 ]
 
 TASK_TEMPLATES = [
@@ -85,57 +83,112 @@ TASK_TEMPLATES = [
     "Refactor {component} to improve {aspect}",
     "Optimize {component} {aspect}",
     "Setup {component} for {purpose}",
-    "Configure {component} {aspect}"
+    "Configure {component} {aspect}",
 ]
 
 # Feature ideas
 FEATURES = [
-    "SSO integration", "OAuth 2.0 authentication", "two-factor authentication",
-    "real-time collaboration", "live document editing", "version history",
-    "analytics dashboard", "usage metrics", "performance monitoring",
-    "mobile synchronization", "offline mode", "conflict resolution",
-    "API rate limiting", "webhook system", "notification system",
-    "file compression", "encryption at rest", "audit logging",
-    "user management", "role-based permissions", "team workspaces",
-    "search functionality", "tagging system", "metadata extraction",
-    "backup automation", "disaster recovery", "multi-region deployment"
+    "SSO integration",
+    "OAuth 2.0 authentication",
+    "two-factor authentication",
+    "real-time collaboration",
+    "live document editing",
+    "version history",
+    "analytics dashboard",
+    "usage metrics",
+    "performance monitoring",
+    "mobile synchronization",
+    "offline mode",
+    "conflict resolution",
+    "API rate limiting",
+    "webhook system",
+    "notification system",
+    "file compression",
+    "encryption at rest",
+    "audit logging",
+    "user management",
+    "role-based permissions",
+    "team workspaces",
+    "search functionality",
+    "tagging system",
+    "metadata extraction",
+    "backup automation",
+    "disaster recovery",
+    "multi-region deployment",
 ]
 
 # Bug scenarios
 BUGS = [
-    "memory leak", "race condition", "deadlock", "null pointer exception",
-    "timeout issues", "connection drops", "data corruption", "sync conflicts",
-    "authentication failures", "permission errors", "validation bypasses",
-    "UI rendering glitches", "broken links", "slow query performance",
-    "cache invalidation", "session timeouts", "encoding issues",
-    "file upload failures", "download interruptions", "search inaccuracies"
+    "memory leak",
+    "race condition",
+    "deadlock",
+    "null pointer exception",
+    "timeout issues",
+    "connection drops",
+    "data corruption",
+    "sync conflicts",
+    "authentication failures",
+    "permission errors",
+    "validation bypasses",
+    "UI rendering glitches",
+    "broken links",
+    "slow query performance",
+    "cache invalidation",
+    "session timeouts",
+    "encoding issues",
+    "file upload failures",
+    "download interruptions",
+    "search inaccuracies",
 ]
 
 # Task aspects
 TASKS = [
-    "security review", "performance optimization", "code cleanup",
-    "test coverage", "documentation", "deployment scripts",
-    "monitoring setup", "logging configuration", "error handling",
-    "database migration", "dependency updates", "configuration management"
+    "security review",
+    "performance optimization",
+    "code cleanup",
+    "test coverage",
+    "documentation",
+    "deployment scripts",
+    "monitoring setup",
+    "logging configuration",
+    "error handling",
+    "database migration",
+    "dependency updates",
+    "configuration management",
 ]
 
 # Components
 COMPONENTS = [
-    "authentication service", "file storage system", "sync engine",
-    "web interface", "mobile app", "API gateway", "notification service",
-    "analytics engine", "search service", "backup system",
-    "user management", "admin dashboard", "collaboration tools",
-    "security module", "performance monitor", "audit system"
+    "authentication service",
+    "file storage system",
+    "sync engine",
+    "web interface",
+    "mobile app",
+    "API gateway",
+    "notification service",
+    "analytics engine",
+    "search service",
+    "backup system",
+    "user management",
+    "admin dashboard",
+    "collaboration tools",
+    "security module",
+    "performance monitor",
+    "audit system",
 ]
+
 
 def run_command(command, cwd=None):
     """Run a shell command and return the result."""
-    result = subprocess.run(command, shell=True, cwd=cwd, capture_output=True, text=True)
+    result = subprocess.run(
+        command, shell=True, cwd=cwd, capture_output=True, text=True
+    )
     if result.returncode != 0:
         print(f"Command failed: {command}")
         print(f"Error: {result.stderr}")
         return False
     return True
+
 
 def create_milestones():
     """Create all project milestones."""
@@ -148,6 +201,7 @@ def create_milestones():
             print(f"Failed to create milestone: {milestone['title']}")
         else:
             print(f"✅ Created milestone: {milestone['title']}")
+
 
 def generate_issue_title(issue_type, milestone_version):
     """Generate a realistic issue title."""
@@ -166,7 +220,10 @@ def generate_issue_title(issue_type, milestone_version):
         component = random.choice(COMPONENTS)
         topic = random.choice(FEATURES + TASKS)
         aspect = random.choice(TASKS)
-        return template.format(component=component, topic=topic, aspect=aspect, purpose=topic)
+        return template.format(
+            component=component, topic=topic, aspect=aspect, purpose=topic
+        )
+
 
 def create_issues():
     """Create a large number of realistic issues."""
@@ -179,7 +236,7 @@ def create_issues():
         "v1.7.0": 280,  # In progress
         "v1.8.0": 220,  # Some started
         "v1.9.0": 180,  # Mostly planned
-        "v2.0.0": 150   # All planned
+        "v2.0.0": 150,  # All planned
     }
 
     # Status distribution per milestone (more closed for earlier milestones)
@@ -188,7 +245,7 @@ def create_issues():
         "v1.7.0": {"closed": 0.75, "in_progress": 0.15, "open": 0.10},
         "v1.8.0": {"closed": 0.45, "in_progress": 0.25, "open": 0.30},
         "v1.9.0": {"closed": 0.15, "in_progress": 0.20, "open": 0.65},
-        "v2.0.0": {"closed": 0.05, "in_progress": 0.10, "open": 0.85}
+        "v2.0.0": {"closed": 0.05, "in_progress": 0.10, "open": 0.85},
     }
 
     # Issue type distribution
@@ -265,6 +322,7 @@ def create_issues():
 
     print(f"✅ Created {issue_count} total issues")
 
+
 def ensure_developer_assignments():
     """Ensure each developer has at least 5 assigned issues."""
     print("Ensuring minimum developer assignments...")
@@ -274,6 +332,7 @@ def ensure_developer_assignments():
     # For now, we'll trust our random assignment process hit the requirement
     # In a real implementation, we'd check and update assignments as needed
     print("✅ Developer assignment verification complete")
+
 
 def main():
     """Main function to generate all demo data."""
@@ -300,6 +359,7 @@ def main():
     print("  poetry run roadmap list")
     print("  poetry run roadmap milestone list")
     print("  poetry run roadmap project")
+
 
 if __name__ == "__main__":
     main()

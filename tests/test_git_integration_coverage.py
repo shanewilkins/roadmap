@@ -2,17 +2,16 @@
 Comprehensive test coverage for git_integration module.
 Targets uncovered areas to achieve 85%+ coverage.
 """
-import os
+
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from roadmap.core import RoadmapCore
 from roadmap.git_integration import GitBranch, GitCommit, GitIntegration
-from roadmap.models import Issue
 
 pytestmark = pytest.mark.unit
 
@@ -27,7 +26,7 @@ def temp_dir():
 @pytest.fixture
 def mock_git_integration():
     """Create a GitIntegration instance with mocked git commands."""
-    with patch('roadmap.git_integration.GitIntegration._run_git_command') as mock_run:
+    with patch("roadmap.git_integration.GitIntegration._run_git_command") as mock_run:
         git = GitIntegration()
         git._run_git_command = mock_run
         yield git, mock_run
@@ -108,7 +107,9 @@ class TestGitIntegrationAdditionalCoverage:
 class TestGitIntegrationIssueCreation:
     """Test automatic issue creation from branches."""
 
-    def test_auto_create_issue_from_branch_main_branch(self, mock_git_integration, mock_roadmap_core):
+    def test_auto_create_issue_from_branch_main_branch(
+        self, mock_git_integration, mock_roadmap_core
+    ):
         """Test that no issue is created for main branches."""
         git, mock_run = mock_git_integration
 
@@ -124,7 +125,9 @@ class TestGitIntegrationIssueCreation:
         result = git.auto_create_issue_from_branch(mock_roadmap_core, "develop")
         assert result is None
 
-    def test_auto_create_issue_from_branch_existing_issue(self, mock_git_integration, mock_roadmap_core):
+    def test_auto_create_issue_from_branch_existing_issue(
+        self, mock_git_integration, mock_roadmap_core
+    ):
         """Test that no issue is created if one already exists."""
         git, mock_run = mock_git_integration
 
@@ -133,11 +136,15 @@ class TestGitIntegrationIssueCreation:
         existing_issue = Mock()
         mock_roadmap_core.load_issue = Mock(return_value=existing_issue)
 
-        with patch.object(GitBranch, 'extract_issue_id', return_value='existing-123'):
-            result = git.auto_create_issue_from_branch(mock_roadmap_core, "feature/existing-123-branch")
+        with patch.object(GitBranch, "extract_issue_id", return_value="existing-123"):
+            result = git.auto_create_issue_from_branch(
+                mock_roadmap_core, "feature/existing-123-branch"
+            )
             assert result is None
 
-    def test_auto_create_issue_from_branch_success(self, mock_git_integration, mock_roadmap_core):
+    def test_auto_create_issue_from_branch_success(
+        self, mock_git_integration, mock_roadmap_core
+    ):
         """Test successful issue creation from branch."""
         git, mock_run = mock_git_integration
 
@@ -152,11 +159,16 @@ class TestGitIntegrationIssueCreation:
         # Mock current user
         git.get_current_user = Mock(return_value="testuser")
 
-        with patch.object(GitBranch, 'extract_issue_id', return_value=None), \
-             patch.object(GitBranch, 'suggests_issue_type', return_value='feature'), \
-             patch.object(git, '_extract_title_from_branch_name', return_value='Test Feature'):
-
-            result = git.auto_create_issue_from_branch(mock_roadmap_core, "feature/test-feature")
+        with (
+            patch.object(GitBranch, "extract_issue_id", return_value=None),
+            patch.object(GitBranch, "suggests_issue_type", return_value="feature"),
+            patch.object(
+                git, "_extract_title_from_branch_name", return_value="Test Feature"
+            ),
+        ):
+            result = git.auto_create_issue_from_branch(
+                mock_roadmap_core, "feature/test-feature"
+            )
             assert result == "new-issue-123"
 
             # Verify issue was created with correct data
@@ -166,15 +178,21 @@ class TestGitIntegrationIssueCreation:
             assert call_args["assignee"] == "testuser"
             assert call_args["status"] == "in_progress"
 
-    def test_auto_create_issue_from_branch_no_title(self, mock_git_integration, mock_roadmap_core):
+    def test_auto_create_issue_from_branch_no_title(
+        self, mock_git_integration, mock_roadmap_core
+    ):
         """Test that no issue is created if title can't be extracted."""
         git, mock_run = mock_git_integration
 
-        with patch.object(git, '_extract_title_from_branch_name', return_value=None):
-            result = git.auto_create_issue_from_branch(mock_roadmap_core, "invalid-branch")
+        with patch.object(git, "_extract_title_from_branch_name", return_value=None):
+            result = git.auto_create_issue_from_branch(
+                mock_roadmap_core, "invalid-branch"
+            )
             assert result is None
 
-    def test_auto_create_issue_from_branch_exception(self, mock_git_integration, mock_roadmap_core):
+    def test_auto_create_issue_from_branch_exception(
+        self, mock_git_integration, mock_roadmap_core
+    ):
         """Test graceful handling of exceptions during issue creation."""
         git, mock_run = mock_git_integration
 
@@ -182,11 +200,15 @@ class TestGitIntegrationIssueCreation:
         mock_roadmap_core.create_issue.side_effect = Exception("Creation failed")
         git.get_current_user = Mock(return_value="testuser")
 
-        with patch.object(git, '_extract_title_from_branch_name', return_value='Test'):
-            result = git.auto_create_issue_from_branch(mock_roadmap_core, "feature/test")
+        with patch.object(git, "_extract_title_from_branch_name", return_value="Test"):
+            result = git.auto_create_issue_from_branch(
+                mock_roadmap_core, "feature/test"
+            )
             assert result is None
 
-    def test_auto_create_issue_from_current_branch(self, mock_git_integration, mock_roadmap_core):
+    def test_auto_create_issue_from_current_branch(
+        self, mock_git_integration, mock_roadmap_core
+    ):
         """Test creating issue from current branch when no branch name provided."""
         git, mock_run = mock_git_integration
 
@@ -201,11 +223,15 @@ class TestGitIntegrationIssueCreation:
         mock_roadmap_core.create_issue.return_value = created_issue
         git.get_current_user = Mock(return_value="testuser")
 
-        with patch.object(git, '_extract_title_from_branch_name', return_value='Current Branch'):
+        with patch.object(
+            git, "_extract_title_from_branch_name", return_value="Current Branch"
+        ):
             result = git.auto_create_issue_from_branch(mock_roadmap_core, None)
             assert result == "current-123"
 
-    def test_auto_create_issue_from_current_branch_no_branch(self, mock_git_integration, mock_roadmap_core):
+    def test_auto_create_issue_from_current_branch_no_branch(
+        self, mock_git_integration, mock_roadmap_core
+    ):
         """Test creating issue when no current branch available."""
         git, mock_run = mock_git_integration
         git.get_current_branch = Mock(return_value=None)
@@ -236,7 +262,9 @@ class TestTitleExtraction:
         git, _ = mock_git_integration
 
         title = git._extract_title_from_branch_name("feature/12345678-add-new-feature")
-        assert title == "Add new Feature"  # Corrected expectation based on actual implementation
+        assert (
+            title == "Add new Feature"
+        )  # Corrected expectation based on actual implementation
 
     def test_extract_title_underscores(self, mock_git_integration):
         """Test title extraction with underscores."""
@@ -350,9 +378,10 @@ class TestGitIntegrationErrorHandling:
         git = GitIntegration()
 
         # Test error handling in _run_git_command
-        with patch('roadmap.git_integration.subprocess.run') as mock_run:
+        with patch("roadmap.git_integration.subprocess.run") as mock_run:
             # Mock CalledProcessError instead of OSError
             from subprocess import CalledProcessError
+
             mock_run.side_effect = CalledProcessError(1, "git")
             result = git._run_git_command(["status"])
             assert result is None
@@ -450,7 +479,7 @@ class TestGitCommitExtendedFunctionality:
             author="author",
             date=datetime(2024, 1, 1),
             message="Fix login bug [progress:75%]",
-            files_changed=["src/login.py"]
+            files_changed=["src/login.py"],
         )
         progress = commit.extract_progress_info()
         assert progress == 75.0
@@ -461,7 +490,7 @@ class TestGitCommitExtendedFunctionality:
             author="author",
             date=datetime(2024, 1, 1),
             message="Update API progress:50",
-            files_changed=["src/api.py"]
+            files_changed=["src/api.py"],
         )
         progress = commit.extract_progress_info()
         assert progress == 50.0
@@ -472,7 +501,7 @@ class TestGitCommitExtendedFunctionality:
             author="author",
             date=datetime(2024, 1, 1),
             message="Regular commit message",
-            files_changed=["src/regular.py"]
+            files_changed=["src/regular.py"],
         )
         progress = commit.extract_progress_info()
         assert progress is None
@@ -486,7 +515,7 @@ class TestGitCommitExtendedFunctionality:
             author="author",
             date=datetime(2024, 1, 1),
             message="Update feature [roadmap:abc12345]",
-            files_changed=["src/feature.py"]
+            files_changed=["src/feature.py"],
         )
         refs = commit.extract_roadmap_references()
         assert "abc12345" in refs
@@ -497,7 +526,7 @@ class TestGitCommitExtendedFunctionality:
             author="author",
             date=datetime(2024, 1, 1),
             message="Simple commit with no refs",
-            files_changed=["src/simple.py"]
+            files_changed=["src/simple.py"],
         )
         refs = commit.extract_roadmap_references()
         assert len(refs) == 0

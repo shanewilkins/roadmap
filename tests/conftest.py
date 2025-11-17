@@ -32,22 +32,22 @@ def clean_output():
 def assert_output():
     """Provide output assertion helpers to tests."""
     return {
-        'assert_in': assert_in_output,
-        'assert_contains': assert_output_contains,
-        'clean': clean_cli_output,
-        'strip': strip_ansi,
+        "assert_in": assert_in_output,
+        "assert_contains": assert_output_contains,
+        "clean": clean_cli_output,
+        "strip": strip_ansi,
     }
 
 
 @pytest.fixture(autouse=True, scope="function")
 def isolate_roadmap_workspace(request, tmp_path):
     """Isolate each test in a temporary directory unless it's marked as unit test
-    
+
     PERFORMANCE OPTIMIZATION: Skip isolation for unit tests that don't need filesystem operations.
     """
     # Skip isolation for unit tests - major performance win
-    if hasattr(request.node, 'get_closest_marker'):
-        if request.node.get_closest_marker('unit'):
+    if hasattr(request.node, "get_closest_marker"):
+        if request.node.get_closest_marker("unit"):
             yield
             return
 
@@ -69,6 +69,7 @@ def isolate_roadmap_workspace(request, tmp_path):
             config_file = current_roadmap / "config.yaml"
             if config_file.exists() and "Test Project" in config_file.read_text():
                 import shutil
+
                 shutil.rmtree(current_roadmap, ignore_errors=True)
 
         # Yield control to the test
@@ -93,7 +94,7 @@ def isolate_roadmap_workspace(request, tmp_path):
 @pytest.fixture
 def roadmap_workspace():
     """Provide a clean roadmap workspace for tests that need it explicitly.
-    
+
     This is a non-autouse version of the isolation fixture for tests
     that want to explicitly control their workspace setup.
     """
@@ -131,10 +132,11 @@ version: "1.0.0"
 # Centralized Common Fixtures
 # ===========================
 
+
 @pytest.fixture(scope="session")
 def mock_core():
     """Create standardized mock RoadmapCore instance.
-    
+
     This centralizes the mock_core fixture used across multiple test files.
     Individual tests can override specific behavior as needed.
     """
@@ -162,7 +164,7 @@ def mock_milestone():
 @pytest.fixture
 def temp_dir():
     """Create temporary directory for tests that need filesystem operations.
-    
+
     This centralizes the temp_dir fixture pattern used across multiple test files.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -177,7 +179,7 @@ def temp_dir():
 @pytest.fixture
 def temp_workspace():
     """Create temporary workspace with initialized roadmap structure.
-    
+
     This provides a more complete workspace setup for integration tests.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -185,13 +187,13 @@ def temp_workspace():
         os.chdir(tmpdir)
 
         # Initialize basic roadmap structure
-        roadmap_dir = Path(tmpdir) / '.roadmap'
+        roadmap_dir = Path(tmpdir) / ".roadmap"
         roadmap_dir.mkdir(exist_ok=True)
-        (roadmap_dir / 'issues').mkdir(exist_ok=True)
-        (roadmap_dir / 'milestones').mkdir(exist_ok=True)
+        (roadmap_dir / "issues").mkdir(exist_ok=True)
+        (roadmap_dir / "milestones").mkdir(exist_ok=True)
 
         # Create basic config
-        config_file = roadmap_dir / 'config.yaml'
+        config_file = roadmap_dir / "config.yaml"
         config_file.write_text("""# Test Configuration
 project_name: "Test Project"
 version: "1.0.0"
@@ -205,6 +207,7 @@ version: "1.0.0"
 
 # GitHub and Webhook Testing Fixtures
 # ===================================
+
 
 @pytest.fixture
 def github_webhook_payload():
@@ -233,10 +236,11 @@ def cli_test_data():
 # Performance-Optimized Fixtures
 # ==============================
 
+
 @pytest.fixture
 def lightweight_mock_core():
     """Create lightweight mock core for performance-critical tests.
-    
+
     This provides minimal mocking for tests that don't need full core functionality.
     """
     core = Mock()
@@ -261,7 +265,7 @@ def mock_github_client():
 @pytest.fixture
 def patch_github_integration():
     """Lightweight patch for GitHub integration to avoid heavy mocking."""
-    with patch('roadmap.enhanced_github_integration.EnhancedGitHubIntegration') as mock:
+    with patch("roadmap.enhanced_github_integration.EnhancedGitHubIntegration") as mock:
         mock.return_value.is_github_enabled.return_value = True
         mock.return_value.handle_push_event.return_value = []
         mock.return_value.handle_pull_request_event.return_value = []
@@ -271,7 +275,7 @@ def patch_github_integration():
 @pytest.fixture
 def temp_workspace_with_core():
     """Create temporary workspace with initialized roadmap and return both path and core.
-    
+
     Returns tuple of (workspace_path, core_instance) for tests that need both.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -279,21 +283,22 @@ def temp_workspace_with_core():
         os.chdir(tmpdir)
 
         # Initialize roadmap structure
-        roadmap_dir = Path(tmpdir) / '.roadmap'
+        roadmap_dir = Path(tmpdir) / ".roadmap"
         roadmap_dir.mkdir(exist_ok=True)
-        (roadmap_dir / 'issues').mkdir(exist_ok=True)
-        (roadmap_dir / 'milestones').mkdir(exist_ok=True)
+        (roadmap_dir / "issues").mkdir(exist_ok=True)
+        (roadmap_dir / "milestones").mkdir(exist_ok=True)
 
         # Create basic config
-        config_file = roadmap_dir / 'config.yaml'
+        config_file = roadmap_dir / "config.yaml"
         config_file.write_text("""# Test Configuration
 project_name: "Test Project"
 version: "1.0.0"
 """)
 
         # Initialize roadmap core
-        with patch('roadmap.core.RoadmapCore.initialize'):
+        with patch("roadmap.core.RoadmapCore.initialize"):
             from roadmap.core import RoadmapCore
+
             core = RoadmapCore()
             core.is_initialized = Mock(return_value=True)
 
@@ -306,16 +311,13 @@ version: "1.0.0"
 @pytest.fixture
 def patch_filesystem_operations():
     """Patch heavy filesystem operations for faster tests."""
-    with patch('roadmap.core.RoadmapCore.initialize') as mock_init, \
-         patch('pathlib.Path.mkdir') as mock_mkdir, \
-         patch('pathlib.Path.write_text') as mock_write:
-
+    with (
+        patch("roadmap.core.RoadmapCore.initialize") as mock_init,
+        patch("pathlib.Path.mkdir") as mock_mkdir,
+        patch("pathlib.Path.write_text") as mock_write,
+    ):
         mock_init.return_value = True
         mock_mkdir.return_value = None
         mock_write.return_value = None
 
-        yield {
-            'init': mock_init,
-            'mkdir': mock_mkdir,
-            'write_text': mock_write
-        }
+        yield {"init": mock_init, "mkdir": mock_mkdir, "write_text": mock_write}

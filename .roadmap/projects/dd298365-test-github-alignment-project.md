@@ -23,9 +23,9 @@ actual_hours: null
 
 Testing the new project terminology
 
-**Project Owner:** 
+**Project Owner:**
 **Status:** planning
-**Timeline:**  → 
+**Timeline:**  →
 
 ## Objectives
 
@@ -41,8 +41,8 @@ Testing the new project terminology
 
 ## Timeline Tracking
 
-- **Start Date:** 
-- **Target End Date:** 
+- **Start Date:**
+- **Target End Date:**
 - **Actual End Date:** {{ actual_end_date }}
 - **Estimated Hours:** 0
 - **Actual Hours:** {{ actual_hours }}

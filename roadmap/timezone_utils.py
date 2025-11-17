@@ -13,18 +13,19 @@ Key Principles:
 
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, tzinfo
 from pathlib import Path
+from typing import Any
 
 # Import zoneinfo with fallback for older Python versions
 try:
-    from zoneinfo import ZoneInfo
+    from zoneinfo import ZoneInfo  # type: ignore[attr-defined]
 
     ZONEINFO_AVAILABLE = True
 except ImportError:
     # Fallback for Python < 3.9
     try:
-        from backports.zoneinfo import ZoneInfo
+        from backports.zoneinfo import ZoneInfo  # type: ignore
 
         ZONEINFO_AVAILABLE = True
     except ImportError:
@@ -32,7 +33,7 @@ except ImportError:
         # Use basic timezone handling as fallback
         from datetime import timezone as _timezone
 
-        class ZoneInfo:
+        class ZoneInfo(tzinfo):
             """Minimal ZoneInfo fallback for older Python versions."""
 
             def __init__(self, name: str):
@@ -43,6 +44,15 @@ except ImportError:
                     # For other timezones, we'll use UTC as fallback
                     # This is not ideal but maintains basic functionality
                     self._tz = _timezone.utc
+
+            def utcoffset(self, dt: datetime | None) -> Any:
+                return self._tz.utcoffset(dt)
+
+            def tzname(self, dt: datetime | None) -> str | None:
+                return self._tz.tzname(dt)
+
+            def dst(self, dt: datetime | None) -> Any:
+                return self._tz.dst(dt)
 
             def __repr__(self):
                 return f"ZoneInfo('{self.name}')"
@@ -178,7 +188,7 @@ class TimezoneManager:
         except Exception as e:
             raise ValueError(f"Invalid date format '{date_str}': {e}")
 
-    def format_for_user(self, dt: datetime, format_str: str = None) -> str:
+    def format_for_user(self, dt: datetime, format_str: str | None = None) -> str:
         """Format datetime for display to user in their timezone.
 
         Args:
