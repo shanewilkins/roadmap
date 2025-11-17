@@ -562,7 +562,8 @@ Project notes and additional context.
             milestone.due_date = due_date
 
         if status is not None:
-            milestone.status = status
+            from .models import MilestoneStatus
+            milestone.status = MilestoneStatus(status)
 
         from .timezone_utils import now_utc
 
@@ -690,9 +691,13 @@ Project notes and additional context.
                 grouped["Backlog"].append(issue)
             else:
                 milestone_name = issue.milestone
-                if milestone_name not in grouped:
-                    grouped[milestone_name] = []
-                grouped[milestone_name].append(issue)
+                if milestone_name is None:
+                    # Issues without milestone go to Backlog
+                    grouped["Backlog"].append(issue)
+                else:
+                    if milestone_name not in grouped:
+                        grouped[milestone_name] = []
+                    grouped[milestone_name].append(issue)
 
         return grouped
 
@@ -738,8 +743,10 @@ Project notes and additional context.
         # Handle timezone-aware vs timezone-naive datetime comparison
         def get_sortable_date(milestone):
             due_date = milestone.due_date
+            # due_date should not be None since we filtered above, but be safe
             if due_date is None:
-                return None
+                from datetime import datetime
+                return datetime.max  # Put None dates at the end
             # Convert timezone-aware dates to naive for comparison
             if due_date.tzinfo is not None:
                 return due_date.replace(tzinfo=None)
@@ -769,7 +776,7 @@ Project notes and additional context.
 
             # Get token from credentials manager or environment
             credential_manager = get_credential_manager()
-            token = credential_manager.get_credential("github", "token")
+            token = credential_manager.get_token()
 
             if not token:
                 import os
@@ -1034,7 +1041,7 @@ Project notes and additional context.
         if not self.git.is_git_repository():
             return {"is_git_repo": False}
 
-        context = {"is_git_repo": True}
+        context: dict[str, Any] = {"is_git_repo": True}
         context.update(self.git.get_repository_info())
 
         # Current branch info

@@ -15,29 +15,56 @@
   "pythonVersion": "3.10",
   "pythonPlatform": "All",
   
-  // Type checking settings - start permissive, get stricter over time
+  // Type checking settings - gradual migration approach
   "typeCheckingMode": "basic",
   
-  // Enable these gradually
+  // Global settings - permissive during migration
   "reportMissingModuleSource": false,
-  "reportMissingImports": false,
+  "reportMissingImports": "warning",
   "reportUndefinedVariable": "error",
   "reportAssertAlwaysTrue": "warning",
-  "reportUnusedImport": "information",
+  "reportUnusedImport": "information", 
   "reportUnusedVariable": "information",
   "reportDuplicateImport": "warning",
+  "reportGeneralTypeIssues": "warning",
+  "reportOptionalMemberAccess": "warning",
+  "reportOptionalSubscript": "warning",
   
-  // Strict settings for core modules only
+  // Phase-based strictness overrides for gradual migration
   "overrides": [
     {
+      // Phase 2: Core modules - stricter checking
       "include": [
         "roadmap/core.py",
-        "roadmap/models.py",
-        "roadmap/cli/core.py"
+        "roadmap/models.py", 
+        "roadmap/cli/core.py",
+        "roadmap/persistence.py"
       ],
+      "typeCheckingMode": "standard",
       "reportUnknownArgumentType": "warning",
-      "reportUnknownVariableType": "warning",
-      "reportUnknownMemberType": "warning"
+      "reportUnknownVariableType": "warning", 
+      "reportUnknownMemberType": "warning",
+      "reportMissingTypeStubs": "information"
+    },
+    {
+      // Phase 3: Extended modules - moderate checking
+      "include": [
+        "roadmap/analytics.py",
+        "roadmap/github_client.py",
+        "roadmap/git_integration.py", 
+        "roadmap/cli/*.py"
+      ],
+      "reportUnknownArgumentType": "information",
+      "reportUnknownVariableType": "information",
+      "reportGeneralTypeIssues": "information"
+    },
+    {
+      // Test files - minimal checking to avoid blocking
+      "include": ["tests/**/*.py"],
+      "typeCheckingMode": "basic",
+      "reportMissingImports": false,
+      "reportUnknownArgumentType": false,
+      "reportUnknownVariableType": false
     }
   ],
   

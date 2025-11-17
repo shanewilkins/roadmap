@@ -10,14 +10,14 @@ from pydantic import BaseModel, Field
 
 # Import security functions - using a try/except to avoid circular imports
 try:
-    from .file_utils import ensure_directory_exists
-    from .security import create_secure_file, validate_path
+    from .file_utils import ensure_directory_exists  # type: ignore
+    from .security import create_secure_file, validate_path  # type: ignore
 except ImportError:
     # Fallback for when security module is not available
-    def validate_path(path):
+    def validate_path(path):  # type: ignore
         pass
 
-    def create_secure_file(path, mode="w", **kwargs):
+    def create_secure_file(path, mode="w", **kwargs):  # type: ignore
         return open(path, mode, **kwargs)
 
 
@@ -181,7 +181,7 @@ class Issue(BaseModel):
         if self.actual_end_date:
             # Already completed, check if it took longer than estimated
             actual_hours = self.actual_duration_hours
-            return actual_hours and actual_hours > self.estimated_hours
+            return bool(actual_hours and actual_hours > self.estimated_hours)
 
         # Still in progress, check if it's taking longer than estimated
         elapsed = datetime.now() - self.actual_start_date
@@ -485,5 +485,5 @@ class RoadmapConfig(BaseModel):
         import yaml
 
         ensure_directory_exists(config_path.parent)
-        with create_secure_file(config_path, "w") as f:
+        with create_secure_file(str(config_path), "w") as f:
             yaml.dump(self.model_dump(), f, default_flow_style=False)

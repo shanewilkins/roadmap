@@ -80,7 +80,6 @@ pytest-cov = "^7.0.0"
 pytest-asyncio = "^0.23.0"
 pytest-aiohttp = "^1.0.0"
 ruff = "^0.6.0"
-mypy = "^1.18.2"
 pre-commit = "^4.3.0"
 pytest-xdist = "^3.5.0"
 pytest-benchmark = "^4.0.0"
@@ -127,42 +126,9 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = true
-warn_unused_configs = true
-
-# Gradual typing approach - start lenient, get stricter over time
-ignore_missing_imports = true
-allow_untyped_calls = true
-allow_untyped_defs = true
-allow_incomplete_defs = true
-
-# Enable these incrementally as we improve type coverage
-# disallow_untyped_defs = true
-# disallow_untyped_calls = true  
-# disallow_any_generics = true
-
-warn_redundant_casts = true
-warn_unused_ignores = true
-check_untyped_defs = true
-
-# Performance optimizations  
-cache_dir = ".mypy_cache"
-incremental = true
-fast_exit = true
-
-# Module-specific overrides for core modules
-[[tool.mypy.overrides]]
-module = ["roadmap.core", "roadmap.models", "roadmap.cli.core"]
-disallow_untyped_defs = true
-warn_return_any = true
-
-# Ignore third-party modules that don't have stubs
-[[tool.mypy.overrides]]
-module = ["plotly.*", "seaborn.*", "matplotlib.*", "pandas.*"]
-ignore_missing_imports = true
-ignore_errors = true
+# Type checking is now handled by Pyright
+# Configuration is in pyrightconfig.json
+# Pyright provides superior type inference and VSCode integration
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

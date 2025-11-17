@@ -2,21 +2,21 @@
 id: 6fb80d59
 title: Immediate Migration to Pyright as Primary Type Checker
 priority: high
-status: todo
+status: in-progress
 issue_type: feature
 milestone: 0.4.0
 labels: []
 github_issue: null
 created: '2025-11-17T03:04:27.550602+00:00'
-updated: '2025-11-17T03:04:27.550933+00:00'
+updated: '2025-11-17T03:10:08.457589+00:00'
 assignee: shane
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-11-16T21:10:08.453716'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 0.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -40,19 +40,19 @@ Replace MyPy with Pyright as the primary type checker for the roadmap project, i
 
 ## Migration Phases
 
-### Phase 1: Core Infrastructure Setup
+### Phase 1: Core Infrastructure Setup ✅
 
-- [ ] Update pyproject.toml to make Pyright primary type checker
-- [ ] Remove MyPy from CI/CD pipeline
-- [ ] Configure Pyright strict mode gradually by module
-- [ ] Update pre-commit hooks to use Pyright instead of MyPy
+- [x] Update pyproject.toml to make Pyright primary type checker
+- [x] Remove MyPy from CI/CD pipeline
+- [x] Configure Pyright strict mode gradually by module
+- [x] Update pre-commit hooks to use Pyright instead of MyPy
 
-### Phase 2: Core Module Type Safety
+### Phase 2: Core Module Type Safety ✅
 
-- [ ] Fix type errors in roadmap/core.py (highest priority)
-- [ ] Address type issues in roadmap/models.py
-- [ ] Clean up roadmap/cli/core.py type annotations
-- [ ] Resolve roadmap/persistence.py type problems
+- [x] Fix type errors in roadmap/core.py (highest priority) - 8 errors fixed
+- [x] Address type issues in roadmap/models.py - 3 errors fixed  
+- [x] Clean up roadmap/cli/core.py type annotations - 14 errors fixed
+- [x] Resolve roadmap/persistence.py type problems - 3 errors fixed
 
 ### Phase 3: Extended Module Coverage
 

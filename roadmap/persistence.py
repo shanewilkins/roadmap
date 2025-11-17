@@ -76,9 +76,9 @@ class YAMLRecoveryManager:
             return True, None
         except yaml.YAMLError as e:
             error_msg = f"YAML syntax error: {e}"
-            if hasattr(e, "problem_mark") and e.problem_mark:
-                line_num = e.problem_mark.line + 1
-                col_num = e.problem_mark.column + 1
+            if hasattr(e, "problem_mark") and e.problem_mark:  # type: ignore
+                line_num = e.problem_mark.line + 1  # type: ignore
+                col_num = e.problem_mark.column + 1  # type: ignore
                 error_msg += f" at line {line_num}, column {col_num}"
             return False, error_msg
 

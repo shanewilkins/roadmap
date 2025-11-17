@@ -12,12 +12,10 @@ repos:
       # Run the formatter.
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mypy
-    rev: v1.8.0
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.350
     hooks:
-      - id: mypy
-        additional_dependencies: [types-requests, types-PyYAML]
-        args: [--ignore-missing-imports, --no-strict-optional]
+      - id: pyright
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0

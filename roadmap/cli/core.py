@@ -273,11 +273,12 @@ def init(
 
         # Step 4: GitHub integration (unless skipped)
         github_configured = False
-        if not skip_github and (detected_info.get("git_repo") or github_repo):
+        repo_name = github_repo or detected_info.get("git_repo")
+        if not skip_github and repo_name:
             with console.status("🔗 Configuring GitHub integration...", spinner="dots"):
                 github_configured = _setup_github_integration(
                     custom_core,
-                    github_repo or detected_info.get("git_repo"),
+                    repo_name,
                     interactive,
                     yes,
                     token=github_token,
@@ -536,6 +537,9 @@ def _setup_main_project(
         else:
             project_name = detected_info.get("project_name", Path.cwd().name)
 
+    # Ensure project_name is never None
+    assert project_name is not None
+
     # Determine description
     if not description and interactive and not yes:
         default_desc = "A project managed with Roadmap CLI"
@@ -546,6 +550,9 @@ def _setup_main_project(
         )
     elif not description:
         description = "A project managed with Roadmap CLI"
+
+    # Ensure description is never None
+    assert description is not None
 
     # Create project using core functionality
     console.print("📋 Creating main project...", style="bold blue")
@@ -805,7 +812,7 @@ def _setup_github_integration(
         existing_token = None
 
         try:
-            existing_token = cred_manager.get_github_token()
+            existing_token = cred_manager.get_token()
             if existing_token and interactive and not yes and not token:
                 console.print("🔍 Found existing GitHub credentials")
                 if click.confirm("Use existing GitHub credentials?"):
@@ -844,11 +851,14 @@ def _setup_github_integration(
 
         # Test the connection with comprehensive validation
         console.print("🔍 Testing GitHub connection...", style="yellow")
+        if GitHubClient is None:
+            raise ImportError("GitHubClient not available")
         github_client = GitHubClient(use_token)
 
         # Validate user authentication
         try:
-            user_info = github_client._make_request("GET", "/user")
+            user_response = github_client._make_request("GET", "/user")
+            user_info = user_response.json()
             console.print(f"✅ Authenticated as: {user_info.get('login', 'unknown')}")
         except Exception as e:
             console.print(f"❌ Authentication failed: {e}", style="red")
@@ -862,7 +872,9 @@ def _setup_github_integration(
         # Validate repository access
         try:
             owner, repo = github_repo.split("/")
-            repo_info = github_client.get_repository_info(owner, repo)
+            github_client.set_repository(owner, repo)
+            repo_info = github_client.test_repository_access()
+                
             repo_name = repo_info.get("full_name", github_repo)
             console.print(f"✅ Repository access: {repo_name}")
 
@@ -886,7 +898,7 @@ def _setup_github_integration(
 
         # Store credentials securely (only if new token and different)
         if use_token and use_token != existing_token:
-            cred_manager.store_github_token(use_token)
+            cred_manager.store_token(use_token)
             console.print("🔒 Credentials stored securely")
 
         # Save GitHub repository configuration
@@ -920,11 +932,12 @@ def _setup_github_integration(
 
         # Test a basic API call to ensure everything works
         try:
-            issues = github_client._make_request(
+            issues_response = github_client._make_request(
                 "GET",
                 f"/repos/{github_repo}/issues",
                 params={"state": "open", "per_page": 1},
             )
+            issues = issues_response.json()
             console.print(f"✅ API test successful ({len(issues)} issue(s) found)")
         except Exception as e:
             console.print(f"⚠️  API test warning: {e}", style="yellow")
