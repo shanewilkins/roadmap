@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 # Import security functions - using a try/except to avoid circular imports
 try:
+    from .file_utils import ensure_directory_exists
     from .security import create_secure_file, validate_path
 except ImportError:
     # Fallback for when security module is not available
@@ -460,6 +461,6 @@ class RoadmapConfig(BaseModel):
         """Save configuration to YAML file."""
         import yaml
 
-        config_path.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(config_path.parent)
         with create_secure_file(config_path, "w") as f:
             yaml.dump(self.model_dump(), f, default_flow_style=False)

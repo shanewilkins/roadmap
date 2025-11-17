@@ -25,6 +25,8 @@ from difflib import SequenceMatcher
 from datetime import datetime
 import logging
 
+from .file_utils import ensure_directory_exists, file_exists_check
+
 logger = logging.getLogger(__name__)
 
 
@@ -87,7 +89,7 @@ class IdentityManager:
         
     def _load_team_config(self):
         """Load team configuration and user profiles."""
-        if not self.team_config_path.exists():
+        if not file_exists_check(self.team_config_path):
             return
             
         try:
@@ -118,7 +120,7 @@ class IdentityManager:
     def save_team_config(self):
         """Save current team configuration and profiles."""
         # Ensure directory exists
-        self.team_config_path.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(self.team_config_path.parent)
         
         # Prepare data for serialization
         data = {

@@ -11,6 +11,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, ContextManager, Dict, Optional
 
+from .file_utils import ensure_directory_exists
 from .models import Issue, Milestone
 
 
@@ -266,7 +267,7 @@ class LockedFileOperations:
                     )
 
                 # Ensure directory exists
-                file_path.parent.mkdir(parents=True, exist_ok=True)
+                ensure_directory_exists(file_path.parent)
 
                 # Write to temporary file first for atomic operation
                 with tempfile.NamedTemporaryFile(

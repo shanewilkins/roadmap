@@ -9,6 +9,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+from .file_utils import ensure_directory_exists
+
 # Security logger
 security_logger = logging.getLogger("roadmap.security")
 
@@ -47,7 +49,7 @@ def create_secure_file(
 
     try:
         # Create parent directories if they don't exist
-        path.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(path.parent)
 
         # Open file with specified mode
         with open(path, mode, **kwargs) as f:
@@ -82,8 +84,8 @@ def create_secure_directory(path: Path, permissions: int = 0o700) -> None:
         SecurityError: If directory creation fails
     """
     try:
-        path.mkdir(parents=True, exist_ok=True)
-        path.chmod(permissions)
+        ensure_directory_exists(path, permissions=permissions)
+        # Note: ensure_directory_exists already sets permissions
 
         log_security_event(
             "directory_created", {"path": str(path), "permissions": oct(permissions)}

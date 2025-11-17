@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import yaml
 
 from .datetime_parser import parse_datetime
+from .file_utils import ensure_directory_exists
 from .models import Issue, Milestone, MilestoneStatus, Priority, Status
 
 
@@ -32,7 +33,7 @@ class YAMLRecoveryManager:
 
     def __init__(self, backup_dir: Optional[Path] = None):
         self.backup_dir = backup_dir or Path(".roadmap/backups")
-        self.backup_dir.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(self.backup_dir)
 
     def create_backup(self, file_path: Path) -> Path:
         """Create a backup of a YAML file before modification."""
@@ -333,7 +334,7 @@ class EnhancedYAMLPersistence:
                 return False, f"Generated YAML is invalid: {error}"
 
             # Ensure directory exists
-            file_path.parent.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(file_path.parent)
 
             # Write file
             file_path.write_text(full_content, encoding="utf-8")

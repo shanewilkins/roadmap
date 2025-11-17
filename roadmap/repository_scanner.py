@@ -26,6 +26,7 @@ from .core import RoadmapCore
 from .parser import IssueParser
 from .ci_tracking import CITracker, GitCommit, GitBranch, CITrackingConfig
 from .bulk_operations import BulkOperationResult, BulkOperations
+from .file_utils import ensure_directory_exists
 from .git_integration import GitIntegration
 
 logger = logging.getLogger(__name__)
@@ -750,7 +751,7 @@ class AdvancedRepositoryScanner:
             output_file = self.roadmap_core.artifacts_dir / f"repository_scan_{timestamp}.json"
         
         # Ensure artifacts directory exists
-        output_file.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(output_file.parent)
         
         # Convert to serializable format
         export_data = {

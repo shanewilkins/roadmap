@@ -7,10 +7,11 @@ from typing import Any, Dict, Optional, Tuple
 
 import yaml
 
+from .datetime_parser import parse_datetime
+from .file_utils import ensure_directory_exists, file_exists_check
 from .models import Issue, IssueType, Milestone, MilestoneStatus, Priority, Project, ProjectStatus, Status
 from .persistence import YAMLValidationError, enhanced_persistence
 from .timezone_utils import now_utc
-from .datetime_parser import parse_datetime
 
 
 class FrontmatterParser:
@@ -21,7 +22,7 @@ class FrontmatterParser:
     @classmethod
     def parse_file(cls, file_path: Path) -> Tuple[Dict[str, Any], str]:
         """Parse a markdown file and return frontmatter and content."""
-        if not file_path.exists():
+        if not file_exists_check(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
         content = file_path.read_text(encoding="utf-8")
@@ -50,7 +51,7 @@ class FrontmatterParser:
         cls, frontmatter: Dict[str, Any], content: str, file_path: Path
     ) -> None:
         """Write frontmatter and content to a markdown file."""
-        file_path.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(file_path.parent)
 
         # Convert datetime objects to ISO format strings
         serializable_frontmatter = cls._prepare_frontmatter_for_yaml(frontmatter)

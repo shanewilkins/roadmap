@@ -14,6 +14,7 @@ from rich.progress import Progress, TaskID
 from rich.table import Table
 
 from .core import RoadmapCore
+from .file_utils import ensure_directory_exists
 from .models import Issue, Milestone
 from .timezone_utils import migrate_naive_datetime, now_utc
 from .parser import IssueParser, MilestoneParser
@@ -113,12 +114,12 @@ class TimezoneDataMigrator:
         """Create backup of current data before migration."""
         try:
             # Create backup directory
-            self.backup_dir.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(self.backup_dir)
             
             # Create timestamped backup
             timestamp = now_utc().strftime("%Y%m%d_%H%M%S")
             backup_path = self.backup_dir / f"pre_timezone_migration_{timestamp}"
-            backup_path.mkdir(exist_ok=True)
+            ensure_directory_exists(backup_path)
             
             # Copy issues directory
             if self.core.issues_dir.exists():
@@ -456,7 +457,7 @@ class TimezoneDataMigrator:
     def save_migration_log(self) -> Path:
         """Save migration log to file."""
         log_file = self.backup_dir / f"migration_log_{now_utc().strftime('%Y%m%d_%H%M%S')}.txt"
-        log_file.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(log_file.parent)
         
         with open(log_file, 'w') as f:
             f.write(f"Timezone Migration Log\n")
