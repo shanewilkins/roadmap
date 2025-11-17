@@ -6,7 +6,7 @@ to improve performance and maintainability.
 """
 
 import os
-from typing import Optional
+
 
 import click
 
@@ -17,7 +17,6 @@ console = get_console()
 
 # Import core classes for backward compatibility with tests
 from roadmap.core import RoadmapCore
-
 
 
 # Import functions that tests expect to be available
@@ -456,7 +455,6 @@ def register_commands():
     from .milestone import milestone
     from .project import project
     from .release import release_group
-
     from .team import team
     from .timezone import timezone_group
     from .user import user

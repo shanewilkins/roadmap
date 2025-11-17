@@ -9,8 +9,6 @@ and maintainability.
 import click
 from rich.console import Console
 
-from roadmap.core import RoadmapCore
-
 # Import all the modular command groups
 from roadmap.cli.analytics import analytics
 from roadmap.cli.ci import ci
@@ -23,6 +21,7 @@ from roadmap.cli.progress import progress_reports, recalculate_progress
 from roadmap.cli.project import project
 from roadmap.cli.team import team
 from roadmap.cli.user import user
+from roadmap.core import RoadmapCore
 
 # Initialize console for rich output
 console = Console()

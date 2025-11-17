@@ -8,7 +8,6 @@ from .github_client import GitHubAPIError, GitHubClient
 from .models import Issue, Milestone, MilestoneStatus, Priority, RoadmapConfig, Status
 from .parser import FrontmatterParser, IssueParser, MilestoneParser
 
-
 __all__ = [
     "Issue",
     "Milestone",

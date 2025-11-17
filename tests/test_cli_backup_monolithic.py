@@ -27,7 +27,7 @@ def reset_cli_state():
         try:
             ctx = main.make_context("main", [])
             ctx.reset()
-        except:
+        except Exception:
             pass
 
     # Clear any module-level state
@@ -1055,9 +1055,6 @@ class TestSyncBidirectionalCommand:
         """Test bidirectional sync with conflicts detected."""
         runner = CliRunner()
 
-        from datetime import datetime
-
-        from roadmap.models import Issue
         # from roadmap.sync import SyncConflict  # Legacy sync functionality removed
 
         # Mock conflicts - Legacy sync functionality removed

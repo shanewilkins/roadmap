@@ -207,16 +207,18 @@ class TestGitHookManager:
             with patch("subprocess.run") as mock_subprocess:
                 mock_subprocess.return_value.stdout = f"feature/{issue.id}-test-feature"
                 mock_subprocess.return_value.returncode = 0
-                
+
                 with patch("roadmap.ci_tracking.CITracker") as mock_tracker_class:
                     mock_tracker = Mock()
                     mock_tracker.track_branch.return_value = {issue.id: ["tracked"]}
                     mock_tracker_class.return_value = mock_tracker
-                    
+
                     hook_manager.handle_post_checkout()
-                    
+
                     # Verify CI tracker was called with the branch
-                    mock_tracker.track_branch.assert_called_once_with(f"feature/{issue.id}-test-feature")
+                    mock_tracker.track_branch.assert_called_once_with(
+                        f"feature/{issue.id}-test-feature"
+                    )
 
     def test_non_git_repo_handling(self):
         """Test graceful handling when not in a Git repository."""
@@ -684,14 +686,14 @@ class TestGitHooksIntegration:
                 with patch("subprocess.run") as mock_subprocess:
                     mock_subprocess.return_value.stdout = branch_name
                     mock_subprocess.return_value.returncode = 0
-                    
+
                     with patch("roadmap.ci_tracking.CITracker") as mock_tracker_class:
                         mock_tracker = Mock()
                         mock_tracker.track_branch.return_value = {issue.id: ["tracked"]}
                         mock_tracker_class.return_value = mock_tracker
-                        
+
                         hook_manager.handle_post_checkout()
-                        
+
                         # Verify CI tracker was called with the branch
                         mock_tracker.track_branch.assert_called_once_with(branch_name)
 

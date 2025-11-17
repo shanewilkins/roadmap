@@ -454,7 +454,7 @@ class TestCICommandsIntegration:
                 "track-pr",
                 "124",
                 "--branch",
-"feature/cli12345-fix",
+                "feature/cli12345-fix",
                 "--action",
                 "opened",
             ],
