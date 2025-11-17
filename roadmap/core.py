@@ -1,5 +1,6 @@
 """Core roadmap functionality."""
 
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -175,9 +176,13 @@ class RoadmapCore:
 
         # Check each possible directory
         for dir_name in possible_names:
-            potential_core = cls(root_path=search_path, roadmap_dir_name=dir_name)
-            if potential_core.is_initialized():
-                return potential_core
+            try:
+                potential_core = cls(root_path=search_path, roadmap_dir_name=dir_name)
+                if potential_core.is_initialized():
+                    return potential_core
+            except (OSError, PermissionError, sqlite3.OperationalError):
+                # Skip directories that can't be accessed or have permission issues
+                continue
 
         return None
 

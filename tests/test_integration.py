@@ -21,8 +21,8 @@ pytestmark = pytest.mark.filesystem
 
 @pytest.fixture
 def mock_github_client():
-    """Mock GitHub client for sync operations."""
-    with patch("roadmap.sync.GitHubClient") as mock_client_class:
+    """Mock GitHub client for integration operations."""
+    with patch("roadmap.github_client.GitHubClient") as mock_client_class:
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -375,101 +375,6 @@ class TestEndToEndWorkflows:
         result = runner.invoke(main, ["issue", "delete", "nonexistent"], input="y\n")
         assert result.exit_code == 0
         assert "Issue not found" in result.output
-
-
-class TestSyncIntegration:
-    """Test GitHub sync integration workflows."""
-
-    def test_sync_setup_workflow(self, temp_workspace, mock_github_client):
-        """Test complete sync setup workflow."""
-        runner = CliRunner()
-
-        # Initialize roadmap
-        runner.invoke(
-            main,
-            [
-                "init",
-                "--non-interactive",
-                "--skip-github",
-                "--project-name",
-                "test-project",
-            ],
-        )
-
-        # Test sync setup
-        with patch("roadmap.cli.sync.SyncManager") as mock_sync_manager_class:
-            mock_sync_manager = Mock()
-            mock_sync_manager_class.return_value = mock_sync_manager
-            mock_sync_manager.store_token_secure.return_value = (
-                True,
-                "Token stored securely",
-            )
-            mock_sync_manager.test_connection.return_value = (
-                True,
-                "Connection successful",
-            )
-            mock_sync_manager.setup_repository.return_value = (
-                True,
-                "Repository setup complete",
-            )
-
-            result = runner.invoke(
-                main, ["sync", "setup", "--token", "test-token", "--repo", "user/repo"]
-            )
-            assert result.exit_code == 0
-            assert "Token stored securely" in result.output
-
-            # Test connection
-            result = runner.invoke(main, ["sync", "test"])
-            assert result.exit_code == 0
-            assert "Connection successful" in result.output
-
-    def test_sync_push_pull_workflow(self, temp_workspace, mock_github_client):
-        """Test sync push/pull workflow."""
-        runner = CliRunner()
-
-        # Setup
-        runner.invoke(
-            main,
-            [
-                "init",
-                "--non-interactive",
-                "--skip-github",
-                "--project-name",
-                "test-project",
-            ],
-        )
-
-        with patch("roadmap.cli.sync.SyncManager") as mock_sync_manager_class:
-            mock_sync_manager = Mock()
-            mock_sync_manager_class.return_value = mock_sync_manager
-
-            # Mock sync operations - these methods return (success_count, error_count, error_messages)
-            mock_sync_manager.is_configured.return_value = True
-            mock_sync_manager.sync_all_issues.return_value = (
-                2,
-                0,
-                [],
-            )  # 2 issues, 0 errors
-            mock_sync_manager.sync_all_milestones.return_value = (
-                1,
-                0,
-                [],
-            )  # 1 milestone, 0 errors
-
-            # Create local data
-            runner.invoke(main, ["issue", "create", "Local issue"])
-            runner.invoke(main, ["milestone", "create", "Local milestone"])
-
-            # Test push
-            result = runner.invoke(main, ["sync", "push"])
-            assert result.exit_code == 0
-            assert "push to GitHub" in result.output
-
-            # Test pull
-            result = runner.invoke(main, ["sync", "pull"])
-            assert result.exit_code == 0
-            assert "sync mode" in result.output
 
 
 class TestCrossModuleIntegration:

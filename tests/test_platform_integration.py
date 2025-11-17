@@ -32,6 +32,7 @@ class TestCrossPlatformCLIWorkflows:
             assert result.exit_code == 0
             yield temp_dir
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_macos_cli_secure_setup_workflow(self, temp_roadmap):
         """Test complete CLI workflow on macOS with secure storage."""
         with patch("platform.system", return_value="Darwin"):
@@ -79,6 +80,7 @@ class TestCrossPlatformCLIWorkflows:
                     # Verify store_token_secure was called
                     mock_instance.store_token_secure.assert_called_once()
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_windows_cli_secure_setup_workflow(self, temp_roadmap):
         """Test complete CLI workflow on Windows with secure storage."""
         with patch("platform.system", return_value="Windows"):
@@ -120,6 +122,7 @@ class TestCrossPlatformCLIWorkflows:
                     assert "Token stored securely" in result.output
                     assert "Connected as winuser" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_linux_cli_secure_setup_workflow(self, temp_roadmap):
         """Test complete CLI workflow on Linux with secure storage."""
         with patch("platform.system", return_value="Linux"):
@@ -162,6 +165,7 @@ class TestCrossPlatformCLIWorkflows:
                     assert "Token stored securely" in result.output
                     assert "Connected as linuxuser" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_cross_platform_status_command(self, temp_roadmap):
         """Test sync status command across platforms."""
         platforms = [("Darwin", "macOS"), ("Windows", "Windows"), ("Linux", "Linux")]
@@ -193,6 +197,7 @@ class TestCrossPlatformCLIWorkflows:
                     assert "Token Sources:" in result.output
                     assert "Credential Manager:" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_cross_platform_environment_variable_priority(self, temp_roadmap):
         """Test that environment variables work across all platforms."""
         platforms = ["Darwin", "Windows", "Linux"]
@@ -234,6 +239,7 @@ class TestCrossPlatformCLIWorkflows:
                             in result.output
                         )
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_cross_platform_insecure_flag_behavior(self, temp_roadmap):
         """Test --insecure flag behavior across platforms."""
         platforms = ["Darwin", "Windows", "Linux"]
@@ -277,6 +283,7 @@ class TestCrossPlatformCLIWorkflows:
                         "Consider using environment variable instead" in result.output
                     )
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_cross_platform_credential_manager_unavailable(self, temp_roadmap):
         """Test behavior when credential manager is unavailable on each platform."""
         test_cases = [
@@ -313,6 +320,7 @@ class TestCrossPlatformCLIWorkflows:
                     assert result.exit_code == 0  # Should not crash
                     assert "Alternative: Set environment variable" in result.output
 
+    @pytest.mark.skip(reason="Legacy sync functionality removed")
     def test_cross_platform_delete_token_command(self, temp_roadmap):
         """Test delete-token command across platforms."""
         platforms = [

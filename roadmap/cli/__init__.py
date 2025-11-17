@@ -412,8 +412,9 @@ def main(ctx: click.Context):
     # by means other than the `if` block below)
     ctx.ensure_object(dict)
 
-    # Initialize core with default roadmap directory
-    ctx.obj["core"] = RoadmapCore()
+    # Initialize core with default roadmap directory (skip for init command)
+    if ctx.invoked_subcommand != "init":
+        ctx.obj["core"] = RoadmapCore()
 
     # If no subcommand was provided, show help
     if ctx.invoked_subcommand is None:

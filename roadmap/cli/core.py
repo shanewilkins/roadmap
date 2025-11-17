@@ -115,7 +115,32 @@ def init(
         roadmap init --template software         # Use software project template
     """
 
-    # Create a new core instance with the custom directory name
+    # Check if roadmap already exists (without creating RoadmapCore instance)
+    roadmap_dir = Path.cwd() / name
+    config_file = roadmap_dir / "config.yaml" 
+    is_initialized = roadmap_dir.exists() and config_file.exists()
+
+    # If dry-run, show planned steps and exit before making changes
+    if dry_run:
+        console.print("🚀 Roadmap CLI Initialization", style="bold cyan")
+        console.print()
+        console.print(
+            "ℹ️  Dry run mode enabled - no changes will be made.", style="yellow"
+        )
+        if is_initialized and force:
+            console.print(
+                f"🟡 Would remove existing {name}/ and reinitialize", style="yellow"
+            )
+        elif is_initialized:
+            console.print(f"❌ Roadmap already initialized in {name}/ directory", style="bold red")
+            console.print("Tip: use --force to reinitialize", style="yellow")
+        else:
+            console.print(
+                f"Planned actions:\n - Create roadmap directory: {name}/\n - Create default templates and config\n - Create main project (unless --skip-project)\n - Optionally configure GitHub (unless --skip-github)"
+            )
+        return
+
+    # Create a new core instance with the custom directory name (after dry-run check)
     custom_core = RoadmapCore(roadmap_dir_name=name)
 
     # Global init lock path prevents concurrent inits
@@ -163,16 +188,6 @@ def init(
     # Enhanced initialization flow
     console.print("🚀 Roadmap CLI Initialization", style="bold cyan")
     console.print()
-
-    # If dry-run, show planned steps and exit before making changes
-    if dry_run:
-        console.print(
-            "ℹ️  Dry run mode enabled - no changes will be made.", style="yellow"
-        )
-        console.print(
-            f"Planned actions:\n - Create roadmap directory: {name}/\n - Create default templates and config\n - Create main project (unless --skip-project)\n - Optionally configure GitHub (unless --skip-github)"
-        )
-        return
 
     try:
         # Create a lock file to indicate init in progress
@@ -347,37 +362,9 @@ def status(ctx: click.Context) -> None:
     try:
         console.print("📊 Roadmap Status", style="bold blue")
 
-        # Get all issues and milestones from database
-        issues = core.db.get_all_issues()
-        milestones = core.db.get_all_milestones()
-
-        # Convert database results to compatible format
-        issues = [
-            type(
-                "Issue",
-                (),
-                {
-                    "id": issue["id"],
-                    "title": issue["title"],
-                    "status": issue["status"],
-                    "assignee": issue.get("assignee"),
-                    "milestone": issue.get("milestone_name", issue.get("milestone_id")),
-                },
-            )()
-            for issue in issues
-        ]
-
-        milestones = [
-            type(
-                "Milestone",
-                (),
-                {
-                    "name": ms["name"],
-                    "title": ms["title"],
-                },
-            )()
-            for ms in milestones
-        ]
+        # Get all issues and milestones from files (more reliable than database)
+        issues = core.list_issues()
+        milestones = core.list_milestones()
 
         if not issues and not milestones:
             console.print("\n📝 No issues or milestones found.", style="yellow")
@@ -390,8 +377,8 @@ def status(ctx: click.Context) -> None:
         if milestones:
             console.print("\n🎯 Milestones:", style="bold cyan")
             for ms in milestones:
-                progress = core.db.get_milestone_progress(ms.title)
-                console.print(f"\n  {ms.title}")
+                progress = core.db.get_milestone_progress(ms.name)
+                console.print(f"\n  {ms.name}")
 
                 if progress["total"] > 0:
                     with Progress(
@@ -411,7 +398,10 @@ def status(ctx: click.Context) -> None:
 
         # Show issues by status
         console.print("\n📋 Issues by Status:", style="bold cyan")
-        status_counts = core.db.get_issues_by_status()
+        
+        # Count issues by status from the issues list
+        from collections import Counter
+        status_counts = Counter(issue.status for issue in issues)
 
         if status_counts:
             status_table = Table(show_header=False, box=None)
@@ -420,17 +410,18 @@ def status(ctx: click.Context) -> None:
 
             for status in Status:
                 count = status_counts.get(status, 0)
-                status_style = {
-                    Status.TODO: "white",
-                    Status.IN_PROGRESS: "yellow",
-                    Status.BLOCKED: "red",
-                    Status.REVIEW: "blue",
-                    Status.DONE: "green",
-                }.get(status, "white")
+                if count > 0:  # Only show statuses that have issues
+                    status_style = {
+                        Status.TODO: "white",
+                        Status.IN_PROGRESS: "yellow",
+                        Status.BLOCKED: "red",
+                        Status.REVIEW: "blue",
+                        Status.DONE: "green",
+                    }.get(status, "white")
 
-                status_table.add_row(
-                    Text(f"  {status.value}", style=status_style), str(count)
-                )
+                    status_table.add_row(
+                        Text(f"  {status.value}", style=status_style), str(count)
+                    )
 
             console.print(status_table)
         else:
