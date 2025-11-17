@@ -498,7 +498,7 @@ def milestone_kanban(
         # Print column headers
         header_line = ""
         separator_line = ""
-        for title, issues, style in columns:
+        for title, issues, _style in columns:
             header_line += f"{title:<{col_width}}"
             separator_line += "─" * col_width
 
@@ -510,7 +510,7 @@ def milestone_kanban(
 
         for row in range(max_issues):
             row_line = ""
-            for title, issues, style in columns:
+            for title, issues, _style in columns:
                 if row < len(issues):
                     issue = issues[row]
                     # Format issue card

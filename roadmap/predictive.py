@@ -1287,7 +1287,7 @@ class PredictiveReportGenerator:
             )
 
         # By risk type
-        risk_types = set(r.risk_type for r in risks)
+        risk_types = {r.risk_type for r in risks}
         for risk_type in risk_types:
             summary[f'{risk_type.lower().replace(" ", "_")}_count'] = len(
                 [r for r in risks if r.risk_type == risk_type]

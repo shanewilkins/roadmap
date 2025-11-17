@@ -117,7 +117,7 @@ def init(
 
     # Check if roadmap already exists (without creating RoadmapCore instance)
     roadmap_dir = Path.cwd() / name
-    config_file = roadmap_dir / "config.yaml" 
+    config_file = roadmap_dir / "config.yaml"
     is_initialized = roadmap_dir.exists() and config_file.exists()
 
     # If dry-run, show planned steps and exit before making changes
@@ -132,7 +132,9 @@ def init(
                 f"🟡 Would remove existing {name}/ and reinitialize", style="yellow"
             )
         elif is_initialized:
-            console.print(f"❌ Roadmap already initialized in {name}/ directory", style="bold red")
+            console.print(
+                f"❌ Roadmap already initialized in {name}/ directory", style="bold red"
+            )
             console.print("Tip: use --force to reinitialize", style="yellow")
         else:
             console.print(
@@ -398,9 +400,10 @@ def status(ctx: click.Context) -> None:
 
         # Show issues by status
         console.print("\n📋 Issues by Status:", style="bold cyan")
-        
+
         # Count issues by status from the issues list
         from collections import Counter
+
         status_counts = Counter(issue.status for issue in issues)
 
         if status_counts:

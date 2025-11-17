@@ -164,7 +164,7 @@ class TestFileLock:
         # Should have exactly one success and two failures, but the test environment
         # might behave differently than expected, so let's be more flexible
         successes = len([r for r in results if "succeeded" in r])
-        failures = len([r for r in results if "failed" in r])
+        len([r for r in results if "failed" in r])
 
         # At least one should succeed, and there should be some contention
         assert successes >= 1

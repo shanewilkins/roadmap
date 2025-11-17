@@ -472,16 +472,16 @@ class TestCICommandsIntegration:
     def test_command_error_handling(self):
         """Test error handling in CI commands."""
         # Test with invalid parameters
-        result = self.runner.invoke(ci, ["scan-full", "--max-commits", "-1"])
+        self.runner.invoke(ci, ["scan-full", "--max-commits", "-1"])
         # Should validate parameters
 
-        result = self.runner.invoke(ci, ["track-branch", ""])
+        self.runner.invoke(ci, ["track-branch", ""])
         # Should handle empty branch name
 
-        result = self.runner.invoke(ci, ["track-commit", "invalid-sha"])
+        self.runner.invoke(ci, ["track-commit", "invalid-sha"])
         # Should handle invalid commit SHA
 
-        result = self.runner.invoke(ci, ["config", "invalid_setting", "value"])
+        self.runner.invoke(ci, ["config", "invalid_setting", "value"])
         # Should handle invalid configuration
 
     def test_cli_help_commands(self):

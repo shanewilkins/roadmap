@@ -606,7 +606,7 @@ class TestGitHooksIntegration:
             subprocess.run(["git", "commit", "-m", commit_msg], check=True)
 
         # Sync all issues with Git activity
-        sync_results = automation.sync_all_issues_with_git()
+        automation.sync_all_issues_with_git()
 
         # Check if the issue was updated with git information
         updated_issue = automation.core.get_issue(issue.id)

@@ -331,7 +331,7 @@ def release_status(ctx):
         )
 
     # Milestones status
-    total_milestones = len(milestones)
+    len(milestones)
     completed_milestones = len([m for m in milestones if m.status.value == "completed"])
     active_milestones = len([m for m in milestones if m.status.value == "active"])
 

@@ -95,7 +95,7 @@ class DataProcessor:
                 value = getattr(issue, field)
                 if value is None:
                     value = "None"
-                elif isinstance(value, (Priority, Status, IssueType)):
+                elif isinstance(value, Priority | Status | IssueType):
                     value = value.value
                 elif isinstance(value, list):
                     value = ",".join(value) if value else "Empty"

@@ -536,7 +536,7 @@ class QueryBuilder:
             if column not in df.columns:
                 continue
 
-            if isinstance(value, (list, tuple)):
+            if isinstance(value, list | tuple):
                 mask &= df[column].isin(value)
             else:
                 mask &= df[column] == value

@@ -23,7 +23,7 @@ class TestCoreEdgeCases:
     def test_list_issues_with_malformed_files(self, initialized_core):
         """Test listing issues when some files are malformed."""
         # Create a valid issue
-        issue = initialized_core.create_issue("Valid Issue")
+        initialized_core.create_issue("Valid Issue")
 
         # Create a malformed file in the issues directory
         malformed_file = initialized_core.issues_dir / "malformed.md"
@@ -39,7 +39,7 @@ class TestCoreEdgeCases:
     def test_list_issues_with_empty_files(self, initialized_core):
         """Test listing issues when some files are empty."""
         # Create a valid issue
-        issue = initialized_core.create_issue("Valid Issue")
+        initialized_core.create_issue("Valid Issue")
 
         # Create an empty file in the issues directory
         empty_file = initialized_core.issues_dir / "empty.md"
@@ -53,7 +53,7 @@ class TestCoreEdgeCases:
     def test_list_issues_with_corrupted_frontmatter(self, initialized_core):
         """Test listing issues with corrupted YAML frontmatter."""
         # Create a valid issue
-        issue = initialized_core.create_issue("Valid Issue")
+        initialized_core.create_issue("Valid Issue")
 
         # Create a file with corrupted frontmatter
         corrupted_file = initialized_core.issues_dir / "corrupted.md"
@@ -76,7 +76,7 @@ This issue has corrupted YAML frontmatter.
     def test_list_issues_with_missing_required_fields(self, initialized_core):
         """Test listing issues with missing required fields."""
         # Create a valid issue
-        issue = initialized_core.create_issue("Valid Issue")
+        initialized_core.create_issue("Valid Issue")
 
         # Create a file with missing required fields
         missing_fields_file = initialized_core.issues_dir / "missing-fields.md"
@@ -100,16 +100,14 @@ This issue is missing the title field.
         # Create issues with various attributes
         issue1 = initialized_core.create_issue("Issue 1", priority=Priority.HIGH)
         issue2 = initialized_core.create_issue("Issue 2", priority=Priority.LOW)
-        issue3 = initialized_core.create_issue("Issue 3", priority=Priority.HIGH)
+        initialized_core.create_issue("Issue 3", priority=Priority.HIGH)
 
         # Update issue statuses
         initialized_core.update_issue(issue1.id, status=Status.IN_PROGRESS)
         initialized_core.update_issue(issue2.id, status=Status.DONE)
 
         # Create a milestone and assign issues
-        milestone = initialized_core.create_milestone(
-            "Test Milestone", "Test description"
-        )
+        initialized_core.create_milestone("Test Milestone", "Test description")
         initialized_core.move_issue_to_milestone(issue1.id, "Test Milestone")
 
         # Test filtering by multiple criteria
@@ -158,9 +156,7 @@ This issue is missing the title field.
 
     def test_move_nonexistent_issue_to_milestone(self, initialized_core):
         """Test moving non-existent issue to milestone."""
-        milestone = initialized_core.create_milestone(
-            "Test Milestone", "Test description"
-        )
+        initialized_core.create_milestone("Test Milestone", "Test description")
 
         result = initialized_core.move_issue_to_milestone(
             "nonexistent-id", "Test Milestone"
@@ -172,7 +168,7 @@ This issue is missing the title field.
         # Create issues with various assignee states
         issue1 = initialized_core.create_issue("Issue 1")
         issue2 = initialized_core.create_issue("Issue 2")
-        issue3 = initialized_core.create_issue("Issue 3")
+        initialized_core.create_issue("Issue 3")
 
         # Set different assignee states
         initialized_core.update_issue(issue1.id, assignee="alice")
@@ -258,7 +254,7 @@ This issue is missing the title field.
             # Try to update the issue (should handle permission error gracefully)
             # Note: This might not always fail on all systems, so we just ensure it doesn't crash
             try:
-                result = initialized_core.update_issue(issue.id, title="New Title")
+                initialized_core.update_issue(issue.id, title="New Title")
                 # If it succeeds, that's fine too
             except PermissionError:
                 # If it fails with permission error, that's expected

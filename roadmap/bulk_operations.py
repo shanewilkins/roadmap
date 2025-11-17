@@ -144,7 +144,7 @@ class BulkOperations:
                         # validation_result is either a dict or string error message
                         error_msg = (
                             str(validation_result)
-                            if isinstance(validation_result, (str, dict))
+                            if isinstance(validation_result, str | dict)
                             else "Validation failed"
                         )
                         result.add_failure(file_path, error_msg)

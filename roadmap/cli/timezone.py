@@ -174,7 +174,7 @@ def timezone_config(ctx, timezone: str | None, show: bool):
 
         console.print("\n🌐 Common Timezones:", style="bold blue")
         common_timezones = tz_manager.get_common_timezones()
-        for i, tz in enumerate(common_timezones[:10]):  # Show first 10
+        for _i, tz in enumerate(common_timezones[:10]):  # Show first 10
             console.print(f"   {tz}")
 
         if len(common_timezones) > 10:

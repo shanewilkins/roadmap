@@ -29,7 +29,7 @@ def temp_roadmap():
             issue1 = core.create_issue("Open Todo Issue", priority=Priority.HIGH)
             issue2 = core.create_issue("Blocked Issue", priority=Priority.MEDIUM)
             issue3 = core.create_issue("Done Issue", priority=Priority.LOW)
-            issue4 = core.create_issue(
+            core.create_issue(
                 "Backlog Issue", priority=Priority.CRITICAL
             )  # No milestone
 
@@ -38,7 +38,7 @@ def temp_roadmap():
             core.update_issue(issue3.id, status=Status.DONE)
 
             # Create test milestone and assign issues
-            milestone = core.create_milestone("Test Sprint", "Test sprint description")
+            core.create_milestone("Test Sprint", "Test sprint description")
             core.move_issue_to_milestone(issue1.id, "Test Sprint")
             core.move_issue_to_milestone(issue2.id, "Test Sprint")
             core.move_issue_to_milestone(issue3.id, "Test Sprint")

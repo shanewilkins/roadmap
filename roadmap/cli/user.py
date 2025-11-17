@@ -196,7 +196,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
 
     # Calculate what needs attention
     today = datetime.date.today()
-    future_cutoff = today + datetime.timedelta(days=days)
+    today + datetime.timedelta(days=days)
 
     for issue in active_issues:
         if issue.status == Status.BLOCKED:

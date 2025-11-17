@@ -791,12 +791,10 @@ class TestPredictiveIntegration:
         risks = risk_predictor.assess_project_risks(30)
 
         assert len(risks) > 0
-        high_priority_risks = [
-            r for r in risks if r.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
-        ]
+        [r for r in risks if r.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]]
 
         # Should identify dependency risks due to issue dependencies
-        dependency_risks = [r for r in risks if "dependency" in r.risk_type.lower()]
+        [r for r in risks if "dependency" in r.risk_type.lower()]
 
         # 3. Deadline Forecasting
         forecaster = DeadlineForecaster(core, estimator, risk_predictor)
@@ -812,7 +810,7 @@ class TestPredictiveIntegration:
             for iid in forecast.critical_path_issues
             if core.get_issue(iid)
         ]
-        high_priority_in_critical = any(
+        any(
             issue.priority in [Priority.HIGH, Priority.CRITICAL]
             for issue in critical_issues
         )

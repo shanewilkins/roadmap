@@ -272,7 +272,7 @@ class TestTeamCollaborationIntegration:
             result = runner.invoke(
                 main, ["issue", "create", "Todo task", "--assignee", "alice"]
             )
-            todo_id = result.output.split("ID:")[1].split()[0]
+            result.output.split("ID:")[1].split()[0]
 
             result = runner.invoke(
                 main, ["issue", "create", "In progress task", "--assignee", "alice"]

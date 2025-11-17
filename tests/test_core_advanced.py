@@ -37,14 +37,14 @@ class TestRoadmapCoreAdvancedIssueOperations:
     def test_get_issues_by_milestone(self, core):
         """Test getting issues grouped by milestone."""
         # Create milestones
-        milestone1 = core.create_milestone("Milestone 1", "Description 1")
-        milestone2 = core.create_milestone("Milestone 2", "Description 2")
+        core.create_milestone("Milestone 1", "Description 1")
+        core.create_milestone("Milestone 2", "Description 2")
 
         # Create issues
         issue1 = core.create_issue(title="Issue 1", priority=Priority.HIGH)
         issue2 = core.create_issue(title="Issue 2", priority=Priority.MEDIUM)
         issue3 = core.create_issue(title="Issue 3", priority=Priority.LOW)
-        issue4 = core.create_issue(title="Backlog Issue", priority=Priority.LOW)
+        core.create_issue(title="Backlog Issue", priority=Priority.LOW)
 
         # Assign issues to milestones
         core.assign_issue_to_milestone(issue1.id, "Milestone 1")
@@ -72,8 +72,8 @@ class TestRoadmapCoreAdvancedIssueOperations:
     def test_move_issue_to_milestone(self, core):
         """Test moving issues between milestones."""
         # Create milestones
-        milestone1 = core.create_milestone("Milestone 1", "Description 1")
-        milestone2 = core.create_milestone("Milestone 2", "Description 2")
+        core.create_milestone("Milestone 1", "Description 1")
+        core.create_milestone("Milestone 2", "Description 2")
 
         # Create issue
         issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
@@ -110,10 +110,10 @@ class TestRoadmapCoreAdvancedIssueOperations:
         future_date1 = datetime.now() + timedelta(days=10)
         future_date2 = datetime.now() + timedelta(days=20)
 
-        milestone1 = core.create_milestone(
+        core.create_milestone(
             name="Next Milestone", description="Coming soon", due_date=future_date1
         )
-        milestone2 = core.create_milestone(
+        core.create_milestone(
             name="Later Milestone", description="Coming later", due_date=future_date2
         )
 
@@ -124,7 +124,7 @@ class TestRoadmapCoreAdvancedIssueOperations:
     def test_get_next_milestone_no_future_milestones(self, core):
         """Test getting next milestone when none exist."""
         # Create milestone without due date (won't be returned by get_next_milestone)
-        milestone = core.create_milestone(
+        core.create_milestone(
             name="Milestone Without Due Date", description="No due date set"
         )
 
@@ -134,8 +134,8 @@ class TestRoadmapCoreAdvancedIssueOperations:
     def test_get_next_milestone_no_due_dates(self, core):
         """Test getting next milestone when milestones have no due dates."""
         # Create milestones without due dates
-        milestone1 = core.create_milestone("Milestone 1", "No due date")
-        milestone2 = core.create_milestone("Milestone 2", "Also no due date")
+        core.create_milestone("Milestone 1", "No due date")
+        core.create_milestone("Milestone 2", "Also no due date")
 
         next_milestone = core.get_next_milestone()
         assert next_milestone is None
@@ -176,8 +176,8 @@ class TestRoadmapCoreTeamManagement:
     def test_get_team_members_empty(self, core):
         """Test getting team members when no issues have assignees."""
         # Create issues without assignees
-        issue1 = core.create_issue(title="Issue 1", priority=Priority.HIGH)
-        issue2 = core.create_issue(title="Issue 2", priority=Priority.MEDIUM)
+        core.create_issue(title="Issue 1", priority=Priority.HIGH)
+        core.create_issue(title="Issue 2", priority=Priority.MEDIUM)
 
         team_members = core.get_team_members()
         assert len(team_members) == 0
@@ -222,13 +222,13 @@ class TestRoadmapCoreTeamManagement:
     def test_get_assigned_issues(self, core):
         """Test getting issues assigned to specific user."""
         # Create issues with different assignees
-        issue1 = core.create_issue(
+        core.create_issue(
             title="Alice Issue 1", priority=Priority.HIGH, assignee="alice@example.com"
         )
-        issue2 = core.create_issue(
+        core.create_issue(
             title="Bob Issue", priority=Priority.MEDIUM, assignee="bob@example.com"
         )
-        issue3 = core.create_issue(
+        core.create_issue(
             title="Alice Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
 
@@ -248,15 +248,15 @@ class TestRoadmapCoreTeamManagement:
         mock_current_user.return_value = "alice@example.com"
 
         # Create issues
-        issue1 = core.create_issue(
+        core.create_issue(
             title="My Issue 1", priority=Priority.HIGH, assignee="alice@example.com"
         )
-        issue2 = core.create_issue(
+        core.create_issue(
             title="Someone Else's Issue",
             priority=Priority.MEDIUM,
             assignee="bob@example.com",
         )
-        issue3 = core.create_issue(
+        core.create_issue(
             title="My Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
 
@@ -272,7 +272,7 @@ class TestRoadmapCoreTeamManagement:
         mock_current_user.return_value = None
 
         # Create issues
-        issue = core.create_issue(
+        core.create_issue(
             title="Some Issue", priority=Priority.HIGH, assignee="alice@example.com"
         )
 
@@ -282,16 +282,16 @@ class TestRoadmapCoreTeamManagement:
     def test_get_all_assigned_issues(self, core):
         """Test getting all issues grouped by assignee."""
         # Create issues with different assignees
-        issue1 = core.create_issue(
+        core.create_issue(
             title="Alice Issue 1", priority=Priority.HIGH, assignee="alice@example.com"
         )
-        issue2 = core.create_issue(
+        core.create_issue(
             title="Bob Issue", priority=Priority.MEDIUM, assignee="bob@example.com"
         )
-        issue3 = core.create_issue(
+        core.create_issue(
             title="Alice Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
-        issue4 = core.create_issue(
+        core.create_issue(
             title="Unassigned Issue",
             priority=Priority.LOW,
             # No assignee
@@ -452,7 +452,7 @@ class TestRoadmapCoreTemplatesAndConfig:
         core._update_gitignore()
 
         # No gitignore should be created if no git repo
-        gitignore = core.root_path / ".gitignore"
+        core.root_path / ".gitignore"
         # The method might still create one, so we just verify it doesn't crash
 
     def test_load_config_success(self, core):
@@ -517,7 +517,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
 
         # This should handle validation errors gracefully
-        updated_issue = core.update_issue(issue.id, priority="invalid_priority")
+        core.update_issue(issue.id, priority="invalid_priority")
         # The update might fail or handle the invalid value - either is acceptable
         # As long as it doesn't crash the application
 
@@ -535,7 +535,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
 
     def test_delete_milestone_with_file_error(self, core):
         """Test milestone deletion with file system errors."""
-        milestone = core.create_milestone("Test Milestone", "Description")
+        core.create_milestone("Test Milestone", "Description")
 
         # Mock file operations to raise exception
         with patch("pathlib.Path.unlink") as mock_unlink:
@@ -576,7 +576,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
 
             # Operations should handle permission errors gracefully
             try:
-                issue = core.create_issue("Test Issue", priority=Priority.HIGH)
+                core.create_issue("Test Issue", priority=Priority.HIGH)
                 # May succeed or fail depending on system
             except (PermissionError, OSError):
                 # Expected on some systems

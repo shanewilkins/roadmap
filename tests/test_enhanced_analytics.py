@@ -911,8 +911,8 @@ class TestIntegration:
         enhanced_analyzer.analyzer.find_bottlenecks = Mock(return_value={})
 
         # Multiple analyses should be consistent
-        workload = enhanced_analyzer.analyze_workload_distribution()
-        insights = enhanced_analyzer.generate_productivity_insights()
+        enhanced_analyzer.analyze_workload_distribution()
+        enhanced_analyzer.generate_productivity_insights()
 
         # Both should process the same base data
         assert enhanced_analyzer.get_issues_dataframe.call_count >= 2

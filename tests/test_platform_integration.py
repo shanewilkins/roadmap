@@ -170,7 +170,7 @@ class TestCrossPlatformCLIWorkflows:
         """Test sync status command across platforms."""
         platforms = [("Darwin", "macOS"), ("Windows", "Windows"), ("Linux", "Linux")]
 
-        for platform_name, platform_display in platforms:
+        for platform_name, _platform_display in platforms:
             with patch("platform.system", return_value=platform_name):
                 runner = CliRunner()
 
@@ -292,7 +292,7 @@ class TestCrossPlatformCLIWorkflows:
             ("Linux", "Linux Secret Service unavailable"),
         ]
 
-        for platform_name, error_context in test_cases:
+        for platform_name, _error_context in test_cases:
             with patch("platform.system", return_value=platform_name):
                 runner = CliRunner()
 
@@ -430,14 +430,14 @@ class TestPlatformSpecificDependencies:
                 ):
                     # Should not crash, should handle gracefully
                     try:
-                        result = cm.store_token("test_token")
+                        cm.store_token("test_token")
                         # May return False or raise CredentialManagerError
                     except CredentialManagerError as e:
                         # Should be a controlled exception
                         assert isinstance(e, CredentialManagerError)
                     except Exception as e:
                         # Other controlled exceptions are also acceptable
-                        assert isinstance(e, (FileNotFoundError, ImportError))
+                        assert isinstance(e, FileNotFoundError | ImportError)
 
 
 class TestRealWorldCompatibility:
@@ -481,7 +481,7 @@ class TestRealWorldCompatibility:
             ("windows", "Windows Server Core"),
         ]
 
-        for platform_system, distro in docker_platforms:
+        for platform_system, _distro in docker_platforms:
             with patch("platform.system", return_value=platform_system.title()):
                 # Mock limited Docker environment
                 limited_env = {"PATH": "/usr/local/bin:/usr/bin:/bin"}
@@ -507,7 +507,7 @@ class TestRealWorldCompatibility:
             ("Linux", "BusyBox environment"),
         ]
 
-        for platform_name, scenario in minimal_scenarios:
+        for platform_name, _scenario in minimal_scenarios:
             with patch("platform.system", return_value=platform_name):
                 # Mock minimal environment (specific to subprocess and keyring)
                 with patch("subprocess.run", side_effect=FileNotFoundError()):

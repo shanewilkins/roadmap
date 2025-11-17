@@ -206,13 +206,10 @@ class TestTeamCollaborationFeaturesIntegration:
             runner.invoke(
                 main, ["issue", "create", "Foundation", "--assignee", "alice"]
             )
-            foundation_id = "foundation"  # Simplified for test
 
             runner.invoke(main, ["issue", "create", "Layer 1", "--assignee", "bob"])
-            layer1_id = "layer1"
 
             runner.invoke(main, ["issue", "create", "Layer 2", "--assignee", "charlie"])
-            layer2_id = "layer2"
 
             # Set up dependency chain
             # This would be more realistic with actual IDs from create output

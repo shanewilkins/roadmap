@@ -155,7 +155,7 @@ class EnhancedGitHubIntegration:
             # Extract issue references from PR title and body
             pr_title = pr_data.get("title", "")
             pr_body = pr_data.get("body", "") or ""
-            pr_number = pr_data.get("number")
+            pr_data.get("number")
             pr_branch = pr_data.get("head", {}).get("ref", "")
 
             # Find referenced issues

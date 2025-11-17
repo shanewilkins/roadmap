@@ -957,7 +957,7 @@ class TestCleanupOldBackups:
                 with patch.object(Path, "stat") as mock_stat:
                     mock_stat.return_value.st_mtime = old_time
 
-                    result = cleanup_old_backups(backup_dir, retention_days=30)
+                    cleanup_old_backups(backup_dir, retention_days=30)
 
                     # Should only find backup files via glob pattern
                     mock_glob.assert_called_with("*.backup*")
@@ -1050,9 +1050,7 @@ class TestSecurityIntegration:
             original_dir = os.getcwd()
             try:
                 os.chdir(temp_dir)
-                validated_path = validate_path(
-                    final_path.relative_to(base_dir), base_dir
-                )
+                validate_path(final_path.relative_to(base_dir), base_dir)
             finally:
                 os.chdir(original_dir)
 

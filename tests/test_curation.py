@@ -478,9 +478,9 @@ class TestCurationCLI:
         curator = RoadmapCurator(temp_roadmap)
 
         # Create test data
-        milestone = temp_roadmap.create_milestone("Test Milestone", "Test description")
-        issue1 = temp_roadmap.create_issue("Orphaned Issue 1", priority=Priority.HIGH)
-        issue2 = temp_roadmap.create_issue("Orphaned Issue 2", priority=Priority.MEDIUM)
+        temp_roadmap.create_milestone("Test Milestone", "Test description")
+        temp_roadmap.create_issue("Orphaned Issue 1", priority=Priority.HIGH)
+        temp_roadmap.create_issue("Orphaned Issue 2", priority=Priority.MEDIUM)
 
         # Analyze orphaned items
         report = curator.analyze_orphaned_items(include_backlog=True)
@@ -510,7 +510,7 @@ class TestCurationIntegration:
         curator = RoadmapCurator(core)
 
         # Create a realistic roadmap structure
-        milestones = [
+        [
             core.create_milestone(
                 "Sprint 1",
                 "Current sprint",
@@ -571,8 +571,8 @@ class TestCurationIntegration:
         suggestions = curator.suggest_milestone_assignments(report.orphaned_issues)
 
         # High priority issues should be suggested for Sprint 1
-        sprint1_suggestions = suggestions.get("Sprint 1", [])
-        high_priority_issue_id = issues[1].id  # High priority feature
+        suggestions.get("Sprint 1", [])
+        issues[1].id  # High priority feature
 
         # Apply smart suggestions
         for milestone_name, issue_ids in suggestions.items():

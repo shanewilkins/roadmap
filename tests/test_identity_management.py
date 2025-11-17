@@ -171,7 +171,7 @@ class TestIdentityManager:
         manager = IdentityManager(temp_roadmap)
 
         # Add a team member
-        profile = manager.add_team_member(
+        manager.add_team_member(
             canonical_id="test.user",
             display_name="Test User",
             github_username="testuser",

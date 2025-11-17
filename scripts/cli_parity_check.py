@@ -65,8 +65,8 @@ def canonical_name(entry):
     return entry.get("func")
 
 
-mono_names = sorted(set(canonical_name(e) for e in monolith_cmds))
-mod_names = sorted(set(canonical_name(e) for e in modular_cmds))
+mono_names = sorted({canonical_name(e) for e in monolith_cmds})
+mod_names = sorted({canonical_name(e) for e in modular_cmds})
 
 # Also introspect live Click group if importable
 import importlib
@@ -78,7 +78,7 @@ live_names = []
 try:
     main = importlib.import_module("roadmap.cli").main
     if hasattr(main, "commands"):
-        live_names = sorted(list(main.commands.keys()))
+        live_names = sorted(main.commands.keys())
 except Exception:
     live_names = []
 

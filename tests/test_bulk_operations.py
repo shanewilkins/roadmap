@@ -278,8 +278,10 @@ This is {name} description."""
 
     def test_batch_update_field_with_condition(self):
         """Test batch field update with condition."""
+
         # Only update issues with "todo" status
-        condition = lambda issue: issue.status == Status.TODO
+        def condition(issue):
+            return issue.status == Status.TODO
 
         result = self.bulk_ops.batch_update_field(
             self.temp_dir,

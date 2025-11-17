@@ -946,7 +946,7 @@ class TestDataUtilsIntegration:
 
         # Perform analysis
         team_perf = DataAnalyzer.analyze_team_performance(issues_df)
-        bottlenecks = DataAnalyzer.find_bottlenecks(issues_df)
+        DataAnalyzer.find_bottlenecks(issues_df)
 
         # Test export to temporary files
         with tempfile.TemporaryDirectory() as tmpdir:

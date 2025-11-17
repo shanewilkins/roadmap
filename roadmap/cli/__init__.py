@@ -7,7 +7,6 @@ to improve performance and maintainability.
 
 import os
 
-
 import click
 
 # Initialize console for rich output

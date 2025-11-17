@@ -158,7 +158,7 @@ class GitHistoryAnalyzer:
         # Analyze each period
         end_date = datetime.now()
 
-        for i in range(num_periods):
+        for _i in range(num_periods):
             start_date = end_date - period_delta
 
             # Get commits for this period
@@ -222,7 +222,7 @@ class GitHistoryAnalyzer:
         all_commits = self.git_integration.get_recent_commits(
             count=1000, since=since_date
         )
-        developers = list(set(c.author for c in all_commits))
+        developers = list({c.author for c in all_commits})
 
         # Analyze each developer
         dev_metrics = []
@@ -397,7 +397,7 @@ class GitHistoryAnalyzer:
             "tf": "Infrastructure",
         }
 
-        for ext, count in file_extensions.most_common(3):
+        for ext, _count in file_extensions.most_common(3):
             if ext in tech_mapping:
                 specializations.append(tech_mapping[ext])
 
@@ -517,7 +517,7 @@ class GitHistoryAnalyzer:
             bottlenecks.append("Limited team collaboration")
 
         # Commit concentration (too few active developers)
-        active_developers = len(set(c.author for c in commits))
+        active_developers = len({c.author for c in commits})
         if active_developers < 2:
             bottlenecks.append("Over-reliance on single developer")
 
@@ -663,7 +663,7 @@ class AnalyticsReportGenerator:
             all_commits = self.analyzer.git_integration.get_recent_commits(
                 count=1000, since=since_date
             )
-            developers = list(set(c.author for c in all_commits))
+            developers = list({c.author for c in all_commits})
 
             dev_reports = []
             for dev in developers:

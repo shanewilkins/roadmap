@@ -306,7 +306,7 @@ def set(key: str, value: str):
     """
     try:
         # Load current configuration
-        roadmap_core = RoadmapCore()
+        RoadmapCore()
 
         # Configuration mapping
         config_map = {
@@ -406,7 +406,7 @@ def status(issue_id: str | None):
             if issue.git_commits:
                 rprint(f"💻 Commits: {len(issue.git_commits)} associated")
                 # Show first few commits
-                for i, commit in enumerate(issue.git_commits[:3]):
+                for _i, commit in enumerate(issue.git_commits[:3]):
                     rprint(f"   • {str(commit)[:8]}")
                 if len(issue.git_commits) > 3:
                     rprint(f"   ... and {len(issue.git_commits) - 3} more")

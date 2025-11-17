@@ -99,7 +99,7 @@ class FieldValidator:
 
         # Check required field
         if self.required and (
-            value == "" or (isinstance(value, (list, dict)) and len(value) == 0)
+            value == "" or (isinstance(value, list | dict) and len(value) == 0)
         ):
             result.add_error(f"Field '{self.field_name}' is required")
             return result

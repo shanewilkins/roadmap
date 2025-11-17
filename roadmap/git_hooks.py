@@ -239,7 +239,7 @@ except Exception as e:
             if results:
                 log_file = Path(".git/roadmap-hooks.log")
                 timestamp = datetime.now().isoformat()
-                updated_issues = list(results.keys())
+                list(results.keys())
                 actions_summary = []
                 for issue_id, actions in results.items():
                     actions_summary.append(f"{issue_id}({len(actions)} actions)")
@@ -282,7 +282,7 @@ except Exception as e:
                     capture_output=True,
                     text=True,
                 )
-                remote = remote_result.stdout.strip() or "origin"
+                remote_result.stdout.strip() or "origin"
 
                 merge_result = subprocess.run(
                     ["git", "config", "--get", f"branch.{current_branch}.merge"],
@@ -624,7 +624,6 @@ class WorkflowAutomation:
             issue.git_commits = []
 
         # Track latest progress and completion status
-        latest_progress = None
         highest_progress = None
         is_completed = False
 
@@ -636,7 +635,6 @@ class WorkflowAutomation:
             # Extract progress
             progress = commit.extract_progress_info()
             if progress is not None:
-                latest_progress = progress
                 if highest_progress is None or progress > highest_progress:
                     highest_progress = progress
 

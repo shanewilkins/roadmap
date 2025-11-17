@@ -497,7 +497,7 @@ def _original_broadcast(ctx: click.Context, message: str, assignee: str, issue: 
         # Create broadcast record (this would integrate with notification system)
         timestamp = datetime.datetime.now().isoformat()
 
-        broadcast_data = {
+        {
             "timestamp": timestamp,
             "message": message,
             "sender": core.get_current_user()

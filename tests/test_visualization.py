@@ -637,7 +637,7 @@ class TestTeamWorkloadChart:
 
         # May raise VisualizationError or handle gracefully
         try:
-            result = chart_generator.generate_team_workload_chart(unassigned_issues)
+            chart_generator.generate_team_workload_chart(unassigned_issues)
             # Implementation may handle this case gracefully
         except (VisualizationError, ValueError, KeyError):
             # Any of these is acceptable for this edge case
@@ -971,7 +971,7 @@ class TestVisualizationIntegration:
         # Extract data that should be consistent
         total_issues = len(issues)
         completed_issues = len([i for i in issues if i.status == Status.DONE])
-        assignees = set(i.assignee for i in issues if i.assignee)
+        assignees = {i.assignee for i in issues if i.assignee}
 
         # Verify data consistency expectations
         assert total_issues == 9

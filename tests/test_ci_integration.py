@@ -378,7 +378,7 @@ class TestRepositoryScannerIntegration:
         commits = scanner.scan_commit_history(max_commits=20)
 
         # Should analyze commit types
-        commit_types = set(c.commit_type for c in commits if c.commit_type)
+        commit_types = {c.commit_type for c in commits if c.commit_type}
         expected_types = {"feat", "fix", "docs", "test", "chore", "refactor"}
         assert len(commit_types.intersection(expected_types)) > 0
 
@@ -401,7 +401,7 @@ class TestRepositoryScannerIntegration:
         branches = scanner.scan_branch_history()
 
         # Should categorize branch types
-        branch_types = set(b.branch_type for b in branches if b.branch_type)
+        branch_types = {b.branch_type for b in branches if b.branch_type}
         expected_types = {"feature", "bugfix", "docs"}
         assert len(branch_types.intersection(expected_types)) > 0
 
@@ -410,7 +410,7 @@ class TestRepositoryScannerIntegration:
         assert len(branches_with_issues) > 0
 
         # Should analyze lifecycle stages
-        lifecycle_stages = set(b.lifecycle_stage for b in branches)
+        lifecycle_stages = {b.lifecycle_stage for b in branches}
         assert "main" in lifecycle_stages or "merged" in lifecycle_stages
 
     def test_project_migration(self, scanner_setup):
@@ -653,15 +653,15 @@ class TestAdvancedCIIntegration:
         core, repo_path = full_integration_setup
 
         # Test with invalid parameters
-        result = runner.invoke(ci, ["scan-full", "--max-commits", "0"])
+        runner.invoke(ci, ["scan-full", "--max-commits", "0"])
         # Should handle gracefully or show appropriate error
 
         # Test with non-existent branch
-        result = runner.invoke(ci, ["track-branch", "nonexistent-branch"])
+        runner.invoke(ci, ["track-branch", "nonexistent-branch"])
         # Should handle gracefully
 
         # Test migration with invalid options
-        result = runner.invoke(ci, ["migrate-project", "--max-commits", "-1"])
+        runner.invoke(ci, ["migrate-project", "--max-commits", "-1"])
         # Should validate input appropriately
 
 

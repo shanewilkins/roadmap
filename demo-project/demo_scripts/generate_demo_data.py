@@ -259,7 +259,7 @@ def create_issues():
         milestone_key = milestone_title.split(" -")[0]  # Extract version
         weights = status_weights[milestone_key]
 
-        for i in range(total_issues):
+        for _i in range(total_issues):
             # Determine issue type
             rand = random.random()
             if rand < type_weights["feature"]:
@@ -326,7 +326,6 @@ def create_issues():
 def ensure_developer_assignments():
     """Ensure each developer has at least 5 assigned issues."""
     print("Ensuring minimum developer assignments...")
-    demo_dir = "/Users/shane/roadmap/demo-project"
 
     # This would require reading existing issues and updating assignments
     # For now, we'll trust our random assignment process hit the requirement

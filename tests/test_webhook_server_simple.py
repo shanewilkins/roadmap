@@ -200,7 +200,6 @@ class TestWebhookServerIntegration:
         self, temp_workspace, lightweight_mock_core, patch_github_integration
     ):
         """Test webhook server configuration using performance-optimized fixtures."""
-        workspace_dir = temp_workspace
 
         server = GitHubWebhookServer(
             roadmap_core=lightweight_mock_core, secret="test_secret"
@@ -213,7 +212,6 @@ class TestWebhookServerIntegration:
 
     def test_webhook_payload_processing(self, temp_workspace, mock_core):
         """Test webhook payload processing logic."""
-        workspace_dir = temp_workspace
 
         with patch("roadmap.webhook_server.EnhancedGitHubIntegration"):
             server = GitHubWebhookServer(

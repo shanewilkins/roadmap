@@ -75,40 +75,20 @@ version = "0.1.0"
     def test_get_current_user_fallbacks(self):
         """Test _get_current_user with different environment setups."""
         with (
-            patch("roadmap.git_integration.GitIntegration") as mock_git_class,
-            patch("roadmap.cli.os.environ.get") as mock_env_get,
+            patch("roadmap.cli.git", None),  # Disable git
+            patch.dict("os.environ", {"USER": "env_user"}, clear=True),
         ):
-            # Mock Git integration to return None (no git user)
-            mock_git = Mock()
-            mock_git.get_current_user.return_value = None
-            mock_git_class.return_value = mock_git
-
-            # Test USER environment variable
-            mock_env_get.side_effect = lambda var, default=None: {
-                "USER": "env_user",
-                "USERNAME": None,
-            }.get(var, default)
-
             user = _get_current_user()
             assert user == "env_user"
 
     def test_get_current_user_username_fallback(self):
         """Test _get_current_user with USERNAME fallback."""
-        with patch("roadmap.git_integration.GitIntegration") as mock_git_class:
-            # Mock Git integration to return None (no git user)
-            mock_git = Mock()
-            mock_git.get_current_user.return_value = None
-            mock_git_class.return_value = mock_git
-
-            # Test USERNAME environment variable fallback
-            with patch("roadmap.cli.os.environ.get") as mock_env_get:
-                mock_env_get.side_effect = lambda var, default=None: {
-                    "USER": None,
-                    "USERNAME": "username_user",
-                }.get(var, default)
-
-                user = _get_current_user()
-                assert user == "username_user"
+        with (
+            patch("roadmap.cli.git", None),  # Disable git
+            patch.dict("os.environ", {"USERNAME": "username_user"}, clear=True),
+        ):
+            user = _get_current_user()
+            assert user == "username_user"
 
             # Test no environment variables
             with patch("roadmap.cli.os.environ.get") as mock_env_get:

@@ -506,7 +506,6 @@ class RoadmapCurator:
         recommendations = []
 
         # Find milestones based on priority matching
-        high_priority_milestones = []
         open_milestones = []
 
         for milestone in milestones:

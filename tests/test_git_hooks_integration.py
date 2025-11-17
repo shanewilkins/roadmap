@@ -13,6 +13,7 @@ from roadmap.git_hooks import GitHookManager, WorkflowAutomation
 from roadmap.models import IssueType, Priority
 
 
+@pytest.mark.integration
 class TestGitHooksIntegration:
     """Integration tests for git hooks in realistic scenarios."""
 
@@ -60,13 +61,13 @@ class TestGitHooksIntegration:
         core, repo_path = git_hooks_repo
 
         # Create test issues for different scenarios
-        feature_issue = core.create_issue(
+        core.create_issue(
             title="Feature Implementation with Hooks",
             priority=Priority.HIGH,
             issue_type=IssueType.FEATURE,
         )
 
-        bug_issue = core.create_issue(
+        core.create_issue(
             title="Critical Bug Fix with Progress",
             priority=Priority.HIGH,
             issue_type=IssueType.BUG,
@@ -107,7 +108,7 @@ class TestGitHooksIntegration:
         time.sleep(0.1)
 
         # Check if issue was updated by hook
-        updated_feature = core.get_issue(feature_id)
+        core.get_issue(feature_id)
         # Note: The hook may or may not update the issue depending on CI tracking integration
         # We'll verify the hook was called by checking the log file
         log_file = repo_path / ".git" / "roadmap-hooks.log"
@@ -148,7 +149,7 @@ class TestGitHooksIntegration:
         core, repo_path = git_hooks_repo
 
         # Create a feature issue
-        issue = core.create_issue(
+        core.create_issue(
             title="Feature Branch Integration",
             priority=Priority.MEDIUM,
             issue_type=IssueType.FEATURE,
@@ -198,11 +199,10 @@ class TestGitHooksIntegration:
                 check=False,
                 capture_output=True,
             )
-        except:
+        except subprocess.CalledProcessError:
             pass  # Expected to fail due to fake remote
 
         # Verify pre-push hook ran (check log or hook execution)
-        log_file = repo_path / ".git" / "roadmap-hooks.log"
         # Pre-push hook might not create log entries, but it should not crash
 
     def test_post_checkout_hook_integration(self, git_hooks_repo):
@@ -218,9 +218,7 @@ class TestGitHooksIntegration:
 
         created_issues = []
         for title, priority, issue_type in issues_data:
-            issue = core.create_issue(
-                title=title, priority=priority, issue_type=issue_type
-            )
+            core.create_issue(title=title, priority=priority, issue_type=issue_type)
             created_issues.append(
                 core.list_issues()[-1].id
             )  # Get the last created issue ID
@@ -269,7 +267,7 @@ class TestGitHooksIntegration:
         core, repo_path = git_hooks_repo
 
         # Create an issue for merge testing
-        issue = core.create_issue(
+        core.create_issue(
             title="Merge Integration Feature",
             priority=Priority.HIGH,
             issue_type=IssueType.FEATURE,
@@ -332,7 +330,7 @@ class TestGitHooksIntegration:
         core, repo_path = git_hooks_repo
 
         # Create an issue with potentially problematic characters
-        issue = core.create_issue(
+        core.create_issue(
             title="Test Issue with Special Characters: [brackets] & symbols!",
             priority=Priority.MEDIUM,
             issue_type=IssueType.BUG,
@@ -370,14 +368,14 @@ class TestGitHooksIntegration:
             # Git commit should succeed even if hook has issues
             assert result.returncode == 0
 
-    def test_hook_performance_integration(self, git_hooks_repo):
+    def test_hook_performance_integration(self, git_hooks_repo, mock_git_operations):
         """Test git hook performance with multiple commits and issues."""
         core, repo_path = git_hooks_repo
 
         # Create multiple issues
         issue_ids = []
         for i in range(5):
-            issue = core.create_issue(
+            core.create_issue(
                 title=f"Performance Test Issue {i+1}",
                 priority=Priority.MEDIUM,
                 issue_type=IssueType.FEATURE,
@@ -471,9 +469,7 @@ class TestGitHooksIntegration:
 
         issue_ids = []
         for title, priority, issue_type in issues_data:
-            issue = core.create_issue(
-                title=title, priority=priority, issue_type=issue_type
-            )
+            core.create_issue(title=title, priority=priority, issue_type=issue_type)
             issues = core.list_issues()
             issue_ids.append(issues[-1].id)
 
@@ -483,7 +479,7 @@ class TestGitHooksIntegration:
 
         # Test WorkflowAutomation if available
         try:
-            automation = WorkflowAutomation(core)
+            WorkflowAutomation(core)
 
             # Create branch-based workflows
             for issue_id in issue_ids:
@@ -524,7 +520,7 @@ class TestGitHooksIntegration:
         core, repo_path = git_hooks_repo
 
         # Create issue for concurrent testing
-        issue = core.create_issue(
+        core.create_issue(
             title="Concurrent Operations Test",
             priority=Priority.HIGH,
             issue_type=IssueType.FEATURE,
@@ -628,7 +624,7 @@ class TestGitHooksErrorRecovery:
         hook_manager.install_hooks()
 
         # Create a test issue
-        issue = core.create_issue(
+        core.create_issue(
             title="Corruption Recovery Test",
             priority=Priority.HIGH,
             issue_type=IssueType.BUG,
@@ -700,7 +696,7 @@ class TestGitHooksErrorRecovery:
         hook_manager.install_hooks()
 
         # Create issue and make roadmap directory read-only
-        issue = core.create_issue(
+        core.create_issue(
             title="Permission Error Test",
             priority=Priority.MEDIUM,
             issue_type=IssueType.OTHER,
@@ -737,6 +733,8 @@ class TestGitHooksErrorRecovery:
                 os.chmod(roadmap_dir, 0o755)
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestGitHooksAdvancedIntegration:
     """Advanced integration tests for git hooks with complex scenarios."""
 
@@ -805,7 +803,7 @@ class TestGitHooksAdvancedIntegration:
                 ("Documentation Update", "docs"),
             ]
         ):
-            issue = core.create_issue(
+            core.create_issue(
                 title=title,
                 priority=Priority.HIGH if i < 2 else Priority.MEDIUM,
                 issue_type=IssueType.FEATURE if stage == "feature" else IssueType.BUG,
@@ -886,7 +884,7 @@ class TestGitHooksAdvancedIntegration:
         core, repo_path = advanced_repo
 
         # Create issue for rebase testing
-        issue = core.create_issue(
+        core.create_issue(
             title="Rebase Integration Test",
             priority=Priority.HIGH,
             issue_type=IssueType.FEATURE,
@@ -956,7 +954,7 @@ class TestGitHooksAdvancedIntegration:
         core, repo_path = advanced_repo
 
         # Create issues for cherry-pick testing
-        hotfix_issue = core.create_issue(
+        core.create_issue(
             title="Critical Hotfix", priority=Priority.HIGH, issue_type=IssueType.BUG
         )
 
@@ -1021,7 +1019,7 @@ class TestGitHooksAdvancedIntegration:
         hook_manager.install_hooks()
 
         # Create issue for submodule work
-        issue = core.create_issue(
+        core.create_issue(
             title="Submodule Integration",
             priority=Priority.MEDIUM,
             issue_type=IssueType.OTHER,

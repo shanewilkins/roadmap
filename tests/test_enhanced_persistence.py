@@ -54,7 +54,7 @@ class TestYAMLRecoveryManager:
     def test_restore_from_backup(self):
         """Test restoring from backup."""
         # Create backup
-        backup_path = self.recovery_manager.create_backup(self.test_file)
+        self.recovery_manager.create_backup(self.test_file)
 
         # Modify original file
         self.test_file.write_text("Modified content")

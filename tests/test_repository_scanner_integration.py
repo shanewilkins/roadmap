@@ -11,6 +11,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from roadmap.core import RoadmapCore
 from roadmap.models import Issue, IssueType, Priority, Status
 from roadmap.parser import IssueParser
@@ -23,6 +25,8 @@ from roadmap.repository_scanner import (
 )
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestRepositoryScannerCore:
     """Test core repository scanning functionality."""
 

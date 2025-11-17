@@ -277,6 +277,7 @@ class AdvancedRepositoryScanner:
                 capture_output=True,
                 text=True,
                 check=True,
+                cwd=self.roadmap_core.root_path,
             )
 
             files_changed = 0
@@ -305,6 +306,7 @@ class AdvancedRepositoryScanner:
                 capture_output=True,
                 text=True,
                 check=True,
+                cwd=self.roadmap_core.root_path,
             )
 
             lines = result.stdout.strip().split("\n")
@@ -393,7 +395,13 @@ class AdvancedRepositoryScanner:
                 cmd.append(f"--until={self.config.until_date.isoformat()}")
 
             # Get commit SHAs
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                cwd=self.roadmap_core.root_path,
+            )
             commit_shas = [
                 sha.strip() for sha in result.stdout.strip().split("\n") if sha.strip()
             ]
@@ -441,7 +449,11 @@ class AdvancedRepositoryScanner:
         try:
             # Get all branches (local and remote) - use simpler format
             result = subprocess.run(
-                ["git", "branch", "-a"], capture_output=True, text=True, check=True
+                ["git", "branch", "-a"],
+                capture_output=True,
+                text=True,
+                check=True,
+                cwd=self.roadmap_core.root_path,
             )
 
             branch_info = {}
@@ -472,6 +484,7 @@ class AdvancedRepositoryScanner:
                                 capture_output=True,
                                 text=True,
                                 check=True,
+                                cwd=self.roadmap_core.root_path,
                             )
 
                             if commit_result.stdout.strip():
@@ -525,6 +538,7 @@ class AdvancedRepositoryScanner:
                                 capture_output=True,
                                 text=True,
                                 check=True,
+                                cwd=self.roadmap_core.root_path,
                             )
                             analysis.commit_count = int(count_result.stdout.strip())
                         except (subprocess.CalledProcessError, ValueError):
@@ -545,6 +559,7 @@ class AdvancedRepositoryScanner:
                                 ],
                                 capture_output=True,
                                 check=False,
+                                cwd=self.roadmap_core.root_path,
                             )
                             analysis.is_merged = merge_check.returncode == 0
                         except subprocess.CalledProcessError:
@@ -682,7 +697,6 @@ class AdvancedRepositoryScanner:
                         if commits_for_issue:
                             # Use the first commit for issue details
                             first_commit = min(commits_for_issue, key=lambda c: c.date)
-                            last_commit = max(commits_for_issue, key=lambda c: c.date)
 
                             # Infer issue type from commit types
                             commit_types = [
@@ -763,9 +777,9 @@ class AdvancedRepositoryScanner:
                             issue = IssueParser.parse_issue_file(issue_file)
 
                             # Add new commits that aren't already linked
-                            existing_commit_hashes = set(
+                            existing_commit_hashes = {
                                 c.get("hash", "") for c in (issue.git_commits or [])
-                            )
+                            }
                             new_commit_shas = [
                                 sha
                                 for sha in commit_shas

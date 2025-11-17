@@ -25,7 +25,7 @@ def reset_cli_state():
     # Clear Click-related caches if they exist
     if hasattr(main, "make_context"):
         try:
-            ctx = main.make_context("main", [])
+            main.make_context("main", [])
             # Context reset not available, skip
             pass
         except:

@@ -232,7 +232,7 @@ def list_issues(
 
             # Calculate totals
             total_hours = sum(issue.estimated_hours or 0 for issue in issues)
-            remaining_hours = sum(
+            sum(
                 issue.estimated_hours or 0
                 for issue in issues
                 if issue.status.value != "done"

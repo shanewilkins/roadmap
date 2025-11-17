@@ -94,7 +94,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_delete_milestone_with_assigned_issues(self, core):
         """Test deleting milestone that has assigned issues."""
         # Create milestone
-        milestone = core.create_milestone("Test Milestone", "Description")
+        core.create_milestone("Test Milestone", "Description")
 
         # Create and assign issues to the milestone
         issue1 = core.create_issue(
@@ -376,7 +376,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_security_and_logging_integration(self, core):
         """Test security logging integration in various operations."""
         # Test issue creation with security logging
-        with patch("roadmap.security.log_security_event") as mock_log:
+        with patch("roadmap.security.log_security_event"):
             issue = core.create_issue(
                 title="Security Test Issue", priority=Priority.HIGH
             )
@@ -401,7 +401,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_milestone_status_filtering(self, core):
         """Test milestone operations with different status values."""
         # Create milestones with different statuses
-        milestone1 = core.create_milestone("Open Milestone", "Open milestone")
+        core.create_milestone("Open Milestone", "Open milestone")
         milestone2 = core.create_milestone("Closed Milestone", "Closed milestone")
 
         # Update milestone2 to closed status
@@ -422,21 +422,17 @@ class TestRoadmapCoreUncoveredLines:
     def test_get_issues_by_milestone_complex(self, core):
         """Test get_issues_by_milestone with complex milestone assignments."""
         # Create milestones
-        milestone1 = core.create_milestone("Sprint 1", "First sprint")
-        milestone2 = core.create_milestone("Sprint 2", "Second sprint")
+        core.create_milestone("Sprint 1", "First sprint")
+        core.create_milestone("Sprint 2", "Second sprint")
 
         # Create issues with various assignments
-        issue1 = core.create_issue(title="Issue 1", priority=Priority.HIGH)
-        issue2 = core.create_issue(
+        core.create_issue(title="Issue 1", priority=Priority.HIGH)
+        core.create_issue(
             title="Issue 2", priority=Priority.MEDIUM, milestone="Sprint 1"
         )
-        issue3 = core.create_issue(
-            title="Issue 3", priority=Priority.LOW, milestone="Sprint 2"
-        )
-        issue4 = core.create_issue(
-            title="Issue 4", priority=Priority.HIGH, milestone="Sprint 1"
-        )
-        issue5 = core.create_issue(title="Issue 5", priority=Priority.MEDIUM)  # Backlog
+        core.create_issue(title="Issue 3", priority=Priority.LOW, milestone="Sprint 2")
+        core.create_issue(title="Issue 4", priority=Priority.HIGH, milestone="Sprint 1")
+        core.create_issue(title="Issue 5", priority=Priority.MEDIUM)  # Backlog
 
         # Get grouped issues
         grouped = core.get_issues_by_milestone()

@@ -308,6 +308,43 @@ version: "1.0.0"
             os.chdir(old_cwd)
 
 
+@pytest.fixture(scope="session")
+def session_temp_workspace(tmp_path_factory):
+    """Session-scoped temporary workspace for reuse across tests.
+
+    Major performance optimization: reuse workspace structure
+    across multiple tests in the same session.
+    """
+    workspace = tmp_path_factory.mktemp("shared_workspace")
+
+    # Create basic roadmap structure once
+    roadmap_dir = workspace / ".roadmap"
+    roadmap_dir.mkdir(exist_ok=True)
+    (roadmap_dir / "issues").mkdir(exist_ok=True)
+    (roadmap_dir / "milestones").mkdir(exist_ok=True)
+
+    # Create basic config once
+    config_file = roadmap_dir / "config.yaml"
+    config_file.write_text("""# Session Test Configuration
+project_name: "Session Test Project"
+version: "1.0.0"
+""")
+
+    return workspace
+
+
+@pytest.fixture(scope="session")
+def session_mock_github_client():
+    """Session-scoped GitHub client mock for performance."""
+    mock_client = Mock()
+    mock_client.is_authenticated = True
+    mock_client.owner = "test-owner"
+    mock_client.repo = "test-repo"
+    mock_client.get_issues.return_value = []
+    mock_client.get_milestones.return_value = []
+    return mock_client
+
+
 @pytest.fixture
 def patch_filesystem_operations():
     """Patch heavy filesystem operations for faster tests."""
@@ -321,3 +358,158 @@ def patch_filesystem_operations():
         mock_write.return_value = None
 
         yield {"init": mock_init, "mkdir": mock_mkdir, "write_text": mock_write}
+
+
+# Performance Test Utilities
+# ==========================
+
+
+@pytest.fixture(scope="session")
+def shared_git_repo(tmp_path_factory):
+    """Session-scoped git repository for reuse across slow tests.
+
+    Major performance optimization: creates git repo once per session,
+    copies for tests that need isolation.
+    """
+    import subprocess
+
+    repo_path = tmp_path_factory.mktemp("shared_git_repo")
+
+    # Initialize git repository once
+    subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"], cwd=repo_path, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"], cwd=repo_path, check=True
+    )
+
+    # Create initial commit
+    readme = repo_path / "README.md"
+    readme.write_text("# Test Repository\n")
+    subprocess.run(["git", "add", "README.md"], cwd=repo_path, check=True)
+    subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=repo_path, check=True)
+
+    return repo_path
+
+
+@pytest.fixture
+def optimized_git_repo(shared_git_repo, tmp_path):
+    """Fast git repository by copying from shared session fixture.
+
+    Performance optimization: Copy existing git repo instead of
+    initializing from scratch every time.
+    """
+    import shutil
+
+    repo_copy = tmp_path / "git_repo_copy"
+    shutil.copytree(shared_git_repo, repo_copy)
+    return repo_copy
+
+
+@pytest.fixture(scope="session")
+def performance_test_config():
+    """Configuration for performance-optimized tests."""
+    return {
+        "enable_mocking": True,
+        "skip_filesystem": True,
+        "mock_git_operations": True,
+        "lightweight_fixtures": True,
+    }
+
+
+@pytest.fixture
+def fast_mock_core():
+    """Ultra-lightweight mock core with minimal setup."""
+    core = Mock()
+    core.is_initialized.return_value = True
+    core.workspace_root = Path("/tmp/fast_test")
+    core.get_issues.return_value = []
+    core.get_milestones.return_value = []
+    return core
+
+
+@pytest.fixture
+def mock_git_operations():
+    """Mock non-essential git operations for performance.
+
+    Selectively mocks git operations that don't affect core hook testing.
+    Major performance optimization for integration tests.
+    """
+    with (
+        patch(
+            "roadmap.repository_scanner.AdvancedRepositoryScanner.scan_commit_history"
+        ) as mock_scan,
+        patch(
+            "roadmap.repository_scanner.AdvancedRepositoryScanner.scan_branch_history"
+        ) as mock_analyze,
+    ):
+        # Mock repository scanning (expensive operations)
+        mock_scan.return_value = []
+        mock_analyze.return_value = []
+
+        yield {"scan_commit_history": mock_scan, "scan_branch_history": mock_analyze}
+
+
+@pytest.fixture
+def selective_git_mock():
+    """Selectively mock only expensive git operations.
+
+    Keeps essential git operations real for integration testing,
+    mocks only the performance bottlenecks.
+    """
+
+    def mock_selective_run(*args, **kwargs):
+        """Mock function that selectively handles git commands."""
+        import subprocess as real_subprocess
+
+        if args and isinstance(args[0], list):
+            cmd = args[0]
+            # Mock expensive operations
+            if "git" in cmd and any(
+                expensive in cmd
+                for expensive in ["log", "--stat", "--oneline", "rev-list", "ls-files"]
+            ):
+                result = Mock()
+                result.returncode = 0
+                result.stdout = "mocked output"
+                result.stderr = ""
+                return result
+
+        # Use real subprocess for essential operations
+        return real_subprocess.run(*args, **kwargs)
+
+    with patch("subprocess.run", side_effect=mock_selective_run):
+        yield
+
+
+def pytest_collection_modifyitems(config, items):
+    """Add performance optimizations based on test markers."""
+    for item in items:
+        # Mark slow tests automatically based on patterns
+        if any(
+            pattern in item.nodeid
+            for pattern in [
+                "git_hooks_integration",
+                "test_multi_branch_workflow",
+                "test_hook_performance",
+                "repository_scanner_integration",
+                "test_complete_roadmap_lifecycle",
+            ]
+        ):
+            item.add_marker(pytest.mark.slow)
+
+        # Add integration marker for heavy tests
+        if "integration" in item.nodeid.lower() and not item.get_closest_marker("unit"):
+            item.add_marker(pytest.mark.integration)
+
+        # Add performance optimization markers
+        if "git_hooks_integration" in item.nodeid:
+            item.add_marker(pytest.mark.performance)
+
+        # Auto-apply optimized fixtures for slow tests (but not integration tests)
+        if item.get_closest_marker("slow") and "repository_scanner" in item.nodeid:
+            # Skip mocking for integration tests that need real repository scanning
+            if not item.get_closest_marker("integration"):
+                # Add selective mocking marker for repository scanner tests
+                item.add_marker(pytest.mark.mock_scanning)

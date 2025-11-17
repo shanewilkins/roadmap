@@ -272,7 +272,7 @@ class TestGitHooksSpecificCoverage:
         hook_manager = GitHookManager(core)
         hooks_dir = repo_path / ".git" / "hooks"
 
-        for cycle in range(3):
+        for _cycle in range(3):
             # Install hooks
             assert hook_manager.install_hooks()
 

@@ -119,10 +119,10 @@ class ChartGenerator:
                         "xanchor": "center",
                         "font": {"size": 16},
                     },
-                    font=dict(family="Arial, sans-serif", size=12),
+                    font={"family": "Arial, sans-serif", "size": 12},
                     showlegend=True,
-                    legend=dict(orientation="v", yanchor="middle", y=0.5),
-                    margin=dict(t=60, b=40, l=40, r=40),
+                    legend={"orientation": "v", "yanchor": "middle", "y": 0.5},
+                    margin={"t": 60, "b": 40, "l": 40, "r": 40},
                     height=500,
                 )
 
@@ -149,8 +149,8 @@ class ChartGenerator:
                     },
                     xaxis_title="Status",
                     yaxis_title="Number of Issues",
-                    font=dict(family="Arial, sans-serif", size=12),
-                    margin=dict(t=60, b=40, l=40, r=40),
+                    font={"family": "Arial, sans-serif", "size": 12},
+                    margin={"t": 60, "b": 40, "l": 40, "r": 40},
                     height=500,
                 )
 
@@ -314,7 +314,7 @@ class ChartGenerator:
                         y=burndown_data["ideal_remaining"],
                         mode="lines",
                         name="Ideal Burndown",
-                        line=dict(color="gray", dash="dash", width=2),
+                        line={"color": "gray", "dash": "dash", "width": 2},
                         hovertemplate="Date: %{x}<br>Ideal Remaining: %{y} issues<extra></extra>",
                     )
                 )
@@ -326,8 +326,8 @@ class ChartGenerator:
                         y=burndown_data["actual_remaining"],
                         mode="lines+markers",
                         name="Actual Burndown",
-                        line=dict(color="#3b82f6", width=3),
-                        marker=dict(size=6),
+                        line={"color": "#3b82f6", "width": 3},
+                        marker={"size": 6},
                         hovertemplate="Date: %{x}<br>Actual Remaining: %{y} issues<extra></extra>",
                     )
                 )
@@ -342,9 +342,9 @@ class ChartGenerator:
                 },
                 xaxis_title="Date",
                 yaxis_title="Issues Remaining",
-                font=dict(family="Arial, sans-serif", size=12),
+                font={"family": "Arial, sans-serif", "size": 12},
                 hovermode="x unified",
-                margin=dict(t=60, b=40, l=60, r=40),
+                margin={"t": 60, "b": 40, "l": 60, "r": 40},
                 height=500,
             )
 
@@ -451,8 +451,8 @@ class ChartGenerator:
                     y=velocity_df["issues_completed"],
                     mode="lines+markers",
                     name="Issues Completed",
-                    line=dict(color="#10b981", width=3),
-                    marker=dict(size=6),
+                    line={"color": "#10b981", "width": 3},
+                    marker={"size": 6},
                     hovertemplate="Period: %{x}<br>Issues: %{y}<extra></extra>",
                 ),
                 row=1,
@@ -466,8 +466,8 @@ class ChartGenerator:
                     y=velocity_df["velocity_score"],
                     mode="lines+markers",
                     name="Velocity Score",
-                    line=dict(color="#3b82f6", width=3),
-                    marker=dict(size=6),
+                    line={"color": "#3b82f6", "width": 3},
+                    marker={"size": 6},
                     hovertemplate="Period: %{x}<br>Score: %{y:.1f}<extra></extra>",
                 ),
                 row=2,
@@ -481,10 +481,10 @@ class ChartGenerator:
                     "xanchor": "center",
                     "font": {"size": 16},
                 },
-                font=dict(family="Arial, sans-serif", size=12),
+                font={"family": "Arial, sans-serif", "size": 12},
                 showlegend=False,
                 height=600,
-                margin=dict(t=80, b=40, l=60, r=40),
+                margin={"t": 80, "b": 40, "l": 60, "r": 40},
             )
 
             fig.update_xaxes(title_text="Period", row=2, col=1)
@@ -641,8 +641,8 @@ class ChartGenerator:
                 },
                 xaxis_title="Progress (%)",
                 yaxis_title="Milestone",
-                font=dict(family="Arial, sans-serif", size=12),
-                margin=dict(t=60, b=40, l=150, r=40),
+                font={"family": "Arial, sans-serif", "size": 12},
+                margin={"t": 60, "b": 40, "l": 150, "r": 40},
                 height=max(400, len(names) * 50),
             )
 
@@ -675,7 +675,7 @@ class ChartGenerator:
             bars = ax.barh(names, progress_values, color=colors)
 
             # Add progress labels
-            for i, (bar, data) in enumerate(zip(bars, milestone_data, strict=False)):
+            for _i, (bar, data) in enumerate(zip(bars, milestone_data, strict=False)):
                 width = bar.get_width()
                 ax.text(
                     width + 1,
@@ -775,10 +775,10 @@ class ChartGenerator:
                     "xanchor": "center",
                     "font": {"size": 16},
                 },
-                font=dict(family="Arial, sans-serif", size=12),
+                font={"family": "Arial, sans-serif", "size": 12},
                 showlegend=False,
                 height=500,
-                margin=dict(t=80, b=40, l=60, r=40),
+                margin={"t": 80, "b": 40, "l": 60, "r": 40},
             )
 
             fig.update_xaxes(title_text="Team Member", row=1, col=1)
@@ -930,8 +930,8 @@ class ChartGenerator:
                     y=completions,
                     mode="lines+markers",
                     name="Completion %",
-                    line=dict(color="#2E7D32", width=3),
-                    marker=dict(size=8, color="#4CAF50"),
+                    line={"color": "#2E7D32", "width": 3},
+                    marker={"size": 8, "color": "#4CAF50"},
                     hovertemplate="<b>%{x}</b><br>Completion: %{y:.1f}%<extra></extra>",
                 ),
                 row=1,
@@ -985,9 +985,13 @@ class ChartGenerator:
                 },
                 height=700,
                 showlegend=True,
-                legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                ),
+                legend={
+                    "orientation": "h",
+                    "yanchor": "bottom",
+                    "y": 1.02,
+                    "xanchor": "right",
+                    "x": 1,
+                },
                 plot_bgcolor="white",
                 paper_bgcolor="white",
             )
@@ -1241,9 +1245,7 @@ class DashboardGenerator:
 
         # Calculate milestone metrics
         active_milestones = len([m for m in milestones if m.status.value == "active"])
-        completed_milestones = len(
-            [m for m in milestones if m.status.value == "completed"]
-        )
+        len([m for m in milestones if m.status.value == "completed"])
 
         # Read chart HTML content
         def read_chart_content(chart_path: Path) -> str:

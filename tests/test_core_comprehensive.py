@@ -189,7 +189,7 @@ class TestRoadmapCoreIssueAssignment:
         """Test successful issue assignment to milestone."""
         # Create issue and milestone
         issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
-        milestone = core.create_milestone(
+        core.create_milestone(
             name="Test Milestone", description="Milestone description"
         )
 
@@ -204,7 +204,7 @@ class TestRoadmapCoreIssueAssignment:
     def test_assign_issue_to_milestone_issue_not_found(self, core):
         """Test assigning nonexistent issue to milestone."""
         # Create milestone
-        milestone = core.create_milestone(
+        core.create_milestone(
             name="Test Milestone", description="Milestone description"
         )
 
@@ -240,7 +240,7 @@ class TestRoadmapCoreMilestoneProgress:
     def test_get_milestone_progress_with_issues(self, core):
         """Test milestone progress calculation with various issue states."""
         # Create milestone
-        milestone = core.create_milestone(
+        core.create_milestone(
             name="Test Milestone", description="Milestone description"
         )
 
@@ -274,9 +274,7 @@ class TestRoadmapCoreMilestoneProgress:
     def test_get_milestone_progress_no_issues(self, core):
         """Test milestone progress with no assigned issues."""
         # Create milestone with no issues
-        milestone = core.create_milestone(
-            name="Empty Milestone", description="No issues assigned"
-        )
+        core.create_milestone(name="Empty Milestone", description="No issues assigned")
 
         progress = core.get_milestone_progress("Empty Milestone")
 
@@ -309,14 +307,14 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_backlog_issues(self, core):
         """Test getting backlog (unassigned) issues."""
         # Create milestone
-        milestone = core.create_milestone(
+        core.create_milestone(
             name="Test Milestone", description="Milestone description"
         )
 
         # Create issues - some assigned, some not
         issue1 = core.create_issue(title="Assigned Issue", priority=Priority.HIGH)
-        issue2 = core.create_issue(title="Backlog Issue 1", priority=Priority.MEDIUM)
-        issue3 = core.create_issue(title="Backlog Issue 2", priority=Priority.LOW)
+        core.create_issue(title="Backlog Issue 1", priority=Priority.MEDIUM)
+        core.create_issue(title="Backlog Issue 2", priority=Priority.LOW)
 
         # Assign one issue to milestone
         core.assign_issue_to_milestone(issue1.id, "Test Milestone")
@@ -334,7 +332,7 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_backlog_issues_empty(self, core):
         """Test getting backlog when all issues are assigned."""
         # Create milestone
-        milestone = core.create_milestone(
+        core.create_milestone(
             name="Test Milestone", description="Milestone description"
         )
 
@@ -349,12 +347,8 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_milestone_issues(self, core):
         """Test getting issues for specific milestone."""
         # Create milestones
-        milestone1 = core.create_milestone(
-            name="Milestone 1", description="First milestone"
-        )
-        milestone2 = core.create_milestone(
-            name="Milestone 2", description="Second milestone"
-        )
+        core.create_milestone(name="Milestone 1", description="First milestone")
+        core.create_milestone(name="Milestone 2", description="Second milestone")
 
         # Create issues
         issue1 = core.create_issue(title="Issue for M1", priority=Priority.HIGH)
@@ -381,12 +375,10 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_milestone_issues_empty(self, core):
         """Test getting issues for milestone with no assignments."""
         # Create milestone
-        milestone = core.create_milestone(
-            name="Empty Milestone", description="No issues assigned"
-        )
+        core.create_milestone(name="Empty Milestone", description="No issues assigned")
 
         # Create unassigned issue
-        issue = core.create_issue(title="Unassigned Issue", priority=Priority.MEDIUM)
+        core.create_issue(title="Unassigned Issue", priority=Priority.MEDIUM)
 
         # Should return empty list
         issues = core.get_milestone_issues("Empty Milestone")

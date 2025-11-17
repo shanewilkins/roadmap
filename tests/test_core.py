@@ -128,9 +128,9 @@ class TestRoadmapCore:
         core.initialize()
 
         # Create test issues
-        issue1 = core.create_issue("Issue 1", Priority.HIGH)
-        issue2 = core.create_issue("Issue 2", Priority.LOW)
-        issue3 = core.create_issue("Issue 3", Priority.CRITICAL)
+        core.create_issue("Issue 1", Priority.HIGH)
+        core.create_issue("Issue 2", Priority.LOW)
+        core.create_issue("Issue 3", Priority.CRITICAL)
 
         issues = core.list_issues()
 
@@ -254,8 +254,8 @@ class TestRoadmapCore:
         """Test listing milestones."""
         core.initialize()
 
-        milestone1 = core.create_milestone("v1.0", "First release")
-        milestone2 = core.create_milestone("v2.0", "Second release")
+        core.create_milestone("v1.0", "First release")
+        core.create_milestone("v2.0", "Second release")
 
         milestones = core.list_milestones()
 
@@ -267,7 +267,7 @@ class TestRoadmapCore:
         """Test getting specific milestone."""
         core.initialize()
 
-        created_milestone = core.create_milestone("v1.0", "First release")
+        core.create_milestone("v1.0", "First release")
         retrieved_milestone = core.get_milestone("v1.0")
 
         assert retrieved_milestone is not None
@@ -286,7 +286,7 @@ class TestRoadmapCore:
         core.initialize()
 
         issue = core.create_issue("Test Issue")
-        milestone = core.create_milestone("v1.0", "First release")
+        core.create_milestone("v1.0", "First release")
 
         success = core.assign_issue_to_milestone(issue.id, "v1.0")
         assert success is True
@@ -318,7 +318,7 @@ class TestRoadmapCore:
         core.initialize()
 
         # Create milestone and issues
-        milestone = core.create_milestone("v1.0", "First release")
+        core.create_milestone("v1.0", "First release")
 
         issue1 = core.create_issue("Issue 1")
         issue2 = core.create_issue("Issue 2")
