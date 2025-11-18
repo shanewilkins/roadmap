@@ -45,7 +45,12 @@ class ChartGenerator:
         """
         self.artifacts_dir = artifacts_dir
         self.charts_dir = artifacts_dir / "charts"
-        self.charts_dir.mkdir(exist_ok=True)
+        try:
+            self.charts_dir.mkdir(parents=True, exist_ok=True)
+        except (OSError, FileNotFoundError):
+            # If we can't create the directory, just continue
+            # Charts will fail to save but won't crash initialization
+            pass
 
         # Configure matplotlib for better output
         plt.rcParams["figure.figsize"] = (12, 8)

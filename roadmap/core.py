@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .application.services import (
+    ConfigurationService,
     IssueService,
     MilestoneService,
     ProjectService,
+    VisualizationService,
 )
 from .database import StateManager
 from .error_handling import (
@@ -65,6 +67,8 @@ class RoadmapCore:
         self.project_service = ProjectService(
             self.db, self.projects_dir, self.milestones_dir
         )
+        self.visualization_service = VisualizationService(self.db, self.artifacts_dir)
+        self.config_service = ConfigurationService()
 
         # Cache for team members to avoid repeated API calls
         self._team_members_cache = None
