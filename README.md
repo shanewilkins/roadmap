@@ -400,32 +400,126 @@ roadmap bulk update-field /path/to/roadmaps \
 - **Poetry**: Modern dependency management and packaging
 - **pytest**: Comprehensive testing with 87% coverage
 
+### Clean Layered Architecture
+
+Roadmap v1.0 implements a **clean, maintainable architecture** organized into five layers:
+
+```
+┌─────────────────────────────────────────┐
+│    🖥️ Presentation Layer (CLI)         │  ← User commands and CLI interface
+├─────────────────────────────────────────┤
+│    ⚙️ Application Layer (Services)     │  ← Business logic and use cases
+├─────────────────────────────────────────┤
+│    🎯 Domain Layer (Models)            │  ← Pure business entities
+├─────────────────────────────────────────┤
+│    🔌 Infrastructure Layer             │  ← External integrations
+├─────────────────────────────────────────┤
+│    🔧 Shared Layer (Utilities)         │  ← Common utilities & validation
+└─────────────────────────────────────────┘
+```
+
+**Key Benefits:**
+- ✅ **Testability**: Each layer independently testable with 87% coverage
+- ✅ **Maintainability**: Clear separation of concerns
+- ✅ **Extensibility**: New features added without affecting existing code
+- ✅ **Reusability**: Services and utilities shared across all layers
+- ✅ **Debuggability**: Easy to trace issues through defined layer boundaries
+
+**See:** `docs/ARCHITECTURE.md` for detailed documentation of each layer
+
 ## 📁 Project Structure
+
+The roadmap CLI is organized using a **clean, layered architecture** for maintainability and testability:
 
 ```text
 roadmap/
-├── roadmap/
-│   ├── __init__.py              # Package initialization
-│   ├── cli.py                   # Main CLI interface
-│   ├── core.py                  # Core roadmap functionality
-│   ├── models.py                # Data models and validation
-│   ├── parser.py                # YAML parsing and validation
-│   ├── persistence.py           # Enhanced YAML persistence
-│   ├── bulk_operations.py       # Bulk file operations
-│   ├── file_locking.py          # Concurrent access protection
-│   ├── sync.py                  # GitHub synchronization
-│   ├── performance_sync.py      # High-performance sync engine
-│   ├── github_client.py         # GitHub API integration
-│   └── credentials.py           # Secure credential management
-├── tests/                       # Comprehensive test suite (87% coverage)
-├── .roadmap/                    # Local roadmap data (created by init)
-│   ├── issues/                  # Issue YAML files
-│   ├── milestones/              # Milestone YAML files
-│   ├── templates/               # File templates
-│   └── config.yaml              # Local configuration
-├── pyproject.toml               # Poetry configuration
-└── README.md                    # This documentation
+├── roadmap/                        # Main package
+│   ├── domain/                     # 🎯 Domain Layer - Pure business logic
+│   │   ├── issue.py                # Issue model, Priority, Status enums
+│   │   ├── milestone.py            # Milestone model, MilestoneStatus enum
+│   │   └── project.py              # Project model, ProjectStatus enum
+│   │
+│   ├── infrastructure/             # 🔌 Infrastructure Layer - External integrations
+│   │   ├── storage.py              # Database/YAML persistence
+│   │   ├── github.py               # GitHub API client
+│   │   ├── git.py                  # Git operations & hooks
+│   │   └── __init__.py
+│   │
+│   ├── application/                # ⚙️ Application Layer - Use cases & services
+│   │   ├── services/
+│   │   │   ├── issue_service.py    # Issue operations
+│   │   │   ├── milestone_service.py # Milestone operations
+│   │   │   └── project_service.py  # Project operations
+│   │   ├── visualization/          # Visualization & rendering
+│   │   │   ├── timeline.py
+│   │   │   ├── progress.py
+│   │   │   ├── burndown.py
+│   │   │   └── renderers/
+│   │   ├── core.py                 # RoadmapCore orchestrator
+│   │   └── __init__.py
+│   │
+│   ├── presentation/               # 🖥️ Presentation Layer - CLI interface
+│   │   └── cli/
+│   │       ├── issues/             # Issue commands (create, list, update, close)
+│   │       ├── milestones/         # Milestone commands
+│   │       ├── projects/           # Project commands
+│   │       ├── progress/           # Progress display
+│   │       ├── data/               # Data export
+│   │       ├── git/                # Git hooks
+│   │       ├── comment.py          # Comment command
+│   │       ├── utils.py            # CLI utilities
+│   │       └── core.py             # Main CLI entry point
+│   │
+│   ├── shared/                     # 🔧 Shared Layer - Common utilities
+│   │   ├── errors.py               # Exception definitions
+│   │   ├── constants.py            # App enums and config defaults
+│   │   ├── formatters.py           # Output formatting utilities
+│   │   ├── validation.py           # Data validators
+│   │   ├── logging.py              # Logging configuration
+│   │   ├── progress.py             # Progress calculation engine
+│   │   ├── datetime_parser.py      # DateTime parsing utilities
+│   │   ├── timezone_utils.py       # Timezone handling
+│   │   └── __init__.py             # Shared layer exports
+│   │
+│   ├── cli.py                      # Legacy CLI wrapper (backward compat)
+│   ├── core.py                     # Legacy core (backward compat - deprecated)
+│   ├── models.py                   # Legacy models (backward compat - deprecated)
+│   ├── __init__.py                 # Package initialization
+│   └── ...other utilities...       # Credentials, settings, version, etc.
+│
+├── tests/                          # 🧪 Test suite (87% coverage)
+│   ├── unit/                       # Isolated component tests
+│   │   ├── domain/                 # Domain model tests (3 files)
+│   │   ├── application/            # Service/core tests (9 files)
+│   │   ├── infrastructure/         # Storage/git/github tests (6 files)
+│   │   └── shared/                 # Utility tests (4 files)
+│   ├── integration/                # Integration/workflow tests (12 files)
+│   ├── fixtures/                   # Shared test fixtures
+│   ├── conftest.py                 # Pytest configuration
+│   ├── test_data_factory.py        # Test data utilities
+│   └── test_utils.py               # ANSI stripping and utilities
+│
+├── docs/                           # 📚 Documentation
+│   ├── ARCHITECTURE.md             # Detailed architecture guide
+│   ├── USER_WORKFLOWS.md           # User workflow documentation
+│   └── ...other docs...
+│
+├── pyproject.toml                  # Poetry configuration
+├── pytest.ini                       # Pytest configuration
+├── pyrightconfig.json              # Type checking configuration
+├── REFACTORING_IMPLEMENTATION_PLAN.md # Architecture refactoring plan
+└── README.md                       # This documentation
 ```
+
+### Layer Responsibilities
+
+| Layer | Purpose | Examples |
+|-------|---------|----------|
+| **Domain** | Pure business logic, models, enums | Issue, Milestone, Priority status |
+| **Infrastructure** | External system integration | GitHub API, Git operations, database |
+| **Application** | Use cases, services, orchestration | IssueService, visualization, business logic |
+| **Presentation** | CLI commands and user interface | issue create, milestone list, etc |
+| **Shared** | Common utilities, validation, logging | Formatters, validators, error handling |
 
 ## 🔄 User Workflows
 
@@ -591,6 +685,115 @@ roadmap sync pull --high-performance --workers 4 --batch-size 25
 # Monitor performance
 roadmap sync pull --high-performance  # Check performance report
 ```
+
+## 👨‍💻 Developer Guide
+
+### Understanding the Architecture
+
+Roadmap uses a **5-layer clean architecture** for maximum maintainability:
+
+1. **Domain Layer** (`roadmap/domain/`)
+   - Pure business logic and data models
+   - No external dependencies
+   - Contains: Issue, Milestone, Project models and enums
+   - **Testing**: `tests/unit/domain/`
+
+2. **Infrastructure Layer** (`roadmap/infrastructure/`)
+   - External system integrations
+   - GitHub API, Git operations, file storage
+   - Contains: GitHub client, Git commands, database/storage
+   - **Testing**: `tests/unit/infrastructure/`
+
+3. **Application Layer** (`roadmap/application/`)
+   - Use cases and business logic orchestration
+   - Services that combine domain and infrastructure
+   - Contains: IssueService, MilestoneService, visualization
+   - **Testing**: `tests/unit/application/`
+
+4. **Presentation Layer** (`roadmap/presentation/`)
+   - CLI commands and user interface
+   - Maps user commands to application services
+   - Contains: `cli/` directory with command modules
+   - **Testing**: `tests/integration/`
+
+5. **Shared Layer** (`roadmap/shared/`)
+   - Common utilities across all layers
+   - Validators, formatters, logging, error handling
+   - Contains: validation, errors, formatters, constants
+   - **Testing**: `tests/unit/shared/`
+
+### Adding a New Feature
+
+1. **Start with the domain** (if new entity type):
+   ```python
+   # roadmap/domain/your_entity.py
+   class YourEntity(BaseModel):
+       """Your entity model"""
+   ```
+
+2. **Add infrastructure** if external integration needed:
+   ```python
+   # roadmap/infrastructure/your_integration.py
+   class YourClient:
+       """External API client"""
+   ```
+
+3. **Create service** in application layer:
+   ```python
+   # roadmap/application/services/your_service.py
+   class YourService:
+       """Business logic for your feature"""
+   ```
+
+4. **Add CLI command** in presentation layer:
+   ```python
+   # roadmap/presentation/cli/your_domain/your_command.py
+   @click.command()
+   def your_command():
+       """User-facing CLI command"""
+   ```
+
+5. **Write tests** at each layer:
+   - Unit tests in `tests/unit/`
+   - Integration tests in `tests/integration/`
+
+### Running Tests
+
+```bash
+# Run all tests
+poetry run pytest
+
+# Run specific layer tests
+poetry run pytest tests/unit/domain/
+poetry run pytest tests/unit/application/
+poetry run pytest tests/integration/
+
+# Run with coverage
+poetry run pytest --cov=roadmap
+```
+
+### Code Quality
+
+```bash
+# Type checking
+poetry run pyright roadmap/
+
+# Linting
+poetry run ruff check roadmap/
+
+# Format code
+poetry run black roadmap/
+```
+
+### Deprecation Policy
+
+Old code is marked with deprecation notices guiding to new locations:
+- `roadmap/core.py` → Use `roadmap.application.core`
+- `roadmap/models.py` → Use `roadmap.domain`
+- `roadmap/database.py` → Use `roadmap.infrastructure.storage`
+- etc.
+
+Deprecated files are maintained for backward compatibility but removed in v2.0.
 
 ## 🤝 Contributing
 
