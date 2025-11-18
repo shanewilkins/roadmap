@@ -349,11 +349,11 @@ def register_commands():
     # Register command groups with lazy loading
     # Core v1.0 commands only
     from roadmap.presentation.cli.issues import issue
+    from roadmap.presentation.cli.milestones import milestone
 
     from .comment import comment
     from .data import data
     from .git_integration import git
-    from .milestone import milestone
     from .progress import progress_reports, recalculate_progress
     from .project import project
 

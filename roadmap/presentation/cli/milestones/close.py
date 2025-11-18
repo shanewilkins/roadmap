@@ -1,0 +1,40 @@
+"""Close milestone command."""
+
+import click
+
+from roadmap.cli.utils import get_console
+
+console = get_console()
+
+
+@click.command("close")
+@click.argument("milestone_name")
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
+    """Convenience command to mark a milestone as closed."""
+    core = ctx.obj["core"]
+
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        return
+
+    try:
+        if not force:
+            if not click.confirm(
+                f"Are you sure you want to close milestone '{milestone_name}'?"
+            ):
+                console.print("❌ Milestone close cancelled.", style="yellow")
+                return
+
+        from roadmap.models import MilestoneStatus
+
+        success = core.update_milestone(milestone_name, status=MilestoneStatus.CLOSED)
+        if success:
+            console.print(f"✅ Closed milestone: {milestone_name}", style="bold green")
+        else:
+            console.print(f"❌ Milestone not found: {milestone_name}", style="bold red")
+    except Exception as e:
+        console.print(f"❌ Failed to close milestone: {e}", style="bold red")
