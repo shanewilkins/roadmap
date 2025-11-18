@@ -5,8 +5,8 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from roadmap.bulk_operations import BulkOperationResult, BulkOperations
-from roadmap.models import Priority, Status
+from roadmap.application.services import BulkOperationResult, BulkOperations
+from roadmap.domain import Priority, Status
 from roadmap.parser import IssueParser
 
 

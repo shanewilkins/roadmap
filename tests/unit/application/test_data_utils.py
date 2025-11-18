@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from roadmap.data_utils import DataAnalyzer, DataFrameAdapter, QueryBuilder
-from roadmap.models import (
+from roadmap.domain import (
     Issue,
     IssueType,
     Milestone,

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 def test_init_with_custom_template(cli_runner):

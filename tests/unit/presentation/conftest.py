@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 @pytest.fixture(autouse=True)
@@ -69,7 +69,7 @@ def cli_isolated_fs():
 @pytest.fixture
 def initialized_roadmap(temp_dir):
     """Provide a temporary directory with an initialized roadmap."""
-    from roadmap.core import RoadmapCore
+    from roadmap.application.core import RoadmapCore
 
     # Initialize the roadmap
     manager = RoadmapCore()

@@ -71,7 +71,7 @@ def update_milestone(
         if status:
             # Map CLI status string to MilestoneStatus enum
             try:
-                from roadmap.models import MilestoneStatus
+                from roadmap.domain import MilestoneStatus
 
                 # MilestoneStatus expects 'open' or 'closed' values
                 updates["status"] = MilestoneStatus(status)

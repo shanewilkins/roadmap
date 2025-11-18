@@ -14,8 +14,8 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from roadmap.cli.ci import ci
-from roadmap.core import RoadmapCore
-from roadmap.models import IssueType, Priority
+from roadmap.application.services import RoadmapCore
+from roadmap.domain import IssueType, Priority
 
 
 class TestCICommandsIntegration:

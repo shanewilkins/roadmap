@@ -2,25 +2,12 @@
 
 __version__ = "0.4.0"
 
-from .core import RoadmapCore
-from .credentials import CredentialManager, CredentialManagerError
-from .github_client import GitHubAPIError, GitHubClient
-from .models import Issue, Milestone, MilestoneStatus, Priority, RoadmapConfig, Status
-from .parser import FrontmatterParser, IssueParser, MilestoneParser
+# Legacy exports - use layer-specific imports instead
+# from roadmap.domain import Issue, Milestone
+# from roadmap.infrastructure.github import GitHubClient
+# from roadmap.infrastructure.credentials import CredentialManager
+# from roadmap.application.services import ... etc
 
 __all__ = [
-    "Issue",
-    "Milestone",
-    "Priority",
-    "Status",
-    "MilestoneStatus",
-    "RoadmapConfig",
-    "IssueParser",
-    "MilestoneParser",
-    "FrontmatterParser",
-    "RoadmapCore",
-    "GitHubClient",
-    "GitHubAPIError",
-    "CredentialManager",
-    "CredentialManagerError",
+    "__version__",
 ]

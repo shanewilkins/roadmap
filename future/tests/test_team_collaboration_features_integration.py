@@ -5,7 +5,7 @@ import tempfile
 
 from click.testing import CliRunner
 
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 class TestTeamCollaborationFeaturesIntegration:

@@ -10,8 +10,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core import RoadmapCore
-from roadmap.git_integration import GitBranch, GitCommit, GitIntegration
+from roadmap.application.core import RoadmapCore
+from roadmap.infrastructure.git import GitBranch, GitCommit, GitIntegration
 
 pytestmark = pytest.mark.unit
 

@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
-from roadmap.github_client import GitHubAPIError, GitHubClient
-from roadmap.models import Priority, Status
+from roadmap.infrastructure.github import GitHubAPIError, GitHubClient
+from roadmap.domain import Priority, Status
 
 pytestmark = pytest.mark.unit
 

@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import yaml
 
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 def test_start_issue_respects_config_auto_branch(cli_runner):

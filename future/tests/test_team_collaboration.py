@@ -5,9 +5,9 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli import main
-from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Priority, Status
+from roadmap.presentation.cli import main
+from roadmap.application.services import RoadmapCore
+from roadmap.domain import Issue, Priority, Status
 
 
 @pytest.fixture
@@ -325,7 +325,7 @@ class TestGitHubIntegration:
 
     def test_get_team_members_from_github(self):
         """Test getting team members from GitHub API."""
-        from roadmap.github_client import GitHubClient
+        from roadmap.infrastructure.github import GitHubClient
 
         client = GitHubClient("fake-token", "owner", "repo")
 
@@ -342,7 +342,7 @@ class TestGitHubIntegration:
 
     def test_get_current_user_from_github(self):
         """Test getting current user from GitHub API."""
-        from roadmap.github_client import GitHubClient
+        from roadmap.infrastructure.github import GitHubClient
 
         client = GitHubClient("fake-token", "owner", "repo")
 

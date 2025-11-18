@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.github_client import GitHubClient
-from roadmap.models import Comment
+from roadmap.infrastructure.github import GitHubClient
+from roadmap.domain import Comment
 
 
 @pytest.fixture
@@ -189,7 +189,7 @@ class TestCommentCLI:
     def test_comment_help_available(self):
         """Test that comment commands are available in CLI."""
         # This is a basic test to ensure the commands are properly registered
-        from roadmap.cli import main
+        from roadmap.presentation.cli import main
 
         # The main function should have a comment group
         comment_group = None
@@ -210,7 +210,7 @@ class TestBlockedStatus:
 
     def test_blocked_status_enum(self):
         """Test that blocked status is properly defined."""
-        from roadmap.models import Status
+        from roadmap.domain import Status
 
         assert Status.BLOCKED == "blocked"
         assert Status.BLOCKED in Status
@@ -227,8 +227,8 @@ class TestBlockedStatus:
         """Test that GitHub client handles blocked status."""
         from unittest.mock import patch
 
-        from roadmap.github_client import GitHubClient
-        from roadmap.models import Status
+        from roadmap.infrastructure.github import GitHubClient
+        from roadmap.domain import Status
 
         with patch("roadmap.github_client.GitHubClient._check_repository"):
             client = GitHubClient(token="fake-token", owner="test", repo="test")
@@ -245,7 +245,7 @@ class TestBlockedStatus:
         """Test that blocked status label is included in default setup."""
         from unittest.mock import Mock, patch
 
-        from roadmap.github_client import GitHubClient
+        from roadmap.infrastructure.github import GitHubClient
 
         with patch("roadmap.github_client.GitHubClient._check_repository"):
             with patch(

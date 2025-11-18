@@ -19,8 +19,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from roadmap.error_handling import ErrorSeverity, ValidationError
-from roadmap.models import IssueType, MilestoneStatus, Priority, Status
+from roadmap.shared.errors import ErrorSeverity, ValidationError
+from roadmap.domain import IssueType, MilestoneStatus, Priority, Status
 
 
 class ValidationType(Enum):

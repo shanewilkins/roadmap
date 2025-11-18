@@ -1,5 +1,5 @@
-from roadmap.git_integration import GitIntegration
-from roadmap.models import Issue
+from roadmap.infrastructure.git import GitIntegration
+from roadmap.domain import Issue
 
 
 def make_issue():

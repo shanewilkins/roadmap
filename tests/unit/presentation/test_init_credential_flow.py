@@ -1,6 +1,6 @@
 from unittest.mock import Mock, patch
 
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 def test_init_with_github_token_stores_and_uses_token(cli_runner):

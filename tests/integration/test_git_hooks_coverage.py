@@ -8,8 +8,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core import RoadmapCore
-from roadmap.git_hooks import GitHookManager
+from roadmap.application.core import RoadmapCore
+# from roadmap.infrastructure.git_hooks import GitHookManager
 
 
 class TestGitHooksSpecificCoverage:

@@ -9,8 +9,8 @@ import yaml
 
 from .datetime_parser import parse_datetime
 from .file_utils import ensure_directory_exists
-from .models import Issue, Milestone
-from .validation import validate_frontmatter_structure
+from .domain import Issue, Milestone
+from .shared.validation import validate_frontmatter_structure
 
 
 class YAMLValidationError(Exception):

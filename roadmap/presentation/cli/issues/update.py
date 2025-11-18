@@ -3,8 +3,8 @@
 import click
 
 from roadmap.cli.utils import get_console
-from roadmap.error_handling import ErrorHandler, ValidationError
-from roadmap.models import Priority
+from roadmap.shared.errors import ErrorHandler, ValidationError
+from roadmap.domain import Priority
 
 console = get_console()
 

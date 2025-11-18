@@ -19,9 +19,9 @@ from roadmap.analytics import (
     ProjectVelocity,
     TeamInsights,
 )
-from roadmap.core import RoadmapCore
-from roadmap.git_integration import GitCommit
-from roadmap.models import Priority, Status
+from roadmap.application.services import RoadmapCore
+from roadmap.infrastructure.git import GitCommit
+from roadmap.domain import Priority, Status
 
 
 class TestGitHistoryAnalyzer:

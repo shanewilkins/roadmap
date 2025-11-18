@@ -10,7 +10,7 @@ from urllib3.util.retry import Retry
 
 from ..credentials import get_credential_manager
 from ..datetime_parser import parse_github_datetime
-from ..models import Comment, Priority, Status
+from ..domain import Comment, Priority, Status
 
 
 class GitHubAPIError(Exception):

@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.core import RoadmapCore
-from roadmap.models import Priority, Status
+from roadmap.application.core import RoadmapCore
+from roadmap.domain import Priority, Status
 
 
 @pytest.fixture

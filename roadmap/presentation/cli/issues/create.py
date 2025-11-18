@@ -6,8 +6,8 @@ import subprocess
 import click
 
 from roadmap.cli.utils import get_console
-from roadmap.error_handling import ErrorHandler, ValidationError
-from roadmap.models import IssueType, Priority
+from roadmap.shared.errors import ErrorHandler, ValidationError
+from roadmap.domain import IssueType, Priority
 
 console = get_console()
 

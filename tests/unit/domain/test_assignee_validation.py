@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.core import RoadmapCore
+from roadmap.application.core import RoadmapCore
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def cli_runner():
 @pytest.fixture
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
-    from roadmap.cli import main
+    from roadmap.presentation.cli import main
 
     runner = CliRunner()
     result = runner.invoke(
@@ -201,7 +201,7 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_with_invalid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with invalid assignee."""
-        from roadmap.cli import main
+        from roadmap.presentation.cli import main
 
         # Create a mock core
         mock_core = Mock()
@@ -232,7 +232,7 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_with_valid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with valid assignee."""
-        from roadmap.cli import main
+        from roadmap.presentation.cli import main
 
         # Create a mock core
         mock_core = Mock()
@@ -269,7 +269,7 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_local_only_usage(self, cli_runner, initialized_roadmap):
         """Test issue creation works without GitHub when validation is skipped."""
-        from roadmap.cli import main
+        from roadmap.presentation.cli import main
 
         # Create a mock core that simulates local-only usage (no GitHub config)
         mock_core = Mock()

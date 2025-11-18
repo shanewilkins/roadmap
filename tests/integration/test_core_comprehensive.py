@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.core import RoadmapCore
-from roadmap.models import (
+from roadmap.application.core import RoadmapCore
+from roadmap.domain import (
     IssueType,
     MilestoneStatus,
     Priority,

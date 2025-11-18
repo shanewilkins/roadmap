@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
+from roadmap.domain import Issue, Milestone, MilestoneStatus, Priority, Status
 from roadmap.parser import IssueParser, MilestoneParser
 from roadmap.persistence import (
     EnhancedYAMLPersistence,

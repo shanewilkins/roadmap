@@ -9,10 +9,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core import RoadmapCore
-from roadmap.git_hooks import GitHookManager, WorkflowAutomation
-from roadmap.git_integration import GitIntegration
-from roadmap.models import Priority, Status
+from roadmap.application.core import RoadmapCore
+# from roadmap.infrastructure.git_hooks import GitHookManager, WorkflowAutomation
+from roadmap.infrastructure.git import GitIntegration
+from roadmap.domain import Priority, Status
 
 
 class TestGitHookManager:
@@ -469,7 +469,7 @@ class TestWorkflowAutomation:
         automation = WorkflowAutomation(core)
 
         # Create a mock commit that references the issue
-        from roadmap.git_integration import GitCommit
+        from roadmap.infrastructure.git import GitCommit
 
         mock_commit = GitCommit(
             hash="abc123",

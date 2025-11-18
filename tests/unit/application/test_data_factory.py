@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from roadmap.models import Issue, Milestone, RoadmapConfig
+from roadmap.domain import Issue, Milestone
 
 # Mark all tests in this file as unit tests (no filesystem operations)
 pytestmark = pytest.mark.unit

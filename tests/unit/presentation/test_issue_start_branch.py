@@ -1,6 +1,6 @@
 from unittest.mock import Mock, patch
 
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 def test_start_issue_creates_branch(cli_runner):

@@ -14,7 +14,7 @@ Extracted from core.py to separate business logic.
 from pathlib import Path
 
 from roadmap.domain.issue import Issue, IssueType, Priority, Status
-from roadmap.error_handling import (
+from roadmap.shared.errors import (
     ErrorHandler,
     ErrorSeverity,
     FileOperationError,

@@ -12,9 +12,9 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from roadmap.cli import main
-from roadmap.core import RoadmapCore
-from roadmap.models import Priority, Status
+from roadmap.presentation.cli import main
+from roadmap.application.core import RoadmapCore
+from roadmap.domain import Priority, Status
 
 pytestmark = pytest.mark.filesystem
 

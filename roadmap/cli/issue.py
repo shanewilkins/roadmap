@@ -10,11 +10,11 @@ from rich.table import Table
 from rich.text import Text
 
 from roadmap.cli.utils import get_console
-from roadmap.error_handling import (
+from roadmap.shared.errors import (
     ErrorHandler,
     ValidationError,
 )
-from roadmap.models import IssueType, Priority, Status
+from roadmap.domain import IssueType, Priority, Status
 
 console = get_console()
 
@@ -981,7 +981,7 @@ def start_issue(
     try:
         from datetime import datetime
 
-        from roadmap.models import Status
+        from roadmap.domain import Status
 
         # Parse start date
         if date:
@@ -1021,7 +1021,7 @@ def start_issue(
             console.print("   Status: In Progress", style="yellow")
             # Determine git-branch behavior: CLI flag overrides, otherwise check config
             try:
-                from roadmap.models import RoadmapConfig
+                from roadmap.domain import RoadmapConfig
 
                 cfg = (
                     RoadmapConfig.load_from_file(core.config_file)

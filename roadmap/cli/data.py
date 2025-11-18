@@ -6,7 +6,7 @@ import json
 import click
 
 from roadmap.cli.utils import get_console
-from roadmap.models import Issue
+from roadmap.domain import Issue
 
 console = get_console()
 
@@ -57,7 +57,7 @@ def export(ctx: click.Context, format: str, output: str, filter: str):
     if core is None:
         # Try to discover an existing roadmap in the current directory
         try:
-            from roadmap.core import RoadmapCore
+            from roadmap.application.core import RoadmapCore
 
             core = RoadmapCore.find_existing_roadmap()
         except Exception:

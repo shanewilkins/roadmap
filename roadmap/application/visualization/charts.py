@@ -21,7 +21,7 @@ from matplotlib.patches import Circle  # noqa: E402
 from plotly.subplots import make_subplots  # noqa: E402
 
 from roadmap.data_utils import DataAnalyzer, DataFrameAdapter  # noqa: E402
-from roadmap.models import Issue, Milestone, Status  # noqa: E402
+from roadmap.domain import Issue, Milestone, Status  # noqa: E402
 
 # Set style configurations
 plt.style.use("default")

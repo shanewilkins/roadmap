@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.core import RoadmapCore
+from roadmap.application.services import RoadmapCore
 from roadmap.curation import CurationReport, OrphanageType, OrphanedItem, RoadmapCurator
-from roadmap.models import (
+from roadmap.domain import (
     IssueType,
     Priority,
 )
@@ -414,7 +414,7 @@ class TestCurationCLI:
         """Test the curate orphaned CLI command."""
         from click.testing import CliRunner
 
-        from roadmap.cli import curate_orphaned
+        from roadmap.presentation.cli import curate_orphaned
 
         # Mock the core
         mock_core = MagicMock()
@@ -461,7 +461,7 @@ class TestCurationCLI:
         """Test curation commands with uninitialized roadmap."""
         from click.testing import CliRunner
 
-        from roadmap.cli import curate_orphaned
+        from roadmap.presentation.cli import curate_orphaned
 
         mock_core = MagicMock()
         mock_core.is_initialized.return_value = False

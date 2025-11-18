@@ -17,9 +17,9 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.cli.ci import ci
-from roadmap.core import RoadmapCore
-from roadmap.git_hooks import GitHookManager
-from roadmap.models import IssueType, Priority
+from roadmap.application.services import RoadmapCore
+from roadmap.infrastructure.git_hooks import GitHookManager
+from roadmap.domain import IssueType, Priority
 from roadmap.repository_scanner import AdvancedRepositoryScanner, RepositoryScanConfig
 
 

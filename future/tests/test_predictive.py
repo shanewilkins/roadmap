@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core import RoadmapCore
-from roadmap.models import Issue, Priority, Status
+from roadmap.application.services import RoadmapCore
+from roadmap.domain import Issue, Priority, Status
 from roadmap.predictive import (
     ConfidenceLevel,
     DeadlineForecast,

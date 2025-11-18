@@ -9,10 +9,10 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from roadmap.cli import main
-from roadmap.core import RoadmapCore
-from roadmap.git_integration import GitBranch, GitCommit, GitIntegration
-from roadmap.models import IssueType, Priority
+from roadmap.presentation.cli import main
+from roadmap.application.core import RoadmapCore
+from roadmap.infrastructure.git import GitBranch, GitCommit, GitIntegration
+from roadmap.domain import IssueType, Priority
 
 
 class TestGitCommit:
@@ -358,7 +358,7 @@ class TestGitIntegrationCore:
         subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
 
         # Refresh git integration after git repo is created
-        from roadmap.git_integration import GitIntegration
+        from roadmap.infrastructure.git import GitIntegration
 
         self.core.git = GitIntegration(self.core.root_path)
 

@@ -29,7 +29,7 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
                 console.print("❌ Milestone close cancelled.", style="yellow")
                 return
 
-        from roadmap.models import MilestoneStatus
+        from roadmap.domain import MilestoneStatus
 
         success = core.update_milestone(milestone_name, status=MilestoneStatus.CLOSED)
         if success:

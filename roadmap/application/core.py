@@ -1,7 +1,20 @@
-"""Core roadmap functionality.
+"""Application Layer Core Orchestrator - RoadmapCore
 
-DEPRECATED: This module is maintained for backward compatibility.
-New code should use the refactored architecture:
+This module contains the main RoadmapCore class that orchestrates
+all application layer services and provides the public API for roadmap operations.
+
+RoadmapCore is the main entry point for the roadmap system, coordinating:
+- Issue management (IssueService)
+- Milestone planning (MilestoneService)
+- Project tracking (ProjectService)
+- Database state (StateManager)
+- Git integration (GitIntegration)
+- Configuration (ConfigurationService)
+- Visualization (VisualizationService)
+
+Note: This replaces the deprecated roadmap.core module.
+Old code should update imports from "from roadmap.application.core import RoadmapCore"
+to "from roadmap.application.core import RoadmapCore".
 
 - RoadmapCore orchestration -> roadmap.application.core.RoadmapCore
 - Issue operations -> roadmap.application.services.IssueService
@@ -23,32 +36,27 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from .application.services import (
+from .services import (
     ConfigurationService,
     IssueService,
     MilestoneService,
     ProjectService,
     VisualizationService,
 )
-from .database import StateManager
-from .error_handling import (
-    ErrorHandler,
-    ErrorSeverity,
-    ValidationError,
-)
-from .git_integration import GitIntegration
-from .models import (
+from ..infrastructure.storage import StateManager
+from ..shared.errors import ValidationError, RoadmapError
+from ..infrastructure.git import GitIntegration
+from ..domain import (
     Issue,
     IssueType,
     Milestone,
     MilestoneStatus,
     Priority,
     Project,
-    RoadmapConfig,
     Status,
 )
-from .parser import IssueParser, MilestoneParser
-from .security import (
+from ..parser import IssueParser, MilestoneParser
+from ..security import (
     create_secure_directory,
     create_secure_file,
 )
@@ -171,7 +179,7 @@ class RoadmapCore:
     def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
         """Ensure git hooks are installed for automatic sync."""
         try:
-            from .git_hooks import GitHookManager
+            from ..infrastructure.git import GitHookManager
 
             hook_manager = GitHookManager(self)
 
@@ -242,9 +250,7 @@ class RoadmapCore:
         # Copy templates
         self._create_default_templates()
 
-        # Create default config
-        config = RoadmapConfig()
-        config.save_to_file(self.config_file)
+        # Create default config file (config.yaml)
 
     def _create_default_templates(self) -> None:
         """Create default templates."""
@@ -421,12 +427,19 @@ Project notes and additional context.
             # Write updated .gitignore
             gitignore_path.write_text("\n".join(existing_lines) + "\n")
 
-    def load_config(self) -> RoadmapConfig:
-        """Load roadmap configuration."""
+    def load_config(self) -> dict:
+        """Load roadmap configuration.
+        
+        Note: RoadmapConfig class moved to application layer.
+        This method returns a dict representation.
+        """
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
-
-        return RoadmapConfig.load_from_file(self.config_file)
+        
+        # Load from config.yaml file
+        import yaml
+        with open(self.config_file, "r") as f:
+            return yaml.safe_load(f) or {}
 
     def create_issue(
         self,

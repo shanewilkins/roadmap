@@ -1,4 +1,4 @@
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 def test_create_issue_with_git_branch_flag(cli_runner):

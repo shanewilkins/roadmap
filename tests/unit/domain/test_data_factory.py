@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from roadmap.models import Issue, Milestone, RoadmapConfig
+from roadmap.domain import Issue, Milestone
 
 # Mark all tests in this file as unit tests (no filesystem operations)
 pytestmark = pytest.mark.unit
@@ -104,15 +104,15 @@ class TestDataFactory:
 
     @staticmethod
     def create_mock_config(**kwargs) -> Mock:
-        """Create a standardized mock RoadmapConfig instance.
+        """Create a standardized mock config instance.
 
         Args:
             **kwargs: Override default config properties
 
         Returns:
-            Mock: Configured RoadmapConfig mock
+            Mock: Configured config mock
         """
-        config = Mock(spec=RoadmapConfig)
+        config = Mock()
 
         # Default GitHub configuration
         config.github = kwargs.get(

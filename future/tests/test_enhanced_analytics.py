@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from roadmap.enhanced_analytics import EnhancedAnalyzer
-from roadmap.models import Issue, Milestone, MilestoneStatus, Priority, Status
+from roadmap.domain import Issue, Milestone, MilestoneStatus, Priority, Status
 
 # Mark all tests as unit tests
 pytestmark = pytest.mark.unit

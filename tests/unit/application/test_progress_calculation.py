@@ -5,7 +5,7 @@ Tests the core progress calculation engine for milestones and projects
 as specified in issue 515a927c.
 """
 
-from roadmap.models import (
+from roadmap.domain import (
     Issue,
     Milestone,
     MilestoneStatus,

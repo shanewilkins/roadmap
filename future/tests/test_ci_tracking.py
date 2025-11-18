@@ -15,8 +15,8 @@ from roadmap.ci_tracking import (
     GitBranch,
     GitCommit,
 )
-from roadmap.core import RoadmapCore
-from roadmap.models import Issue, IssueType, Priority, Status
+from roadmap.application.services import RoadmapCore
+from roadmap.domain import Issue, IssueType, Priority, Status
 
 
 class TestCITracker:

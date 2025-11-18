@@ -9,9 +9,10 @@ independent of any framework or external system. Models here should:
 - Be fully testable in isolation
 - Represent core concepts of the problem domain
 
-Models: Issue, Milestone, Project
+Models: Issue, Milestone, Project, Comment
 """
 
+from .comment import Comment
 from .issue import Issue, IssueType, Priority, Status
 from .milestone import Milestone, MilestoneStatus, RiskLevel
 from .project import Project, ProjectStatus
@@ -26,4 +27,5 @@ __all__ = [
     "RiskLevel",
     "Project",
     "ProjectStatus",
+    "Comment",
 ]

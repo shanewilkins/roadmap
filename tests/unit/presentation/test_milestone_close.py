@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.cli import main
+from roadmap.presentation.cli import main
 
 
 @pytest.mark.unit

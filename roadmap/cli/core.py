@@ -17,14 +17,14 @@ from rich.table import Table
 from rich.text import Text
 
 from roadmap.cli.utils import get_console
-from roadmap.core import RoadmapCore
-from roadmap.models import Status
+from roadmap.application.core import RoadmapCore
+from roadmap.domain import Status
 
 console = get_console()
 # Import GitHub client and credential manager at module level so they can be patched in tests
 try:
     from roadmap.credentials import CredentialManager
-    from roadmap.github_client import GitHubClient
+    from roadmap.infrastructure.github import GitHubClient
 except Exception:
     GitHubClient = None
     CredentialManager = None

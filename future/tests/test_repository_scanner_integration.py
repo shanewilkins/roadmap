@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.core import RoadmapCore
-from roadmap.models import Issue, IssueType, Priority, Status
+from roadmap.application.services import RoadmapCore
+from roadmap.domain import Issue, IssueType, Priority, Status
 from roadmap.parser import IssueParser
 from roadmap.repository_scanner import (
     AdvancedRepositoryScanner,

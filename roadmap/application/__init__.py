@@ -14,7 +14,7 @@ Structure:
   - progress.py: Progress/burndown charts
   - burndown.py: Burndown analysis
   - renderers/: Output formatting (ASCII, JSON, HTML)
-- core.py: Main orchestrator
+- core.py: Main orchestrator (RoadmapCore)
 
 Guidelines:
 - Services depend on domain + infrastructure
@@ -22,3 +22,7 @@ Guidelines:
 - Services should be <400 lines each
 - Visualization modules handle output generation
 """
+
+from .core import RoadmapCore
+
+__all__ = ["RoadmapCore"]

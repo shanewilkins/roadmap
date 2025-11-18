@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli import main
-from roadmap.core import RoadmapCore
-from roadmap.models import Milestone, MilestoneStatus, Priority, Status
+from roadmap.presentation.cli import main
+from roadmap.application.core import RoadmapCore
+from roadmap.domain import Milestone, MilestoneStatus, Priority, Status
 
 
 @pytest.fixture

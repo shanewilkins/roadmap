@@ -13,9 +13,12 @@ import click
 from roadmap.cli.utils import get_console
 
 # Import core classes for backward compatibility with tests
-from roadmap.core import RoadmapCore
+from roadmap.application.core import RoadmapCore
 
 console = get_console()
+
+# Flag to track if commands have been registered to avoid duplicate registration
+_commands_registered = False
 
 
 def register_git_commands():
@@ -314,11 +317,17 @@ def _detect_project_context():
     }
 
 
-@click.group(invoke_without_command=True)
+@click.group()
 @click.version_option()
 @click.pass_context
 def main(ctx: click.Context):
     """Roadmap CLI - A command line tool for creating and managing roadmaps."""
+    # Register commands on first invocation if not already done
+    global _commands_registered
+    if not _commands_registered:
+        register_commands()
+        _commands_registered = True
+    
     # Ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below)
     ctx.ensure_object(dict)
@@ -381,8 +390,10 @@ def register_commands():
     # To restore a feature, move it back from future/ and add it here.
 
 
-# Register all commands when module is imported
-register_commands()
+# Note: Commands are now registered on first invocation of main()
+# This avoids circular import issues during module initialization
+#
+# register_commands() is called from within main() on first use
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ from datetime import datetime
 import click
 
 from roadmap.cli.utils import get_console
-from roadmap.models import Status
+from roadmap.domain import Status
 
 console = get_console()
 
@@ -104,7 +104,7 @@ def start_issue(
             console.print("   Status: In Progress", style="yellow")
             # Determine git-branch behavior: CLI flag overrides, otherwise check config
             try:
-                from roadmap.models import RoadmapConfig
+                from roadmap.domain import RoadmapConfig
 
                 cfg = (
                     RoadmapConfig.load_from_file(core.config_file)

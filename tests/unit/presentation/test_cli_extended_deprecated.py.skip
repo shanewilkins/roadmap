@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli import _detect_project_context, _get_current_user, main
+from roadmap.presentation.cli import _detect_project_context, _get_current_user, main
 
 
 @pytest.fixture
