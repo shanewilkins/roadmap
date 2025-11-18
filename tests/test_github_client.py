@@ -36,7 +36,7 @@ class TestGitHubClient:
         assert client.repo == "test_repo"
 
     @patch.dict("os.environ", {}, clear=True)
-    @patch("roadmap.github_client.get_credential_manager")
+    @patch("roadmap.infrastructure.github.get_credential_manager")
     def test_initialization_without_token_raises_error(self, mock_credential_manager):
         """Test that missing token raises error."""
         # Mock credential manager to return None

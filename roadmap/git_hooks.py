@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .core import RoadmapCore
-from .git_integration import GitCommit, GitIntegration
+from .infrastructure.git import GitCommit, GitIntegration
 from .models import Issue, Status
 from .parser import IssueParser
 

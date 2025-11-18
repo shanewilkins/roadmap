@@ -19,3 +19,16 @@ Modules:
 - storage.py: Database persistence layer
 - persistence.py: State persistence utilities
 """
+
+from .git import GitCommit, GitIntegration
+from .github import GitHubAPIError, GitHubClient
+from .storage import DatabaseError, StateManager
+
+__all__ = [
+    "GitHubClient",
+    "GitHubAPIError",
+    "GitCommit",
+    "GitIntegration",
+    "StateManager",
+    "DatabaseError",
+]
