@@ -56,7 +56,9 @@ class TestGitHooksIntegration:
             finally:
                 os.chdir(original_cwd)
 
-    @pytest.mark.skip(reason="Archived feature: CI tracking integration moved to future/")
+    @pytest.mark.skip(
+        reason="Archived feature: CI tracking integration moved to future/"
+    )
     def test_complete_hook_lifecycle_integration(self, git_hooks_repo):
         """Test complete git hook lifecycle with real commits and issue updates."""
         core, repo_path = git_hooks_repo
@@ -263,7 +265,9 @@ class TestGitHooksIntegration:
             )
             assert result.stdout.strip() == branch_name
 
-    @pytest.mark.skip(reason="Archived feature: CI tracking integration moved to future/")
+    @pytest.mark.skip(
+        reason="Archived feature: CI tracking integration moved to future/"
+    )
     def test_post_merge_hook_integration(self, git_hooks_repo):
         """Test post-merge hook integration with merge scenarios."""
         core, repo_path = git_hooks_repo
@@ -370,7 +374,9 @@ class TestGitHooksIntegration:
             # Git commit should succeed even if hook has issues
             assert result.returncode == 0
 
-    @pytest.mark.skip(reason="Archived feature: CI tracking integration moved to future/")
+    @pytest.mark.skip(
+        reason="Archived feature: CI tracking integration moved to future/"
+    )
     def test_hook_performance_integration(self, git_hooks_repo, mock_git_operations):
         """Test git hook performance with multiple commits and issues."""
         core, repo_path = git_hooks_repo
