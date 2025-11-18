@@ -1,11 +1,27 @@
-"""Project management commands.
+"""Project commands module.
 
-Commands for creating and listing projects.
-Currently re-exports from roadmap.cli.project for backward compatibility.
-
-Future: Split into create.py, list.py
+Provides all project management commands:
+- create: Create a new project
+- list: List all projects with optional filtering
+- delete: Delete a project
 """
 
-from roadmap.cli.project import project
+import click
+
+from roadmap.presentation.cli.projects.create import create_project
+from roadmap.presentation.cli.projects.delete import delete_project
+from roadmap.presentation.cli.projects.list import list_projects
+
+
+@click.group()
+def project():
+    """Manage projects (top-level planning documents)."""
+    pass
+
+
+# Register all commands
+project.add_command(create_project, name="create")
+project.add_command(list_projects, name="list")
+project.add_command(delete_project, name="delete")
 
 __all__ = ["project"]

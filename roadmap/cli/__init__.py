@@ -350,12 +350,12 @@ def register_commands():
     # Core v1.0 commands only
     from roadmap.presentation.cli.issues import issue
     from roadmap.presentation.cli.milestones import milestone
+    from roadmap.presentation.cli.projects import project
 
     from .comment import comment
     from .data import data
     from .git_integration import git
     from .progress import progress_reports, recalculate_progress
-    from .project import project
 
     main.add_command(data)
     main.add_command(project)
