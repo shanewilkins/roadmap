@@ -5,11 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from .application.services import (
+    IssueService,
+    MilestoneService,
+    ProjectService,
+)
 from .database import StateManager
 from .error_handling import (
     ErrorHandler,
     ErrorSeverity,
-    FileOperationError,
     ValidationError,
 )
 from .git_integration import GitIntegration
@@ -23,7 +27,7 @@ from .models import (
     RoadmapConfig,
     Status,
 )
-from .parser import IssueParser, MilestoneParser, ProjectParser
+from .parser import IssueParser, MilestoneParser
 from .security import (
     create_secure_directory,
     create_secure_file,
@@ -52,6 +56,15 @@ class RoadmapCore:
 
         # Initialize database manager
         self.db = StateManager(self.roadmap_dir / "state.db")
+
+        # Initialize service layer
+        self.issue_service = IssueService(self.db, self.issues_dir)
+        self.milestone_service = MilestoneService(
+            self.db, self.milestones_dir, self.issues_dir
+        )
+        self.project_service = ProjectService(
+            self.db, self.projects_dir, self.milestones_dir
+        )
 
         # Cache for team members to avoid repeated API calls
         self._team_members_cache = None
@@ -409,23 +422,17 @@ Project notes and additional context.
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        issue = Issue(
+        return self.issue_service.create_issue(
             title=title,
             priority=priority,
             issue_type=issue_type,
-            milestone=milestone or "",
-            labels=labels or [],
+            milestone=milestone,
+            labels=labels,
             assignee=assignee,
             estimated_hours=estimated_hours,
-            depends_on=depends_on or [],
-            blocks=blocks or [],
-            content=f"# {title}\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+            depends_on=depends_on,
+            blocks=blocks,
         )
-
-        issue_path = self.issues_dir / issue.filename
-        IssueParser.save_issue_file(issue, issue_path)
-
-        return issue
 
     def list_issues(
         self,
@@ -439,95 +446,25 @@ Project notes and additional context.
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        issues = []
-        for issue_file in self.issues_dir.glob("*.md"):
-            try:
-                issue = IssueParser.parse_issue_file(issue_file)
-
-                # Apply filters
-                if milestone and issue.milestone != milestone:
-                    continue
-                if status and issue.status != status:
-                    continue
-                if priority and issue.priority != priority:
-                    continue
-                if issue_type and issue.issue_type != issue_type:
-                    continue
-                if assignee and issue.assignee != assignee:
-                    continue
-                if priority and issue.priority != priority:
-                    continue
-                if assignee and issue.assignee != assignee:
-                    continue
-
-                issues.append(issue)
-            except Exception as e:
-                # Log parsing error but continue processing other files
-                error_handler = ErrorHandler()
-                error_handler.handle_error(
-                    FileOperationError(
-                        f"Skipping malformed issue file: {issue_file.name}",
-                        file_path=issue_file,
-                        operation="parse_issue",
-                        severity=ErrorSeverity.LOW,
-                        cause=e,
-                    ),
-                    show_traceback=False,
-                    exit_on_critical=False,
-                )
-                continue
-
-        # Sort by priority then by creation date
-        priority_order = {
-            Priority.CRITICAL: 0,
-            Priority.HIGH: 1,
-            Priority.MEDIUM: 2,
-            Priority.LOW: 3,
-        }
-        issues.sort(key=lambda x: (priority_order.get(x.priority, 999), x.created))
-
-        return issues
+        return self.issue_service.list_issues(
+            milestone=milestone,
+            status=status,
+            priority=priority,
+            issue_type=issue_type,
+            assignee=assignee,
+        )
 
     def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID."""
-        for issue_file in self.issues_dir.glob(f"{issue_id}-*.md"):
-            try:
-                return IssueParser.parse_issue_file(issue_file)
-            except Exception:
-                continue
-        return None
+        return self.issue_service.get_issue(issue_id)
 
     def update_issue(self, issue_id: str, **updates) -> Issue | None:
         """Update an existing issue."""
-        issue = self.get_issue(issue_id)
-        if not issue:
-            return None
-
-        # Update fields
-        for field, value in updates.items():
-            if hasattr(issue, field):
-                setattr(issue, field, value)
-
-        # Update timestamp
-        from .timezone_utils import now_utc
-
-        issue.updated = now_utc()
-
-        # Save updated issue
-        issue_path = self.issues_dir / issue.filename
-        IssueParser.save_issue_file(issue, issue_path)
-
-        return issue
+        return self.issue_service.update_issue(issue_id, **updates)
 
     def delete_issue(self, issue_id: str) -> bool:
         """Delete an issue."""
-        for issue_file in self.issues_dir.glob(f"{issue_id}-*.md"):
-            try:
-                issue_file.unlink()
-                return True
-            except Exception:
-                continue
-        return False
+        return self.issue_service.delete_issue(issue_id)
 
     def create_milestone(
         self, name: str, description: str = "", due_date: datetime | None = None
@@ -536,55 +473,20 @@ Project notes and additional context.
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        milestone = Milestone(
-            name=name,
-            description=description,
-            due_date=due_date,
-            content=f"# {name}\n\n## Description\n\n{description}\n\n## Goals\n\n- [ ] Goal 1\n- [ ] Goal 2\n- [ ] Goal 3",
+        return self.milestone_service.create_milestone(
+            name=name, description=description, due_date=due_date
         )
-
-        milestone_path = self.milestones_dir / milestone.filename
-        MilestoneParser.save_milestone_file(milestone, milestone_path)
-
-        return milestone
 
     def list_milestones(self) -> list[Milestone]:
         """List all milestones."""
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        milestones = []
-        for milestone_file in self.milestones_dir.glob("*.md"):
-            try:
-                milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                milestones.append(milestone)
-            except Exception:
-                continue
-
-        # Sort milestones by due date (earliest first), then by name
-        # Helper function to safely get sortable date
-        def get_sortable_date(milestone):
-            if milestone.due_date is None:
-                return datetime.max
-            # Convert timezone-aware to naive for comparison
-            if milestone.due_date.tzinfo is not None:
-                return milestone.due_date.replace(tzinfo=None)
-            return milestone.due_date
-
-        milestones.sort(key=lambda x: (get_sortable_date(x), x.name))
-        return milestones
+        return self.milestone_service.list_milestones()
 
     def get_milestone(self, name: str) -> Milestone | None:
         """Get a specific milestone by name (searches by YAML name field, not filename)."""
-        # Search through all milestone files to find one with matching name field
-        for milestone_file in self.milestones_dir.glob("*.md"):
-            try:
-                milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                if milestone.name == name:
-                    return milestone
-            except Exception:
-                continue
-        return None
+        return self.milestone_service.get_milestone(name)
 
     def delete_milestone(self, name: str) -> bool:
         """Delete a milestone and unassign all issues from it.
@@ -598,31 +500,7 @@ Project notes and additional context.
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized")
 
-        # Check if milestone exists
-        milestone = self.get_milestone(name)
-        if not milestone:
-            return False
-
-        # Unassign all issues from this milestone
-        issues = self.list_issues(milestone=name)
-        for issue in issues:
-            issue.milestone = None
-            from .timezone_utils import now_utc
-
-            issue.updated = now_utc()
-            issue_path = self.issues_dir / issue.filename
-            IssueParser.save_issue_file(issue, issue_path)
-
-        # Delete the milestone file (find it by searching through files)
-        for milestone_file in self.milestones_dir.glob("*.md"):
-            try:
-                test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                if test_milestone.name == name:
-                    milestone_file.unlink()
-                    return True
-            except Exception:
-                continue
-        return False
+        return self.milestone_service.delete_milestone(name)
 
     def update_milestone(
         self,
@@ -647,39 +525,16 @@ Project notes and additional context.
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized")
 
-        # Get the existing milestone
-        milestone = self.get_milestone(name)
-        if not milestone:
-            return False
-
-        # Update fields if provided
-        if description is not None:
-            milestone.description = description
-
-        if clear_due_date:
-            milestone.due_date = None
-        elif due_date is not None:
-            milestone.due_date = due_date
-
-        if status is not None:
-            from .models import MilestoneStatus
-
-            milestone.status = MilestoneStatus(status)
-
-        from .timezone_utils import now_utc
-
-        milestone.updated = now_utc()
-
-        # Save the updated milestone (find the actual file by searching)
-        for milestone_file in self.milestones_dir.glob("*.md"):
-            try:
-                test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                if test_milestone.name == name:
-                    MilestoneParser.save_milestone_file(milestone, milestone_file)
-                    return True
-            except Exception:
-                continue
-        return False
+        return (
+            self.milestone_service.update_milestone(
+                name=name,
+                description=description,
+                due_date=due_date,
+                clear_due_date=clear_due_date,
+                status=status,
+            )
+            is not None
+        )
 
     def assign_issue_to_milestone(self, issue_id: str, milestone_name: str) -> bool:
         """Assign an issue to a milestone."""
@@ -703,25 +558,7 @@ Project notes and additional context.
 
     def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
         """Get progress statistics for a milestone."""
-        issues = self.list_issues(milestone=milestone_name)
-
-        if not issues:
-            return {"total": 0, "completed": 0, "progress": 0.0, "by_status": {}}
-
-        total = len(issues)
-        completed = len([i for i in issues if i.status == Status.DONE])
-        progress = (completed / total) * 100 if total > 0 else 0.0
-
-        by_status = {}
-        for status in Status:
-            by_status[status.value] = len([i for i in issues if i.status == status])
-
-        return {
-            "total": total,
-            "completed": completed,
-            "progress": progress,
-            "by_status": by_status,
-        }
+        return self.milestone_service.get_milestone_progress(milestone_name)
 
     # Project management methods
     def list_projects(self) -> list[Project]:
@@ -729,47 +566,18 @@ Project notes and additional context.
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        projects = []
-        for project_file in self.projects_dir.glob("*.md"):
-            try:
-                project = ProjectParser.parse_project_file(project_file)
-                projects.append(project)
-            except Exception:
-                continue
-
-        projects.sort(key=lambda x: x.created)
-        return projects
+        return self.project_service.list_projects()
 
     def get_project(self, project_id: str) -> Project | None:
         """Get a specific project by ID."""
-        for project_file in self.projects_dir.glob("*.md"):
-            try:
-                project = ProjectParser.parse_project_file(project_file)
-                if project.id.startswith(project_id):
-                    return project
-            except Exception:
-                continue
-        return None
+        return self.project_service.get_project(project_id)
 
     def save_project(self, project: Project) -> bool:
         """Save an updated project to disk."""
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized")
 
-        # Find and update the existing project file
-        for project_file in self.projects_dir.glob("*.md"):
-            try:
-                test_project = ProjectParser.parse_project_file(project_file)
-                if test_project.id == project.id:
-                    ProjectParser.save_project_file(project, project_file)
-                    return True
-            except Exception:
-                continue
-
-        # If not found, create new file
-        project_path = self.projects_dir / project.filename
-        ProjectParser.save_project_file(project, project_path)
-        return True
+        return self.project_service.save_project(project)
 
     def get_backlog_issues(self) -> list[Issue]:
         """Get all issues not assigned to any milestone (backlog)."""
