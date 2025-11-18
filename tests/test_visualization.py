@@ -88,7 +88,7 @@ class TestStatusDistributionChart:
             ),
         ]
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_status_distribution_chart_success(
         self, mock_plt, chart_generator
     ):
@@ -126,7 +126,7 @@ class TestStatusDistributionChart:
         # Chart generation may use different methods based on format
         assert "status_distribution" in str(result)
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_status_distribution_bar_chart(self, mock_plt, chart_generator):
         """Test bar chart variant of status distribution."""
         mock_fig = Mock()
@@ -179,7 +179,7 @@ class TestStatusDistributionChart:
             # Any of these errors is acceptable for invalid input
             pass
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_status_distribution_chart_title_set(
         self, mock_plt, chart_generator
     ):
@@ -250,7 +250,7 @@ class TestBurndownChart:
 
         return milestone, issues
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_burndown_chart_success(
         self, mock_plt, chart_generator, milestone_with_issues
     ):
@@ -268,7 +268,7 @@ class TestBurndownChart:
         assert result is not None
         assert "burndown_chart" in str(result)
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_burndown_chart_with_milestone_name(
         self, mock_plt, chart_generator, milestone_with_issues
     ):
@@ -331,11 +331,10 @@ class TestVelocityChart:
             )
             for i in range(1, 6)
         ]
-        return issues
 
-    @patch("roadmap.visualization.DataAnalyzer")
-    @patch("roadmap.visualization.DataFrameAdapter")
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.DataAnalyzer")
+    @patch("roadmap.application.visualization.charts.DataFrameAdapter")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_velocity_chart_success(
         self, mock_plt, mock_adapter, mock_analyzer, chart_generator, velocity_issues
     ):
@@ -362,9 +361,9 @@ class TestVelocityChart:
         assert result is not None
         assert "velocity_chart" in str(result)
 
-    @patch("roadmap.visualization.DataAnalyzer")
-    @patch("roadmap.visualization.DataFrameAdapter")
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.DataAnalyzer")
+    @patch("roadmap.application.visualization.charts.DataFrameAdapter")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_velocity_chart_custom_period(
         self, mock_plt, mock_adapter, mock_analyzer, chart_generator, velocity_issues
     ):
@@ -444,7 +443,7 @@ class TestMilestoneProgressChart:
             ),
         ]
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_milestone_progress_chart_success(
         self, mock_plt, chart_generator, milestones_with_progress
     ):
@@ -496,7 +495,7 @@ class TestMilestoneProgressChart:
         with pytest.raises(VisualizationError):  # Accept any VisualizationError
             chart_generator.generate_milestone_progress_chart([], [])
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_milestone_progress_chart_overdue_highlighting(
         self, mock_plt, chart_generator, milestones_with_progress
     ):
@@ -577,9 +576,9 @@ class TestTeamWorkloadChart:
             ),
         ]
 
-    @patch("roadmap.visualization.DataAnalyzer")
-    @patch("roadmap.visualization.DataFrameAdapter")
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.DataAnalyzer")
+    @patch("roadmap.application.visualization.charts.DataFrameAdapter")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_team_workload_chart_success(
         self, mock_plt, mock_adapter, mock_analyzer, chart_generator, team_issues
     ):
@@ -643,9 +642,9 @@ class TestTeamWorkloadChart:
             # Any of these is acceptable for this edge case
             pass
 
-    @patch("roadmap.visualization.DataAnalyzer")
-    @patch("roadmap.visualization.DataFrameAdapter")
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.DataAnalyzer")
+    @patch("roadmap.application.visualization.charts.DataFrameAdapter")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_generate_team_workload_chart_grouping(
         self, mock_plt, mock_adapter, mock_analyzer, chart_generator, team_issues
     ):
@@ -708,8 +707,8 @@ class TestDashboardGenerator:
             assert generator.artifacts_dir.exists()
             assert generator.artifacts_dir.is_dir()
 
-    @patch("roadmap.visualization.open", create=True)
-    @patch("roadmap.visualization.Path.exists")
+    @patch("roadmap.application.visualization.charts.open", create=True)
+    @patch("roadmap.application.visualization.charts.Path.exists")
     def test_generate_stakeholder_dashboard_success(
         self, mock_path_exists, mock_open, dashboard_generator
     ):
@@ -769,7 +768,7 @@ class TestVisualizationErrorHandling:
         with tempfile.TemporaryDirectory() as temp_dir:
             yield ChartGenerator(Path(temp_dir))
 
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_matplotlib_save_error_handling(self, mock_plt, chart_generator):
         """Test handling of matplotlib save errors."""
         mock_fig = Mock()
@@ -796,7 +795,7 @@ class TestVisualizationErrorHandling:
         ]
 
         # Should raise exception during save
-        with pytest.raises(Exception):
+        with pytest.raises(VisualizationError):
             chart_generator.generate_status_distribution_chart(sample_issues)
 
     def test_invalid_data_types(self, chart_generator):
@@ -860,9 +859,9 @@ class TestVisualizationIntegration:
 
         return issues, milestones
 
-    @patch("roadmap.visualization.DataAnalyzer")
-    @patch("roadmap.visualization.DataFrameAdapter")
-    @patch("roadmap.visualization.plt")
+    @patch("roadmap.application.visualization.charts.DataAnalyzer")
+    @patch("roadmap.application.visualization.charts.DataFrameAdapter")
+    @patch("roadmap.application.visualization.charts.plt")
     def test_multiple_chart_generation_workflow(
         self,
         mock_plt,

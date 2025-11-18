@@ -12,11 +12,17 @@ Services are used by:
 - CLI layer (command implementations)
 
 Imported from:
-from roadmap.application.services import IssueService, MilestoneService, ProjectService
+from roadmap.application.services import IssueService, MilestoneService, ProjectService, VisualizationService
 """
 
 from .issue_service import IssueService
 from .milestone_service import MilestoneService
 from .project_service import ProjectService
+from .visualization_service import VisualizationService
 
-__all__ = ["IssueService", "MilestoneService", "ProjectService"]
+__all__ = [
+    "IssueService",
+    "MilestoneService",
+    "ProjectService",
+    "VisualizationService",
+]
