@@ -12,11 +12,10 @@ import click
 # Initialize console for rich output
 from roadmap.cli.utils import get_console
 
-console = get_console()
-
-
 # Import core classes for backward compatibility with tests
 from roadmap.core import RoadmapCore
+
+console = get_console()
 
 
 def register_git_commands():
@@ -349,10 +348,11 @@ def register_commands():
 
     # Register command groups with lazy loading
     # Core v1.0 commands only
+    from roadmap.presentation.cli.issues import issue
+
     from .comment import comment
     from .data import data
     from .git_integration import git
-    from .issue import issue
     from .milestone import milestone
     from .progress import progress_reports, recalculate_progress
     from .project import project
