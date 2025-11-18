@@ -4,7 +4,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
-from tests.test_utils import strip_ansi
+from tests.unit.shared.test_utils import strip_ansi
 
 
 @pytest.fixture

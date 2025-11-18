@@ -1,4 +1,4 @@
-"""Shared test fixtures and configuration for CLI tests."""
+"""Shared test fixtures and configuration for presentation (CLI) layer tests."""
 
 import os
 import tempfile
@@ -8,7 +8,6 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.cli import main
-from roadmap.models import Priority, Status
 
 
 @pytest.fixture(autouse=True)
@@ -46,8 +45,6 @@ def reset_cli_state():
 @pytest.fixture
 def cli_runner():
     """Create an isolated CLI runner for testing."""
-    from click.testing import CliRunner
-
     return CliRunner()
 
 
@@ -98,30 +95,3 @@ def mock_github_client():
             "html_url": "https://github.com/test/test/milestones/1",
         }
         yield mock
-
-
-@pytest.fixture
-def sample_issue():
-    """Provide a sample issue for testing."""
-    from roadmap.models import Issue, IssueType
-
-    return Issue(
-        id="issue-1",
-        title="Sample Issue",
-        issue_type=IssueType.FEATURE,
-        status=Status.TODO,
-        priority=Priority.MEDIUM,
-        assignee="test-user",
-        estimated_hours=5.0,
-    )
-
-
-@pytest.fixture
-def sample_milestone():
-    """Provide a sample milestone for testing."""
-    from roadmap.models import Milestone
-
-    return Milestone(
-        name="Sample Milestone",
-        due_date="2024-12-31",
-    )

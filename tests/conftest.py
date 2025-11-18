@@ -7,8 +7,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from .test_data_factory import TestDataFactory
-from .test_utils import (
+from .unit.domain.test_data_factory import TestDataFactory
+from .unit.shared.test_utils import (
     assert_in_output,
     assert_output_contains,
     clean_cli_output,
