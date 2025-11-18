@@ -1,11 +1,10 @@
 """Progress display commands.
 
 Commands for displaying project and issue progress.
-Currently re-exports from roadmap.cli.progress for backward compatibility.
-
-Future: Move to show.py
+Organized into recalculate and reports command groups.
 """
 
-from roadmap.cli.progress import progress_reports, recalculate_progress
+from .recalculate import recalculate_progress
+from .reports import progress_reports
 
 __all__ = ["progress_reports", "recalculate_progress"]

@@ -1,11 +1,8 @@
-"""Git integration commands.
+"""Git integration and workflow commands.
 
-Commands for git hooks and git operations.
-Currently re-exports from roadmap.cli.git_integration for backward compatibility.
-
-Future: Move to hooks.py
+Commands for git operations and Git-roadmap integration.
 """
 
-from roadmap.cli.git_integration import git
+from .commands import git
 
 __all__ = ["git"]
