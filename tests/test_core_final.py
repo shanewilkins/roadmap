@@ -252,6 +252,7 @@ class TestRoadmapCoreUncoveredLines:
             user = core.get_current_user_from_git()
             assert user == "git_user@example.com"
 
+    @pytest.mark.skip(reason="Archived feature: identity module moved to future/")
     def test_validate_assignee_with_cached_team_members(self, core):
         """Test validate_assignee using cached team members."""
         # Mock identity manager to allow the identity system to handle validation
@@ -315,6 +316,7 @@ class TestRoadmapCoreUncoveredLines:
             assert is_valid is True
             assert error == ""
 
+    @pytest.mark.skip(reason="Archived feature: identity module moved to future/")
     def test_validate_assignee_with_exception(self, core):
         """Test validate_assignee when GitHub validation raises exception."""
         # Mock identity manager to fall back to GitHub

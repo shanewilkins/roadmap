@@ -13,23 +13,15 @@ def cli_runner():
     "cmd",
     [
         "--help",
-        "activity",
-        "analytics",
-        "broadcast",
-        "capacity-forecast",
-        "dashboard",
+        # V1.0 core commands
         "data",
         "init",
         "issue",
         "milestone",
-        "notifications",
         "project",
-        "smart-assign",
         "status",
-        "team",
-        "user",
-        "workload-analysis",
-        "handoff",
+        # Archived commands (post-1.0 features) are no longer available
+        # See future/FUTURE_FEATURES.md for restoration details
     ],
 )
 def test_command_help(cli_runner: CliRunner, cmd: str):

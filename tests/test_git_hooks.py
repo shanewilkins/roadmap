@@ -184,6 +184,9 @@ class TestGitHookManager:
         assert updated_issue.status == Status.TODO  # Should remain unchanged
         assert updated_issue.progress_percentage is None  # Should remain unchanged
 
+    @pytest.mark.skip(
+        reason="Tests archived CI tracking functionality (post-1.0 feature moved to future/)"
+    )
     def test_handle_post_checkout(self, temp_git_repo):
         """Test post-checkout hook handler."""
         _, core = temp_git_repo
@@ -628,6 +631,9 @@ class TestGitHooksIntegration:
         assert results["status-automation"] is True
         assert results["progress-tracking"] is True
 
+    @pytest.mark.skip(
+        reason="Tests archived CI tracking functionality (post-1.0 feature moved to future/)"
+    )
     def test_hook_execution_simulation(self, git_repo_with_roadmap):
         """Test simulated hook execution."""
         _, core = git_repo_with_roadmap
@@ -658,6 +664,9 @@ class TestGitHooksIntegration:
         assert updated_issue.status == Status.IN_PROGRESS
         assert len(updated_issue.git_commits) >= 1
 
+    @pytest.mark.skip(
+        reason="Tests archived CI tracking functionality (post-1.0 feature moved to future/)"
+    )
     def test_branch_context_management(self, git_repo_with_roadmap):
         """Test branch context file management."""
         _, core = git_repo_with_roadmap

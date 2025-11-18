@@ -1,0 +1,1813 @@
+{
+  "timestamp": "2025-11-18",
+  "summary": {
+    "total_modules": 55,
+    "statistics": {
+      "core_1_0": {
+        "count": 7,
+        "total_lines": 5222,
+        "total_bytes": 184650,
+        "avg_lines": 746
+      },
+      "post_1_0_candidates": {
+        "count": 12,
+        "total_lines": 7788,
+        "total_bytes": 293027,
+        "avg_lines": 649
+      },
+      "utility": {
+        "count": 6,
+        "total_lines": 2227,
+        "total_bytes": 74849,
+        "avg_lines": 371
+      },
+      "unknown": {
+        "count": 30,
+        "total_lines": 15075,
+        "total_bytes": 521144,
+        "avg_lines": 502
+      }
+    }
+  },
+  "modules_by_category": {
+    "core_1_0": {
+      "models": {
+        "file": "models.py",
+        "lines": 490,
+        "imports": [
+          "uuid",
+          "yaml"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "enum": [
+            "Enum"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "pydantic": [
+            "BaseModel",
+            "Field"
+          ],
+          "file_utils": [
+            "ensure_directory_exists"
+          ],
+          "security": [
+            "create_secure_file",
+            "validate_path"
+          ],
+          "timezone_utils": [
+            "now_utc"
+          ]
+        },
+        "size_bytes": 17605
+      },
+      "database": {
+        "file": "database.py",
+        "lines": 1222,
+        "imports": [
+          "hashlib",
+          "json",
+          "sqlite3",
+          "threading",
+          "yaml"
+        ],
+        "from_imports": {
+          "contextlib": [
+            "contextmanager"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "logging": [
+            "get_logger"
+          ]
+        },
+        "size_bytes": 46014
+      },
+      "core": {
+        "file": "core.py",
+        "lines": 1354,
+        "imports": [
+          "os",
+          "re",
+          "sqlite3",
+          "uuid"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any",
+            "Optional"
+          ],
+          "database": [
+            "StateManager"
+          ],
+          "error_handling": [
+            "ErrorHandler",
+            "ErrorSeverity",
+            "FileOperationError",
+            "ValidationError"
+          ],
+          "git_integration": [
+            "GitIntegration"
+          ],
+          "models": [
+            "Issue",
+            "IssueType",
+            "Milestone",
+            "MilestoneStatus",
+            "Priority",
+            "Project",
+            "RoadmapConfig",
+            "Status"
+          ],
+          "parser": [
+            "IssueParser",
+            "MilestoneParser",
+            "ProjectParser"
+          ],
+          "security": [
+            "create_secure_directory",
+            "create_secure_file"
+          ],
+          "rich.console": [
+            "Console"
+          ],
+          "rich.progress": [
+            "Progress",
+            "SpinnerColumn",
+            "TextColumn"
+          ],
+          "git_hooks": [
+            "GitHookManager"
+          ],
+          "timezone_utils": [
+            "now_utc"
+          ],
+          "credentials": [
+            "get_credential_manager"
+          ],
+          "github_client": [
+            "GitHubClient"
+          ],
+          "identity": [
+            "IdentityManager"
+          ]
+        },
+        "size_bytes": 47468
+      },
+      "parser": {
+        "file": "parser.py",
+        "lines": 391,
+        "imports": [
+          "re",
+          "uuid",
+          "yaml"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "datetime_parser": [
+            "parse_datetime"
+          ],
+          "file_utils": [
+            "ensure_directory_exists",
+            "file_exists_check"
+          ],
+          "models": [
+            "Issue",
+            "IssueType",
+            "Milestone",
+            "MilestoneStatus",
+            "Priority",
+            "Project",
+            "ProjectStatus",
+            "Status"
+          ],
+          "persistence": [
+            "enhanced_persistence"
+          ],
+          "timezone_utils": [
+            "now_utc"
+          ]
+        },
+        "size_bytes": 15188
+      },
+      "datetime_parser": {
+        "file": "datetime_parser.py",
+        "lines": 275,
+        "imports": [
+          "re"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime",
+            "timezone"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "timezone_utils": [
+            "ZONEINFO_AVAILABLE",
+            "ensure_timezone_aware",
+            "get_timezone_manager"
+          ],
+          "zoneinfo": [
+            "ZoneInfo"
+          ],
+          "backports.zoneinfo": [
+            "ZoneInfo"
+          ]
+        },
+        "size_bytes": 9240
+      },
+      "file_utils": {
+        "file": "file_utils.py",
+        "lines": 386,
+        "imports": [
+          "logging",
+          "os",
+          "shutil",
+          "tempfile"
+        ],
+        "from_imports": {
+          "contextlib": [
+            "contextmanager"
+          ],
+          "pathlib": [
+            "Path"
+          ]
+        },
+        "size_bytes": 11406
+      },
+      "cli.core": {
+        "file": "cli/core.py",
+        "lines": 1104,
+        "imports": [
+          "click",
+          "getpass",
+          "json",
+          "os",
+          "re",
+          "shutil",
+          "subprocess",
+          "yaml"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "rich.progress": [
+            "BarColumn",
+            "Progress",
+            "TextColumn"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "rich.text": [
+            "Text"
+          ],
+          "roadmap.cli.utils": [
+            "get_console"
+          ],
+          "roadmap.core": [
+            "RoadmapCore"
+          ],
+          "roadmap.models": [
+            "Status"
+          ],
+          "roadmap.credentials": [
+            "CredentialManager"
+          ],
+          "roadmap.github_client": [
+            "GitHubClient"
+          ],
+          "collections": [
+            "Counter"
+          ]
+        },
+        "size_bytes": 37729
+      }
+    },
+    "post_1_0_candidates": {
+      "timezone_migration": {
+        "file": "timezone_migration.py",
+        "lines": 669,
+        "imports": [
+          "shutil",
+          "yaml"
+        ],
+        "from_imports": {
+          "pathlib": [
+            "Path"
+          ],
+          "rich.console": [
+            "Console"
+          ],
+          "rich.progress": [
+            "Progress"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "file_utils": [
+            "ensure_directory_exists"
+          ],
+          "models": [
+            "Issue",
+            "Milestone"
+          ],
+          "timezone_utils": [
+            "migrate_naive_datetime",
+            "now_utc"
+          ]
+        },
+        "size_bytes": 28545
+      },
+      "ci_tracking": {
+        "file": "ci_tracking.py",
+        "lines": 782,
+        "imports": [
+          "logging",
+          "re",
+          "subprocess"
+        ],
+        "from_imports": {
+          "dataclasses": [
+            "dataclass",
+            "field"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "git_integration": [
+            "GitIntegration"
+          ],
+          "models": [
+            "Status"
+          ],
+          "parser": [
+            "IssueParser"
+          ]
+        },
+        "size_bytes": 26521
+      },
+      "predictive": {
+        "file": "predictive.py",
+        "lines": 1354,
+        "imports": [
+          "json",
+          "statistics"
+        ],
+        "from_imports": {
+          "dataclasses": [
+            "dataclass"
+          ],
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "enum": [
+            "Enum"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "analytics": [
+            "GitHistoryAnalyzer"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "datetime_parser": [
+            "parse_datetime"
+          ],
+          "models": [
+            "Issue",
+            "Priority",
+            "Status"
+          ]
+        },
+        "size_bytes": 52315
+      },
+      "curation": {
+        "file": "curation.py",
+        "lines": 920,
+        "imports": [
+          "csv",
+          "json",
+          "yaml"
+        ],
+        "from_imports": {
+          "dataclasses": [
+            "dataclass"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "enum": [
+            "Enum"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "roadmap.core": [
+            "RoadmapCore"
+          ],
+          "roadmap.models": [
+            "Issue",
+            "IssueType",
+            "Milestone",
+            "MilestoneStatus",
+            "Priority",
+            "Status"
+          ],
+          "roadmap.timezone_utils": [
+            "ensure_timezone_aware",
+            "now_utc"
+          ]
+        },
+        "size_bytes": 34640
+      },
+      "repository_scanner": {
+        "file": "repository_scanner.py",
+        "lines": 937,
+        "imports": [
+          "json",
+          "logging",
+          "re",
+          "subprocess"
+        ],
+        "from_imports": {
+          "concurrent.futures": [
+            "ThreadPoolExecutor",
+            "as_completed"
+          ],
+          "dataclasses": [
+            "dataclass",
+            "field"
+          ],
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "bulk_operations": [
+            "BulkOperationResult",
+            "BulkOperations"
+          ],
+          "ci_tracking": [
+            "CITracker"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "file_utils": [
+            "ensure_directory_exists"
+          ],
+          "git_integration": [
+            "GitIntegration"
+          ],
+          "models": [
+            "Issue",
+            "IssueType",
+            "Priority",
+            "Status"
+          ],
+          "parser": [
+            "IssueParser"
+          ]
+        },
+        "size_bytes": 36482
+      },
+      "enhanced_analytics": {
+        "file": "enhanced_analytics.py",
+        "lines": 493,
+        "imports": [
+          "pandas"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "data_utils": [
+            "DataAnalyzer",
+            "DataFrameAdapter"
+          ],
+          "git_integration": [
+            "GitIntegration"
+          ]
+        },
+        "size_bytes": 18216
+      },
+      "analytics": {
+        "file": "analytics.py",
+        "lines": 730,
+        "imports": [
+          "json",
+          "statistics"
+        ],
+        "from_imports": {
+          "collections": [
+            "Counter",
+            "defaultdict"
+          ],
+          "dataclasses": [
+            "dataclass"
+          ],
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "datetime_parser": [
+            "parse_datetime"
+          ],
+          "git_integration": [
+            "GitCommit",
+            "GitIntegration"
+          ],
+          "models": [
+            "Issue",
+            "Status"
+          ]
+        },
+        "size_bytes": 27122
+      },
+      "webhook_server": {
+        "file": "webhook_server.py",
+        "lines": 303,
+        "imports": [
+          "asyncio",
+          "hashlib",
+          "hmac",
+          "json",
+          "logging",
+          "os",
+          "sys"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "aiohttp": [
+            "web"
+          ],
+          "aiohttp.web": [
+            "Application",
+            "Request",
+            "Response"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "enhanced_github_integration": [
+            "EnhancedGitHubIntegration"
+          ]
+        },
+        "size_bytes": 10375
+      },
+      "bulk_operations": {
+        "file": "bulk_operations.py",
+        "lines": 502,
+        "imports": [
+          "json"
+        ],
+        "from_imports": {
+          "collections.abc": [
+            "Callable"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "models": [
+            "Issue",
+            "Milestone"
+          ],
+          "parser": [
+            "IssueParser",
+            "MilestoneParser"
+          ],
+          "persistence": [
+            "YAMLRecoveryManager",
+            "enhanced_persistence"
+          ]
+        },
+        "size_bytes": 19340
+      },
+      "identity": {
+        "file": "identity.py",
+        "lines": 410,
+        "imports": [
+          "logging",
+          "re",
+          "yaml"
+        ],
+        "from_imports": {
+          "dataclasses": [
+            "dataclass",
+            "field"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "difflib": [
+            "SequenceMatcher"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "file_utils": [
+            "ensure_directory_exists",
+            "file_exists_check"
+          ]
+        },
+        "size_bytes": 15720
+      },
+      "enhanced_github_integration": {
+        "file": "enhanced_github_integration.py",
+        "lines": 648,
+        "imports": [
+          "re"
+        ],
+        "from_imports": {
+          "typing": [
+            "Any"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "datetime_parser": [
+            "parse_github_datetime"
+          ],
+          "error_handling": [
+            "ErrorHandler",
+            "GitOperationError",
+            "NetworkError"
+          ],
+          "git_integration": [
+            "GitBranch",
+            "GitCommit",
+            "GitIntegration"
+          ],
+          "github_client": [
+            "GitHubAPIError",
+            "GitHubClient"
+          ],
+          "models": [
+            "Issue",
+            "Status"
+          ]
+        },
+        "size_bytes": 22760
+      },
+      "cli.analytics": {
+        "file": "cli/analytics.py",
+        "lines": 40,
+        "imports": [
+          "click",
+          "os"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ]
+        },
+        "size_bytes": 991
+      }
+    },
+    "utility": {
+      "timezone_utils": {
+        "file": "timezone_utils.py",
+        "lines": 398,
+        "imports": [
+          "os",
+          "sys"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime",
+            "timezone",
+            "tzinfo"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "zoneinfo": [
+            "ZoneInfo",
+            "available_timezones"
+          ],
+          "backports.zoneinfo": [
+            "ZoneInfo"
+          ]
+        },
+        "size_bytes": 14500
+      },
+      "logging": {
+        "file": "logging.py",
+        "lines": 184,
+        "imports": [
+          "logging",
+          "logging.config",
+          "logging.handlers",
+          "structlog",
+          "sys"
+        ],
+        "from_imports": {
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ]
+        },
+        "size_bytes": 5346
+      },
+      "error_handling": {
+        "file": "error_handling.py",
+        "lines": 485,
+        "imports": [
+          "logging",
+          "sys"
+        ],
+        "from_imports": {
+          "collections.abc": [
+            "Callable"
+          ],
+          "contextlib": [
+            "contextmanager"
+          ],
+          "enum": [
+            "Enum"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "rich.console": [
+            "Console"
+          ],
+          "rich.panel": [
+            "Panel"
+          ]
+        },
+        "size_bytes": 14828
+      },
+      "data_utils": {
+        "file": "data_utils.py",
+        "lines": 579,
+        "imports": [
+          "pandas"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "models": [
+            "Issue",
+            "IssueType",
+            "Milestone",
+            "MilestoneStatus",
+            "Priority",
+            "Status"
+          ]
+        },
+        "size_bytes": 20984
+      },
+      "validation": {
+        "file": "validation.py",
+        "lines": 500,
+        "imports": [
+          "re"
+        ],
+        "from_imports": {
+          "collections.abc": [
+            "Callable"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "enum": [
+            "Enum"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "error_handling": [
+            "ErrorSeverity",
+            "ValidationError"
+          ],
+          "models": [
+            "IssueType",
+            "MilestoneStatus",
+            "Priority",
+            "Status"
+          ],
+          "datetime_parser": [
+            "parse_datetime"
+          ]
+        },
+        "size_bytes": 16924
+      },
+      "cli.utils": {
+        "file": "cli/utils.py",
+        "lines": 81,
+        "imports": [
+          "os",
+          "sys"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ]
+        },
+        "size_bytes": 2267
+      }
+    },
+    "unknown": {
+      "git_integration": {
+        "file": "git_integration.py",
+        "lines": 656,
+        "imports": [
+          "re",
+          "subprocess"
+        ],
+        "from_imports": {
+          "dataclasses": [
+            "dataclass"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "datetime_parser": [
+            "parse_datetime"
+          ],
+          "models": [
+            "Issue"
+          ]
+        },
+        "size_bytes": 23925
+      },
+      "persistence": {
+        "file": "persistence.py",
+        "lines": 370,
+        "imports": [
+          "shutil",
+          "yaml"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "datetime_parser": [
+            "parse_datetime"
+          ],
+          "file_utils": [
+            "ensure_directory_exists"
+          ],
+          "models": [
+            "Issue",
+            "Milestone"
+          ],
+          "validation": [
+            "validate_frontmatter_structure"
+          ]
+        },
+        "size_bytes": 13620
+      },
+      "version": {
+        "file": "version.py",
+        "lines": 328,
+        "imports": [
+          "re",
+          "subprocess",
+          "toml"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "models": [
+            "Issue",
+            "Milestone"
+          ]
+        },
+        "size_bytes": 11309
+      },
+      "credentials": {
+        "file": "credentials.py",
+        "lines": 355,
+        "imports": [
+          "keyring",
+          "os",
+          "platform",
+          "subprocess"
+        ],
+        "from_imports": {},
+        "size_bytes": 11782
+      },
+      "security": {
+        "file": "security.py",
+        "lines": 442,
+        "imports": [
+          "logging",
+          "os",
+          "re",
+          "tempfile",
+          "time"
+        ],
+        "from_imports": {
+          "contextlib": [
+            "contextmanager"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "file_utils": [
+            "ensure_directory_exists"
+          ]
+        },
+        "size_bytes": 13406
+      },
+      "__init__": {
+        "file": "__init__.py",
+        "lines": 27,
+        "imports": [],
+        "from_imports": {
+          "core": [
+            "RoadmapCore"
+          ],
+          "credentials": [
+            "CredentialManager",
+            "CredentialManagerError"
+          ],
+          "github_client": [
+            "GitHubAPIError",
+            "GitHubClient"
+          ],
+          "models": [
+            "Issue",
+            "Milestone",
+            "MilestoneStatus",
+            "Priority",
+            "RoadmapConfig",
+            "Status"
+          ],
+          "parser": [
+            "FrontmatterParser",
+            "IssueParser",
+            "MilestoneParser"
+          ]
+        },
+        "size_bytes": 710
+      },
+      "git_hooks": {
+        "file": "git_hooks.py",
+        "lines": 684,
+        "imports": [
+          "json",
+          "shutil",
+          "subprocess"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "git_integration": [
+            "GitCommit",
+            "GitIntegration"
+          ],
+          "models": [
+            "Issue",
+            "Status"
+          ],
+          "parser": [
+            "IssueParser"
+          ],
+          "ci_tracking": [
+            "CIAutomation",
+            "CITracker",
+            "CITrackingConfig"
+          ]
+        },
+        "size_bytes": 24675
+      },
+      "visualization": {
+        "file": "visualization.py",
+        "lines": 1488,
+        "imports": [
+          "matplotlib.dates",
+          "matplotlib.pyplot",
+          "pandas",
+          "plotly.graph_objects",
+          "seaborn",
+          "warnings"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "matplotlib.patches": [
+            "Circle"
+          ],
+          "plotly.subplots": [
+            "make_subplots"
+          ],
+          "data_utils": [
+            "DataAnalyzer",
+            "DataFrameAdapter"
+          ],
+          "models": [
+            "Issue",
+            "Milestone",
+            "Status"
+          ]
+        },
+        "size_bytes": 52210
+      },
+      "file_locking": {
+        "file": "file_locking.py",
+        "lines": 319,
+        "imports": [
+          "errno",
+          "fcntl",
+          "json",
+          "os",
+          "tempfile",
+          "time"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "threading": [
+            "Lock"
+          ],
+          "typing": [
+            "Any",
+            "ContextManager"
+          ],
+          "file_utils": [
+            "ensure_directory_exists"
+          ]
+        },
+        "size_bytes": 10408
+      },
+      "cli": {
+        "file": "cli.py",
+        "lines": 104,
+        "imports": [
+          "click"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ],
+          "roadmap.cli.analytics": [
+            "analytics"
+          ],
+          "roadmap.cli.ci": [
+            "ci"
+          ],
+          "roadmap.cli.core": [
+            "init",
+            "status"
+          ],
+          "roadmap.cli.data": [
+            "data"
+          ],
+          "roadmap.cli.deprecated": [
+            "register_deprecated_commands"
+          ],
+          "roadmap.cli.git_integration": [
+            "git"
+          ],
+          "roadmap.cli.issue": [
+            "issue"
+          ],
+          "roadmap.cli.progress": [
+            "progress_reports",
+            "recalculate_progress"
+          ],
+          "roadmap.cli.project": [
+            "project"
+          ],
+          "roadmap.cli.team": [
+            "team"
+          ],
+          "roadmap.cli.user": [
+            "user"
+          ],
+          "roadmap.core": [
+            "RoadmapCore"
+          ]
+        },
+        "size_bytes": 3206
+      },
+      "git_hooks_v2": {
+        "file": "git_hooks_v2.py",
+        "lines": 365,
+        "imports": [],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "git": [
+            "Repo"
+          ],
+          "database": [
+            "get_state_manager"
+          ],
+          "logging": [
+            "get_logger",
+            "log_operation"
+          ]
+        },
+        "size_bytes": 11467
+      },
+      "data_processing": {
+        "file": "data_processing.py",
+        "lines": 564,
+        "imports": [
+          "pandas",
+          "statistics"
+        ],
+        "from_imports": {
+          "collections": [
+            "Counter",
+            "defaultdict"
+          ],
+          "collections.abc": [
+            "Callable"
+          ],
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "models": [
+            "Issue",
+            "IssueType",
+            "Priority",
+            "Status"
+          ]
+        },
+        "size_bytes": 20395
+      },
+      "settings": {
+        "file": "settings.py",
+        "lines": 320,
+        "imports": [
+          "os"
+        ],
+        "from_imports": {
+          "pathlib": [
+            "Path"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "dynaconf": [
+            "Dynaconf",
+            "Validator"
+          ],
+          "logging": [
+            "get_logger"
+          ]
+        },
+        "size_bytes": 8956
+      },
+      "progress": {
+        "file": "progress.py",
+        "lines": 368,
+        "imports": [
+          "logging"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime",
+            "timedelta"
+          ],
+          "models": [
+            "Issue",
+            "Milestone",
+            "MilestoneStatus",
+            "Project",
+            "RiskLevel"
+          ]
+        },
+        "size_bytes": 12672
+      },
+      "github_client": {
+        "file": "github_client.py",
+        "lines": 768,
+        "imports": [
+          "os",
+          "requests"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "typing": [
+            "Any"
+          ],
+          "requests.adapters": [
+            "HTTPAdapter"
+          ],
+          "urllib3.util.retry": [
+            "Retry"
+          ],
+          "credentials": [
+            "get_credential_manager"
+          ],
+          "datetime_parser": [
+            "parse_github_datetime"
+          ],
+          "models": [
+            "Comment",
+            "Priority",
+            "Status"
+          ]
+        },
+        "size_bytes": 24574
+      },
+      "cli.user": {
+        "file": "cli/user.py",
+        "lines": 504,
+        "imports": [
+          "click",
+          "datetime",
+          "os",
+          "subprocess"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ],
+          "roadmap.models": [
+            "Priority",
+            "Status"
+          ]
+        },
+        "size_bytes": 16825
+      },
+      "cli.git_integration": {
+        "file": "cli/git_integration.py",
+        "lines": 244,
+        "imports": [
+          "click"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ]
+        },
+        "size_bytes": 8985
+      },
+      "cli.release": {
+        "file": "cli/release.py",
+        "lines": 368,
+        "imports": [
+          "click",
+          "subprocess"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "version": [
+            "VersionManager"
+          ]
+        },
+        "size_bytes": 13412
+      },
+      "cli.comment": {
+        "file": "cli/comment.py",
+        "lines": 103,
+        "imports": [
+          "click"
+        ],
+        "from_imports": {
+          "roadmap.cli.utils": [
+            "get_console"
+          ]
+        },
+        "size_bytes": 3124
+      },
+      "cli.ci": {
+        "file": "cli/ci.py",
+        "lines": 1544,
+        "imports": [
+          "click",
+          "json",
+          "os",
+          "shutil"
+        ],
+        "from_imports": {
+          "pathlib": [
+            "Path"
+          ],
+          "rich": [
+            "print"
+          ],
+          "rich.console": [
+            "Console"
+          ],
+          "rich.progress": [
+            "Progress",
+            "SpinnerColumn",
+            "TextColumn",
+            "TimeElapsedColumn"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "ci_tracking": [
+            "CIAutomation",
+            "CITracker",
+            "CITrackingConfig"
+          ],
+          "core": [
+            "RoadmapCore"
+          ],
+          "repository_scanner": [
+            "AdvancedRepositoryScanner",
+            "RepositoryScanConfig"
+          ],
+          "sync": [
+            "SyncManager"
+          ],
+          "git_hooks": [
+            "GitHookManager"
+          ],
+          "datetime": [
+            "datetime"
+          ],
+          "collections": [
+            "Counter"
+          ]
+        },
+        "size_bytes": 55144
+      },
+      "cli.deprecated": {
+        "file": "cli/deprecated.py",
+        "lines": 151,
+        "imports": [
+          "click"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ],
+          "team": [
+            "_original_capacity_forecast",
+            "_original_smart_assign",
+            "_original_workload_analysis"
+          ],
+          "user": [
+            "_original_dashboard",
+            "_original_notifications"
+          ]
+        },
+        "size_bytes": 5463
+      },
+      "cli.activity": {
+        "file": "cli/activity.py",
+        "lines": 531,
+        "imports": [
+          "click",
+          "datetime",
+          "json",
+          "os"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "roadmap.cli.utils": [
+            "get_console"
+          ],
+          "roadmap.git_integration": [
+            "GitIntegration"
+          ],
+          "roadmap.timezone_utils": [
+            "ensure_timezone_aware",
+            "now_utc"
+          ],
+          "collections": [
+            "defaultdict"
+          ]
+        },
+        "size_bytes": 17846
+      },
+      "cli.__init__": {
+        "file": "cli/__init__.py",
+        "lines": 507,
+        "imports": [
+          "click",
+          "git",
+          "os",
+          "pathlib"
+        ],
+        "from_imports": {
+          "roadmap.cli.utils": [
+            "get_console"
+          ],
+          "roadmap.core": [
+            "RoadmapCore"
+          ],
+          "rich.console": [
+            "Console"
+          ],
+          "roadmap.curation": [
+            "RoadmapCurator"
+          ],
+          "pathlib": [
+            "Path"
+          ],
+          "core": [
+            "init",
+            "status"
+          ],
+          "activity": [
+            "activity",
+            "broadcast",
+            "capacity_forecast",
+            "dashboard",
+            "export_data",
+            "handoff",
+            "handoff_context",
+            "handoff_list",
+            "notifications",
+            "smart_assign",
+            "workload_analysis"
+          ],
+          "analytics": [
+            "analytics"
+          ],
+          "comment": [
+            "comment"
+          ],
+          "data": [
+            "data"
+          ],
+          "deprecated": [
+            "register_deprecated_commands"
+          ],
+          "git_integration": [
+            "git"
+          ],
+          "issue": [
+            "issue"
+          ],
+          "milestone": [
+            "milestone"
+          ],
+          "project": [
+            "project"
+          ],
+          "release": [
+            "release_group"
+          ],
+          "team": [
+            "team"
+          ],
+          "timezone": [
+            "timezone_group"
+          ],
+          "user": [
+            "user"
+          ],
+          "ci": [
+            "ci"
+          ],
+          "progress": [
+            "progress_reports",
+            "recalculate_progress"
+          ]
+        },
+        "size_bytes": 17687
+      },
+      "cli.team": {
+        "file": "cli/team.py",
+        "lines": 1012,
+        "imports": [
+          "click",
+          "datetime"
+        ],
+        "from_imports": {
+          "roadmap.cli.utils": [
+            "get_console"
+          ],
+          "rich.console": [
+            "Console"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "roadmap.models": [
+            "Priority",
+            "Status"
+          ]
+        },
+        "size_bytes": 35971
+      },
+      "cli.progress": {
+        "file": "cli/progress.py",
+        "lines": 440,
+        "imports": [
+          "click",
+          "os"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "rich.console": [
+            "Console"
+          ],
+          "rich.progress": [
+            "Progress"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "progress": [
+            "ProgressCalculationEngine"
+          ],
+          "roadmap.parser": [
+            "MilestoneParser",
+            "ProjectParser"
+          ]
+        },
+        "size_bytes": 15766
+      },
+      "cli.milestone": {
+        "file": "cli/milestone.py",
+        "lines": 542,
+        "imports": [
+          "click",
+          "shutil"
+        ],
+        "from_imports": {
+          "datetime": [
+            "datetime"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "roadmap.cli.utils": [
+            "get_console"
+          ],
+          "roadmap.models": [
+            "MilestoneStatus"
+          ],
+          "roadmap.progress": [
+            "ProgressCalculationEngine"
+          ]
+        },
+        "size_bytes": 18807
+      },
+      "cli.issue": {
+        "file": "cli/issue.py",
+        "lines": 1197,
+        "imports": [
+          "click",
+          "os",
+          "subprocess"
+        ],
+        "from_imports": {
+          "rich.table": [
+            "Table"
+          ],
+          "rich.text": [
+            "Text"
+          ],
+          "roadmap.cli.utils": [
+            "get_console"
+          ],
+          "roadmap.error_handling": [
+            "ErrorHandler",
+            "ValidationError"
+          ],
+          "roadmap.models": [
+            "IssueType",
+            "Priority",
+            "RoadmapConfig",
+            "Status"
+          ],
+          "datetime": [
+            "datetime"
+          ]
+        },
+        "size_bytes": 43133
+      },
+      "cli.timezone": {
+        "file": "cli/timezone.py",
+        "lines": 240,
+        "imports": [
+          "click"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ],
+          "rich.prompt": [
+            "Confirm"
+          ],
+          "timezone_migration": [
+            "TimezoneDataMigrator"
+          ],
+          "timezone_utils": [
+            "get_timezone_manager"
+          ]
+        },
+        "size_bytes": 8971
+      },
+      "cli.data": {
+        "file": "cli/data.py",
+        "lines": 172,
+        "imports": [
+          "click",
+          "csv",
+          "json"
+        ],
+        "from_imports": {
+          "roadmap.cli.utils": [
+            "get_console"
+          ],
+          "roadmap.models": [
+            "Issue"
+          ],
+          "roadmap.core": [
+            "RoadmapCore"
+          ],
+          "io": [
+            "StringIO"
+          ]
+        },
+        "size_bytes": 5250
+      },
+      "cli.project": {
+        "file": "cli/project.py",
+        "lines": 362,
+        "imports": [
+          "click",
+          "os",
+          "uuid",
+          "yaml"
+        ],
+        "from_imports": {
+          "rich.console": [
+            "Console"
+          ],
+          "rich.table": [
+            "Table"
+          ],
+          "datetime": [
+            "datetime"
+          ]
+        },
+        "size_bytes": 11445
+      }
+    }
+  }
+}

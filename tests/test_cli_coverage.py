@@ -22,6 +22,7 @@ def cli_runner():
 class TestCLIDashboard:
     """Test dashboard command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: dashboard command moved to future/")
     def test_dashboard_without_initialization(self, cli_runner):
         """Test dashboard command when roadmap is not initialized."""
         with cli_runner.isolated_filesystem():
@@ -29,12 +30,14 @@ class TestCLIDashboard:
             # Should handle gracefully - either show empty dashboard or ask to initialize
             assert result.exit_code in [0, 1]  # Allow both success and error handling
 
+    @pytest.mark.skip(reason="Archived feature: dashboard command moved to future/")
     def test_dashboard_help(self, cli_runner):
         """Test dashboard command help."""
         result = cli_runner.invoke(main, ["dashboard", "--help"])
         assert result.exit_code == 0
         assert "dashboard" in result.output.lower()
 
+    @pytest.mark.skip(reason="Archived feature: dashboard command moved to future/")
     def test_dashboard_with_assignee(self, cli_runner):
         """Test dashboard with assignee filter."""
         with cli_runner.isolated_filesystem():
@@ -59,12 +62,14 @@ class TestCLIDashboard:
 class TestCLIActivity:
     """Test activity command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: activity command moved to future/")
     def test_activity_help(self, cli_runner):
         """Test activity command help."""
         result = cli_runner.invoke(main, ["activity", "--help"])
         assert result.exit_code == 0
         assert "activity" in result.output.lower()
 
+    @pytest.mark.skip(reason="Archived feature: activity command moved to future/")
     def test_activity_with_days(self, cli_runner):
         """Test activity with days filter."""
         with cli_runner.isolated_filesystem():
@@ -76,11 +81,13 @@ class TestCLIActivity:
 class TestCLINotifications:
     """Test notifications command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: notifications command moved to future/")
     def test_notifications_help(self, cli_runner):
         """Test notifications command help."""
         result = cli_runner.invoke(main, ["notifications", "--help"])
         assert result.exit_code == 0
 
+    @pytest.mark.skip(reason="Archived feature: notifications command moved to future/")
     def test_notifications_mark_read(self, cli_runner):
         """Test notifications mark-read command."""
         with cli_runner.isolated_filesystem():
@@ -91,11 +98,13 @@ class TestCLINotifications:
 class TestCLIBroadcast:
     """Test broadcast command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: broadcast command moved to future/")
     def test_broadcast_help(self, cli_runner):
         """Test broadcast command help."""
         result = cli_runner.invoke(main, ["broadcast", "--help"])
         assert result.exit_code == 0
 
+    @pytest.mark.skip(reason="Archived feature: broadcast command moved to future/")
     def test_broadcast_basic(self, cli_runner):
         """Test basic broadcast command."""
         with cli_runner.isolated_filesystem():
@@ -122,6 +131,7 @@ class TestCLIStatus:
 class TestCLIHandoff:
     """Test handoff command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: handoff command moved to future/")
     def test_handoff_help(self, cli_runner):
         """Test handoff command help."""
         result = cli_runner.invoke(main, ["handoff", "--help"])
@@ -143,6 +153,7 @@ class TestCLIHandoff:
 class TestCLISmartAssign:
     """Test smart-assign command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: smart-assign command moved to future/")
     def test_smart_assign_help(self, cli_runner):
         """Test smart-assign command help."""
         result = cli_runner.invoke(main, ["smart-assign", "--help"])
@@ -152,6 +163,7 @@ class TestCLISmartAssign:
 class TestCLIAnalytics:
     """Test analytics command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: analytics command moved to future/")
     def test_analytics_help(self, cli_runner):
         """Test analytics command help."""
         result = cli_runner.invoke(main, ["analytics", "--help"])
@@ -167,6 +179,7 @@ class TestCLIAnalytics:
 class TestCLIExport:
     """Test export command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: export command moved to future/")
     def test_export_help(self, cli_runner):
         """Test export command help."""
         result = cli_runner.invoke(main, ["export", "--help"])
@@ -199,6 +212,7 @@ class TestCLISync:
 class TestCLITeam:
     """Test team command coverage."""
 
+    @pytest.mark.skip(reason="Archived feature: team command moved to future/")
     def test_team_help(self, cli_runner):
         """Test team command help."""
         result = cli_runner.invoke(main, ["team", "--help"])

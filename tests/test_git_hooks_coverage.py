@@ -187,6 +187,7 @@ class TestGitHooksSpecificCoverage:
         hook_manager.handle_post_merge()  # Should not raise exception
 
     @patch("subprocess.run")
+    @pytest.mark.skip(reason="Archived feature: ci_tracking module moved to future/")
     def test_handle_post_commit_ci_tracking_error(
         self, mock_subprocess, minimal_git_repo
     ):

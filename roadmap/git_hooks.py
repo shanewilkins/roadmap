@@ -172,12 +172,12 @@ except Exception as e:
         return base_script
 
     def handle_post_commit(self):
-        """Handle post-commit hook - update issues based on commit using CI tracking."""
-        try:
-            # Use the new CI tracking system for commit handling
-            from .ci_tracking import CITracker, CITrackingConfig
+        """Handle post-commit hook - log commit info.
 
-            # Get the latest commit SHA
+        Note: CI tracking (post-1.0 feature) has been moved to future/ci_tracking.py
+        """
+        try:
+            # Get the latest commit SHA for logging
             result = subprocess.run(
                 ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
             )
@@ -186,36 +186,28 @@ except Exception as e:
             if not latest_commit_sha:
                 return
 
-            # Initialize CI tracker
-            config = CITrackingConfig()
-            tracker = CITracker(self.core, config)
+            # Log the commit for basic tracking
+            log_file = Path(".git/roadmap-hooks.log")
+            timestamp = datetime.now().isoformat()
+            log_entry = f"{timestamp} - Commit: {latest_commit_sha[:7]}\n"
 
-            # Track the commit automatically
-            results = tracker.track_commit(latest_commit_sha)
-
-            # Log results for debugging (optional)
-            if results:
-                log_file = Path(".git/roadmap-hooks.log")
-                timestamp = datetime.now().isoformat()
-                updated_issues = list(results.keys())
-                log_entry = f"{timestamp}: Post-commit hook tracked commit {latest_commit_sha[:8]} -> issues: {', '.join(updated_issues)}\n"
-
-                try:
-                    with open(log_file, "a") as f:
-                        f.write(log_entry)
-                except Exception:
-                    pass  # Silent fail for logging
+            # Append to log file if it exists
+            try:
+                with open(log_file, "a") as f:
+                    f.write(log_entry)
+            except Exception:
+                pass  # Silent fail for logging
 
         except Exception:
             # Silent fail to avoid breaking Git operations
             pass
 
     def handle_post_checkout(self):
-        """Handle post-checkout hook - track branches using CI tracking system."""
-        try:
-            # Use the new CI tracking system for branch handling
-            from .ci_tracking import CITracker, CITrackingConfig
+        """Handle post-checkout hook - track branch changes.
 
+        Note: Advanced CI branch tracking (post-1.0 feature) has been moved to future/ci_tracking.py
+        """
+        try:
             # Get current branch
             result = subprocess.run(
                 ["git", "branch", "--show-current"],
@@ -228,40 +220,27 @@ except Exception as e:
             if not branch_name:
                 return
 
-            # Initialize CI tracker
-            config = CITrackingConfig()
-            tracker = CITracker(self.core, config)
+            # Log the branch checkout for basic tracking
+            log_file = Path(".git/roadmap-hooks.log")
+            timestamp = datetime.now().isoformat()
+            log_entry = f"{timestamp} - Checkout: {branch_name}\n"
 
-            # Track the branch automatically
-            results = tracker.track_branch(branch_name)
-
-            # Log results for debugging (optional)
-            if results:
-                log_file = Path(".git/roadmap-hooks.log")
-                timestamp = datetime.now().isoformat()
-                list(results.keys())
-                actions_summary = []
-                for issue_id, actions in results.items():
-                    actions_summary.append(f"{issue_id}({len(actions)} actions)")
-
-                log_entry = f"{timestamp}: Post-checkout hook tracked branch '{branch_name}' -> {', '.join(actions_summary)}\n"
-
-                try:
-                    with open(log_file, "a") as f:
-                        f.write(log_entry)
-                except Exception:
-                    pass  # Silent fail for logging
+            try:
+                with open(log_file, "a") as f:
+                    f.write(log_entry)
+            except Exception:
+                pass  # Silent fail for logging
 
         except Exception:
             # Silent fail to avoid breaking Git operations
             pass
 
     def handle_pre_push(self):
-        """Handle pre-push hook - simulate PR merge behavior using CI automation."""
-        try:
-            # Use CI automation system to simulate PR behavior
-            from .ci_tracking import CIAutomation, CITracker, CITrackingConfig
+        """Handle pre-push hook - basic push notification.
 
+        Note: Advanced CI automation (post-1.0 feature) has been moved to future/ci_tracking.py
+        """
+        try:
             # Get current branch
             result = subprocess.run(
                 ["git", "branch", "--show-current"],
@@ -274,52 +253,16 @@ except Exception as e:
             if not current_branch:
                 return
 
-            # Check if pushing to main branch (simulate merge)
-            # Get the remote we're pushing to
+            # Log the push for basic tracking
+            log_file = Path(".git/roadmap-hooks.log")
+            timestamp = datetime.now().isoformat()
+            log_entry = f"{timestamp} - Push: {current_branch}\n"
+
             try:
-                remote_result = subprocess.run(
-                    ["git", "config", "--get", f"branch.{current_branch}.remote"],
-                    capture_output=True,
-                    text=True,
-                )
-                remote_result.stdout.strip() or "origin"
-
-                merge_result = subprocess.run(
-                    ["git", "config", "--get", f"branch.{current_branch}.merge"],
-                    capture_output=True,
-                    text=True,
-                )
-                merge_ref = merge_result.stdout.strip()
-                target_branch = merge_ref.split("/")[-1] if merge_ref else "main"
-            except:
-                target_branch = "main"
-
-            # Initialize CI automation
-            config = CITrackingConfig()
-            tracker = CITracker(self.core, config)
-            automation = CIAutomation(self.core, tracker)
-
-            # If pushing to main branch, simulate PR merge
-            if target_branch in config.main_branches:
-                pr_info = {
-                    "number": 0,  # Local push doesn't have PR number
-                    "head_branch": current_branch,
-                    "base_branch": target_branch,
-                }
-
-                results = automation.on_pull_request_merged(pr_info)
-
-                # Log results
-                if results.get("actions"):
-                    log_file = Path(".git/roadmap-hooks.log")
-                    timestamp = datetime.now().isoformat()
-                    log_entry = f"{timestamp}: Pre-push hook simulated PR merge {current_branch} -> {target_branch}: {', '.join(results['actions'])}\n"
-
-                    try:
-                        with open(log_file, "a") as f:
-                            f.write(log_entry)
-                    except Exception:
-                        pass
+                with open(log_file, "a") as f:
+                    f.write(log_entry)
+            except Exception:
+                pass  # Silent fail for logging
 
         except Exception:
             # Silent fail to avoid breaking Git operations

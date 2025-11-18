@@ -177,6 +177,7 @@ class TestCLIInitCommandExtensive:
 class TestCLIDashboardExtensive:
     """Comprehensive dashboard command testing."""
 
+    @pytest.mark.skip(reason="Archived feature: dashboard command moved to future/")
     def test_dashboard_with_mock_core(self, cli_runner, mock_roadmap_core):
         """Test dashboard with mocked roadmap core."""
         # Add some mock issues
@@ -195,6 +196,7 @@ class TestCLIDashboardExtensive:
             result = cli_runner.invoke(main, ["dashboard"])
             assert result.exit_code in [0, 1]
 
+    @pytest.mark.skip(reason="Archived feature: dashboard command moved to future/")
     def test_dashboard_with_assignee_filter(self, cli_runner, mock_roadmap_core):
         """Test dashboard with assignee filtering."""
         mock_roadmap_core.get_team_members.return_value = ["user1", "user2"]
@@ -203,6 +205,7 @@ class TestCLIDashboardExtensive:
             result = cli_runner.invoke(main, ["dashboard", "--assignee", "user1"])
             assert result.exit_code in [0, 1]
 
+    @pytest.mark.skip(reason="Archived feature: dashboard command moved to future/")
     def test_dashboard_with_days_filter(self, cli_runner, mock_roadmap_core):
         """Test dashboard with days filtering."""
         with cli_runner.isolated_filesystem():
@@ -213,12 +216,14 @@ class TestCLIDashboardExtensive:
 class TestCLIActivityExtensive:
     """Comprehensive activity command testing."""
 
+    @pytest.mark.skip(reason="Archived feature: activity command moved to future/")
     def test_activity_with_mock_data(self, cli_runner, mock_roadmap_core):
         """Test activity command with mock data."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ["activity"])
             assert result.exit_code in [0, 1]
 
+    @pytest.mark.skip(reason="Archived feature: activity command moved to future/")
     def test_activity_with_user_filter(self, cli_runner, mock_roadmap_core):
         """Test activity with user filtering."""
         with cli_runner.isolated_filesystem():

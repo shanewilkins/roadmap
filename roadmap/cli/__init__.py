@@ -14,96 +14,9 @@ from roadmap.cli.utils import get_console
 
 console = get_console()
 
+
 # Import core classes for backward compatibility with tests
 from roadmap.core import RoadmapCore
-
-
-# Import functions that tests expect to be available
-# These are imported for backward compatibility and should be considered deprecated
-@click.command()
-@click.option(
-    "--include-backlog", is_flag=True, help="Include backlog items as orphaned"
-)
-@click.option(
-    "--min-age", default=0, help="Minimum age in days for items to be considered"
-)
-@click.option(
-    "--max-age", default=None, help="Maximum age in days for items to be considered"
-)
-@click.option("--export", help="Export report to file (JSON, CSV, or Markdown)")
-@click.option("--format", default="json", help="Export format (json, csv, markdown)")
-@click.option(
-    "--interactive", is_flag=True, help="Interactive mode for guided curation"
-)
-def curate_orphaned(
-    include_backlog: bool, min_age: int, max_age, export, format: str, interactive: bool
-):
-    """Scan for and display orphaned items (issues and milestones)."""
-    try:
-        # Use module-level RoadmapCore so tests that patch roadmap.cli.RoadmapCore
-        # are effective. Import the curator from the curation module at runtime
-        # so tests patching roadmap.curation.RoadmapCurator still work.
-        from rich.console import Console
-
-        from roadmap.curation import RoadmapCurator
-
-        console = Console()
-        core = RoadmapCore()
-
-        if not core.is_initialized():
-            console.print(
-                "❌ Roadmap not initialized. Run 'roadmap init' first.",
-                style="bold red",
-            )
-            return
-
-        curator = RoadmapCurator(core)
-
-        with console.status("[bold green]Analyzing orphaned items..."):
-            report = curator.analyze_orphaned_items(
-                include_backlog=include_backlog,
-                min_age_days=min_age,
-                max_age_days=max_age,
-            )
-
-        # Display summary. Support both object attributes and dict-style reports
-        # (tests may provide MagicMock instances or simple dicts).
-        try:
-            orphaned_issues = getattr(report, "orphaned_issues", None)
-            if orphaned_issues is None:
-                orphaned_issues = report.get("orphaned_issues", [])
-        except Exception:
-            orphaned_issues = []
-
-        try:
-            orphaned_milestones = getattr(report, "orphaned_milestones", None)
-            if orphaned_milestones is None:
-                orphaned_milestones = report.get("orphaned_milestones", [])
-        except Exception:
-            orphaned_milestones = []
-
-        console.print(f"📊 Found {len(orphaned_issues)} orphaned issues")
-        console.print(f"📊 Found {len(orphaned_milestones)} orphaned milestones")
-
-        # Export if requested
-        if export:
-            from pathlib import Path
-
-            output_path = Path(export)
-            curator.export_curation_report(report, output_path, format)
-            console.print(f"✅ Report exported to {output_path}", style="bold green")
-
-        # Interactive mode
-        if interactive:
-            console.print(
-                "🔧 Interactive curation mode not yet implemented", style="yellow"
-            )
-
-    except Exception as e:
-        from rich.console import Console
-
-        console = Console()
-        console.print(f"❌ Failed to analyze orphaned items: {e}", style="bold red")
 
 
 def register_git_commands():
@@ -424,6 +337,9 @@ def register_commands():
     """
     Lazy load and register all command groups.
     This improves startup performance by only importing modules when needed.
+
+    Note: Post-1.0 features have been archived to the 'future/' directory
+    and are no longer registered. See future/FUTURE_FEATURES.md for details.
     """
     # Register standalone commands
     from .core import init, status
@@ -432,70 +348,38 @@ def register_commands():
     main.add_command(status)
 
     # Register command groups with lazy loading
-    # Register activity and utility commands
-    from .activity import (
-        activity,
-        broadcast,
-        capacity_forecast,
-        dashboard,
-        export_data,
-        handoff,
-        handoff_context,
-        handoff_list,
-        notifications,
-        smart_assign,
-        workload_analysis,
-    )
-    from .analytics import analytics
+    # Core v1.0 commands only
     from .comment import comment
     from .data import data
-    from .deprecated import register_deprecated_commands
     from .git_integration import git
     from .issue import issue
     from .milestone import milestone
+    from .progress import progress_reports, recalculate_progress
     from .project import project
-    from .release import release_group
-    from .team import team
-    from .timezone import timezone_group
-    from .user import user
 
-    main.add_command(activity)
-    main.add_command(broadcast)
-    main.add_command(handoff)
-    main.add_command(dashboard)
-    main.add_command(notifications)
-    main.add_command(export_data)
-    main.add_command(handoff_context)
-    main.add_command(handoff_list)
-    main.add_command(workload_analysis)
-    main.add_command(smart_assign)
-    main.add_command(capacity_forecast)
-
-    main.add_command(team)
-    main.add_command(user)
     main.add_command(data)
     main.add_command(project)
     main.add_command(issue)
     main.add_command(milestone)
     main.add_command(git)
-    main.add_command(analytics)
     main.add_command(comment)
-    main.add_command(release_group)
-    main.add_command(timezone_group)
-
-    # Register progress and CI commands
-    from .ci import ci
-    from .progress import progress_reports, recalculate_progress
-
     main.add_command(recalculate_progress)
     main.add_command(progress_reports)
-    main.add_command(ci)
 
     # Register git commands for backward compatibility
     register_git_commands()
 
-    # Register deprecated commands for backward compatibility
-    register_deprecated_commands(main)
+    # ARCHIVED TO future/ (post-1.0 features):
+    # - activity.py, broadcast, capacity_forecast, dashboard, export_data, handoff, etc.
+    # - analytics.py and cli/analytics.py
+    # - team.py (team commands) -> future/team_management.py
+    # - user.py (user commands) -> future/user_management.py
+    # - ci.py (CI commands) -> future/ci_commands.py
+    # - release.py -> future/release_management.py
+    # - timezone.py -> future/timezone_commands.py
+    # - deprecated.py -> future/deprecated_commands.py
+    #
+    # To restore a feature, move it back from future/ and add it here.
 
 
 # Register all commands when module is imported

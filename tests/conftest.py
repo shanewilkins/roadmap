@@ -264,12 +264,19 @@ def mock_github_client():
 
 @pytest.fixture
 def patch_github_integration():
-    """Lightweight patch for GitHub integration to avoid heavy mocking."""
-    with patch("roadmap.enhanced_github_integration.EnhancedGitHubIntegration") as mock:
-        mock.return_value.is_github_enabled.return_value = True
-        mock.return_value.handle_push_event.return_value = []
-        mock.return_value.handle_pull_request_event.return_value = []
-        yield mock
+    """Lightweight patch for GitHub integration to avoid heavy mocking.
+
+    Note: enhanced_github_integration has been moved to future/ (post-1.0 feature).
+    This fixture is kept for backward compatibility but returns a simple mock.
+    """
+    # Since EnhancedGitHubIntegration has been archived, we just create a simple mock
+    from unittest.mock import Mock
+
+    mock = Mock()
+    mock.is_github_enabled.return_value = True
+    mock.handle_push_event.return_value = []
+    mock.handle_pull_request_event.return_value = []
+    yield mock
 
 
 @pytest.fixture
@@ -435,20 +442,12 @@ def mock_git_operations():
 
     Selectively mocks git operations that don't affect core hook testing.
     Major performance optimization for integration tests.
-    """
-    with (
-        patch(
-            "roadmap.repository_scanner.AdvancedRepositoryScanner.scan_commit_history"
-        ) as mock_scan,
-        patch(
-            "roadmap.repository_scanner.AdvancedRepositoryScanner.scan_branch_history"
-        ) as mock_analyze,
-    ):
-        # Mock repository scanning (expensive operations)
-        mock_scan.return_value = []
-        mock_analyze.return_value = []
 
-        yield {"scan_commit_history": mock_scan, "scan_branch_history": mock_analyze}
+    Note: repository_scanner has been moved to future/ (post-1.0 feature).
+    This fixture is kept for backward compatibility.
+    """
+    # Since repository_scanner has been archived, just return an empty mock dict
+    yield {"scan_commit_history": Mock(), "scan_branch_history": Mock()}
 
 
 @pytest.fixture
