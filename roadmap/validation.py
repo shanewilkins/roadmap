@@ -1,6 +1,20 @@
 """
 Unified Validation Framework for Roadmap CLI
 
+DEPRECATED: This module is maintained for backward compatibility.
+New code should import from roadmap.shared.validation instead:
+
+- ValidationType -> roadmap.shared.validation.ValidationType
+- ValidationResult -> roadmap.shared.validation.ValidationResult
+- FieldValidator -> roadmap.shared.validation.FieldValidator
+- SchemaValidator -> roadmap.shared.validation.SchemaValidator
+- RoadmapValidator -> roadmap.shared.validation.RoadmapValidator
+- validate_and_raise() -> roadmap.shared.validation.validate_and_raise()
+- default_validator -> roadmap.shared.validation.default_validator
+
+This module will be removed in v2.0.
+See: roadmap/shared/validation.py for the new location.
+
 This module provides centralized validation utilities, field validators, and consistent
 validation error handling to eliminate duplicate validation patterns across the codebase.
 

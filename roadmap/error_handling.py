@@ -1,6 +1,20 @@
 """
 Unified Error Handling Framework for Roadmap CLI
 
+DEPRECATED: This module is maintained for backward compatibility.
+New code should import from roadmap.shared.errors instead:
+
+- ErrorSeverity -> roadmap.shared.errors.ErrorSeverity
+- ErrorCategory -> roadmap.shared.errors.ErrorCategory
+- RoadmapError -> roadmap.shared.errors.RoadmapError
+- FileOperationError -> roadmap.shared.errors.FileOperationError
+- ValidationError -> roadmap.shared.errors.ValidationError
+- NetworkError -> roadmap.shared.errors.NetworkError
+- GitOperationError -> roadmap.shared.errors.GitOperationError
+- ConfigurationError -> roadmap.shared.errors.ConfigurationError
+
+This module will be removed in v2.0.
+See: roadmap/shared/errors.py for the new location.
 This module provides centralized error handling utilities, standardized exception classes,
 and consistent error reporting mechanisms to eliminate duplicate error handling patterns
 across the codebase.

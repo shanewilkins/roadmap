@@ -1,4 +1,22 @@
-"""Core roadmap functionality."""
+"""Core roadmap functionality.
+
+DEPRECATED: This module is maintained for backward compatibility.
+New code should use the refactored architecture:
+
+- RoadmapCore orchestration -> roadmap.application.core.RoadmapCore
+- Issue operations -> roadmap.application.services.IssueService
+- Milestone operations -> roadmap.application.services.MilestoneService
+- Project operations -> roadmap.application.services.ProjectService
+- GitHub integration -> roadmap.infrastructure.github.GitHubClient
+- Git operations -> roadmap.infrastructure.git.GitOperations
+- Storage/Database -> roadmap.infrastructure.storage.StateManager
+
+This module will be removed in v2.0. Please migrate your code to use the
+new layered architecture for better maintainability and testability.
+
+See: docs/ARCHITECTURE.md for the new structure.
+See: REFACTORING_IMPLEMENTATION_PLAN.md for migration details.
+"""
 
 import sqlite3
 from datetime import datetime
