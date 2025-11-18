@@ -11,3 +11,19 @@ independent of any framework or external system. Models here should:
 
 Models: Issue, Milestone, Project
 """
+
+from .issue import Issue, IssueType, Priority, Status
+from .milestone import Milestone, MilestoneStatus, RiskLevel
+from .project import Project, ProjectStatus
+
+__all__ = [
+    "Issue",
+    "IssueType",
+    "Priority",
+    "Status",
+    "Milestone",
+    "MilestoneStatus",
+    "RiskLevel",
+    "Project",
+    "ProjectStatus",
+]
