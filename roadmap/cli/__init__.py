@@ -348,13 +348,13 @@ def register_commands():
 
     # Register command groups with lazy loading
     # Core v1.0 commands only
+    from roadmap.presentation.cli.comment import comment
+    from roadmap.presentation.cli.data import data
+    from roadmap.presentation.cli.git import git
     from roadmap.presentation.cli.issues import issue
     from roadmap.presentation.cli.milestones import milestone
     from roadmap.presentation.cli.progress import progress_reports, recalculate_progress
     from roadmap.presentation.cli.projects import project
-    from roadmap.presentation.cli.data import data
-    from roadmap.presentation.cli.git import git
-    from roadmap.presentation.cli.comment import comment
 
     main.add_command(data)
     main.add_command(project)

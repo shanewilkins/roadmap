@@ -1,6 +1,5 @@
 """Create project command."""
 
-import os
 from datetime import datetime
 
 import click
