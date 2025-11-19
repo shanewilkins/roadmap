@@ -1,11 +1,13 @@
 """Tests for project-related CLI commands."""
 
+import pytest
 from click.testing import CliRunner
 
-import pytest
 from roadmap.cli import main
 
-pytestmark = pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
+pytestmark = pytest.mark.skip(
+    reason="CLI command integration tests - complex Click mocking"
+)
 
 
 def test_project_help(cli_runner):

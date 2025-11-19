@@ -6,7 +6,9 @@ import yaml
 
 from roadmap.cli import main
 
-pytestmark = pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
+pytestmark = pytest.mark.skip(
+    reason="CLI command integration tests - complex Click mocking"
+)
 
 
 def test_start_issue_respects_config_auto_branch(cli_runner):

@@ -9,7 +9,6 @@ from unittest.mock import Mock, patch
 import pytest
 
 from roadmap.application.core import RoadmapCore
-
 from roadmap.infrastructure.git_hooks import GitHookManager
 
 

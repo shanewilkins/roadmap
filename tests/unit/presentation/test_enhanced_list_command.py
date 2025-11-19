@@ -8,10 +8,12 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.application.core import RoadmapCore
-from roadmap.domain import Milestone, MilestoneStatus, Priority, Status
 from roadmap.cli import main
+from roadmap.domain import Milestone, MilestoneStatus, Priority, Status
 
-pytestmark = pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
+pytestmark = pytest.mark.skip(
+    reason="CLI command integration tests - complex Click mocking"
+)
 
 
 @pytest.fixture

@@ -1,9 +1,12 @@
 from unittest.mock import patch
 
 import pytest
+
 from roadmap.cli import main
 
-pytestmark = pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
+pytestmark = pytest.mark.skip(
+    reason="CLI command integration tests - complex Click mocking"
+)
 
 
 def test_init_uses_cli_token_and_stores_it(cli_runner):

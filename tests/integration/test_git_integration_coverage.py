@@ -26,7 +26,9 @@ def temp_dir():
 @pytest.fixture
 def mock_git_integration():
     """Create a GitIntegration instance with mocked git commands."""
-    with patch("roadmap.infrastructure.git.GitIntegration._run_git_command") as mock_run:
+    with patch(
+        "roadmap.infrastructure.git.GitIntegration._run_git_command"
+    ) as mock_run:
         git = GitIntegration()
         git._run_git_command = mock_run
         yield git, mock_run

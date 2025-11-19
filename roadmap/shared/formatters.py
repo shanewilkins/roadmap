@@ -1,6 +1,6 @@
 """Output formatting utilities for CLI display."""
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 
 def format_table(
     title: str,
-    columns: List[str],
-    rows: List[tuple],
+    columns: list[str],
+    rows: list[tuple],
     console: Optional["Console"] = None,
 ) -> str:
     """
@@ -47,9 +47,7 @@ def format_table(
     return str(table)
 
 
-def _format_table_simple(
-    title: str, columns: List[str], rows: List[tuple]
-) -> str:
+def _format_table_simple(title: str, columns: list[str], rows: list[tuple]) -> str:
     """Fallback simple table formatting without rich."""
     output = [f"\n{title}", "-" * len(title)]
     output.append(" | ".join(columns))
@@ -61,7 +59,7 @@ def _format_table_simple(
 
 def format_panel(
     content: str,
-    title: Optional[str] = None,
+    title: str | None = None,
     expand: bool = False,
 ) -> "Panel":
     """
@@ -129,7 +127,7 @@ def format_info(text: str) -> "Text":
     return Text(text, style="bold cyan")
 
 
-def format_list(items: List[str], title: Optional[str] = None) -> str:
+def format_list(items: list[str], title: str | None = None) -> str:
     """
     Format items as a bulleted list.
 
@@ -148,9 +146,7 @@ def format_list(items: List[str], title: Optional[str] = None) -> str:
     return "\n".join(output)
 
 
-def format_key_value_pairs(
-    pairs: Dict[str, Any], title: Optional[str] = None
-) -> str:
+def format_key_value_pairs(pairs: dict[str, Any], title: str | None = None) -> str:
     """
     Format key-value pairs for display.
 
@@ -248,7 +244,7 @@ def format_duration(seconds: float) -> str:
         return f"{hours:.1f}h"
 
 
-def format_count(count: int, singular: str, plural: Optional[str] = None) -> str:
+def format_count(count: int, singular: str, plural: str | None = None) -> str:
     """
     Format a count with proper singular/plural form.
 

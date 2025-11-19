@@ -1,9 +1,12 @@
 from unittest.mock import Mock, patch
 
 import pytest
+
 from roadmap.cli import main
 
-pytestmark = pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
+pytestmark = pytest.mark.skip(
+    reason="CLI command integration tests - complex Click mocking"
+)
 
 
 def test_start_issue_creates_branch(cli_runner):

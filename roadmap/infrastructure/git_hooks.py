@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from ..application.core import RoadmapCore
-from .git import GitCommit, GitIntegration
-from ..domain import Issue, Status, MilestoneStatus
+from ..domain import Issue, MilestoneStatus, Status
 from ..parser import IssueParser
+from .git import GitCommit, GitIntegration
 
 
 class GitHookManager:
@@ -382,7 +382,10 @@ except Exception as e:
                             milestone.progress = progress
 
                         # Auto-complete milestone if all issues are done
-                        if progress >= 100 and milestone.status != MilestoneStatus.CLOSED:
+                        if (
+                            progress >= 100
+                            and milestone.status != MilestoneStatus.CLOSED
+                        ):
                             # Use MilestoneStatus enum for type safety
                             if hasattr(milestone, "status"):
                                 milestone.status = MilestoneStatus.CLOSED

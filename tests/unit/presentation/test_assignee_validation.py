@@ -116,7 +116,9 @@ class TestAssigneeValidation:
             # Mock empty team members cache (to force GitHub validation)
             with patch.object(core, "_get_cached_team_members", return_value=[]):
                 # Mock the GitHubClient where it's imported
-                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
+                with patch(
+                    "roadmap.infrastructure.github.GitHubClient"
+                ) as mock_client_class:
                     mock_client = Mock()
                     mock_client.validate_assignee.return_value = (
                         False,
@@ -154,7 +156,9 @@ class TestAssigneeValidation:
         ):
             with patch.object(core, "_get_cached_team_members", return_value=[]):
                 # Mock the GitHubClient where it's imported
-                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
+                with patch(
+                    "roadmap.infrastructure.github.GitHubClient"
+                ) as mock_client_class:
                     mock_client = Mock()
                     mock_client.validate_assignee.return_value = (True, "")
                     mock_client_class.return_value = mock_client

@@ -7,13 +7,12 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.application.core import RoadmapCore
+from roadmap.cli import main
 from roadmap.domain import IssueType, Priority
 from roadmap.infrastructure.git import GitBranch, GitCommit, GitIntegration
-from roadmap.cli import main
 
 
 class TestGitCommit:

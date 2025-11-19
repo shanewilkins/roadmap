@@ -11,8 +11,8 @@ import pytest
 
 from roadmap.application.core import RoadmapCore
 from roadmap.domain import Priority, Status
-from roadmap.infrastructure.git_hooks import GitHookManager, WorkflowAutomation
 from roadmap.infrastructure.git import GitIntegration
+from roadmap.infrastructure.git_hooks import GitHookManager, WorkflowAutomation
 
 
 @pytest.mark.integration

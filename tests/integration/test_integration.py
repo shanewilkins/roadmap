@@ -13,8 +13,8 @@ import yaml
 from click.testing import CliRunner
 
 from roadmap.application.core import RoadmapCore
-from roadmap.domain import Priority, Status
 from roadmap.cli import main
+from roadmap.domain import Priority, Status
 
 pytestmark = pytest.mark.filesystem
 
@@ -65,7 +65,9 @@ class TestEndToEndWorkflows:
                 "Test Lifecycle",
             ],
         )
-        assert result.exit_code == 0, f"Init failed: exit_code={result.exit_code}, output={result.output}, exception={result.exception}"
+        assert (
+            result.exit_code == 0
+        ), f"Init failed: exit_code={result.exit_code}, output={result.output}, exception={result.exception}"
         assert "Roadmap CLI Initialization" in result.output
         assert os.path.exists(".roadmap")
         assert os.path.exists(".roadmap/config.yaml")

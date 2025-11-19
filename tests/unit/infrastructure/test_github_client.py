@@ -18,7 +18,9 @@ class TestGitHubClient:
     @pytest.fixture
     def mock_session(self):
         """Mock requests session."""
-        with patch("roadmap.infrastructure.github.requests.Session") as mock_session_class:
+        with patch(
+            "roadmap.infrastructure.github.requests.Session"
+        ) as mock_session_class:
             mock_session = Mock()
             mock_session_class.return_value = mock_session
             yield mock_session
@@ -426,7 +428,9 @@ class TestGitHubClientErrorHandling:
     @pytest.fixture
     def mock_session(self):
         """Mock requests session."""
-        with patch("roadmap.infrastructure.github.requests.Session") as mock_session_class:
+        with patch(
+            "roadmap.infrastructure.github.requests.Session"
+        ) as mock_session_class:
             mock_session = Mock()
             mock_session_class.return_value = mock_session
             yield mock_session

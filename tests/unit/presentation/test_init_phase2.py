@@ -1,9 +1,12 @@
 from pathlib import Path
 
 import pytest
+
 from roadmap.cli import main
 
-pytestmark = pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
+pytestmark = pytest.mark.skip(
+    reason="CLI command integration tests - complex Click mocking"
+)
 
 
 def test_init_with_custom_template(cli_runner):

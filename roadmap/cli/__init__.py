@@ -392,6 +392,7 @@ except ImportError as e:
     # If there's a circular import, commands will still be registered
     # when main() is invoked through Click's mechanism
     import sys
+
     if "partially initialized" not in str(e):
         # Re-raise if it's not a circular import issue
         raise

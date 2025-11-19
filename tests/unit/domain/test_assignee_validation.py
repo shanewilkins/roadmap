@@ -36,7 +36,10 @@ def initialized_roadmap(temp_dir):
         if result.exception:
             print(f"Exception: {result.exception}")
             import traceback
-            traceback.print_exception(type(result.exception), result.exception, result.exception.__traceback__)
+
+            traceback.print_exception(
+                type(result.exception), result.exception, result.exception.__traceback__
+            )
     assert result.exit_code == 0
     return temp_dir
 
@@ -123,7 +126,9 @@ class TestAssigneeValidation:
             # Mock empty team members cache (to force GitHub validation)
             with patch.object(core, "_get_cached_team_members", return_value=[]):
                 # Mock the GitHubClient where it's imported
-                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
+                with patch(
+                    "roadmap.infrastructure.github.GitHubClient"
+                ) as mock_client_class:
                     mock_client = Mock()
                     mock_client.validate_assignee.return_value = (
                         False,
@@ -161,7 +166,9 @@ class TestAssigneeValidation:
         ):
             with patch.object(core, "_get_cached_team_members", return_value=[]):
                 # Mock the GitHubClient where it's imported
-                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
+                with patch(
+                    "roadmap.infrastructure.github.GitHubClient"
+                ) as mock_client_class:
                     mock_client = Mock()
                     mock_client.validate_assignee.return_value = (True, "")
                     mock_client_class.return_value = mock_client
