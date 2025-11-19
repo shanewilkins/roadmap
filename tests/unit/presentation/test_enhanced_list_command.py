@@ -56,7 +56,7 @@ def temp_roadmap():
                 status=MilestoneStatus.OPEN,
             )
             milestone_path = core.milestones_dir / future_milestone.filename
-            from roadmap.parser import MilestoneParser
+            from roadmap.infrastructure.persistence.parser import MilestoneParser
 
             MilestoneParser.save_milestone_file(future_milestone, milestone_path)
 

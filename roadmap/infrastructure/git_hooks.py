@@ -9,7 +9,7 @@ from typing import Any
 
 from ..application.core import RoadmapCore
 from ..domain import Issue, MilestoneStatus, Status
-from ..parser import IssueParser
+from .persistence.parser import IssueParser
 from .git import GitCommit, GitIntegration
 
 

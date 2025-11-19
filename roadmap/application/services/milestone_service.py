@@ -19,7 +19,7 @@ from typing import Any
 from roadmap.domain.issue import Status
 from roadmap.domain.milestone import Milestone, MilestoneStatus
 from roadmap.infrastructure.storage import StateManager
-from roadmap.parser import IssueParser, MilestoneParser
+from roadmap.infrastructure.persistence.parser import IssueParser, MilestoneParser
 from roadmap.shared.timezone_utils import now_utc
 
 

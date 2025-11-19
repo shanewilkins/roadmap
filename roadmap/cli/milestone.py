@@ -344,7 +344,9 @@ def recalculate_milestone_progress(
 
     try:
         # Import the progress engine
-        from roadmap.application.services.progress_service import ProgressCalculationEngine
+        from roadmap.application.services.progress_service import (
+            ProgressCalculationEngine,
+        )
 
         # Load all data
         all_issues = core.list_issues()

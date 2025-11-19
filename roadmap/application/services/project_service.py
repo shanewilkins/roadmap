@@ -15,7 +15,7 @@ from typing import Any
 from roadmap.domain.milestone import MilestoneStatus
 from roadmap.domain.project import Project
 from roadmap.infrastructure.storage import StateManager
-from roadmap.parser import MilestoneParser, ProjectParser
+from roadmap.infrastructure.persistence.parser import MilestoneParser, ProjectParser
 from roadmap.shared.timezone_utils import now_utc
 
 

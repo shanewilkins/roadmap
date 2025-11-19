@@ -7,7 +7,11 @@ providing unified access to application configuration and secrets.
 from pathlib import Path
 from typing import Any
 
-from roadmap.credentials import CredentialManager, CredentialManagerError, mask_token
+from roadmap.infrastructure.security.credentials import (
+    CredentialManager,
+    CredentialManagerError,
+    mask_token,
+)
 from roadmap.settings import settings
 
 

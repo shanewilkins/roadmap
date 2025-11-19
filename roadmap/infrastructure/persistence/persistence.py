@@ -7,10 +7,10 @@ from typing import Any
 
 import yaml
 
-from .datetime_parser import parse_datetime
-from .domain import Issue, Milestone
-from .file_utils import ensure_directory_exists
-from .shared.validation import validate_frontmatter_structure
+from ...datetime_parser import parse_datetime
+from ...domain import Issue, Milestone
+from ...file_utils import ensure_directory_exists
+from ...shared.validation import validate_frontmatter_structure
 
 
 class YAMLValidationError(Exception):

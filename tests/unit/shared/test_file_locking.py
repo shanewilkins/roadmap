@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.file_locking import (
+from roadmap.infrastructure.persistence.file_locking import (
     FileLock,
     FileLockError,
     FileLockTimeout,

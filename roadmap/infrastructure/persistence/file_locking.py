@@ -11,7 +11,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, ContextManager
 
-from .file_utils import ensure_directory_exists
+from ...file_utils import ensure_directory_exists
 
 
 class FileLockError(Exception):

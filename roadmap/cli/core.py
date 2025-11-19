@@ -23,7 +23,7 @@ from roadmap.domain import Status
 console = get_console()
 # Import GitHub client and credential manager at module level so they can be patched in tests
 try:
-    from roadmap.credentials import CredentialManager
+    from roadmap.infrastructure.security.credentials import CredentialManager
     from roadmap.infrastructure.github import GitHubClient
 except Exception:
     GitHubClient = None

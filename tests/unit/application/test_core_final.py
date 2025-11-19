@@ -85,7 +85,7 @@ class TestRoadmapCoreUncoveredLines:
         milestone_file.write_text("corrupted content that will cause parser to fail")
 
         # Mock parser to raise exception on this file
-        with patch("roadmap.parser.MilestoneParser.parse_milestone_file") as mock_parse:
+        with patch("roadmap.infrastructure.persistence.parser.MilestoneParser.parse_milestone_file") as mock_parse:
             mock_parse.side_effect = Exception("Parse error")
 
             milestone = core.get_milestone("corrupted_milestone")
@@ -416,7 +416,7 @@ class TestRoadmapCoreUncoveredLines:
             milestone_file = (
                 core.milestones_dir / f"{milestone2.name.lower().replace(' ', '_')}.md"
             )
-            from roadmap.parser import MilestoneParser
+            from roadmap.infrastructure.persistence.parser import MilestoneParser
 
             MilestoneParser.save_milestone_file(milestone2, milestone_file)
 

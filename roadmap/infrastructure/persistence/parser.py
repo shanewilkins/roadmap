@@ -8,8 +8,8 @@ from typing import Any
 
 import yaml
 
-from .datetime_parser import parse_datetime
-from .domain import (
+from ...datetime_parser import parse_datetime
+from ...domain import (
     Issue,
     IssueType,
     Milestone,
@@ -19,9 +19,9 @@ from .domain import (
     ProjectStatus,
     Status,
 )
-from .file_utils import ensure_directory_exists, file_exists_check
+from ...file_utils import ensure_directory_exists, file_exists_check
 from .persistence import enhanced_persistence
-from .shared.timezone_utils import now_utc
+from ...shared.timezone_utils import now_utc
 
 
 class FrontmatterParser:

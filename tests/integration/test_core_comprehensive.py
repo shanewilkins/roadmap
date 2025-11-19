@@ -166,7 +166,7 @@ class TestRoadmapCoreMilestoneOperations:
         assert milestone is not None
 
         # Mock parser to raise exception
-        with patch("roadmap.parser.MilestoneParser.save_milestone_file") as mock_save:
+        with patch("roadmap.infrastructure.persistence.parser.MilestoneParser.save_milestone_file") as mock_save:
             mock_save.side_effect = Exception("Save failed")
 
             result = core.update_milestone(
@@ -602,7 +602,7 @@ class TestRoadmapCoreAdvancedOperations:
         assert hasattr(core.git, "repo_path")
         assert core.git.repo_path == core.root_path
 
-    @patch("roadmap.parser.IssueParser.save_issue_file")
+    @patch("roadmap.infrastructure.persistence.parser.IssueParser.save_issue_file")
     def test_security_integration(self, mock_save, core):
         """Test that security functions are used in operations."""
         # IssueParser.save_issue_file should be called during issue creation

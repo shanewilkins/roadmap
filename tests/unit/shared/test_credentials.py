@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.credentials import (
+from roadmap.infrastructure.security.credentials import (
     CredentialManager,
     CredentialManagerError,
     get_credential_manager,

@@ -5,8 +5,8 @@ import tempfile
 from pathlib import Path
 
 from roadmap.domain import Issue, Milestone, MilestoneStatus, Priority, Status
-from roadmap.parser import IssueParser, MilestoneParser
-from roadmap.persistence import (
+from roadmap.infrastructure.persistence.parser import IssueParser, MilestoneParser
+from roadmap.infrastructure.persistence.persistence import (
     EnhancedYAMLPersistence,
     YAMLRecoveryManager,
 )

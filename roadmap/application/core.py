@@ -47,7 +47,7 @@ from ..domain import (
 )
 from ..infrastructure.git import GitIntegration
 from ..infrastructure.storage import StateManager
-from ..parser import IssueParser, MilestoneParser
+from ..infrastructure.persistence.parser import IssueParser, MilestoneParser
 from ..security import (
     create_secure_directory,
     create_secure_file,
@@ -740,7 +740,7 @@ Project notes and additional context.
             Tuple of (token, owner, repo) or (None, None, None) if not configured
         """
         try:
-            from ..credentials import get_credential_manager
+            from ..infrastructure.security.credentials import get_credential_manager
 
             config = self.load_config()
             github_config = config.github or {}

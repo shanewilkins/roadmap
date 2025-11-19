@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.domain import Issue, Milestone, MilestoneStatus, Priority, Status
-from roadmap.parser import FrontmatterParser, IssueParser, MilestoneParser
+from roadmap.infrastructure.persistence.parser import FrontmatterParser, IssueParser, MilestoneParser
 
 pytestmark = pytest.mark.unit
 

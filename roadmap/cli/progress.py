@@ -65,7 +65,7 @@ def recalculate_milestone(ctx: click.Context, milestone_name: str, method: str):
 
         if updated:
             # Save the updated milestone
-            from roadmap.parser import MilestoneParser
+            from roadmap.infrastructure.persistence.parser import MilestoneParser
 
             milestone_file = core.milestones_dir / f"{milestone.name}.md"
             MilestoneParser.save_milestone_file(milestone, milestone_file)
@@ -191,7 +191,7 @@ def recalculate_all(ctx: click.Context, method: str):
             updated_milestones = 0
             for milestone in all_milestones:
                 if engine.update_milestone_progress(milestone, all_issues):
-                    from roadmap.parser import MilestoneParser
+                    from roadmap.infrastructure.persistence.parser import MilestoneParser
 
                     milestone_file = core.milestones_dir / f"{milestone.name}.md"
                     MilestoneParser.save_milestone_file(milestone, milestone_file)
@@ -202,7 +202,7 @@ def recalculate_all(ctx: click.Context, method: str):
             updated_projects = 0
             for project in all_projects:
                 if engine.update_project_progress(project, all_milestones, all_issues):
-                    from roadmap.parser import ProjectParser
+                    from roadmap.infrastructure.persistence.parser import ProjectParser
 
                     project_file = core.projects_dir / f"{project.id}.md"
                     ProjectParser.save_project_file(project, project_file)

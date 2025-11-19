@@ -5,6 +5,7 @@ Tests the core progress calculation engine for milestones and projects
 as specified in issue 515a927c.
 """
 
+from roadmap.application.services.progress_service import ProgressCalculationEngine
 from roadmap.domain import (
     Issue,
     Milestone,
@@ -13,7 +14,6 @@ from roadmap.domain import (
     ProjectStatus,
     Status,
 )
-from roadmap.application.services.progress_service import ProgressCalculationEngine
 
 
 class TestProgressCalculationEngine:
