@@ -9,7 +9,7 @@ the requirements from issue 515a927c.
 import logging
 from datetime import datetime, timedelta
 
-from .domain import (
+from ...domain import (
     Issue,
     Milestone,
     MilestoneStatus,

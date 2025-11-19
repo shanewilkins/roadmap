@@ -13,7 +13,7 @@ from roadmap.domain import (
     ProjectStatus,
     Status,
 )
-from roadmap.progress import ProgressCalculationEngine
+from roadmap.application.services.progress_service import ProgressCalculationEngine
 
 
 class TestProgressCalculationEngine:
@@ -314,7 +314,7 @@ class TestEventSystem:
 
     def test_issue_update_event_handling(self):
         """Test that issue updates trigger proper events."""
-        from roadmap.progress import ProgressEventSystem
+        from roadmap.application.services.progress_service import ProgressEventSystem
 
         engine = ProgressCalculationEngine(method="effort_weighted")
         event_system = ProgressEventSystem(engine)
@@ -346,7 +346,7 @@ class TestEventSystem:
 
     def test_non_progress_affecting_change(self):
         """Test that non-progress changes don't trigger unnecessary updates."""
-        from roadmap.progress import ProgressEventSystem
+        from roadmap.application.services.progress_service import ProgressEventSystem
 
         engine = ProgressCalculationEngine(method="effort_weighted")
         event_system = ProgressEventSystem(engine)

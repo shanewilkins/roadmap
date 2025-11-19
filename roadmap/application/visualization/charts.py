@@ -20,7 +20,10 @@ import seaborn as sns  # noqa: E402
 from matplotlib.patches import Circle  # noqa: E402
 from plotly.subplots import make_subplots  # noqa: E402
 
-from roadmap.data_utils import DataAnalyzer, DataFrameAdapter  # noqa: E402
+from roadmap.application.data.data_utils import (  # noqa: E402
+    DataAnalyzer,
+    DataFrameAdapter,
+)
 from roadmap.domain import Issue, Milestone, Status  # noqa: E402
 
 # Set style configurations

@@ -17,7 +17,7 @@ from rich.table import Table
 is_testing = "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("NO_COLOR") == "1"
 console = Console(force_terminal=not is_testing, no_color=is_testing)
 
-from ..progress import ProgressCalculationEngine
+from ..application.services.progress_service import ProgressCalculationEngine
 
 
 @click.group()

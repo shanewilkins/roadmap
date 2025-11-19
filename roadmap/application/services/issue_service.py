@@ -21,7 +21,7 @@ from roadmap.shared.errors import (
     ErrorSeverity,
     FileOperationError,
 )
-from roadmap.timezone_utils import now_utc
+from roadmap.shared.timezone_utils import now_utc
 
 
 class IssueService:

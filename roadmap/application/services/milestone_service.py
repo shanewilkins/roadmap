@@ -20,7 +20,7 @@ from roadmap.domain.issue import Status
 from roadmap.domain.milestone import Milestone, MilestoneStatus
 from roadmap.infrastructure.storage import StateManager
 from roadmap.parser import IssueParser, MilestoneParser
-from roadmap.timezone_utils import now_utc
+from roadmap.shared.timezone_utils import now_utc
 
 
 class MilestoneService:

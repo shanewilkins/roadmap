@@ -6,7 +6,7 @@ import click
 from rich.console import Console
 from rich.progress import Progress
 
-from roadmap.progress import ProgressCalculationEngine
+from roadmap.application.services.progress_service import ProgressCalculationEngine
 
 # Initialize console for rich output with test mode detection
 is_testing = "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("NO_COLOR") == "1"

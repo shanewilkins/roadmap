@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 # Import timezone utilities
-from .timezone_utils import (
+from .shared.timezone_utils import (
     ZONEINFO_AVAILABLE,
     ensure_timezone_aware,
     get_timezone_manager,

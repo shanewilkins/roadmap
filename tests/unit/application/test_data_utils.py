@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from roadmap.data_utils import DataAnalyzer, DataFrameAdapter, QueryBuilder
+from roadmap.application.data.data_utils import DataAnalyzer, DataFrameAdapter, QueryBuilder
 from roadmap.domain import (
     Issue,
     IssueType,

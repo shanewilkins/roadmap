@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 # Import timezone utilities with circular import protection
 try:
-    from ..timezone_utils import now_utc
+    from ..shared.timezone_utils import now_utc
 except ImportError:
     # Fallback during module loading
     def now_utc():
