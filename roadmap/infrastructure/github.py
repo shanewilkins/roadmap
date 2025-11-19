@@ -9,7 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .security.credentials import get_credential_manager
-from ..datetime_parser import parse_github_datetime
+from ..shared.datetime_parser import parse_github_datetime
 from ..domain import Comment, Priority, Status
 
 

@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..datetime_parser import parse_datetime
+from ..shared.datetime_parser import parse_datetime
 from ..domain import Issue
 
 

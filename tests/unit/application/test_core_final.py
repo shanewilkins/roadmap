@@ -382,7 +382,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_security_and_logging_integration(self, core):
         """Test security logging integration in various operations."""
         # Test issue creation with security logging
-        with patch("roadmap.security.log_security_event"):
+        with patch("roadmap.shared.security.log_security_event"):
             issue = core.create_issue(
                 title="Security Test Issue", priority=Priority.HIGH
             )

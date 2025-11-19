@@ -48,7 +48,7 @@ from ..domain import (
 from ..infrastructure.git import GitIntegration
 from ..infrastructure.storage import StateManager
 from ..infrastructure.persistence.parser import IssueParser, MilestoneParser
-from ..security import (
+from ..shared.security import (
     create_secure_directory,
     create_secure_file,
 )

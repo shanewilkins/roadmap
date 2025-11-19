@@ -8,7 +8,7 @@ from typing import Any
 
 import yaml
 
-from ...datetime_parser import parse_datetime
+from ...shared.datetime_parser import parse_datetime
 from ...domain import (
     Issue,
     IssueType,
@@ -19,7 +19,7 @@ from ...domain import (
     ProjectStatus,
     Status,
 )
-from ...file_utils import ensure_directory_exists, file_exists_check
+from ...shared.file_utils import ensure_directory_exists, file_exists_check
 from .persistence import enhanced_persistence
 from ...shared.timezone_utils import now_utc
 
