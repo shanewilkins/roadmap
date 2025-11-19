@@ -1,5 +1,7 @@
 """Assignee validation strategies for RoadmapCore."""
 
+from typing import Any
+
 
 class AssigneeValidationResult:
     """Result of assignee validation."""
@@ -98,7 +100,8 @@ class GitHubValidator:
         self.owner = owner
         self.repo = repo
         self.cached_members = (
-            set(cached_members) if isinstance(cached_members, list) 
+            set(cached_members)
+            if isinstance(cached_members, list)
             else (cached_members or set())
         )
 
