@@ -3,6 +3,8 @@
 import click
 from rich.console import Console
 
+from .status_display import GitStatusDisplay
+
 console = Console()
 
 
@@ -39,85 +41,27 @@ def git_status(ctx: click.Context):
         )
         return
 
+    display = GitStatusDisplay(console)
+
     try:
         git_context = core.get_git_context()
 
         if not git_context.get("is_git_repo", False):
-            console.print("📁 Not in a Git repository", style="yellow")
+            display.show_not_git_repo()
             return
 
-        console.print("🔍 Git Repository Status", style="bold blue")
-        console.print()
+        display.show_header()
+        display.show_repository_info(git_context)
+        display.show_current_branch(git_context)
 
-        # Repository info
-        if git_context.get("origin_url"):
-            console.print(f"📍 Origin: {git_context['origin_url']}", style="cyan")
-
-        if git_context.get("github_owner") and git_context.get("github_repo"):
-            console.print(
-                f"🐙 GitHub: {git_context['github_owner']}/{git_context['github_repo']}",
-                style="cyan",
-            )
-
-        # Current branch and linked issue
-        if git_context.get("current_branch"):
-            console.print(
-                f"🌿 Current branch: {git_context['current_branch']}", style="green"
-            )
-
-            linked_issue = git_context.get("linked_issue")
-            if linked_issue:
-                console.print("🔗 Linked issue:", style="bold")
-                console.print(f"   📋 {linked_issue['title']}", style="cyan")
-                console.print(f"   🆔 {linked_issue['id']}", style="dim")
-                console.print(f"   📊 Status: {linked_issue['status']}", style="yellow")
-                console.print(
-                    f"   ⚡ Priority: {linked_issue['priority']}",
-                    style="red" if linked_issue["priority"] == "critical" else "yellow",
-                )
-            else:
-                console.print("   💡 No linked issue found", style="dim")
-
-        # Branch-issue mapping
         branch_issues = core.get_branch_linked_issues()
-        if branch_issues:
-            console.print("\n🌿 Branch-Issue Links:", style="bold")
-            for branch, issue_ids in branch_issues.items():
-                for issue_id in issue_ids:
-                    issue = core.get_issue(issue_id)
-                    if issue:
-                        marker = (
-                            "👉"
-                            if branch == git_context.get("current_branch")
-                            else "  "
-                        )
-                        console.print(
-                            f"{marker} {branch} → {issue.title[:50]}{'...' if len(issue.title) > 50 else ''}",
-                            style="cyan",
-                        )
+        current_branch = git_context.get("current_branch", "")
+        display.show_branch_issue_links(branch_issues, current_branch, core)
 
-        # Recent commits with roadmap references
-        if core.git.is_git_repository():
-            recent_commits = core.git.get_recent_commits(count=5)
-            roadmap_commits = [
-                c for c in recent_commits if c.extract_roadmap_references()
-            ]
-
-            if roadmap_commits:
-                console.print("\n📝 Recent Roadmap Commits:", style="bold")
-                for commit in roadmap_commits[:3]:
-                    console.print(
-                        f"   {commit.short_hash} {commit.message[:60]}{'...' if len(commit.message) > 60 else ''}",
-                        style="dim",
-                    )
-                    refs = commit.extract_roadmap_references()
-                    if refs:
-                        console.print(
-                            f"     🔗 References: {', '.join(refs)}", style="cyan"
-                        )
+        display.show_recent_commits(core)
 
     except Exception as e:
-        console.print(f"❌ Failed to get Git status: {e}", style="bold red")
+        display.show_error(e)
 
 
 @git.command("branch")

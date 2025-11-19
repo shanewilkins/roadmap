@@ -867,122 +867,102 @@ Project notes and additional context.
             - (True, "") if valid (backward compatible)
             - (False, error_message) if invalid
         """
+        try:
+            from .assignee_validation import AssigneeValidationStrategy
+
+            # Get GitHub config if available
+            github_config = None
+            try:
+                token, owner, repo = self._get_github_config()
+                if token and owner and repo:
+                    github_config = (token, owner, repo)
+            except Exception:
+                pass
+
+            # Get cached team members
+            cached_members = None
+            try:
+                cached_members = self._get_cached_team_members()
+            except Exception:
+                pass
+
+            # Use validation strategy
+            strategy = AssigneeValidationStrategy(
+                self.root_path, github_config, cached_members
+            )
+            is_valid, error_message, canonical_id = strategy.validate(assignee)
+
+            if is_valid:
+                self._last_canonical_assignee = canonical_id
+                return True, ""
+            else:
+                return False, error_message
+
+        except Exception:
+            # Fall back to legacy validation if strategy fails
+            return self._legacy_validate_assignee(assignee)
+
+    def _legacy_validate_assignee(self, assignee: str) -> tuple[bool, str]:
+        """Legacy validation fallback for when validation strategy fails.
+
+        Args:
+            assignee: Username to validate
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
         if not assignee or not assignee.strip():
             return False, "Assignee cannot be empty"
 
         assignee = assignee.strip()
 
         try:
-            # Try identity management system first
-            from .identity import IdentityManager
+            token, owner, repo = self._get_github_config()
+            if not token or not owner or not repo:
+                # If GitHub is not configured, allow any assignee without validation
+                # This supports local-only roadmap usage without GitHub integration
+                self._last_canonical_assignee = assignee
+                return True, ""
 
-            identity_manager = IdentityManager(self.root_path)
-            is_valid, result, profile = identity_manager.resolve_assignee(assignee)
+            # GitHub is configured - perform validation against repository access
 
-            if is_valid:
-                # Store canonical form for later retrieval but return empty string for compatibility
-                self._last_canonical_assignee = (
-                    profile.canonical_id if profile else result
-                )
+            # First check against cached team members for performance
+            team_members = self._get_cached_team_members()
+            if team_members and assignee in team_members:
+                self._last_canonical_assignee = assignee
+                return True, ""
+
+            # If not in cache or cache is empty, do full validation via API
+            from ..infrastructure.github import GitHubClient
+
+            client = GitHubClient(token=token, owner=owner, repo=repo)
+
+            # This will do the full GitHub API validation
+            github_valid, github_error = client.validate_assignee(assignee)
+            if github_valid:
+                self._last_canonical_assignee = assignee
                 return True, ""
             else:
-                # If identity system failed, check if we should fall back to GitHub validation
-                token, owner, repo = self._get_github_config()
+                return False, github_error
 
-                # If GitHub is configured and identity system suggests GitHub fallback
-                if (
-                    token
-                    and owner
-                    and repo
-                    and identity_manager.config.validation_mode
-                    in ["hybrid", "github-only"]
-                ):
-                    # Fall back to GitHub validation for hybrid/github-only mode
-                    team_members = self._get_cached_team_members()
-                    if team_members and assignee in team_members:
-                        self._last_canonical_assignee = assignee
-                        return True, ""
-
-                    # Do full validation via API
-                    from ..infrastructure.github import GitHubClient
-
-                    client = GitHubClient(token=token, owner=owner, repo=repo)
-                    github_valid, github_error = client.validate_assignee(assignee)
-                    if github_valid:
-                        self._last_canonical_assignee = assignee
-                        return True, ""
-                    else:
-                        return False, github_error
-
-                # If no GitHub config and identity system is in local/hybrid mode,
-                # accept reasonable names (for local-only usage)
-                elif not (
-                    token and owner and repo
-                ) and identity_manager.config.validation_mode in [
-                    "local-only",
-                    "hybrid",
-                ]:
-                    # Basic validation for local usage
-                    if len(assignee) >= 2 and not any(
-                        char in assignee for char in "<>{}[]()"
-                    ):
-                        self._last_canonical_assignee = assignee
-                        return True, ""
-                    else:
-                        return False, f"'{assignee}' is not a valid assignee name"
-
-                # No fallback available, return identity system result
-                return False, result
-
-        except Exception:
-            # If identity management fails, fall back to legacy validation
-            try:
-                token, owner, repo = self._get_github_config()
-                if not token or not owner or not repo:
-                    # If GitHub is not configured, allow any assignee without validation
-                    # This supports local-only roadmap usage without GitHub integration
-                    self._last_canonical_assignee = assignee
-                    return True, ""
-
-                # GitHub is configured - perform validation against repository access
-
-                # First check against cached team members for performance
-                team_members = self._get_cached_team_members()
-                if team_members and assignee in team_members:
-                    self._last_canonical_assignee = assignee
-                    return True, ""
-
-                # If not in cache or cache is empty, do full validation via API
-                from ..infrastructure.github import GitHubClient
-
-                client = GitHubClient(token=token, owner=owner, repo=repo)
-
-                # This will do the full GitHub API validation
-                github_valid, github_error = client.validate_assignee(assignee)
-                if github_valid:
-                    self._last_canonical_assignee = assignee
-                    return True, ""
-                else:
-                    return False, github_error
-
-            except Exception as fallback_error:
-                # If validation fails due to network/API issues, allow the assignment
-                # but log a warning that validation couldn't be performed
-                error_handler = ErrorHandler()
-                error_handler.handle_error(
-                    ValidationError(
-                        f"Could not validate assignee '{assignee}' - validation unavailable",
-                        field="assignee",
-                        value=assignee,
-                        severity=ErrorSeverity.WARNING,
-                        cause=fallback_error,
-                    ),
-                    show_traceback=False,
-                    exit_on_critical=False,
-                )
-                warning_msg = f"Warning: Could not validate assignee (validation unavailable): {str(fallback_error)}"
-                self._last_canonical_assignee = assignee
-                return True, warning_msg
+        except Exception as fallback_error:
+            # If validation fails due to network/API issues, allow the assignment
+            # but log a warning that validation couldn't be performed
+            error_handler = ErrorHandler()
+            error_handler.handle_error(
+                ValidationError(
+                    f"Could not validate assignee '{assignee}' - validation unavailable",
+                    field="assignee",
+                    value=assignee,
+                    severity=ErrorSeverity.WARNING,
+                    cause=fallback_error,
+                ),
+                show_traceback=False,
+                exit_on_critical=False,
+            )
+            warning_msg = f"Warning: Could not validate assignee (validation unavailable): {str(fallback_error)}"
+            self._last_canonical_assignee = assignee
+            return True, warning_msg
 
     def get_canonical_assignee(self, assignee: str) -> str:
         """Get the canonical form of an assignee name.
