@@ -1,34 +1,17 @@
 """Create issue command."""
 
-import os
-import subprocess
-
 import click
 
+from roadmap.cli.issue_creation import (
+    AssigneeResolver,
+    GitBranchCreator,
+    IssueDisplayFormatter,
+)
 from roadmap.cli.utils import get_console
 from roadmap.domain import IssueType, Priority
 from roadmap.shared.errors import ErrorHandler, ValidationError
 
 console = get_console()
-
-
-def _safe_create_branch(git, issue, checkout=True, force=False):
-    """Call create_branch_for_issue with best-effort compatibility for older signatures.
-
-    Tries the newest signature (checkout, force) first, falls back to older ones.
-    """
-    try:
-        return git.create_branch_for_issue(issue, checkout=checkout, force=force)
-    except TypeError:
-        # Try without force
-        try:
-            return git.create_branch_for_issue(issue, checkout=checkout)
-        except TypeError:
-            # Try fully positional (issue only)
-            try:
-                return git.create_branch_for_issue(issue)
-            except Exception:
-                return False
 
 
 @click.command("create")
@@ -93,33 +76,11 @@ def create_issue(
         return
 
     try:
-        # Auto-detect assignee from Git if not provided
-        if not assignee:
-            git_user = core.get_current_user_from_git()
-            if git_user:
-                assignee = git_user
-                console.print(
-                    f"🔍 Auto-detected assignee from Git: {assignee}", style="dim"
-                )
+        # Resolve assignee with auto-detection and validation
+        assignee_resolver = AssigneeResolver(core)
+        canonical_assignee = assignee_resolver.resolve_assignee(assignee)
 
-        # Validate assignee if provided
-        canonical_assignee = assignee
-        if assignee:
-            is_valid, result = core.validate_assignee(assignee)
-            if not is_valid:
-                console.print(f"❌ Invalid assignee: {result}", style="bold red")
-                raise click.Abort()
-            elif result and "Warning:" in result:
-                console.print(f"⚠️  {result}", style="bold yellow")
-                canonical_assignee = assignee  # Keep original if warning
-            else:
-                canonical_assignee = core.get_canonical_assignee(assignee)
-                if canonical_assignee != assignee:
-                    console.print(
-                        f"🔄 Resolved '{assignee}' to '{canonical_assignee}'",
-                        style="dim",
-                    )
-
+        # Create the issue
         issue = core.create_issue(
             title=title,
             priority=Priority(priority),
@@ -131,127 +92,16 @@ def create_issue(
             depends_on=list(depends_on),
             blocks=list(blocks),
         )
-        console.print(f"✅ Created issue: {issue.title}", style="bold green")
-        console.print(f"   ID: {issue.id}", style="cyan")
-        console.print(f"   Type: {issue.issue_type.value.title()}", style="blue")
-        console.print(f"   Priority: {issue.priority.value}", style="yellow")
-        if milestone:
-            console.print(f"   Milestone: {milestone}", style="blue")
-        if assignee:
-            console.print(f"   Assignee: {assignee}", style="magenta")
-        if estimate:
-            console.print(
-                f"   Estimated: {issue.estimated_time_display}", style="green"
-            )
-        if depends_on:
-            console.print(f"   Depends on: {', '.join(depends_on)}", style="orange1")
-        if blocks:
-            console.print(f"   Blocks: {', '.join(blocks)}", style="red1")
+
+        # Display issue information
+        IssueDisplayFormatter.display_created_issue(issue, milestone, assignee)
 
         # Create Git branch if requested
         if git_branch:
-            if hasattr(core, "git") and core.git.is_git_repository():
-                # Determine resolved branch name early so fallbacks use the same name
-                resolved_branch_name = branch_name or core.git.suggest_branch_name(
-                    issue
-                )
-                branch_success = _safe_create_branch(
-                    core.git, issue, checkout=checkout, force=force
-                )
-                if branch_success:
-                    console.print(
-                        f"🌿 Created Git branch: {resolved_branch_name}", style="green"
-                    )
-                    if checkout:
-                        console.print(
-                            f"✅ Checked out branch: {resolved_branch_name}",
-                            style="green",
-                        )
-                else:
-                    # Determine likely reason for failure
-                    status_output = (
-                        core.git._run_git_command(["status", "--porcelain"]) or ""
-                    )
-                    if status_output.strip():
-                        console.print(
-                            "⚠️  Working tree has uncommitted changes — branch creation skipped. Use --force to override.",
-                            style="yellow",
-                        )
-                    else:
-                        # Try fallback direct git command
-                        fallback = core.git._run_git_command(
-                            ["checkout", "-b", resolved_branch_name]
-                        )
-                        if fallback is not None:
-                            console.print(
-                                f"🌿 Created Git branch: {resolved_branch_name}",
-                                style="green",
-                            )
-                            if checkout:
-                                console.print(
-                                    f"✅ Checked out branch: {resolved_branch_name}",
-                                    style="green",
-                                )
-                        else:
-                            # Final check: maybe branch exists already; verify via rev-parse
-                            exists = None
-                            try:
-                                if hasattr(core, "git"):
-                                    exists = core.git._run_git_command(
-                                        ["rev-parse", "--verify", resolved_branch_name]
-                                    )
-                            except Exception:
-                                exists = None
+            branch_creator = GitBranchCreator(core)
+            branch_creator.create_branch(issue, branch_name, checkout, force)
 
-                            if exists:
-                                console.print(
-                                    f"🌿 Created Git branch: {resolved_branch_name}",
-                                    style="green",
-                                )
-                                if checkout:
-                                    console.print(
-                                        f"✅ Checked out branch: {resolved_branch_name}",
-                                        style="green",
-                                    )
-                            else:
-                                # As a last resort try running git directly in the repo root
-                                try:
-                                    subprocess.run(
-                                        [
-                                            "git",
-                                            "checkout",
-                                            "-b",
-                                            resolved_branch_name,
-                                        ],
-                                        cwd=getattr(core, "root_path", None)
-                                        or os.getcwd(),
-                                        check=True,
-                                        capture_output=True,
-                                        text=True,
-                                    )
-                                    console.print(
-                                        f"🌿 Created Git branch: {resolved_branch_name}",
-                                        style="green",
-                                    )
-                                    if checkout:
-                                        console.print(
-                                            f"✅ Checked out branch: {resolved_branch_name}",
-                                            style="green",
-                                        )
-                                except Exception:
-                                    console.print(
-                                        "⚠️  Failed to create or checkout branch. See git for details.",
-                                        style="yellow",
-                                    )
-            else:
-                console.print(
-                    "⚠️  Not in a Git repository, skipping branch creation",
-                    style="yellow",
-                )
-
-        console.print(f"   File: .roadmap/issues/{issue.filename}", style="dim")
     except click.Abort:
-        # Re-raise click.Abort to maintain proper exit code
         raise
     except Exception as e:
         error_handler = ErrorHandler()

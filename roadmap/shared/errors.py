@@ -197,6 +197,195 @@ class ConfigurationError(RoadmapError):
         self.config_file = config_file
 
 
+# Additional specific exceptions for better error handling
+
+
+class IssueNotFoundError(RoadmapError):
+    """Raised when an issue cannot be found."""
+
+    def __init__(self, message: str, issue_id: str | None = None, **kwargs):
+        context = kwargs.get("context", {})
+        if issue_id:
+            context["issue_id"] = issue_id
+
+        super().__init__(
+            message,
+            severity=kwargs.get("severity", ErrorSeverity.MEDIUM),
+            category=ErrorCategory.VALIDATION,
+            context=context,
+            cause=kwargs.get("cause"),
+        )
+        self.issue_id = issue_id
+
+
+class MilestoneNotFoundError(RoadmapError):
+    """Raised when a milestone cannot be found."""
+
+    def __init__(self, message: str, milestone_name: str | None = None, **kwargs):
+        context = kwargs.get("context", {})
+        if milestone_name:
+            context["milestone"] = milestone_name
+
+        super().__init__(
+            message,
+            severity=kwargs.get("severity", ErrorSeverity.MEDIUM),
+            category=ErrorCategory.VALIDATION,
+            context=context,
+            cause=kwargs.get("cause"),
+        )
+        self.milestone_name = milestone_name
+
+
+class GitHubAPIError(NetworkError):
+    """Errors specific to GitHub API operations."""
+
+    def __init__(
+        self,
+        message: str,
+        endpoint: str | None = None,
+        rate_limit_remaining: int | None = None,
+        **kwargs,
+    ):
+        context = kwargs.get("context", {})
+        if endpoint:
+            context["endpoint"] = endpoint
+        if rate_limit_remaining is not None:
+            context["rate_limit_remaining"] = rate_limit_remaining
+
+        super().__init__(
+            message,
+            severity=kwargs.get("severity", ErrorSeverity.HIGH),
+            **kwargs,
+        )
+        self.endpoint = endpoint
+        self.rate_limit_remaining = rate_limit_remaining
+
+
+class AuthenticationError(RoadmapError):
+    """Raised when authentication fails."""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=kwargs.get("severity", ErrorSeverity.HIGH),
+            category=ErrorCategory.PERMISSION,
+            context=kwargs.get("context", {}),
+            cause=kwargs.get("cause"),
+        )
+
+
+class StateError(RoadmapError):
+    """Raised when operation is invalid for current state."""
+
+    def __init__(self, message: str, current_state: str | None = None, **kwargs):
+        context = kwargs.get("context", {})
+        if current_state:
+            context["current_state"] = current_state
+
+        super().__init__(
+            message,
+            severity=kwargs.get("severity", ErrorSeverity.MEDIUM),
+            category=ErrorCategory.VALIDATION,
+            context=context,
+            cause=kwargs.get("cause"),
+        )
+        self.current_state = current_state
+
+
+class ParseError(RoadmapError):
+    """Raised when parsing fails."""
+
+    def __init__(
+        self,
+        message: str,
+        file_path: Path | None = None,
+        line_number: int | None = None,
+        **kwargs,
+    ):
+        context = kwargs.get("context", {})
+        if file_path:
+            context["file_path"] = str(file_path)
+        if line_number:
+            context["line_number"] = line_number
+
+        super().__init__(
+            message,
+            severity=kwargs.get("severity", ErrorSeverity.HIGH),
+            category=ErrorCategory.PARSING,
+            context=context,
+            cause=kwargs.get("cause"),
+        )
+        self.file_path = file_path
+        self.line_number = line_number
+
+
+class PersistenceError(FileOperationError):
+    """Raised when database or file persistence operations fail."""
+
+    pass
+
+
+class FileLockError(FileOperationError):
+    """Raised when file locking operations fail."""
+
+    pass
+
+
+class DirectoryCreationError(FileOperationError):
+    """Raised when directory creation fails."""
+
+    pass
+
+
+class FileReadError(FileOperationError):
+    """Raised when file reading fails."""
+
+    pass
+
+
+class FileWriteError(FileOperationError):
+    """Raised when file writing fails."""
+
+    pass
+
+
+class ExportError(FileOperationError):
+    """Raised when data export fails."""
+
+    pass
+
+
+class ImportError(FileOperationError):
+    """Raised when data import fails."""
+
+    pass
+
+
+class SecurityError(RoadmapError):
+    """Base class for security-related errors."""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message,
+            severity=kwargs.get("severity", ErrorSeverity.CRITICAL),
+            category=ErrorCategory.PERMISSION,
+            context=kwargs.get("context", {}),
+            cause=kwargs.get("cause"),
+        )
+
+
+class PathValidationError(SecurityError):
+    """Raised when path validation fails (path traversal, etc.)."""
+
+    def __init__(self, message: str, path: Path | str | None = None, **kwargs):
+        context = kwargs.get("context", {})
+        if path:
+            context["path"] = str(path)
+
+        super().__init__(message, context=context, **kwargs)
+        self.path = path
+
+
 class ErrorHandler:
     """Centralized error handling utilities."""
 

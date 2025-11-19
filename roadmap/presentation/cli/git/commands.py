@@ -226,7 +226,7 @@ def git_link(ctx: click.Context, issue_id: str):
             return
 
         # Link the issue to the current branch
-        success = core.link_issue_to_branch(issue_id, current_branch)
+        success = core.link_issue_to_current_branch(issue_id)
 
         if success:
             console.print(

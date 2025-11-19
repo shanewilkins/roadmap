@@ -240,11 +240,11 @@ class TestGitIntegrationCLI:
         shutil.rmtree(self.temp_dir)
 
     def test_git_status_command(self):
-        """Test git-status command."""
+        """Test git status command."""
         self.setUp()
         try:
             runner = CliRunner()
-            result = runner.invoke(main, ["git-status"])
+            result = runner.invoke(main, ["git", "status"])
 
             assert result.exit_code == 0
             assert "Git Repository Status" in result.output
@@ -253,7 +253,7 @@ class TestGitIntegrationCLI:
             self.tearDown()
 
     def test_git_branch_command(self):
-        """Test git-branch command."""
+        """Test git branch command."""
         self.setUp()
         try:
             runner = CliRunner()
@@ -268,7 +268,7 @@ class TestGitIntegrationCLI:
             issue_id = result.output.split("ID:")[1].strip().split()[0]
 
             # Create a branch for the issue
-            result = runner.invoke(main, ["git-branch", issue_id])
+            result = runner.invoke(main, ["git", "branch", issue_id])
             assert result.exit_code == 0
             assert "Created branch:" in result.output
             assert "Linked to issue:" in result.output
@@ -276,7 +276,7 @@ class TestGitIntegrationCLI:
             self.tearDown()
 
     def test_git_link_command(self):
-        """Test git-link command."""
+        """Test git link command."""
         self.setUp()
         try:
             runner = CliRunner()
@@ -290,7 +290,7 @@ class TestGitIntegrationCLI:
             subprocess.run(["git", "checkout", "-b", "test-branch"], check=True)
 
             # Link issue to current branch
-            result = runner.invoke(main, ["git-link", issue_id])
+            result = runner.invoke(main, ["git", "link", issue_id])
             assert result.exit_code == 0
             assert "Linked issue to branch:" in result.output
         finally:

@@ -99,6 +99,7 @@ mkdocs = "^1.6.0"
 mkdocs-material = "^9.5.0"
 mkdocs-click = "^0.8.0"
 myst-parser = "^4.0.0"
+radon = "^6.0.1"
 
 [tool.poetry.scripts]
 roadmap = "roadmap.cli:main"

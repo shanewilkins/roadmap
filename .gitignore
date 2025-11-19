@@ -186,3 +186,7 @@ coverage.json
 *_demo.json
 *_analysis*.json
 pruning_*.json
+
+# copilot generated files
+
+docs/copilot_reports/

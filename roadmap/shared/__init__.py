@@ -82,13 +82,27 @@ from .datetime_parser import (
     parse_user_datetime,
 )
 from .errors import (
+    AuthenticationError,
     ConfigurationError,
+    DirectoryCreationError,
     ErrorCategory,
     ErrorSeverity,
+    ExportError,
+    FileLockError,
     FileOperationError,
+    FileReadError,
+    FileWriteError,
+    GitHubAPIError,
     GitOperationError,
+    IssueNotFoundError,
+    MilestoneNotFoundError,
     NetworkError,
+    ParseError,
+    PathValidationError,
+    PersistenceError,
     RoadmapError,
+    SecurityError,
+    StateError,
     ValidationError,
 )
 from .file_utils import (
@@ -105,9 +119,28 @@ from .logging import (
     configure_for_testing,
     get_logger,
     get_security_logger,
+    log_operation,
     setup_logging,
 )
+from .metrics import (
+    MetricsCollector,
+    OperationMetric,
+    get_metrics_collector,
+)
+from .performance import (
+    OperationTimer,
+    async_timed_operation,
+    timed_operation,
+)
 from .progress import ProgressCalculationEngine, ProgressEventSystem
+from .retry import (
+    API_RETRY,
+    DATABASE_RETRY,
+    NETWORK_RETRY,
+    RetryConfig,
+    async_retry,
+    retry,
+)
 from .security import (
     cleanup_old_backups,
     configure_security_logging,

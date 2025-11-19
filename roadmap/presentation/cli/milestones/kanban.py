@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.cli.kanban_helpers import KanbanLayout, KanbanOrganizer
 from roadmap.cli.utils import get_console
 
 console = get_console()
@@ -49,101 +50,78 @@ def milestone_kanban(
             )
             return
 
-        # Organize issues into kanban columns
-        from datetime import datetime
+        # Organize into categories
+        categories = KanbanOrganizer.categorize_issues(milestone_issues)
+        columns = KanbanOrganizer.create_column_definitions(categories, no_color)
 
-        now = datetime.now()
-
-        overdue = []
-        blocked = []
-        in_progress = []
-        not_started = []
-        done = []
-
-        for issue in milestone_issues:
-            if issue.status.value == "done":
-                done.append(issue)
-            elif issue.status.value == "blocked":
-                blocked.append(issue)
-            elif issue.status.value == "in-progress":
-                in_progress.append(issue)
-            elif (
-                issue.due_date and issue.due_date < now and issue.status.value != "done"
-            ):
-                overdue.append(issue)
-            else:
-                not_started.append(issue)
-
-        # Display the kanban board
-        console.print(f"\n🎯 Kanban Board: {milestone.name}", style="bold blue")
-        console.print(
-            f"📅 Due: {milestone.due_date.strftime('%Y-%m-%d') if milestone.due_date else 'No due date'}"
+        # Display kanban board
+        _display_header(milestone, milestone_issues)
+        _display_board(
+            columns,
+            compact,
+            col_width=KanbanLayout.calculate_column_width(len(columns)),
         )
-        console.print(
-            f"📊 Progress: {len(done)}/{len(milestone_issues)} issues completed\n"
-        )
-
-        # Create columns
-        columns = [
-            ("🚨 Overdue", overdue, "bold red" if not no_color else "white"),
-            ("🚫 Blocked", blocked, "bold yellow" if not no_color else "white"),
-            ("🔄 In Progress", in_progress, "bold blue" if not no_color else "white"),
-            ("⏸️  Not Started", not_started, "dim white" if not no_color else "white"),
-            ("✅ Done", done, "bold green" if not no_color else "white"),
-        ]
-
-        # Calculate column width based on terminal size
-        try:
-            import shutil
-
-            terminal_width = shutil.get_terminal_size().columns
-            col_width = max(
-                30, (terminal_width - 5) // len(columns)
-            )  # More space per column
-        except Exception:
-            col_width = 35
-
-        # Print column headers
-        header_line = ""
-        separator_line = ""
-        for title, _issues, _style in columns:
-            header_line += f"{title:<{col_width}}"
-            separator_line += "─" * col_width
-
-        console.print(header_line, style="bold")
-        console.print(separator_line, style="dim")
-
-        # Print issues in columns
-        max_issues = max(len(col[1]) for col in columns) if columns else 0
-
-        for row in range(max_issues):
-            row_line = ""
-            for _title, issues, _style in columns:
-                if row < len(issues):
-                    issue = issues[row]
-                    # Format issue card
-                    title_space = col_width - 12  # Space for ID and padding
-                    display_title = issue.title
-                    if len(display_title) > title_space:
-                        display_title = display_title[: title_space - 3] + "..."
-                    card_text = f"#{issue.id[:8]} {display_title}"
-                    row_line += f"{card_text:<{col_width}}"
-                else:
-                    row_line += " " * col_width
-
-            console.print(row_line)
-
-            if not compact:
-                # Add spacing between cards
-                if row < max_issues - 1:
-                    console.print("")
-
-        # Print summary
-        console.print("\n📈 Summary:")
-        console.print(
-            f"   Overdue: {len(overdue)} | Blocked: {len(blocked)} | In Progress: {len(in_progress)}"
-        )
-        console.print(f"   Not Started: {len(not_started)} | Done: {len(done)}")
+        _display_summary(categories)
 
     except Exception as e:
         console.print(f"❌ Failed to display kanban board: {e}", style="bold red")
+
+
+def _display_header(milestone, milestone_issues):
+    """Display board header with milestone info."""
+    console.print(f"\n🎯 Kanban Board: {milestone.name}", style="bold blue")
+    console.print(
+        f"📅 Due: {milestone.due_date.strftime('%Y-%m-%d') if milestone.due_date else 'No due date'}"
+    )
+    done_count = sum(1 for i in milestone_issues if i.status.value == "done")
+    console.print(
+        f"📊 Progress: {done_count}/{len(milestone_issues)} issues completed\n"
+    )
+
+
+def _display_board(columns, compact: bool, col_width: int):
+    """Display the kanban board columns."""
+    # Print column headers
+    header_line = ""
+    separator_line = ""
+    for title, _issues, _style in columns:
+        header_line += f"{title:<{col_width}}"
+        separator_line += "─" * col_width
+
+    console.print(header_line, style="bold")
+    console.print(separator_line, style="dim")
+
+    # Print rows
+    max_issues = max(len(issues) for _, issues, _ in columns) if columns else 0
+    for row in range(max_issues):
+        row_line = ""
+        for _title, issues, _style in columns:
+            if row < len(issues):
+                issue = issues[row]
+                # Format issue card
+                title_space = col_width - 12  # Space for ID and padding
+                display_title = issue.title
+                if len(display_title) > title_space:
+                    display_title = display_title[: title_space - 3] + "..."
+                card_text = f"#{issue.id[:8]} {display_title}"
+                row_line += f"{card_text:<{col_width}}"
+            else:
+                row_line += " " * col_width
+
+        console.print(row_line)
+
+        if not compact:
+            # Add spacing between cards
+            if row < max_issues - 1:
+                console.print("")
+
+
+def _display_summary(categories: dict):
+    """Display summary statistics."""
+    console.print("\n📈 Summary:")
+    console.print(
+        f"   Overdue: {len(categories['overdue'])} | Blocked: {len(categories['blocked'])} | In Progress: {len(categories['in_progress'])}"
+    )
+    console.print(
+        f"   Not Started: {len(categories['not_started'])} | Done: {len(categories['done'])}"
+    )

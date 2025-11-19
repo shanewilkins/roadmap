@@ -576,141 +576,110 @@ class ChartGenerator:
         if not milestones:
             raise VisualizationError("No milestones provided for progress chart")
 
+        from .progress_helpers import MilestoneProgressCalculator
+
         # Calculate progress for each milestone
-        milestone_data = []
-        for milestone in milestones:
-            milestone_issues = [i for i in issues if i.milestone == milestone.name]
-            total_issues = len(milestone_issues)
-            completed_issues = len(
-                [i for i in milestone_issues if i.status == Status.DONE]
-            )
-            progress = (
-                (completed_issues / total_issues * 100) if total_issues > 0 else 0
-            )
-
-            milestone_data.append(
-                {
-                    "name": milestone.name,
-                    "progress": progress,
-                    "completed": completed_issues,
-                    "total": total_issues,
-                    "due_date": milestone.due_date,
-                }
-            )
-
-        # Sort by due date
-        milestone_data.sort(key=lambda x: x["due_date"] or datetime.max.date())
+        milestone_data = MilestoneProgressCalculator.calculate_milestone_data(
+            milestones, issues
+        )
 
         filename = f"milestone_progress_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         if output_format == "html":
-            # Interactive Plotly progress chart
-            names = [m["name"] for m in milestone_data]
-            progress_values = [m["progress"] for m in milestone_data]
-
-            # Color based on progress
-            colors = []
-            for p in progress_values:
-                if p >= 100:
-                    colors.append("#10b981")  # Green for complete
-                elif p >= 75:
-                    colors.append("#3b82f6")  # Blue for near complete
-                elif p >= 50:
-                    colors.append("#f59e0b")  # Yellow for in progress
-                elif p >= 25:
-                    colors.append("#f97316")  # Orange for started
-                else:
-                    colors.append("#ef4444")  # Red for not started
-
-            fig = go.Figure(
-                data=[
-                    go.Bar(
-                        y=names,
-                        x=progress_values,
-                        orientation="h",
-                        marker_color=colors,
-                        text=[f"{p:.1f}%" for p in progress_values],
-                        textposition="auto",
-                        hovertemplate="<b>%{y}</b><br>Progress: %{x:.1f}%<br>"
-                        + "Completed: %{customdata[0]}/{customdata[1]} issues<extra></extra>",
-                        customdata=[
-                            [m["completed"], m["total"]] for m in milestone_data
-                        ],
-                    )
-                ]
-            )
-
-            fig.update_layout(
-                title={
-                    "text": "Milestone Progress Overview",
-                    "x": 0.5,
-                    "xanchor": "center",
-                    "font": {"size": 16},
-                },
-                xaxis_title="Progress (%)",
-                yaxis_title="Milestone",
-                font={"family": "Arial, sans-serif", "size": 12},
-                margin={"t": 60, "b": 40, "l": 150, "r": 40},
-                height=max(400, len(names) * 50),
-            )
-
-            fig.update_xaxes(range=[0, 100])
-
-            output_path = self.charts_dir / f"{filename}.html"
-            fig.write_html(str(output_path))
-
+            return self._generate_html_progress_chart(milestone_data, filename)
         else:
-            # Matplotlib progress chart
-            fig, ax = plt.subplots(figsize=(12, max(6, len(milestone_data) * 0.8)))
+            return self._generate_matplotlib_progress_chart(
+                milestone_data, filename, output_format
+            )
 
-            names = [m["name"] for m in milestone_data]
-            progress_values = [m["progress"] for m in milestone_data]
+    def _generate_html_progress_chart(
+        self, milestone_data: list[dict], filename: str
+    ) -> Path:
+        """Generate HTML progress chart using Plotly."""
+        from .progress_helpers import ProgressColorMapper
 
-            # Color based on progress
-            colors = []
-            for p in progress_values:
-                if p >= 100:
-                    colors.append("#10b981")  # Green
-                elif p >= 75:
-                    colors.append("#3b82f6")  # Blue
-                elif p >= 50:
-                    colors.append("#f59e0b")  # Yellow
-                elif p >= 25:
-                    colors.append("#f97316")  # Orange
-                else:
-                    colors.append("#ef4444")  # Red
+        names = [m["name"] for m in milestone_data]
+        progress_values = [m["progress"] for m in milestone_data]
+        colors = ProgressColorMapper.get_colors_for_progress_list(progress_values)
 
-            bars = ax.barh(names, progress_values, color=colors)
-
-            # Add progress labels
-            for _i, (bar, data) in enumerate(zip(bars, milestone_data, strict=False)):
-                width = bar.get_width()
-                ax.text(
-                    width + 1,
-                    bar.get_y() + bar.get_height() / 2,
-                    f"{data['progress']:.1f}% ({data['completed']}/{data['total']})",
-                    ha="left",
-                    va="center",
-                    fontsize=10,
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=names,
+                    x=progress_values,
+                    orientation="h",
+                    marker_color=colors,
+                    text=[f"{p:.1f}%" for p in progress_values],
+                    textposition="auto",
+                    hovertemplate="<b>%{y}</b><br>Progress: %{x:.1f}%<br>"
+                    + "Completed: %{customdata[0]}/{customdata[1]} issues<extra></extra>",
+                    customdata=[[m["completed"], m["total"]] for m in milestone_data],
                 )
+            ]
+        )
 
-            ax.set_xlabel("Progress (%)", fontsize=12)
-            ax.set_ylabel("Milestone", fontsize=12)
-            ax.set_title("Milestone Progress Overview", fontsize=14, fontweight="bold")
-            ax.set_xlim(0, 110)
-            ax.grid(True, axis="x", alpha=0.3)
+        fig.update_layout(
+            title={
+                "text": "Milestone Progress Overview",
+                "x": 0.5,
+                "xanchor": "center",
+                "font": {"size": 16},
+            },
+            xaxis_title="Progress (%)",
+            yaxis_title="Milestone",
+            font={"family": "Arial, sans-serif", "size": 12},
+            margin={"t": 60, "b": 40, "l": 150, "r": 40},
+            height=max(400, len(names) * 50),
+        )
 
-            plt.tight_layout()
+        fig.update_xaxes(range=[0, 100])
 
-            if output_format == "svg":
-                output_path = self.charts_dir / f"{filename}.svg"
-                plt.savefig(output_path, format="svg", bbox_inches="tight")
-            else:
-                output_path = self.charts_dir / f"{filename}.png"
-                plt.savefig(output_path, format="png", bbox_inches="tight")
+        output_path = self.charts_dir / f"{filename}.html"
+        fig.write_html(str(output_path))
+        return output_path
 
-            plt.close()
+    def _generate_matplotlib_progress_chart(
+        self, milestone_data: list[dict], filename: str, output_format: str
+    ) -> Path:
+        """Generate matplotlib progress chart (PNG or SVG)."""
+        from .progress_helpers import ProgressColorMapper
 
+        fig, ax = plt.subplots(figsize=(12, max(6, len(milestone_data) * 0.8)))
+
+        names = [m["name"] for m in milestone_data]
+        progress_values = [m["progress"] for m in milestone_data]
+        colors = ProgressColorMapper.get_colors_for_progress_list(progress_values)
+
+        bars = ax.barh(names, progress_values, color=colors)
+
+        # Add progress labels
+        for _i, (bar, data) in enumerate(zip(bars, milestone_data, strict=False)):
+            width = bar.get_width()
+            ax.text(
+                width + 1,
+                bar.get_y() + bar.get_height() / 2,
+                f"{data['progress']:.1f}% ({data['completed']}/{data['total']})",
+                ha="left",
+                va="center",
+                fontsize=10,
+            )
+
+        ax.set_xlabel("Progress (%)", fontsize=12)
+        ax.set_ylabel("Milestone", fontsize=12)
+        ax.set_title("Milestone Progress Overview", fontsize=14, fontweight="bold")
+        ax.set_xlim(0, 110)
+        ax.grid(True, axis="x", alpha=0.3)
+
+        plt.tight_layout()
+
+        if output_format == "svg":
+            output_path = self.charts_dir / f"{filename}.svg"
+            plt.savefig(output_path, format="svg", bbox_inches="tight")
+        else:
+            output_path = self.charts_dir / f"{filename}.png"
+            plt.savefig(output_path, format="png", bbox_inches="tight")
+
+        plt.close()
         return output_path
 
     def generate_team_workload_chart(

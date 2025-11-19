@@ -4,27 +4,41 @@ These are the fundamental commands needed to get started with Roadmap.
 """
 
 import getpass
-import json
 import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
 import click
-import yaml
 from rich.progress import BarColumn, Progress, TextColumn
 from rich.table import Table
 from rich.text import Text
 
 from roadmap.application.core import RoadmapCore
+from roadmap.application.health import HealthCheck, HealthStatus
+from roadmap.cli.github_setup import (
+    GitHubConfigManager,
+    GitHubTokenResolver,
+    GitHubValidator,
+    show_github_setup_instructions,
+)
+from roadmap.cli.init_workflow import (
+    InitializationLock,
+    InitializationManifest,
+    InitializationValidator,
+    InitializationWorkflow,
+    show_dry_run_info,
+)
 from roadmap.cli.utils import get_console
 from roadmap.domain import Status
+from roadmap.shared.logging import get_logger
 
 console = get_console()
+logger = get_logger(__name__)
 # Import GitHub client and credential manager at module level so they can be patched in tests
 try:
-    from roadmap.infrastructure.security.credentials import CredentialManager
     from roadmap.infrastructure.github import GitHubClient
+    from roadmap.infrastructure.security.credentials import CredentialManager
 except Exception:
     GitHubClient = None
     CredentialManager = None
@@ -114,195 +128,116 @@ def init(
         roadmap init --github-repo owner/repo    # Specify GitHub repository
         roadmap init --template software         # Use software project template
     """
+    log = logger.bind(
+        operation="init",
+        name=name,
+        skip_github=skip_github,
+        interactive=interactive,
+        dry_run=dry_run,
+        force=force,
+    )
+    log.info("starting_init")
 
-    # Check if roadmap already exists (without creating RoadmapCore instance)
+    # Create a new core instance with the custom directory name
     roadmap_dir = Path.cwd() / name
-    config_file = roadmap_dir / "config.yaml"
-    is_initialized = roadmap_dir.exists() and config_file.exists()
-
-    # If dry-run, show planned steps and exit before making changes
-    if dry_run:
-        console.print("🚀 Roadmap CLI Initialization", style="bold cyan")
-        console.print()
-        console.print(
-            "ℹ️  Dry run mode enabled - no changes will be made.", style="yellow"
-        )
-        if is_initialized and force:
-            console.print(
-                f"🟡 Would remove existing {name}/ and reinitialize", style="yellow"
-            )
-        elif is_initialized:
-            console.print(
-                f"❌ Roadmap already initialized in {name}/ directory", style="bold red"
-            )
-            console.print("Tip: use --force to reinitialize", style="yellow")
-        else:
-            console.print(
-                f"Planned actions:\n - Create roadmap directory: {name}/\n - Create default templates and config\n - Create main project (unless --skip-project)\n - Optionally configure GitHub (unless --skip-github)"
-            )
-        return
-
-    # Create a new core instance with the custom directory name (after dry-run check)
     custom_core = RoadmapCore(roadmap_dir_name=name)
 
-    # Global init lock path prevents concurrent inits
-    lock_path = Path.cwd() / ".roadmap_init.lock"
+    # Handle dry-run mode
+    if dry_run:
+        config_file = roadmap_dir / "config.yaml"
+        is_initialized = roadmap_dir.exists() and config_file.exists()
+        log.info("dry_run_mode", is_initialized=is_initialized)
+        show_dry_run_info(name, is_initialized, force, skip_project, skip_github)
+        return
 
-    if lock_path.exists():
+    # Validate initialization prerequisites
+    lock_path = Path.cwd() / ".roadmap_init.lock"
+    is_valid, error_msg = InitializationValidator.validate_lockfile(lock_path)
+    if not is_valid:
+        console.print(f"❌ {error_msg}", style="bold red")
+        return
+
+    is_valid, error_msg = InitializationValidator.check_existing_roadmap(
+        custom_core, force
+    )
+    if not is_valid:
+        console.print(f"❌ {error_msg}", style="bold red")
         console.print(
-            "❌ Initialization already in progress (lockfile present). Try again later.",
-            style="bold red",
+            "Tip: use --force to reinitialize or --dry-run to preview.", style="yellow"
         )
         return
 
-    if custom_core.is_initialized():
-        if not force:
-            console.print(
-                f"❌ Roadmap already initialized in {name}/ directory", style="bold red"
-            )
-            console.print(
-                "Tip: use --force to reinitialize or --dry-run to preview.",
-                style="yellow",
-            )
-            return
-        else:
-            if dry_run:
-                console.print(
-                    f"🟡 Dry run: would remove existing {name}/ and reinitialize",
-                    style="yellow",
-                )
-                return
-            # Proceed to remove existing and reinitialize
-            console.print(
-                f"⚠️  --force specified: removing existing {name}/", style="yellow"
-            )
-            import shutil
+    # Acquire initialization lock
+    lock = InitializationLock(lock_path)
+    if not lock.acquire():
+        console.print(
+            "❌ Initialization already in progress. Try again later.", style="bold red"
+        )
+        return
 
-            try:
-                if custom_core.roadmap_dir.exists():
-                    shutil.rmtree(custom_core.roadmap_dir)
-            except Exception as e:
-                console.print(
-                    f"❌ Failed to remove existing roadmap: {e}", style="bold red"
-                )
-                return
+    # Initialize workflow
+    workflow = InitializationWorkflow(custom_core)
+    manifest = InitializationManifest(custom_core.roadmap_dir / ".init_manifest.json")
 
-    # Enhanced initialization flow
     console.print("🚀 Roadmap CLI Initialization", style="bold cyan")
     console.print()
 
     try:
-        # Create a lock file to indicate init in progress
-        try:
-            lock_path.write_text(
-                f"pid:{os.getpid()}\nstarted:{datetime.now().isoformat()}\n"
-            )
-        except Exception:
-            # If lock cannot be created, continue but warn
+        # Handle force re-initialization
+        if custom_core.is_initialized() and force:
             console.print(
-                "⚠️  Could not create init lockfile; proceeding with care",
-                style="yellow",
+                f"⚠️  --force specified: removing existing {name}/", style="yellow"
             )
+            if not workflow.cleanup_existing():
+                return
 
-        # Prepare an init manifest to record created paths for potential rollback
-        manifest = {"created": []}
-
-        # Step 1: Context Detection
+        # Step 1: Detect context
         detected_info = _detect_project_context()
-        console.print("🔍 Detected Context:", style="bold blue")
-        if detected_info.get("git_repo"):
-            console.print(f"  Git repository: {detected_info['git_repo']}")
-        else:
-            console.print("  Git repository: Not detected", style="dim")
-            if interactive:
-                console.print(
-                    "    💡 Consider running 'git init' to enable advanced features",
-                    style="yellow",
-                )
-        if detected_info.get("project_name"):
-            console.print(f"  Project name: {detected_info['project_name']}")
-        console.print(f"  Directory: {Path.cwd()}")
-        console.print()
+        _show_detected_context(detected_info, interactive)
 
-        # Step 2: Basic roadmap initialization
+        # Step 2: Create roadmap structure
         with console.status(
             f"🗂️  Creating roadmap structure in {name}/...", spinner="dots"
         ):
-            custom_core.initialize()
-        # Record common created items (we'll check existence before writing)
-        try:
-            if custom_core.roadmap_dir.exists():
-                manifest["created"].append(str(custom_core.roadmap_dir))
-            if custom_core.projects_dir.exists():
-                manifest["created"].append(str(custom_core.projects_dir))
-            if custom_core.templates_dir.exists():
-                manifest["created"].append(str(custom_core.templates_dir))
-            if custom_core.config_file.exists():
-                manifest["created"].append(str(custom_core.config_file))
-            # Write manifest inside .roadmap for easy reference
-            try:
-                (custom_core.roadmap_dir / ".init_manifest.json").write_text(
-                    json.dumps(manifest)
-                )
-            except Exception:
-                # Best-effort
-                pass
-        except Exception:
-            pass
+            workflow.create_structure()
+            workflow.record_created_paths(manifest)
 
-        # Update the context to use the custom core
         ctx.obj["core"] = custom_core
 
-        # Step 3: Project creation (unless skipped)
+        # Step 3: Create main project (unless skipped)
         project_info = None
         if not skip_project:
-            with console.status("📋 Creating main project...", spinner="dots"):
-                project_info = _setup_main_project(
-                    custom_core,
-                    project_name,
-                    description,
-                    detected_info,
-                    interactive,
-                    template,
-                    yes,
-                    template_path,
-                )
-            # append project file to manifest if present
-            try:
-                if project_info and "filename" in project_info:
-                    manifest_file = (
-                        custom_core.roadmap_dir / "projects" / project_info["filename"]
-                    )
-                    if manifest_file.exists():
-                        manifest.setdefault("created", []).append(str(manifest_file))
-                        try:
-                            (
-                                custom_core.roadmap_dir / ".init_manifest.json"
-                            ).write_text(json.dumps(manifest))
-                        except Exception:
-                            pass
-            except Exception:
-                pass
-            console.print(
-                f"✅ Created main project: {project_info['name']} (ID: {project_info['id'][:8]})"
+            project_info = _create_main_project(
+                custom_core,
+                manifest,
+                project_name,
+                description,
+                detected_info,
+                interactive,
+                template,
+                yes,
+                template_path,
             )
-
-        # Step 4: GitHub integration (unless skipped)
-        github_configured = False
-        repo_name = github_repo or detected_info.get("git_repo")
-        if not skip_github and repo_name:
-            with console.status("🔗 Configuring GitHub integration...", spinner="dots"):
-                github_configured = _setup_github_integration(
-                    custom_core,
-                    repo_name,
-                    interactive,
-                    yes,
-                    token=github_token,
+            if project_info:
+                console.print(
+                    f"✅ Created main project: {project_info['name']} (ID: {project_info['id'][:8]})"
                 )
 
-        # Step 5: Success summary and next steps
-        # Post-init validation: ensure created files and permissions look correct
-        validation_ok = _post_init_validate(custom_core, name, project_info)
+        # Step 4: Configure GitHub integration (unless skipped)
+        github_configured = _configure_github(
+            custom_core,
+            skip_github,
+            github_repo,
+            detected_info,
+            interactive,
+            yes,
+            github_token,
+        )
+
+        # Step 5: Validate and show summary
+        validation_ok = InitializationValidator.post_init_validate(
+            custom_core, name, project_info
+        )
         if not validation_ok:
             console.print(
                 "⚠️  Initialization completed with warnings; see above.", style="yellow"
@@ -311,51 +246,102 @@ def init(
         _show_success_summary(name, github_configured, project_info, detected_info)
 
     except Exception as e:
+        log.error("init_failed", error=str(e))
         console.print(f"❌ Failed to initialize roadmap: {e}", style="bold red")
-        # Attempt targeted rollback using manifest if present
-        try:
-            manifest_file = custom_core.roadmap_dir / ".init_manifest.json"
-            if manifest_file.exists():
-                try:
-                    data = json.loads(manifest_file.read_text())
-                    import shutil
-
-                    for p in data.get("created", []):
-                        try:
-                            ppath = Path(p)
-                            if ppath.is_file():
-                                ppath.unlink()
-                            elif ppath.is_dir():
-                                shutil.rmtree(ppath)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-        except Exception:
-            pass
-        # Fallback: remove the whole roadmap dir if it exists
-        if custom_core.roadmap_dir.exists():
-            import shutil
-
-            shutil.rmtree(custom_core.roadmap_dir)
-        # Do not re-raise the exception — surface a friendly message and exit
-        return
+        manifest.rollback()
+        workflow.rollback_on_error()
     finally:
-        # Remove init lock if present
-        try:
-            if lock_path.exists():
-                lock_path.unlink()
-        except Exception:
-            pass
+        lock.release()
+
+
+def _show_detected_context(detected_info: dict, interactive: bool) -> None:
+    """Display detected project context."""
+    console.print("🔍 Detected Context:", style="bold blue")
+    if detected_info.get("git_repo"):
+        console.print(f"  Git repository: {detected_info['git_repo']}")
+    else:
+        console.print("  Git repository: Not detected", style="dim")
+        if interactive:
+            console.print(
+                "    💡 Consider running 'git init' to enable advanced features",
+                style="yellow",
+            )
+    if detected_info.get("project_name"):
+        console.print(f"  Project name: {detected_info['project_name']}")
+    console.print(f"  Directory: {Path.cwd()}")
+    console.print()
+
+
+def _create_main_project(
+    custom_core: RoadmapCore,
+    manifest: "InitializationManifest",
+    project_name: str | None,
+    description: str | None,
+    detected_info: dict,
+    interactive: bool,
+    template: str,
+    yes: bool,
+    template_path: str | None,
+) -> dict | None:
+    """Create the main project with status output."""
+    with console.status("📋 Creating main project...", spinner="dots"):
+        project_info = _setup_main_project(
+            custom_core,
+            project_name,
+            description,
+            detected_info,
+            interactive,
+            template,
+            yes,
+            template_path,
+        )
+
+    # Add project file to manifest
+    if project_info and "filename" in project_info:
+        project_file = custom_core.roadmap_dir / "projects" / project_info["filename"]
+        manifest.add_path(project_file)
+
+    return project_info
+
+
+def _configure_github(
+    custom_core: RoadmapCore,
+    skip_github: bool,
+    github_repo: str | None,
+    detected_info: dict,
+    interactive: bool,
+    yes: bool,
+    github_token: str | None,
+) -> bool:
+    """Configure GitHub integration if not skipped."""
+    if skip_github:
+        return False
+
+    repo_name = github_repo or detected_info.get("git_repo")
+    if not repo_name:
+        return False
+
+    with console.status("🔗 Configuring GitHub integration...", spinner="dots"):
+        return _setup_github_integration(
+            custom_core,
+            repo_name,
+            interactive,
+            yes,
+            token=github_token,
+        )
 
 
 @click.command()
 @click.pass_context
 def status(ctx: click.Context) -> None:
     """Show the current status of the roadmap."""
+    log = logger.bind(operation="status")
+    log.info("starting_status")
+
     core = ctx.obj["core"]
 
     if not core.is_initialized():
+        log.warning("roadmap_not_initialized")
         console.print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
@@ -367,6 +353,12 @@ def status(ctx: click.Context) -> None:
         # Get all issues and milestones from files (more reliable than database)
         issues = core.list_issues()
         milestones = core.list_milestones()
+
+        log.info(
+            "status_data_retrieved",
+            issue_count=len(issues),
+            milestone_count=len(milestones),
+        )
 
         if not issues and not milestones:
             console.print("\n📝 No issues or milestones found.", style="yellow")
@@ -432,6 +424,57 @@ def status(ctx: click.Context) -> None:
 
     except Exception as e:
         console.print(f"❌ Failed to show status: {e}", style="bold red")
+
+
+@click.command()
+def health() -> None:
+    """Check system health and component status."""
+    log = logger.bind(operation="health")
+    log.info("starting_health_check")
+
+    console.print("🏥 System Health Check", style="bold blue")
+
+    # Run all health checks
+    checks = HealthCheck.run_all_checks()
+    overall_status = HealthCheck.get_overall_status(checks)
+
+    # Display results
+    console.print()
+    for check_name, (status, message) in checks.items():
+        # Format check name
+        display_name = check_name.replace("_", " ").title()
+
+        # Choose emoji and style based on status
+        if status == HealthStatus.HEALTHY:
+            emoji = "✅"
+            style = "green"
+        elif status == HealthStatus.DEGRADED:
+            emoji = "⚠️"
+            style = "yellow"
+        else:  # UNHEALTHY
+            emoji = "❌"
+            style = "red"
+
+        console.print(f"{emoji} {display_name}: {message}", style=style)
+
+    # Display overall status
+    console.print()
+    if overall_status == HealthStatus.HEALTHY:
+        console.print("✨ Overall Status: HEALTHY", style="bold green")
+        log.info("health_check_completed", status="healthy")
+    elif overall_status == HealthStatus.DEGRADED:
+        console.print("⚠️  Overall Status: DEGRADED", style="bold yellow")
+        console.print(
+            "   Some components have issues but system is functional", style="dim"
+        )
+        log.warning("health_check_completed", status="degraded")
+    else:  # UNHEALTHY
+        console.print("❌ Overall Status: UNHEALTHY", style="bold red")
+        console.print(
+            "   Critical issues detected - system may not function properly",
+            style="dim",
+        )
+        log.error("health_check_completed", status="unhealthy")
 
 
 # Helper functions for init command
@@ -800,166 +843,62 @@ def _setup_github_integration(
     token: str | None = None,
 ) -> bool:
     """Set up GitHub integration with credential flow."""
-
-    console.print("🔗 GitHub Integration Setup", style="bold blue")
-
-    if interactive and not yes:
-        console.print(f"\nRepository: {github_repo}")
-        console.print("\nTo sync with GitHub, you'll need a personal access token.")
-        console.print("→ Open: https://github.com/settings/tokens")
-        console.print(
-            "→ Create token with 'repo' scope (or 'public_repo' for public repos)"
-        )
-        console.print(
-            "→ Required permissions: Issues, Pull requests, Repository metadata"
-        )
-        console.print()
-
-        if not yes and not click.confirm(
-            "Do you want to set up GitHub integration now?"
-        ):
-            console.print(
-                "⏭️  Skipping GitHub integration (you can set this up later with 'roadmap sync setup')"
-            )
-            return False
-
     try:
-        # Use module-level GitHubClient and CredentialManager (patched in tests)
-        if CredentialManager is None:
-            raise ImportError("CredentialManager not available")
-        cred_manager = CredentialManager()
-        existing_token = None
+        # Import GitHub modules
+        if CredentialManager is None or GitHubClient is None:
+            raise ImportError("GitHub integration dependencies not available")
 
-        try:
-            existing_token = cred_manager.get_token()
-            if existing_token and interactive and not yes and not token:
-                console.print("🔍 Found existing GitHub credentials")
-                if click.confirm("Use existing GitHub credentials?"):
-                    console.print("✅ Using existing GitHub credentials")
-                else:
-                    existing_token = None
-        except Exception:
-            pass  # No existing credentials
-
-        # Prefer token provided via CLI, then environment, then stored
-        env_token = os.environ.get("ROADMAP_GITHUB_TOKEN")
-        if token:
-            use_token = token
-        elif env_token:
-            use_token = env_token
-            console.print(
-                "ℹ️  Using GitHub token from environment variable ROADMAP_GITHUB_TOKEN",
-                style="dim",
-            )
-        elif existing_token:
-            use_token = existing_token
-        else:
-            # Get token from user if interactive
-            if interactive and not yes:
-                console.print(
-                    "To integrate with GitHub you'll need a personal access token with 'repo' scope."
-                )
-                console.print("→ Create one: https://github.com/settings/tokens")
-                use_token = click.prompt("Paste your GitHub token", hide_input=True)
-            else:
-                console.print(
-                    "❌ Non-interactive mode requires providing a token via --github-token or setting ROADMAP_GITHUB_TOKEN, or use --skip-github to skip integration.",
-                    style="bold red",
-                )
+        # Show setup instructions and get confirmation
+        if interactive and not yes:
+            if not show_github_setup_instructions(github_repo, yes):
                 return False
 
-        # Test the connection with comprehensive validation
-        console.print("🔍 Testing GitHub connection...", style="yellow")
-        if GitHubClient is None:
-            raise ImportError("GitHubClient not available")
-        github_client = GitHubClient(use_token)
+        # Initialize managers
+        cred_manager = CredentialManager()
+        token_resolver = GitHubTokenResolver(cred_manager)
 
-        # Validate user authentication
-        try:
-            user_response = github_client._make_request("GET", "/user")
-            user_info = user_response.json()
-            console.print(f"✅ Authenticated as: {user_info.get('login', 'unknown')}")
-        except Exception as e:
-            console.print(f"❌ Authentication failed: {e}", style="red")
+        # Get existing token
+        existing_token = token_resolver.get_existing_token()
+
+        # Resolve which token to use
+        use_token, should_continue = token_resolver.resolve_token(
+            token, interactive, yes, existing_token
+        )
+        if not should_continue or not use_token:
+            return False
+
+        # Test the connection
+        console.print("🔍 Testing GitHub connection...", style="yellow")
+        github_client = GitHubClient(use_token)
+        validator = GitHubValidator(github_client)
+
+        # Validate authentication
+        auth_success, username = validator.validate_authentication()
+        if not auth_success:
             if interactive and click.confirm(
                 "Continue without GitHub integration? (recommended to skip until token is fixed)"
             ):
                 return False
-            else:
-                raise
+            raise RuntimeError(f"Authentication failed: {username}")
 
         # Validate repository access
-        try:
-            owner, repo = github_repo.split("/")
-            github_client.set_repository(owner, repo)
-            repo_info = github_client.test_repository_access()
-
-            repo_name = repo_info.get("full_name", github_repo)
-            console.print(f"✅ Repository access: {repo_name}")
-
-            # Check permissions
-            permissions = repo_info.get("permissions", {})
-            if permissions.get("admin") or permissions.get("push"):
-                console.print("✅ Write access: Available")
-            elif permissions.get("pull"):
-                console.print(
-                    "⚠️  Read-only access: Limited sync capabilities", style="yellow"
-                )
-            else:
-                console.print("❌ No repository access detected", style="red")
-
-        except Exception as e:
-            console.print(f"⚠️  Repository validation warning: {e}", style="yellow")
+        repo_success, repo_info = validator.validate_repository_access(github_repo)
+        if not repo_success:
             if interactive and not yes:
                 if not click.confirm("Continue with GitHub integration anyway?"):
                     return False
-            # Continue anyway for non-interactive mode
 
-        # Store credentials securely (only if new token and different)
-        if use_token and use_token != existing_token:
+        # Store credentials if new/different
+        if use_token != existing_token:
             cred_manager.store_token(use_token)
             console.print("🔒 Credentials stored securely")
 
-        # Save GitHub repository configuration
-        config_file = core.roadmap_dir / "config.yaml"
-
-        if config_file.exists():
-            with open(config_file) as f:
-                config = yaml.safe_load(f) or {}
-        else:
-            config = {}
-
-        # Enhanced GitHub configuration
-        config["github"] = {
-            "repository": github_repo,
-            "enabled": True,
-            "sync_enabled": True,
-            "webhook_secret": None,  # Can be set up later
-            "sync_settings": {
-                "bidirectional": True,
-                "auto_close": True,
-                "sync_labels": True,
-                "sync_milestones": True,
-            },
-        }
-
         # Save configuration
-        with open(config_file, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        config_manager = GitHubConfigManager(core)
+        config_manager.save_github_config(github_repo)
 
-        console.print("⚙️  Configuration saved")
-
-        # Test a basic API call to ensure everything works
-        try:
-            issues_response = github_client._make_request(
-                "GET",
-                f"/repos/{github_repo}/issues",
-                params={"state": "open", "per_page": 1},
-            )
-            issues = issues_response.json()
-            console.print(f"✅ API test successful ({len(issues)} issue(s) found)")
-        except Exception as e:
-            console.print(f"⚠️  API test warning: {e}", style="yellow")
+        # Test API access
+        validator.test_api_access(github_repo)
 
         return True
 
@@ -974,8 +913,7 @@ def _setup_github_integration(
         console.print(f"❌ GitHub setup failed: {e}", style="red")
         if interactive and click.confirm("Continue without GitHub integration?"):
             return False
-        else:
-            raise
+        raise
 
 
 def _show_success_summary(
