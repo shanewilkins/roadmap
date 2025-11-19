@@ -1,5 +1,11 @@
-from roadmap.infrastructure.git import GitIntegration
 from roadmap.domain import Issue
+from roadmap.infrastructure.git import GitIntegration
+
+
+# Simple config class for testing (RoadmapConfig moved out of roadmap.models)
+class RoadmapConfig:
+    def __init__(self):
+        self.defaults = {}
 
 
 def make_issue():

@@ -26,7 +26,7 @@ def temp_dir():
 @pytest.fixture
 def mock_git_integration():
     """Create a GitIntegration instance with mocked git commands."""
-    with patch("roadmap.git_integration.GitIntegration._run_git_command") as mock_run:
+    with patch("roadmap.infrastructure.git.GitIntegration._run_git_command") as mock_run:
         git = GitIntegration()
         git._run_git_command = mock_run
         yield git, mock_run
@@ -378,7 +378,7 @@ class TestGitIntegrationErrorHandling:
         git = GitIntegration()
 
         # Test error handling in _run_git_command
-        with patch("roadmap.git_integration.subprocess.run") as mock_run:
+        with patch("roadmap.infrastructure.git.subprocess.run") as mock_run:
             # Mock CalledProcessError instead of OSError
             from subprocess import CalledProcessError
 

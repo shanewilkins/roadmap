@@ -16,10 +16,10 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli.ci import ci
 from roadmap.application.services import RoadmapCore
-from roadmap.infrastructure.git_hooks import GitHookManager
+from roadmap.cli.ci import ci
 from roadmap.domain import IssueType, Priority
+from roadmap.infrastructure.git_hooks import GitHookManager
 from roadmap.repository_scanner import AdvancedRepositoryScanner, RepositoryScanConfig
 
 

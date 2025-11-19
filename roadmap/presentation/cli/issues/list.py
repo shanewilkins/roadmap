@@ -5,8 +5,8 @@ from rich.table import Table
 from rich.text import Text
 
 from roadmap.cli.utils import get_console
-from roadmap.shared.errors import ErrorHandler, ValidationError
 from roadmap.domain import Priority, Status
+from roadmap.shared.errors import ErrorHandler, ValidationError
 
 console = get_console()
 

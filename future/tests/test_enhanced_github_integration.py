@@ -15,9 +15,9 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
+from roadmap.domain import Issue, Priority, Status
 from roadmap.enhanced_github_integration import EnhancedGitHubIntegration
 from roadmap.infrastructure.github import GitHubAPIError, GitHubClient
-from roadmap.domain import Issue, Priority, Status
 
 pytestmark = pytest.mark.unit
 

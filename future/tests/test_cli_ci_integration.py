@@ -13,8 +13,8 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from roadmap.cli.ci import ci
 from roadmap.application.services import RoadmapCore
+from roadmap.cli.ci import ci
 from roadmap.domain import IssueType, Priority
 
 

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.presentation.cli import main
+from roadmap.cli import main
 
 
 class TestCrossPlatformCLIWorkflows:

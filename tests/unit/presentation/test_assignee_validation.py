@@ -17,7 +17,7 @@ def cli_runner():
 @pytest.fixture
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
-    from roadmap.presentation.cli import main
+    from roadmap.cli import main
 
     runner = CliRunner()
     result = runner.invoke(
@@ -115,8 +115,8 @@ class TestAssigneeValidation:
         ):
             # Mock empty team members cache (to force GitHub validation)
             with patch.object(core, "_get_cached_team_members", return_value=[]):
-                # Mock the GitHubClient constructor to return our mock
-                with patch("roadmap.github_client.GitHubClient") as mock_client_class:
+                # Mock the GitHubClient where it's imported
+                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
                     mock_client = Mock()
                     mock_client.validate_assignee.return_value = (
                         False,
@@ -153,8 +153,8 @@ class TestAssigneeValidation:
             core, "_get_github_config", return_value=("token", "owner", "repo")
         ):
             with patch.object(core, "_get_cached_team_members", return_value=[]):
-                # Mock the GitHubClient constructor to return our mock
-                with patch("roadmap.github_client.GitHubClient") as mock_client_class:
+                # Mock the GitHubClient where it's imported
+                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
                     mock_client = Mock()
                     mock_client.validate_assignee.return_value = (True, "")
                     mock_client_class.return_value = mock_client
@@ -201,7 +201,7 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_with_invalid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with invalid assignee."""
-        from roadmap.presentation.cli import main
+        from roadmap.cli import main
 
         # Create a mock core
         mock_core = Mock()
@@ -232,7 +232,7 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_with_valid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with valid assignee."""
-        from roadmap.presentation.cli import main
+        from roadmap.cli import main
 
         # Create a mock core
         mock_core = Mock()
@@ -269,7 +269,7 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_local_only_usage(self, cli_runner, initialized_roadmap):
         """Test issue creation works without GitHub when validation is skipped."""
-        from roadmap.presentation.cli import main
+        from roadmap.cli import main
 
         # Create a mock core that simulates local-only usage (no GitHub config)
         mock_core = Mock()

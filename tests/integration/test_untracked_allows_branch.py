@@ -1,7 +1,7 @@
 import subprocess
 
-from roadmap.infrastructure.git import GitIntegration
 from roadmap.domain import Issue
+from roadmap.infrastructure.git import GitIntegration
 
 
 def test_untracked_files_do_not_block_branch_creation(tmp_path):

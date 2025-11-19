@@ -283,7 +283,7 @@ class TestRoadmapCoreUncoveredLines:
                     assert error == ""
 
                     # Test invalid assignee - falls back to GitHub validation
-                    with patch("roadmap.github_client.GitHubClient") as mock_github:
+                    with patch("roadmap.infrastructure.github.GitHubClient") as mock_github:
                         mock_client = Mock()
                         mock_client.validate_assignee.return_value = (
                             False,
@@ -339,7 +339,7 @@ class TestRoadmapCoreUncoveredLines:
                     mock_cached.return_value = []
 
                     # Mock GitHub client to raise exception
-                    with patch("roadmap.github_client.GitHubClient") as mock_github:
+                    with patch("roadmap.infrastructure.github.GitHubClient") as mock_github:
                         mock_github.side_effect = Exception("Network error")
 
                         # Should fall back to legacy validation which allows any assignee when GitHub fails

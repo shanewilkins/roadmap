@@ -12,9 +12,9 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from roadmap.presentation.cli import main
 from roadmap.application.core import RoadmapCore
 from roadmap.domain import Priority, Status
+from roadmap.cli import main
 
 pytestmark = pytest.mark.filesystem
 
@@ -22,7 +22,7 @@ pytestmark = pytest.mark.filesystem
 @pytest.fixture
 def mock_github_client():
     """Mock GitHub client for integration operations."""
-    with patch("roadmap.github_client.GitHubClient") as mock_client_class:
+    with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -65,7 +65,7 @@ class TestEndToEndWorkflows:
                 "Test Lifecycle",
             ],
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"Init failed: exit_code={result.exit_code}, output={result.output}, exception={result.exception}"
         assert "Roadmap CLI Initialization" in result.output
         assert os.path.exists(".roadmap")
         assert os.path.exists(".roadmap/config.yaml")

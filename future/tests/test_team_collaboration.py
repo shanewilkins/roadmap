@@ -5,9 +5,9 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.presentation.cli import main
 from roadmap.application.services import RoadmapCore
 from roadmap.domain import Issue, Priority, Status
+from roadmap.presentation.cli import main
 
 
 @pytest.fixture

@@ -36,16 +36,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from .services import (
-    ConfigurationService,
-    IssueService,
-    MilestoneService,
-    ProjectService,
-    VisualizationService,
-)
-from ..infrastructure.storage import StateManager
-from ..shared.errors import ValidationError, RoadmapError
-from ..infrastructure.git import GitIntegration
 from ..domain import (
     Issue,
     IssueType,
@@ -55,10 +45,24 @@ from ..domain import (
     Project,
     Status,
 )
+from ..infrastructure.git import GitIntegration
+from ..infrastructure.storage import StateManager
 from ..parser import IssueParser, MilestoneParser
 from ..security import (
     create_secure_directory,
     create_secure_file,
+)
+from ..shared.errors import (
+    ErrorHandler,
+    ErrorSeverity,
+    ValidationError,
+)
+from .services import (
+    ConfigurationService,
+    IssueService,
+    MilestoneService,
+    ProjectService,
+    VisualizationService,
 )
 
 
@@ -251,6 +255,7 @@ class RoadmapCore:
         self._create_default_templates()
 
         # Create default config file (config.yaml)
+        self._create_default_config()
 
     def _create_default_templates(self) -> None:
         """Create default templates."""
@@ -390,6 +395,26 @@ Project notes and additional context.
         with create_secure_file(self.templates_dir / "project.md", "w", 0o644) as f:
             f.write(project_template)
 
+    def _create_default_config(self) -> None:
+        """Create default configuration file."""
+        import yaml
+
+        config_data = {
+            "project_name": "My Roadmap",
+            "github": None,
+            "defaults": {
+                "priority": "medium",
+                "issue_type": "other",
+            },
+            "features": {
+                "github_integration": False,
+                "git_sync": False,
+            },
+        }
+
+        with create_secure_file(self.config_file, "w", 0o644) as f:
+            yaml.dump(config_data, f, default_flow_style=False)
+
     def _update_gitignore(self) -> None:
         """Update .gitignore to exclude roadmap local data from version control."""
         gitignore_path = self.root_path / ".gitignore"
@@ -427,19 +452,27 @@ Project notes and additional context.
             # Write updated .gitignore
             gitignore_path.write_text("\n".join(existing_lines) + "\n")
 
-    def load_config(self) -> dict:
+    def load_config(self) -> Any:
         """Load roadmap configuration.
-        
+
         Note: RoadmapConfig class moved to application layer.
-        This method returns a dict representation.
+        This method returns a dict-like object with attribute access.
         """
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
-        
+
         # Load from config.yaml file
         import yaml
-        with open(self.config_file, "r") as f:
-            return yaml.safe_load(f) or {}
+
+        with open(self.config_file) as f:
+            config_data = yaml.safe_load(f) or {}
+
+        # Create a simple object that allows attribute access
+        class ConfigObject:
+            def __init__(self, data):
+                self.__dict__.update(data)
+
+        return ConfigObject(config_data)
 
     def create_issue(
         self,
@@ -582,7 +615,7 @@ Project notes and additional context.
             return False
 
         issue.milestone = milestone_name
-        from .timezone_utils import now_utc
+        from ..shared.timezone_utils import now_utc
 
         issue.updated = now_utc()
 
@@ -659,7 +692,7 @@ Project notes and additional context.
 
         # Update issue milestone
         issue.milestone = milestone_name
-        from .timezone_utils import now_utc
+        from ..shared.timezone_utils import now_utc
 
         issue.updated = now_utc()
 
@@ -707,7 +740,7 @@ Project notes and additional context.
             Tuple of (token, owner, repo) or (None, None, None) if not configured
         """
         try:
-            from .credentials import get_credential_manager
+            from ..credentials import get_credential_manager
 
             config = self.load_config()
             github_config = config.github or {}
@@ -740,7 +773,7 @@ Project notes and additional context.
             List of usernames if GitHub is configured, empty list otherwise
         """
         try:
-            from .github_client import GitHubClient
+            from ..infrastructure.github import GitHubClient
 
             token, owner, repo = self._get_github_config()
             if not token or not owner or not repo:
@@ -760,7 +793,7 @@ Project notes and additional context.
             Current user's GitHub username if configured, None otherwise
         """
         try:
-            from .github_client import GitHubClient
+            from ..infrastructure.github import GitHubClient
 
             token, owner, repo = self._get_github_config()
             if not token or not owner or not repo:
@@ -871,7 +904,7 @@ Project notes and additional context.
                         return True, ""
 
                     # Do full validation via API
-                    from .github_client import GitHubClient
+                    from ..infrastructure.github import GitHubClient
 
                     client = GitHubClient(token=token, owner=owner, repo=repo)
                     github_valid, github_error = client.validate_assignee(assignee)
@@ -920,7 +953,7 @@ Project notes and additional context.
                     return True, ""
 
                 # If not in cache or cache is empty, do full validation via API
-                from .github_client import GitHubClient
+                from ..infrastructure.github import GitHubClient
 
                 client = GitHubClient(token=token, owner=owner, repo=repo)
 

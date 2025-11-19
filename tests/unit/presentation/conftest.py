@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.presentation.cli import main
+from roadmap.cli import main
 
 
 @pytest.fixture(autouse=True)
@@ -81,7 +81,7 @@ def initialized_roadmap(temp_dir):
 @pytest.fixture
 def mock_github_client():
     """Mock GitHub client for testing sync operations."""
-    with patch("roadmap.github_client.GitHubClient") as mock:
+    with patch("roadmap.infrastructure.github.GitHubClient") as mock:
         # Mock successful authentication
         mock.return_value.test_connection.return_value = True
         mock.return_value.get_issues.return_value = []

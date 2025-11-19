@@ -14,7 +14,6 @@ Usage:
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 # Define the import replacements
 IMPORT_REPLACEMENTS = [
@@ -63,7 +62,7 @@ IMPORT_REPLACEMENTS = [
 ]
 
 
-def find_files(root_dir: Path, patterns: List[str]) -> List[Path]:
+def find_files(root_dir: Path, patterns: list[str]) -> list[Path]:
     """Find all Python files matching the patterns."""
     files = set()
     for pattern in patterns:
@@ -73,10 +72,10 @@ def find_files(root_dir: Path, patterns: List[str]) -> List[Path]:
     return sorted(files)
 
 
-def apply_replacements(file_path: Path, verbose: bool = False) -> Tuple[int, bool]:
+def apply_replacements(file_path: Path, verbose: bool = False) -> tuple[int, bool]:
     """
     Apply import replacements to a single file.
-    
+
     Returns:
         Tuple of (number of replacements made, whether file was modified)
     """
@@ -88,12 +87,12 @@ def apply_replacements(file_path: Path, verbose: bool = False) -> Tuple[int, boo
         for replacement in IMPORT_REPLACEMENTS:
             pattern = replacement["pattern"]
             replacement_text = replacement["replacement"]
-            
+
             matches = list(re.finditer(pattern, content))
             if matches:
                 content = re.sub(pattern, replacement_text, content)
                 replacement_count += len(matches)
-                
+
                 if verbose:
                     print(
                         f"  - {replacement['description']}: {len(matches)} replacement(s)"
@@ -126,16 +125,14 @@ def main():
     files_with_changes = []
 
     for file_path in files_to_process:
-        replacement_count, was_modified = apply_replacements(
-            file_path, verbose=verbose
-        )
+        replacement_count, was_modified = apply_replacements(file_path, verbose=verbose)
 
         if replacement_count > 0:
             total_replacements += replacement_count
             if was_modified:
                 files_modified += 1
                 files_with_changes.append((file_path, replacement_count))
-                
+
                 if verbose or apply_changes:
                     rel_path = file_path.relative_to(root_dir)
                     print(f"\n✓ {rel_path}")
@@ -190,8 +187,8 @@ def main():
                 rel_path = file_path.relative_to(root_dir)
                 print(f"  {rel_path}: {count} import(s)")
 
-        print(f"\nRun with --apply to fix these imports")
-        print(f"Run with --apply --verbose for detailed output\n")
+        print("\nRun with --apply to fix these imports")
+        print("Run with --apply --verbose for detailed output\n")
 
 
 if __name__ == "__main__":

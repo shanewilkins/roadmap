@@ -16,8 +16,8 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.table import Table
 from rich.text import Text
 
-from roadmap.cli.utils import get_console
 from roadmap.application.core import RoadmapCore
+from roadmap.cli.utils import get_console
 from roadmap.domain import Status
 
 console = get_console()

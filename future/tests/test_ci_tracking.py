@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from roadmap.application.services import RoadmapCore
 from roadmap.ci_tracking import (
     CIAutomation,
     CITracker,
@@ -15,7 +16,6 @@ from roadmap.ci_tracking import (
     GitBranch,
     GitCommit,
 )
-from roadmap.application.services import RoadmapCore
 from roadmap.domain import Issue, IssueType, Priority, Status
 
 

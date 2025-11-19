@@ -16,6 +16,11 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
+from roadmap.application.visualization import (
+    ChartGenerator,
+    DashboardGenerator,
+    VisualizationError,
+)
 from roadmap.domain import (
     Issue,
     Milestone,
@@ -23,7 +28,6 @@ from roadmap.domain import (
     Priority,
     Status,
 )
-from roadmap.application.visualization import ChartGenerator, DashboardGenerator, VisualizationError
 
 pytestmark = pytest.mark.unit
 

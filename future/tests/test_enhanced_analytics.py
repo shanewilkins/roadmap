@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
-from roadmap.enhanced_analytics import EnhancedAnalyzer
 from roadmap.domain import Issue, Milestone, MilestoneStatus, Priority, Status
+from roadmap.enhanced_analytics import EnhancedAnalyzer
 
 # Mark all tests as unit tests
 pytestmark = pytest.mark.unit

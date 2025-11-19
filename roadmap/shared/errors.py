@@ -6,7 +6,6 @@ This module contains all custom exception classes and error categorization enums
 
 import logging
 import sys
-from collections.abc import Callable
 from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
@@ -196,8 +195,6 @@ class ConfigurationError(RoadmapError):
             cause=kwargs.get("cause"),
         )
         self.config_file = config_file
-
-
 
 
 class ErrorHandler:

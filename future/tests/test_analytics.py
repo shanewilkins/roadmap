@@ -20,8 +20,8 @@ from roadmap.analytics import (
     TeamInsights,
 )
 from roadmap.application.services import RoadmapCore
-from roadmap.infrastructure.git import GitCommit
 from roadmap.domain import Priority, Status
+from roadmap.infrastructure.git import GitCommit
 
 
 class TestGitHistoryAnalyzer:

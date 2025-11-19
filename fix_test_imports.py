@@ -40,7 +40,11 @@ for test_file in test_files:
 
         # Fix RoadmapCore imports
         if re.search(core_pattern, content):
-            content = re.sub(core_pattern, "from roadmap.application.core import RoadmapCore", content)
+            content = re.sub(
+                core_pattern,
+                "from roadmap.application.core import RoadmapCore",
+                content,
+            )
             total_fixes += 1
             print(f"✓ Fixed RoadmapCore import in {test_file.relative_to(root_dir)}")
 
@@ -50,16 +54,18 @@ for test_file in test_files:
             content = re.sub(
                 r"from roadmap\.domain import (.*?), RoadmapConfig(.*?)(?=\n)",
                 r"from roadmap.domain import \1\2",
-                content
+                content,
             )
             # Also handle case where it's the only import
             content = re.sub(
                 r"from roadmap\.domain import RoadmapConfig",
                 "# RoadmapConfig removed - no longer available",
-                content
+                content,
             )
             total_fixes += 1
-            print(f"✓ Removed RoadmapConfig import from {test_file.relative_to(root_dir)}")
+            print(
+                f"✓ Removed RoadmapConfig import from {test_file.relative_to(root_dir)}"
+            )
 
         if content != original_content:
             test_file.write_text(content)

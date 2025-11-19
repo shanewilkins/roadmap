@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
-from roadmap.infrastructure.github import GitHubAPIError, GitHubClient
 from roadmap.domain import Priority, Status
+from roadmap.infrastructure.github import GitHubAPIError, GitHubClient
 
 pytestmark = pytest.mark.unit
 
@@ -18,7 +18,7 @@ class TestGitHubClient:
     @pytest.fixture
     def mock_session(self):
         """Mock requests session."""
-        with patch("roadmap.github_client.requests.Session") as mock_session_class:
+        with patch("roadmap.infrastructure.github.requests.Session") as mock_session_class:
             mock_session = Mock()
             mock_session_class.return_value = mock_session
             yield mock_session
@@ -426,7 +426,7 @@ class TestGitHubClientErrorHandling:
     @pytest.fixture
     def mock_session(self):
         """Mock requests session."""
-        with patch("roadmap.github_client.requests.Session") as mock_session_class:
+        with patch("roadmap.infrastructure.github.requests.Session") as mock_session_class:
             mock_session = Mock()
             mock_session_class.return_value = mock_session
             yield mock_session

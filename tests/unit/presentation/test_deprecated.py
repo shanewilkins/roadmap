@@ -3,7 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
-from roadmap.presentation.cli import main
+from roadmap.cli import main
 
 
 @pytest.mark.skip(reason="Archived feature: capacity-forecast command moved to future/")
