@@ -7,8 +7,8 @@ from typing import Any
 
 import yaml
 
-from ...shared.datetime_parser import parse_datetime
 from ...domain import Issue, Milestone
+from ...shared.datetime_parser import parse_datetime
 from ...shared.file_utils import ensure_directory_exists
 from ...shared.validation import validate_frontmatter_structure
 

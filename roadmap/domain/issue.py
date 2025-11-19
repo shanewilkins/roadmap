@@ -7,13 +7,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-# Import timezone utilities with circular import protection
-try:
-    from ..shared.timezone_utils import now_utc
-except ImportError:
-    # Fallback during module loading
-    def now_utc():
-        return datetime.now()
+
+def now_utc():
+    """Get current UTC datetime with timezone awareness."""
+    from ..shared.timezone_utils import now_utc as tz_now_utc
+
+    return tz_now_utc()
 
 
 class Priority(str, Enum):
