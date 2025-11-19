@@ -1,11 +1,8 @@
 """Start issue command."""
 
-from datetime import datetime
-
 import click
 
 from roadmap.cli.utils import get_console
-from roadmap.domain import Status
 
 console = get_console()
 
@@ -57,6 +54,12 @@ def start_issue(
     force: bool,
 ):
     """Start work on an issue by recording the actual start date."""
+    from roadmap.cli.start_issue_helpers import (
+        StartDateParser,
+        StartIssueDisplay,
+        StartIssueWorkflow,
+    )
+
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -67,20 +70,13 @@ def start_issue(
 
     try:
         # Parse start date
-        if date:
-            try:
-                start_date = datetime.strptime(date, "%Y-%m-%d %H:%M")
-            except ValueError:
-                try:
-                    start_date = datetime.strptime(date, "%Y-%m-%d")
-                except ValueError:
-                    console.print(
-                        "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
-                        style="bold red",
-                    )
-                    return
-        else:
-            start_date = datetime.now()
+        start_date = StartDateParser.parse_start_date(date)
+        if start_date is None:
+            console.print(
+                "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
+                style="bold red",
+            )
+            return
 
         # Get the issue
         issue = core.get_issue(issue_id)
@@ -88,82 +84,46 @@ def start_issue(
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
-        # Update issue with start date and status
-        success = core.update_issue(
-            issue_id,
-            actual_start_date=start_date,
-            status=Status.IN_PROGRESS,
-            progress_percentage=0.0,
-        )
+        # Start work on issue
+        success = StartIssueWorkflow.start_work(core, issue_id, start_date)
 
         if success:
-            console.print(f"🚀 Started work on: {issue.title}", style="bold green")
-            console.print(
-                f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
-            )
-            console.print("   Status: In Progress", style="yellow")
-            # Determine git-branch behavior: CLI flag overrides, otherwise check config
-            try:
-                from roadmap.domain import RoadmapConfig
+            StartIssueDisplay.show_started(issue, start_date, console)
 
-                cfg = (
-                    RoadmapConfig.load_from_file(core.config_file)
-                    if core.config_file.exists()
-                    else RoadmapConfig()
-                )
-                config_auto_branch = bool(cfg.defaults.get("auto_branch", False))
-            except Exception:
-                config_auto_branch = False
-
-            if not git_branch and config_auto_branch:
-                git_branch = True
-
-            # Optionally create a git branch for the issue
-            try:
-                if git_branch:
-                    if hasattr(core, "git") and core.git.is_git_repository():
-                        resolved_branch_name = (
-                            branch_name or core.git.suggest_branch_name(issue)
-                        )
-                        branch_success = _safe_create_branch(
-                            core.git, issue, checkout=checkout, force=force
-                        )
-                        if branch_success:
-                            console.print(
-                                f"🌿 Created Git branch: {resolved_branch_name}",
-                                style="green",
-                            )
-                            if checkout:
-                                console.print(
-                                    f"✅ Checked out branch: {resolved_branch_name}",
-                                    style="green",
-                                )
-                        else:
-                            status_output = (
-                                core.git._run_git_command(["status", "--porcelain"])
-                                or ""
-                            )
-                            if status_output.strip():
-                                console.print(
-                                    "⚠️  Working tree has uncommitted changes — branch creation skipped. Use --force to override.",
-                                    style="yellow",
-                                )
-                            else:
-                                console.print(
-                                    "⚠️  Failed to create or checkout branch. See git for details.",
-                                    style="yellow",
-                                )
-                    else:
-                        console.print(
-                            "⚠️  Not in a Git repository, skipping branch creation",
-                            style="yellow",
-                        )
-            except Exception as e:
-                console.print(
-                    f"⚠️  Git branch creation skipped due to error: {e}", style="yellow"
+            # Handle git branch creation
+            if StartIssueWorkflow.should_create_branch(git_branch, core):
+                _handle_git_branch_creation(
+                    core, issue, branch_name, checkout, force, console
                 )
         else:
             console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
 
     except Exception as e:
         console.print(f"❌ Failed to start issue: {e}", style="bold red")
+
+
+def _handle_git_branch_creation(core, issue, branch_name, checkout, force, console):
+    """Handle git branch creation for started issue."""
+    from roadmap.cli.start_issue_helpers import StartIssueDisplay
+
+    try:
+        if hasattr(core, "git") and core.git.is_git_repository():
+            resolved_branch_name = branch_name or core.git.suggest_branch_name(issue)
+            branch_success = _safe_create_branch(
+                core.git, issue, checkout=checkout, force=force
+            )
+            if branch_success:
+                StartIssueDisplay.show_branch_created(
+                    resolved_branch_name, checkout, console
+                )
+            else:
+                StartIssueDisplay.show_branch_warning(core, console)
+        else:
+            console.print(
+                "⚠️  Not in a Git repository, skipping branch creation",
+                style="yellow",
+            )
+    except Exception as e:
+        console.print(
+            f"⚠️  Git branch creation skipped due to error: {e}", style="yellow"
+        )
