@@ -175,3 +175,14 @@ Thumbs.db
 .roadmap/artifacts/
 .roadmap/*.tmp
 .roadmap/*.lock
+
+# Pytest benchmarks
+.benchmarks/
+
+# Coverage reports
+coverage.json
+
+# Analysis and demo files (temporary)
+*_demo.json
+*_analysis*.json
+pruning_*.json
