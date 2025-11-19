@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..datetime_parser import parse_datetime
-from ..models import Issue
+from ..domain import Issue
 
 
 @dataclass

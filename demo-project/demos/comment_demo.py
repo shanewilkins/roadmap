@@ -13,7 +13,7 @@ sys.path.insert(0, str(project_root))
 
 from datetime import datetime
 
-from roadmap.models import Comment
+from roadmap.domain import Comment
 
 
 def main():

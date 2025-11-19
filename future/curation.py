@@ -9,7 +9,7 @@ from typing import Any
 import yaml
 
 from roadmap.core import RoadmapCore
-from roadmap.models import (
+from roadmap.domain import (
     Issue,
     IssueType,
     Milestone,

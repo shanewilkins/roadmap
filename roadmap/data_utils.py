@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from .models import Issue, IssueType, Milestone, MilestoneStatus, Priority, Status
+from .domain import Issue, IssueType, Milestone, MilestoneStatus, Priority, Status
 
 
 class DataFrameAdapter:

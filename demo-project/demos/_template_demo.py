@@ -22,7 +22,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import roadmap modules if needed
-# from roadmap.models import Issue, Milestone, Status, Priority
+# from roadmap.domain import Issue, Milestone, Status, Priority
 # from roadmap.core import RoadmapCore
 # from roadmap.github_client import GitHubClient
 

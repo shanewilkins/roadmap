@@ -8,7 +8,7 @@ import os
 import click
 from rich.console import Console
 
-from roadmap.models import Priority, Status
+from roadmap.domain import Priority, Status
 
 console = Console()
 

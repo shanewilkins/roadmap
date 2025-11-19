@@ -13,7 +13,7 @@ import datetime
 from rich.console import Console
 from rich.table import Table
 
-from roadmap.models import Priority, Status
+from roadmap.domain import Priority, Status
 
 console = Console()
 

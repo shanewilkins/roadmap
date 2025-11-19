@@ -10,7 +10,7 @@ import yaml
 
 from .datetime_parser import parse_datetime
 from .file_utils import ensure_directory_exists, file_exists_check
-from .models import (
+from .domain import (
     Issue,
     IssueType,
     Milestone,
