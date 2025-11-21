@@ -2,11 +2,10 @@
 
 import click
 
+from roadmap.shared.cli_errors import handle_cli_errors
 from roadmap.shared.console import get_console
-from roadmap.shared.cli_errors import CLIErrorHandler, handle_cli_errors
 
 console = get_console()
-error_handler = CLIErrorHandler()
 
 
 @click.command("unblock")
@@ -29,12 +28,9 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
         console.print(f"❌ Issue not found: {issue_id}", style="bold red")
         raise click.Abort()
 
-    if (
-        issue.status
-        and getattr(issue.status, "value", str(issue.status)) != "blocked"
-    ):
-        error_handler.handle_warning(
-            f"Issue is not blocked (current status: {issue.status.value if hasattr(issue.status, 'value') else issue.status})"
+    if issue.status and getattr(issue.status, "value", str(issue.status)) != "blocked":
+        console.print(
+            f"[yellow]⚠️  Issue is not blocked (current status: {issue.status.value if hasattr(issue.status, 'value') else issue.status})[/yellow]"
         )
         return
 

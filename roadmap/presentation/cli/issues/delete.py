@@ -2,11 +2,10 @@
 
 import click
 
+from roadmap.shared.cli_errors import handle_cli_errors
 from roadmap.shared.console import get_console
-from roadmap.shared.cli_errors import CLIErrorHandler, handle_cli_errors
 
 console = get_console()
-error_handler = CLIErrorHandler()
 
 
 @click.command("delete")
@@ -36,17 +35,12 @@ def delete_issue(
 
     # Confirm deletion if not using --yes flag
     if not yes:
-        if not click.confirm(
-            f"Are you sure you want to delete issue '{issue.title}'?"
-        ):
-            error_handler.handle_warning("Issue deletion cancelled")
+        if not click.confirm(f"Are you sure you want to delete issue '{issue.title}'?"):
+            console.print("[yellow]⚠️  Issue deletion cancelled[/yellow]")
             raise click.Abort()
 
     # Delete the issue
     core.delete_issue(issue_id)
 
-    error_handler.handle_success(
-        f"Permanently deleted issue: {issue.title}",
-        console,
-        {"ID": issue_id},
-    )
+    console.print(f"[green]✅ Permanently deleted issue: {issue.title}[/green]")
+    console.print(f"   ID: {issue_id}", style="dim")
