@@ -41,6 +41,9 @@ console = get_console()
     type=click.Choice(["critical", "high", "medium", "low"]),
     help="Filter by priority",
 )
+@click.option(
+    "--overdue", is_flag=True, help="Show only overdue issues (past due date)"
+)
 @click.pass_context
 def list_issues(
     ctx: click.Context,
@@ -54,6 +57,7 @@ def list_issues(
     my_issues: bool,
     status: str,
     priority: str,
+    overdue: bool,
 ):
     """List all issues with various filtering options."""
     core = ctx.obj["core"]
@@ -78,6 +82,7 @@ def list_issues(
         issues, filter_description = query_service.get_filtered_issues(
             milestone=milestone,
             backlog=backlog,
+            overdue=overdue,
             unassigned=unassigned,
             next_milestone=next_milestone,
             assignee=assignee,

@@ -23,9 +23,16 @@ console = get_console()
     type=click.Choice(["critical", "high", "medium", "low"]),
     help="Filter by priority",
 )
+@click.option(
+    "--overdue", is_flag=True, help="Show only overdue projects (past target end date)"
+)
 @click.pass_context
 def list_projects(
-    ctx: click.Context, status: str | None, owner: str | None, priority: str | None
+    ctx: click.Context,
+    status: str | None,
+    owner: str | None,
+    priority: str | None,
+    overdue: bool,
 ):
     """List all projects with optional filtering."""
     core = ctx.obj["core"]
@@ -71,6 +78,43 @@ def list_projects(
                             continue
                         if priority and metadata.get("priority") != priority:
                             continue
+
+                        # Apply overdue filter
+                        if overdue:
+                            from datetime import datetime
+
+                            target_end = metadata.get("target_end_date")
+                            if target_end:
+                                try:
+                                    # Parse the date (handle various formats)
+                                    if isinstance(target_end, str):
+                                        end_date = datetime.fromisoformat(
+                                            target_end.replace("Z", "+00:00")
+                                        )
+                                    else:
+                                        end_date = target_end
+
+                                    # Normalize timezone for comparison
+                                    end_date = (
+                                        end_date.replace(tzinfo=None)
+                                        if end_date.tzinfo
+                                        else end_date
+                                    )
+                                    now = datetime.now()
+
+                                    # Skip if not overdue or already completed
+                                    project_status = metadata.get("status", "")
+                                    if end_date >= now or project_status in [
+                                        "completed",
+                                        "cancelled",
+                                    ]:
+                                        continue
+                                except (ValueError, AttributeError):
+                                    # Skip projects with invalid dates
+                                    continue
+                            else:
+                                # Skip projects without target_end_date when filtering for overdue
+                                continue
 
                         projects.append(
                             {

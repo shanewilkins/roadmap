@@ -9,10 +9,13 @@ Provides all milestone management commands:
 - update: Update milestone properties
 - recalculate: Recalculate milestone progress
 - kanban: Display milestone in kanban board layout
+- view: View detailed information about a milestone
+- archive: Archive a milestone to .roadmap/archive/milestones/
 """
 
 import click
 
+from roadmap.presentation.cli.milestones.archive import archive_milestone
 from roadmap.presentation.cli.milestones.assign import assign_milestone
 from roadmap.presentation.cli.milestones.close import close_milestone
 from roadmap.presentation.cli.milestones.create import create_milestone
@@ -22,7 +25,9 @@ from roadmap.presentation.cli.milestones.list import list_milestones
 from roadmap.presentation.cli.milestones.recalculate import (
     recalculate_milestone_progress,
 )
+from roadmap.presentation.cli.milestones.restore import restore_milestone
 from roadmap.presentation.cli.milestones.update import update_milestone
+from roadmap.presentation.cli.milestones.view import view_milestone
 
 
 @click.group()
@@ -40,5 +45,8 @@ milestone.add_command(delete_milestone, name="delete")
 milestone.add_command(close_milestone, name="close")
 milestone.add_command(recalculate_milestone_progress, name="recalculate")
 milestone.add_command(milestone_kanban, name="kanban")
+milestone.add_command(view_milestone, name="view")
+milestone.add_command(archive_milestone, name="archive")
+milestone.add_command(restore_milestone, name="restore")
 
 __all__ = ["milestone"]

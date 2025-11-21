@@ -54,6 +54,7 @@ class IssueQueryService:
         next_milestone: bool = False,
         assignee: str | None = None,
         my_issues: bool = False,
+        overdue: bool = False,
     ) -> tuple[list[Issue], str]:
         """
         Get issues based on primary filter criteria.
@@ -84,6 +85,19 @@ class IssueQueryService:
         if milestone:
             return self.core.get_milestone_issues(milestone), f"milestone '{milestone}'"
 
+        # Handle overdue filter
+        if overdue:
+            from datetime import datetime
+
+            all_issues = self.core.list_issues()
+            overdue_issues = [
+                issue
+                for issue in all_issues
+                if issue.due_date
+                and issue.due_date.replace(tzinfo=None) < datetime.now()
+            ]
+            return overdue_issues, "overdue"
+
         # Show all issues
         return self.core.list_issues(), "all"
 
@@ -95,6 +109,7 @@ class IssueQueryService:
         blocked_only: bool = False,
         status: str | None = None,
         priority: str | None = None,
+        overdue: bool = False,
     ) -> tuple[list[Issue], str]:
         """
         Apply additional filters to issue list.
@@ -120,6 +135,16 @@ class IssueQueryService:
         if priority:
             result = [i for i in result if i.priority == Priority(priority)]
             description += f" {priority} priority"
+
+        if overdue:
+            from datetime import datetime
+
+            result = [
+                i
+                for i in result
+                if i.due_date and i.due_date.replace(tzinfo=None) < datetime.now()
+            ]
+            description += " overdue"
 
         return result, description
 

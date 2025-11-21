@@ -4,11 +4,11 @@ title: Immediate Migration to Pyright as Primary Type Checker
 priority: high
 status: in-progress
 issue_type: feature
-milestone: 0.4.0
+milestone: v.0.5.0
 labels: []
 github_issue: null
 created: '2025-11-17T03:04:27.550602+00:00'
-updated: '2025-11-17T03:10:08.457589+00:00'
+updated: '2025-11-21T12:14:00.000000+00:00'
 assignee: shane
 estimated_hours: null
 due_date: null
@@ -16,7 +16,7 @@ depends_on: []
 blocks: []
 actual_start_date: '2025-11-16T21:10:08.453716'
 actual_end_date: null
-progress_percentage: 0.0
+progress_percentage: 40.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

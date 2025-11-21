@@ -80,6 +80,11 @@ def register_commands():
     main.add_command(status)
     main.add_command(health)
 
+    # Register today command
+    from roadmap.presentation.cli.today import today
+
+    main.add_command(today)
+
     # Register command groups with lazy loading
     # Core v1.0 commands only
     from roadmap.presentation.cli.comment import comment

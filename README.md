@@ -289,6 +289,10 @@ roadmap issue create "Complex issue" \
 roadmap issue list
 roadmap issue list --status todo --priority high
 roadmap issue list --milestone "v1.0"
+roadmap issue list --overdue  # Show only overdue issues
+
+# View detailed issue information
+roadmap issue view <issue-id>  # Displays full issue details with rich formatting
 
 # Update issues
 roadmap issue update "Issue title" --status done
@@ -311,6 +315,10 @@ roadmap milestone create "v2.0" \
 # List milestones
 roadmap milestone list
 roadmap milestone list --status open
+roadmap milestone list --overdue  # Show only overdue milestones
+
+# View detailed milestone information
+roadmap milestone view "v1.0"  # Displays progress, issues, goals
 
 # Update milestones
 roadmap milestone update "v1.0" --status closed
@@ -318,6 +326,24 @@ roadmap milestone update "v2.0" --due-date "2025-01-15"
 
 # Delete milestones
 roadmap milestone delete "v1.0"
+```
+
+### Project Management
+
+```bash
+# List projects
+roadmap project list
+roadmap project list --overdue  # Show only overdue projects
+
+# View detailed project information
+roadmap project view <project-id>  # Displays milestones, effort tracking
+```
+
+### Daily Workflow
+
+```bash
+# Get your daily summary
+roadmap today  # Shows in-progress, overdue, blocked, upcoming, and completed tasks
 ```
 
 ### GitHub Synchronization

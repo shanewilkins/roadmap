@@ -9,8 +9,9 @@ console = get_console()
 
 
 @click.command("list")
+@click.option("--overdue", is_flag=True, help="Show only overdue milestones")
 @click.pass_context
-def list_milestones(ctx: click.Context):
+def list_milestones(ctx: click.Context, overdue: bool):
     """List all milestones."""
     core = ctx.obj["core"]
 
@@ -22,6 +23,19 @@ def list_milestones(ctx: click.Context):
 
     try:
         milestones = core.list_milestones()
+
+        # Filter for overdue milestones if requested
+        if overdue:
+            from datetime import datetime
+
+            now = datetime.now().replace(tzinfo=None)
+            milestones = [
+                ms
+                for ms in milestones
+                if ms.due_date
+                and ms.due_date.replace(tzinfo=None) < now
+                and ms.status.value == "open"
+            ]
 
         if not milestones:
             console.print("📋 No milestones found.", style="yellow")
