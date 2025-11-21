@@ -166,7 +166,9 @@ class TestRoadmapCoreMilestoneOperations:
         assert milestone is not None
 
         # Mock parser to raise exception
-        with patch("roadmap.infrastructure.persistence.parser.MilestoneParser.save_milestone_file") as mock_save:
+        with patch(
+            "roadmap.infrastructure.persistence.parser.MilestoneParser.save_milestone_file"
+        ) as mock_save:
             mock_save.side_effect = Exception("Save failed")
 
             result = core.update_milestone(

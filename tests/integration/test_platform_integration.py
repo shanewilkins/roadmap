@@ -359,7 +359,9 @@ class TestPlatformSpecificDependencies:
                 # Test that keyring import works (mocked)
                 mock_keyring = MagicMock()
                 with patch.dict("sys.modules", {"keyring": mock_keyring}):
-                    from roadmap.infrastructure.security.credentials import CredentialManager
+                    from roadmap.infrastructure.security.credentials import (
+                        CredentialManager,
+                    )
 
                     cm = CredentialManager()
 
@@ -377,7 +379,9 @@ class TestPlatformSpecificDependencies:
 
         for platform_name, expected_method in test_cases:
             with patch("platform.system", return_value=platform_name):
-                from roadmap.infrastructure.security.credentials import CredentialManager
+                from roadmap.infrastructure.security.credentials import (
+                    CredentialManager,
+                )
 
                 cm = CredentialManager()
 
@@ -398,7 +402,9 @@ class TestPlatformSpecificDependencies:
 
         for platform_name in platforms:
             with patch("platform.system", return_value=platform_name):
-                from roadmap.infrastructure.security.credentials import CredentialManager
+                from roadmap.infrastructure.security.credentials import (
+                    CredentialManager,
+                )
 
                 cm = CredentialManager()
 
@@ -412,7 +418,10 @@ class TestPlatformSpecificDependencies:
 
     def test_cross_platform_error_resilience(self):
         """Test that errors on one platform don't break functionality."""
-        from roadmap.infrastructure.security.credentials import CredentialManager, CredentialManagerError
+        from roadmap.infrastructure.security.credentials import (
+            CredentialManager,
+            CredentialManagerError,
+        )
 
         error_scenarios = [
             ("Darwin", FileNotFoundError("security command not found")),
@@ -464,7 +473,9 @@ class TestRealWorldCompatibility:
                             "GITHUB_TOKEN": f'ci_token_{ci_name.lower().replace(" ", "_")}',
                         },
                     ):
-                        from roadmap.infrastructure.security.credentials import CredentialManager
+                        from roadmap.infrastructure.security.credentials import (
+                            CredentialManager,
+                        )
 
                         cm = CredentialManager()
 
@@ -487,7 +498,9 @@ class TestRealWorldCompatibility:
                 limited_env = {"PATH": "/usr/local/bin:/usr/bin:/bin"}
 
                 with patch.dict("os.environ", limited_env, clear=True):
-                    from roadmap.infrastructure.security.credentials import CredentialManager
+                    from roadmap.infrastructure.security.credentials import (
+                        CredentialManager,
+                    )
 
                     cm = CredentialManager()
 

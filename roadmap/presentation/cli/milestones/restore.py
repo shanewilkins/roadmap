@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-import click
-from rich.console import Console
+import click  # type: ignore[import-untyped]
+from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import MilestoneParser
 
@@ -164,7 +164,7 @@ def restore_milestone(
                 ctx.exit(1)
 
             # Check if already exists in active
-            dest_file = active_dir / archived_file.name
+            dest_file = active_dir / archived_file.name  # type: ignore[union-attr]
             if dest_file.exists():
                 console.print(
                     f"❌ Milestone '{milestone_name}' already exists in active milestones.",
@@ -178,11 +178,11 @@ def restore_milestone(
                     style="bold blue",
                 )
                 console.print(
-                    f"  Source: .roadmap/archive/milestones/{archived_file.name}",
+                    f"  Source: .roadmap/archive/milestones/{archived_file.name}",  # type: ignore[union-attr]
                     style="cyan",
                 )
                 console.print(
-                    f"  Destination: .roadmap/milestones/{archived_file.name}",
+                    f"  Destination: .roadmap/milestones/{archived_file.name}",  # type: ignore[union-attr]
                     style="cyan",
                 )
                 return
@@ -197,7 +197,7 @@ def restore_milestone(
 
             # Perform restore
             active_dir.mkdir(parents=True, exist_ok=True)
-            archived_file.rename(dest_file)
+            archived_file.rename(dest_file)  # type: ignore[union-attr]
             console.print(
                 f"\n✅ Restored milestone '{milestone_name}' to .roadmap/milestones/",
                 style="bold green",

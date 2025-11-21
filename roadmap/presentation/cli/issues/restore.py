@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-import click
-from rich.console import Console
+import click  # type: ignore[import-untyped]
+from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import IssueParser
 
@@ -173,7 +173,7 @@ def restore_issue(
         else:
             # Restore single issue - find it in archive using partial ID
             archived_file = None
-            for file_path in archive_dir.glob(f"{issue_id[:8]}*.md"):
+            for file_path in archive_dir.glob(f"{issue_id[:8]}*.md"):  # type: ignore[index]
                 archived_file = file_path
                 break
 
@@ -186,7 +186,7 @@ def restore_issue(
 
             # Parse to get full info
             try:
-                issue = IssueParser.parse_issue_file(archived_file)
+                issue = IssueParser.parse_issue_file(archived_file)  # type: ignore[arg-type]
             except Exception as e:
                 console.print(
                     f"❌ Failed to parse archived issue: {e}",
@@ -195,7 +195,7 @@ def restore_issue(
                 ctx.exit(1)
 
             # Check if already exists in active
-            dest_file = active_dir / archived_file.name
+            dest_file = active_dir / archived_file.name  # type: ignore[union-attr]
             if dest_file.exists():
                 console.print(
                     f"❌ Issue '{issue_id}' already exists in active issues.",
@@ -209,11 +209,11 @@ def restore_issue(
                     style="bold blue",
                 )
                 console.print(
-                    f"  Source: .roadmap/archive/issues/{archived_file.name}",
+                    f"  Source: .roadmap/archive/issues/{archived_file.name}",  # type: ignore[union-attr]
                     style="cyan",
                 )
                 console.print(
-                    f"  Destination: .roadmap/issues/{archived_file.name}",
+                    f"  Destination: .roadmap/issues/{archived_file.name}",  # type: ignore[union-attr]
                     style="cyan",
                 )
                 if status:
@@ -234,7 +234,7 @@ def restore_issue(
 
             # Perform restore
             active_dir.mkdir(parents=True, exist_ok=True)
-            archived_file.rename(dest_file)
+            archived_file.rename(dest_file)  # type: ignore[union-attr]
 
             # Update status if requested
             if status:

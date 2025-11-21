@@ -9,8 +9,8 @@ from typing import Any
 
 from ..application.core import RoadmapCore
 from ..domain import Issue, MilestoneStatus, Status
-from .persistence.parser import IssueParser
 from .git import GitCommit, GitIntegration
+from .persistence.parser import IssueParser
 
 
 class GitHookManager:
