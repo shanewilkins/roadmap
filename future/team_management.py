@@ -8,8 +8,8 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from roadmap.shared.console import get_console
 from roadmap.domain import Priority, Status
+from roadmap.shared.console import get_console
 
 console = get_console()
 console = Console()
