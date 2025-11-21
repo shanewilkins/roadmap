@@ -5,8 +5,8 @@ Issue display formatting logic for CLI.
 from rich.table import Table
 from rich.text import Text
 
-from roadmap.cli.utils import get_console
 from roadmap.domain import Issue, Priority, Status
+from roadmap.shared.console import get_console
 
 console = get_console()
 

@@ -4,7 +4,7 @@ from datetime import datetime
 
 import click
 
-from roadmap.cli.utils import get_console
+from roadmap.shared.console import get_console
 
 console = get_console()
 

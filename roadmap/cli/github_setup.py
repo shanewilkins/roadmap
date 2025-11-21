@@ -10,7 +10,7 @@ import click
 import yaml
 
 from roadmap.application.core import RoadmapCore
-from roadmap.cli.utils import get_console
+from roadmap.shared.console import get_console
 
 console = get_console()
 
@@ -91,8 +91,8 @@ class GitHubTokenResolver:
         return None, False
 
 
-class GitHubValidator:
-    """Validates GitHub connectivity and permissions."""
+class GitHubSetupValidator:
+    """Validates GitHub connectivity and permissions during setup."""
 
     def __init__(self, github_client: "GitHubClient"):
         self.client = github_client

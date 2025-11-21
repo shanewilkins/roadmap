@@ -3,7 +3,7 @@
 import click
 
 from roadmap.cli.kanban_helpers import KanbanLayout, KanbanOrganizer
-from roadmap.cli.utils import get_console
+from roadmap.shared.console import get_console
 
 console = get_console()
 

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.application.core import RoadmapCore
-from roadmap.cli.utils import get_console
+from roadmap.shared.console import get_console
 
 console = get_console()
 

@@ -7,8 +7,8 @@ from roadmap.cli.issue_creation import (
     GitBranchCreator,
     IssueDisplayFormatter,
 )
-from roadmap.cli.utils import get_console
 from roadmap.domain import IssueType, Priority
+from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
 
 console = get_console()

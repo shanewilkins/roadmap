@@ -18,8 +18,8 @@ from roadmap.application.core import RoadmapCore
 from roadmap.application.health import HealthCheck, HealthStatus
 from roadmap.cli.github_setup import (
     GitHubConfigManager,
+    GitHubSetupValidator,
     GitHubTokenResolver,
-    GitHubValidator,
     show_github_setup_instructions,
 )
 from roadmap.cli.init_workflow import (
@@ -29,8 +29,8 @@ from roadmap.cli.init_workflow import (
     InitializationWorkflow,
     show_dry_run_info,
 )
-from roadmap.cli.utils import get_console
 from roadmap.domain import Status
+from roadmap.shared.console import get_console
 from roadmap.shared.logging import get_logger
 
 console = get_console()
@@ -870,7 +870,7 @@ def _setup_github_integration(
         # Test the connection
         console.print("🔍 Testing GitHub connection...", style="yellow")
         github_client = GitHubClient(use_token)
-        validator = GitHubValidator(github_client)
+        validator = GitHubSetupValidator(github_client)
 
         # Validate authentication
         auth_success, username = validator.validate_authentication()
