@@ -92,13 +92,18 @@ def roadmap_with_data(cli_runner):
         )
         assert result.exit_code == 0, f"Project creation failed: {result.output}"
 
+        # Extract project ID from output
+        match = re.search(r"ID:\s+([a-f0-9-]+)", result.output)
+        assert match, f"Could not find project ID in output: {result.output}"
+        project_id = match.group(1)
+
         yield (
             cli_runner,
             temp_dir,
             {
                 "issue_id": issue_id,
                 "milestone_name": "v1.0.0",
-                "project_id": "test-project",
+                "project_id": project_id,
             },
         )
 
@@ -219,8 +224,10 @@ class TestProjectViewCommand:
         )
 
         assert result.exit_code == 0, f"Project view failed: {result.output}"
-        assert "Test Project" in result.output
+        # Check for the project name we created
         assert "test-project" in result.output
+        # Check for the project ID
+        assert data["project_id"] in result.output
 
     def test_project_view_displays_description(self, roadmap_with_data):
         """Test that project view displays the description."""
