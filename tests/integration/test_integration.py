@@ -264,6 +264,7 @@ class TestEndToEndWorkflows:
             if "ID:" in line:
                 issue1_id = line.split(":")[1].strip()
                 break
+        assert issue1_id is not None, "Failed to parse issue1_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Issue 2"])
         issue2_id = None
@@ -271,6 +272,7 @@ class TestEndToEndWorkflows:
             if "ID:" in line:
                 issue2_id = line.split(":")[1].strip()
                 break
+        assert issue2_id is not None, "Failed to parse issue2_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Backlog Issue"])
         backlog_issue_id = None
@@ -278,6 +280,9 @@ class TestEndToEndWorkflows:
             if "ID:" in line:
                 backlog_issue_id = line.split(":")[1].strip()
                 break
+        assert (
+            backlog_issue_id is not None
+        ), "Failed to parse backlog_issue_id from output"
 
         # Create milestone
         milestone_name = "Milestone 1"
