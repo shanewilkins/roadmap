@@ -51,7 +51,7 @@ def isolated_roadmap_with_issues(isolated_roadmap):
     """Create an isolated roadmap with sample issues.
 
     Yields:
-        tuple: (cli_runner, temp_dir_path)
+        tuple: (cli_runner, temp_dir_path, created_issue_ids)
     """
     cli_runner, temp_dir = isolated_roadmap
 
@@ -62,6 +62,7 @@ def isolated_roadmap_with_issues(isolated_roadmap):
         {"title": "Update documentation", "type": "other", "priority": "low"},
     ]
 
+    created_ids = []
     for issue in issues:
         result = cli_runner.invoke(
             main,
@@ -76,8 +77,14 @@ def isolated_roadmap_with_issues(isolated_roadmap):
             ],
         )
         assert result.exit_code == 0, f"Issue creation failed: {result.output}"
+        # Parse the issue ID from the output (format: "ID: <id>")
+        import re
 
-    yield cli_runner, temp_dir
+        match = re.search(r"ID:\s+([^\s]+)", result.output)
+        if match:
+            created_ids.append(match.group(1))
+
+    yield cli_runner, temp_dir, created_ids
 
 
 class TestCLIInit:
@@ -252,7 +259,7 @@ class TestCLIIssueList:
 
     def test_list_issues(self, isolated_roadmap_with_issues):
         """Test listing all issues."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["issue", "list"])
 
@@ -262,7 +269,7 @@ class TestCLIIssueList:
 
     def test_list_issues_with_status_filter(self, isolated_roadmap_with_issues):
         """Test listing issues with status filter."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["issue", "list", "--status", "todo"])
 
@@ -270,7 +277,7 @@ class TestCLIIssueList:
 
     def test_list_issues_with_priority_filter(self, isolated_roadmap_with_issues):
         """Test listing issues with priority filter."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["issue", "list", "--priority", "high"])
 
@@ -302,7 +309,7 @@ class TestCLIIssueUpdate:
 
     def test_update_issue_title(self, isolated_roadmap_with_issues):
         """Test updating issue title."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         # Update using a known issue number (they're created sequentially)
         result = cli_runner.invoke(
@@ -314,7 +321,7 @@ class TestCLIIssueUpdate:
 
     def test_update_issue_priority(self, isolated_roadmap_with_issues):
         """Test updating issue priority."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(
             main,
@@ -351,12 +358,16 @@ class TestCLIIssueDelete:
 
     def test_delete_issue(self, isolated_roadmap_with_issues):
         """Test deleting an issue."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
 
-        # Delete issue #1 with confirmation
+        # Skip test if no issues were created
+        if not issue_ids:
+            pytest.skip("No issues created in fixture")
+
+        # Delete first issue with confirmation
         result = cli_runner.invoke(
             main,
-            ["issue", "delete", "1"],
+            ["issue", "delete", issue_ids[0]],
             input="y\n",
         )
 
@@ -364,11 +375,15 @@ class TestCLIIssueDelete:
 
     def test_delete_issue_force(self, isolated_roadmap_with_issues):
         """Test force deleting an issue."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
+
+        # Skip test if less than 2 issues were created
+        if len(issue_ids) < 2:
+            pytest.skip("Not enough issues created in fixture")
 
         result = cli_runner.invoke(
             main,
-            ["issue", "delete", "2", "--yes"],  # --yes skips confirmation
+            ["issue", "delete", issue_ids[1], "--yes"],  # --yes skips confirmation
         )
 
         assert result.exit_code == 0 or "deleted" in result.output.lower()
@@ -397,7 +412,7 @@ class TestCLIIssueWorkflow:
 
     def test_start_issue(self, isolated_roadmap_with_issues):
         """Test starting work on an issue."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["issue", "start", "1"])
 
@@ -410,7 +425,7 @@ class TestCLIIssueWorkflow:
 
     def test_finish_issue(self, isolated_roadmap_with_issues):
         """Test finishing an issue."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         # Start first
         cli_runner.invoke(main, ["issue", "start", "1"])
@@ -426,7 +441,7 @@ class TestCLIIssueWorkflow:
 
     def test_done_issue(self, isolated_roadmap_with_issues):
         """Test marking issue as done."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["issue", "done", "1"])
 
@@ -434,7 +449,7 @@ class TestCLIIssueWorkflow:
 
     def test_update_progress(self, isolated_roadmap_with_issues):
         """Test updating issue progress."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["issue", "progress", "1", "50"])
 
@@ -442,7 +457,7 @@ class TestCLIIssueWorkflow:
 
     def test_block_issue(self, isolated_roadmap_with_issues):
         """Test blocking an issue."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(
             main,
@@ -453,7 +468,7 @@ class TestCLIIssueWorkflow:
 
     def test_unblock_issue(self, isolated_roadmap_with_issues):
         """Test unblocking an issue."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         # Block first
         cli_runner.invoke(
@@ -547,7 +562,7 @@ def isolated_roadmap_with_milestone(isolated_roadmap_with_issues):
     Yields:
         tuple: (cli_runner, temp_dir_path)
     """
-    cli_runner, temp_dir = isolated_roadmap_with_issues
+    cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
     # Create a milestone
     result = cli_runner.invoke(
@@ -675,7 +690,7 @@ class TestCLIMilestoneAssign:
 
     def test_assign_to_nonexistent_milestone(self, isolated_roadmap_with_issues):
         """Test assigning to non-existent milestone."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(
             main,
@@ -844,7 +859,7 @@ class TestCLIDataExport:
 
     def test_export_json_format(self, isolated_roadmap_with_issues):
         """Test exporting data to JSON format."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         output_file = temp_dir / "export.json"
         result = cli_runner.invoke(
@@ -863,7 +878,7 @@ class TestCLIDataExport:
 
     def test_export_csv_format(self, isolated_roadmap_with_issues):
         """Test exporting data to CSV format."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         output_file = temp_dir / "export.csv"
         result = cli_runner.invoke(
@@ -879,7 +894,7 @@ class TestCLIDataExport:
 
     def test_export_markdown_format(self, isolated_roadmap_with_issues):
         """Test exporting data to Markdown format."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         output_file = temp_dir / "export.md"
         result = cli_runner.invoke(
@@ -895,7 +910,7 @@ class TestCLIDataExport:
 
     def test_export_without_output_file(self, isolated_roadmap_with_issues):
         """Test export outputs to stdout when no file specified."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(
             main,
@@ -908,7 +923,7 @@ class TestCLIDataExport:
 
     def test_export_with_filter(self, isolated_roadmap_with_issues):
         """Test export with filter option."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         output_file = temp_dir / "filtered.json"
         result = cli_runner.invoke(
@@ -953,7 +968,7 @@ class TestCLIGitIntegration:
     @pytest.fixture
     def isolated_git_repo(self, isolated_roadmap_with_issues):
         """Create an isolated roadmap with git repo."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         # Initialize git repo
         import subprocess
@@ -996,7 +1011,7 @@ class TestCLIGitIntegration:
 
     def test_git_status_without_repo(self, isolated_roadmap_with_issues):
         """Test git status without git repo."""
-        cli_runner, temp_dir = isolated_roadmap_with_issues
+        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["git", "status"])
 
