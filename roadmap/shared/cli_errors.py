@@ -4,16 +4,23 @@ Unified error handling for CLI commands.
 Provides consistent error handling, logging, and user feedback across all CLI commands.
 """
 
+import functools
 import sys
+import time
 import traceback
-from typing import Any, Callable, TypeVar, cast
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
 
 import click
 from rich.console import Console
 
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import RoadmapError
-from roadmap.shared.logging import get_logger
+from roadmap.shared.logging import (
+    clear_correlation_id,
+    get_logger,
+    set_correlation_id,
+)
 
 logger = get_logger(__name__)
 console = get_console()
@@ -52,22 +59,32 @@ class CLIErrorHandler:
 
         if isinstance(error, RoadmapError):
             # Application-level errors (expected)
-            logger.error(f"Application error in {command_name}: {error.message}", extra=error_context)
+            logger.error(
+                f"Application error in {command_name}: {error.message}",
+                extra=error_context,
+            )
             console_output.print(f"[red]❌ {error.message}[/red]")
 
         elif isinstance(error, click.ClickException):
             # Click-specific errors (expected)
-            logger.info(f"CLI error in {command_name}: {error.format_message()}", extra=error_context)
+            logger.info(
+                f"CLI error in {command_name}: {error.format_message()}",
+                extra=error_context,
+            )
             console_output.print(f"[red]❌ {error.format_message()}[/red]")
 
-        elif isinstance(error, (FileNotFoundError, PermissionError, OSError)):
+        elif isinstance(error, FileNotFoundError | PermissionError | OSError):
             # File system errors
-            logger.error(f"File system error in {command_name}: {error}", extra=error_context)
+            logger.error(
+                f"File system error in {command_name}: {error}", extra=error_context
+            )
             console_output.print(f"[red]❌ File error: {error}[/red]")
 
-        elif isinstance(error, (ValueError, TypeError)):
+        elif isinstance(error, ValueError | TypeError):
             # Validation errors
-            logger.error(f"Validation error in {command_name}: {error}", extra=error_context)
+            logger.error(
+                f"Validation error in {command_name}: {error}", extra=error_context
+            )
             console_output.print(f"[red]❌ Invalid input: {error}[/red]")
 
         else:
@@ -137,13 +154,16 @@ class CLIErrorHandler:
         logger.warning(message)
 
 
-def handle_cli_errors(command_name: str | None = None, show_traceback: bool = False) -> Callable[[F], F]:
+def handle_cli_errors(
+    command_name: str | None = None, show_traceback: bool = False, log_args: bool = True
+) -> Callable[[F], F]:
     """
-    Decorator to add unified error handling to CLI commands.
+    Decorator to add unified error handling to CLI commands with timing and correlation tracking.
 
     Args:
         command_name: Name of the command (for logging)
         show_traceback: Whether to show full traceback on errors
+        log_args: Whether to log function arguments (filtered to remove sensitive data)
 
     Example:
         @click.command()
@@ -154,23 +174,82 @@ def handle_cli_errors(command_name: str | None = None, show_traceback: bool = Fa
     """
 
     def decorator(func: F) -> F:
+        @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             cmd_name = command_name or func.__name__
+            start_time = time.perf_counter()
+
+            # Set correlation ID for this command invocation
+            correlation_id = set_correlation_id()
+
+            # Filter sensitive data from arguments
+            if log_args:
+                filtered_kwargs = {
+                    k: "***REDACTED***"
+                    if any(s in k.lower() for s in ["token", "password", "secret"])
+                    else v
+                    for k, v in kwargs.items()
+                }
+                logger.info(
+                    f"Command invoked: {cmd_name}",
+                    operation=cmd_name,
+                    correlation_id=correlation_id,
+                    args=filtered_kwargs,
+                )
+            else:
+                logger.info(
+                    f"Command invoked: {cmd_name}",
+                    operation=cmd_name,
+                    correlation_id=correlation_id,
+                )
+
             try:
-                return func(*args, **kwargs)
+                result = func(*args, **kwargs)
+
+                # Log successful completion with timing
+                duration = time.perf_counter() - start_time
+                logger.info(
+                    f"Command completed: {cmd_name}",
+                    operation=cmd_name,
+                    correlation_id=correlation_id,
+                    duration_ms=round(duration * 1000, 2),
+                    success=True,
+                )
+
+                return result
+
             except KeyboardInterrupt:
+                duration = time.perf_counter() - start_time
+                logger.warning(
+                    "Operation cancelled by user",
+                    operation=cmd_name,
+                    correlation_id=correlation_id,
+                    duration_ms=round(duration * 1000, 2),
+                )
                 CLIErrorHandler.handle_keyboard_interrupt(command_name=cmd_name)
+
             except click.Abort:
                 # Already handled, just re-raise
                 raise
+
             except Exception as e:
+                duration = time.perf_counter() - start_time
+                logger.error(
+                    f"Command failed: {cmd_name}",
+                    operation=cmd_name,
+                    correlation_id=correlation_id,
+                    duration_ms=round(duration * 1000, 2),
+                    error_type=type(e).__name__,
+                    error_message=str(e),
+                )
                 CLIErrorHandler.handle_error(
                     e, command_name=cmd_name, show_traceback=show_traceback
                 )
 
-        # Preserve function metadata for Click
-        wrapper.__name__ = func.__name__
-        wrapper.__doc__ = func.__doc__
+            finally:
+                # Clear correlation ID after command completes
+                clear_correlation_id()
+
         return cast(F, wrapper)
 
     return decorator
