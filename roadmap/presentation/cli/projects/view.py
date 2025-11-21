@@ -39,7 +39,7 @@ def view_project(ctx: click.Context, project_id: str):
             "\n💡 Tip: Use 'roadmap project list' to see all available projects.",
             style="dim",
         )
-        return
+        ctx.exit(1)
 
     # Build header with status badge
     status_colors = {

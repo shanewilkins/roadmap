@@ -39,7 +39,7 @@ def view_issue(ctx: click.Context, issue_id: str):
             "\n💡 Tip: Use 'roadmap issue list' to see all available issues.",
             style="dim",
         )
-        return
+        ctx.exit(1)
 
     # Build header with status badge
     status_colors = {

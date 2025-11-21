@@ -41,7 +41,7 @@ def view_milestone(ctx: click.Context, milestone_name: str):
             "\n💡 Tip: Use 'roadmap milestone list' to see all available milestones.",
             style="dim",
         )
-        return
+        ctx.exit(1)
 
     # Get all issues for progress calculation
     all_issues = core.list_issues()
