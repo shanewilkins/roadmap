@@ -183,7 +183,7 @@ class RoadmapCore:
     def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
         """Ensure git hooks are installed for automatic sync."""
         try:
-            from ..infrastructure.git import GitHookManager
+            from ..infrastructure.git_hooks import GitHookManager
 
             hook_manager = GitHookManager(self)
 
@@ -992,7 +992,7 @@ Project notes and additional context.
         """
         # Try to get from identity management system
         try:
-            from .identity import IdentityManager
+            from roadmap.future.identity import IdentityManager
 
             identity_manager = IdentityManager(self.root_path)
             is_valid, result, profile = identity_manager.resolve_assignee(assignee)

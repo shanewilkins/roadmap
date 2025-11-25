@@ -30,7 +30,9 @@ def get_current_user() -> str:
 
         repo = git.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
         try:
-            return repo.config_reader().get_value("user", "name")
+            name = repo.config_reader().get_value("user", "name")
+            if isinstance(name, str):
+                return name
         except Exception:
             pass
     except Exception:

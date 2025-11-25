@@ -40,7 +40,7 @@ class IdentitySystemValidator:
             Validation result with canonical ID if successful
         """
         try:
-            from .identity import IdentityManager
+            from roadmap.future.identity import IdentityManager
 
             identity_manager = IdentityManager(self.root_path)
             is_valid, result, profile = identity_manager.resolve_assignee(assignee)
@@ -70,7 +70,7 @@ class IdentitySystemValidator:
             Validation mode string (e.g., 'hybrid', 'local-only', 'github-only')
         """
         try:
-            from .identity import IdentityManager
+            from roadmap.future.identity import IdentityManager
 
             identity_manager = IdentityManager(self.root_path)
             return identity_manager.config.validation_mode

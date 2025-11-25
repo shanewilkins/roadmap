@@ -1,9 +1,11 @@
-from roadmap.domain import Issue
+from roadmap.domain import Issue, Priority, Status
 from roadmap.infrastructure.git import GitIntegration
 
 
 def make_issue():
-    i = Issue(id="abc12345", title="Test Issue", priority="medium", status="todo")
+    i = Issue(
+        id="abc12345", title="Test Issue", priority=Priority.MEDIUM, status=Status.TODO
+    )
     return i
 
 

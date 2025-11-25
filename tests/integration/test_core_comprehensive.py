@@ -408,7 +408,9 @@ class TestRoadmapCoreErrorHandling:
 
         # All these should raise ValueError
         with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.create_issue("Test", "Description")
+            from roadmap.domain import Priority
+
+            core.create_issue("Test", priority=Priority.HIGH)
 
         with pytest.raises(ValueError, match="Roadmap not initialized"):
             core.list_issues()

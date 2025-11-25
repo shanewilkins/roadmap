@@ -362,11 +362,7 @@ except Exception as e:
                     milestone_issues = [
                         issue
                         for issue in self.core.list_issues()
-                        if (
-                            hasattr(issue, "milestone_id")
-                            and hasattr(milestone, "id")
-                            and issue.milestone_id == milestone.id
-                        )
+                        if issue.milestone == milestone.name
                     ]
 
                     if milestone_issues:
@@ -378,8 +374,8 @@ except Exception as e:
                         progress = (completed_issues / total_issues) * 100
 
                         # Update milestone progress (use setattr for type safety)
-                        if hasattr(milestone, "progress"):
-                            milestone.progress = progress
+                        if hasattr(milestone, "calculated_progress"):
+                            milestone.calculated_progress = progress
 
                         # Auto-complete milestone if all issues are done
                         if (
@@ -387,10 +383,9 @@ except Exception as e:
                             and milestone.status != MilestoneStatus.CLOSED
                         ):
                             # Use MilestoneStatus enum for type safety
-                            if hasattr(milestone, "status"):
-                                milestone.status = MilestoneStatus.CLOSED
-                            if hasattr(milestone, "completed_date"):
-                                milestone.completed_date = datetime.now().isoformat()
+                            milestone.status = MilestoneStatus.CLOSED
+                            if hasattr(milestone, "actual_end_date"):
+                                milestone.actual_end_date = datetime.now()
 
                         # Use getattr to safely call save_milestone method
                         save_method = getattr(self.core, "save_milestone", None)

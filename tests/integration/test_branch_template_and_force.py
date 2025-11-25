@@ -1,4 +1,4 @@
-from roadmap.domain import Issue
+from roadmap.domain import Issue, Priority, Status
 from roadmap.infrastructure.git import GitIntegration
 
 
@@ -9,7 +9,9 @@ class RoadmapConfig:
 
 
 def make_issue():
-    return Issue(id="abc12345", title="Test Issue", priority="medium", status="todo")
+    return Issue(
+        id="abc12345", title="Test Issue", priority=Priority.MEDIUM, status=Status.TODO
+    )
 
 
 def test_suggest_branch_uses_template(tmp_path):

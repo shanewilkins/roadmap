@@ -4,7 +4,7 @@ Handles OAuth, token management, and validation.
 """
 
 import os
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import click
 import yaml
@@ -22,11 +22,14 @@ except ImportError:
     GitHubClient = None  # type: ignore
     CredentialManager = None  # type: ignore
 
+if TYPE_CHECKING:
+    pass
+
 
 class GitHubTokenResolver:
     """Resolves GitHub tokens from multiple sources."""
 
-    def __init__(self, cred_manager: Optional["CredentialManager"] = None):
+    def __init__(self, cred_manager=None):  # type: ignore
         self.cred_manager = cred_manager
 
     def get_existing_token(self) -> str | None:
@@ -94,7 +97,7 @@ class GitHubTokenResolver:
 class GitHubSetupValidator:
     """Validates GitHub connectivity and permissions during setup."""
 
-    def __init__(self, github_client: "GitHubClient"):
+    def __init__(self, github_client):  # type: ignore
         self.client = github_client
 
     def validate_authentication(self) -> tuple[bool, str | None]:

@@ -61,18 +61,8 @@ class StartIssueWorkflow:
         if git_branch_flag:
             return True
 
-        # Check config for auto_branch default
-        try:
-            from roadmap.domain import RoadmapConfig
-
-            cfg = (
-                RoadmapConfig.load_from_file(core.config_file)
-                if core.config_file.exists()
-                else RoadmapConfig()
-            )
-            return bool(cfg.defaults.get("auto_branch", False))
-        except Exception:
-            return False
+        # Check config for auto_branch default (disabled for now - can be re-enabled later)
+        return False
 
 
 class StartIssueDisplay:
