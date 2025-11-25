@@ -3,6 +3,7 @@
 import click
 
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.cli_errors import handle_cli_errors
 from roadmap.shared.console import get_console
 
@@ -42,7 +43,8 @@ def delete_issue(
             raise click.Abort()
 
     # Delete the issue
-    core.delete_issue(issue_id)
+    with track_database_operation("delete", "issue", entity_id=issue_id):
+        core.delete_issue(issue_id)
 
     console.print(f"[green]✅ Permanently deleted issue: {issue.title}[/green]")
     console.print(f"   ID: {issue_id}", style="dim")

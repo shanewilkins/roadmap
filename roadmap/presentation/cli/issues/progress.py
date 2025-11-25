@@ -5,6 +5,7 @@ import click
 from roadmap.domain import Status
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -39,7 +40,8 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
             return
 
         # Update progress
-        success = core.update_issue(issue_id, progress_percentage=percentage)
+        with track_database_operation("update", "issue", entity_id=issue_id):
+            success = core.update_issue(issue_id, progress_percentage=percentage)
 
         if success:
             console.print(f"📊 Updated progress: {issue.title}", style="bold green")

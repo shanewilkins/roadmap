@@ -6,6 +6,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -76,7 +77,10 @@ def finish_issue(
             update_data["content"] = content + completion_note
 
         # Update the issue
-        success = core.update_issue(issue_id, **update_data)
+        with track_database_operation(
+            "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
+        ):
+            success = core.update_issue(issue_id, **update_data)
 
         if success:
             # Re-fetch issue to display updated values

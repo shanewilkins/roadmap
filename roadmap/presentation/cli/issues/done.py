@@ -4,6 +4,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -36,7 +37,8 @@ def done_issue(
             return
 
         # Update status to done
-        updated_issue = core.update_issue(issue_id, status="done")
+        with track_database_operation("update", "issue", entity_id=issue_id):
+            updated_issue = core.update_issue(issue_id, status="done")
 
         console.print(f"✅ Finished: {updated_issue.title}", style="bold green")
         console.print(f"   ID: {updated_issue.id}", style="cyan")

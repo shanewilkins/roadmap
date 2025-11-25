@@ -6,6 +6,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -40,9 +41,10 @@ def create_milestone(ctx: click.Context, name: str, description: str, due_date: 
             return
 
     try:
-        milestone = core.create_milestone(
-            name=name, description=description, due_date=parsed_due_date
-        )
+        with track_database_operation("create", "milestone", warn_threshold_ms=2000):
+            milestone = core.create_milestone(
+                name=name, description=description, due_date=parsed_due_date
+            )
         console.print(f"✅ Created milestone: {milestone.name}", style="bold green")
         console.print(f"   Description: {milestone.description}", style="cyan")
         if milestone.due_date:

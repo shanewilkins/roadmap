@@ -4,6 +4,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
 
@@ -84,7 +85,10 @@ def update_issue(
             raise click.Abort()
 
         # Update the issue
-        updated_issue = core.update_issue(issue_id, **updates)
+        with track_database_operation(
+            "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
+        ):
+            updated_issue = core.update_issue(issue_id, **updates)
 
         # Display results
         IssueUpdateDisplay.show_update_result(updated_issue, updates, reason, console)

@@ -6,6 +6,9 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import (
+    track_file_operation,
+)
 from roadmap.shared.console import get_console
 
 # Initialize console
@@ -172,8 +175,9 @@ def create_project(
         project_filename = f"{project_id}-{name.lower().replace(' ', '-')}.md"
         project_path = projects_dir / project_filename
 
-        with open(project_path, "w") as f:
-            f.write(project_content)
+        with track_file_operation("write", str(project_path)):
+            with open(project_path, "w") as f:
+                f.write(project_content)
 
         console.print("✅ Created project:", style="bold green")
         console.print(f"   ID: {project_id}")

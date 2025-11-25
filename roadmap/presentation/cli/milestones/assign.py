@@ -4,6 +4,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -25,7 +26,9 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
         return
 
     try:
-        success = core.assign_issue_to_milestone(issue_id, milestone_name)
+        with track_database_operation("update", "milestone", warn_threshold_ms=2000):
+            success = core.assign_issue_to_milestone(issue_id, milestone_name)
+
         if success:
             console.print(
                 f"✅ Assigned issue {issue_id} to milestone '{milestone_name}'",

@@ -4,6 +4,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -32,7 +33,8 @@ def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
                 console.print("❌ Milestone deletion cancelled.", style="yellow")
                 return
 
-        success = core.delete_milestone(milestone_name)
+        with track_database_operation("delete", "milestone"):
+            success = core.delete_milestone(milestone_name)
         if success:
             console.print(f"✅ Deleted milestone: {milestone_name}", style="bold green")
         else:

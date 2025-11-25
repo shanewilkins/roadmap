@@ -4,6 +4,9 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import (
+    track_file_operation,
+)
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -54,7 +57,8 @@ def delete_project(ctx: click.Context, project_id: str, confirm: bool):
                 return
 
         # Delete file
-        project_file.unlink()
+        with track_file_operation("delete", str(project_file)):
+            project_file.unlink()
         console.print(
             f"✅ Deleted project: {project_name} ({project_id})", style="bold green"
         )

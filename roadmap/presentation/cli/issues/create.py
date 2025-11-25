@@ -10,6 +10,7 @@ from roadmap.cli.issue_creation import (
 from roadmap.domain import IssueType, Priority
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
 
@@ -84,17 +85,18 @@ def create_issue(
         canonical_assignee = assignee_resolver.resolve_assignee(assignee)
 
         # Create the issue
-        issue = core.create_issue(
-            title=title,
-            priority=Priority(priority),
-            issue_type=IssueType(issue_type),
-            milestone=milestone,
-            assignee=canonical_assignee,
-            labels=list(labels),
-            estimated_hours=estimate,
-            depends_on=list(depends_on),
-            blocks=list(blocks),
-        )
+        with track_database_operation("create", "issue", warn_threshold_ms=2000):
+            issue = core.create_issue(
+                title=title,
+                priority=Priority(priority),
+                issue_type=IssueType(issue_type),
+                milestone=milestone,
+                assignee=canonical_assignee,
+                labels=list(labels),
+                estimated_hours=estimate,
+                depends_on=list(depends_on),
+                blocks=list(blocks),
+            )
 
         # Display issue information
         IssueDisplayFormatter.display_created_issue(issue, milestone, assignee)

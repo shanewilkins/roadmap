@@ -6,6 +6,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -197,7 +198,10 @@ def update_project(
             return
 
         # Update the project
-        updated_project = core.update_project(project_id, **updates)
+        with track_database_operation(
+            "update", "project", entity_id=project_id, warn_threshold_ms=2000
+        ):
+            updated_project = core.update_project(project_id, **updates)
 
         if not updated_project:
             console.print(

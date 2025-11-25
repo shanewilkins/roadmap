@@ -4,6 +4,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -88,7 +89,8 @@ def start_issue(
             return
 
         # Start work on issue
-        success = StartIssueWorkflow.start_work(core, issue_id, start_date)
+        with track_database_operation("update", "issue", entity_id=issue_id):
+            success = StartIssueWorkflow.start_work(core, issue_id, start_date)
 
         if success:
             StartIssueDisplay.show_started(issue, start_date, console)

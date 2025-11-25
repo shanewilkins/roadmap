@@ -6,6 +6,7 @@ import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -87,7 +88,8 @@ def update_milestone(
             return
 
         # Update the milestone
-        success = core.update_milestone(milestone_name, **updates)
+        with track_database_operation("update", "milestone", warn_threshold_ms=2000):
+            success = core.update_milestone(milestone_name, **updates)
 
         if not success:
             console.print(
