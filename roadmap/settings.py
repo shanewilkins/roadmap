@@ -8,7 +8,7 @@ various configuration sources (files, environment variables, etc.).
 from pathlib import Path
 from typing import Any
 
-from dynaconf import Dynaconf, Validator
+from dynaconf import Dynaconf, Validator  # type: ignore[import-not-found]
 
 from .shared.logging import get_logger
 
@@ -44,6 +44,8 @@ _validators = [
     Validator("logging.log_dir", default="~/.roadmap/logs"),
     Validator("logging.max_file_size", default="10MB"),
     Validator("logging.backup_count", default=5, gte=0),
+    Validator("logging.retention_days", default=90, gte=1),
+    Validator("logging.archive_old_logs", default=True, is_type_of=bool),
     # Git settings
     Validator("git.auto_sync", default=True, is_type_of=bool),
     Validator("git.hooks_enabled", default=True, is_type_of=bool),
