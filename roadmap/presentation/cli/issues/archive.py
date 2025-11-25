@@ -218,6 +218,7 @@ def archive_issue(
             archive_dir.mkdir(parents=True, exist_ok=True)
 
             # Find the issue file
+            assert issue_id is not None  # Should never reach here with None issue_id
             issue_files = list((roadmap_dir / "issues").glob(f"{issue_id[:8]}*.md"))
             if issue_files:
                 issue_file = issue_files[0]
