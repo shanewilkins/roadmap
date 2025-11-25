@@ -65,6 +65,8 @@ class IssueService:
         Returns:
             Newly created Issue object
         """
+        import json
+
         issue = Issue(
             title=title,
             priority=priority,
@@ -80,6 +82,30 @@ class IssueService:
 
         issue_path = self.issues_dir / issue.filename
         IssueParser.save_issue_file(issue, issue_path)
+
+        # Persist to database (non-blocking - file system is primary source of truth)
+        try:
+            self.db.create_issue(
+                {
+                    "id": issue.id,
+                    "project_id": None,  # Issues are not project-scoped in current design
+                    "milestone_id": None,  # Not directly mapped in current design
+                    "title": title,
+                    "description": "",
+                    "status": "open",
+                    "priority": priority.value,
+                    "issue_type": issue_type.value,
+                    "assignee": assignee,
+                    "estimate_hours": estimated_hours,
+                    "due_date": None,
+                    "metadata": json.dumps(
+                        {"filename": issue.filename, "labels": labels or []}
+                    ),
+                }
+            )
+        except Exception:
+            # Silently continue if DB insert fails - file-based system is primary
+            pass
 
         return issue
 

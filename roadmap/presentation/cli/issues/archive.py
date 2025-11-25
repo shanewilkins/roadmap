@@ -161,6 +161,16 @@ def archive_issue(
                     issue_file = issue_files[0]
                     archive_file = archive_dir / issue_file.name
                     issue_file.rename(archive_file)
+
+                    # Mark as archived in database
+                    try:
+                        core.db.mark_issue_archived(issue.id, archived=True)
+                    except Exception as e:
+                        console.print(
+                            f"⚠️  Warning: Failed to mark issue {issue.id} as archived in database: {e}",
+                            style="yellow",
+                        )
+
                     archived_count += 1
 
             console.print(
@@ -210,6 +220,15 @@ def archive_issue(
                 issue_file = issue_files[0]
                 archive_file = archive_dir / issue_file.name
                 issue_file.rename(archive_file)
+
+                # Mark as archived in database
+                try:
+                    core.db.mark_issue_archived(issue.id, archived=True)
+                except Exception as e:
+                    console.print(
+                        f"⚠️  Warning: Failed to mark in database: {e}", style="yellow"
+                    )
+
                 console.print(
                     f"\n✅ Archived issue '{issue_id}' to .roadmap/archive/issues/",
                     style="bold green",

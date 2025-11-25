@@ -85,6 +85,11 @@ def register_commands():
 
     main.add_command(today)
 
+    # Register cleanup command
+    from roadmap.presentation.cli.cleanup import cleanup
+
+    main.add_command(cleanup)
+
     # Register command groups with lazy loading
     # Core v1.0 commands only
     from roadmap.presentation.cli.comment import comment

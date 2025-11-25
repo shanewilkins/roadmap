@@ -161,6 +161,15 @@ def restore_issue(
                     else:
                         file_path.rename(dest_file)
 
+                    # Mark as unarchived in database
+                    try:
+                        core.db.mark_issue_archived(id, archived=False)
+                    except Exception as e:
+                        console.print(
+                            f"⚠️  Warning: Failed to mark issue {id} as restored in database: {e}",
+                            style="yellow",
+                        )
+
                     restored_count += 1
 
             console.print(
@@ -235,6 +244,14 @@ def restore_issue(
             # Perform restore
             active_dir.mkdir(parents=True, exist_ok=True)
             archived_file.rename(dest_file)  # type: ignore[union-attr]
+
+            # Mark as unarchived in database
+            try:
+                core.db.mark_issue_archived(issue.id, archived=False)
+            except Exception as e:
+                console.print(
+                    f"⚠️  Warning: Failed to mark in database: {e}", style="yellow"
+                )
 
             # Update status if requested
             if status:

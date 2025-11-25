@@ -54,6 +54,9 @@ class MilestoneService:
         Returns:
             Newly created Milestone object
         """
+        import json
+        import uuid
+
         milestone = Milestone(
             name=name,
             description=description,
@@ -63,6 +66,24 @@ class MilestoneService:
 
         milestone_path = self.milestones_dir / milestone.filename
         MilestoneParser.save_milestone_file(milestone, milestone_path)
+
+        # Persist to database (non-blocking - file system is primary source of truth)
+        try:
+            milestone_id = str(uuid.uuid4())[:8]
+            self.db.create_milestone(
+                {
+                    "id": milestone_id,
+                    "project_id": None,  # Milestones are not project-scoped in current design
+                    "title": name,
+                    "description": description,
+                    "status": "open",
+                    "due_date": due_date.isoformat() if due_date else None,
+                    "metadata": json.dumps({"filename": milestone.filename}),
+                }
+            )
+        except Exception:
+            # Silently continue if DB insert fails - file-based system is primary
+            pass
 
         return milestone
 

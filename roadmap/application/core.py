@@ -647,6 +647,21 @@ Project notes and additional context.
 
         return self.project_service.save_project(project)
 
+    def update_project(self, project_id: str, **updates) -> Project | None:
+        """Update a project with the given fields.
+
+        Args:
+            project_id: Project identifier
+            **updates: Fields to update (name, description, status, priority, etc.)
+
+        Returns:
+            Updated Project object if successful, None if not found
+        """
+        if not self.is_initialized():
+            raise ValueError("Roadmap not initialized")
+
+        return self.project_service.update_project(project_id, **updates)
+
     def get_backlog_issues(self) -> list[Issue]:
         """Get all issues not assigned to any milestone (backlog)."""
         all_issues = self.list_issues()

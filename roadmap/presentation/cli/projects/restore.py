@@ -1,21 +1,21 @@
-"""Restore milestone command - move archived milestones back to active."""
+"""Restore project command - move archived projects back to active."""
 
 from pathlib import Path
 
 import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
-from roadmap.infrastructure.persistence.parser import MilestoneParser
+from roadmap.infrastructure.persistence.parser import ProjectParser
 
 console = Console()
 
 
 @click.command()
-@click.argument("milestone_name", required=False)
+@click.argument("project_name", required=False)
 @click.option(
     "--all",
     is_flag=True,
-    help="Restore all archived milestones",
+    help="Restore all archived projects",
 )
 @click.option(
     "--dry-run",
@@ -28,22 +28,22 @@ console = Console()
     help="Skip confirmation prompt",
 )
 @click.pass_context
-def restore_milestone(
+def restore_project(
     ctx: click.Context,
-    milestone_name: str | None,
+    project_name: str | None,
     all: bool,
     dry_run: bool,
     force: bool,
 ):
-    """Restore an archived milestone back to active milestones.
+    """Restore an archived project back to active projects.
 
-    This moves a milestone from .roadmap/archive/milestones/ back to
-    .roadmap/milestones/, making it active again.
+    This moves a project from .roadmap/archive/projects/ back to
+    .roadmap/projects/, making it active again.
 
     Examples:
-        roadmap milestone restore "v1.0"
-        roadmap milestone restore --all
-        roadmap milestone restore "v1.0" --dry-run
+        roadmap project restore "my-project"
+        roadmap project restore --all
+        roadmap project restore "my-project" --dry-run
     """
     core = ctx.obj["core"]
 
@@ -54,85 +54,85 @@ def restore_milestone(
         )
         ctx.exit(1)
 
-    if not milestone_name and not all:
+    if not project_name and not all:
         console.print(
-            "❌ Error: Specify a milestone name or use --all",
+            "❌ Error: Specify a project name or use --all",
             style="bold red",
         )
         ctx.exit(1)
 
-    if milestone_name and all:
+    if project_name and all:
         console.print(
-            "❌ Error: Cannot specify milestone name with --all",
+            "❌ Error: Cannot specify project name with --all",
             style="bold red",
         )
         ctx.exit(1)
 
     try:
         roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "milestones"
-        active_dir = roadmap_dir / "milestones"
+        archive_dir = roadmap_dir / "archive" / "projects"
+        active_dir = roadmap_dir / "projects"
 
         if not archive_dir.exists():
             console.print(
-                "📋 No archived milestones found.",
+                "📋 No archived projects found.",
                 style="yellow",
             )
             return
 
         if all:
-            # Get all archived milestone files
+            # Get all archived project files
             archived_files = list(archive_dir.glob("*.md"))
 
             if not archived_files:
-                console.print("📋 No archived milestones to restore.", style="yellow")
+                console.print("📋 No archived projects to restore.", style="yellow")
                 return
 
-            # Parse milestone names
-            milestones_info = []
+            # Parse project names
+            projects_info = []
             for file_path in archived_files:
                 try:
-                    milestone = MilestoneParser.parse_milestone_file(file_path)
-                    milestones_info.append((file_path, milestone.name))
+                    project = ProjectParser.parse_project_file(file_path)
+                    projects_info.append((file_path, project.id, project.name))
                 except Exception:
                     continue
 
-            if not milestones_info:
-                console.print("📋 No valid archived milestones found.", style="yellow")
+            if not projects_info:
+                console.print("📋 No valid archived projects found.", style="yellow")
                 return
 
             if dry_run:
                 console.print(
-                    f"\n🔍 [DRY RUN] Would restore {len(milestones_info)} milestone(s):\n",
+                    f"\n🔍 [DRY RUN] Would restore {len(projects_info)} project(s):\n",
                     style="bold blue",
                 )
-                for _, name in milestones_info:
+                for _, _, name in projects_info:
                     console.print(f"  • {name}", style="cyan")
                 return
 
             # Confirm
             if not force:
                 console.print(
-                    f"\n⚠️  About to restore {len(milestones_info)} archived milestone(s):",
+                    f"\n⚠️  About to restore {len(projects_info)} archived project(s):",
                     style="bold yellow",
                 )
-                for _, name in milestones_info:
+                for _, _, name in projects_info:
                     console.print(f"  • {name}", style="cyan")
 
                 if not click.confirm("\nProceed with restore?", default=False):
                     console.print("❌ Cancelled.", style="yellow")
                     return
 
-            # Restore each milestone
+            # Restore each project
             active_dir.mkdir(parents=True, exist_ok=True)
             restored_count = 0
 
-            for file_path, name in milestones_info:
+            for file_path, project_id, name in projects_info:
                 if file_path.exists():
                     dest_file = active_dir / file_path.name
                     if dest_file.exists():
                         console.print(
-                            f"⚠️  Skipping {name} - already exists in active milestones",
+                            f"⚠️  Skipping {name} - already exists in active projects",
                             style="yellow",
                         )
                         continue
@@ -140,27 +140,27 @@ def restore_milestone(
 
                     # Mark as unarchived in database
                     try:
-                        core.db.mark_milestone_archived(name, archived=False)
+                        core.db.mark_project_archived(project_id, archived=False)
                     except Exception as e:
                         console.print(
-                            f"⚠️  Warning: Failed to mark milestone {name} as restored in database: {e}",
+                            f"⚠️  Warning: Failed to mark project {name} as restored in database: {e}",
                             style="yellow",
                         )
 
                     restored_count += 1
 
             console.print(
-                f"\n✅ Restored {restored_count} milestone(s) to .roadmap/milestones/",
+                f"\n✅ Restored {restored_count} project(s) to .roadmap/projects/",
                 style="bold green",
             )
 
         else:
-            # Restore single milestone - find it in archive
+            # Restore single project - find it in archive
             archived_file = None
             for file_path in archive_dir.glob("*.md"):
                 try:
-                    milestone = MilestoneParser.parse_milestone_file(file_path)
-                    if milestone.name == milestone_name:
+                    project = ProjectParser.parse_project_file(file_path)
+                    if project.name == project_name:
                         archived_file = file_path
                         break
                 except Exception:
@@ -168,7 +168,17 @@ def restore_milestone(
 
             if not archived_file or not archived_file.exists():
                 console.print(
-                    f"❌ Archived milestone '{milestone_name}' not found.",
+                    f"❌ Archived project '{project_name}' not found.",
+                    style="bold red",
+                )
+                ctx.exit(1)
+
+            # Parse to get full info
+            try:
+                project = ProjectParser.parse_project_file(archived_file)  # type: ignore[arg-type]
+            except Exception as e:
+                console.print(
+                    f"❌ Failed to parse archived project: {e}",
                     style="bold red",
                 )
                 ctx.exit(1)
@@ -177,22 +187,22 @@ def restore_milestone(
             dest_file = active_dir / archived_file.name  # type: ignore[union-attr]
             if dest_file.exists():
                 console.print(
-                    f"❌ Milestone '{milestone_name}' already exists in active milestones.",
+                    f"❌ Project '{project_name}' already exists in active projects.",
                     style="bold red",
                 )
                 ctx.exit(1)
 
             if dry_run:
                 console.print(
-                    f"\n🔍 [DRY RUN] Would restore milestone: {milestone_name}",
+                    f"\n🔍 [DRY RUN] Would restore project: {project_name}",
                     style="bold blue",
                 )
                 console.print(
-                    f"  Source: .roadmap/archive/milestones/{archived_file.name}",  # type: ignore[union-attr]
+                    f"  Source: .roadmap/archive/projects/{archived_file.name}",  # type: ignore[union-attr]
                     style="cyan",
                 )
                 console.print(
-                    f"  Destination: .roadmap/milestones/{archived_file.name}",  # type: ignore[union-attr]
+                    f"  Destination: .roadmap/projects/{archived_file.name}",  # type: ignore[union-attr]
                     style="cyan",
                 )
                 return
@@ -200,7 +210,7 @@ def restore_milestone(
             # Confirm
             if not force:
                 if not click.confirm(
-                    f"Restore milestone '{milestone_name}'?", default=False
+                    f"Restore project '{project_name}'?", default=False
                 ):
                     console.print("❌ Cancelled.", style="yellow")
                     return
@@ -211,17 +221,17 @@ def restore_milestone(
 
             # Mark as unarchived in database
             try:
-                core.db.mark_milestone_archived(milestone_name, archived=False)
+                core.db.mark_project_archived(project.id, archived=False)
             except Exception as e:
                 console.print(
                     f"⚠️  Warning: Failed to mark in database: {e}", style="yellow"
                 )
 
             console.print(
-                f"\n✅ Restored milestone '{milestone_name}' to .roadmap/milestones/",
+                f"\n✅ Restored project '{project_name}' to .roadmap/projects/",
                 style="bold green",
             )
 
     except Exception as e:
-        console.print(f"❌ Failed to restore milestone: {e}", style="bold red")
+        console.print(f"❌ Failed to restore project: {e}", style="bold red")
         ctx.exit(1)

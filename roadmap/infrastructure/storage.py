@@ -216,6 +216,52 @@ class StateManager:
 
         logger.info("Database schema initialized")
 
+        # Run migrations
+        self._run_migrations()
+
+    def _run_migrations(self):
+        """Run database migrations for schema updates."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Get current schema version (use pragma to check if columns exist)
+        migrations = []
+
+        # Migration 1: Add archive columns
+        cursor.execute("PRAGMA table_info(projects)")
+        project_columns = [col[1] for col in cursor.fetchall()]
+        if "archived" not in project_columns:
+            migrations.append("""
+                ALTER TABLE projects ADD COLUMN archived INTEGER DEFAULT 0;
+                ALTER TABLE projects ADD COLUMN archived_at TIMESTAMP NULL;
+            """)
+
+        cursor.execute("PRAGMA table_info(milestones)")
+        milestone_columns = [col[1] for col in cursor.fetchall()]
+        if "archived" not in milestone_columns:
+            migrations.append("""
+                ALTER TABLE milestones ADD COLUMN archived INTEGER DEFAULT 0;
+                ALTER TABLE milestones ADD COLUMN archived_at TIMESTAMP NULL;
+            """)
+
+        cursor.execute("PRAGMA table_info(issues)")
+        issue_columns = [col[1] for col in cursor.fetchall()]
+        if "archived" not in issue_columns:
+            migrations.append("""
+                ALTER TABLE issues ADD COLUMN archived INTEGER DEFAULT 0;
+                ALTER TABLE issues ADD COLUMN archived_at TIMESTAMP NULL;
+            """)
+
+        # Execute migrations
+        for migration_sql in migrations:
+            try:
+                conn.executescript(migration_sql)
+                logger.info("Applied database migration")
+            except Exception as e:
+                logger.warning(f"Migration may have already been applied: {e}")
+
+        conn.commit()
+
     def is_initialized(self) -> bool:
         """Check if database is properly initialized."""
         try:
@@ -298,6 +344,205 @@ class StateManager:
         deleted = cursor.rowcount > 0
         if deleted:
             logger.info("Deleted project", project_id=project_id)
+
+        return deleted
+
+    def mark_project_archived(self, project_id: str, archived: bool = True) -> bool:
+        """Mark a project as archived or unarchived.
+
+        Args:
+            project_id: Project identifier
+            archived: True to archive, False to unarchive
+
+        Returns:
+            True if successful, False otherwise
+        """
+        with self.transaction() as conn:
+            if archived:
+                cursor = conn.execute(
+                    "UPDATE projects SET archived = 1, archived_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (project_id,),
+                )
+            else:
+                cursor = conn.execute(
+                    "UPDATE projects SET archived = 0, archived_at = NULL WHERE id = ?",
+                    (project_id,),
+                )
+
+        updated = cursor.rowcount > 0
+        if updated:
+            action = "archived" if archived else "unarchived"
+            logger.info(f"Project {action}", project_id=project_id)
+
+        return updated
+
+    def mark_milestone_archived(self, milestone_id: str, archived: bool = True) -> bool:
+        """Mark a milestone as archived or unarchived."""
+        with self.transaction() as conn:
+            if archived:
+                cursor = conn.execute(
+                    "UPDATE milestones SET archived = 1, archived_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (milestone_id,),
+                )
+            else:
+                cursor = conn.execute(
+                    "UPDATE milestones SET archived = 0, archived_at = NULL WHERE id = ?",
+                    (milestone_id,),
+                )
+
+        updated = cursor.rowcount > 0
+        if updated:
+            action = "archived" if archived else "unarchived"
+            logger.info(f"Milestone {action}", milestone_id=milestone_id)
+
+        return updated
+
+    def mark_issue_archived(self, issue_id: str, archived: bool = True) -> bool:
+        """Mark an issue as archived or unarchived."""
+        with self.transaction() as conn:
+            if archived:
+                cursor = conn.execute(
+                    "UPDATE issues SET archived = 1, archived_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (issue_id,),
+                )
+            else:
+                cursor = conn.execute(
+                    "UPDATE issues SET archived = 0, archived_at = NULL WHERE id = ?",
+                    (issue_id,),
+                )
+
+        updated = cursor.rowcount > 0
+        if updated:
+            action = "archived" if archived else "unarchived"
+            logger.info(f"Issue {action}", issue_id=issue_id)
+
+        return updated
+
+    # Milestone operations
+    def create_milestone(self, milestone_data: dict[str, Any]) -> str:
+        """Create a new milestone."""
+        with self.transaction() as conn:
+            conn.execute(
+                """
+                INSERT INTO milestones (id, project_id, title, description, status, due_date, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    milestone_data["id"],
+                    milestone_data.get("project_id"),
+                    milestone_data.get("title"),
+                    milestone_data.get("description"),
+                    milestone_data.get("status", "open"),
+                    milestone_data.get("due_date"),
+                    milestone_data.get("metadata"),
+                ),
+            )
+
+        logger.info("Created milestone", milestone_id=milestone_data["id"])
+        return milestone_data["id"]
+
+    def get_milestone(self, milestone_id: str) -> dict[str, Any] | None:
+        """Get milestone by ID."""
+        conn = self._get_connection()
+        row = conn.execute(
+            "SELECT * FROM milestones WHERE id = ?", (milestone_id,)
+        ).fetchone()
+
+        return dict(row) if row else None
+
+    def update_milestone(self, milestone_id: str, updates: dict[str, Any]) -> bool:
+        """Update milestone."""
+        if not updates:
+            return False
+
+        set_clause = ", ".join(f"{key} = ?" for key in updates.keys())
+        values = list(updates.values()) + [milestone_id]
+
+        with self.transaction() as conn:
+            cursor = conn.execute(
+                f"""
+                UPDATE milestones SET {set_clause} WHERE id = ?
+            """,
+                values,
+            )
+
+        updated = cursor.rowcount > 0
+        if updated:
+            logger.info(
+                "Updated milestone",
+                milestone_id=milestone_id,
+                updates=list(updates.keys()),
+            )
+
+        return updated
+
+    # Issue operations
+    def create_issue(self, issue_data: dict[str, Any]) -> str:
+        """Create a new issue."""
+        with self.transaction() as conn:
+            conn.execute(
+                """
+                INSERT INTO issues (id, project_id, milestone_id, title, description, status, priority, issue_type, assignee, estimate_hours, due_date, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    issue_data["id"],
+                    issue_data.get("project_id"),
+                    issue_data.get("milestone_id"),
+                    issue_data.get("title"),
+                    issue_data.get("description"),
+                    issue_data.get("status", "open"),
+                    issue_data.get("priority", "medium"),
+                    issue_data.get("issue_type", "task"),
+                    issue_data.get("assignee"),
+                    issue_data.get("estimate_hours"),
+                    issue_data.get("due_date"),
+                    issue_data.get("metadata"),
+                ),
+            )
+
+        logger.info("Created issue", issue_id=issue_data["id"])
+        return issue_data["id"]
+
+    def get_issue(self, issue_id: str) -> dict[str, Any] | None:
+        """Get issue by ID."""
+        conn = self._get_connection()
+        row = conn.execute("SELECT * FROM issues WHERE id = ?", (issue_id,)).fetchone()
+
+        return dict(row) if row else None
+
+    def update_issue(self, issue_id: str, updates: dict[str, Any]) -> bool:
+        """Update issue."""
+        if not updates:
+            return False
+
+        set_clause = ", ".join(f"{key} = ?" for key in updates.keys())
+        values = list(updates.values()) + [issue_id]
+
+        with self.transaction() as conn:
+            cursor = conn.execute(
+                f"""
+                UPDATE issues SET {set_clause} WHERE id = ?
+            """,
+                values,
+            )
+
+        updated = cursor.rowcount > 0
+        if updated:
+            logger.info(
+                "Updated issue", issue_id=issue_id, updates=list(updates.keys())
+            )
+
+        return updated
+
+    def delete_issue(self, issue_id: str) -> bool:
+        """Delete issue."""
+        with self.transaction() as conn:
+            cursor = conn.execute("DELETE FROM issues WHERE id = ?", (issue_id,))
+
+        deleted = cursor.rowcount > 0
+        if deleted:
+            logger.info("Deleted issue", issue_id=issue_id)
 
         return deleted
 

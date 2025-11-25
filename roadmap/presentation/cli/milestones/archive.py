@@ -156,6 +156,16 @@ def archive_milestone(
                 if milestone_file and milestone_file.exists():
                     archive_file = archive_dir / milestone_file.name
                     milestone_file.rename(archive_file)
+
+                    # Mark as archived in database
+                    try:
+                        core.db.mark_milestone_archived(milestone.name, archived=True)
+                    except Exception as e:
+                        console.print(
+                            f"⚠️  Warning: Failed to mark milestone {milestone.name} as archived in database: {e}",
+                            style="yellow",
+                        )
+
                     archived_count += 1
 
             console.print(
@@ -228,6 +238,15 @@ def archive_milestone(
 
             archive_file = archive_dir / milestone_file.name
             milestone_file.rename(archive_file)
+
+            # Mark as archived in database
+            try:
+                core.db.mark_milestone_archived(milestone_name, archived=True)
+            except Exception as e:
+                console.print(
+                    f"⚠️  Warning: Failed to mark in database: {e}", style="yellow"
+                )
+
             console.print(
                 f"\n✅ Archived milestone '{milestone_name}' to .roadmap/archive/milestones/",
                 style="bold green",
