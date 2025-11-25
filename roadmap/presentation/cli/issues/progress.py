@@ -3,6 +3,7 @@
 import click
 
 from roadmap.domain import Status
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
@@ -64,4 +65,11 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
             console.print(f"❌ Failed to update progress: {issue_id}", style="bold red")
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_progress",
+            entity_type="issue",
+            entity_id=issue_id,
+            additional_context={"percentage": percentage},
+        )
         console.print(f"❌ Failed to update progress: {e}", style="bold red")

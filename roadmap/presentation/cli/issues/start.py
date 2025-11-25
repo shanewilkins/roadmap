@@ -2,6 +2,8 @@
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -44,6 +46,7 @@ def _safe_create_branch(git, issue, checkout=True, force=False):
     "--force", is_flag=True, help="Force branch creation even if working tree is dirty"
 )
 @click.pass_context
+@log_command("issue_start", entity_type="issue", track_duration=True)
 def start_issue(
     ctx: click.Context,
     issue_id: str,
@@ -99,6 +102,12 @@ def start_issue(
             console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_start",
+            entity_type="issue",
+            entity_id=issue_id,
+        )
         console.print(f"❌ Failed to start issue: {e}", style="bold red")
 
 

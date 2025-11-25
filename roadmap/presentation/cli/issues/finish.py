@@ -4,6 +4,8 @@ from datetime import datetime
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -20,6 +22,7 @@ console = get_console()
     help="Record actual completion time and duration (like old 'complete' command)",
 )
 @click.pass_context
+@log_command("issue_finish", entity_type="issue", track_duration=True)
 def finish_issue(
     ctx: click.Context, issue_id: str, reason: str, date: str, record_time: bool
 ):
@@ -118,4 +121,11 @@ def finish_issue(
             console.print(f"❌ Failed to finish issue: {issue_id}", style="bold red")
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_finish",
+            entity_type="issue",
+            entity_id=issue_id,
+            additional_context={"reason": reason},
+        )
         console.print(f"❌ Error finishing issue: {e}", style="bold red")

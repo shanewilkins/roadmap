@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
@@ -37,4 +38,10 @@ def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
         else:
             console.print(f"❌ Milestone not found: {milestone_name}", style="bold red")
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="milestone_delete",
+            entity_type="milestone",
+            additional_context={"milestone_name": milestone_name},
+        )
         console.print(f"❌ Failed to delete milestone: {e}", style="bold red")

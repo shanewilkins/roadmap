@@ -4,6 +4,8 @@ from datetime import datetime
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -54,6 +56,7 @@ console = get_console()
 @click.option("--clear-start-date", is_flag=True, help="Clear the start date")
 @click.option("--clear-target-date", is_flag=True, help="Clear the target end date")
 @click.pass_context
+@log_command("project_update", entity_type="project", track_duration=True)
 def update_project(
     ctx: click.Context,
     project_id: str,
@@ -251,6 +254,12 @@ def update_project(
             )
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="project_update",
+            entity_type="project",
+            entity_id=project_id,
+        )
         console.print(f"❌ Failed to update project: {e}", style="bold red")
         import traceback
 

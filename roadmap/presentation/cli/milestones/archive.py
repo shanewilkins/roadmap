@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import MilestoneParser
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
@@ -255,5 +256,11 @@ def archive_milestone(
             )
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="milestone_archive",
+            entity_type="milestone",
+            additional_context={"milestone_name": milestone_name},
+        )
         console.print(f"❌ Failed to archive milestone: {e}", style="bold red")
         ctx.exit(1)

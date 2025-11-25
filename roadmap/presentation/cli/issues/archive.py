@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import IssueParser
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
@@ -242,5 +243,11 @@ def archive_issue(
                 ctx.exit(1)
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_archive",
+            entity_type="issue",
+            entity_id=issue_id,
+        )
         console.print(f"❌ Failed to archive issue: {e}", style="bold red")
         ctx.exit(1)

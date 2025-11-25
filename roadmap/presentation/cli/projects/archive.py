@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import ProjectParser
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
@@ -158,5 +159,11 @@ def archive_project(
         )
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="project_archive",
+            entity_type="project",
+            additional_context={"project_name": project_name},
+        )
         console.print(f"❌ Failed to archive project: {e}", style="bold red")
         ctx.exit(1)

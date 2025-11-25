@@ -4,6 +4,8 @@ from datetime import datetime
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -21,6 +23,7 @@ console = get_console()
 )
 @click.option("--clear-due-date", is_flag=True, help="Clear the due date")
 @click.pass_context
+@log_command("milestone_update", entity_type="milestone", track_duration=True)
 def update_milestone(
     ctx: click.Context,
     milestone_name: str,
@@ -108,4 +111,10 @@ def update_milestone(
             console.print("   Due Date: Cleared", style="dim")
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="milestone_update",
+            entity_type="milestone",
+            additional_context={"milestone_name": milestone_name},
+        )
         console.print(f"❌ Failed to update milestone: {e}", style="bold red")

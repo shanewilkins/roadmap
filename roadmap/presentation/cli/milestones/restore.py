@@ -6,6 +6,7 @@ import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import MilestoneParser
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
@@ -225,5 +226,11 @@ def restore_milestone(
             )
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="milestone_restore",
+            entity_type="milestone",
+            additional_context={"milestone_name": milestone_name},
+        )
         console.print(f"❌ Failed to restore milestone: {e}", style="bold red")
         ctx.exit(1)

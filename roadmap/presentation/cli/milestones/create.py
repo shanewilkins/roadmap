@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
@@ -51,4 +52,10 @@ def create_milestone(ctx: click.Context, name: str, description: str, due_date: 
             )
         console.print(f"   File: .roadmap/milestones/{milestone.filename}", style="dim")
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="milestone_create",
+            entity_type="milestone",
+            additional_context={"name": name},
+        )
         console.print(f"❌ Failed to create milestone: {e}", style="bold red")

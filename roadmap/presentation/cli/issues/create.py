@@ -8,6 +8,7 @@ from roadmap.cli.issue_creation import (
     IssueDisplayFormatter,
 )
 from roadmap.domain import IssueType, Priority
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
@@ -106,6 +107,12 @@ def create_issue(
     except click.Abort:
         raise
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_create",
+            entity_type="issue",
+            additional_context={"title": title, "priority": priority},
+        )
         error_handler = ErrorHandler()
         error_handler.handle_error(
             ValidationError(

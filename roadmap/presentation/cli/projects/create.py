@@ -4,6 +4,8 @@ from datetime import datetime
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 # Initialize console
@@ -53,6 +55,7 @@ console = get_console()
     help="Milestone names (can be specified multiple times)",
 )
 @click.pass_context
+@log_command("project_create", entity_type="project", track_duration=True)
 def create_project(
     ctx: click.Context,
     name: str,
@@ -183,4 +186,10 @@ def create_project(
         console.print(f"   File: {project_path.relative_to(core.root_path)}")
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="project_create",
+            entity_type="project",
+            additional_context={"name": name},
+        )
         console.print(f"❌ Failed to create project: {e}", style="bold red")

@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
@@ -46,4 +47,11 @@ def done_issue(
     except click.Abort:
         raise
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_done",
+            entity_type="issue",
+            entity_id=issue_id,
+            additional_context={"reason": reason},
+        )
         console.print(f"❌ Failed to mark issue as done: {e}", style="bold red")

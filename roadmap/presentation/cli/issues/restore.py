@@ -6,6 +6,7 @@ import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import IssueParser
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
@@ -267,5 +268,11 @@ def restore_issue(
                 console.print(f"   Status set to: {status}", style="green")
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_restore",
+            entity_type="issue",
+            entity_id=issue_id,
+        )
         console.print(f"❌ Failed to restore issue: {e}", style="bold red")
         ctx.exit(1)

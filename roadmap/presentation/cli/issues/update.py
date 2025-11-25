@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
@@ -91,6 +92,13 @@ def update_issue(
     except click.Abort:
         raise
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="issue_update",
+            entity_type="issue",
+            entity_id=issue_id,
+            additional_context={"title": title},
+        )
         error_handler = ErrorHandler()
         error_handler.handle_error(
             ValidationError(

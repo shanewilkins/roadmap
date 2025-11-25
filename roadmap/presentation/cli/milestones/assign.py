@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
@@ -36,4 +37,10 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
                 style="bold red",
             )
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="milestone_assign",
+            entity_type="milestone",
+            additional_context={"issue_id": issue_id, "milestone_name": milestone_name},
+        )
         console.print(f"❌ Failed to assign issue: {e}", style="bold red")

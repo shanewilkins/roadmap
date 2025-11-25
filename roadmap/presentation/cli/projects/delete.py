@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
@@ -59,4 +60,10 @@ def delete_project(ctx: click.Context, project_id: str, confirm: bool):
         )
 
     except Exception as e:
+        log_error_with_context(
+            e,
+            operation="project_delete",
+            entity_type="project",
+            entity_id=project_id,
+        )
         console.print(f"❌ Failed to delete project: {e}", style="bold red")
