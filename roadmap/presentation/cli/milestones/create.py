@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -14,6 +15,7 @@ console = get_console()
 @click.option("--description", "-d", default="", help="Milestone description")
 @click.option("--due-date", help="Due date for milestone (YYYY-MM-DD format)")
 @click.pass_context
+@log_command("milestone_create", entity_type="milestone", track_duration=True)
 def create_milestone(ctx: click.Context, name: str, description: str, due_date: str):
     """Create a new milestone."""
     core = ctx.obj["core"]

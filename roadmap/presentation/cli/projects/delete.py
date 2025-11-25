@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -11,6 +12,7 @@ console = get_console()
 @click.argument("project_id")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
+@log_command("project_delete", entity_type="project", track_duration=True)
 def delete_project(ctx: click.Context, project_id: str, confirm: bool):
     """Delete a project."""
     core = ctx.obj["core"]

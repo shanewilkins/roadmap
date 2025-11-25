@@ -3,6 +3,7 @@
 import click
 
 from roadmap.domain import Status
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -12,6 +13,7 @@ console = get_console()
 @click.argument("issue_id")
 @click.argument("percentage", type=float)
 @click.pass_context
+@log_command("issue_progress", entity_type="issue", track_duration=True)
 def update_progress(ctx: click.Context, issue_id: str, percentage: float):
     """Update the progress percentage for an issue (0-100)."""
     core = ctx.obj["core"]

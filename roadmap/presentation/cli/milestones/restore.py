@@ -6,6 +6,7 @@ import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import MilestoneParser
+from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
 
@@ -28,6 +29,7 @@ console = Console()
     help="Skip confirmation prompt",
 )
 @click.pass_context
+@log_command("milestone_restore", entity_type="milestone", track_duration=True)
 def restore_milestone(
     ctx: click.Context,
     milestone_name: str | None,

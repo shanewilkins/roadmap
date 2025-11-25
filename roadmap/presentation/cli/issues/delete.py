@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.cli_errors import handle_cli_errors
 from roadmap.shared.console import get_console
 
@@ -13,6 +14,7 @@ console = get_console()
 @click.option("--yes", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 @handle_cli_errors(command_name="issue delete")
+@log_command("issue_delete", entity_type="issue", track_duration=True)
 def delete_issue(
     ctx: click.Context,
     issue_id: str,

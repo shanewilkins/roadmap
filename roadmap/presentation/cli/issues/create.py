@@ -8,6 +8,7 @@ from roadmap.cli.issue_creation import (
     IssueDisplayFormatter,
 )
 from roadmap.domain import IssueType, Priority
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
 
@@ -50,6 +51,7 @@ console = get_console()
     "--force", is_flag=True, help="Force branch creation even if working tree is dirty"
 )
 @click.pass_context
+@log_command("issue_create", entity_type="issue", track_duration=True)
 def create_issue(
     ctx: click.Context,
     title: str,

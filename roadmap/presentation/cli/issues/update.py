@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
 
@@ -29,6 +30,7 @@ console = get_console()
 @click.option("--estimate", "-e", type=float, help="Update estimated time (in hours)")
 @click.option("--reason", "-r", help="Reason for the update")
 @click.pass_context
+@log_command("issue_update", entity_type="issue", track_duration=True)
 def update_issue(
     ctx: click.Context,
     issue_id: str,

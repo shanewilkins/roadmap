@@ -6,6 +6,7 @@ import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import ProjectParser
+from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
 
@@ -28,6 +29,7 @@ console = Console()
     help="Skip confirmation prompt",
 )
 @click.pass_context
+@log_command("project_restore", entity_type="project", track_duration=True)
 def restore_project(
     ctx: click.Context,
     project_name: str | None,

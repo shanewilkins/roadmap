@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -11,6 +12,7 @@ console = get_console()
 @click.argument("issue_id")
 @click.option("--reason", "-r", help="Reason for marking as done")
 @click.pass_context
+@log_command("issue_done", entity_type="issue", track_duration=True)
 def done_issue(
     ctx: click.Context,
     issue_id: str,

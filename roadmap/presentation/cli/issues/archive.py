@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import IssueParser
+from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
 
@@ -39,6 +40,7 @@ console = Console()
     help="Skip confirmation prompt",
 )
 @click.pass_context
+@log_command("issue_archive", entity_type="issue", track_duration=True)
 def archive_issue(
     ctx: click.Context,
     issue_id: str | None,

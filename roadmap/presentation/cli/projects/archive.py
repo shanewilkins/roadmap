@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import ProjectParser
+from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
 
@@ -29,6 +30,7 @@ console = Console()
     help="Skip confirmation prompt",
 )
 @click.pass_context
+@log_command("project_archive", entity_type="project", track_duration=True)
 def archive_project(
     ctx: click.Context,
     project_name: str | None,

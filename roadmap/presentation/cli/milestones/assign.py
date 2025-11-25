@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -11,6 +12,7 @@ console = get_console()
 @click.argument("issue_id")
 @click.argument("milestone_name")
 @click.pass_context
+@log_command("milestone_assign", entity_type="milestone", track_duration=True)
 def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
     """Assign an issue to a milestone."""
     core = ctx.obj["core"]

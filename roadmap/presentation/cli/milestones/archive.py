@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import MilestoneParser
+from roadmap.presentation.cli.logging_decorators import log_command
 
 console = Console()
 
@@ -34,6 +35,7 @@ console = Console()
     help="Skip confirmation prompt",
 )
 @click.pass_context
+@log_command("milestone_archive", entity_type="milestone", track_duration=True)
 def archive_milestone(
     ctx: click.Context,
     milestone_name: str | None,
