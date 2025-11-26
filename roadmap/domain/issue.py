@@ -114,7 +114,14 @@ class Issue(BaseModel):
 
     @property
     def progress_display(self) -> str:
-        """Get a human-readable display of progress as percentage (0-100%)."""
+        """Get a human-readable display of progress as percentage (0-100%).
+
+        Returns:
+            - Empty string for Todo (not yet started)
+            - "100%" for Closed
+            - Explicit percentage if set
+            - "0%" for other statuses (in-progress, blocked, review) when no explicit progress
+        """
         if self.progress_percentage is not None:
             return f"{self.progress_percentage:.0f}%"
 
@@ -122,10 +129,10 @@ class Issue(BaseModel):
         if self.status == Status.CLOSED:
             return "100%"
         elif self.status == Status.TODO:
-            return "0%"
+            return ""  # Blank for todo - no progress tracking yet
         else:
-            # For in-progress, blocked, review - default to 50% if no explicit progress
-            return "50%"
+            # For in-progress, blocked, review - default to 0% if no explicit progress
+            return "0%"
 
     @property
     def actual_duration_hours(self) -> float | None:
