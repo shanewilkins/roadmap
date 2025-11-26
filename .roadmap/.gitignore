@@ -1,0 +1,15 @@
+# Database files - always local, never committed
+db/state.db
+db/state.db-shm
+db/state.db-wal
+db/*.db-*
+
+# Backups created during DB operations
+db/backups/
+
+# Generated reports (local analysis)
+reports/
+exports/
+
+# OS files
+.DS_Store

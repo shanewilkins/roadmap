@@ -145,9 +145,9 @@ class TestCLIInit:
 
             roadmap_dir = Path(".roadmap")
             assert roadmap_dir.exists()
-            # Database should be created (check for .db file or state directory)
-            db_files = list(roadmap_dir.glob("*.db"))
-            assert len(db_files) > 0 or (roadmap_dir / "state").exists()
+            # Database should be created in db/ folder
+            db_files = list((roadmap_dir / "db").glob("*.db"))
+            assert len(db_files) > 0
 
     def test_init_help(self, cli_runner):
         """Test init help command."""

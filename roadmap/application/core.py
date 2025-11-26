@@ -82,12 +82,13 @@ class RoadmapCore:
         self.templates_dir = self.roadmap_dir / "templates"
         self.artifacts_dir = self.roadmap_dir / "artifacts"
         self.config_file = self.roadmap_dir / "config.yaml"
+        self.db_dir = self.roadmap_dir / "db"
 
         # Initialize Git integration
         self.git = GitIntegration(self.root_path)
 
         # Initialize database manager
-        self.db = StateManager(self.roadmap_dir / "state.db")
+        self.db = StateManager(self.db_dir / "state.db")
 
         # Initialize service layer
         self.issue_service = IssueService(self.db, self.issues_dir)
