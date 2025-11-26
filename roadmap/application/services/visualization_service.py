@@ -192,7 +192,7 @@ class VisualizationService:
 
         return {
             "total_issues": len(issues),
-            "completed": len([i for i in issues if i.status == Status.DONE]),
+            "completed": len([i for i in issues if i.status == Status.CLOSED]),
             "in_progress": len([i for i in issues if i.status == Status.IN_PROGRESS]),
             "blocked": len([i for i in issues if i.status == Status.BLOCKED]),
             "todo": len([i for i in issues if i.status == Status.TODO]),

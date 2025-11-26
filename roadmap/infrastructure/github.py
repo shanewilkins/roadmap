@@ -416,7 +416,7 @@ class GitHubClient:
             Status.IN_PROGRESS: ["status:in-progress"],
             Status.BLOCKED: ["status:blocked"],
             Status.REVIEW: ["status:review"],
-            Status.DONE: ["status:done"],
+            Status.CLOSED: ["status:done"],
         }
         return status_labels.get(status, [])
 
@@ -456,7 +456,7 @@ class GitHubClient:
             elif label == "status:review":
                 return Status.REVIEW
             elif label == "status:done":
-                return Status.DONE
+                return Status.CLOSED
 
         return None
 

@@ -4,8 +4,7 @@ Provides all issue management commands:
 - list: List issues with various filters
 - create: Create a new issue
 - update: Update an existing issue
-- done: Mark issue as done
-- finish: Finish an issue with time tracking
+- close: Close an issue (Git-aligned terminology)
 - start: Start work on an issue
 - progress: Update issue progress percentage
 - block: Mark an issue as blocked
@@ -20,11 +19,10 @@ import click
 
 from roadmap.presentation.cli.issues.archive import archive_issue
 from roadmap.presentation.cli.issues.block import block_issue
+from roadmap.presentation.cli.issues.close import close_issue
 from roadmap.presentation.cli.issues.create import create_issue
 from roadmap.presentation.cli.issues.delete import delete_issue
 from roadmap.presentation.cli.issues.deps import deps
-from roadmap.presentation.cli.issues.done import done_issue
-from roadmap.presentation.cli.issues.finish import finish_issue
 from roadmap.presentation.cli.issues.list import list_issues
 from roadmap.presentation.cli.issues.progress import update_progress
 from roadmap.presentation.cli.issues.restore import restore_issue
@@ -44,8 +42,7 @@ def issue():
 issue.add_command(list_issues, name="list")
 issue.add_command(create_issue, name="create")
 issue.add_command(update_issue, name="update")
-issue.add_command(done_issue, name="done")
-issue.add_command(finish_issue, name="finish")
+issue.add_command(close_issue, name="close")
 issue.add_command(start_issue, name="start")
 issue.add_command(update_progress, name="progress")
 issue.add_command(block_issue, name="block")

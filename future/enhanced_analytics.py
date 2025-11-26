@@ -49,7 +49,7 @@ class EnhancedAnalyzer:
 
         # Filter to completed issues with completion dates
         completed_df = df[
-            (df["status"] == "done") & (df["actual_end_date"].notna())
+            (df["status"] == "closed") & (df["actual_end_date"].notna())
         ].copy()
 
         if completed_df.empty:
@@ -141,7 +141,7 @@ class EnhancedAnalyzer:
                         lambda x: (x == "in-progress").sum(),
                         lambda x: (x == "blocked").sum(),
                         lambda x: (x == "review").sum(),
-                        lambda x: (x == "done").sum(),
+                        lambda x: (x == "closed").sum(),
                     ],
                     "priority": [
                         lambda x: (x == "critical").sum(),
@@ -378,7 +378,7 @@ class EnhancedAnalyzer:
 
         # Summary metrics
         insights["summary"] = {
-            "completion_rate": (df["status"] == "done").mean() * 100,
+            "completion_rate": (df["status"] == "closed").mean() * 100,
             "avg_estimated_hours": df["estimated_hours"].mean(),
             "total_estimated_work": df["estimated_hours"].sum(),
             "overdue_percentage": df["is_overdue"].mean() * 100,
@@ -462,8 +462,8 @@ class EnhancedAnalyzer:
 
             return {
                 "total_issues": len(period_df),
-                "completed_issues": (period_df["status"] == "done").sum(),
-                "completion_rate": (period_df["status"] == "done").mean() * 100,
+                "completed_issues": (period_df["status"] == "closed").sum(),
+                "completion_rate": (period_df["status"] == "closed").mean() * 100,
                 "avg_estimated_hours": period_df["estimated_hours"].mean(),
                 "overdue_percentage": period_df["is_overdue"].mean() * 100,
                 "blocked_percentage": (period_df["status"] == "blocked").mean() * 100,

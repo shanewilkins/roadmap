@@ -403,7 +403,7 @@ class TestCIAutomation:
         assert results["base_branch"] == "main"
 
         # Should auto-complete the issue
-        assert issue.status == Status.DONE
+        assert issue.status == Status.CLOSED
         assert issue.actual_end_date is not None
         assert issue.completed_date is not None
         assert "Auto-completed issue ea4606b6" in results["actions"]

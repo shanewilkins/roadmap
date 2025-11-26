@@ -607,7 +607,7 @@ class TestBranchPolicyEnforcement:
     def test_enforce_branch_policy_completed_issue(self, mock_integration):
         """Test branch policy with completed issue reference."""
         mock_integration.core.get_issue.return_value = Mock(
-            id="abc12345", status=Status.DONE
+            id="abc12345", status=Status.CLOSED
         )
         with patch.object(
             mock_integration,

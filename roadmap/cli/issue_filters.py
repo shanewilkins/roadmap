@@ -121,7 +121,7 @@ class IssueQueryService:
         description = filter_description
 
         if open_only:
-            result = [i for i in result if i.status != Status.DONE]
+            result = [i for i in result if i.status != Status.CLOSED]
             description += " open"
 
         if blocked_only:

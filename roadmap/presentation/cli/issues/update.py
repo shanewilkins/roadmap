@@ -23,7 +23,7 @@ console = get_console()
 @click.option(
     "--status",
     "-s",
-    type=click.Choice(["todo", "in-progress", "blocked", "review", "done"]),
+    type=click.Choice(["todo", "in-progress", "blocked", "review", "closed"]),
     help="Update status",
 )
 @click.option("--assignee", "-a", help="Update assignee")

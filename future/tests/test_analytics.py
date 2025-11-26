@@ -63,7 +63,7 @@ class TestGitHistoryAnalyzer:
         # Create test issue with git commits
         issue = core.create_issue("Test Issue", Priority.HIGH)
         issue.assignee = "Test Developer"
-        issue.status = Status.DONE
+        issue.status = Status.CLOSED
         issue.completed_date = datetime.now().isoformat()
         issue.git_commits = [
             {

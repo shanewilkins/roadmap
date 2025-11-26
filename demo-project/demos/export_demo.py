@@ -154,7 +154,7 @@ def main():
 
     # Analyze the data
     total_issues = len(issues)
-    open_issues = len([i for i in issues if i['status'] != 'done'])
+    open_issues = len([i for i in issues if i['status'] != 'closed'])
     print(f"Total: {total_issues}, Open: {open_issues}")
     """)
 

@@ -184,7 +184,7 @@ def format_status_badge(status: str) -> "Text":
 
     # Map status values to colors
     status_colors = {
-        "done": "bold green",
+        "closed": "bold green",
         "in-progress": "bold blue",
         "in_progress": "bold blue",
         "todo": "bold yellow",

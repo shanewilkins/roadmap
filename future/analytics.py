@@ -83,7 +83,7 @@ class GitHistoryAnalyzer:
         # Get issues completed by this developer
         issues = self.core.list_issues()
         dev_issues = [i for i in issues if i.assignee == developer]
-        completed_issues = [i for i in dev_issues if i.status == Status.DONE]
+        completed_issues = [i for i in dev_issues if i.status == Status.CLOSED]
 
         # Calculate completion times
         completion_times = []
@@ -169,7 +169,7 @@ class GitHistoryAnalyzer:
             completed_issues = []
             for issue in issues:
                 if (
-                    issue.status == Status.DONE
+                    issue.status == Status.CLOSED
                     and hasattr(issue, "completed_date")
                     and issue.completed_date
                 ):

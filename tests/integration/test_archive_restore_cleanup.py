@@ -60,7 +60,7 @@ def roadmap_with_issues_and_milestones(isolated_roadmap):
         [
             ("Fix bug in parser", "todo"),
             ("Add new feature", "in-progress"),
-            ("Update docs", "done"),
+            ("Update docs", "closed"),
         ]
     ):
         result = cli_runner.invoke(
@@ -81,10 +81,10 @@ def roadmap_with_issues_and_milestones(isolated_roadmap):
             issues.append({"id": match.group(1), "title": title, "status": status})
 
         # Update status for done issue
-        if status == "done":
+        if status == "closed":
             result = cli_runner.invoke(
                 main,
-                ["issue", "update", match.group(1), "--status", "done"],
+                ["issue", "update", match.group(1), "--status", "closed"],
             )
             assert result.exit_code == 0
 
@@ -98,7 +98,7 @@ class TestIssueArchiveRestore:
         """Test archiving a single done issue."""
         cli_runner, temp_dir, issues = roadmap_with_issues_and_milestones
 
-        done_issue = next(i for i in issues if i["status"] == "done")
+        done_issue = next(i for i in issues if i["status"] == "closed")
 
         result = cli_runner.invoke(
             main,
@@ -140,7 +140,7 @@ class TestIssueArchiveRestore:
         cli_runner, temp_dir, issues = roadmap_with_issues_and_milestones
 
         # Archive a done issue
-        done_issue = next(i for i in issues if i["status"] == "done")
+        done_issue = next(i for i in issues if i["status"] == "closed")
         result = cli_runner.invoke(
             main,
             ["issue", "archive", done_issue["id"], "--force"],
@@ -156,7 +156,7 @@ class TestIssueArchiveRestore:
         """Test archive dry-run doesn't modify anything."""
         cli_runner, temp_dir, issues = roadmap_with_issues_and_milestones
 
-        done_issue = next(i for i in issues if i["status"] == "done")
+        done_issue = next(i for i in issues if i["status"] == "closed")
 
         result = cli_runner.invoke(
             main,
@@ -170,7 +170,7 @@ class TestIssueArchiveRestore:
         """Test restoring a single archived issue."""
         cli_runner, temp_dir, issues = roadmap_with_issues_and_milestones
 
-        done_issue = next(i for i in issues if i["status"] == "done")
+        done_issue = next(i for i in issues if i["status"] == "closed")
 
         # Archive first
         result = cli_runner.invoke(
@@ -212,7 +212,7 @@ class TestIssueArchiveRestore:
         """Test restoring issue with status change."""
         cli_runner, temp_dir, issues = roadmap_with_issues_and_milestones
 
-        done_issue = next(i for i in issues if i["status"] == "done")
+        done_issue = next(i for i in issues if i["status"] == "closed")
 
         # Archive
         result = cli_runner.invoke(

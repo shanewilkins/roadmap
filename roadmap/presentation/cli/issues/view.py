@@ -47,7 +47,7 @@ def view_issue(ctx: click.Context, issue_id: str):
         "in-progress": "yellow",
         "blocked": "red",
         "review": "magenta",
-        "done": "green",
+        "closed": "green",
     }
     status_color = status_colors.get(issue.status.value, "white")
 

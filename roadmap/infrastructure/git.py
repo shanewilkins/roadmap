@@ -537,7 +537,7 @@ class GitIntegration:
 
         for pattern in completion_patterns:
             if re.search(pattern, commit.message, re.IGNORECASE):
-                updates["status"] = "done"
+                updates["status"] = "closed"
                 updates["progress_percentage"] = 100.0
                 break
 
@@ -625,7 +625,7 @@ class GitIntegration:
                         # Update the issue
                         roadmap_core.update_issue(issue_id, **update_data)
 
-                        if updates.get("status") == "done":
+                        if updates.get("status") == "closed":
                             results["closed"].append(issue_id)
                         else:
                             results["updated"].append(issue_id)

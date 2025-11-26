@@ -61,7 +61,7 @@ def today(ctx: click.Context):
             for i in my_issues
             if i.due_date
             and i.due_date.replace(tzinfo=None) < datetime.now()
-            and i.status != Status.DONE
+            and i.status != Status.CLOSED
         ]
         blocked = [i for i in my_issues if i.status == Status.BLOCKED]
         todo_high_priority = [
@@ -72,7 +72,7 @@ def today(ctx: click.Context):
         completed_today = [
             i
             for i in my_issues
-            if i.status == Status.DONE
+            if i.status == Status.CLOSED
             and i.actual_end_date
             and i.actual_end_date.date() == datetime.now().date()
         ]

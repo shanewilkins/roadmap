@@ -25,18 +25,20 @@ class KanbanOrganizer:
             "blocked": [],
             "in_progress": [],
             "not_started": [],
-            "done": [],
+            "closed": [],
         }
 
         for issue in milestone_issues:
-            if issue.status.value == "done":
-                categories["done"].append(issue)
+            if issue.status.value == "closed":
+                categories["closed"].append(issue)
             elif issue.status.value == "blocked":
                 categories["blocked"].append(issue)
             elif issue.status.value == "in-progress":
                 categories["in_progress"].append(issue)
             elif (
-                issue.due_date and issue.due_date < now and issue.status.value != "done"
+                issue.due_date
+                and issue.due_date < now
+                and issue.status.value != "closed"
             ):
                 categories["overdue"].append(issue)
             else:
@@ -75,7 +77,11 @@ class KanbanOrganizer:
                 categories["not_started"],
                 "dim white" if not no_color else "white",
             ),
-            ("✅ Done", categories["done"], "bold green" if not no_color else "white"),
+            (
+                "✅ Closed",
+                categories["closed"],
+                "bold green" if not no_color else "white",
+            ),
         ]
 
 

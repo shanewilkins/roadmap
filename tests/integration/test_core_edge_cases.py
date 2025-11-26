@@ -104,7 +104,7 @@ This issue is missing the title field.
 
         # Update issue statuses
         initialized_core.update_issue(issue1.id, status=Status.IN_PROGRESS)
-        initialized_core.update_issue(issue2.id, status=Status.DONE)
+        initialized_core.update_issue(issue2.id, status=Status.CLOSED)
 
         # Create a milestone and assign issues
         initialized_core.create_milestone("Test Milestone", "Test description")

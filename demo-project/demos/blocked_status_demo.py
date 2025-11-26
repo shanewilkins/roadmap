@@ -35,7 +35,7 @@ def main():
         ("in-progress", "🔄", "yellow", "Actively being worked on"),
         ("blocked", "🚫", "red", "Waiting on dependencies"),
         ("review", "👀", "blue", "Under review"),
-        ("done", "✅", "green", "Completed"),
+        ("closed", "✅", "green", "Completed"),
     ]
 
     for status, emoji, color, description in statuses:

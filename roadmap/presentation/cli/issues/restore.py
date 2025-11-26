@@ -21,7 +21,7 @@ console = Console()
 )
 @click.option(
     "--status",
-    type=click.Choice(["todo", "in-progress", "blocked", "review", "done"]),
+    type=click.Choice(["todo", "in-progress", "blocked", "review", "closed"]),
     help="Set status when restoring (default: keep current status)",
 )
 @click.option(

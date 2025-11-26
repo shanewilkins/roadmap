@@ -30,17 +30,17 @@ class TestKanbanOrganizer:
             "blocked": [],
             "in_progress": [],
             "not_started": [],
-            "done": [],
+            "closed": [],
         }
 
     def test_categorize_issues_done(self):
         """categorize_issues should categorize done issues."""
-        issue = self.create_issue(status=Status.DONE)
+        issue = self.create_issue(status=Status.CLOSED)
 
         result = KanbanOrganizer.categorize_issues([issue])
 
-        assert len(result["done"]) == 1
-        assert result["done"][0] == issue
+        assert len(result["closed"]) == 1
+        assert result["closed"][0] == issue
         assert len(result["overdue"]) == 0
         assert len(result["blocked"]) == 0
         assert len(result["in_progress"]) == 0
@@ -86,11 +86,11 @@ class TestKanbanOrganizer:
     def test_categorize_issues_not_overdue_if_done(self):
         """categorize_issues should not mark done issues as overdue."""
         yesterday = datetime.now() - timedelta(days=1)
-        issue = self.create_issue(status=Status.DONE, due_date=yesterday)
+        issue = self.create_issue(status=Status.CLOSED, due_date=yesterday)
 
         result = KanbanOrganizer.categorize_issues([issue])
 
-        assert len(result["done"]) == 1
+        assert len(result["closed"]) == 1
         assert len(result["overdue"]) == 0
 
     def test_categorize_issues_future_due_date_not_overdue(self):
@@ -107,7 +107,7 @@ class TestKanbanOrganizer:
         """categorize_issues should handle multiple issues correctly."""
         yesterday = datetime.now() - timedelta(days=1)
         issues = [
-            self.create_issue(status=Status.DONE, title="Done issue"),
+            self.create_issue(status=Status.CLOSED, title="Done issue"),
             self.create_issue(status=Status.BLOCKED, title="Blocked issue"),
             self.create_issue(status=Status.IN_PROGRESS, title="In progress issue"),
             self.create_issue(status=Status.TODO, title="Not started issue"),
@@ -118,7 +118,7 @@ class TestKanbanOrganizer:
 
         result = KanbanOrganizer.categorize_issues(issues)  # type: ignore[arg-type]
 
-        assert len(result["done"]) == 1
+        assert len(result["closed"]) == 1
         assert len(result["blocked"]) == 1
         assert len(result["in_progress"]) == 1
         assert len(result["not_started"]) == 1
@@ -131,7 +131,7 @@ class TestKanbanOrganizer:
             "blocked": [],
             "in_progress": [Mock(), Mock()],
             "not_started": [],
-            "done": [Mock()],
+            "closed": [Mock()],
         }
 
         result = KanbanOrganizer.create_column_definitions(categories, no_color=False)
@@ -151,7 +151,7 @@ class TestKanbanOrganizer:
         assert result[3][0] == "⏸️  Not Started"
         assert result[3][2] == "dim white"
 
-        assert result[4][0] == "✅ Done"
+        assert result[4][0] == "✅ Closed"
         assert result[4][2] == "bold green"
 
     def test_create_column_definitions_no_color(self):
@@ -161,7 +161,7 @@ class TestKanbanOrganizer:
             "blocked": [],
             "in_progress": [],
             "not_started": [],
-            "done": [],
+            "closed": [],
         }
 
         result = KanbanOrganizer.create_column_definitions(categories, no_color=True)

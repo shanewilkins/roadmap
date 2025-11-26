@@ -1,4 +1,4 @@
-"""Finish issue command."""
+"""Close issue command - unified replacement for 'closed' and 'finish'."""
 
 from datetime import datetime
 
@@ -12,24 +12,35 @@ from roadmap.shared.console import get_console
 console = get_console()
 
 
-@click.command("finish")
+@click.command("close")
 @click.argument("issue_id")
-@click.option("--reason", "-r", help="Reason for finishing the issue")
-@click.option("--date", help="Completion date (YYYY-MM-DD HH:MM, defaults to now)")
+@click.option("--reason", "-r", help="Reason for closing the issue")
 @click.option(
     "--record-time",
     "-t",
     is_flag=True,
-    help="Record actual completion time and duration (like old 'complete' command)",
+    help="Record actual completion time and duration",
+)
+@click.option(
+    "--date",
+    help="Completion date (YYYY-MM-DD HH:MM, defaults to now)",
 )
 @click.pass_context
-@log_command("issue_finish", entity_type="issue", track_duration=True)
-def finish_issue(
-    ctx: click.Context, issue_id: str, reason: str, date: str, record_time: bool
+@log_command("issue_close", entity_type="issue", track_duration=True)
+def close_issue(
+    ctx: click.Context,
+    issue_id: str,
+    reason: str,
+    record_time: bool,
+    date: str,
 ):
-    """Finish an issue (record completion time, reason).
+    """Close an issue (mark as done).
 
-    Behaves like the original monolithic `issue finish` command.
+    Unified command that marks an issue as closed and optionally records
+    completion metadata like reason and timing information.
+
+    Git-aligned terminology: 'close' is used instead of 'closed' for consistency
+    with Git workflows.
     """
     core = ctx.obj["core"]
 
@@ -40,7 +51,14 @@ def finish_issue(
         return
 
     try:
-        # Parse completion date
+        # Check if issue exists
+        issue = core.get_issue(issue_id)
+        if not issue:
+            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+            return
+
+        # Parse completion date if record_time is enabled
+        end_date = None
         if record_time:
             if date:
                 try:
@@ -63,17 +81,13 @@ def finish_issue(
             "progress_percentage": 100.0,
         }
 
-        if record_time:
+        if record_time and end_date:
             update_data["actual_end_date"] = end_date
 
         if reason:
             # Append reason to existing content
-            issue = core.get_issue(issue_id)
-            if not issue:
-                console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-                return
             content = issue.content or ""
-            completion_note = f"\n\n**Finished:** {reason}"
+            completion_note = f"\n\n**Closed:** {reason}"
             update_data["content"] = content + completion_note
 
         # Update the issue
@@ -85,21 +99,20 @@ def finish_issue(
         if success:
             # Re-fetch issue to display updated values
             updated = core.get_issue(issue_id)
-            console.print(f"✅ Finished: {updated.title}", style="bold green")
+            console.print(f"✅ Closed: {updated.title}", style="bold green")
 
             if reason:
                 console.print(f"   Reason: {reason}", style="cyan")
 
-            if record_time:
-                end_display = update_data.get("actual_end_date", datetime.now())
+            if record_time and end_date:
                 console.print(
-                    f"   Completed: {end_display.strftime('%Y-%m-%d %H:%M')}",
+                    f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}",
                     style="cyan",
                 )
 
                 # Show duration if we have start date
                 if updated.actual_start_date:
-                    duration = end_display - updated.actual_start_date
+                    duration = end_date - updated.actual_start_date
                     hours = duration.total_seconds() / 3600
                     console.print(f"   Duration: {hours:.1f} hours", style="cyan")
 
@@ -120,16 +133,16 @@ def finish_issue(
                         else:
                             console.print("   ✅ Right on estimate!", style="green")
 
-            console.print("   Status: Done", style="green")
+            console.print("   Status: Closed", style="green")
         else:
-            console.print(f"❌ Failed to finish issue: {issue_id}", style="bold red")
+            console.print(f"❌ Failed to close issue: {issue_id}", style="bold red")
 
     except Exception as e:
         log_error_with_context(
             e,
-            operation="issue_finish",
+            operation="issue_close",
             entity_type="issue",
             entity_id=issue_id,
-            additional_context={"reason": reason},
+            additional_context={"reason": reason, "record_time": record_time},
         )
-        console.print(f"❌ Error finishing issue: {e}", style="bold red")
+        console.print(f"❌ Error closing issue: {e}", style="bold red")

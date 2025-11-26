@@ -1389,7 +1389,7 @@ class StateManager:
                 ).fetchone()
 
                 completed_result = conn.execute(
-                    "SELECT COUNT(*) FROM issues WHERE milestone_id = ? AND status = 'done'",
+                    "SELECT COUNT(*) FROM issues WHERE milestone_id = ? AND status = 'closed'",
                     (milestone_id,),
                 ).fetchone()
 

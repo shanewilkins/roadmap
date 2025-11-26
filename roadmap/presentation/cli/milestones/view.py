@@ -152,7 +152,7 @@ def view_milestone(ctx: click.Context, milestone_name: str):
                 "in-progress": "yellow",
                 "blocked": "red",
                 "review": "magenta",
-                "done": "green",
+                "closed": "green",
             }
             status_color = status_colors.get(issue.status.value, "white")
 

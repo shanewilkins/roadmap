@@ -54,7 +54,7 @@ class TestDataFrameAdapter:
                 title="Task 3",
                 issue_type=IssueType.BUG,
                 priority=Priority.LOW,
-                status=Status.DONE,
+                status=Status.CLOSED,
                 assignee="charlie",
             ),
         ]
@@ -422,7 +422,7 @@ class TestDataAnalyzer:
                 "is_overdue": [False, False, True, False, False],
                 "is_completed": [True, True, False, True, False],
                 "priority": ["critical", "high", "medium", "low", "medium"],
-                "status": ["done", "done", "in-progress", "done", "todo"],
+                "status": ["closed", "closed", "in-progress", "closed", "todo"],
             }
         )
 
@@ -456,7 +456,7 @@ class TestDataAnalyzer:
                     "blocked",
                     "blocked",
                     "review",
-                    "done",
+                    "closed",
                 ],
                 "assignee": ["alice", "alice", "bob", "bob", "charlie", "alice"],
                 "priority": ["high", "medium", "critical", "high", "low", "medium"],
@@ -568,7 +568,7 @@ class TestDataAnalyzer:
                 "is_overdue": [False],
                 "is_completed": [True],
                 "priority": ["high"],
-                "status": ["done"],
+                "status": ["closed"],
             }
         )
 
@@ -638,7 +638,7 @@ class TestDataAnalyzer:
         """Test bottleneck detection with no bottlenecks."""
         clean_df = pd.DataFrame(
             {
-                "status": ["done", "done", "review"],
+                "status": ["closed", "closed", "review"],
                 "assignee": ["alice", "bob", "charlie"],
                 "priority": ["medium", "low", "high"],
                 "depends_on": ["", "", ""],
@@ -681,7 +681,7 @@ class TestQueryBuilder:
             {
                 "id": ["1", "2", "3", "4", "5"],
                 "title": ["Feature A", "Bug Fix B", "Task C", "Feature D", "Bug E"],
-                "status": ["todo", "done", "in-progress", "blocked", "review"],
+                "status": ["todo", "closed", "in-progress", "blocked", "review"],
                 "priority": ["high", "critical", "medium", "low", "high"],
                 "assignee": ["alice", "bob", "alice", "charlie", "bob"],
                 "created": [
@@ -755,11 +755,11 @@ class TestQueryBuilder:
 
     def test_filter_by_criteria_single_value(self, sample_df):
         """Test filtering by single criterion."""
-        result = QueryBuilder.filter_by_criteria(sample_df, status="done")
+        result = QueryBuilder.filter_by_criteria(sample_df, status="closed")
 
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
-        assert result.iloc[0]["status"] == "done"
+        assert result.iloc[0]["status"] == "closed"
         assert result.iloc[0]["id"] == "2"
 
     def test_filter_by_criteria_multiple_values(self, sample_df):
@@ -775,11 +775,11 @@ class TestQueryBuilder:
 
     def test_filter_by_criteria_list_values(self, sample_df):
         """Test filtering with list of values."""
-        result = QueryBuilder.filter_by_criteria(sample_df, status=["todo", "done"])
+        result = QueryBuilder.filter_by_criteria(sample_df, status=["todo", "closed"])
 
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 2
-        assert all(result["status"].isin(["todo", "done"]))
+        assert all(result["status"].isin(["todo", "closed"]))
 
     def test_filter_by_criteria_no_match(self, sample_df):
         """Test filtering with no matches."""
@@ -792,7 +792,7 @@ class TestQueryBuilder:
         """Test filtering with empty DataFrame."""
         empty_df = pd.DataFrame()
 
-        result = QueryBuilder.filter_by_criteria(empty_df, status="done")
+        result = QueryBuilder.filter_by_criteria(empty_df, status="closed")
 
         assert isinstance(result, pd.DataFrame)
         assert result.empty
@@ -875,7 +875,7 @@ class TestDataUtilsIntegration:
             Status.TODO,
             Status.IN_PROGRESS,
             Status.REVIEW,
-            Status.DONE,
+            Status.CLOSED,
             Status.BLOCKED,
         ]
 
@@ -986,7 +986,7 @@ class TestDataUtilsIntegration:
                 id=f"large_issue_{i}",
                 title=f"Large Task {i}",
                 priority=Priority.MEDIUM,
-                status=Status.TODO if i % 2 == 0 else Status.DONE,
+                status=Status.TODO if i % 2 == 0 else Status.CLOSED,
                 issue_type=IssueType.FEATURE,
                 assignee=f"user{i%5}@example.com",
                 created=now - timedelta(days=i),
@@ -1004,7 +1004,7 @@ class TestDataUtilsIntegration:
         bottlenecks = DataAnalyzer.find_bottlenecks(df)
 
         # Filter operations
-        filtered = QueryBuilder.filter_by_criteria(df, status="done")
+        filtered = QueryBuilder.filter_by_criteria(df, status="closed")
         searched = QueryBuilder.search_text(df, "Large")
 
         assert isinstance(team_perf, pd.DataFrame)

@@ -242,7 +242,7 @@ class MilestoneService:
             return {"total": 0, "completed": 0, "progress": 0.0, "by_status": {}}
 
         total = len(issues)
-        completed = len([i for i in issues if i.status == Status.DONE])
+        completed = len([i for i in issues if i.status == Status.CLOSED])
         progress = (completed / total) * 100 if total > 0 else 0.0
 
         by_status = {}

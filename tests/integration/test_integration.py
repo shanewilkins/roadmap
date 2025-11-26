@@ -331,7 +331,7 @@ class TestEndToEndWorkflows:
         assert completion_percentage == 0.0  # No issues completed yet
 
         # Update one issue to done and check completion
-        core.update_issue(issue1_id, status=Status.DONE)
+        core.update_issue(issue1_id, status=Status.CLOSED)
         all_issues = core.list_issues()  # Refresh
         completion_percentage = milestone.get_completion_percentage(all_issues)
         assert completion_percentage == 50.0  # 1 of 2 issues completed
@@ -367,7 +367,7 @@ class TestEndToEndWorkflows:
 
         # Try to update non-existent issue
         result = runner.invoke(
-            main, ["issue", "update", "nonexistent", "--status", "done"]
+            main, ["issue", "update", "nonexistent", "--status", "closed"]
         )
         # Should fail with non-zero exit code for error
         assert result.exit_code != 0 or "Issue not found" in result.output

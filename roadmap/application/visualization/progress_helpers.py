@@ -26,7 +26,7 @@ class MilestoneProgressCalculator:
             milestone_issues = [i for i in issues if i.milestone == milestone.name]
             total_issues = len(milestone_issues)
             completed_issues = len(
-                [i for i in milestone_issues if i.status == Status.DONE]
+                [i for i in milestone_issues if i.status == Status.CLOSED]
             )
             progress = (
                 (completed_issues / total_issues * 100) if total_issues > 0 else 0

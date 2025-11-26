@@ -10,7 +10,7 @@ from roadmap.shared.console import get_console
 console = get_console()
 
 
-@click.command("done")
+@click.command("closed")
 @click.argument("issue_id")
 @click.option("--reason", "-r", help="Reason for marking as done")
 @click.pass_context
@@ -38,7 +38,7 @@ def done_issue(
 
         # Update status to done
         with track_database_operation("update", "issue", entity_id=issue_id):
-            updated_issue = core.update_issue(issue_id, status="done")
+            updated_issue = core.update_issue(issue_id, status="closed")
 
         console.print(f"✅ Finished: {updated_issue.title}", style="bold green")
         console.print(f"   ID: {updated_issue.id}", style="cyan")

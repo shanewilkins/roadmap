@@ -90,7 +90,7 @@ class ChartGenerator:
             "in-progress": "#f59e0b",  # Amber
             "blocked": "#ef4444",  # Red
             "review": "#3b82f6",  # Blue
-            "done": "#10b981",  # Green
+            "closed": "#10b981",  # Green
         }
 
         filename = f"status_distribution_{chart_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -1213,7 +1213,7 @@ class DashboardGenerator:
 
         # Calculate summary metrics
         total_issues = len(issues)
-        completed_issues = len([i for i in issues if i.status == Status.DONE])
+        completed_issues = len([i for i in issues if i.status == Status.CLOSED])
         in_progress_issues = len([i for i in issues if i.status == Status.IN_PROGRESS])
         blocked_issues = len([i for i in issues if i.status == Status.BLOCKED])
         completion_rate = (

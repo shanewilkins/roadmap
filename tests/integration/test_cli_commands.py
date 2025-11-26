@@ -408,7 +408,7 @@ class TestCLIIssueDelete:
 
 
 class TestCLIIssueWorkflow:
-    """Test issue workflow commands (start, finish, done, progress)."""
+    """Test issue workflow commands (start, close, progress)."""
 
     def test_start_issue(self, isolated_roadmap_with_issues):
         """Test starting work on an issue."""
@@ -423,29 +423,21 @@ class TestCLIIssueWorkflow:
             or "in_progress" in result.output.lower()
         )
 
-    def test_finish_issue(self, isolated_roadmap_with_issues):
-        """Test finishing an issue."""
+    def test_close_issue(self, isolated_roadmap_with_issues):
+        """Test closing an issue."""
         cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
         # Start first
         cli_runner.invoke(main, ["issue", "start", "1"])
 
-        # Then finish
-        result = cli_runner.invoke(main, ["issue", "finish", "1"])
+        # Then close
+        result = cli_runner.invoke(main, ["issue", "close", "1"])
 
         assert (
             result.exit_code == 0
-            or "finish" in result.output.lower()
-            or "completed" in result.output.lower()
+            or "close" in result.output.lower()
+            or "closed" in result.output.lower()
         )
-
-    def test_done_issue(self, isolated_roadmap_with_issues):
-        """Test marking issue as done."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
-
-        result = cli_runner.invoke(main, ["issue", "done", "1"])
-
-        assert result.exit_code == 0 or "done" in result.output.lower()
 
     def test_update_progress(self, isolated_roadmap_with_issues):
         """Test updating issue progress."""
@@ -487,9 +479,9 @@ class TestCLIIssueWorkflow:
 
         assert result.exit_code == 0
 
-    def test_finish_issue_help(self, cli_runner):
-        """Test finish command help."""
-        result = cli_runner.invoke(main, ["issue", "finish", "--help"])
+    def test_close_issue_help(self, cli_runner):
+        """Test close command help."""
+        result = cli_runner.invoke(main, ["issue", "close", "--help"])
 
         assert result.exit_code == 0
 
@@ -515,8 +507,7 @@ class TestCLIIssueHelp:
             "update",
             "delete",
             "start",
-            "finish",
-            "done",
+            "close",
             "progress",
             "block",
             "unblock",

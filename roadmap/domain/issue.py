@@ -39,7 +39,7 @@ class Status(str, Enum):
     IN_PROGRESS = "in-progress"
     BLOCKED = "blocked"
     REVIEW = "review"
-    DONE = "done"
+    CLOSED = "closed"
 
 
 class Issue(BaseModel):
@@ -116,7 +116,7 @@ class Issue(BaseModel):
     def progress_display(self) -> str:
         """Get a human-readable display of progress."""
         if self.progress_percentage is None:
-            if self.status == Status.DONE:
+            if self.status == Status.CLOSED:
                 return "100%"
             elif self.status == Status.IN_PROGRESS:
                 return "In Progress"

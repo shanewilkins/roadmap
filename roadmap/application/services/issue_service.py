@@ -246,4 +246,4 @@ class IssueService:
         Returns:
             Closed Issue object if found, None otherwise
         """
-        return self.update_issue(issue_id, status=Status.DONE)
+        return self.update_issue(issue_id, status=Status.CLOSED)

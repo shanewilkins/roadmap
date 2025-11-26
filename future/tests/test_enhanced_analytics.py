@@ -89,7 +89,7 @@ class TestDataFrameGeneration:
                 title="Bug Fix",
                 content="Fix critical bug",
                 priority=Priority.CRITICAL,
-                status=Status.DONE,
+                status=Status.CLOSED,
                 estimated_hours=4.0,
                 assignee="bob@example.com",
             ),
@@ -193,7 +193,7 @@ class TestCompletionTrends:
         mock_issues_df = pd.DataFrame(
             {
                 "id": ["1", "2", "3"],
-                "status": ["done", "done", "todo"],
+                "status": ["closed", "closed", "todo"],
                 "actual_end_date": [
                     now - timedelta(days=7),
                     now - timedelta(days=14),
@@ -226,7 +226,7 @@ class TestCompletionTrends:
         mock_df = pd.DataFrame(
             {
                 "id": ["1", "2"],
-                "status": ["done", "done"],
+                "status": ["closed", "closed"],
                 "actual_end_date": [now - timedelta(days=30), now - timedelta(days=60)],
                 "estimated_hours": [8.0, 12.0],
                 "actual_duration_hours": [7.5, 11.0],
@@ -280,7 +280,7 @@ class TestWorkloadDistribution:
                 "estimated_hours": [8.0, 12.0, 6.0, 4.0],
                 "actual_duration_hours": [7.0, 11.0, 5.5, 3.5],
                 "progress_percentage": [100.0, 80.0, 90.0, 100.0],
-                "status": ["done", "in-progress", "review", "done"],
+                "status": ["closed", "in-progress", "review", "closed"],
                 "priority": ["high", "medium", "critical", "low"],
                 "is_overdue": [False, True, False, False],
             }
@@ -411,7 +411,7 @@ class TestIssueLifecycle:
         return pd.DataFrame(
             {
                 "id": ["1", "2", "3", "4"],
-                "status": ["todo", "in-progress", "review", "done"],
+                "status": ["todo", "in-progress", "review", "closed"],
                 "estimated_hours": [8.0, 12.0, 4.0, 6.0],
                 "actual_duration_hours": [0.0, 6.0, 4.0, 6.0],
                 "progress_percentage": [0.0, 50.0, 90.0, 100.0],
@@ -577,7 +577,7 @@ class TestProductivityInsights:
         return pd.DataFrame(
             {
                 "id": ["1", "2", "3", "4"],
-                "status": ["done", "todo", "blocked", "in-progress"],
+                "status": ["closed", "todo", "blocked", "in-progress"],
                 "priority": ["high", "medium", "critical", "low"],
                 "is_overdue": [False, True, False, False],
                 "assignee": ["alice", "bob", "alice", "charlie"],
@@ -681,7 +681,7 @@ class TestPeriodComparison:
         return pd.DataFrame(
             {
                 "id": ["1", "2", "3", "4"],
-                "status": ["done", "done", "todo", "blocked"],
+                "status": ["closed", "closed", "todo", "blocked"],
                 "priority": ["high", "medium", "critical", "low"],
                 "is_overdue": [False, False, True, False],
                 "estimated_hours": [8.0, 4.0, 12.0, 6.0],
@@ -735,7 +735,7 @@ class TestPeriodComparison:
         recent_only_df = pd.DataFrame(
             {
                 "id": ["1", "2"],
-                "status": ["done", "todo"],
+                "status": ["closed", "todo"],
                 "priority": ["high", "medium"],
                 "is_overdue": [False, False],
                 "estimated_hours": [8.0, 4.0],
@@ -800,7 +800,7 @@ class TestErrorHandling:
         malformed_df = pd.DataFrame(
             {
                 "id": ["1", "2"],
-                "status": ["done", "todo"],
+                "status": ["closed", "todo"],
                 # Missing 'created' column should cause KeyError
             }
         )
@@ -836,7 +836,7 @@ class TestIntegration:
         comprehensive_df = pd.DataFrame(
             {
                 "id": [f"issue{i}" for i in range(1, 11)],
-                "status": ["done"] * 5 + ["todo"] * 3 + ["in-progress"] * 2,
+                "status": ["closed"] * 5 + ["todo"] * 3 + ["in-progress"] * 2,
                 "priority": ["high"] * 3 + ["medium"] * 4 + ["low"] * 3,
                 "assignee": ["alice"] * 4 + ["bob"] * 3 + ["charlie"] * 3,
                 "estimated_hours": [
@@ -896,7 +896,7 @@ class TestIntegration:
         consistent_df = pd.DataFrame(
             {
                 "id": ["1", "2", "3"],
-                "status": ["done", "todo", "in-progress"],
+                "status": ["closed", "todo", "in-progress"],
                 "assignee": ["alice", "alice", "bob"],
                 "estimated_hours": [8.0, 4.0, 6.0],
                 "actual_duration_hours": [7.5, 0.0, 3.0],
@@ -925,7 +925,7 @@ class TestIntegration:
             {
                 "id": [f"issue{i}" for i in range(1000)],
                 "status": (
-                    ["done"] * 400
+                    ["closed"] * 400
                     + ["todo"] * 300
                     + ["in-progress"] * 200
                     + ["blocked"] * 100

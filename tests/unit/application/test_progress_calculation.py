@@ -26,7 +26,10 @@ class TestProgressCalculationEngine:
         # Create test issues
         issues = [
             Issue(
-                id="1", title="Issue 1", status=Status.DONE, milestone="test-milestone"
+                id="1",
+                title="Issue 1",
+                status=Status.CLOSED,
+                milestone="test-milestone",
             ),
             Issue(
                 id="2",
@@ -59,7 +62,7 @@ class TestProgressCalculationEngine:
             Issue(
                 id="1",
                 title="Issue 1",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="test-milestone",
                 estimated_hours=8.0,
             ),
@@ -98,14 +101,14 @@ class TestProgressCalculationEngine:
             Issue(
                 id="1",
                 title="Issue 1",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="complete-milestone",
                 estimated_hours=4.0,
             ),
             Issue(
                 id="2",
                 title="Issue 2",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="complete-milestone",
                 estimated_hours=4.0,
             ),
@@ -133,7 +136,7 @@ class TestProgressCalculationEngine:
             Issue(
                 id="1",
                 title="Issue 1",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="m1",
                 estimated_hours=8.0,
             ),
@@ -147,14 +150,14 @@ class TestProgressCalculationEngine:
             Issue(
                 id="3",
                 title="Issue 3",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="m2",
                 estimated_hours=4.0,
             ),
             Issue(
                 id="4",
                 title="Issue 4",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="m2",
                 estimated_hours=4.0,
             ),
@@ -228,7 +231,7 @@ class TestProgressCalculationEngine:
         issue = Issue(
             id="1",
             title="Test Issue",
-            status=Status.DONE,
+            status=Status.CLOSED,
             milestone="test-milestone",
             estimated_hours=8.0,
         )
@@ -261,7 +264,7 @@ class TestProgressCalculationEngine:
             Issue(
                 id="1",
                 title="Issue 1",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="m1",
                 estimated_hours=4.0,
             ),
@@ -289,7 +292,7 @@ class TestProgressCalculationEngine:
             Issue(
                 id="1",
                 title="Issue 1",
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="test-milestone",
                 estimated_hours=4.0,
             ),
@@ -337,7 +340,7 @@ class TestEventSystem:
         all_projects = []
 
         # Simulate issue status change
-        changes = {"status": Status.DONE}
+        changes = {"status": Status.CLOSED}
 
         # Handle the update event
         results = event_system.on_issue_updated(

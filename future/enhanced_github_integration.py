@@ -354,7 +354,7 @@ class EnhancedGitHubIntegration:
                         f"Branch references non-existent issue: {issue_id}"
                     )
                     result["valid"] = False
-                elif issue.status == Status.DONE:
+                elif issue.status == Status.CLOSED:
                     result["warnings"].append(
                         f"Branch references completed issue: {issue_id}"
                     )
@@ -474,7 +474,7 @@ class EnhancedGitHubIntegration:
                 "title": roadmap_issue.title,
                 "body": self._format_issue_body_for_github(roadmap_issue),
                 "labels": self._convert_labels_for_github(roadmap_issue),
-                "state": "closed" if roadmap_issue.status == Status.DONE else "open",
+                "state": "closed" if roadmap_issue.status == Status.CLOSED else "open",
             }
 
             # Normalize assignee into a list of login strings if present.
@@ -507,7 +507,9 @@ class EnhancedGitHubIntegration:
         try:
             # Map GitHub state to roadmap status
             status = (
-                Status.DONE if github_issue["state"] == "closed" else Status.IN_PROGRESS
+                Status.CLOSED
+                if github_issue["state"] == "closed"
+                else Status.IN_PROGRESS
             )
 
             update_data = {
@@ -550,7 +552,7 @@ class EnhancedGitHubIntegration:
             if action == "opened":
                 update_data["status"] = "in-progress"
             elif action == "merged":
-                update_data["status"] = "done"
+                update_data["status"] = "closed"
                 update_data["progress_percentage"] = 100.0
             elif action == "closed" and not pr_data.get("merged", False):
                 # PR closed without merging - mark as blocked or keep current status

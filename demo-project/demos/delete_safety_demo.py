@@ -30,7 +30,7 @@ def main():
     print("\n2. 🆕 NEW ISSUE DONE COMMAND:")
     print("   • Recommended alternative to deletion")
     print("   • Preserves issue history")
-    print("   • Marks status as 'done'")
+    print("   • Marks status as 'closed'")
     print("   • Optional reason for closure")
     print("   • Safe and reversible")
 

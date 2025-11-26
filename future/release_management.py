@@ -134,7 +134,7 @@ def prepare_release(ctx, bump_type: str, dry_run: bool):
     milestones = core_obj.list_milestones()
 
     # Find issues completed since last release
-    completed_issues = [issue for issue in issues if issue.status.value == "done"]
+    completed_issues = [issue for issue in issues if issue.status.value == "closed"]
 
     if dry_run:
         console.print("\n🔬 Dry run - would perform these actions:", style="bold blue")
@@ -316,7 +316,7 @@ def release_status(ctx):
     milestones = core_obj.list_milestones()
 
     total_issues = len(issues)
-    completed_issues = len([i for i in issues if i.status.value == "done"])
+    completed_issues = len([i for i in issues if i.status.value == "closed"])
     in_progress_issues = len([i for i in issues if i.status.value == "in-progress"])
 
     if in_progress_issues == 0:

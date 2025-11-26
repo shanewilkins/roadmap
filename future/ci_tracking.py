@@ -495,7 +495,7 @@ class CITracker:
 
             # Mark as complete
             old_status = issue.status
-            issue.status = Status.DONE
+            issue.status = Status.CLOSED
             issue.progress_percentage = 100.0
             issue.completed_date = datetime.now().isoformat()
             issue.updated = datetime.now()
@@ -767,7 +767,7 @@ class CIAutomation:
             if self.config.auto_close_on_merge:
                 issue = self.roadmap_core.get_issue(issue_id)
                 if issue and issue.status in [Status.IN_PROGRESS, Status.TODO]:
-                    issue.status = Status.DONE
+                    issue.status = Status.CLOSED
                     issue.actual_end_date = datetime.now()
                     issue.completed_date = datetime.now().isoformat()
                     issue.updated = datetime.now()

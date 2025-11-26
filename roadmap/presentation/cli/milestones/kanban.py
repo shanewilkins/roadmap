@@ -73,7 +73,7 @@ def _display_header(milestone, milestone_issues):
     console.print(
         f"📅 Due: {milestone.due_date.strftime('%Y-%m-%d') if milestone.due_date else 'No due date'}"
     )
-    done_count = sum(1 for i in milestone_issues if i.status.value == "done")
+    done_count = sum(1 for i in milestone_issues if i.status.value == "closed")
     console.print(
         f"📊 Progress: {done_count}/{len(milestone_issues)} issues completed\n"
     )
@@ -123,5 +123,5 @@ def _display_summary(categories: dict):
         f"   Overdue: {len(categories['overdue'])} | Blocked: {len(categories['blocked'])} | In Progress: {len(categories['in_progress'])}"
     )
     console.print(
-        f"   Not Started: {len(categories['not_started'])} | Done: {len(categories['done'])}"
+        f"   Not Started: {len(categories['not_started'])} | Done: {len(categories['closed'])}"
     )

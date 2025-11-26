@@ -148,14 +148,14 @@ class TestRoadmapCore:
         core.create_issue("Issue 1", Priority.HIGH, milestone="v1.0")
         core.create_issue("Issue 2", Priority.LOW, milestone="v2.0")
         issue3 = core.create_issue("Issue 3", Priority.HIGH, milestone="v1.0")
-        core.update_issue(issue3.id, status=Status.DONE)
+        core.update_issue(issue3.id, status=Status.CLOSED)
 
         # Filter by milestone
         v1_issues = core.list_issues(milestone="v1.0")
         assert len(v1_issues) == 2
 
         # Filter by status
-        done_issues = core.list_issues(status=Status.DONE)
+        done_issues = core.list_issues(status=Status.CLOSED)
         assert len(done_issues) == 1
 
         # Filter by priority
@@ -330,7 +330,7 @@ class TestRoadmapCore:
         core.assign_issue_to_milestone(issue3.id, "v1.0")
 
         # Complete one issue
-        core.update_issue(issue1.id, status=Status.DONE)
+        core.update_issue(issue1.id, status=Status.CLOSED)
 
         progress = core.get_milestone_progress("v1.0")
 
@@ -339,7 +339,7 @@ class TestRoadmapCore:
         assert (
             abs(progress["progress"] - 33.333333333333336) < 0.000001
         )  # Allow for floating point precision
-        assert progress["by_status"]["done"] == 1
+        assert progress["by_status"]["closed"] == 1
         assert progress["by_status"]["todo"] == 2
 
     def test_get_milestone_progress_no_issues(self, core):

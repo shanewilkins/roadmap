@@ -353,7 +353,7 @@ class TestGitHubClient:
         assert client.status_to_labels(Status.TODO) == ["status:todo"]
         assert client.status_to_labels(Status.IN_PROGRESS) == ["status:in-progress"]
         assert client.status_to_labels(Status.REVIEW) == ["status:review"]
-        assert client.status_to_labels(Status.DONE) == ["status:done"]
+        assert client.status_to_labels(Status.CLOSED) == ["status:done"]
 
     def test_labels_to_priority(self, client):
         """Test labels to priority conversion."""

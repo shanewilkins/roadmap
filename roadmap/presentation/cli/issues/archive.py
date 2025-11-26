@@ -121,8 +121,10 @@ def archive_issue(
             all_issues = core.list_issues()
 
             if all_done:
-                issues_to_archive = [i for i in all_issues if i.status.value == "done"]
-                description = "done"
+                issues_to_archive = [
+                    i for i in all_issues if i.status.value == "closed"
+                ]
+                description = "closed"
             else:  # orphaned
                 issues_to_archive = [i for i in all_issues if not i.milestone]
                 description = "orphaned (no milestone)"
@@ -188,9 +190,9 @@ def archive_issue(
                 console.print(f"❌ Issue '{issue_id}' not found.", style="bold red")
                 ctx.exit(1)
 
-            if issue.status.value != "done":
+            if issue.status.value != "closed":
                 console.print(
-                    f"⚠️  Warning: Issue '{issue_id}' is not done (status: {issue.status.value})",
+                    f"⚠️  Warning: Issue '{issue_id}' is not closed (status: {issue.status.value})",
                     style="bold yellow",
                 )
                 if not force and not click.confirm("Archive anyway?", default=False):

@@ -213,7 +213,7 @@ class IssueEstimator:
     def _find_similar_issues(self, issue: Issue, limit: int = 10) -> list[Issue]:
         """Find historically similar issues using text similarity and metadata."""
         all_issues = self.core.list_issues()
-        completed_issues = [i for i in all_issues if i.status == Status.DONE]
+        completed_issues = [i for i in all_issues if i.status == Status.CLOSED]
 
         if not completed_issues:
             return []

@@ -236,7 +236,7 @@ class TestIssueUpdateBuilder:
         result = IssueUpdateBuilder.build_updates(
             title="Updated Title",
             priority="critical",
-            status="done",
+            status="closed",
             assignee="testuser",
             milestone="v2.0",
             description="Updated description",
@@ -248,7 +248,7 @@ class TestIssueUpdateBuilder:
         assert len(result) == 7
         assert result["title"] == "Updated Title"
         assert result["priority"] == Priority.CRITICAL
-        assert result["status"] == "done"
+        assert result["status"] == "closed"
         assert result["assignee"] == "testuser"
         assert result["milestone"] == "v2.0"
         assert result["description"] == "Updated description"
@@ -419,7 +419,7 @@ class TestIssueUpdateDisplay:
         mock_issue.title = "Test Issue"
         mock_console = Mock()
 
-        updates = {"status": "done"}
+        updates = {"status": "closed"}
         reason = "Completed implementation"
 
         IssueUpdateDisplay.show_update_result(mock_issue, updates, reason, mock_console)
@@ -434,7 +434,7 @@ class TestIssueUpdateDisplay:
         mock_issue.title = "Test Issue"
         mock_console = Mock()
 
-        updates = {"status": "done"}
+        updates = {"status": "closed"}
 
         IssueUpdateDisplay.show_update_result(mock_issue, updates, None, mock_console)
 

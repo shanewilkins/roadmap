@@ -132,7 +132,7 @@ class DataFrameAdapter:
                     [i for i in milestone_issues if i.status == Status.REVIEW]
                 ),
                 "issues_done": len(
-                    [i for i in milestone_issues if i.status == Status.DONE]
+                    [i for i in milestone_issues if i.status == Status.CLOSED]
                 ),
             }
             records.append(record)

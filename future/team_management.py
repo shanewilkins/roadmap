@@ -161,7 +161,7 @@ def _original_capacity_forecast(ctx: click.Context, days: int, assignee: str):
             return
 
         # Calculate workload distribution
-        active_issues = [i for i in all_issues if i.status != Status.DONE]
+        active_issues = [i for i in all_issues if i.status != Status.CLOSED]
 
         console.print("\n👥 Team Summary:")
         console.print(f"   Active Issues: {len(active_issues)}")
@@ -261,8 +261,8 @@ def _original_workload_analysis(
             return
 
         # Group by status
-        active_issues = [i for i in all_issues if i.status != Status.DONE]
-        completed_issues = [i for i in all_issues if i.status == Status.DONE]
+        active_issues = [i for i in all_issues if i.status != Status.CLOSED]
+        completed_issues = [i for i in all_issues if i.status == Status.CLOSED]
 
         console.print("\n📋 Issue Summary:")
         console.print(f"   Active: {len(active_issues)}")
@@ -401,7 +401,7 @@ def _original_smart_assign(
                 member_issues = [
                     i
                     for i in all_issues
-                    if i.assignee == member and i.status != Status.DONE
+                    if i.assignee == member and i.status != Status.CLOSED
                 ]
                 workload = len(member_issues)
 
@@ -559,7 +559,7 @@ def _original_activity(ctx: click.Context, days: int, assignee: str):
         recent_created = []
 
         for issue in all_issues:
-            if issue.status == Status.DONE and issue.actual_end_date:
+            if issue.status == Status.CLOSED and issue.actual_end_date:
                 if issue.actual_end_date >= cutoff_date.date():
                     recent_completed.append(issue)
 
@@ -717,7 +717,7 @@ def _original_handoff_context(ctx: click.Context, issue_id: str):
                 dep_issue = core.get_issue(dep_id)
                 if dep_issue:
                     status_style = (
-                        "green" if dep_issue.status == Status.DONE else "yellow"
+                        "green" if dep_issue.status == Status.CLOSED else "yellow"
                     )
                     console.print(
                         f"   • {dep_id}: {dep_issue.title} [{dep_issue.status.value}]",
@@ -771,7 +771,7 @@ def _original_handoff_list(ctx: click.Context, assignee: str, show_completed: bo
 
         # Filter out completed if not requested
         if not show_completed:
-            all_issues = [i for i in all_issues if i.status != Status.DONE]
+            all_issues = [i for i in all_issues if i.status != Status.CLOSED]
 
         if not all_issues:
             console.print("📝 No handoffs found", style="yellow")
@@ -800,7 +800,7 @@ def _original_handoff_list(ctx: click.Context, assignee: str, show_completed: bo
                     Status.IN_PROGRESS: "yellow",
                     Status.BLOCKED: "red",
                     Status.REVIEW: "blue",
-                    Status.DONE: "green",
+                    Status.CLOSED: "green",
                 }.get(issue.status, "white")
 
                 console.print(
@@ -901,7 +901,7 @@ def list_assignments(ctx: click.Context):
                     Status.IN_PROGRESS: "yellow",
                     Status.BLOCKED: "red",
                     Status.REVIEW: "blue",
-                    Status.DONE: "green",
+                    Status.CLOSED: "green",
                 }.get(issue.status, "white")
 
                 console.print(
@@ -956,7 +956,7 @@ def show_workload(ctx: click.Context):
             remaining_hours = sum(
                 issue.estimated_hours or 0
                 for issue in issues
-                if issue.status != Status.DONE and issue.estimated_hours is not None
+                if issue.status != Status.CLOSED and issue.estimated_hours is not None
             )
 
             # Format estimated time display
@@ -975,7 +975,7 @@ def show_workload(ctx: click.Context):
                 str(status_counts[Status.IN_PROGRESS]),
                 str(status_counts[Status.BLOCKED]),
                 str(status_counts[Status.REVIEW]),
-                str(status_counts[Status.DONE]),
+                str(status_counts[Status.CLOSED]),
                 time_display,
             )
 

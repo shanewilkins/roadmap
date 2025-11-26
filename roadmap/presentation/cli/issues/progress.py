@@ -51,9 +51,9 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
             if percentage == 0:
                 status_msg = "Todo"
             elif percentage == 100:
-                status_msg = "Consider marking as done"
+                status_msg = "Consider marking as closed"
                 console.print(
-                    f"   💡 {status_msg}: roadmap issue complete {issue_id}",
+                    f"   💡 {status_msg}: roadmap issue close {issue_id}",
                     style="dim",
                 )
             else:

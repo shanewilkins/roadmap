@@ -323,9 +323,9 @@ except Exception as e:
             if not issue:
                 return
 
-            # Mark as done if not already
-            if issue.status != Status.DONE:
-                issue.status = Status.DONE
+            # Mark as closed if not already
+            if issue.status != Status.CLOSED:
+                issue.status = Status.CLOSED
                 issue.progress_percentage = 100.0
                 issue.completed_date = datetime.now().isoformat()
 
@@ -369,7 +369,7 @@ except Exception as e:
                         # Calculate progress
                         total_issues = len(milestone_issues)
                         completed_issues = len(
-                            [i for i in milestone_issues if i.status == Status.DONE]
+                            [i for i in milestone_issues if i.status == Status.CLOSED]
                         )
                         progress = (completed_issues / total_issues) * 100
 
@@ -609,8 +609,8 @@ class WorkflowAutomation:
             issue.progress_percentage = 100.0
             updated = True
 
-        if is_completed and issue.status != Status.DONE:
-            issue.status = Status.DONE
+        if is_completed and issue.status != Status.CLOSED:
+            issue.status = Status.CLOSED
             issue.completed_date = datetime.now().isoformat()
             updated = True
         elif highest_progress and highest_progress > 0 and issue.status == Status.TODO:

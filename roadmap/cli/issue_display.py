@@ -43,7 +43,7 @@ class IssueTableFormatter:
             Status.IN_PROGRESS: "yellow",
             Status.BLOCKED: "red",
             Status.REVIEW: "blue",
-            Status.DONE: "green",
+            Status.CLOSED: "green",
         }.get(issue.status, "white")
 
         table.add_row(

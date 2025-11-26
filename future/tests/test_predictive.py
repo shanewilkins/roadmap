@@ -128,14 +128,14 @@ class TestIssueEstimator:
             id="hist1",
             title="API work",
             content="API implementation",
-            status=Status.DONE,
+            status=Status.CLOSED,
             priority=Priority.MEDIUM,
         )
         completed_issue2 = Issue(
             id="hist2",
             title="Database task",
             content="Database optimization",
-            status=Status.DONE,
+            status=Status.CLOSED,
             priority=Priority.HIGH,
         )
 
@@ -485,7 +485,7 @@ class TestDeadlineForecaster:
         from roadmap.parser import IssueParser
 
         for issue in issues:
-            issue.status = Status.DONE
+            issue.status = Status.CLOSED
             IssueParser.save_issue_file(issue, core.issues_dir / issue.filename)
 
         forecaster = DeadlineForecaster(core)
@@ -584,7 +584,7 @@ class TestPredictiveReportGenerator:
                     title="Completed",
                     content="Finished work",
                     priority=Priority.LOW,
-                    status=Status.DONE,
+                    status=Status.CLOSED,
                 ),
             ]
 

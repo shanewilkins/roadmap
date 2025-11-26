@@ -39,7 +39,7 @@ def temp_roadmap():
 
             # Update statuses after creation
             core.update_issue(issue2.id, status=Status.BLOCKED)
-            core.update_issue(issue3.id, status=Status.DONE)
+            core.update_issue(issue3.id, status=Status.CLOSED)
 
             # Create test milestone and assign issues
             core.create_milestone("Test Sprint", "Test sprint description")

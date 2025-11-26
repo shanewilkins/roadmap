@@ -88,7 +88,7 @@ class TestStatusDistributionChart:
                 title="Test 2",
                 content="Content",
                 priority=Priority.MEDIUM,
-                status=Status.DONE,
+                status=Status.CLOSED,
             ),
         ]
 
@@ -120,7 +120,7 @@ class TestStatusDistributionChart:
                 title="Test 2",
                 content="Content",
                 priority=Priority.MEDIUM,
-                status=Status.DONE,
+                status=Status.CLOSED,
             ),
         ]
 
@@ -238,7 +238,7 @@ class TestBurndownChart:
                 title="Completed Issue",
                 content="Content 1",
                 priority=Priority.HIGH,
-                status=Status.DONE,
+                status=Status.CLOSED,
                 completed_date=(datetime.now() - timedelta(days=5)).isoformat(),
                 milestone=milestone.name,
             ),
@@ -329,7 +329,7 @@ class TestVelocityChart:
                 title=f"Issue {i}",
                 content=f"Content {i}",
                 priority=Priority.MEDIUM,
-                status=Status.DONE,
+                status=Status.CLOSED,
                 completed_date=(base_date + timedelta(days=i * 3)).isoformat(),
                 estimated_hours=8.0,
             )
@@ -474,7 +474,7 @@ class TestMilestoneProgressChart:
                 title="Issue 1",
                 content="Content",
                 priority=Priority.LOW,
-                status=Status.DONE,
+                status=Status.CLOSED,
                 milestone="Milestone 1",
             ),
             Issue(
@@ -574,7 +574,7 @@ class TestTeamWorkloadChart:
                 title="Issue 3",
                 content="Content 3",
                 priority=Priority.LOW,
-                status=Status.DONE,
+                status=Status.CLOSED,
                 assignee="alice",
                 estimated_hours=4.0,
             ),
@@ -850,7 +850,7 @@ class TestVisualizationIntegration:
                 title=f"Issue {i}",
                 content=f"Content for issue {i}",
                 priority=[Priority.HIGH, Priority.MEDIUM, Priority.LOW][i % 3],
-                status=[Status.TODO, Status.IN_PROGRESS, Status.DONE][i % 3],
+                status=[Status.TODO, Status.IN_PROGRESS, Status.CLOSED][i % 3],
                 assignee=["alice", "bob", "charlie"][i % 3],
                 milestone="Phase 1" if i < 5 else None,
                 estimated_hours=float(8 * (i % 3 + 1)),
@@ -947,7 +947,7 @@ class TestVisualizationIntegration:
         # Generate multiple charts
         status_chart = chart_generator.generate_status_distribution_chart(issues)
         velocity_chart = chart_generator.generate_velocity_chart(
-            [i for i in issues if i.status == Status.DONE]
+            [i for i in issues if i.status == Status.CLOSED]
         )
         milestone_chart = chart_generator.generate_milestone_progress_chart(
             milestones, issues
@@ -973,7 +973,7 @@ class TestVisualizationIntegration:
 
         # Extract data that should be consistent
         total_issues = len(issues)
-        completed_issues = len([i for i in issues if i.status == Status.DONE])
+        completed_issues = len([i for i in issues if i.status == Status.CLOSED])
         assignees = {i.assignee for i in issues if i.assignee}
 
         # Verify data consistency expectations

@@ -188,7 +188,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
         return
 
     # Categorize issues
-    active_issues = [i for i in my_issues if i.status != Status.DONE]
+    active_issues = [i for i in my_issues if i.status != Status.CLOSED]
     today_issues = []
     upcoming_issues = []
     blocked_issues = []
@@ -321,7 +321,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
         if hasattr(issue, "depends_on") and issue.depends_on:
             for dep_id in issue.depends_on:
                 dep_issue = core.get_issue(dep_id)
-                if dep_issue and dep_issue.status != Status.DONE:
+                if dep_issue and dep_issue.status != Status.CLOSED:
                     blocking_me.append((issue, dep_issue))
 
     if blocking_me:
@@ -347,7 +347,7 @@ def _display_daily_dashboard(core, assignee: str, days: int):
         [
             i
             for i in my_issues
-            if i.status == Status.DONE
+            if i.status == Status.CLOSED
             and hasattr(i, "actual_end_date")
             and i.actual_end_date
             and i.actual_end_date == today
@@ -436,7 +436,7 @@ def _get_user_notifications(core, assignee: str, since_date: datetime.date) -> l
         # High priority notification
         if (
             issue.priority in [Priority.CRITICAL, Priority.HIGH]
-            and issue.status != Status.DONE
+            and issue.status != Status.CLOSED
         ):
             notifications.append(
                 {

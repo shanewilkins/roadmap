@@ -633,7 +633,7 @@ class TestWorkflowAutomationSync:
             )
 
             assert result is True
-            assert issue.status == Status.DONE
+            assert issue.status == Status.CLOSED
             assert issue.progress_percentage == 100.0
             mock_save.assert_called_once()
 

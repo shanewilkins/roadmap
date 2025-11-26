@@ -15,6 +15,12 @@ console = get_console()
 
 
 @click.command("list")
+@click.argument(
+    "filter_type",
+    required=False,
+    default=None,
+    type=click.Choice(["backlog"], case_sensitive=False),
+)
 @click.option("--milestone", "-m", help="Filter by milestone")
 @click.option("--backlog", is_flag=True, help="Show only backlog issues (no milestone)")
 @click.option(
@@ -32,7 +38,7 @@ console = get_console()
 @click.option(
     "--status",
     "-s",
-    type=click.Choice(["todo", "in-progress", "blocked", "review", "done"]),
+    type=click.Choice(["todo", "in-progress", "blocked", "review", "closed"]),
     help="Filter by status",
 )
 @click.option(
@@ -47,6 +53,7 @@ console = get_console()
 @click.pass_context
 def list_issues(
     ctx: click.Context,
+    filter_type: str,
     milestone: str,
     backlog: bool,
     unassigned: bool,
@@ -59,7 +66,11 @@ def list_issues(
     priority: str,
     overdue: bool,
 ):
-    """List all issues with various filtering options."""
+    """List all issues with various filtering options.
+
+    Optional positional argument 'backlog' shows only backlog issues (no milestone).
+    Equivalent to: roadmap issue list --backlog
+    """
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -67,6 +78,10 @@ def list_issues(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
         return
+
+    # Handle positional filter_type argument
+    if filter_type and filter_type.lower() == "backlog":
+        backlog = True
 
     try:
         # Validate filter combinations

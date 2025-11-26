@@ -411,7 +411,7 @@ def status(ctx: click.Context) -> None:
                         Status.IN_PROGRESS: "yellow",
                         Status.BLOCKED: "red",
                         Status.REVIEW: "blue",
-                        Status.DONE: "green",
+                        Status.CLOSED: "green",
                     }.get(status, "white")
 
                     status_table.add_row(

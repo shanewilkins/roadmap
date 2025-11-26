@@ -730,7 +730,7 @@ class AdvancedRepositoryScanner:
                                 id=issue_id,
                                 title=f"Auto-created from commit: {first_commit.message[:50]}...",
                                 issue_type=issue_type,
-                                status=Status.DONE
+                                status=Status.CLOSED
                                 if any(
                                     issue_id in c.completion_markers
                                     for c in commits_for_issue
