@@ -505,7 +505,6 @@ class TestWorkflowAutomationSync:
             id="TEST-001",
             title="Test Issue",
             status=Status.TODO,
-            filename="TEST-001.md",
         )
         mock_core.list_issues.return_value = [issue]
 
@@ -538,7 +537,6 @@ class TestWorkflowAutomationSync:
             id="TEST-001",
             title="Test Issue",
             status=Status.TODO,
-            filename="TEST-001.md",
         )
         mock_core.list_issues.return_value = [issue]
 
@@ -558,7 +556,6 @@ class TestWorkflowAutomationSync:
             id="TEST-001",
             title="Test Issue",
             status=Status.TODO,
-            filename="TEST-001.md",
         )
         mock_core.list_issues.return_value = [issue]
 
@@ -591,7 +588,6 @@ class TestWorkflowAutomationSync:
             id="TEST-001",
             title="Test Issue",
             status=Status.TODO,
-            filename="TEST-001.md",
         )
 
         # Create a commit without completion keywords
@@ -624,7 +620,6 @@ class TestWorkflowAutomationSync:
             id="TEST-001",
             title="Test Issue",
             status=Status.IN_PROGRESS,
-            filename="TEST-001.md",
         )
 
         # Mock the methods on the commit instance
@@ -650,7 +645,6 @@ class TestWorkflowAutomationSync:
             id="TEST-001",
             title="Test Issue",
             status=Status.TODO,
-            filename="TEST-001.md",
         )
         # Issue already has this commit tracked
         issue.git_commits = [{"hash": "abc123", "message": "Already tracked"}]

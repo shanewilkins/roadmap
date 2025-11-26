@@ -46,6 +46,7 @@ class TestProgressCalculationEngine:
         engine.update_milestone_progress(milestone, issues)
 
         # Should be 33.33% (1 out of 3 issues done)
+        assert milestone.calculated_progress is not None
         assert abs(milestone.calculated_progress - 33.33) < 0.1
         assert milestone.status == MilestoneStatus.OPEN  # Not fully complete
 
@@ -85,6 +86,7 @@ class TestProgressCalculationEngine:
         engine.update_milestone_progress(milestone, issues)
 
         # Should be 50% (8 hours out of 16 total hours done)
+        assert milestone.calculated_progress is not None
         assert abs(milestone.calculated_progress - 50.0) < 0.1
 
     def test_milestone_completion_status_propagation(self):
@@ -181,6 +183,7 @@ class TestProgressCalculationEngine:
 
         # m1 should be 50% (8 out of 16 hours), m2 should be 100% (8 out of 8 hours)
         # Weighted average: (16 * 0.5 + 8 * 1.0) / 24 = 16/24 = 66.67%
+        assert project.calculated_progress is not None
         assert abs(project.calculated_progress - 66.67) < 0.1
 
     def test_project_completion_status_propagation(self):
@@ -306,6 +309,7 @@ class TestProgressCalculationEngine:
         engine.update_milestone_progress(milestone, issues)
 
         # Should be 87.5% (4.0 + 3.0) / 8.0 * 100
+        assert milestone.calculated_progress is not None
         assert abs(milestone.calculated_progress - 87.5) < 0.1
 
 
