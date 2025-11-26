@@ -2,22 +2,22 @@
 id: eaac826b
 title: 'CLI Enhancement: Align terminology with Git and improve workflow'
 priority: high
-status: in-progress
+status: closed
 issue_type: feature
 milestone: v.0.6.0
 labels:
 - cli,ux,1.0-target
 github_issue: null
 created: '2025-11-26T18:11:41.512485+00:00'
-updated: '2025-11-26T18:16:34.958203+00:00'
+updated: '2025-11-26T18:37:57.725286+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-11-26T12:16:34.955325'
+actual_start_date: '2025-11-26T12:16:34.955325+00:00'
 actual_end_date: null
-progress_percentage: 0.0
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
