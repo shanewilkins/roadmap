@@ -4,11 +4,11 @@ title: Implement comprehensive security audit framework
 priority: high
 status: todo
 issue_type: other
-milestone: v.0.5.0
+milestone: v.0.6.0
 labels: []
 github_issue: 18
 created: '2025-10-14T15:46:16.002409+00:00'
-updated: '2025-11-21T19:40:00.000000+00:00'
+updated: '2025-11-26T09:00:00.000000+00:00'
 assignee: shanewilkins
 estimated_hours: 32.0
 due_date: null
