@@ -48,6 +48,12 @@ console = get_console()
     help="Filter by priority",
 )
 @click.option(
+    "--issue-type",
+    "-t",
+    type=click.Choice(["feature", "bug", "other"]),
+    help="Filter by issue type",
+)
+@click.option(
     "--overdue", is_flag=True, help="Show only overdue issues (past due date)"
 )
 @click.pass_context
@@ -64,6 +70,7 @@ def list_issues(
     my_issues: bool,
     status: str,
     priority: str,
+    issue_type: str,
     overdue: bool,
 ):
     """List all issues with various filtering options.
@@ -123,6 +130,7 @@ def list_issues(
             blocked_only=blocked,
             status=status,
             priority=priority,
+            issue_type=issue_type,
         )
 
         # Display issues using table formatter

@@ -109,6 +109,7 @@ class IssueQueryService:
         blocked_only: bool = False,
         status: str | None = None,
         priority: str | None = None,
+        issue_type: str | None = None,
         overdue: bool = False,
     ) -> tuple[list[Issue], str]:
         """
@@ -135,6 +136,12 @@ class IssueQueryService:
         if priority:
             result = [i for i in result if i.priority == Priority(priority)]
             description += f" {priority} priority"
+
+        if issue_type:
+            from roadmap.domain import IssueType
+
+            result = [i for i in result if i.issue_type == IssueType(issue_type)]
+            description += f" {issue_type}"
 
         if overdue:
             from datetime import datetime
