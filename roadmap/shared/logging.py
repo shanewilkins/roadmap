@@ -396,7 +396,7 @@ def configure_for_testing():
     """Configure minimal logging for tests."""
     logging.basicConfig(level=logging.CRITICAL)
     structlog.configure(
-        processors=[structlog.testing.TestingRenderer()],
+        processors=[structlog.testing.TestingRenderer()],  # type: ignore[attr-defined]
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,

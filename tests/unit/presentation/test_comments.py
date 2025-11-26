@@ -200,10 +200,10 @@ class TestCommentCLI:
                 break
 
         assert comment_group is not None
-        assert "list" in comment_group.commands
-        assert "create" in comment_group.commands
-        assert "edit" in comment_group.commands
-        assert "delete" in comment_group.commands
+        assert "list" in comment_group.commands  # type: ignore[attr-defined]
+        assert "create" in comment_group.commands  # type: ignore[attr-defined]
+        assert "edit" in comment_group.commands  # type: ignore[attr-defined]
+        assert "delete" in comment_group.commands  # type: ignore[attr-defined]
 
 
 @pytest.mark.skip(reason="Blocked status feature not yet fully implemented")

@@ -49,7 +49,7 @@ class TestAssigneeValidation:
         assert "cannot be empty" in error.lower()
 
         # Test None
-        is_valid, error = core.validate_assignee(None)
+        is_valid, error = core.validate_assignee(None)  # type: ignore[arg-type]
         assert not is_valid
         assert "cannot be empty" in error.lower()
 

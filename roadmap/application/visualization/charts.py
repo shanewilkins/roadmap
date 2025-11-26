@@ -857,7 +857,7 @@ class ChartGenerator:
         actual_remaining = []
         for date in dates:
             completed_by_date = len(
-                completed_issues[completed_issues["updated"].dt.date <= date]
+                completed_issues[completed_issues["updated"].dt.date <= date]  # type: ignore[attr-defined]
             )
             remaining = total_issues - completed_by_date
             actual_remaining.append(max(0, remaining))

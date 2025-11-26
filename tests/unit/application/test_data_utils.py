@@ -892,7 +892,6 @@ class TestDataUtilsIntegration:
                 updated=now - timedelta(hours=i + 1),
                 estimated_hours=float(2 + i % 10),
                 progress_percentage=float(i * 5),
-                actual_hours=float(1 + i % 8) if i % 3 == 0 else 0.0,
             )
             if i % 5 == 0:  # Some completed issues
                 issue.actual_start_date = now - timedelta(days=15 - i // 2)

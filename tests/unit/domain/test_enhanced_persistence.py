@@ -228,8 +228,8 @@ Content"""
             issue_file, "issue"
         )
         assert is_valid
-        assert result["id"] == "a1b2c3d4"
-        assert result["title"] == "Test Issue"
+        assert result["id"] == "a1b2c3d4"  # type: ignore[index]
+        assert result["title"] == "Test Issue"  # type: ignore[index]
 
     def test_safe_save_with_backup_milestone(self):
         """Test safe saving of milestone with backup."""
@@ -252,7 +252,7 @@ Content"""
             milestone_file, "milestone"
         )
         assert is_valid
-        assert result["name"] == "Version 1.0"
+        assert result["name"] == "Version 1.0"  # type: ignore[index]
 
     def test_get_file_health_report(self):
         """Test generating file health report."""

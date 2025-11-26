@@ -107,7 +107,7 @@ def SecureFileManager(file_path: str | Path, mode: str = "w", **kwargs):
                 pass
         raise FileOperationError(
             f"Secure file operation failed: {e}", Path(file_path), mode
-        )
+        ) from e
 
 
 def ensure_directory_exists(
@@ -143,7 +143,7 @@ def ensure_directory_exists(
     except OSError as e:
         raise DirectoryCreationError(
             f"Failed to create directory: {e}", Path(directory_path), "mkdir"
-        )
+        ) from e
 
 
 def safe_write_file(
@@ -191,7 +191,9 @@ def safe_write_file(
         return file_path
 
     except Exception as e:
-        raise FileWriteError(f"Failed to write file: {e}", Path(file_path), "write")
+        raise FileWriteError(
+            f"Failed to write file: {e}", Path(file_path), "write"
+        ) from e
 
 
 def safe_read_file(
@@ -228,7 +230,7 @@ def safe_read_file(
     except FileNotFoundError:
         raise
     except Exception as e:
-        raise FileReadError(f"Failed to read file: {e}", Path(file_path), "read")
+        raise FileReadError(f"Failed to read file: {e}", Path(file_path), "read") from e
 
 
 def file_exists_check(
@@ -302,7 +304,7 @@ def get_file_size(file_path: str | Path) -> int:
     except Exception as e:
         raise FileOperationError(
             f"Failed to get file size: {e}", Path(file_path), "stat"
-        )
+        ) from e
 
 
 def backup_file(
@@ -343,7 +345,7 @@ def backup_file(
     except Exception as e:
         raise FileOperationError(
             f"Failed to create backup: {e}", Path(file_path), "backup"
-        )
+        ) from e
 
 
 def cleanup_temp_files(directory: str | Path, pattern: str = "*.tmp") -> int:
@@ -381,5 +383,7 @@ def cleanup_temp_files(directory: str | Path, pattern: str = "*.tmp") -> int:
 
     except Exception as e:
         raise FileOperationError(
-            f"Failed to cleanup temp files: {e}", directory, "cleanup"
-        )
+            f"Failed to cleanup temp files: {e}",
+            Path(directory) if isinstance(directory, str) else directory,
+            "cleanup",
+        ) from e

@@ -448,6 +448,7 @@ class TestCrossModuleIntegration:
                 break
 
         # Update through CLI
+        assert issue_id is not None, "Could not find issue ID in output"
         runner.invoke(main, ["issue", "update", issue_id, "--status", "in-progress"])
 
         # Verify data through core

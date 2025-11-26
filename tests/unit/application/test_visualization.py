@@ -299,7 +299,7 @@ class TestBurndownChart:
         """Test burndown data calculation with empty issues."""
         # Create DataFrame with expected columns but no data
         empty_df = pd.DataFrame(
-            columns=["is_completed", "completed_date", "created_date"]
+            columns=["is_completed", "completed_date", "created_date"]  # type: ignore[arg-type]
         )
 
         result = chart_generator._calculate_burndown_data(empty_df)
@@ -616,7 +616,7 @@ class TestTeamWorkloadChart:
         # Mock data analysis
         mock_team_df = pd.DataFrame(
             {"total_issues": [3, 5], "total_estimated_hours": [10.0, 15.0]},
-            index=["Alice", "Bob"],
+            index=["Alice", "Bob"],  # type: ignore[arg-type]
         )
         mock_analyzer.analyze_team_performance.return_value = mock_team_df
         mock_adapter.issues_to_dataframe.return_value = pd.DataFrame()
@@ -682,7 +682,7 @@ class TestTeamWorkloadChart:
         # Mock data analysis
         mock_team_df = pd.DataFrame(
             {"total_issues": [2, 3], "total_estimated_hours": [8.0, 12.0]},
-            index=["Alice", "Bob"],
+            index=["Alice", "Bob"],  # type: ignore[arg-type]
         )
         mock_analyzer.analyze_team_performance.return_value = mock_team_df
         mock_adapter.issues_to_dataframe.return_value = pd.DataFrame()
@@ -887,7 +887,7 @@ class TestVisualizationIntegration:
         )
         mock_team_df = pd.DataFrame(
             {"total_issues": [3, 2], "total_estimated_hours": [15.0, 10.0]},
-            index=["Alice", "Bob"],
+            index=["Alice", "Bob"],  # type: ignore[arg-type]
         )
 
         mock_analyzer.analyze_velocity_trends.return_value = mock_velocity_df

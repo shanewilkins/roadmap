@@ -623,6 +623,7 @@ class TestGitHooksIntegration:
         assert (
             len(updated_issue.git_commits) > 0
         )  # Should have at least one commit tracked
+        assert updated_issue.progress_percentage is not None
         assert (
             updated_issue.progress_percentage >= 75.0
         )  # Should show significant progress

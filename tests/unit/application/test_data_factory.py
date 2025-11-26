@@ -104,15 +104,15 @@ class TestDataFactory:
 
     @staticmethod
     def create_mock_config(**kwargs) -> Mock:
-        """Create a standardized mock RoadmapConfig instance.
+        """Create a standardized mock config instance.
 
         Args:
             **kwargs: Override default config properties
 
         Returns:
-            Mock: Configured RoadmapConfig mock
+            Mock: Configured config mock
         """
-        config = Mock(spec=RoadmapConfig)
+        config = Mock()
 
         # Default GitHub configuration
         config.github = kwargs.get(

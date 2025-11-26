@@ -75,7 +75,7 @@ def cleanup(
             console.print("📋 No backup directory found.", style="yellow")
             return
 
-        backup_files = list(backups_dir.glob("*.backup.md"))
+        backup_files = list(backups_dir.glob("*.backup.md"))  # type: ignore[func-returns-value]
         if not backup_files:
             console.print("📋 No backup files found.", style="yellow")
             return
