@@ -8,6 +8,7 @@ from rich.console import Console  # type: ignore[import-untyped]
 from roadmap.infrastructure.persistence.parser import ProjectParser
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.shared.file_utils import ensure_directory_exists
 
 console = Console()
 
@@ -127,7 +128,7 @@ def restore_project(
                     return
 
             # Restore each project
-            active_dir.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(active_dir)
             restored_count = 0
 
             for file_path, project_id, name in projects_info:
@@ -219,7 +220,7 @@ def restore_project(
                     return
 
             # Perform restore
-            active_dir.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(active_dir)
             archived_file.rename(dest_file)  # type: ignore[union-attr]
 
             # Mark as unarchived in database

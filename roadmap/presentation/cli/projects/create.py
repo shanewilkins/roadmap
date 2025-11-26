@@ -10,6 +10,7 @@ from roadmap.presentation.cli.performance_tracking import (
     track_file_operation,
 )
 from roadmap.shared.console import get_console
+from roadmap.shared.file_utils import ensure_directory_exists
 
 # Initialize console
 console = get_console()
@@ -108,7 +109,7 @@ def create_project(
 
         # Create projects directory if it doesn't exist
         projects_dir = core.roadmap_dir / "projects"
-        projects_dir.mkdir(exist_ok=True)
+        projects_dir = ensure_directory_exists(projects_dir)
 
         # Load and process template
         template_path = core.templates_dir / "project.md"

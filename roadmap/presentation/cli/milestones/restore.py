@@ -8,6 +8,7 @@ from rich.console import Console  # type: ignore[import-untyped]
 from roadmap.infrastructure.persistence.parser import MilestoneParser
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.shared.file_utils import ensure_directory_exists
 
 console = Console()
 
@@ -127,7 +128,7 @@ def restore_milestone(
                     return
 
             # Restore each milestone
-            active_dir.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(active_dir)
             restored_count = 0
 
             for file_path, name in milestones_info:
@@ -209,7 +210,7 @@ def restore_milestone(
                     return
 
             # Perform restore
-            active_dir.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(active_dir)
             archived_file.rename(dest_file)  # type: ignore[union-attr]
 
             # Mark as unarchived in database

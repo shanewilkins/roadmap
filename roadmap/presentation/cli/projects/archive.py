@@ -8,6 +8,7 @@ from rich.console import Console
 from roadmap.infrastructure.persistence.parser import ProjectParser
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.shared.file_utils import ensure_directory_exists
 
 console = Console()
 
@@ -121,7 +122,7 @@ def archive_project(
                 return
 
         # Perform archive
-        archive_dir.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(archive_dir)
 
         # Find the project file by searching all .md files
         project_file = None

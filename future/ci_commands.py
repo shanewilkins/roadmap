@@ -11,6 +11,8 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 
+from roadmap.shared.file_utils import ensure_directory_exists
+
 from ..ci_tracking import CIAutomation, CITracker, CITrackingConfig
 from ..core import RoadmapCore
 from ..repository_scanner import AdvancedRepositoryScanner, RepositoryScanConfig
@@ -701,7 +703,7 @@ def github_status(format: str, verbose: bool):
 
     except Exception as e:
         rprint(f"❌ Error checking GitHub status: {e}")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 
 @ci.command()
@@ -723,13 +725,12 @@ def setup_workflows(workflow_name: str, output_dir: str, force: bool):
     - ci-cd: Complete CI/CD with validation
     - lifecycle: Advanced issue lifecycle management
     """
-    import os
     import shutil
     from pathlib import Path
 
     try:
         # Ensure output directory exists
-        os.makedirs(output_dir, exist_ok=True)
+        ensure_directory_exists(Path(output_dir))
 
         # Get template directory
         template_dir = Path(__file__).parent.parent / "templates" / "github_workflows"
@@ -775,7 +776,7 @@ def setup_workflows(workflow_name: str, output_dir: str, force: bool):
 
     except Exception as e:
         rprint(f"❌ Error setting up workflows: {e}")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 
 @ci.command("scan-full")
@@ -1029,7 +1030,7 @@ def scan_full_repository(
 
     except Exception as e:
         rprint(f"❌ Error during repository scan: {e}")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 
 @ci.command("migrate-project")
@@ -1295,7 +1296,7 @@ def migrate_project(
                 report_data["migration_results"] = migration_result.to_dict()
 
             report_path = Path(export_report)
-            report_path.parent.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(report_path.parent)
 
             with open(report_path, "w") as f:
                 json.dump(report_data, f, indent=2, default=str)
@@ -1313,7 +1314,7 @@ def migrate_project(
 
     except Exception as e:
         rprint(f"❌ Error during project migration: {e}")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 
 @ci.command("analyze-patterns")
@@ -1524,7 +1525,7 @@ def analyze_patterns(commits: int, pattern_type: str, export: str | None):
             }
 
             export_path = Path(export)
-            export_path.parent.mkdir(parents=True, exist_ok=True)
+            ensure_directory_exists(export_path.parent)
 
             with open(export_path, "w") as f:
                 json.dump(analysis_data, f, indent=2, default=str)
@@ -1535,7 +1536,7 @@ def analyze_patterns(commits: int, pattern_type: str, export: str | None):
 
     except Exception as e:
         rprint(f"❌ Error during pattern analysis: {e}")
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
 
 
 # Add the ci group to the main CLI

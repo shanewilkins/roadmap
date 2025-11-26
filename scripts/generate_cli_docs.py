@@ -27,7 +27,9 @@ class CLIDocGenerator:
         self.runner = CliRunner()
         self.commands_data = {}
 
-    def extract_command_info(self, command_path: list[str] = None) -> dict[str, Any]:
+    def extract_command_info(
+        self, command_path: list[str] | None = None
+    ) -> dict[str, Any]:
         """Extract information from a Click command."""
         if command_path is None:
             command_path = []
@@ -106,7 +108,9 @@ class CLIDocGenerator:
 
         return info
 
-    def discover_commands(self, command_path: list[str] = None) -> list[list[str]]:
+    def discover_commands(
+        self, command_path: list[str] | None = None
+    ) -> list[list[str]]:
         """Discover all available commands recursively."""
         if command_path is None:
             command_path = []
@@ -284,7 +288,9 @@ class CLIDocGenerator:
 
     def save_documentation(self, filename: str = "CLI_REFERENCE_AUTO.md"):
         """Save the generated documentation to a file."""
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        from roadmap.shared.file_utils import ensure_directory_exists
+
+        ensure_directory_exists(self.output_dir)
 
         markdown_content = self.generate_markdown_doc()
 
