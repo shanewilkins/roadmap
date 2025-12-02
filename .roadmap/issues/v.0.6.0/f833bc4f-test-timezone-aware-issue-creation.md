@@ -4,7 +4,7 @@ title: Test timezone-aware issue creation
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-16T19:41:48.050372+00:00'
@@ -24,15 +24,3 @@ git_branches: []
 git_commits: []
 completed_date: null
 ---
-
-# Test timezone-aware issue creation
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3

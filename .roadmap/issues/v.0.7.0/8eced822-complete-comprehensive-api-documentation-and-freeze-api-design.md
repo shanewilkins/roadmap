@@ -4,7 +4,7 @@ title: Complete comprehensive API documentation and freeze API design
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: v.0.7.0
 labels: []
 github_issue: 20
 created: '2025-10-14T15:46:25.762446+00:00'
@@ -24,19 +24,3 @@ git_branches: []
 git_commits: []
 completed_date: null
 ---
-
-# Complete comprehensive API documentation and freeze API design
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins
