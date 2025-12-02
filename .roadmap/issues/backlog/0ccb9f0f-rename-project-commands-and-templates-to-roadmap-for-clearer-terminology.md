@@ -92,7 +92,7 @@ id: abc123
 title: My Roadmap
 type: roadmap              # was: project
 priority: high
-status: active
+status: in-progress
 owner: shane
 created: '2025-10-11T20:30:00'
 updated: '2025-10-11T20:30:00'
