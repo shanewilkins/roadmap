@@ -132,7 +132,7 @@ class IssueService:
             List of Issue objects matching all filters, sorted by priority then date
         """
         issues = []
-        for issue_file in self.issues_dir.glob("*.md"):
+        for issue_file in self.issues_dir.rglob("*.md"):
             try:
                 issue = IssueParser.parse_issue_file(issue_file)
 
@@ -185,7 +185,7 @@ class IssueService:
         Returns:
             Issue object if found, None otherwise
         """
-        for issue_file in self.issues_dir.glob(f"{issue_id}-*.md"):
+        for issue_file in self.issues_dir.rglob(f"{issue_id}-*.md"):
             try:
                 return IssueParser.parse_issue_file(issue_file)
             except Exception:
@@ -229,7 +229,7 @@ class IssueService:
         Returns:
             True if deleted successfully, False if not found
         """
-        for issue_file in self.issues_dir.glob(f"{issue_id}-*.md"):
+        for issue_file in self.issues_dir.rglob(f"{issue_id}-*.md"):
             try:
                 issue_file.unlink()
                 return True

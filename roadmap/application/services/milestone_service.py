@@ -97,7 +97,7 @@ class MilestoneService:
             List of Milestone objects sorted by due date then name
         """
         milestones = []
-        for milestone_file in self.milestones_dir.glob("*.md"):
+        for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
                 milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 if status is None or milestone.status == status:
@@ -126,7 +126,7 @@ class MilestoneService:
         Returns:
             Milestone object if found, None otherwise
         """
-        for milestone_file in self.milestones_dir.glob("*.md"):
+        for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
                 milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 if milestone.name == name:
@@ -174,7 +174,7 @@ class MilestoneService:
         milestone.updated = now_utc()
 
         # Save the updated milestone
-        for milestone_file in self.milestones_dir.glob("*.md"):
+        for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
                 test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 if test_milestone.name == name:
@@ -199,7 +199,7 @@ class MilestoneService:
             return False
 
         # Unassign all issues from this milestone
-        for issue_file in self.issues_dir.glob("*.md"):
+        for issue_file in self.issues_dir.rglob("*.md"):
             try:
                 issue = IssueParser.parse_issue_file(issue_file)
                 if issue.milestone == name:
@@ -210,7 +210,7 @@ class MilestoneService:
                 continue
 
         # Delete the milestone file
-        for milestone_file in self.milestones_dir.glob("*.md"):
+        for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
                 test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 if test_milestone.name == name:
@@ -230,7 +230,7 @@ class MilestoneService:
             Dict with total, completed, progress percentage, and status breakdown
         """
         issues = []
-        for issue_file in self.issues_dir.glob("*.md"):
+        for issue_file in self.issues_dir.rglob("*.md"):
             try:
                 issue = IssueParser.parse_issue_file(issue_file)
                 if issue.milestone == milestone_name:

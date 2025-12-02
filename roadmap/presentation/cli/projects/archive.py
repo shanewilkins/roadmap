@@ -126,7 +126,7 @@ def archive_project(
 
         # Find the project file by searching all .md files
         project_file = None
-        for md_file in (roadmap_dir / "projects").glob("*.md"):
+        for md_file in (roadmap_dir / "projects").rglob("*.md"):
             # Read and check if this is the right project
             try:
                 test_project = ProjectParser.parse_project_file(md_file)

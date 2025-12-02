@@ -1001,9 +1001,9 @@ class StateManager:
 
             # Process in dependency order: projects first, then milestones, then issues
             for directory, pattern in [
-                ("projects", "projects/*.md"),
-                ("milestones", "milestones/*.md"),
-                ("issues", "issues/*.md"),
+                ("projects", "projects/**/*.md"),
+                ("milestones", "milestones/**/*.md"),
+                ("issues", "issues/**/*.md"),
             ]:
                 dir_path = roadmap_dir / directory
                 if dir_path.exists():
@@ -1065,7 +1065,7 @@ class StateManager:
             logger.info("Starting full rebuild from git files")
 
             # Rebuild from all files in dependency order (projects first, then milestones, then issues)
-            for pattern in ["projects/*.md", "milestones/*.md", "issues/*.md"]:
+            for pattern in ["projects/**/*.md", "milestones/**/*.md", "issues/**/*.md"]:
                 for file_path in roadmap_dir.glob(pattern):
                     stats["files_processed"] += 1
                     stats["files_changed"] += (
@@ -1105,12 +1105,12 @@ class StateManager:
         try:
             # Count total files
             total_files = 0
-            for pattern in ["issues/*.md", "milestones/*.md", "projects/*.md"]:
+            for pattern in ["issues/**/*.md", "milestones/**/*.md", "projects/**/*.md"]:
                 total_files += len(list(roadmap_dir.glob(pattern)))
 
             # Count changed files
             changed_files = 0
-            for pattern in ["issues/*.md", "milestones/*.md", "projects/*.md"]:
+            for pattern in ["issues/**/*.md", "milestones/**/*.md", "projects/**/*.md"]:
                 for file_path in roadmap_dir.glob(pattern):
                     if self.has_file_changed(file_path):
                         changed_files += 1
@@ -1246,7 +1246,7 @@ class StateManager:
             for subdir in ["issues", "milestones", "projects"]:
                 subdir_path = roadmap_dir / subdir
                 if subdir_path.exists():
-                    md_files.extend(subdir_path.glob("*.md"))
+                    md_files.extend(subdir_path.rglob("*.md"))
 
             if not md_files:
                 return False

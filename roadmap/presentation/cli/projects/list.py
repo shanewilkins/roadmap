@@ -48,7 +48,7 @@ def list_projects(
             return
 
         # Get all project files
-        project_files = list(projects_dir.glob("*.md"))
+        project_files = list(projects_dir.rglob("*.md"))
 
         if not project_files:
             console.print(

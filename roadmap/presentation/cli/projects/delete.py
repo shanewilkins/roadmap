@@ -26,7 +26,7 @@ def delete_project(ctx: click.Context, project_id: str, confirm: bool):
 
         # Find project file
         project_file = None
-        for file_path in projects_dir.glob("*.md"):
+        for file_path in projects_dir.rglob("*.md"):
             if file_path.name.startswith(project_id):
                 project_file = file_path
                 break

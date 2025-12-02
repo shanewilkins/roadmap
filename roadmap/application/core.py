@@ -1142,7 +1142,7 @@ Project notes and additional context.
         """
         inconsistencies = []
 
-        for milestone_file in self.milestones_dir.glob("*.md"):
+        for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
                 milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 expected_filename = milestone.filename

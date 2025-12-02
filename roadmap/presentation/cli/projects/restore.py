@@ -86,7 +86,7 @@ def restore_project(
 
         if all:
             # Get all archived project files
-            archived_files = list(archive_dir.glob("*.md"))
+            archived_files = list(archive_dir.rglob("*.md"))
 
             if not archived_files:
                 console.print("📋 No archived projects to restore.", style="yellow")

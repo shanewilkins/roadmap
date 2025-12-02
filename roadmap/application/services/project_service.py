@@ -41,7 +41,7 @@ class ProjectService:
             List of Project objects sorted by creation date
         """
         projects = []
-        for project_file in self.projects_dir.glob("*.md"):
+        for project_file in self.projects_dir.rglob("*.md"):
             try:
                 project = ProjectParser.parse_project_file(project_file)
                 projects.append(project)
@@ -60,7 +60,7 @@ class ProjectService:
         Returns:
             Project object if found, None otherwise
         """
-        for project_file in self.projects_dir.glob("*.md"):
+        for project_file in self.projects_dir.rglob("*.md"):
             try:
                 project = ProjectParser.parse_project_file(project_file)
                 if project.id.startswith(project_id):
@@ -79,7 +79,7 @@ class ProjectService:
             True if saved, False on error
         """
         # Find and update the existing project file
-        for project_file in self.projects_dir.glob("*.md"):
+        for project_file in self.projects_dir.rglob("*.md"):
             try:
                 test_project = ProjectParser.parse_project_file(project_file)
                 if test_project.id == project.id:
@@ -152,7 +152,7 @@ class ProjectService:
         Returns:
             True if deleted, False if not found
         """
-        for project_file in self.projects_dir.glob("*.md"):
+        for project_file in self.projects_dir.rglob("*.md"):
             try:
                 project = ProjectParser.parse_project_file(project_file)
                 if project.id.startswith(project_id):
@@ -191,7 +191,7 @@ class ProjectService:
         completed_count = 0
 
         for milestone_name in project.milestones:
-            for milestone_file in self.milestones_dir.glob("*.md"):
+            for milestone_file in self.milestones_dir.rglob("*.md"):
                 try:
                     milestone = MilestoneParser.parse_milestone_file(milestone_file)
                     if milestone.name == milestone_name:

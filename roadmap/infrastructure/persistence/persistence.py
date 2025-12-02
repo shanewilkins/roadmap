@@ -335,7 +335,7 @@ class EnhancedYAMLPersistence:
             "warnings": [],
         }
 
-        for file_path in directory.glob("*.md"):
+        for file_path in directory.rglob("*.md"):
             report["total_files"] += 1
 
             try:
