@@ -196,7 +196,8 @@ START HERE (choose role)
   ↓                    ↓                 ↓
   Quick setup          Deep dive        Trust validation
   20 minutes           2 hours          1 hour
-```
+
+```text
 
 ---
 

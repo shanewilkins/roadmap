@@ -22,11 +22,13 @@ jobs:
       - uses: actions/checkout@v3
 
       # Check for known vulnerabilities
+
       - name: Run pip-audit
         run: |
           pip install pip-audit
           pip-audit --ignore-vuln CVE-2021-XXXXX  # If needed
-```
+
+```text
 
 **What it checks:**
 - Known CVEs in dependencies
@@ -55,19 +57,22 @@ jobs:
       - uses: actions/checkout@v3
 
       # Run Bandit for security issues
+
       - name: Bandit Security Scan
         run: |
           pip install bandit
           bandit -r roadmap/ -f json -o bandit-report.json
 
       # Run Semgrep for pattern-based scanning
+
       - name: Semgrep Scan
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-
             p/security-audit
             p/python
-```
+
+```text
 
 **What it checks:**
 - SQL injection patterns
@@ -98,10 +103,12 @@ jobs:
       - uses: actions/checkout@v3
 
       # Build Docker image
+
       - name: Build Image
         run: docker build -t roadmap-cli:test .
 
       # Scan with Trivy
+
       - name: Trivy Vulnerability Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -110,11 +117,13 @@ jobs:
           output: 'trivy-results.sarif'
 
       # Upload to GitHub Security
+
       - name: Upload Results
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
-```
+
+```text
 
 **What it checks:**
 - CVEs in base image (Alpine, Python, etc.)
@@ -145,6 +154,7 @@ jobs:
           fetch-depth: 0  # Full history for comparison
 
       # Scan for secrets
+
       - name: TruffleHog Secret Scan
         uses: trufflesecurity/trufflehog@main
         with:
@@ -152,7 +162,8 @@ jobs:
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
           extra_args: --only-verified
-```
+
+```text
 
 **What it checks:**
 - AWS credentials
@@ -185,24 +196,28 @@ jobs:
           python-version: '3.12'
 
       # Type checking
+
       - name: Pyright Type Check
         run: |
           pip install pyright
           pyright roadmap/
 
       # Linting with security rules
+
       - name: Ruff Lint
         run: |
           pip install ruff
           ruff check roadmap/
 
       # Code coverage
+
       - name: Coverage Check
         run: |
           pip install coverage
           coverage run -m pytest
           coverage report --fail-under=85
-```
+
+```text
 
 **What it checks:**
 - Type safety violations
@@ -224,7 +239,7 @@ jobs:
 
 ### Branch Protection Rules
 
-```
+```text
 Master Branch Protection:
 ├─ Require pull request reviews: 1 approval
 ├─ Require status checks to pass:
@@ -236,7 +251,8 @@ Master Branch Protection:
 ├─ Require branches to be up to date
 ├─ Include administrators: true
 └─ Restrict who can push: maintainers only
-```
+
+```text
 
 ### Automatic Security Patching
 
@@ -261,7 +277,8 @@ updates:
       - dependency-type: "production"
     ignore:
         - dependency-name: "example-package"
-```
+
+```text
 
 **Rules:**
 - Automatically creates PRs for dependency updates
@@ -278,36 +295,48 @@ updates:
 Before every release, run:
 
 ```bash
+
 # 1. Verify production CVEs
+
 pip-audit
 
 # 2. Run security tests
+
 pytest tests/security/ -v
 
 # 3. Check for secrets
+
 trufflehog filesystem . --only-verified
 
 # 4. SAST scanning
+
 bandit -r roadmap/ -ll  # Only report medium+ issues
 
 # 5. Type checking
+
 pyright roadmap/
 
 # 6. Dependency tree
+
 pip freeze | grep -E "django|jupyter"  # Verify not in production
-```
+
+```text
 
 ### Penetration Testing Procedure
 
 ```bash
+
 # Run penetration test scenarios
+
 pytest tests/security/test_penetration.py -v
 
 # Individual attack vectors
+
 pytest tests/security/test_penetration.py::TestCommandInjectionPrevention -v
 pytest tests/security/test_penetration.py::TestPathTraversalPrevention -v
 pytest tests/security/test_penetration.py::TestPrivilegeEscalation -v
-```
+
+```text
 
 ---
 
@@ -350,7 +379,7 @@ Monitored in GitHub:
 
 ### Remediation Workflow
 
-```
+```text
 Security Alert
     ↓
 Create GitHub Issue (private)
@@ -370,7 +399,8 @@ Publish Security Advisory
 Notify Users
     ↓
 Close Issue
-```
+
+```text
 
 ---
 
@@ -379,7 +409,9 @@ Close Issue
 ### Local Pre-commit Hooks
 
 ```bash
+
 # .pre-commit-config.yaml
+
 repos:
   - repo: local
     hooks:
@@ -395,7 +427,8 @@ repos:
         language: system
         stages: [push]
         always_run: true
-```
+
+```text
 
 ### Developer Security Checklist
 

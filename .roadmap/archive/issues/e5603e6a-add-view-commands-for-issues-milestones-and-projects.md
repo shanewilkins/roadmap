@@ -51,6 +51,7 @@ Implement three new view commands following CRUD patterns (view = Read operation
 ## Acceptance Criteria
 
 ### Issue View Command
+
 - [ ] Create `roadmap/presentation/cli/issues/view.py` with `view_issue` command
 - [ ] Accept issue ID as argument (required)
 - [ ] Display formatted output using Rich panels/tables with sections:
@@ -65,6 +66,7 @@ Implement three new view commands following CRUD patterns (view = Read operation
 - [ ] Register command in `roadmap/presentation/cli/issues/__init__.py`
 
 ### Milestone View Command
+
 - [ ] Create `roadmap/presentation/cli/milestones/view.py` with `view_milestone` command
 - [ ] Accept milestone name as argument (required)
 - [ ] Display formatted output with sections:
@@ -79,6 +81,7 @@ Implement three new view commands following CRUD patterns (view = Read operation
 - [ ] Register command in `roadmap/presentation/cli/milestones/__init__.py`
 
 ### Project View Command
+
 - [ ] Create `roadmap/presentation/cli/projects/view.py` with `view_project` command
 - [ ] Accept project ID as argument (required)
 - [ ] Display formatted output with sections:
@@ -91,6 +94,7 @@ Implement three new view commands following CRUD patterns (view = Read operation
 - [ ] Register command in `roadmap/presentation/cli/projects/__init__.py`
 
 ### Testing & Documentation
+
 - [ ] Add integration tests for all three view commands
 - [ ] Test error handling (missing items, invalid IDs)
 - [ ] Update CLI help documentation

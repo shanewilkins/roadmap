@@ -12,18 +12,27 @@ This is a comprehensive demonstration project showcasing the capabilities of the
 
 ## Project Structure
 
-```
+```text
 demo-project/
 ├── .roadmap/              # Complete roadmap project data
+
 │   ├── config.yaml       # Project configuration
+
 │   ├── issues/           # 1,346 realistic issues
+
 │   └── milestones/       # 5 development milestones
+
 ├── demo_scripts/         # Scripts and demonstrations
+
 │   ├── generate_demo_data.py           # Original demo generator
+
 │   ├── generate_large_demo_data.py     # Large-scale demo generator
+
 │   └── demos/            # Feature demonstration scripts
+
 └── README.md             # This file
-```
+
+```text
 
 ## Quick Start
 
@@ -69,15 +78,18 @@ The `demo_scripts/demos/` directory contains ready-to-run scripts that showcase 
 - **`enhanced_list_demo.py`** - Advanced filtering and search
 
 Run any demo script with:
+
 ```bash
 python demo_scripts/demos/script_name.py
-```
+
+```text
 
 ## The CloudSync Enterprise Platform
 
 This demo project simulates the development of "CloudSync Enterprise Platform" - a comprehensive cloud synchronization solution. The project includes:
 
 ### Milestones
+
 1. **v1.0 - Foundation** - Core infrastructure and basic sync
 2. **v1.1 - Enhanced Security** - Advanced security features
 3. **v1.2 - Performance** - Optimization and scalability
@@ -85,6 +97,7 @@ This demo project simulates the development of "CloudSync Enterprise Platform" -
 5. **v2.0 - Enterprise** - Enterprise-grade features
 
 ### Teams & Roles
+
 - **Backend Developers** - Core platform development
 - **Frontend Developers** - User interface and experience
 - **DevOps Engineers** - Infrastructure and deployment
@@ -93,6 +106,7 @@ This demo project simulates the development of "CloudSync Enterprise Platform" -
 - **QA Engineers** - Testing and quality assurance
 
 ### Issue Types
+
 - **Features** - New functionality development
 - **Bugs** - Issue fixes and improvements
 - **Security** - Security enhancements and audits
@@ -124,12 +138,16 @@ This demo project simulates the development of "CloudSync Enterprise Platform" -
 If you want to regenerate or modify the demo data:
 
 ```bash
+
 # Generate basic demo (fewer issues)
+
 python demo_scripts/generate_demo_data.py
 
 # Generate large-scale demo (1300+ issues)
+
 python demo_scripts/generate_large_demo_data.py
-```
+
+```text
 
 ## Notes
 

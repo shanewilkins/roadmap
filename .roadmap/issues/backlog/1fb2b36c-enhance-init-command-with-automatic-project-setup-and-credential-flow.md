@@ -36,11 +36,13 @@ The current `roadmap init` command creates basic directory structure but doesn't
 ## Current State Analysis
 
 ### What `init` Currently Does
+
 - Creates `.roadmap/` directory structure
 - Sets up basic configuration files
 - Creates empty folders for issues, milestones, projects
 
 ### What's Missing
+
 - No automatic project creation for the repository/workspace
 - No guided credential setup flow
 - No GitHub integration configuration prompts
@@ -50,26 +52,35 @@ The current `roadmap init` command creates basic directory structure but doesn't
 ## Proposed Enhanced Flow
 
 ### 1. Smart Project Detection & Creation
+
 ```bash
 roadmap init [project-name]
+
 # If no project-name provided, infer from:
+
 # - Git repository name
+
 # - Current directory name
+
 # - Prompt user for input
-```
+
+```text
 
 ### 2. Automatic Top-Level Project Generation
+
 - Create a main project document that represents the entire repository/workspace
 - Include sensible defaults based on detected information
 - Set appropriate timeline and initial milestones
 
 ### 3. Interactive Credential Setup
+
 - Detect if GitHub integration is desired (check for .git directory)
 - Guide user through GitHub token creation
 - Test connection and validate permissions
 - Store credentials securely
 
 ### 4. Configuration Validation
+
 - Verify all setup steps completed successfully
 - Provide clear success/failure feedback
 - Suggest next steps for getting started
@@ -77,6 +88,7 @@ roadmap init [project-name]
 ## Detailed Feature Requirements
 
 ### Enhanced Init Command Options
+
 ```bash
 roadmap init [OPTIONS] [PROJECT_NAME]
 
@@ -88,35 +100,47 @@ Options:
   --skip-project         Skip automatic project creation
   --interactive          Run in interactive mode with prompts
   --template TEXT        Use project template (basic, software, research, etc.)
-```
+
+```text
 
 ### Automatic Project Creation Logic
+
 ```python
+
 # Pseudo-code for enhanced init flow
+
 def enhanced_init():
     # 1. Detect context
+
     project_name = detect_project_name()
     git_repo = detect_git_repository()
 
     # 2. Create directory structure
+
     create_roadmap_structure()
 
     # 3. Generate main project
+
     if not skip_project:
         create_main_project(project_name)
 
     # 4. GitHub integration setup
+
     if git_repo and not skip_github:
         setup_github_integration(git_repo)
 
     # 5. Validation and next steps
+
     validate_setup()
     show_getting_started_guide()
-```
+
+```text
 
 ### Interactive Setup Flow
+
 1. **Welcome & Context Detection**
    ```
+
    🚀 Roadmap CLI Initialization
 
    Detected: Git repository "shanewilkins/roadmap"
@@ -130,6 +154,7 @@ def enhanced_init():
 
 2. **Project Setup**
    ```
+
    📋 Creating Main Project
 
    Project name: [roadmap] (auto-detected)
@@ -140,6 +165,7 @@ def enhanced_init():
 
 3. **GitHub Integration**
    ```
+
    🔗 GitHub Integration Setup
 
    Repository: shanewilkins/roadmap ✓
@@ -152,6 +178,7 @@ def enhanced_init():
 
 4. **Validation & Next Steps**
    ```
+
    ✅ Setup Complete!
 
    Created:
@@ -168,6 +195,7 @@ def enhanced_init():
 ## Acceptance Criteria
 
 ### Core Functionality
+
 - [x] `roadmap init` automatically creates a main project document
 - [x] Project name auto-detection from git repo or directory name
 - [x] Interactive prompts for missing information
@@ -176,6 +204,7 @@ def enhanced_init():
 - [x] Setup completion verification
 
 ### User Experience
+
 - [ ] Clear progress indicators during initialization
 - [ ] Helpful error messages with recovery suggestions
 - [x] Option to skip optional steps (--skip-github, --skip-project)
@@ -183,6 +212,7 @@ def enhanced_init():
 - [x] Template support for different project types
 
 ### Technical Requirements
+
 - [x] Backwards compatibility with existing init behavior
 - [ ] Proper error handling for all setup steps
 - [ ] Secure credential handling during setup
@@ -190,6 +220,7 @@ def enhanced_init():
 - [ ] Configuration validation and rollback on errors
 
 ### Documentation & Testing
+
 - [ ] Update CLI documentation with new init options
 - [ ] Add examples for different initialization scenarios
 - [ ] Unit tests for auto-detection logic
@@ -199,18 +230,21 @@ def enhanced_init():
 ## Implementation Plan
 
 ### Phase 1: Core Enhancement (2h)
+
 - [ ] Enhance init command with project creation
 - [ ] Add auto-detection for project name and git repo
 - [ ] Implement basic interactive prompts
 - [ ] Add validation for successful setup
 
 ### Phase 2: GitHub Integration (1.5h)
+
 - [ ] Add GitHub credential setup to init flow
 - [ ] Implement connection testing during init
 - [ ] Add GitHub configuration validation
 - [ ] Handle credential setup errors gracefully
 
 ### Phase 3: Polish & Documentation (0.5h)
+
 - [ ] Add progress indicators and better UX
 - [ ] Update documentation and help text
 - [ ] Add template support (if time permits)
@@ -244,45 +278,63 @@ If you want, I can: add the `GITHUB_TOKEN` env-var fallback, create a CHANGELOG 
 ## Technical Considerations
 
 ### Auto-Detection Logic
+
 ```python
 def detect_project_name():
     # Priority order:
+
     # 1. Git repository name
+
     # 2. Directory name
+
     # 3. Package name (pyproject.toml, package.json)
+
     # 4. Prompt user
-```
+
+```text
 
 ### GitHub Repository Detection
+
 ```python
 def detect_git_repository():
     # Check git remote origin
+
     # Parse owner/repo from URL
+
     # Validate repository exists and is accessible
-```
+
+```text
 
 ### Credential Setup Integration
+
 ```python
 def setup_github_integration(repo_info):
     # Guide user through token creation
+
     # Test connection with minimal API call
+
     # Store credentials using existing credential manager
+
     # Configure repository settings
-```
+
+```text
 
 ## User Stories
 
 ### Story 1: New User - Fresh Repository
+
 **As a** developer starting a new project
 **I want** to run `roadmap init` and have everything set up automatically
 **So that** I can start managing my roadmap immediately without manual configuration
 
 ### Story 2: Existing Project - Adding Roadmap
+
 **As a** project maintainer adding roadmap to an existing repository
 **I want** the init command to detect my project context and GitHub repository
 **So that** I don't have to manually configure obvious settings
 
 ### Story 3: Team Onboarding - GitHub Integration
+
 **As a** team member joining a project with roadmap
 **I want** the init command to guide me through GitHub credential setup
 **So that** I can collaborate on the roadmap without technical barriers

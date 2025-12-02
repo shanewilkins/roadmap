@@ -8,7 +8,8 @@ Get up and running with Roadmap CLI in just a few minutes.
 
 ```bash
 pip install roadmap-cli
-```
+
+```text
 
 ### Option 2: Install from Source
 
@@ -16,19 +17,24 @@ pip install roadmap-cli
 git clone https://github.com/roadmap-cli/roadmap.git
 cd roadmap
 poetry install
-```
+
+```text
 
 ## Basic Setup
 
 ### 1. Initialize Your First Roadmap
 
 ```bash
+
 # Create a new roadmap in the current directory
+
 roadmap init
 
 # Or create with a custom name
+
 roadmap init --name my-project-roadmap
-```
+
+```text
 
 This creates:
 - Project directory structure
@@ -44,7 +50,8 @@ roadmap issue create "Setup development environment" \
   --priority high \
   --type feature \
   --estimate 4
-```
+
+```text
 
 ### 3. Create a Milestone
 
@@ -52,61 +59,82 @@ roadmap issue create "Setup development environment" \
 roadmap milestone create "v1.0 Beta" \
   --due-date 2025-12-31 \
   --description "First beta release with core features"
-```
+
+```text
 
 ### 4. Assign Issue to Milestone
 
 ```bash
+
 # Find your issue ID
+
 roadmap issue list
 
 # Assign to milestone
+
 roadmap issue update ISSUE_ID --milestone "v1.0 Beta"
-```
+
+```text
 
 ## Essential Commands
 
 ### Issue Management
 
 ```bash
+
 # List all issues
+
 roadmap issue list
 
 # Filter issues
+
 roadmap issue list --status in-progress --priority high
 
 # Update issue status
+
 roadmap issue update ISSUE_ID --status in-progress
 
 # Complete an issue
+
 roadmap issue complete ISSUE_ID
-```
+
+```text
 
 ### Project Status
 
 ```bash
+
 # View overall project status
+
 roadmap status
 
 # View your personal dashboard
+
 roadmap dashboard
 
 # View team workload
+
 roadmap team workload
-```
+
+```text
 
 ### Data Export
 
 ```bash
+
 # Export issues to Excel
+
 roadmap export issues --format excel
 
 # Export with filtering
+
 roadmap export issues --format csv --status done --milestone "v1.0"
 
 # Generate analytics report
+
 roadmap export analytics --format excel
-```
+
+```text
 
 ## GitHub Integration (Optional)
 
@@ -114,7 +142,8 @@ roadmap export analytics --format excel
 
 ```bash
 roadmap sync setup
-```
+
+```text
 
 This will:
 - Prompt for your GitHub token
@@ -124,100 +153,138 @@ This will:
 ### 2. Sync with GitHub
 
 ```bash
+
 # Pull issues from GitHub
+
 roadmap sync pull
 
 # Push local changes to GitHub
+
 roadmap sync push
 
 # Two-way sync
+
 roadmap sync
-```
+
+```text
 
 ## Team Collaboration
 
 ### Adding Team Members
 
 ```bash
+
 # Assign issues to team members
+
 roadmap issue update ISSUE_ID --assignee alice
 
 # Hand off work between team members
+
 roadmap handoff ISSUE_ID bob --context "Needs frontend integration"
 
 # View team activity
+
 roadmap activity
-```
+
+```text
 
 ### Workload Management
 
 ```bash
+
 # View team workload distribution
+
 roadmap team workload
 
 # Forecast capacity
+
 roadmap capacity-forecast
 
 # Analyze team performance
+
 roadmap analytics team
-```
+
+```text
 
 ## Advanced Features
 
 ### Bulk Operations
 
 ```bash
+
 # Validate all issues
+
 roadmap bulk validate
 
 # Generate health report
+
 roadmap bulk health-report
 
 # Backup entire roadmap
+
 roadmap bulk backup
-```
+
+```text
 
 ### Analytics and Reporting
 
 ```bash
+
 # Enhanced analytics dashboard
+
 roadmap analytics enhanced
 
 # Velocity analysis
+
 roadmap analytics velocity
 
 # Quality metrics
+
 roadmap analytics quality
-```
+
+```text
 
 ### Git Integration
 
 ```bash
+
 # Create Git branch for issue
+
 roadmap git-branch ISSUE_ID
 
 # Link issue to current branch
+
 roadmap git-link ISSUE_ID
 
 # Sync issue status from Git activity
+
 roadmap git-sync
-```
+
+```text
 
 ## File Structure
 
 After initialization, your project will have:
 
-```
+```text
 your-project/
 ├── .roadmap/                    # Default roadmap directory
+
 │   ├── artifacts/              # Export files (auto-excluded from git)
+
 │   ├── issues/                 # Individual issue files
+
 │   ├── milestones/            # Milestone definitions
+
 │   ├── templates/             # Issue and milestone templates
+
 │   └── config.yaml            # Project configuration
+
 ├── .gitignore                 # Auto-updated to exclude artifacts/
+
 └── (your project files)
-```
+
+```text
 
 ## Configuration
 
@@ -229,20 +296,25 @@ github_repo: "username/repo"
 default_assignee: "your-username"
 sync_enabled: true
 backup_enabled: true
-```
+
+```text
 
 ## Getting Help
 
 ### Built-in Help
 
 ```bash
+
 # General help
+
 roadmap --help
 
 # Command-specific help
+
 roadmap issue --help
 roadmap export issues --help
-```
+
+```text
 
 ### Common Issues
 
@@ -267,29 +339,38 @@ roadmap export issues --help
 Here's a complete example workflow:
 
 ```bash
+
 # 1. Initialize project
+
 roadmap init --name my-app-roadmap
 
 # 2. Create milestone
+
 roadmap milestone create "MVP Release" --due-date 2025-06-01
 
 # 3. Create issues
+
 roadmap issue create "User authentication" --priority critical --type feature --milestone "MVP Release"
 roadmap issue create "Database schema" --priority high --type feature --milestone "MVP Release"
 roadmap issue create "API endpoints" --priority medium --type feature --milestone "MVP Release"
 
 # 4. Start working
+
 roadmap issue start ISSUE_ID
 
 # 5. Track progress
+
 roadmap status
 roadmap dashboard
 
 # 6. Export progress report
+
 roadmap export analytics --format excel
 
 # 7. Share with team
+
 # The excel file is in .roadmap/artifacts/ ready to share
-```
+
+```text
 
 You're now ready to start managing your project roadmap effectively! 🚀

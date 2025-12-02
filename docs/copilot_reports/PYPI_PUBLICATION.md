@@ -34,77 +34,110 @@ This guide covers the complete process for publishing the Roadmap CLI to PyPI.
 ### 1. Final Build and Validation
 
 ```bash
+
 # Validate package configuration
+
 poetry check
 
 # Run full test suite
+
 poetry run pytest --cov=roadmap --cov-report=term-missing
 
 # Build distribution packages
+
 poetry build
 
 # Validate built packages
+
 twine check dist/*
-```
+
+```text
 
 ### 2. Test Publication (TestPyPI)
 
 ```bash
+
 # Configure TestPyPI
+
 poetry config repositories.test-pypi https://test.pypi.org/legacy/
 
 # Publish to TestPyPI first
+
 poetry publish -r test-pypi
 
 # Test installation from TestPyPI
+
 pip install --index-url https://test.pypi.org/simple/ roadmap-cli
 
 # Verify installation works
+
 roadmap --version
 roadmap --help
-```
+
+```text
 
 ### 3. Production Publication (PyPI)
 
 ```bash
+
 # Publish to PyPI
+
 poetry publish
 
 # Verify on PyPI
+
 # Visit: https://pypi.org/project/roadmap-cli/
 
 # Test production installation
+
 pip install roadmap-cli
 roadmap --version
-```
+
+```text
 
 ## 📦 Package Structure
 
 ### Included Files
 
-```
+```text
 roadmap-cli-1.0.0/
 ├── roadmap/                    # Main package
+
 │   ├── __init__.py
 │   ├── cli.py                 # CLI entry point
+
 │   ├── core.py                # Core functionality
+
 │   ├── models.py              # Data models
+
 │   ├── persistence.py         # YAML persistence
+
 │   ├── sync.py                # GitHub sync
+
 │   ├── analytics.py           # Data analytics
+
 │   ├── visualization.py       # Chart generation
+
 │   ├── security.py            # Security module
+
 │   └── ...                    # Other modules
+
 ├── LICENSE.md                  # MIT license
+
 ├── README.md                   # Package description
+
 ├── CHANGELOG.md               # Version history
+
 ├── pyproject.toml             # Package metadata
+
 └── docs/                      # Documentation
+
     ├── quickstart.md
     ├── CLI_REFERENCE.md
     ├── VISUALIZATION_FEATURES.md
     └── ...
-```
+
+```text
 
 ### Excluded Files
 
@@ -207,18 +240,26 @@ roadmap-cli-1.0.0/
 ### Version Management
 
 ```bash
+
 # Bump version for new release
+
 poetry version patch  # 1.0.0 -> 1.0.1
+
 poetry version minor  # 1.0.0 -> 1.1.0
+
 poetry version major  # 1.0.0 -> 2.0.0
 
 # Update CHANGELOG.md with new features
+
 # Update README.md if needed
+
 # Run tests and build
+
 poetry test
 poetry build
 poetry publish
-```
+
+```text
 
 ### Release Process
 

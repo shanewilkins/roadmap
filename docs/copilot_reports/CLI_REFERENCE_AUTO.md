@@ -92,9 +92,11 @@ Complete reference for all Roadmap CLI commands with examples, options, and usag
 activity                     Show recent team activity and updates.
 
 **Usage:**
+
 ```bash
 main [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -140,15 +142,18 @@ main [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap --help
-```
+
+```text
 
 ```bash
 roadmap --version
-```
+
+```text
 
 ```bash
 roadmap status
-```
+
+```text
 
 ---
 
@@ -157,9 +162,11 @@ roadmap status
 -d, --days INTEGER   Show activity for last N days
 
 **Usage:**
+
 ```bash
 main activity [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -171,7 +178,8 @@ main activity [OPTIONS]
 
 ```bash
 roadmap activity --help
-```
+
+```text
 
 ---
 
@@ -180,9 +188,11 @@ roadmap activity --help
 developer  🔬 EXPERIMENTAL: Analyze individual developer productivity and...
 
 **Usage:**
+
 ```bash
 main analytics [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -200,15 +210,18 @@ main analytics [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap analytics
-```
+
+```text
 
 ```bash
 roadmap analytics --export --format excel
-```
+
+```text
 
 ```bash
 roadmap analytics --period month --export
-```
+
+```text
 
 ---
 
@@ -217,9 +230,11 @@ roadmap analytics --period month --export
 -d, --days INTEGER  Analysis period in days (default: 30)
 
 **Usage:**
+
 ```bash
 main analytics developer [OPTIONS] DEVELOPER_NAME
-```
+
+```text
 
 **Options:**
 
@@ -231,7 +246,8 @@ main analytics developer [OPTIONS] DEVELOPER_NAME
 
 ```bash
 roadmap analytics developer --help
-```
+
+```text
 
 ---
 
@@ -240,9 +256,11 @@ roadmap analytics developer --help
 -p, --period [D|W|M|Q]     Analysis period for velocity trends (D=daily,
 
 **Usage:**
+
 ```bash
 main analytics enhanced [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -256,7 +274,8 @@ main analytics enhanced [OPTIONS]
 
 ```bash
 roadmap analytics enhanced --help
-```
+
+```text
 
 ---
 
@@ -265,9 +284,11 @@ roadmap analytics enhanced --help
 -d, --days INTEGER  Analysis period in days (default: 90)
 
 **Usage:**
+
 ```bash
 main analytics quality [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -278,7 +299,8 @@ main analytics quality [OPTIONS]
 
 ```bash
 roadmap analytics quality --help
-```
+
+```text
 
 ---
 
@@ -287,9 +309,11 @@ roadmap analytics quality --help
 -d, --days INTEGER             Analysis period in days (default: 30)
 
 **Usage:**
+
 ```bash
 main analytics team [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -302,7 +326,8 @@ main analytics team [OPTIONS]
 
 ```bash
 roadmap analytics team --help
-```
+
+```text
 
 ---
 
@@ -311,9 +336,11 @@ roadmap analytics team --help
 -p, --period [week|month|quarter]
 
 **Usage:**
+
 ```bash
 main analytics velocity [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -325,7 +352,8 @@ main analytics velocity [OPTIONS]
 
 ```bash
 roadmap analytics velocity --help
-```
+
+```text
 
 ---
 
@@ -334,9 +362,11 @@ roadmap analytics velocity --help
 -a, --assignee TEXT  Send update to specific assignee (defaults to team)
 
 **Usage:**
+
 ```bash
 main broadcast [OPTIONS] MESSAGE
-```
+
+```text
 
 **Options:**
 
@@ -348,7 +378,8 @@ main broadcast [OPTIONS] MESSAGE
 
 ```bash
 roadmap broadcast --help
-```
+
+```text
 
 ---
 
@@ -357,9 +388,11 @@ roadmap broadcast --help
 -d, --days INTEGER   Forecast period in days
 
 **Usage:**
+
 ```bash
 main capacity-forecast [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -371,7 +404,8 @@ main capacity-forecast [OPTIONS]
 
 ```bash
 roadmap capacity-forecast --help
-```
+
+```text
 
 ---
 
@@ -380,9 +414,11 @@ roadmap capacity-forecast --help
 create  Create a new comment on an issue.
 
 **Usage:**
+
 ```bash
 main comment [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -399,7 +435,8 @@ main comment [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap comment --help
-```
+
+```text
 
 ---
 
@@ -408,9 +445,11 @@ roadmap comment --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main comment create [OPTIONS] ISSUE_IDENTIFIER COMMENT_TEXT
-```
+
+```text
 
 **Options:**
 
@@ -420,7 +459,8 @@ main comment create [OPTIONS] ISSUE_IDENTIFIER COMMENT_TEXT
 
 ```bash
 roadmap comment create --help
-```
+
+```text
 
 ---
 
@@ -429,9 +469,11 @@ roadmap comment create --help
 --force  Skip confirmation prompt
 
 **Usage:**
+
 ```bash
 main comment delete [OPTIONS] COMMENT_ID
-```
+
+```text
 
 **Options:**
 
@@ -443,7 +485,8 @@ main comment delete [OPTIONS] COMMENT_ID
 
 ```bash
 roadmap comment delete --help
-```
+
+```text
 
 ---
 
@@ -452,9 +495,11 @@ roadmap comment delete --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main comment edit [OPTIONS] COMMENT_ID NEW_TEXT
-```
+
+```text
 
 **Options:**
 
@@ -464,7 +509,8 @@ main comment edit [OPTIONS] COMMENT_ID NEW_TEXT
 
 ```bash
 roadmap comment edit --help
-```
+
+```text
 
 ---
 
@@ -473,9 +519,11 @@ roadmap comment edit --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main comment list [OPTIONS] ISSUE_IDENTIFIER
-```
+
+```text
 
 **Options:**
 
@@ -485,7 +533,8 @@ main comment list [OPTIONS] ISSUE_IDENTIFIER
 
 ```bash
 roadmap comment list --help
-```
+
+```text
 
 ---
 
@@ -494,9 +543,11 @@ roadmap comment list --help
 -a, --assignee TEXT  Show dashboard for specific assignee (defaults to you)
 
 **Usage:**
+
 ```bash
 main dashboard [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -508,7 +559,8 @@ main dashboard [OPTIONS]
 
 ```bash
 roadmap dashboard --help
-```
+
+```text
 
 ---
 
@@ -517,9 +569,11 @@ roadmap dashboard --help
 analytics   Export comprehensive analytics to Excel with multiple sheets.
 
 **Usage:**
+
 ```bash
 main export [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -535,7 +589,8 @@ main export [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap export --help
-```
+
+```text
 
 ---
 
@@ -544,9 +599,11 @@ roadmap export --help
 -f, --format [csv|excel|json]  Export format
 
 **Usage:**
+
 ```bash
 main export analytics [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -560,7 +617,8 @@ main export analytics [OPTIONS]
 
 ```bash
 roadmap export analytics --help
-```
+
+```text
 
 ---
 
@@ -569,9 +627,11 @@ roadmap export analytics --help
 -f, --format [csv|excel|json]   Export format
 
 **Usage:**
+
 ```bash
 main export issues [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -593,15 +653,18 @@ main export issues [OPTIONS]
 
 ```bash
 roadmap export issues --format csv
-```
+
+```text
 
 ```bash
 roadmap export issues --format excel --milestone 'v1.0'
-```
+
+```text
 
 ```bash
 roadmap export issues --format json --status done --priority critical
-```
+
+```text
 
 ---
 
@@ -610,9 +673,11 @@ roadmap export issues --format json --status done --priority critical
 -f, --format [csv|excel|json]  Export format
 
 **Usage:**
+
 ```bash
 main export milestones [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -627,7 +692,8 @@ main export milestones [OPTIONS]
 
 ```bash
 roadmap export milestones --help
-```
+
+```text
 
 ---
 
@@ -636,9 +702,11 @@ roadmap export milestones --help
 --checkout / --no-checkout  Checkout the branch after creation
 
 **Usage:**
+
 ```bash
 main git-branch [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -649,7 +717,8 @@ main git-branch [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap git-branch --help
-```
+
+```text
 
 ---
 
@@ -658,9 +727,11 @@ roadmap git-branch --help
 --since TEXT  Show commits since date (e.g., '1 week ago')
 
 **Usage:**
+
 ```bash
 main git-commits [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -671,7 +742,8 @@ main git-commits [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap git-commits --help
-```
+
+```text
 
 ---
 
@@ -680,9 +752,11 @@ roadmap git-commits --help
 -h, --hooks [post-commit|pre-push|post-merge|post-checkout]
 
 **Usage:**
+
 ```bash
 main git-hooks-install [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -692,7 +766,8 @@ main git-hooks-install [OPTIONS]
 
 ```bash
 roadmap git-hooks-install --help
-```
+
+```text
 
 ---
 
@@ -701,9 +776,11 @@ roadmap git-hooks-install --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main git-hooks-uninstall [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -713,7 +790,8 @@ main git-hooks-uninstall [OPTIONS]
 
 ```bash
 roadmap git-hooks-uninstall --help
-```
+
+```text
 
 ---
 
@@ -722,9 +800,11 @@ roadmap git-hooks-uninstall --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main git-link [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -734,7 +814,8 @@ main git-link [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap git-link --help
-```
+
+```text
 
 ---
 
@@ -743,9 +824,11 @@ roadmap git-link --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main git-status [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -755,7 +838,8 @@ main git-status [OPTIONS]
 
 ```bash
 roadmap git-status --help
-```
+
+```text
 
 ---
 
@@ -764,9 +848,11 @@ roadmap git-status --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main git-sync [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -776,7 +862,8 @@ main git-sync [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap git-sync --help
-```
+
+```text
 
 ---
 
@@ -785,9 +872,11 @@ roadmap git-sync --help
 -n, --notes TEXT     Handoff notes for the new assignee
 
 **Usage:**
+
 ```bash
 main handoff [OPTIONS] ISSUE_ID NEW_ASSIGNEE
-```
+
+```text
 
 **Options:**
 
@@ -799,7 +888,8 @@ main handoff [OPTIONS] ISSUE_ID NEW_ASSIGNEE
 
 ```bash
 roadmap handoff --help
-```
+
+```text
 
 ---
 
@@ -808,9 +898,11 @@ roadmap handoff --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main handoff-context [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -820,7 +912,8 @@ main handoff-context [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap handoff-context --help
-```
+
+```text
 
 ---
 
@@ -829,9 +922,11 @@ roadmap handoff-context --help
 -a, --assignee TEXT  Filter by assignee
 
 **Usage:**
+
 ```bash
 main handoff-list [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -843,7 +938,8 @@ main handoff-list [OPTIONS]
 
 ```bash
 roadmap handoff-list --help
-```
+
+```text
 
 ---
 
@@ -852,9 +948,11 @@ roadmap handoff-list --help
 -n, --name TEXT  Name of the roadmap directory (default: .roadmap)
 
 **Usage:**
+
 ```bash
 main init [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -865,15 +963,18 @@ main init [OPTIONS]
 
 ```bash
 roadmap init
-```
+
+```text
 
 ```bash
 roadmap init --name my-project
-```
+
+```text
 
 ```bash
 roadmap init -n project-roadmap
-```
+
+```text
 
 ---
 
@@ -882,9 +983,11 @@ roadmap init -n project-roadmap
 block     Mark an issue as blocked.
 
 **Usage:**
+
 ```bash
 main issue [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -909,7 +1012,8 @@ main issue [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap issue --help
-```
+
+```text
 
 ---
 
@@ -918,9 +1022,11 @@ roadmap issue --help
 --reason TEXT  Reason why the issue is blocked
 
 **Usage:**
+
 ```bash
 main issue block [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -931,7 +1037,8 @@ main issue block [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap issue block --help
-```
+
+```text
 
 ---
 
@@ -940,9 +1047,11 @@ roadmap issue block --help
 --reason TEXT  Reason for closing the issue
 
 **Usage:**
+
 ```bash
 main issue close [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -953,7 +1062,8 @@ main issue close [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap issue close --help
-```
+
+```text
 
 ---
 
@@ -962,9 +1072,11 @@ roadmap issue close --help
 --date TEXT  Completion date (YYYY-MM-DD HH:MM, defaults to now)
 
 **Usage:**
+
 ```bash
 main issue complete [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -975,7 +1087,8 @@ main issue complete [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap issue complete --help
-```
+
+```text
 
 ---
 
@@ -984,9 +1097,11 @@ roadmap issue complete --help
 -p, --priority [critical|high|medium|low]
 
 **Usage:**
+
 ```bash
 main issue create [OPTIONS] TITLE
-```
+
+```text
 
 **Options:**
 
@@ -1006,15 +1121,18 @@ main issue create [OPTIONS] TITLE
 
 ```bash
 roadmap issue create 'Fix authentication bug'
-```
+
+```text
 
 ```bash
 roadmap issue create 'Add user dashboard' --priority high --type feature
-```
+
+```text
 
 ```bash
 roadmap issue create 'Database optimization' -p critical -m 'v1.0' -a john
-```
+
+```text
 
 ---
 
@@ -1023,9 +1141,11 @@ roadmap issue create 'Database optimization' -p critical -m 'v1.0' -a john
 --yes   Confirm the action without prompting.
 
 **Usage:**
+
 ```bash
 main issue delete [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -1036,7 +1156,8 @@ main issue delete [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap issue delete --help
-```
+
+```text
 
 ---
 
@@ -1045,9 +1166,11 @@ roadmap issue delete --help
 --show-all  Show all dependency relationships in the project
 
 **Usage:**
+
 ```bash
 main issue deps [OPTIONS] [ISSUE_ID]
-```
+
+```text
 
 **Options:**
 
@@ -1058,7 +1181,8 @@ main issue deps [OPTIONS] [ISSUE_ID]
 
 ```bash
 roadmap issue deps --help
-```
+
+```text
 
 ---
 
@@ -1067,9 +1191,11 @@ roadmap issue deps --help
 -m, --milestone TEXT            Filter by milestone
 
 **Usage:**
+
 ```bash
 main issue list [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1090,7 +1216,8 @@ main issue list [OPTIONS]
 
 ```bash
 roadmap issue list --help
-```
+
+```text
 
 ---
 
@@ -1099,9 +1226,11 @@ roadmap issue list --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main issue move [OPTIONS] ISSUE_ID [MILESTONE_NAME]
-```
+
+```text
 
 **Options:**
 
@@ -1111,7 +1240,8 @@ main issue move [OPTIONS] ISSUE_ID [MILESTONE_NAME]
 
 ```bash
 roadmap issue move --help
-```
+
+```text
 
 ---
 
@@ -1120,9 +1250,11 @@ roadmap issue move --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main issue progress [OPTIONS] ISSUE_ID PERCENTAGE
-```
+
+```text
 
 **Options:**
 
@@ -1132,7 +1264,8 @@ main issue progress [OPTIONS] ISSUE_ID PERCENTAGE
 
 ```bash
 roadmap issue progress --help
-```
+
+```text
 
 ---
 
@@ -1141,9 +1274,11 @@ roadmap issue progress --help
 --date TEXT  Start date (YYYY-MM-DD HH:MM, defaults to now)
 
 **Usage:**
+
 ```bash
 main issue start [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -1154,7 +1289,8 @@ main issue start [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap issue start --help
-```
+
+```text
 
 ---
 
@@ -1163,9 +1299,11 @@ roadmap issue start --help
 --reason TEXT  Reason for unblocking
 
 **Usage:**
+
 ```bash
 main issue unblock [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -1176,7 +1314,8 @@ main issue unblock [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap issue unblock --help
-```
+
+```text
 
 ---
 
@@ -1185,9 +1324,11 @@ roadmap issue unblock --help
 -s, --status [todo|in-progress|blocked|review|done]
 
 **Usage:**
+
 ```bash
 main issue update [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -1200,7 +1341,8 @@ main issue update [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap issue update --help
-```
+
+```text
 
 ---
 
@@ -1209,9 +1351,11 @@ roadmap issue update --help
 assign  Assign an issue to a milestone.
 
 **Usage:**
+
 ```bash
 main milestone [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -1229,7 +1373,8 @@ main milestone [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap milestone --help
-```
+
+```text
 
 ---
 
@@ -1238,9 +1383,11 @@ roadmap milestone --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main milestone assign [OPTIONS] ISSUE_ID MILESTONE_NAME
-```
+
+```text
 
 **Options:**
 
@@ -1250,7 +1397,8 @@ main milestone assign [OPTIONS] ISSUE_ID MILESTONE_NAME
 
 ```bash
 roadmap milestone assign --help
-```
+
+```text
 
 ---
 
@@ -1259,9 +1407,11 @@ roadmap milestone assign --help
 -d, --description TEXT  Milestone description
 
 **Usage:**
+
 ```bash
 main milestone create [OPTIONS] NAME
-```
+
+```text
 
 **Options:**
 
@@ -1273,7 +1423,8 @@ main milestone create [OPTIONS] NAME
 
 ```bash
 roadmap milestone create --help
-```
+
+```text
 
 ---
 
@@ -1282,9 +1433,11 @@ roadmap milestone create --help
 --yes   Confirm the action without prompting.
 
 **Usage:**
+
 ```bash
 main milestone delete [OPTIONS] MILESTONE_NAME
-```
+
+```text
 
 **Options:**
 
@@ -1295,7 +1448,8 @@ main milestone delete [OPTIONS] MILESTONE_NAME
 
 ```bash
 roadmap milestone delete --help
-```
+
+```text
 
 ---
 
@@ -1304,9 +1458,11 @@ roadmap milestone delete --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main milestone list [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1316,7 +1472,8 @@ main milestone list [OPTIONS]
 
 ```bash
 roadmap milestone list --help
-```
+
+```text
 
 ---
 
@@ -1325,9 +1482,11 @@ roadmap milestone list --help
 -d, --description TEXT  Update milestone description
 
 **Usage:**
+
 ```bash
 main milestone update [OPTIONS] MILESTONE_NAME
-```
+
+```text
 
 **Options:**
 
@@ -1340,7 +1499,8 @@ main milestone update [OPTIONS] MILESTONE_NAME
 
 ```bash
 roadmap milestone update --help
-```
+
+```text
 
 ---
 
@@ -1349,9 +1509,11 @@ roadmap milestone update --help
 -a, --assignee TEXT  Show notifications for specific assignee (defaults to
 
 **Usage:**
+
 ```bash
 main notifications [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1364,7 +1526,8 @@ main notifications [OPTIONS]
 
 ```bash
 roadmap notifications --help
-```
+
+```text
 
 ---
 
@@ -1373,9 +1536,11 @@ roadmap notifications --help
 deadline      🔬 EXPERIMENTAL: Forecast project completion with scenario...
 
 **Usage:**
+
 ```bash
 main predict [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -1392,7 +1557,8 @@ main predict [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap predict --help
-```
+
+```text
 
 ---
 
@@ -1401,9 +1567,11 @@ roadmap predict --help
 -t, --target TEXT     Target completion date (YYYY-MM-DD)
 
 **Usage:**
+
 ```bash
 main predict deadline [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1416,7 +1584,8 @@ main predict deadline [OPTIONS]
 
 ```bash
 roadmap predict deadline --help
-```
+
+```text
 
 ---
 
@@ -1425,9 +1594,11 @@ roadmap predict deadline --help
 -d, --developer TEXT  Developer to assign (affects estimation)
 
 **Usage:**
+
 ```bash
 main predict estimate [OPTIONS] [ISSUE_IDS]...
-```
+
+```text
 
 **Options:**
 
@@ -1440,7 +1611,8 @@ main predict estimate [OPTIONS] [ISSUE_IDS]...
 
 ```bash
 roadmap predict estimate --help
-```
+
+```text
 
 ---
 
@@ -1449,9 +1621,11 @@ roadmap predict estimate --help
 -t, --target TEXT  Target completion date (YYYY-MM-DD)
 
 **Usage:**
+
 ```bash
 main predict intelligence [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1463,7 +1637,8 @@ main predict intelligence [OPTIONS]
 
 ```bash
 roadmap predict intelligence --help
-```
+
+```text
 
 ---
 
@@ -1472,9 +1647,11 @@ roadmap predict intelligence --help
 -d, --days INTEGER           Risk assessment period (default: 30)
 
 **Usage:**
+
 ```bash
 main predict risks [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1487,7 +1664,8 @@ main predict risks [OPTIONS]
 
 ```bash
 roadmap predict risks --help
-```
+
+```text
 
 ---
 
@@ -1496,9 +1674,11 @@ roadmap predict risks --help
 assignee  Generate detailed report for a specific assignee or all assignees.
 
 **Usage:**
+
 ```bash
 main report [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -1513,7 +1693,8 @@ main report [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap report --help
-```
+
+```text
 
 ---
 
@@ -1522,9 +1703,11 @@ roadmap report --help
 -s, --status [todo|in-progress|blocked|review|done]
 
 **Usage:**
+
 ```bash
 main report assignee [OPTIONS] [ASSIGNEE]
-```
+
+```text
 
 **Options:**
 
@@ -1538,7 +1721,8 @@ main report assignee [OPTIONS] [ASSIGNEE]
 
 ```bash
 roadmap report assignee --help
-```
+
+```text
 
 ---
 
@@ -1547,9 +1731,11 @@ roadmap report assignee --help
 -t, --type [feature|bug|other]  Filter by issue type (can be used multiple
 
 **Usage:**
+
 ```bash
 main report summary [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1561,7 +1747,8 @@ main report summary [OPTIONS]
 
 ```bash
 roadmap report summary --help
-```
+
+```text
 
 ---
 
@@ -1570,9 +1757,11 @@ roadmap report summary --help
 --consider-skills        Consider team member skills (experimental)
 
 **Usage:**
+
 ```bash
 main smart-assign [OPTIONS] ISSUE_ID
-```
+
+```text
 
 **Options:**
 
@@ -1585,7 +1774,8 @@ main smart-assign [OPTIONS] ISSUE_ID
 
 ```bash
 roadmap smart-assign --help
-```
+
+```text
 
 ---
 
@@ -1594,9 +1784,11 @@ roadmap smart-assign --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main status [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1606,7 +1798,8 @@ main status [OPTIONS]
 
 ```bash
 roadmap status --help
-```
+
+```text
 
 ---
 
@@ -1615,9 +1808,11 @@ roadmap status --help
 bidirectional  Perform intelligent bidirectional synchronization between...
 
 **Usage:**
+
 ```bash
 main sync [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -1637,7 +1832,8 @@ main sync [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap sync --help
-```
+
+```text
 
 ---
 
@@ -1646,9 +1842,11 @@ roadmap sync --help
 --issues                        Sync issues only
 
 **Usage:**
+
 ```bash
 main sync bidirectional [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1662,7 +1860,8 @@ main sync bidirectional [OPTIONS]
 
 ```bash
 roadmap sync bidirectional --help
-```
+
+```text
 
 ---
 
@@ -1671,9 +1870,11 @@ roadmap sync bidirectional --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main sync delete-token [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1683,7 +1884,8 @@ main sync delete-token [OPTIONS]
 
 ```bash
 roadmap sync delete-token --help
-```
+
+```text
 
 ---
 
@@ -1692,9 +1894,11 @@ roadmap sync delete-token --help
 --issues              Pull issues only
 
 **Usage:**
+
 ```bash
 main sync pull [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1709,7 +1913,8 @@ main sync pull [OPTIONS]
 
 ```bash
 roadmap sync pull --help
-```
+
+```text
 
 ---
 
@@ -1718,9 +1923,11 @@ roadmap sync pull --help
 --issues      Push issues only
 
 **Usage:**
+
 ```bash
 main sync push [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1732,7 +1939,8 @@ main sync push [OPTIONS]
 
 ```bash
 roadmap sync push --help
-```
+
+```text
 
 ---
 
@@ -1741,9 +1949,11 @@ roadmap sync push --help
 --token TEXT  GitHub token for authentication
 
 **Usage:**
+
 ```bash
 main sync setup [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1756,7 +1966,8 @@ main sync setup [OPTIONS]
 
 ```bash
 roadmap sync setup --help
-```
+
+```text
 
 ---
 
@@ -1765,9 +1976,11 @@ roadmap sync setup --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main sync status [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1777,7 +1990,8 @@ main sync status [OPTIONS]
 
 ```bash
 roadmap sync status --help
-```
+
+```text
 
 ---
 
@@ -1786,9 +2000,11 @@ roadmap sync status --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main sync test [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1798,7 +2014,8 @@ main sync test [OPTIONS]
 
 ```bash
 roadmap sync test --help
-```
+
+```text
 
 ---
 
@@ -1807,9 +2024,11 @@ roadmap sync test --help
 assignments  Show issue assignments for all team members.
 
 **Usage:**
+
 ```bash
 main team [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -1825,7 +2044,8 @@ main team [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap team --help
-```
+
+```text
 
 ---
 
@@ -1834,9 +2054,11 @@ roadmap team --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main team assignments [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1846,7 +2068,8 @@ main team assignments [OPTIONS]
 
 ```bash
 roadmap team assignments --help
-```
+
+```text
 
 ---
 
@@ -1855,9 +2078,11 @@ roadmap team assignments --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main team members [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1867,7 +2092,8 @@ main team members [OPTIONS]
 
 ```bash
 roadmap team members --help
-```
+
+```text
 
 ---
 
@@ -1876,9 +2102,11 @@ roadmap team members --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main team workload [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1888,7 +2116,8 @@ main team workload [OPTIONS]
 
 ```bash
 roadmap team workload --help
-```
+
+```text
 
 ---
 
@@ -1897,9 +2126,11 @@ roadmap team workload --help
 critical-path  Show the critical path through the project dependencies.
 
 **Usage:**
+
 ```bash
 main timeline [OPTIONS] COMMAND [ARGS]...
-```
+
+```text
 
 **Options:**
 
@@ -1914,7 +2145,8 @@ main timeline [OPTIONS] COMMAND [ARGS]...
 
 ```bash
 roadmap timeline --help
-```
+
+```text
 
 ---
 
@@ -1923,9 +2155,11 @@ roadmap timeline --help
 -m, --milestone TEXT  Filter by milestone
 
 **Usage:**
+
 ```bash
 main timeline critical-path [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1936,7 +2170,8 @@ main timeline critical-path [OPTIONS]
 
 ```bash
 roadmap timeline critical-path --help
-```
+
+```text
 
 ---
 
@@ -1945,9 +2180,11 @@ roadmap timeline critical-path --help
 -a, --assignee TEXT        Filter by assignee
 
 **Usage:**
+
 ```bash
 main timeline show [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1961,7 +2198,8 @@ main timeline show [OPTIONS]
 
 ```bash
 roadmap timeline show --help
-```
+
+```text
 
 ---
 
@@ -1970,9 +2208,11 @@ roadmap timeline show --help
 --help  Show this message and exit.
 
 **Usage:**
+
 ```bash
 main workflow-automation-disable [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -1982,7 +2222,8 @@ main workflow-automation-disable [OPTIONS]
 
 ```bash
 roadmap workflow-automation-disable --help
-```
+
+```text
 
 ---
 
@@ -1991,9 +2232,11 @@ roadmap workflow-automation-disable --help
 -f, --features [git-hooks|status-automation|progress-tracking]
 
 **Usage:**
+
 ```bash
 main workflow-automation-setup [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -2003,7 +2246,8 @@ main workflow-automation-setup [OPTIONS]
 
 ```bash
 roadmap workflow-automation-setup --help
-```
+
+```text
 
 ---
 
@@ -2012,9 +2256,11 @@ roadmap workflow-automation-setup --help
 --dry-run  Show what would be synced without making changes
 
 **Usage:**
+
 ```bash
 main workflow-sync-all [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -2025,7 +2271,8 @@ main workflow-sync-all [OPTIONS]
 
 ```bash
 roadmap workflow-sync-all --help
-```
+
+```text
 
 ---
 
@@ -2034,9 +2281,11 @@ roadmap workflow-sync-all --help
 -a, --assignee TEXT  Analyze workload for specific assignee
 
 **Usage:**
+
 ```bash
 main workload-analysis [OPTIONS]
-```
+
+```text
 
 **Options:**
 
@@ -2049,6 +2298,7 @@ main workload-analysis [OPTIONS]
 
 ```bash
 roadmap workload-analysis --help
-```
+
+```text
 
 ---

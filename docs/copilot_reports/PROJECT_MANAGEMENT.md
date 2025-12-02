@@ -19,7 +19,8 @@ Each project in Roadmap includes:
 
 ```bash
 roadmap project create "My First Project"
-```
+
+```text
 
 This creates a basic project with:
 - Auto-generated unique ID (8 characters)
@@ -40,7 +41,8 @@ roadmap project create "Q1 Product Launch" \
   --milestones "Alpha Release" \
   --milestones "Beta Testing" \
   --milestones "Production Launch"
-```
+
+```text
 
 This creates a comprehensive project with:
 - Full metadata and timeline
@@ -51,12 +53,15 @@ This creates a comprehensive project with:
 ## 📁 Project File Structure
 
 Projects are stored in `.roadmap/projects/` with the naming pattern:
-```
+
+```text
 {project-id}-{project-name-slugified}.md
-```
+
+```text
 
 Example file structure:
-```
+
+```text
 .roadmap/
 ├── projects/
 │   ├── a1b2c3d4-q1-product-launch.md
@@ -66,13 +71,15 @@ Example file structure:
 ├── milestones/
 └── templates/
     └── project.md
-```
+
+```text
 
 ## 📄 Project Template
 
 Each project file contains:
 
 ### YAML Frontmatter
+
 ```yaml
 ---
 id: "a1b2c3d4"
@@ -93,9 +100,11 @@ milestones:
 estimated_hours: 480.0
 actual_hours: null
 ---
-```
+
+```text
 
 ### Markdown Content
+
 - **Project Overview**: Description and key details
 - **Objectives**: Checkable goals and deliverables
 - **Milestones & Timeline**: Linked milestone tracking
@@ -108,28 +117,33 @@ actual_hours: null
 
 ```bash
 roadmap project overview
-```
+
+```text
 
 Provides comprehensive analysis including:
 
 #### Overall Statistics
+
 - Total issues across all projects
 - Completion rates and progress tracking
 - Open bugs and technical debt indicators
 - Milestone completion status
 
 #### Milestone Progression
+
 - Progress tracking per milestone
 - Issue breakdown by type (bug/feature/task)
 - Timeline adherence and completion dates
 - Status indicators (completed/in-progress/planned)
 
 #### Team Workload
+
 - Issue distribution across team members
 - Workload balance indicators
 - Assignment analytics
 
 #### Technical Health
+
 - Bug-to-feature ratios
 - Technical debt indicators
 - Quality metrics
@@ -137,25 +151,31 @@ Provides comprehensive analysis including:
 ### Output Formats
 
 #### Rich Terminal Display (default)
+
 ```bash
 roadmap project overview
-```
+
+```text
 - Colored tables and indicators
 - Progress bars and status icons
 - Formatted for terminal viewing
 
 #### JSON Export
+
 ```bash
 roadmap project overview --format json
-```
+
+```text
 - Machine-readable format
 - Suitable for automation and integration
 - Complete data export
 
 #### CSV Export
+
 ```bash
 roadmap project overview --format csv
-```
+
+```text
 - Spreadsheet-compatible format
 - Milestone data with progress metrics
 - Easy data analysis and reporting
@@ -163,21 +183,26 @@ roadmap project overview --format csv
 ## 🔗 Integration with Issues and Milestones
 
 ### Milestone Integration
+
 Projects can reference multiple milestones:
+
 ```bash
 roadmap project create "Complex Project" \
   --milestones "Phase 1" \
   --milestones "Phase 2" \
   --milestones "Phase 3"
-```
+
+```text
 
 ### Issue Relationship
+
 While projects don't directly contain issues, they provide organizational structure:
 - Issues belong to milestones
 - Milestones belong to projects
 - Projects provide high-level tracking and resource planning
 
 ### Workflow Integration
+
 1. **Create Project** with milestones and timeline
 2. **Create Milestones** that align with project goals
 3. **Create Issues** within milestones
@@ -186,24 +211,28 @@ While projects don't directly contain issues, they provide organizational struct
 ## 🎯 Best Practices
 
 ### Project Planning
+
 - **Start with Clear Objectives**: Define specific, measurable goals
 - **Break Down into Milestones**: Create logical phases or deliverables
 - **Estimate Realistically**: Include buffer time for unknowns
 - **Assign Clear Ownership**: Designate a project lead/owner
 
 ### Timeline Management
+
 - **Set Realistic Dates**: Consider team capacity and dependencies
 - **Track Progress Regularly**: Use overview command for status checks
 - **Update Estimates**: Adjust hours as work progresses
 - **Document Changes**: Use notes section for important updates
 
 ### Resource Planning
+
 - **Estimate Hours**: Provide realistic effort estimates
 - **Track Actual Time**: Update actual_hours as work completes
 - **Monitor Variance**: Compare estimated vs actual for future planning
 - **Balance Workload**: Use overview to identify team distribution
 
 ### Milestone Integration
+
 - **Align with Goals**: Ensure milestones support project objectives
 - **Create Dependencies**: Plan milestone sequencing
 - **Track Completion**: Monitor milestone progress through project overview
@@ -212,8 +241,11 @@ While projects don't directly contain issues, they provide organizational struct
 ## 📈 Project Lifecycle
 
 ### 1. Planning Phase
+
 ```bash
+
 # Create project
+
 roadmap project create "New Initiative" \
   --description "Detailed project description" \
   --owner "project-lead" \
@@ -222,40 +254,51 @@ roadmap project create "New Initiative" \
   --estimated-hours 200.0
 
 # Status: planning
-```
+
+```text
 
 ### 2. Active Development
+
 - Update status to "active"
 - Create and assign milestones
 - Track progress through issues
 - Monitor timeline and resource usage
 
 ### 3. Completion
+
 - Update actual_end_date
 - Record actual_hours
 - Set status to "completed"
 - Document lessons learned
 
 ### 4. Analysis and Retrospective
+
 ```bash
+
 # Generate project report
+
 roadmap project overview --format json > project-report.json
 
 # Analyze team workload
+
 roadmap project overview --format csv > team-analysis.csv
-```
+
+```text
 
 ## 🚀 Advanced Usage
 
 ### Custom Templates
+
 Projects use the template at `.roadmap/templates/project.md`. You can customize this template to match your organization's needs while maintaining the YAML frontmatter structure.
 
 ### Integration with External Tools
+
 - **JSON Export**: Integrate with project management tools
 - **CSV Export**: Import into spreadsheets for analysis
 - **Git Integration**: Track project files in version control
 
 ### Automation Opportunities
+
 - **CI/CD Integration**: Generate reports automatically
 - **Progress Tracking**: Automate status updates
 - **Resource Planning**: Extract data for capacity planning

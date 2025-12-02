@@ -45,24 +45,28 @@ Implement a robust semantic versioning system with automated enforcement and pre
 ## Technical Implementation
 
 ### Phase 1: Version Management System
+
 1. Create `roadmap/version.py` module for centralized version handling
 2. Add version validation functions (semantic version format checking)
 3. Implement version consistency checker across files
 4. Add version bump utilities (patch, minor, major)
 
 ### Phase 2: Release Command
+
 1. Add `roadmap release` CLI command with options: `--patch`, `--minor`, `--major`
 2. Pre-flight checks: tests, git status, documentation completeness
 3. Automated changelog generation from completed milestones/issues
 4. Git tagging and commit automation
 
 ### Phase 3: PyPI Publication Setup
+
 1. Complete pyproject.toml metadata (description, keywords, classifiers, URLs)
 2. Validate package build process (`poetry build`)
 3. Test installation from built packages
 4. Document publication workflow for maintainers
 
 ### Phase 4: Documentation and Validation
+
 1. Create release documentation in docs/PYPI_PUBLICATION.md
 2. Add version management to CLI reference
 3. Test complete release workflow in development

@@ -216,23 +216,27 @@ Once v.1.0.0 ships, we enforce strict semantic versioning:
 These are explicitly **NOT** in v.1.0.0 but planned for future releases:
 
 ### v.1.1.0: Analytics & Intelligence
+
 - AI-powered project insights
 - Predictive analytics
 - Intelligent recommendations
 
 ### v.1.2.0: Enterprise Features
+
 - Enterprise SSO/SAML
 - Role-based access control (RBAC)
 - Multi-organization support
 - Team management
 
 ### v.1.3.0: API & Integration Platform
+
 - REST API completeness
 - Webhook system
 - Third-party integrations
 - SDK improvements
 
 ### v.2.0.0: Advanced Platform
+
 - Cloud/SaaS deployment
 - Real-time collaboration
 - Mobile applications
@@ -243,15 +247,19 @@ These are explicitly **NOT** in v.1.0.0 but planned for future releases:
 ## Decision Log
 
 ### Why NOT include advanced analytics in v.1.0.0?
+
 Core workflow stability is more important than nice-to-have analytics. Users need to trust v.1.0 with their roadmaps before we add complexity.
 
 ### Why NOT include Enterprise SSO?
+
 v.1.0.0 targets individual developers and small teams. Enterprise features can follow as market demand proves.
 
 ### Why strict semantic versioning?
+
 Once users depend on v.1.0.0 for production roadmaps, breaking changes become migration burdens. Semantic versioning prevents surprises.
 
 ### Why a 5-day hardening period before release?
+
 Production releases need buffer time for UAT, edge case testing, and validation. Don't rush to release.
 
 ---

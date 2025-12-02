@@ -12,16 +12,21 @@ A fresh production environment was created and verified to ensure the security a
 ## Environment Setup
 
 ```bash
+
 # Create fresh venv
+
 python3 -m venv test_prod_env
 source test_prod_env/bin/activate
 
 # Upgrade pip tooling
+
 pip install --upgrade pip setuptools wheel
 
 # Install production only (no dev extras)
+
 pip install .
-```
+
+```text
 
 ## Verification Results
 
@@ -31,13 +36,14 @@ pip install .
 
 **Result:** ✅ **NO KNOWN VULNERABILITIES FOUND**
 
-```
+```text
 No known vulnerabilities found
 
 Name        Skip Reason
 ----------- --------------------------------------------------------------------------
 roadmap-cli Dependency not found on PyPI and could not be audited: roadmap-cli (0.4.0)
-```
+
+```text
 
 ### Installed Packages
 
@@ -89,23 +95,32 @@ These packages were installed from the **system-wide Python** or a cached enviro
 **For Production Deployment:**
 
 ```bash
+
 # Option 1: Using pip
+
 pip install roadmap-cli
 
 # Option 2: Using Poetry (without dev extras)
+
 poetry install --no-dev
 
 # NOT for production:
+
 # poetry install          # installs dev dependencies too
+
 # pip install -e .        # development mode
-```
+
+```text
 
 **Verification Command:**
 
 ```bash
+
 # Verify no vulnerabilities in production
+
 PIPAPI_PYTHON_LOCATION=$(which python) pip-audit
-```
+
+```text
 
 ## Security Implications
 

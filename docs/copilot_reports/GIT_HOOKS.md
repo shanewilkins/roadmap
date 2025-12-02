@@ -17,15 +17,20 @@ Roadmap CLI provides comprehensive Git hooks integration for automatic issue tra
 ## Installation
 
 ```bash
+
 # Install all Git hooks
+
 roadmap git-hooks-install
 
 # Install specific hooks
+
 roadmap git-hooks-install --hooks pre-commit,post-commit
 
 # Uninstall hooks
+
 roadmap git-hooks-uninstall
-```
+
+```text
 
 ## Configuration
 

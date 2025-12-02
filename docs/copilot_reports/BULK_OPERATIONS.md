@@ -32,15 +32,19 @@ Powerful bulk operations system for large-scale data management, validation, and
 ## CLI Commands
 
 ```bash
+
 # Bulk operations
+
 roadmap bulk validate --comprehensive
 roadmap bulk health-report --output report.json
 roadmap bulk backup --destination ./backup
 
 # Data operations
+
 roadmap export issues --format xlsx
 roadmap export analytics --format json
-```
+
+```text
 
 ## Bulk Processing
 

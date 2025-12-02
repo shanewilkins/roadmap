@@ -7,22 +7,29 @@ This document consolidates all production configuration, security verification, 
 ### ✅ Pre-flight Check (2 minutes)
 
 ```bash
+
 # 1. Install production only (0 CVEs)
+
 pip install roadmap-cli
 
 # 2. Verify security
+
 pip-audit  # Should show: No known vulnerabilities found
 
 # 3. Test
+
 roadmap --version
 
 # 4. Configure
+
 cp .env.production .env
 vim .env
 
 # 5. Run
+
 roadmap progress
-```
+
+```text
 
 ## Production vs Development Installation
 
@@ -42,8 +49,10 @@ roadmap progress
 ```bash
 pip install roadmap-cli
 pip-audit  # Verify
+
 roadmap --help
-```
+
+```text
 
 **Why:** Simplest, requires no git/poetry, works everywhere.
 
@@ -52,7 +61,8 @@ roadmap --help
 ```bash
 poetry install --no-dev
 poetry run roadmap --help
-```
+
+```text
 
 **Why:** Reproducible builds, lock files ensure exact dependencies, CI/CD friendly.
 
@@ -61,7 +71,8 @@ poetry run roadmap --help
 ```bash
 docker build -t roadmap-cli:0.4.0 .
 docker run roadmap-cli:0.4.0 progress
-```
+
+```text
 
 **Why:** Consistent environment, easy scaling, works on any OS.
 
@@ -72,17 +83,21 @@ docker run roadmap-cli:0.4.0 progress
 Key production settings (see `.env.production` for complete list):
 
 ```bash
+
 # Required
+
 ROADMAP_ENV=production
 ROADMAP_LOG_LEVEL=INFO
 
 # Optional (defaults shown)
+
 ROADMAP_DEBUG=false
 ROADMAP_CACHE_ENABLED=true
 ROADMAP_CACHE_TTL=3600
 ROADMAP_VERIFY_SSL=true
 ROADMAP_CREDENTIAL_BACKEND=keyring
-```
+
+```text
 
 ### Secrets Management
 
@@ -113,18 +128,24 @@ ROADMAP_CREDENTIAL_BACKEND=keyring
 ### Verify Installation
 
 ```bash
+
 # Check if production
+
 pip list | wc -l  # Should be ~50
 
 # Verify no CVEs
+
 pip-audit  # Should return: No known vulnerabilities found
 
 # Check Python version
+
 python --version  # Should be 3.10+
 
 # Verify installed packages
+
 pip show roadmap-cli
-```
+
+```text
 
 ### Root Cause of CVEs (If Found in Dev)
 
@@ -141,7 +162,9 @@ If you see 18 CVEs in development installations, these are from:
 ### Systemd Service
 
 ```bash
+
 # /etc/systemd/system/roadmap.service
+
 [Unit]
 Description=Roadmap CLI
 After=network.target
@@ -155,12 +178,14 @@ Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
-```
+
+```text
 
 ```bash
 sudo systemctl enable roadmap
 sudo systemctl start roadmap
-```
+
+```text
 
 ### Kubernetes
 
@@ -182,7 +207,8 @@ spec:
         envFrom:
         - secretRef:
             name: roadmap-secrets
-```
+
+```text
 
 ### Docker Compose
 
@@ -195,7 +221,8 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-```
+
+```text
 
 ### GitHub Actions CI/CD
 
@@ -225,38 +252,54 @@ jobs:
         run: |
           docker build -t roadmap-cli:${{ github.ref_name }} .
           docker push roadmap-cli:${{ github.ref_name }}
-```
+
+```text
 
 ## Monitoring & Maintenance
 
 ### Health Checks
 
 ```bash
+
 # Daily verification
+
 0 2 * * * /opt/roadmap/venv/bin/pip-audit >> /var/log/roadmap-audit.log
-```
+
+```text
 
 ```bash
+
 # Service status
+
 systemctl status roadmap
-```
+
+```text
 
 ```bash
+
 # Log inspection
+
 journalctl -u roadmap -n 50 -f
-```
+
+```text
 
 ### Backup Strategy
 
 ```bash
+
 # Daily backup
+
 0 3 * * * tar -czf /backups/roadmap_$(date +\%Y\%m\%d).tar.gz /var/lib/roadmap
-```
+
+```text
 
 ```bash
+
 # Keep 30 days
+
 find /backups -name "roadmap_*.tar.gz" -mtime +30 -delete
-```
+
+```text
 
 ### Security Hardening
 
@@ -271,6 +314,7 @@ find /backups -name "roadmap_*.tar.gz" -mtime +30 -delete
 
    ```bash
    ufw allow from 10.0.0.0/8 to any port 8000  # Internal only
+
    ```
 
 3. **SELinux (if enabled):**

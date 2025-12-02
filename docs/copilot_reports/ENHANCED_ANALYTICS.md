@@ -32,18 +32,24 @@ Comprehensive analytics system providing detailed insights into team performance
 ## CLI Commands
 
 ```bash
+
 # Developer analytics
+
 roadmap analytics developer --assignee john
 
 # Team analytics
+
 roadmap analytics team --team backend
 
 # Quality metrics
+
 roadmap analytics quality --timeframe 30d
 
 # Velocity analysis
+
 roadmap analytics velocity --milestone v1.0
-```
+
+```text
 
 ## Core Analytics
 

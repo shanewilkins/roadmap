@@ -22,12 +22,16 @@ Complete reference for all Roadmap CLI commands with examples, options, and usag
 Initialize a new roadmap in the current directory.
 
 ```bash
+
 # Basic initialization
+
 roadmap init
 
 # Initialize with verbose output
+
 roadmap init --verbose
-```
+
+```text
 
 **Creates:**
 
@@ -38,7 +42,7 @@ roadmap init --verbose
 
 **Example Output:**
 
-```
+```text
 🗺️  Initializing new roadmap...
 ✅ Roadmap initialized successfully!
 
@@ -50,23 +54,28 @@ Created the following structure:
   └── config.yaml
 
 Try: roadmap issue create 'My first issue'
-```
+
+```text
 
 ### `roadmap status`
 
 Display current roadmap status and project overview.
 
 ```bash
+
 # Show status overview
+
 roadmap status
 
 # Detailed status with verbose output
+
 roadmap status --verbose
-```
+
+```text
 
 **Example Output:**
 
-```
+```text
 📊 Roadmap Status
 ─────────────────
 
@@ -75,7 +84,8 @@ Issues: 15 total (3 todo, 8 in-progress, 4 done)
 Milestones: 3 total (2 open, 1 closed)
 Last Sync: 2024-10-10 14:30:22
 GitHub: ✅ Connected (username/repository)
-```
+
+```text
 
 ## 🏗️ Project Management
 
@@ -84,10 +94,13 @@ GitHub: ✅ Connected (username/repository)
 Create a new project with comprehensive metadata and timeline tracking.
 
 ```bash
+
 # Basic project creation
+
 roadmap project create "My Project"
 
 # Full project with all options
+
 roadmap project create "Advanced Project" \
   --description "Complex project with milestones" \
   --owner "johnsmith" \
@@ -100,12 +113,14 @@ roadmap project create "Advanced Project" \
   --milestones "Launch"
 
 # Quick project with minimal options
+
 roadmap project create "Bug Fix Sprint" \
   --description "Critical bug fixes for Q1" \
   --owner "devteam" \
   --priority "critical" \
   --estimated-hours 40.0
-```
+
+```text
 
 **Options:**
 
@@ -126,7 +141,7 @@ roadmap project create "Bug Fix Sprint" \
 
 **Example Output:**
 
-```
+```text
 ✅ Created project:
    ID: a1b2c3d4
    Name: Advanced Project
@@ -134,28 +149,36 @@ roadmap project create "Bug Fix Sprint" \
    Owner: johnsmith
    Estimated: 120.0h
    File: .roadmap/projects/a1b2c3d4-advanced-project.md
-```
+
+```text
 
 ### `roadmap project overview`
 
 Generate comprehensive project-level analysis and reporting.
 
 ```bash
+
 # Rich terminal output (default)
+
 roadmap project overview
 
 # JSON format for automation
+
 roadmap project overview --format json
 
 # CSV export for spreadsheets
+
 roadmap project overview --format csv
 
 # Custom output directory
+
 roadmap project overview --output ./reports
 
 # Skip chart generation
+
 roadmap project overview --no-include-charts
-```
+
+```text
 
 **Options:**
 
@@ -179,10 +202,13 @@ roadmap project overview --no-include-charts
 Create a new issue with optional metadata.
 
 ```bash
+
 # Basic issue creation
+
 roadmap issue create "Implement user authentication"
 
 # Issue with full metadata
+
 roadmap issue create "Fix login validation bug" \
   --priority high \
   --status todo \
@@ -190,7 +216,8 @@ roadmap issue create "Fix login validation bug" \
   --assignee "developer1" \
   --labels bug,security,backend \
   --estimate 4.5
-```
+
+```text
 
 **Options:**
 
@@ -207,7 +234,9 @@ roadmap issue create "Fix login validation bug" \
 **Time Estimation Examples:**
 
 ```bash
+
 # Quick task (30 minutes)
+
 roadmap issue create "Update documentation" --estimate 0.5
 
 
@@ -227,19 +256,24 @@ Example:
 ```yaml
 defaults:
   branch_name_template: "feat/{id}/{slug}"
-```
+
+```text
 
 If the template is not set, roadmap falls back to `feature/{id}-{slug}`.
 
 # Standard task (4 hours)
+
 roadmap issue create "Implement login form" --estimate 4
 
 # Large feature (2 days = 16 hours)
+
 roadmap issue create "User dashboard redesign" --estimate 16
 
 # Sprint epic (5 days = 40 hours)
+
 roadmap issue create "Complete payment integration" --estimate 40
-```
+
+```text
 
 **Example with all options:**
 
@@ -250,53 +284,67 @@ roadmap issue create "Add email verification" \
   --assignee "security-team" \
   --labels email,verification,security \
   --estimate 6.5
-```
+
+```text
 
 ### `roadmap issue list`
 
 List issues with optional filtering.
 
 ```bash
+
 # List all issues
+
 roadmap issue list
 
 # Filter by status
+
 roadmap issue list --status todo
 roadmap issue list --status in-progress,review
 
 # Filter by priority
+
 roadmap issue list --priority high
 roadmap issue list --priority critical,high
 
 # Filter by milestone
+
 roadmap issue list --milestone "v1.0"
 
 # Filter by assignee
+
 roadmap issue list --assignee "developer1"
 
 # Show my issues
+
 roadmap issue list --my-issues
 
 # Combine filters
+
 roadmap issue list \
   --status todo,in-progress \
   --priority high \
   --milestone "v1.0"
 
 # Show only specific fields
+
 roadmap issue list --fields title,status,priority
-```
+
+```text
 
 **Assignee Time Aggregation:**
 
 When filtering by assignee (`--assignee` or `--my-issues`), the command displays additional time summaries:
 
 ```bash
-# Example assignee output with time aggregation
-roadmap issue list --assignee "backend-team"
-```
 
-```
+# Example assignee output with time aggregation
+
+roadmap issue list --assignee "backend-team"
+
+```text
+
+```text
 📋 3 assigned to backend-team issues
 
 ┌──────────┬─────────────────────┬──────────┬─────────────┬──────────┬───────────┐
@@ -313,11 +361,12 @@ roadmap issue list --assignee "backend-team"
    in-progress: 1 issues (16.0h)
    done: 1 issues (8.0h)
    review: 1 issues (4.0h)
-```
+
+```text
 
 **Output Format:**
 
-```
+```text
 📋 Issues (3 found)
 ┌─────────────────────────┬──────────┬──────────┬───────────┬──────────┐
 │ Title                   │ Status   │ Priority │ Milestone │ Estimate │
@@ -326,7 +375,8 @@ roadmap issue list --assignee "backend-team"
 │ Fix validation bug      │ review   │ critical │ v1.0      │ 2.5h     │
 │ Add email verification  │ todo     │ medium   │ v1.0      │ 8.0h     │
 └─────────────────────────┴──────────┴──────────┴───────────┴──────────┘
-```
+
+```text
 
 The output includes estimated time for each issue when available, displayed in a human-readable format (hours, minutes, or days as appropriate).
 
@@ -335,26 +385,32 @@ The output includes estimated time for each issue when available, displayed in a
 Update an existing issue's metadata.
 
 ```bash
+
 # Update issue status
+
 roadmap issue update abc123 --status in-progress
 
 # Update multiple fields
+
 roadmap issue update def456 \
   --status done \
   --priority low \
   --assignee "qa-team"
 
 # Update estimated time
+
 roadmap issue update ghi789 --estimate 8.5
 
 # Comprehensive update
+
 roadmap issue update abc123 \
   --status in-progress \
   --priority high \
   --assignee "dev-team" \
   --milestone "v1.0" \
   --estimate 12.0
-```
+
+```text
 
 **Updatable Fields:**
 
@@ -368,36 +424,48 @@ roadmap issue update abc123 \
 **Estimate Update Examples:**
 
 ```bash
+
 # Increase estimate after scope analysis
+
 roadmap issue update abc123 --estimate 16
 
 # Decrease estimate after simplification
+
 roadmap issue update def456 --estimate 2.5
 
 # Remove estimate (set to no estimate)
+
 roadmap issue update ghi789 --estimate 0
-```
+
+```text
 
 ### `roadmap issue start`
 
 Start work on an issue by recording the actual start date and optionally creating a Git branch.
 
 ```bash
+
 # Start work on an issue (records current time as start date)
+
 roadmap issue start abc123
 
 # Start with specific date
+
 roadmap issue start abc123 --date "2025-01-15 09:00"
 
 # Start and create a Git branch
+
 roadmap issue start abc123 --git-branch
 
 # Start with custom branch name
+
 roadmap issue start abc123 --git-branch --branch-name "feat/custom-auth"
 
 # Start with branch creation, even if working tree has changes
+
 roadmap issue start abc123 --git-branch --force
-```
+
+```text
 
 **Options:**
 
@@ -419,43 +487,60 @@ roadmap issue start abc123 --git-branch --force
 **Example Workflow:**
 
 ```bash
+
 # Create an issue
+
 roadmap issue create "Implement authentication" --estimate 8
 
 # Start working on it with automatic branch creation
+
 roadmap issue start abc123 --git-branch
 
 # Output:
+
 # 🚀 Started work on: Implement authentication
+
 #    Started: 2025-01-15 14:30
+
 #    Status: In Progress
+
 # 🌿 Created Git branch: feature/abc123-implement-authentication
+
 # ✅ Checked out branch: feature/abc123-implement-authentication
-```
+
+```text
 
 ### `roadmap issue done`
 
 Mark an issue as done (convenient alias for `roadmap issue update --status done`).
 
 ```bash
+
 # Mark issue as done
+
 roadmap issue done issue-abc123
 
 # Mark as done with reason
+
 roadmap issue done issue-abc123 --reason "Fixed in version 2.1"
-```
+
+```text
 
 ### `roadmap issue update` (Enhanced)
 
 Update issue fields including status with optional reason tracking.
 
 ```bash
+
 # Update status with reason
+
 roadmap issue update issue-abc123 --status done --reason "Feature complete"
 
 # Update multiple fields
+
 roadmap issue update issue-abc123 --status in-progress --priority high --assignee john
-```
+
+```text
 
 **New `--reason` Feature:**
 
@@ -469,9 +554,12 @@ roadmap issue update issue-abc123 --status in-progress --priority high --assigne
 Delete an issue permanently.
 
 ```bash
+
 # Delete an issue (requires confirmation)
+
 roadmap issue delete issue-abc123
-```
+
+```text
 
 **⚠️  WARNING:** This permanently deletes the issue. Consider using `roadmap issue done` or `roadmap issue update --status done` instead.
 
@@ -496,12 +584,16 @@ roadmap issue delete issue-abc123
 List all comments for a specific issue.
 
 ```bash
+
 # List comments for a local issue
+
 roadmap comment list issue-abc123
 
 # List comments for a GitHub issue number
+
 roadmap comment list 42
-```
+
+```text
 
 **Features:**
 
@@ -515,21 +607,26 @@ roadmap comment list 42
 Create a new comment on an issue.
 
 ```bash
+
 # Create comment on local issue
+
 roadmap comment create issue-abc123 "This looks good to me!"
 
 # Create comment with markdown formatting
+
 roadmap comment create 42 "**Status Update:** Fixed the authentication bug.
 Ready for testing in staging environment."
 
 # Multi-line comment
+
 roadmap comment create issue-abc123 "Great work on this feature!
 
 Here are some suggestions:
 - [ ] Add unit tests
 - [ ] Update documentation
 - [ ] Consider edge cases"
-```
+
+```text
 
 **Features:**
 
@@ -543,13 +640,17 @@ Here are some suggestions:
 Update an existing comment.
 
 ```bash
+
 # Edit a comment by its GitHub comment ID
+
 roadmap comment edit 1234567 "Updated comment with new information"
 
 # Edit with markdown formatting
+
 roadmap comment edit 1234567 "**Updated:** The issue has been resolved.
 Thanks to @developer for the quick fix!"
-```
+
+```text
 
 **Features:**
 
@@ -563,12 +664,16 @@ Thanks to @developer for the quick fix!"
 Delete a comment.
 
 ```bash
+
 # Delete comment with confirmation prompt
+
 roadmap comment delete 1234567
 
 # Delete without confirmation (use with caution)
+
 roadmap comment delete 1234567 --confirm
-```
+
+```text
 
 **Safety Features:**
 
@@ -591,15 +696,19 @@ roadmap comment delete 1234567 --confirm
 Create a new milestone.
 
 ```bash
+
 # Basic milestone
+
 roadmap milestone create "v1.0"
 
 # Milestone with full details
+
 roadmap milestone create "Security Audit" \
   --description "Complete security review and fixes" \
   --due-date "2024-12-31" \
   --status open
-```
+
+```text
 
 **Options:**
 
@@ -612,20 +721,25 @@ roadmap milestone create "Security Audit" \
 List milestones with optional filtering.
 
 ```bash
+
 # List all milestones
+
 roadmap milestone list
 
 # Filter by status
+
 roadmap milestone list --status open
 roadmap milestone list --status closed
 
 # Show progress information
+
 roadmap milestone list --with-progress
-```
+
+```text
 
 **Output Format:**
 
-```
+```text
 🎯 Milestones (2 found)
 ┌─────────────────┬──────────┬────────────┬──────────┬──────────┐
 │ Name            │ Status   │ Due Date   │ Progress │ Estimate │
@@ -633,7 +747,8 @@ roadmap milestone list --with-progress
 │ v1.0            │ open     │ 2024-12-31 │ 60%(6/10)│ 32.5h    │
 │ Security Audit  │ open     │ 2024-11-15 │ 25%(1/4) │ 16.0h    │
 └─────────────────┴──────────┴────────────┴──────────┴──────────┘
-```
+
+```text
 
 The milestone list includes total estimated time for all issues in each milestone, calculated from individual issue estimates.
 
@@ -642,28 +757,37 @@ The milestone list includes total estimated time for all issues in each mileston
 Update milestone details.
 
 ```bash
+
 # Update milestone status
+
 roadmap milestone update "v1.0" --status closed
 
 # Update due date
+
 roadmap milestone update "Security Audit" --due-date "2025-01-15"
 
 # Update description
+
 roadmap milestone update "v1.0" \
   --description "First stable release with core features"
-```
+
+```text
 
 ### `roadmap milestone delete`
 
 Delete a milestone.
 
 ```bash
+
 # Delete milestone (issues will become unassigned)
+
 roadmap milestone delete "Old milestone"
 
 # Delete with confirmation
+
 roadmap milestone delete "Important milestone" --confirm
-```
+
+```text
 
 **Behavior:**
 
@@ -676,9 +800,12 @@ roadmap milestone delete "Important milestone" --confirm
 Delete a milestone permanently and unassign all issues from it.
 
 ```bash
+
 # Delete a milestone (requires confirmation)
+
 roadmap milestone delete "Sprint 1"
-```
+
+```text
 
 **⚠️  WARNING:** This permanently deletes the milestone and unassigns all issues.
 
@@ -703,30 +830,37 @@ roadmap milestone delete "Sprint 1"
 Configure GitHub integration with secure credential storage.
 
 ```bash
+
 # Recommended: Secure credential manager storage
+
 roadmap sync setup \
   --token "your-github-token" \
   --repo "username/repository"
 
 # Repository-only setup (if token already configured)
+
 roadmap sync setup --repo "username/repository"
 
 # Environment variable setup (alternative)
+
 export GITHUB_TOKEN="your-github-token"
 roadmap sync setup --repo "username/repository"
 
 # Enterprise GitHub setup
+
 roadmap sync setup \
   --token "enterprise-token" \
   --repo "org/project" \
   --github-url "https://github.enterprise.com"
 
 # Insecure config file storage (NOT RECOMMENDED)
+
 roadmap sync setup \
   --token "token" \
   --repo "user/repo" \
   --insecure
-```
+
+```text
 
 **🔐 Credential Storage Options (Recommended Order):**
 
@@ -786,36 +920,44 @@ roadmap sync setup \
 Test GitHub connection and permissions.
 
 ```bash
+
 # Test current configuration
+
 roadmap sync test
 
 # Verbose test output
+
 roadmap sync test --verbose
-```
+
+```text
 
 **Example Output:**
 
-```
+```text
 🔍 Testing GitHub connection...
 ✅ Successfully connected to GitHub
 ✅ Repository access confirmed: username/repository
 ✅ Issue creation permissions verified
 ✅ Milestone access permissions verified
 🎉 GitHub integration is working correctly!
-```
+
+```text
 
 ### `roadmap sync status`
 
 Show GitHub sync configuration and status.
 
 ```bash
+
 # Show sync status
+
 roadmap sync status
-```
+
+```text
 
 **Example Output:**
 
-```
+```text
 🔄 GitHub Sync Status
 ─────────────────────
 
@@ -830,33 +972,42 @@ Local Milestones: 3
 GitHub Milestones: 4
 
 Sync needed: Yes (3 new GitHub issues)
-```
+
+```text
 
 ### `roadmap sync pull`
 
 Pull changes from GitHub to local roadmap.
 
 ```bash
+
 # Standard pull (all items)
+
 roadmap sync pull
 
 # Pull only issues
+
 roadmap sync pull --issues
 
 # Pull only milestones
+
 roadmap sync pull --milestones
 
 # High-performance pull (recommended for 50+ items)
+
 roadmap sync pull --high-performance
 
 # High-performance with custom settings
+
 roadmap sync pull --high-performance \
   --workers 16 \
   --batch-size 100
 
 # Pull issues only with high performance
+
 roadmap sync pull --issues --high-performance
-```
+
+```text
 
 **Performance Options:**
 
@@ -866,7 +1017,7 @@ roadmap sync pull --issues --high-performance
 
 **Standard Pull Output:**
 
-```
+```text
 🔄 Pulling from GitHub...
 📋 Syncing milestones...
    ✅ 3 milestones synced
@@ -874,11 +1025,12 @@ roadmap sync pull --issues --high-performance
    ✅ 15 issues synced
 
 ✅ Successfully synced 18 items from GitHub
-```
+
+```text
 
 **High-Performance Pull Output:**
 
-```
+```text
 🚀 Using high-performance sync mode...
 📋 High-performance milestone sync...
    Fetching milestones from GitHub...
@@ -898,25 +1050,32 @@ roadmap sync pull --issues --high-performance
    📞 API calls: 2
    💾 Disk writes: 106
    ✅ Success rate: 98.1%
-```
+
+```text
 
 ### `roadmap sync push`
 
 Push local changes to GitHub.
 
 ```bash
+
 # Standard push (all items)
+
 roadmap sync push
 
 # Push only issues
+
 roadmap sync push --issues
 
 # Push only milestones
+
 roadmap sync push --milestones
 
 # High-performance push
+
 roadmap sync push --high-performance
-```
+
+```text
 
 **Behavior:**
 
@@ -930,93 +1089,142 @@ roadmap sync push --high-performance
 Remove stored GitHub credentials.
 
 ```bash
+
 # Delete token
+
 roadmap sync delete-token
 
 # Delete with confirmation
+
 roadmap sync delete-token --confirm
-```
+
+```text
 
 ### 🔧 GitHub Sync Troubleshooting
 
 **Common Issues and Solutions:**
 
 **❌ "GitHub client not configured"**
+
 ```bash
+
 # Check current status
+
 roadmap sync status
 
 # Solution: Set up repository
+
 roadmap sync setup --repo "username/repository"
-```
+
+```text
 
 **❌ "No token configured"**
+
 ```bash
+
 # Check token sources
+
 roadmap sync status
 
 # Solution 1: Use credential manager (recommended)
+
 roadmap sync setup --token "your-github-token"
 
 # Solution 2: Use environment variable
+
 export GITHUB_TOKEN="your-github-token"
 roadmap sync test
 
 # Solution 3: Check existing credential storage
+
 roadmap sync status  # Shows which method is active
-```
+
+```text
 
 **❌ "Authentication failed" / 401 Unauthorized**
+
 ```bash
+
 # Test current token
+
 roadmap sync test
 
 # Solutions:
+
 # 1. Token expired - generate new token
+
 # 2. Wrong token scope - ensure 'public_repo' or 'repo' scope
+
 # 3. Token revoked - check GitHub settings
+
 # 4. Repository access - ensure token has access to specified repo
-```
+
+```text
 
 **❌ "Repository not found" / 404 Not Found**
+
 ```bash
+
 # Check repository configuration
+
 roadmap sync status
 
 # Solution: Verify repository name format
+
 roadmap sync setup --repo "correct-owner/correct-repo"
+
 # Example: roadmap sync setup --repo "shanewilkins/roadmap"
-```
+
+```text
 
 **❌ "Rate limit exceeded"**
+
 ```bash
+
 # GitHub API rate limits reached
+
 # Solutions:
+
 # 1. Wait for rate limit reset (typically 1 hour)
+
 # 2. Use high-performance mode with smaller batches
+
 roadmap sync pull --high-performance --batch-size 25
-```
+
+```text
 
 **❌ "SSL verification failed"**
+
 ```bash
+
 # For enterprise GitHub with custom certificates
+
 roadmap sync setup --github-url "https://github.enterprise.com"
 
 # Temporary workaround (NOT RECOMMENDED for production)
+
 roadmap sync setup --insecure
-```
+
+```text
 
 **💡 Diagnostic Commands:**
+
 ```bash
+
 # Full diagnostic check
+
 roadmap sync status    # Check configuration
+
 roadmap sync test      # Test connection
+
 roadmap status         # Check local roadmap health
 
 # Clear all credentials and reconfigure
+
 roadmap sync delete-token
 roadmap sync setup --token "new-token" --repo "owner/repo"
-```
+
+```text
 
 ## 🗂️ Bulk Operations
 
@@ -1025,22 +1233,28 @@ roadmap sync setup --token "new-token" --repo "owner/repo"
 Validate YAML files in a directory.
 
 ```bash
+
 # Validate current roadmap
+
 roadmap bulk validate .roadmap/
 
 # Validate specific directory
+
 roadmap bulk validate /path/to/roadmaps/
 
 # Validate with detailed output
+
 roadmap bulk validate .roadmap/ --verbose
 
 # Validate and show only errors
+
 roadmap bulk validate .roadmap/ --errors-only
-```
+
+```text
 
 **Example Output:**
 
-```
+```text
 🔍 Validating roadmap files...
 
 ✅ .roadmap/issues/auth-feature.yaml - Valid
@@ -1056,26 +1270,32 @@ Validation Summary:
 
 Errors found:
 ├── broken-issue.yaml: Invalid YAML syntax at line 5
-```
+
+```text
 
 ### `roadmap bulk health-report`
 
 Generate comprehensive health report for roadmap directory.
 
 ```bash
+
 # Generate health report
+
 roadmap bulk health-report .roadmap/
 
 # Save report to file
+
 roadmap bulk health-report .roadmap/ > health-report.txt
 
 # Detailed health report
+
 roadmap bulk health-report .roadmap/ --detailed
-```
+
+```text
 
 **Example Output:**
 
-```
+```text
 📊 Roadmap Health Report
 Generated: 2024-10-10 15:45:30
 
@@ -1104,25 +1324,32 @@ Generated: 2024-10-10 15:45:30
 ├── Fix YAML syntax in auth-feature.yaml
 ├── Update milestone "v0.9" due date
 └── Assign owners to unassigned issues
-```
+
+```text
 
 ### `roadmap bulk backup`
 
 Create backups of roadmap directories.
 
 ```bash
+
 # Backup current roadmap
+
 roadmap bulk backup .roadmap/
 
 # Backup to specific location
+
 roadmap bulk backup .roadmap/ --destination ./backups/
 
 # Backup with custom name
+
 roadmap bulk backup .roadmap/ --name "pre-migration-backup"
 
 # Backup multiple directories
+
 roadmap bulk backup /projects/roadmap1/ /projects/roadmap2/
-```
+
+```text
 
 **Features:**
 
@@ -1136,13 +1363,16 @@ roadmap bulk backup /projects/roadmap1/ /projects/roadmap2/
 Batch update fields across multiple files.
 
 ```bash
+
 # Update priority for all issues in milestone
+
 roadmap bulk update-field .roadmap/ \
   --field priority \
   --condition "milestone=v1.0" \
   --new-value high
 
 # Update assignee for specific status
+
 roadmap bulk update-field .roadmap/ \
   --field assignee \
   --condition "status=todo" \
@@ -1150,17 +1380,20 @@ roadmap bulk update-field .roadmap/ \
   --new-value "new-team-lead"
 
 # Add labels to issues
+
 roadmap bulk update-field .roadmap/ \
   --field labels \
   --condition "priority=critical" \
   --new-value "urgent,hotfix"
 
 # Update milestone due dates
+
 roadmap bulk update-field .roadmap/ \
   --field due-date \
   --condition "name=v1.0" \
   --new-value "2024-12-31"
-```
+
+```text
 
 **Options:**
 
@@ -1175,50 +1408,67 @@ roadmap bulk update-field .roadmap/ \
 ### Command Chaining
 
 ```bash
+
 # Complete workflow automation
+
 roadmap sync pull --high-performance && \
 roadmap bulk validate .roadmap/ && \
 roadmap bulk health-report .roadmap/ && \
 roadmap sync push --issues
-```
+
+```text
 
 ### Configuration Files
 
 ```bash
+
 # Use custom configuration
+
 roadmap --config /path/to/config.yaml issue list
 
 # Set environment variables
+
 export ROADMAP_GITHUB_TOKEN="your-token"
 export ROADMAP_GITHUB_REPO="user/repo"
 roadmap sync pull
-```
+
+```text
 
 ### Output Formats
 
 ```bash
+
 # JSON output for scripting
+
 roadmap issue list --format json
 
 # CSV export
+
 roadmap issue list --format csv > issues.csv
 
 # Quiet mode (minimal output)
+
 roadmap sync pull --quiet
-```
+
+```text
 
 ### Error Handling
 
 ```bash
+
 # Continue on errors
+
 roadmap bulk validate .roadmap/ --continue-on-error
 
 # Verbose error reporting
+
 roadmap sync pull --verbose
 
 # Debug mode
+
 roadmap --debug issue create "Debug test"
-```
+
+```text
 
 ## � Team Commands
 
@@ -1229,13 +1479,16 @@ Team collaboration commands help manage workload distribution, track assignments
 Display workload summary for all team members, including estimated time calculations.
 
 ```bash
+
 # Show team workload summary
+
 roadmap team workload
-```
+
+```text
 
 **Output Format:**
 
-```
+```text
 📊 Team Workload Summary
 ┌─────────────────┬───────────┬─────────────┬──────────┬─────────────┐
 │ Assignee        │ Total     │ In Progress │ Estimate │ Avg. Hours  │
@@ -1244,7 +1497,8 @@ roadmap team workload
 │ qa-team         │ 5         │ 2           │ 18.0h    │ 3.6h        │
 │ security-team   │ 3         │ 1           │ 24.0h    │ 8.0h        │
 └─────────────────┴───────────┴─────────────┴──────────┴─────────────┘
-```
+
+```text
 
 The workload command shows:
 - **Total**: Total number of assigned issues
@@ -1257,60 +1511,78 @@ The workload command shows:
 List all team members (assignees) found in the roadmap.
 
 ```bash
+
 # List all team members
+
 roadmap team members
-```
+
+```text
 
 ### `roadmap team assignments`
 
 Show detailed assignment breakdown by team member.
 
 ```bash
+
 # Show detailed assignments
+
 roadmap team assignments
-```
+
+```text
 
 ## �💡 Best Practices
 
 ### Naming Conventions
 
 ```bash
+
 # Use descriptive, actionable issue titles
+
 roadmap issue create "Implement OAuth2 authentication for user login"
 roadmap issue create "Fix memory leak in data processing pipeline"
 
 # Use clear milestone names
+
 roadmap milestone create "v1.0-beta" --description "Beta release candidate"
 roadmap milestone create "Security-Audit-Complete" --due-date "2024-12-01"
-```
+
+```text
 
 ### Workflow Optimization
 
 ```bash
+
 # Daily sync routine
+
 roadmap sync pull --high-performance
 roadmap issue list --status todo,in-progress
 roadmap sync push --issues
 
 # Weekly maintenance
+
 roadmap bulk validate .roadmap/
 roadmap bulk health-report .roadmap/
 roadmap bulk backup .roadmap/
-```
+
+```text
 
 ### Team Coordination
 
 ```bash
+
 # Use consistent labels across team
+
 --labels "backend,api,security"
 --labels "frontend,ui,accessibility"
 --labels "devops,infrastructure,monitoring"
 
 # Standardize assignee naming
+
 --assignee "team-frontend"
 --assignee "team-backend"
 --assignee "team-devops"
-```
+
+```text
 
 ---
 

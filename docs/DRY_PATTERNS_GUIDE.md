@@ -36,11 +36,14 @@ All directory creation operations now use `file_utils.ensure_directory_exists()`
 from roadmap.shared.file_utils import ensure_directory_exists
 
 # OLD PATTERN (24 instances replaced):
+
 path.mkdir(parents=True, exist_ok=True)
 
 # NEW PATTERN:
+
 ensure_directory_exists(path)
-```
+
+```text
 
 ### Location
 
@@ -56,7 +59,8 @@ def ensure_directory_exists(
     exist_ok: bool = True,
 ) -> Path:
     """Safely create directory with proper error handling and logging."""
-```
+
+```text
 
 ### Benefits
 
@@ -101,25 +105,33 @@ These are not critical for v0.5.0 but could be cleaned up in v0.6.0.
 In `roadmap/shared/file_utils.py`:
 
 ```python
+
 # Safe file writing with atomic operations
+
 safe_write_file(file_path, content, backup=True)
 
 # Safe file reading with error handling
+
 safe_read_file(file_path, encoding='utf-8')
 
 # File existence checks
+
 file_exists_check(file_path)
 
 # Get file size safely
+
 get_file_size(file_path)
 
 # Create backup of file
+
 backup_file(file_path, backup_dir=None)
 
 # Context manager for secure operations
+
 with SecureFileManager(file_path, mode='w') as f:
     f.write(content)
-```
+
+```text
 
 ### When to Use
 
@@ -179,9 +191,11 @@ class FieldValidator:
     def validate(self, value: Any) -> ValidationResult
 
 # Entity validators
+
 validate_issue_id(issue_id: str) -> ValidationResult
 validate_milestone_id(milestone_id: str) -> ValidationResult
-```
+
+```text
 
 ### When Validators Should Be Consolidated
 
@@ -213,7 +227,8 @@ try:
 except SpecificException as e:
     logger.error(...)
     raise RoadmapError(...) from e  # Chain exception
-```
+
+```text
 
 ### Error Hierarchy
 
@@ -229,7 +244,8 @@ RoadmapError (base)
 ├── GitHubAPIError
 ├── GitOperationError
 └── ...
-```
+
+```text
 
 ### Key Guidelines
 
@@ -241,7 +257,9 @@ RoadmapError (base)
 ### Examples
 
 ```python
+
 # ✅ GOOD: Specific exception, chained, logged
+
 try:
     path.mkdir(parents=True, exist_ok=True)
 except OSError as e:
@@ -249,13 +267,16 @@ except OSError as e:
     raise DirectoryCreationError(...) from e
 
 # ❌ BAD: Generic exception, no chaining
+
 except Exception as e:
     raise FileOperationError(...)
 
 # ❌ BAD: No logging
+
 except OSError as e:
     raise DirectoryCreationError(...) from e
-```
+
+```text
 
 ---
 
@@ -269,7 +290,8 @@ Each CLI command defines similar options independently:
 @click.command()
 @click.option('--format', type=click.Choice(['table', 'json']), ...)
 @click.option('--verbose', is_flag=True, ...)
-```
+
+```text
 
 ### Potential Consolidation (v0.6.0)
 
@@ -281,7 +303,8 @@ from roadmap.cli.common_options import format_option, verbose_option
 @click.command()
 @format_option()
 @verbose_option()
-```
+
+```text
 
 ### Decision: SKIP for v0.5.0
 
@@ -300,30 +323,37 @@ Reasons:
 After consolidation changes:
 
 ```bash
+
 # Run full test suite
+
 poetry run pytest
 
 # Check for unused imports
+
 poetry run ruff check --select F401 roadmap/
 
 # Type checking
+
 poetry run pyright roadmap/
-```
+
+```text
 
 ### Current Status (Post-Phase 4)
 
-```
+```text
 ✅ 1219 tests passing
 ✅ 128 tests skipped (as expected)
 ✅ 0 Pyright type errors
 ✅ All linting passes
-```
+
+```text
 
 ---
 
 ## Implementation Checklist
 
 ### Phase 1: File Operations ✅ DONE
+
 - [x] Create `file_utils.ensure_directory_exists()`
 - [x] Replace 24 mkdir patterns in production code
 - [x] Add imports to updated files
@@ -331,18 +361,21 @@ poetry run pyright roadmap/
 - [x] Verify no regressions
 
 ### Phase 2: Validation Consolidation
+
 - [ ] **DECISION: SKIP** - Domain-specific validators working as-is
 - [ ] Instead, document pattern (this guide)
 - [ ] Keep validation.py for field-level validation
 - [ ] Keep domain validators in their classes
 
 ### Phase 3: Documentation ✅ IN PROGRESS
+
 - [x] Create this guide
 - [x] Document consolidated patterns
 - [x] Document why some things stay separate
 - [ ] Add examples for future contributors
 
 ### Phase 4: CLI Utilities
+
 - [ ] **DEFER TO v0.6.0** - Not needed for v0.5.0
 - [ ] Would require extensive testing
 - [ ] Consider after v0.5.0 release

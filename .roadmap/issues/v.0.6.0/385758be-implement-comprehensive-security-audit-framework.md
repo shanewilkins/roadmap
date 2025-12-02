@@ -45,6 +45,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 ## Acceptance Criteria
 
 ### 1. Credential Security Audit
+
 - [ ] Audit all credential storage mechanisms (tokens, API keys)
 - [ ] Verify credentials are never logged or exposed in error messages
 - [ ] Implement secure credential storage using system keyring/keychain
@@ -52,6 +53,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 - [ ] Verify no credentials are committed to git or stored in plaintext
 
 ### 2. File System Security
+
 - [ ] Audit all file operations for proper permission checks (0o644 files, 0o755 dirs)
 - [ ] Verify path traversal protection (no `../` attacks)
 - [ ] Check symlink handling (resolve safely, prevent exploits)
@@ -59,6 +61,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 - [ ] Ensure file locking prevents race conditions
 
 ### 3. Input Validation & Sanitization
+
 - [ ] Audit all CLI inputs for validation (issue IDs, milestone names, paths)
 - [ ] Verify YAML/JSON parsing safely handles malicious input
 - [ ] Check for command injection vulnerabilities in git operations
@@ -66,6 +69,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 - [ ] Audit user-provided file paths for directory traversal
 
 ### 4. Dependency Security
+
 - [ ] Run `safety check` or `pip-audit` on all dependencies
 - [ ] Document all dependencies and their security implications
 - [ ] Establish process for monitoring CVEs in dependencies
@@ -73,6 +77,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 - [ ] Pin dependency versions to prevent supply chain attacks
 
 ### 5. Git Integration Security
+
 - [ ] Audit git hook installation for injection vulnerabilities
 - [ ] Verify git command construction prevents command injection
 - [ ] Check git branch/commit parsing for malicious input
@@ -80,6 +85,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 - [ ] Ensure git operations don't expose sensitive data
 
 ### 6. Data Privacy & Logging
+
 - [ ] Audit logging to ensure no PII or credentials are logged
 - [ ] Verify error messages don't expose sensitive paths or tokens
 - [ ] Implement log redaction for sensitive data (already done for tokens/passwords)
@@ -87,6 +93,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 - [ ] Add privacy policy for GitHub integration data
 
 ### 7. Documentation & Process
+
 - [ ] Create SECURITY.md with vulnerability reporting process
 - [ ] Document security best practices for contributors
 - [ ] Establish security release process for patches
@@ -94,6 +101,7 @@ High priority due to CLI tool handling sensitive data (GitHub tokens, user ident
 - [ ] Create security checklist for PR reviews
 
 ### 8. Penetration Testing
+
 - [ ] Conduct manual security testing with common attack vectors
 - [ ] Test with malicious YAML frontmatter
 - [ ] Test with symlink attacks

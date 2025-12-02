@@ -45,16 +45,19 @@ The current backup system provides:
 ## Problems to Address
 
 ### 1. **Backup Accumulation**
+
 - No cleanup of old/stale backups leads to `.roadmap/backups/` growth
 - Test-generated invalid issue backups clutter the directory
 - No retention policies or size limits
 
 ### 2. **Limited User Control**
+
 - No manual backup creation on-demand
 - No interactive backup browsing/selection interface
 - No way to exclude certain operations from auto-backup
 
 ### 3. **Missing Management Features**
+
 - No backup metadata (what triggered the backup, operation context)
 - No compression for space efficiency
 - No backup verification or integrity checks
@@ -62,6 +65,7 @@ The current backup system provides:
 ## Requirements
 
 ### Backup Management Commands
+
 - `roadmap backup create [path]` - Manual backup creation
 - `roadmap backup list [--filter-by-date] [--filter-by-type]` - Browse backups
 - `roadmap backup restore <backup-id> [--preview]` - Interactive restoration
@@ -69,12 +73,14 @@ The current backup system provides:
 - `roadmap backup status` - Show backup directory health and statistics
 
 ### Cleanup Policies
+
 - **Retention policies**: Keep last N backups per file
 - **Age-based cleanup**: Remove backups older than X days
 - **Size limits**: Compress or remove when directory exceeds threshold
 - **Test artifact cleanup**: Remove test-generated invalid backups
 
 ### Enhanced Features
+
 - **Backup compression**: Optional gzip compression for older backups
 - **Backup verification**: Validate backup integrity and restorability
 - **Operation context**: Track what operation triggered each backup
@@ -106,6 +112,7 @@ The current backup system provides:
 - Create backup index for faster listing and searching
 
 ## Configuration Example
+
 ```yaml
 backup:
   retention:
@@ -117,4 +124,5 @@ backup:
   cleanup:
     auto_cleanup: true
     cleanup_test_artifacts: true
-```
+
+```text

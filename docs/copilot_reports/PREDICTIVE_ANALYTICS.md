@@ -32,15 +32,20 @@ Advanced predictive analytics engine with machine learning algorithms for intell
 ## Quick Start
 
 ```bash
+
 # Generate predictive report
+
 roadmap predictive-report
 
 # Estimate issue completion
+
 roadmap estimate-issue abc12345
 
 # Risk assessment
+
 roadmap risk-assessment --project myproject
-```
+
+```text
 
 ## Core Classes
 

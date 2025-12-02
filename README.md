@@ -50,11 +50,12 @@ An enterprise-grade project management command line tool for implementing **proj
 
 Roadmap implements project-management-as-code through a three-tier hierarchy:
 
-```
+```text
 📋 ROADMAP LEVEL    → Strategic planning & stakeholder reporting
   ├── 🎯 MILESTONE LEVEL → Sprint planning & feature grouping
       └── 🐛 ISSUE LEVEL     → Task execution & developer workflow
-```
+
+```text
 
 | Level | Purpose | Users | Benefits |
 |-------|---------|-------|----------|
@@ -133,131 +134,176 @@ This architecture enables seamless communication between technical teams and bus
 ### Installation
 
 ```bash
+
 # Install from PyPI (recommended)
+
 pip install roadmap-cli
 
 # Verify installation
+
 roadmap --version
-```
+
+```text
 
 ### 30-Second Demo
 
 ```bash
+
 # 1. Initialize your first roadmap
+
 roadmap init
 
 # 2. Create an issue
+
 roadmap issue create "Implement user authentication" \
   --priority high \
   --status todo \
   --assignee john-doe
 
 # 3. Create a milestone
+
 roadmap milestone create "v1.0 Release" \
   --due-date 2024-12-31 \
   --description "First major release"
 
 # 4. View your roadmap
+
 roadmap issue list
 roadmap dashboard  # Interactive analytics
-```
+
+```text
 
 ### 🎯 Try the Demo Project (Recommended)
 
 Want to see Roadmap CLI in action immediately? We've included a comprehensive demo project with 1,346 realistic issues:
 
 ```bash
+
 # Navigate to the demo project
+
 cd demo-project
 
 # Explore the complete project
+
 roadmap issue list                              # Browse issues
+
 roadmap milestone list                          # View milestones
+
 roadmap dashboard                              # Interactive charts
+
 roadmap export csv                             # Data export
 
 # Run feature demonstrations
+
 python demo_scripts/demos/project_analytics_demo.py
 python demo_scripts/demos/visualization_demo.py
-```
+
+```text
 
 The demo showcases "CloudSync Enterprise Platform" development with 5 milestones, 16 team members, and realistic project data. Perfect for learning all features before creating your own project.
 
 ### GitHub Integration
 
 ```bash
+
 # 1. Setup GitHub integration
+
 roadmap sync setup \
   --token "your-github-token" \
   --repo "username/repository"
 
 # 2. Test connection
+
 roadmap sync test
 
 # 3. Pull existing issues from GitHub (high-performance)
+
 roadmap sync pull --high-performance
 
 # 4. Create local issues and push to GitHub
+
 roadmap issue create "New feature request"
 roadmap sync push --issues
 
 # 5. Sync everything efficiently
+
 roadmap sync pull --high-performance --workers 12 --batch-size 25
-```
+
+```text
 
 ## 💼 Common Workflows
 
 ### Solo Developer
 
 ```bash
+
 # Setup once
+
 roadmap init
 roadmap sync setup --token "token" --repo "user/project"
 
 # Daily workflow
+
 roadmap issue create "Fix login bug" --priority high
 roadmap sync push --issues
 roadmap issue update "Fix login bug" --status done
-```
+
+```text
 
 ### Team Development
 
 ```bash
+
 # Team leader setup
+
 roadmap sync pull --high-performance  # Import existing work
+
 roadmap bulk validate .roadmap/        # Validate team changes
+
 roadmap sync push --issues             # Share with team
-```
+
+```text
 
 ### Enterprise Project Management
 
 ```bash
+
 # Large-scale operations
+
 roadmap sync pull --high-performance --workers 16 --batch-size 100
 roadmap bulk health-report .roadmap/   # Project health check
+
 roadmap export csv --analytics         # Executive reporting
-```
+
+```text
 
 ## 🎬 Interactive Demos
 
 Explore features with ready-to-run demonstration scripts in the `demos/` directory:
 
 ```bash
+
 # Comment management features
+
 python demos/comment_demo.py
 
 # Blocked status workflow
+
 python demos/blocked_status_demo.py
 
 # Enhanced delete safety
+
 python demos/delete_safety_demo.py
 
 # Advanced list filtering
+
 python demos/enhanced_list_demo.py
 
 # Performance optimization
+
 python demos/performance_demo.py
-```
+
+```text
 
 Each demo showcases specific features with examples, benefits, and usage patterns. Perfect for learning new features or demonstrating capabilities to team members.
 
@@ -268,15 +314,20 @@ Each demo showcases specific features with examples, benefits, and usage pattern
 Roadmap CLI is production-ready with **zero known CVEs** in production installations:
 
 ```bash
+
 # Install production only (recommended)
+
 pip install roadmap-cli
 
 # Verify security
+
 pip-audit  # Shows: No known vulnerabilities found
 
 # Start using
+
 roadmap --help
-```
+
+```text
 
 ### Installation Methods
 
@@ -322,17 +373,23 @@ See [Production Deployment](#-production-deployment) for quick start, or [📚 D
 ### Project Initialization
 
 ```bash
+
 # Initialize new roadmap
+
 roadmap init
 
 # Check initialization status
+
 roadmap status
-```
+
+```text
 
 ### Issue Management
 
 ```bash
+
 # Create issues
+
 roadmap issue create "Issue title"
 roadmap issue create "Complex issue" \
   --priority high \
@@ -342,26 +399,33 @@ roadmap issue create "Complex issue" \
   --labels bug,frontend
 
 # List and search issues
+
 roadmap issue list
 roadmap issue list --status todo --priority high
 roadmap issue list --milestone "v1.0"
 roadmap issue list --overdue  # Show only overdue issues
 
 # View detailed issue information
+
 roadmap issue view <issue-id>  # Displays full issue details with rich formatting
 
 # Update issues
+
 roadmap issue update "Issue title" --status done
 roadmap issue update "Issue title" --priority low --assignee "new-dev"
 
 # Delete issues
+
 roadmap issue delete "Issue title"
-```
+
+```text
 
 ### Milestone Management
 
 ```bash
+
 # Create milestones
+
 roadmap milestone create "v1.0" --description "First release"
 roadmap milestone create "v2.0" \
   --description "Major update" \
@@ -369,80 +433,104 @@ roadmap milestone create "v2.0" \
   --status open
 
 # List milestones
+
 roadmap milestone list
 roadmap milestone list --status open
 roadmap milestone list --overdue  # Show only overdue milestones
 
 # View detailed milestone information
+
 roadmap milestone view "v1.0"  # Displays progress, issues, goals
 
 # Update milestones
+
 roadmap milestone update "v1.0" --status closed
 roadmap milestone update "v2.0" --due-date "2025-01-15"
 
 # Delete milestones
+
 roadmap milestone delete "v1.0"
-```
+
+```text
 
 ### Project Management
 
 ```bash
+
 # List projects
+
 roadmap project list
 roadmap project list --overdue  # Show only overdue projects
 
 # View detailed project information
+
 roadmap project view <project-id>  # Displays milestones, effort tracking
-```
+
+```text
 
 ### Daily Workflow
 
 ```bash
+
 # Get your daily summary
+
 roadmap today  # Shows in-progress, overdue, blocked, upcoming, and completed tasks
-```
+
+```text
 
 ### GitHub Synchronization
 
 ```bash
+
 # Setup and configuration
+
 roadmap sync setup --token "token" --repo "user/repo"
 roadmap sync test
 roadmap sync status
 roadmap sync delete-token
 
 # Standard sync
+
 roadmap sync pull --issues --milestones
 roadmap sync push --issues --milestones
 
 # High-performance sync (recommended for 50+ items)
+
 roadmap sync pull --high-performance
 roadmap sync pull --high-performance --workers 16 --batch-size 100
 roadmap sync push --high-performance
 
 # Selective sync
+
 roadmap sync pull --issues --high-performance
 roadmap sync pull --milestones
-```
+
+```text
 
 ### Bulk Operations
 
 ```bash
+
 # Validate entire directory
+
 roadmap bulk validate /path/to/roadmaps
 
 # Generate health report
+
 roadmap bulk health-report /path/to/roadmaps
 
 # Backup directory
+
 roadmap bulk backup /path/to/roadmaps
 
 # Batch field updates
+
 roadmap bulk update-field /path/to/roadmaps \
   --field priority \
   --old-value medium \
   --new-value high
-```
+
+```text
 
 ## 🏗️ Architecture & Features
 
@@ -486,7 +574,7 @@ roadmap bulk update-field /path/to/roadmaps \
 
 Roadmap v1.0 implements a **clean, maintainable architecture** organized into five layers:
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │    🖥️ Presentation Layer (CLI)         │  ← User commands and CLI interface
 ├─────────────────────────────────────────┤
@@ -498,7 +586,8 @@ Roadmap v1.0 implements a **clean, maintainable architecture** organized into fi
 ├─────────────────────────────────────────┤
 │    🔧 Shared Layer (Utilities)         │  ← Common utilities & validation
 └─────────────────────────────────────────┘
-```
+
+```text
 
 **Key Benefits:**
 - ✅ **Testability**: Each layer independently testable with 87% coverage
@@ -516,82 +605,141 @@ The roadmap CLI is organized using a **clean, layered architecture** for maintai
 ```text
 roadmap/
 ├── roadmap/                        # Main package
+
 │   ├── domain/                     # 🎯 Domain Layer - Pure business logic
+
 │   │   ├── issue.py                # Issue model, Priority, Status enums
+
 │   │   ├── milestone.py            # Milestone model, MilestoneStatus enum
+
 │   │   └── project.py              # Project model, ProjectStatus enum
+
 │   │
 │   ├── infrastructure/             # 🔌 Infrastructure Layer - External integrations
+
 │   │   ├── storage.py              # Database/YAML persistence
+
 │   │   ├── github.py               # GitHub API client
+
 │   │   ├── git.py                  # Git operations & hooks
+
 │   │   └── __init__.py
 │   │
 │   ├── application/                # ⚙️ Application Layer - Use cases & services
+
 │   │   ├── services/
 │   │   │   ├── issue_service.py    # Issue operations
+
 │   │   │   ├── milestone_service.py # Milestone operations
+
 │   │   │   └── project_service.py  # Project operations
+
 │   │   ├── visualization/          # Visualization & rendering
+
 │   │   │   ├── timeline.py
 │   │   │   ├── progress.py
 │   │   │   ├── burndown.py
 │   │   │   └── renderers/
 │   │   ├── core.py                 # RoadmapCore orchestrator
+
 │   │   └── __init__.py
 │   │
 │   ├── presentation/               # 🖥️ Presentation Layer - CLI interface
+
 │   │   └── cli/
 │   │       ├── issues/             # Issue commands (create, list, update, close)
+
 │   │       ├── milestones/         # Milestone commands
+
 │   │       ├── projects/           # Project commands
+
 │   │       ├── progress/           # Progress display
+
 │   │       ├── data/               # Data export
+
 │   │       ├── git/                # Git hooks
+
 │   │       ├── comment.py          # Comment command
+
 │   │       ├── utils.py            # CLI utilities
+
 │   │       └── core.py             # Main CLI entry point
+
 │   │
 │   ├── shared/                     # 🔧 Shared Layer - Common utilities
+
 │   │   ├── errors.py               # Exception definitions
+
 │   │   ├── constants.py            # App enums and config defaults
+
 │   │   ├── formatters.py           # Output formatting utilities
+
 │   │   ├── validation.py           # Data validators
+
 │   │   ├── logging.py              # Logging configuration
+
 │   │   ├── progress.py             # Progress calculation engine
+
 │   │   ├── datetime_parser.py      # DateTime parsing utilities
+
 │   │   ├── timezone_utils.py       # Timezone handling
+
 │   │   └── __init__.py             # Shared layer exports
+
 │   │
 │   ├── cli.py                      # Legacy CLI wrapper (backward compat)
+
 │   ├── core.py                     # Legacy core (backward compat - deprecated)
+
 │   ├── models.py                   # Legacy models (backward compat - deprecated)
+
 │   ├── __init__.py                 # Package initialization
+
 │   └── ...other utilities...       # Credentials, settings, version, etc.
+
 │
 ├── tests/                          # 🧪 Test suite (87% coverage)
+
 │   ├── unit/                       # Isolated component tests
+
 │   │   ├── domain/                 # Domain model tests (3 files)
+
 │   │   ├── application/            # Service/core tests (9 files)
+
 │   │   ├── infrastructure/         # Storage/git/github tests (6 files)
+
 │   │   └── shared/                 # Utility tests (4 files)
+
 │   ├── integration/                # Integration/workflow tests (12 files)
+
 │   ├── fixtures/                   # Shared test fixtures
+
 │   ├── conftest.py                 # Pytest configuration
+
 │   ├── test_data_factory.py        # Test data utilities
+
 │   └── test_utils.py               # ANSI stripping and utilities
+
 │
 ├── docs/                           # 📚 Documentation
+
 │   ├── ARCHITECTURE.md             # Detailed architecture guide
+
 │   ├── USER_WORKFLOWS.md           # User workflow documentation
+
 │   └── ...other docs...
 │
 ├── pyproject.toml                  # Poetry configuration
+
 ├── pytest.ini                       # Pytest configuration
+
 ├── pyrightconfig.json              # Type checking configuration
+
 ├── REFACTORING_IMPLEMENTATION_PLAN.md # Architecture refactoring plan
+
 └── README.md                       # This documentation
-```
+
+```text
 
 ### Layer Responsibilities
 
@@ -608,111 +756,147 @@ roadmap/
 ### Workflow 1: Solo Developer
 
 ```bash
+
 # Setup
+
 roadmap init
 roadmap sync setup --token "token" --repo "user/project"
 
 # Daily workflow
+
 roadmap issue create "Fix login bug" --priority high
 roadmap milestone create "v1.1" --due-date "2024-11-15"
 roadmap sync push --issues --milestones
 
 # Project updates
+
 roadmap issue update "Fix login bug" --status done
 roadmap sync pull --high-performance  # Get team updates
-```
+
+```text
 
 ### Workflow 2: Team Development
 
 ```bash
+
 # Team leader setup
+
 roadmap init
 roadmap sync setup --token "team-token" --repo "org/project"
 roadmap sync pull --high-performance  # Import existing issues
 
 # Daily team sync
+
 roadmap sync pull --high-performance  # Get latest from GitHub
+
 roadmap issue create "Team standup notes"
 roadmap bulk validate .roadmap/       # Validate local changes
+
 roadmap sync push --issues            # Share with team
-```
+
+```text
 
 ### Workflow 3: Large-Scale Project
 
 ```bash
+
 # Initial import from active repository
+
 roadmap init
 roadmap sync setup --token "token" --repo "large-org/enterprise-app"
 roadmap sync pull --high-performance --workers 16 --batch-size 100
 
 # Bulk operations for project management
+
 roadmap bulk health-report .roadmap/
 roadmap bulk update-field .roadmap/ --field priority --old-value medium --new-value high
 roadmap bulk backup .roadmap/
 
 # Performance monitoring
+
 roadmap sync pull --high-performance  # Monitor performance metrics
-```
+
+```text
 
 ## 🛠️ Advanced Configuration
 
 ### Performance Tuning
 
 ```bash
+
 # Optimize for your system
+
 roadmap sync pull --high-performance \
   --workers 16 \           # CPU cores × 2
+
   --batch-size 100         # Larger batches for more items
 
 # Monitor performance
+
 roadmap sync pull --high-performance  # Shows performance report
-```
+
+```text
 
 ### Advanced Bulk Operations
 
 ```bash
+
 # Project health monitoring
+
 roadmap bulk health-report /projects/roadmaps/
 
 # Backup before major changes
+
 roadmap bulk backup /projects/roadmaps/
 
 # Mass updates
+
 roadmap bulk update-field /projects/ \
   --field assignee \
   --condition "milestone=v1.0" \
   --new-value "team-lead"
-```
+
+```text
 
 ## 🧪 Testing & Quality
 
 ### Running Tests
 
 ```bash
+
 # Run full test suite
+
 poetry run pytest
 
 # Run with coverage
+
 poetry run pytest --cov=roadmap --cov-report=html
 
 # Test specific components
+
 poetry run pytest tests/test_performance_sync.py
 poetry run pytest tests/test_bulk_operations.py
-```
+
+```text
 
 ### Code Quality
 
 ```bash
+
 # Format code
+
 poetry run black .
 poetry run isort .
 
 # Type checking
+
 poetry run mypy roadmap
 
 # Linting
+
 poetry run flake8 roadmap
-```
+
+```text
 
 ## 📈 Performance Benchmarks
 
@@ -730,43 +914,58 @@ poetry run flake8 roadmap
 #### YAML Validation Errors
 
 ```bash
+
 # Check file syntax
+
 roadmap bulk validate .roadmap/
 
 # View detailed error report
+
 roadmap bulk health-report .roadmap/
 
 # Restore from backup
+
 ls .roadmap/.backups/
 cp .roadmap/.backups/issues_20241010_143022/issue.yaml .roadmap/issues/
-```
+
+```text
 
 #### GitHub Sync Issues
 
 ```bash
+
 # Test connection
+
 roadmap sync test
 
 # Check token and repository
+
 roadmap sync status
 
 # Reset configuration
+
 roadmap sync delete-token
 roadmap sync setup --token "new-token" --repo "user/repo"
-```
+
+```text
 
 #### Performance Issues
 
 ```bash
+
 # Use high-performance mode
+
 roadmap sync pull --high-performance
 
 # Adjust workers and batch size
+
 roadmap sync pull --high-performance --workers 4 --batch-size 25
 
 # Monitor performance
+
 roadmap sync pull --high-performance  # Check performance report
-```
+
+```text
 
 ## 👨‍💻 Developer Guide
 
@@ -780,25 +979,25 @@ Roadmap uses a **5-layer clean architecture** for maximum maintainability:
    - Contains: Issue, Milestone, Project models and enums
    - **Testing**: `tests/unit/domain/`
 
-2. **Infrastructure Layer** (`roadmap/infrastructure/`)
+1. **Infrastructure Layer** (`roadmap/infrastructure/`)
    - External system integrations
    - GitHub API, Git operations, file storage
    - Contains: GitHub client, Git commands, database/storage
    - **Testing**: `tests/unit/infrastructure/`
 
-3. **Application Layer** (`roadmap/application/`)
+1. **Application Layer** (`roadmap/application/`)
    - Use cases and business logic orchestration
    - Services that combine domain and infrastructure
    - Contains: IssueService, MilestoneService, visualization
    - **Testing**: `tests/unit/application/`
 
-4. **Presentation Layer** (`roadmap/presentation/`)
+1. **Presentation Layer** (`roadmap/presentation/`)
    - CLI commands and user interface
    - Maps user commands to application services
    - Contains: `cli/` directory with command modules
    - **Testing**: `tests/integration/`
 
-5. **Shared Layer** (`roadmap/shared/`)
+1. **Shared Layer** (`roadmap/shared/`)
    - Common utilities across all layers
    - Validators, formatters, logging, error handling
    - Contains: validation, errors, formatters, constants
@@ -809,63 +1008,77 @@ Roadmap uses a **5-layer clean architecture** for maximum maintainability:
 1. **Start with the domain** (if new entity type):
    ```python
    # roadmap/domain/your_entity.py
+
    class YourEntity(BaseModel):
        """Your entity model"""
    ```
 
-2. **Add infrastructure** if external integration needed:
+1. **Add infrastructure** if external integration needed:
    ```python
    # roadmap/infrastructure/your_integration.py
+
    class YourClient:
        """External API client"""
    ```
 
-3. **Create service** in application layer:
+1. **Create service** in application layer:
    ```python
    # roadmap/application/services/your_service.py
+
    class YourService:
        """Business logic for your feature"""
    ```
 
-4. **Add CLI command** in presentation layer:
+1. **Add CLI command** in presentation layer:
    ```python
    # roadmap/presentation/cli/your_domain/your_command.py
+
    @click.command()
    def your_command():
        """User-facing CLI command"""
    ```
 
-5. **Write tests** at each layer:
+1. **Write tests** at each layer:
    - Unit tests in `tests/unit/`
    - Integration tests in `tests/integration/`
 
 ### Running Tests
 
 ```bash
+
 # Run all tests
+
 poetry run pytest
 
 # Run specific layer tests
+
 poetry run pytest tests/unit/domain/
 poetry run pytest tests/unit/application/
 poetry run pytest tests/integration/
 
 # Run with coverage
+
 poetry run pytest --cov=roadmap
-```
+
+```text
 
 ### Code Quality
 
 ```bash
+
 # Type checking
+
 poetry run pyright roadmap/
 
 # Linting
+
 poetry run ruff check roadmap/
 
 # Format code
+
 poetry run black roadmap/
-```
+
+```text
 
 ### Deprecation Policy
 
@@ -892,24 +1105,28 @@ Deprecated files are maintained for backward compatibility but removed in v2.0.
    poetry run mypy roadmap
    ```
 
-5. **Commit your changes**: `git commit -m 'Add amazing feature'`
-6. **Push to the branch**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**
+1. **Commit your changes**: `git commit -m 'Add amazing feature'`
+2. **Push to the branch**: `git push origin feature/amazing-feature`
+3. **Open a Pull Request**
 
 ### Development Environment
 
 ```bash
+
 # Setup development environment
+
 git clone https://github.com/yourusername/roadmap.git
 cd roadmap
 poetry install
 poetry shell
 
 # Run tests during development
+
 poetry run pytest tests/test_performance_sync.py -v
 poetry run pytest tests/test_bulk_operations.py -v
 poetry run pytest tests/test_file_locking.py -v
-```
+
+```text
 
 ## 📄 License
 
@@ -984,4 +1201,5 @@ Complete documentation is available in the [`/docs`](docs/) directory:
 Built with ❤️ using Python 3.12+ and modern development practices
 
 *For detailed API documentation, examples, and advanced usage patterns, visit our [documentation site](https://roadmap-cli.readthedocs.io) (coming soon).*
+
 # Test comment

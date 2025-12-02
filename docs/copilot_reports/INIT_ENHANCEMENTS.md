@@ -18,12 +18,16 @@ Features
 Usage examples
 
 ```bash
+
 # Interactive init with project detection
+
 roadmap init
 
 # Non-interactive init with custom template and token
+
 roadmap init --non-interactive --yes --template-path ./my_project.md --github-token $GITHUB_TOKEN
-```
+
+```text
 
 Notes
 - Credential storage uses the project's `CredentialManager` (wraps keyring/backends).
@@ -33,6 +37,9 @@ Notes
 More examples
 
 ```bash
+
 # Non-interactive init with token from env
+
 ROADMAP_GITHUB_TOKEN=$GITHUB_TOKEN roadmap init --non-interactive --yes --github-repo owner/repo --project-name "My Project"
-```
+
+```text

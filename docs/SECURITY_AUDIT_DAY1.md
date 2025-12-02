@@ -32,11 +32,13 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 **Impact:** Django is not used in our codebase. It's installed only because `dynaconf` declares it as an optional `test` extra.
 
 **Recommendation:**
+
 1. We don't use Dynaconf's test suite
 2. Don't install optional test extras: `poetry install --no-extras` or configure Poetry to exclude test extras
 3. Consider switching to simpler config management if Dynaconf isn't core to v1.0
 
 **Action:**
+
 - For development: Continue with current setup (test extras are acceptable for dev)
 - For production/CI: Use `poetry install --no-extras` to exclude optional dependencies
 - Long-term: Evaluate if Dynaconf is necessary for v1.0 scope
@@ -54,17 +56,20 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 | tornado | 6.4.2 | CVE-2025-47287 | 6.5 | Async framework (aiohttp transitive) |
 
 **Assessment:**
+
 - **Production Runtime:** h11 (aiohttp transitive), fonttools (matplotlib transitive) - Low impact, non-critical paths
 - **Development Only:** jupyter-core, jupyterlab, setuptools - No impact on distributed CLI
 - **System Level:** pip (can be updated via `pip install --upgrade pip`)
 - **Tornado:** Transitive through aiohttp; newer version available
 
 **Immediate Actions:**
+
 1. ✅ Uninstall orphaned Django
 2. Update pip: `pip install --upgrade pip` (system-level, not Poetry-managed)
 3. Review whether jupyter-core/jupyterlab are needed (documentation only?)
 
 **Medium-term Actions:**
+
 1. Add `pip-audit` and `safety` to dev dependencies for ongoing scanning
 2. Set up CI/CD check for dependency vulnerabilities
 3. Pin transitive dependency versions to mitigate supply chain attacks
@@ -95,6 +100,7 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 | tabulate | >=0.9.0,<1.0 | Table formatting | ✅ Stable |
 
 **Summary:**
+
 - **0 critical vulnerabilities** in production dependencies
 - **0 vulnerabilities** in core runtime path
 - **All dependencies pinned** to minor version ranges (good practice)
@@ -107,11 +113,13 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 **Status:** ✅ SECURE - PyYAML 6.0.0+ uses safe loading by default
 
 **Key Points:**
+
 - PyYAML 6.0.0 (2023) introduced SafeLoader by default (breaking change from 5.x)
 - This prevents arbitrary code execution through YAML deserialization
 - All our YAML parsing should be using safe loading
 
 **Action Items:**
+
 - [ ] Audit `roadmap/infrastructure/storage.py` and YAML parsing code
 - [ ] Verify all `yaml.load()` calls use `Loader=yaml.SafeLoader` or `yaml.safe_load()`
 - [ ] Check for any `yaml.load()` without explicit loader (would fail safely in 6.0+)
@@ -126,6 +134,7 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 **File:** `roadmap/presentation/cli/` - Command modules
 
 **Commands registered:**
+
 - `init`, `status`, `health` (core)
 - `today`, `cleanup` (core)
 - `comment` (CRUD)
@@ -139,28 +148,33 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 ### 2.2 Input Validation Checklist
 
 #### Issue & Milestone Identifiers
+
 - [ ] Issue IDs: Validate format (should be UUID or hex or numeric)
 - [ ] Milestone names: Validate length (max 255 chars)
 - [ ] Prevent path traversal in issue/milestone names
 - [ ] Check for command injection in descriptions/titles
 
 #### File Paths
+
 - [ ] CLI `--output`, `--format`, `--filter` flags
 - [ ] Prevent directory traversal (`../`, absolute paths)
 - [ ] Validate file extensions for export formats
 - [ ] Check symlink handling
 
 #### Branch Names & Git References
+
 - [ ] Branch name validation (prevent git injection)
 - [ ] Commit SHA validation
 - [ ] Remote URL sanitization
 
 #### DateTime Inputs
+
 - [ ] Validate date format (YYYY-MM-DD expected)
 - [ ] Prevent timezone injection
 - [ ] Check for overflow/underflow
 
 ### 2.3 Test Coverage Approach
+
 1. Review existing validation tests in `tests/`
 2. Identify gaps in input validation
 3. Create test cases for malicious inputs:
@@ -175,11 +189,13 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 ## 3. JSON Parsing Safety
 
 ### 3.1 Files to Audit
+
 - [ ] `roadmap/infrastructure/storage.py` - JSON serialization
 - [ ] `roadmap/domain/models.py` - Pydantic model parsing
 - [ ] `roadmap/presentation/cli/data/commands.py` - Data export
 
 ### 3.2 Status
+
 - Pydantic v2 used for JSON validation (✅ excellent)
 - Type hints throughout codebase
 - No direct `json.loads()` calls expected (prefer Pydantic)
@@ -189,11 +205,13 @@ Django is a **transitive optional test dependency** of `dynaconf` (configuration
 ## 4. Markdown Parsing Safety
 
 ### 4.1 Files to Audit
+
 - [ ] Search for markdown parsing libraries
 - [ ] Check for XSS vulnerabilities in rendered output
 - [ ] Verify HTML sanitization if any rendering occurs
 
 ### 4.2 Expected Status
+
 - CLI is text-based (no HTML rendering to browsers)
 - Low risk for XSS
 - Main concern: data integrity when parsing markdown from issues

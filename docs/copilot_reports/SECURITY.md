@@ -5,6 +5,7 @@ The roadmap CLI now includes comprehensive security improvements for handling Gi
 ## 🔒 Security Features Implemented
 
 ### 1. **Multi-Platform Credential Storage**
+
 - **macOS**: Keychain Services integration
 - **Windows**: Windows Credential Manager
 - **Linux**: Secret Service API (GNOME Keyring, KDE Wallet)
@@ -23,52 +24,75 @@ The system follows a secure priority order for token resolution:
 #### Secure Setup (Recommended)
 
 ```bash
+
 # Store token securely in system credential manager (default behavior)
+
 roadmap sync setup --token ghp_xxx --repo owner/repo
 
 # Environment variable method (recommended for CI/CD)
+
 export GITHUB_TOKEN="ghp_xxx"
 roadmap sync setup --repo owner/repo
-```
+
+```text
 
 #### Legacy Setup (Discouraged)
 
 ```bash
+
 # Store in config file (requires explicit --insecure flag with warnings)
+
 roadmap sync setup --token ghp_xxx --repo owner/repo --insecure
-```
+
+```text
 
 #### Status and Information
+
 ```bash
+
 # View comprehensive credential status
+
 roadmap sync status
 
 # Shows:
+
 # - Connection status
+
 # - Available credential sources
+
 # - Active token source
+
 # - Masked token display
+
 # - Repository configuration
-```
+
+```text
 
 #### Token Management
+
 ```bash
+
 # Delete stored token from credential manager
+
 roadmap sync delete-token
 
 # Test authentication
+
 roadmap sync test
-```
+
+```text
 
 ## 🛡️ Security Improvements
 
 ### **Before (Security Issues)**
+
 ❌ Plain text token storage in config files
 ❌ Risk of accidentally committing tokens to git
 ❌ No token masking in output
 ❌ Single storage method
 
 ### **After (Secure Implementation)**
+
 ✅ Encrypted storage in OS credential managers
 ✅ Environment variable priority
 ✅ Token masking in all output
@@ -79,21 +103,29 @@ roadmap sync test
 ## 📖 Usage Examples
 
 ### Initial Setup with Secure Storage
+
 ```bash
+
 # Initialize roadmap
+
 roadmap init
 
 # Setup GitHub integration with secure token storage
+
 roadmap sync setup --token ghp_your_token_here --repo username/repository --secure
-```
+
+```text
 
 ### Check Credential Status
+
 ```bash
 roadmap sync status
-```
+
+```text
 
 **Output:**
-```
+
+```text
 GitHub Integration Status
 ──────────────────────────────
 ✅ Connection: Connected as username to username/repository
@@ -107,35 +139,45 @@ Active Source: Credential Manager
 Token: ****here
 
 Repository: username/repository
-```
+
+```text
 
 ### Environment Variable Method (Recommended for CI/CD)
+
 ```bash
+
 # Set environment variable
+
 export GITHUB_TOKEN="ghp_your_token_here"
 
 # Setup repository only
+
 roadmap sync setup --repo username/repository
 
 # Status will show environment variable as active source
+
 roadmap sync status
-```
+
+```text
 
 ## 🔧 Technical Implementation
 
 ### Cross-Platform Support
+
 - **macOS**: Uses `security` command-line tool for Keychain access
 - **Windows**: Uses `keyring` library with Windows Credential Manager
 - **Linux**: Uses `keyring` library with Secret Service API
 - **Fallback**: Graceful degradation to environment variables
 
 ### Error Handling
+
 - Silent fallback when credential managers are unavailable
 - Non-blocking credential retrieval
 - Clear error messages for setup issues
 - Comprehensive validation and testing
 
 ### Token Security
+
 - Tokens are masked in all CLI output (`****abcd`)
 - No token logging or debugging output
 - Secure credential manager APIs only
@@ -144,30 +186,39 @@ roadmap sync status
 ## 📦 **Installation**
 
 ```bash
+
 # Standard installation (includes secure credential management)
+
 pip install roadmap
-```
+
+```text
 
 **Note**: The `keyring` library is now included by default, providing secure credential storage on all platforms.
 
 ## 🔍 Migration Guide
 
 ### Existing Users
+
 If you have tokens stored in config files, the system will continue to work but will show security warnings:
 
 ```bash
 roadmap sync status
-```
-```
+
+```text
+
+```text
 ⚠️ Token stored in config file. Consider using --secure flag for better security.
-```
+
+```text
 
 ### Recommended Migration
+
 1. Note your current repository configuration
 2. Delete token from config file or use new secure storage:
    ```bash
    roadmap sync setup --token your_token --repo owner/repo --secure
    ```
+
 3. Verify secure storage:
    ```bash
    roadmap sync status
@@ -184,7 +235,8 @@ The credential management system includes comprehensive tests:
 
 ```bash
 poetry run pytest tests/test_credentials.py -v
-```
+
+```text
 
 ## 🔐 Security Best Practices
 
@@ -206,19 +258,25 @@ poetry run pytest tests/test_credentials.py -v
 ## 🐛 Troubleshooting
 
 ### Credential Manager Not Available
+
 ```bash
 roadmap sync status
-```
+
+```text
 If credential manager shows as unavailable:
 - **Linux**: Install `gnome-keyring` or `kde-wallet`
 - **Windows**: Install with `pip install roadmap[secure]`
 - **Fallback**: Use environment variables
 
 ### Token Not Found
+
 ```bash
 roadmap sync delete-token  # Clear any stored tokens
+
 export GITHUB_TOKEN="your_token"  # Set environment variable
+
 roadmap sync test  # Verify connection
-```
+
+```text
 
 This secure credential management system ensures that your GitHub tokens are stored and handled securely across all supported platforms while maintaining backward compatibility with existing workflows.

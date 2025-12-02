@@ -9,12 +9,16 @@ Directory Structure
 
 tests/
 ├── unit/                           # Isolated component tests (34 test files)
+
 │   ├── domain/                     # Domain layer tests (3 files)
+
 │   │   ├── test_parser.py          # Models and parsing logic
+
 │   │   ├── test_assignee_validation.py
 │   │   └── test_estimated_time.py
 │   │
 │   ├── application/                # Application layer tests (9 files)
+
 │   │   ├── test_core.py
 │   │   ├── test_core_advanced.py
 │   │   ├── test_core_comprehensive.py
@@ -26,6 +30,7 @@ tests/
 │   │   └── test_visualization.py
 │   │
 │   ├── infrastructure/             # Infrastructure layer tests (6 files)
+
 │   │   ├── test_file_locking.py
 │   │   ├── test_github_client.py
 │   │   ├── test_git_hooks.py
@@ -34,13 +39,16 @@ tests/
 │   │   └── test_gitignore_management.py
 │   │
 │   └── shared/                     # Shared layer tests (4 files)
+
 │       ├── test_utils.py
 │       ├── test_progress_calculation.py
 │       ├── test_security.py
 │       └── test_credentials.py
 │
 ├── integration/                    # Integration tests (12 files)
+
 │   ├── test_integration.py         # Core integration tests
+
 │   ├── test_git_integration.py
 │   ├── test_git_integration_coverage.py
 │   ├── test_git_hooks_integration.py
@@ -54,10 +62,13 @@ tests/
 │   └── test_enhanced_list_command.py
 │
 ├── fixtures/                       # Shared test fixtures and utilities
+
 │   ├── conftest.py                 # Pytest configuration and fixtures
+
 │   └── (mock_data.py, factories.py - for future)
 │
 ├── conftest.py                     # Root pytest configuration (original)
+
 └── (legacy test files - not yet deleted)
 
 

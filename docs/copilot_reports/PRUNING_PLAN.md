@@ -73,16 +73,19 @@ Needs investigation:
 ## Impact Summary
 
 ### Conservative (Phase 1 only)
+
 - **Remove**: 7,788 lines (25.7%)
 - **Keep**: 22,524 lines
 - **Result**: Cleaner codebase, all v1.0 features intact
 
 ### Recommended (Phases 1-2)
+
 - **Remove**: 11,488 lines (37.9%)
 - **Keep**: 18,824 lines
 - **Result**: Lean v1.0; easy to expand post-1.0
 
 ### Aggressive (Phases 1-4 with consolidation)
+
 - **Remove**: ~14,000 lines (46%)
 - **Keep**: ~16,300 lines
 - **Result**: Minimal focused core

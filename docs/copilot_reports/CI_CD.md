@@ -17,18 +17,24 @@ Comprehensive CI/CD integration system for automatic issue tracking, branch mana
 ## Quick Start
 
 ```bash
+
 # Scan repository for existing patterns
+
 roadmap ci scan-repository
 
 # Track specific issue
+
 roadmap ci track-issue abc12345
 
 # Bulk synchronization
+
 roadmap ci sync-all
 
 # Performance scanning
+
 roadmap ci scan-repository --high-performance
-```
+
+```text
 
 ## CI Commands
 

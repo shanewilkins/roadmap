@@ -16,43 +16,53 @@ This directory contains features archived for post-1.0 development. These module
 ### Phase 1: Enterprise Analytics & Advanced Features (7,788 lines)
 
 #### Analytics Suite
+
 - **`analytics.py`** - Advanced project analytics (burn-down, velocity metrics)
 - **`enhanced_analytics.py`** - ML-driven analytics and predictions
 - **`predictive.py`** (1,354 lines) - Predictive forecasting and modeling
 - **`analytics_commands.py`** - CLI commands for analytics features
 
 #### GitHub Enterprise
+
 - **`enhanced_github_integration.py`** - Enterprise-level GitHub features
 - **`repository_scanner.py`** - Automatic GitHub repository analysis
 
 #### CI/CD Integration
+
 - **`ci_tracking.py`** - CI/CD pipeline tracking and metrics
 
 #### Data & Workflow Management
+
 - **`curation.py`** - Data curation and cleanup workflows
 - **`timezone_migration.py`** - Comprehensive timezone handling
 
 #### Infrastructure
+
 - **`identity.py`** - Advanced identity and authentication management
 - **`webhook_server.py`** - Webhook server infrastructure for integrations
 
 ### Phase 2: Advanced CLI Commands (3,700 lines)
 
 #### Team & User Management
+
 - **`team_management.py`** (from `cli/team.py`) - Advanced team management
 - **`user_management.py`** (from `cli/user.py`) - User management commands
 
 #### CI/CD Commands
+
 - **`ci_commands.py`** (from `cli/ci.py`) - CI/CD integration commands (1,544 lines)
 
 #### Release Management
+
 - **`release_management.py`** (from `cli/release.py`) - Release coordination commands
 
 #### Timezone & Activity
+
 - **`timezone_commands.py`** (from `cli/timezone.py`) - Timezone commands
 - **`activity_tracking.py`** (from `cli/activity.py`) - Activity timeline features
 
 #### Deprecated
+
 - **`deprecated_commands.py`** (from `cli/deprecated.py`) - Old/deprecated commands
 
 ---
@@ -75,6 +85,7 @@ To restore a feature:
 3. **Register CLI commands** (if applicable) in `roadmap/cli/__init__.py`:
    ```python
    from roadmap.cli import analytics  # Register analytics commands
+
    ```
 
 4. **Update imports** in any remaining code that references the feature

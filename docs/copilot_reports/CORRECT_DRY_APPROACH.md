@@ -3,8 +3,11 @@
 ## What We Should Have Done (Minimal Approach)
 
 ### 1. File Operations (30 lines instead of 377)
+
 ```python
+
 # roadmap/file_utils.py
+
 from pathlib import Path
 
 def ensure_directory_exists(directory_path):
@@ -16,11 +19,15 @@ def safe_file_write(file_path, content):
     file_path = Path(file_path)
     ensure_directory_exists(file_path.parent)
     file_path.write_text(content)
-```
+
+```text
 
 ### 2. Basic Validation (50 lines instead of 447)
+
 ```python
+
 # roadmap/validation.py
+
 def validate_enum_field(value, valid_values, field_name):
     if value not in valid_values:
         raise ValueError(f"Invalid {field_name}: {value}")
@@ -29,22 +36,30 @@ def validate_required_fields(data, required_fields):
     missing = [f for f in required_fields if f not in data or not data[f]]
     if missing:
         raise ValueError(f"Missing required fields: {missing}")
-```
+
+```text
 
 ### 3. Error Handling (40 lines instead of 456)
+
 ```python
+
 # roadmap/error_utils.py
+
 def handle_file_operation(operation, error_message):
     """Standard file operation error handling."""
     try:
         return operation()
     except (FileNotFoundError, PermissionError, OSError) as e:
         raise RuntimeError(f"{error_message}: {e}")
-```
+
+```text
 
 ### 4. Data Processing (60 lines instead of 506)
+
 ```python
+
 # roadmap/data_utils.py
+
 def filter_by_status(items, status):
     """Filter items by status."""
     return [item for item in items if item.status == status]
@@ -56,7 +71,8 @@ def group_by_field(items, field):
     for item in items:
         groups[getattr(item, field)].append(item)
     return dict(groups)
-```
+
+```text
 
 ## Size Comparison
 

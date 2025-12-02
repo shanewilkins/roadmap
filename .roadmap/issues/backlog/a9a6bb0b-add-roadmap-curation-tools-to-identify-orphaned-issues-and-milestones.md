@@ -36,11 +36,13 @@ Implement comprehensive curation tools to help maintain roadmap data integrity b
 ## Requirements
 
 ### Orphaned Issues Detection
+
 - **Unassigned Issues**: Issues not assigned to any milestone or backlog
 - **Categorization**: Group orphaned issues by type, priority, age, and assignee
 - **Reporting**: Generate reports showing orphaned items with actionable recommendations
 
 ### Orphaned Milestones Detection
+
 - **Unlinked Milestones**: Milestones not assigned to any roadmap
 - **Analysis**: Identify patterns in orphaned milestones (completion status, dates, etc.)
 - **Suggestions**: Recommend which roadmaps might be appropriate for orphaned milestones
@@ -65,6 +67,7 @@ Implement comprehensive curation tools to help maintain roadmap data integrity b
 - Export curation results to various formats (JSON, CSV, Markdown)
 
 ## Future Enhancement (AI Integration)
+
 - **TODO**: Intelligent categorization using AI to suggest appropriate milestone/roadmap assignments based on issue content, title, and context
 - **TODO**: Automated tagging and priority suggestions for orphaned items
 - **TODO**: Similarity analysis to group related orphaned items

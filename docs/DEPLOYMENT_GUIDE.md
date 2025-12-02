@@ -29,82 +29,111 @@ Before deploying to production:
 ### Installation
 
 ```bash
+
 # Create virtual environment
+
 python -m venv venv
 source venv/bin/activate
 
 # Install production package
+
 pip install roadmap-cli
 
 # Verify installation
+
 roadmap --version
-```
+
+```text
 
 ### Verification
 
 ```bash
+
 # Verify no CVEs
+
 pip-audit
 
 # Verify dependencies
+
 pip list | grep -E "roadmap|click|pydantic|pyyaml|requests|aiohttp|pandas"
-```
+
+```text
 
 ### Deployment
 
 ```bash
+
 # Copy configuration
+
 cp .env.production .env
 vim .env  # Edit as needed
 
 # Run application
+
 roadmap --help
-```
+
+```text
 
 ## Method 2: poetry install --no-dev (Reproducible)
 
 ### Installation
 
 ```bash
+
 # Install poetry (if not already installed)
+
 pip install poetry
 
 # Clone/download repository
+
 git clone https://github.com/shanewilkins/roadmap.git
 cd roadmap
 
 # Install production dependencies
+
 poetry install --no-dev
 
 # Verify installation
+
 poetry run roadmap --version
-```
+
+```text
 
 ### Verification
 
 ```bash
+
 # Verify no CVEs
+
 pip-audit
 
 # Verify reproducibility
+
 poetry lock --no-update  # Ensures lock file is committed
+
 poetry install --no-dev --no-root  # Reproduces exact environment
-```
+
+```text
 
 ### Deployment
 
 ```bash
+
 # Copy configuration
+
 cp .env.production .env
 vim .env  # Edit as needed
 
 # Run application via poetry
+
 poetry run roadmap --help
 
 # Or activate venv
+
 source $(poetry env info --path)/bin/activate
 roadmap --help
-```
+
+```text
 
 ## Method 3: Docker (Containerized)
 
@@ -117,45 +146,57 @@ LABEL maintainer="Roadmap CLI"
 LABEL description="Enterprise project management tool"
 
 # Set working directory
+
 WORKDIR /app
 
 # Copy files
+
 COPY pyproject.toml setup.cfg README.md LICENSE.md ./
 
 # Install Python dependencies
+
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
 
 # Create non-root user
+
 RUN useradd -m -u 1000 roadmap && \
     chown -R roadmap:roadmap /app
 
 USER roadmap
 
 # Health check
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD roadmap --help > /dev/null || exit 1
 
 # Entry point
+
 ENTRYPOINT ["roadmap"]
 CMD ["--help"]
-```
+
+```text
 
 ### Build & Run
 
 ```bash
+
 # Build image
+
 docker build -t roadmap-cli:0.4.0 .
 
 # Run container
+
 docker run --rm -v $(pwd)/config:/app/config \
   -e ROADMAP_CONFIG_PATH=/app/config \
   roadmap-cli:0.4.0 list
 
 # Run with environment file
+
 docker run --rm --env-file .env.production \
   roadmap-cli:0.4.0 progress
-```
+
+```text
 
 ### Docker Compose
 
@@ -179,20 +220,26 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
-```
+
+```text
 
 ### Verify Docker Build
 
 ```bash
+
 # Check image size (should be ~200MB)
+
 docker images roadmap-cli
 
 # Verify no CVEs in container
+
 docker run --rm roadmap-cli:0.4.0 python -m pip list
 
 # Run security audit in container
+
 docker run --rm roadmap-cli:0.4.0 pip-audit
-```
+
+```text
 
 ## Configuration
 
@@ -201,25 +248,31 @@ docker run --rm roadmap-cli:0.4.0 pip-audit
 Key production environment variables (see `.env.production` for full list):
 
 ```bash
+
 # Application
+
 ROADMAP_ENV=production
 ROADMAP_DEBUG=false
 ROADMAP_LOG_LEVEL=INFO
 
 # Credentials (use secrets manager in production!)
+
 ROADMAP_GITHUB_TOKEN=
 ROADMAP_GIT_USER_EMAIL=
 ROADMAP_GIT_USER_NAME=
 
 # Storage
+
 ROADMAP_DATA_PATH=/var/lib/roadmap
 ROADMAP_CACHE_ENABLED=true
 ROADMAP_CACHE_TTL=3600
 
 # Security
+
 ROADMAP_CREDENTIAL_BACKEND=keyring
 ROADMAP_VERIFY_SSL=true
-```
+
+```text
 
 ### Secrets Management
 
@@ -228,16 +281,19 @@ ROADMAP_VERIFY_SSL=true
 1. **Environment variables** (via secrets manager)
    ```bash
    # Kubernetes
+
    kubectl create secret generic roadmap-secrets \
      --from-literal=ROADMAP_GITHUB_TOKEN=...
 
    # Docker Swarm
+
    docker secret create roadmap_github_token -
    ```
 
 2. **Systemd secrets**
    ```bash
    # /etc/systemd/system/roadmap.service.d/override.conf
+
    [Service]
    Environment="ROADMAP_GITHUB_TOKEN=..."
    EnvironmentFile=/etc/roadmap/.env
@@ -246,6 +302,7 @@ ROADMAP_VERIFY_SSL=true
 3. **HashiCorp Vault**
    ```bash
    # Load secrets from Vault
+
    export ROADMAP_GITHUB_TOKEN=$(vault kv get -field=token secret/roadmap/github)
    ```
 
@@ -254,7 +311,9 @@ ROADMAP_VERIFY_SSL=true
 ### Linux Systemd Service
 
 ```bash
+
 # Create service file: /etc/systemd/system/roadmap.service
+
 [Unit]
 Description=Roadmap CLI
 After=network.target
@@ -270,18 +329,23 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-```
+
+```text
 
 ```bash
+
 # Enable and start
+
 sudo systemctl daemon-reload
 sudo systemctl enable roadmap
 sudo systemctl start roadmap
 
 # Check status
+
 sudo systemctl status roadmap
 sudo journalctl -u roadmap -f
-```
+
+```text
 
 ### Kubernetes Deployment
 
@@ -333,12 +397,15 @@ spec:
       volumes:
       - name: data
         emptyDir: {}
-```
+
+```text
 
 ### AWS Lambda
 
 ```python
+
 # lambda_function.py
+
 import json
 import subprocess
 from roadmap.cli import main
@@ -350,11 +417,13 @@ def lambda_handler(event, context):
 
     try:
         # Execute roadmap command
+
         result = subprocess.run(
             ['roadmap'] + command,
             capture_output=True,
             text=True,
             timeout=300  # 5 minute timeout
+
         )
 
         return {
@@ -369,14 +438,17 @@ def lambda_handler(event, context):
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})
         }
-```
+
+```text
 
 ## Monitoring & Logging
 
 ### Log Rotation (Systemd)
 
 ```bash
+
 # /etc/logrotate.d/roadmap
+
 /var/log/roadmap/*.log {
     daily
     rotate 7
@@ -390,12 +462,15 @@ def lambda_handler(event, context):
         systemctl reload roadmap > /dev/null 2>&1 || true
     endscript
 }
-```
+
+```text
 
 ### Prometheus Metrics
 
 ```python
+
 # In roadmap code
+
 from prometheus_client import Counter, Histogram, start_http_server
 
 commands_total = Counter('roadmap_commands_total', 'Total commands', ['command'])
@@ -405,12 +480,15 @@ command_duration = Histogram('roadmap_command_duration_seconds', 'Command durati
 def execute_command(cmd):
     commands_total.labels(command=cmd).inc()
     # Execute command
-```
+
+```text
 
 ### CloudWatch Logs (AWS)
 
 ```bash
+
 # /etc/awslogs/config/roadmap.conf
+
 [/var/log/roadmap/app.log]
 log_group_name = /aws/roadmap/application
 log_stream_name = {instance_id}
@@ -418,14 +496,17 @@ datetime_format = %Y-%m-%d %H:%M:%S
 file = /var/log/roadmap/app.log
 initial_interval = 5
 log_retention_in_days = 30
-```
+
+```text
 
 ## Backup & Recovery
 
 ### Data Backup
 
 ```bash
+
 # Daily backup script: /usr/local/bin/roadmap-backup.sh
+
 #!/bin/bash
 
 BACKUP_DIR="/backups/roadmap"
@@ -435,95 +516,126 @@ DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$BACKUP_DIR"
 
 # Backup data
+
 tar -czf "$BACKUP_DIR/roadmap_$DATE.tar.gz" \
   --exclude="*.log" \
   "$DATA_DIR"
 
 # Keep only 30 days of backups
+
 find "$BACKUP_DIR" -name "roadmap_*.tar.gz" -mtime +30 -delete
 
 echo "Backup completed: $BACKUP_DIR/roadmap_$DATE.tar.gz"
-```
+
+```text
 
 ### Recovery
 
 ```bash
+
 # Restore from backup
+
 tar -xzf /backups/roadmap/roadmap_20240101_120000.tar.gz -C /
 
 # Verify
+
 roadmap list
-```
+
+```text
 
 ## Security Hardening
 
 ### Firewall Rules
 
 ```bash
+
 # If exposing HTTP/API interface
+
 ufw allow 8000/tcp  # API port
+
 ufw deny from 0.0.0.0/0 to any port 8000  # Default deny
+
 ufw allow from 10.0.0.0/8 to any port 8000  # Allow internal network
-```
+
+```text
 
 ### SELinux Policy
 
 ```bash
+
 # Create custom policy
+
 semanage fcontext -a -t roadmap_data_t "/var/lib/roadmap(/.*)?"
 restorecon -Rv /var/lib/roadmap
 
 semanage port -a -t roadmap_port_t -p tcp 8000
-```
+
+```text
 
 ### File Permissions
 
 ```bash
+
 # Secure data directory
+
 sudo mkdir -p /var/lib/roadmap
 sudo chown roadmap:roadmap /var/lib/roadmap
 sudo chmod 700 /var/lib/roadmap
 
 # Secure configuration
+
 sudo chmod 600 /etc/roadmap/.env
 sudo chmod 600 /etc/roadmap/.env.production
-```
+
+```text
 
 ## Troubleshooting
 
 ### Check CVE Status
 
 ```bash
+
 # Verify production installation has 0 CVEs
+
 pip-audit --desc
 
 # If CVEs found, check dev vs production
+
 pip-audit --dev --desc  # Might show dev-only CVEs
-```
+
+```text
 
 ### Performance Tuning
 
 ```bash
+
 # Monitor resource usage
+
 ps aux | grep roadmap
 top -p $(pgrep -f roadmap)
 
 # Check cache effectiveness
+
 roadmap metrics cache-hit-rate
 
 # Adjust thread pool
+
 export ROADMAP_MAX_WORKERS=8
 roadmap process --parallel
-```
+
+```text
 
 ### Debug Mode
 
 ```bash
+
 # Enable debug logging
+
 export ROADMAP_DEBUG=true
 export ROADMAP_LOG_LEVEL=DEBUG
 roadmap --verbose list
-```
+
+```text
 
 ## CI/CD Integration
 
@@ -565,7 +677,8 @@ jobs:
         run: |
           kubectl set image deployment/roadmap \
             roadmap=roadmap-cli:${{ github.ref_name }}
-```
+
+```text
 
 ---
 

@@ -75,7 +75,7 @@ This week transformed the Roadmap CLI project from a functional but monolithic c
 
 ### Monday Morning Architecture (Before)
 
-```
+```text
 roadmap/
 ├── cli.py (monolithic entry point)
 ├── core.py (1,183 lines - God object)
@@ -85,7 +85,8 @@ roadmap/
 │   └── project.py (361 lines)
 ├── [27 root-level files] (mixed concerns)
 └── tests/ (flat structure, 53 files)
-```
+
+```text
 
 **Problems:**
 - Monolithic CLI command files (1,196 lines in issue.py alone)
@@ -96,37 +97,57 @@ roadmap/
 
 ### Thursday Afternoon Architecture (After)
 
-```
+```text
 roadmap/
 ├── domain/              # Pure business logic (4 files)
+
 │   ├── issue.py
 │   ├── milestone.py
 │   ├── project.py
 │   └── comment.py
 │
 ├── application/         # Use cases & orchestration (16 files)
+
 │   ├── core.py         # Refactored orchestrator
+
 │   ├── services/       # Domain services (6 services)
+
 │   ├── data/          # Data transformations
+
 │   └── visualization/ # Chart generation
+
 │
 ├── infrastructure/      # External concerns (8 files)
+
 │   ├── storage.py      # Database
+
 │   ├── git_hooks.py    # Git integration
+
 │   ├── persistence/    # File I/O (3 modules)
+
 │   └── security/       # Credentials (1 module)
+
 │
 ├── presentation/        # User interface (52 files)
+
 │   └── cli/
 │       ├── issues/     # 11 focused commands
+
 │       ├── milestones/ # 8 focused commands
+
 │       ├── projects/   # 3 focused commands
+
 │       ├── data/       # Export commands
+
 │       ├── git/        # Git commands
+
 │       ├── progress/   # Progress reports
+
 │       └── comment/    # Comment commands
+
 │
 ├── shared/             # Cross-cutting (14 files)
+
 │   ├── validation.py
 │   ├── errors.py
 │   ├── formatters.py
@@ -134,18 +155,27 @@ roadmap/
 │   └── [10 more utilities]
 │
 └── cli/                # Legacy CLI helpers (11 files)
+
     └── [Helper modules for backwards compatibility]
 
 tests/
 ├── fixtures/           # Shared test fixtures
+
 ├── unit/              # Unit tests by layer
+
 │   ├── domain/        # 2 test files
+
 │   ├── application/   # 17 test files
+
 │   ├── infrastructure/# 4 test files
+
 │   ├── presentation/  # 27 test files
+
 │   └── shared/        # 7 test files
+
 └── integration/       # Integration tests (18 files)
-```
+
+```text
 
 **Improvements:**
 - Clear separation of concerns across 5 layers
@@ -238,16 +268,22 @@ tests/
 **Before:** 53 test files in flat structure
 **After:** 82 test files organized by architecture layer
 
-```
+```text
 tests/
 ├── unit/
 │   ├── domain/          # Domain logic tests
+
 │   ├── application/     # Business logic tests
+
 │   ├── infrastructure/  # External system tests
+
 │   ├── presentation/    # CLI tests
+
 │   └── shared/         # Utility tests
+
 └── integration/        # Cross-layer integration tests
-```
+
+```text
 
 **Benefits:**
 - Tests mirror production code structure
@@ -438,24 +474,28 @@ tests/
 ### Architectural Quality: Before vs After
 
 **Before (Monday):**
-```
+
+```text
 Presentation → Application → Domain
      ↕              ↕           ↕
 Infrastructure ←→ Everything
-```
+
+```text
 - Tight coupling across all layers
 - Circular dependencies possible
 - Hard to test in isolation
 - Changes ripple unpredictably
 
 **After (Thursday):**
-```
+
+```text
 Presentation → Application → Domain
      ↓              ↓
 Infrastructure
      ↓
 Shared Utilities
-```
+
+```text
 - Clear unidirectional dependencies
 - Domain has zero external dependencies
 - Easy to test each layer in isolation

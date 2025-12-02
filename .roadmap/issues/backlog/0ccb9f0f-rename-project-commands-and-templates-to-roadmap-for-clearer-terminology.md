@@ -34,8 +34,11 @@ The current CLI uses "project" for the top-level document template and commands,
 ## Current State Analysis
 
 ### Existing "Project" Usage
+
 ```bash
+
 # Current CLI commands
+
 roadmap project create "My Project"
 roadmap project list
 roadmap project overview
@@ -43,16 +46,20 @@ roadmap project update PROJECT_ID
 roadmap project delete PROJECT_ID
 
 # Current file structure
+
 .roadmap/projects/abc123-my-project.md
 
 # Current terminology in code
+
 - Project class/model
 - project_* functions
 - projects/ directory
 - "project" in documentation
-```
+
+```text
 
 ### User Confusion Points
+
 - Tool is called "Roadmap CLI" but creates "projects"
 - Users naturally think in terms of "roadmaps" for planning
 - "Project" is overloaded (could mean git project, work project, etc.)
@@ -61,36 +68,56 @@ roadmap project delete PROJECT_ID
 ## Proposed Terminology Changes
 
 ### CLI Command Renaming
+
 ```bash
+
 # New CLI commands (proposed)
+
 roadmap roadmap create "My Roadmap"     # was: roadmap project create
+
 roadmap roadmap list                    # was: roadmap project list
+
 roadmap roadmap overview                # was: roadmap project overview
+
 roadmap roadmap update ROADMAP_ID       # was: roadmap project update
+
 roadmap roadmap delete ROADMAP_ID       # was: roadmap project delete
 
 # Alternative shorter commands
+
 roadmap create "My Roadmap"             # Top-level shortcut
+
 roadmap list                            # Lists roadmaps by default
+
 roadmap overview                        # Current roadmap overview
-```
+
+```text
 
 ### File Structure Changes
+
 ```bash
+
 # New file structure
+
 .roadmap/roadmaps/abc123-my-roadmap.md  # was: .roadmap/projects/
 
 # Or keep projects/ folder but change content
+
 .roadmap/projects/abc123-my-roadmap.md  # File naming change only
-```
+
+```text
 
 ### Documentation and Template Updates
+
 ```yaml
+
 # New roadmap document header (was project)
+
 ---
 id: abc123
 title: My Roadmap
 type: roadmap              # was: project
+
 priority: high
 status: in-progress
 owner: shane
@@ -101,24 +128,29 @@ updated: '2025-10-11T20:30:00'
 # My Roadmap
 
 ## Overview
+
 This roadmap outlines...
-```
+
+```text
 
 ## Implementation Options
 
 ### Option 1: Complete Renaming (Recommended)
+
 - Rename all CLI commands from `project` to `roadmap`
 - Update file templates and documentation
 - Maintain backwards compatibility with aliases
 - Update all internal code references
 
 ### Option 2: Dual Commands
+
 - Keep existing `project` commands working
 - Add new `roadmap` commands as primary
 - Gradually deprecate `project` commands
 - Allow both file types during transition
 
 ### Option 3: Top-Level Shortcut Only
+
 - Keep `roadmap project` commands unchanged
 - Add `roadmap create/list/overview` shortcuts
 - Minimal code changes required
@@ -127,14 +159,18 @@ This roadmap outlines...
 ## Detailed Implementation Plan
 
 ### Phase 1: CLI Command Structure (1h)
+
 ```python
+
 # Add new command group
+
 @cli.group()
 def roadmap():
     """Manage roadmaps (top-level planning documents)."""
     pass
 
 # New commands
+
 @roadmap.command()
 def create(title, **kwargs):
     """Create a new roadmap."""
@@ -149,9 +185,13 @@ def list(**kwargs):
 def update(roadmap_id, **kwargs):
     """Update an existing roadmap."""
     # Implementation includes:
+
     # - Add/remove milestones
+
     # - Update description, owner, priority
+
     # - Modify dates and status
+
     # - Add/remove team members
 
 @roadmap.command()
@@ -165,20 +205,24 @@ def delete(roadmap_id, **kwargs):
     # Implementation
 
 # Backwards compatibility aliases
+
 @cli.group()
 def project():
     """Manage projects (deprecated: use 'roadmap' commands)."""
     click.echo("⚠️  'project' commands are deprecated. Use 'roadmap' commands instead.")
     pass
-```
+
+```text
 
 ### Phase 2: Template and Documentation Updates (1h)
+
 - Update roadmap document templates
 - Change all documentation references
 - Update help text and examples
 - Modify error messages and output
 
 ### Phase 3: Internal Code Refactoring (1h)
+
 - Rename internal classes and functions
 - Update file handling logic
 - Modify database/storage schema if needed
@@ -187,6 +231,7 @@ def project():
 ## Acceptance Criteria
 
 ### CLI Command Changes
+
 - [ ] New `roadmap roadmap` commands work identically to old `roadmap project` commands
 - [ ] **NEW**: `roadmap roadmap update` command for modifying existing roadmaps
 - [ ] **NEW**: Support for adding/removing milestones via CLI (`--add-milestone`, `--remove-milestone`)
@@ -196,18 +241,21 @@ def project():
 - [ ] Error messages use new "roadmap" terminology
 
 ### File and Template Updates
+
 - [ ] New roadmap documents use "roadmap" terminology in templates
 - [ ] Existing project files continue to work without modification
 - [ ] File naming conventions updated (configurable)
 - [ ] Documentation examples use new terminology
 
 ### User Experience
+
 - [ ] Clear migration path for existing users
 - [ ] Deprecation warnings are helpful and informative
 - [ ] New users naturally discover "roadmap" commands
 - [ ] Command discovery improved with intuitive naming
 
 ### Backwards Compatibility
+
 - [ ] Existing project files load and work correctly
 - [ ] Old CLI commands continue to function
 - [ ] No breaking changes for existing workflows
@@ -216,18 +264,25 @@ def project():
 ## Migration Strategy
 
 ### For Existing Users
+
 ```bash
+
 # Automatic migration helper command
+
 roadmap migrate project-to-roadmap     # Convert existing files/config
 
 # Show migration status
+
 roadmap migrate status                 # What needs converting
 
 # Opt-in migration
+
 roadmap config set terminology roadmap # Switch to new terms
-```
+
+```text
 
 ### For New Users
+
 - Default to "roadmap" terminology from `roadmap init`
 - Documentation examples use new commands
 - Help system primarily shows roadmap commands
@@ -236,14 +291,19 @@ roadmap config set terminology roadmap # Switch to new terms
 ## Technical Implementation Details
 
 ### Command Structure Options
+
 ```python
+
 # Option A: New top-level group
+
 @cli.group()
 def roadmap_cmd():  # Avoid conflict with @cli
+
     """Manage roadmaps."""
     pass
 
 # Option B: Subcommand approach
+
 @cli.group()
 def roadmap():
     """Roadmap management commands."""
@@ -254,23 +314,33 @@ def create():
     pass
 
 # Option C: Hybrid approach
+
 @cli.command()
 def create():  # Top-level shortcut
+
     """Create a new roadmap."""
     pass
-```
+
+```text
 
 ### Configuration Options
+
 ```bash
+
 # User preferences
+
 roadmap config set commands.use_legacy_project_terms false
 roadmap config set commands.show_deprecation_warnings true
 roadmap config set files.roadmap_directory "roadmaps"  # vs "projects"
-```
+
+```text
 
 ### Update Command Specification
+
 ```bash
+
 # New roadmap update command (currently missing from CLI)
+
 roadmap roadmap update ROADMAP_ID [OPTIONS]
 
 Options:
@@ -286,13 +356,16 @@ Options:
   --set-milestones TEXT           Replace all milestones (can be repeated)
 
 # Examples:
+
 roadmap roadmap update d9f5556c --add-milestone "v0.5.0"
 roadmap roadmap update d9f5556c --remove-milestone "old-milestone"
 roadmap roadmap update d9f5556c --description "Updated description" --priority high
 roadmap roadmap update d9f5556c --set-milestones "v1.0" --set-milestones "v2.0"
-```
+
+```text
 
 ### Update Command Implementation
+
 ```python
 @roadmap.command()
 @click.argument('roadmap_id')
@@ -316,6 +389,7 @@ def update(roadmap_id, **kwargs):
     roadmap_data = load_roadmap(roadmap_file)
 
     # Update fields
+
     if kwargs.get('description'):
         roadmap_data['description'] = kwargs['description']
     if kwargs.get('owner'):
@@ -323,6 +397,7 @@ def update(roadmap_id, **kwargs):
     # ... handle other fields
 
     # Handle milestone operations
+
     if kwargs.get('set_milestones'):
         roadmap_data['milestones'] = list(kwargs['set_milestones'])
     else:
@@ -336,14 +411,18 @@ def update(roadmap_id, **kwargs):
                     roadmap_data['milestones'].remove(milestone)
 
     # Update timestamp
+
     roadmap_data['updated'] = datetime.now().isoformat()
 
     # Save changes
+
     save_roadmap(roadmap_file, roadmap_data)
     click.echo(f"✅ Updated roadmap: {roadmap_data['name']}")
-```
+
+```text
 
 ### Backwards Compatibility Code
+
 ```python
 def handle_legacy_project_command(ctx, command_name):
     """Show deprecation warning and redirect to roadmap command."""
@@ -352,27 +431,33 @@ def handle_legacy_project_command(ctx, command_name):
     click.echo()
 
     # Execute new command
+
     ctx.invoke(roadmap_commands[command_name])
-```
+
+```text
 
 ## User Stories
 
 ### Story 1: New User Discovery
+
 **As a** new user of roadmap CLI
 **I want** the commands to use intuitive "roadmap" terminology
 **So that** I can easily understand what the tool does and how to use it
 
 ### Story 2: Existing User Migration
+
 **As an** existing user with project files
 **I want** my existing files and workflows to continue working
 **So that** I can adopt new terminology without losing my data
 
 ### Story 3: Team Onboarding
+
 **As a** team lead onboarding new team members
 **I want** consistent terminology between the tool name and commands
 **So that** new users aren't confused by mismatched naming
 
 ### Story 4: Documentation Clarity
+
 **As a** user reading documentation
 **I want** examples and help text to use "roadmap" terminology consistently
 **So that** I can follow along without terminology confusion
@@ -380,14 +465,17 @@ def handle_legacy_project_command(ctx, command_name):
 ## Alternative Approaches Considered
 
 ### Keep "Project" Terminology
+
 - **Pros**: No breaking changes, simpler implementation
 - **Cons**: Continues user confusion, misaligned naming
 
 ### Complete Breaking Change
+
 - **Pros**: Clean, consistent terminology
 - **Cons**: Breaks existing workflows, user frustration
 
 ### Configuration-Based Toggle
+
 - **Pros**: User choice, gradual adoption
 - **Cons**: Code complexity, ongoing maintenance
 

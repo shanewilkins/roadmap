@@ -55,21 +55,28 @@ When pulling the latest from master with **100+ new issues and 6+ new milestones
 ### CLI Usage
 
 ```bash
+
 # Standard sync (backward compatible)
+
 roadmap sync pull
 
 # High-performance sync (recommended for 50+ items)
+
 roadmap sync pull --high-performance
 
 # Customize performance parameters
+
 roadmap sync pull --high-performance --workers 12 --batch-size 25
 
 # Issues only
+
 roadmap sync pull --issues --high-performance
 
 # Milestones only
+
 roadmap sync pull --milestones --high-performance
-```
+
+```text
 
 ### Real-World Impact: Your 100+ Issue Scenario
 
@@ -134,17 +141,20 @@ The high-performance sync is **completely backward compatible**:
 ## Monitoring & Debugging
 
 ### Performance Report
-```
+
+```text
 📊 Performance Report:
    ⏱️  Total time: 1.30 seconds
    🚀 Throughput: 81.2 items/second
    📞 API calls: 2
    💾 Disk writes: 106
    ✅ Success rate: 98.1%
-```
+
+```text
 
 ### Progress Tracking
-```
+
+```text
 🚀 Using high-performance sync mode...
 📋 High-performance milestone sync...
    Fetching milestones from GitHub...
@@ -157,7 +167,8 @@ The high-performance sync is **completely backward compatible**:
    Batch 0: 50 issues processed
    Batch 1: 100 issues processed
    ✅ 100 created, 0 updated
-```
+
+```text
 
 ## Conclusion
 

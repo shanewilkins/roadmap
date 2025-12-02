@@ -8,19 +8,24 @@ All documentation stubs are marked with the following pattern:
 
 ```markdown
 > **⚠️ DOCUMENTATION STUB** - This feature is fully implemented but documentation is incomplete. Search for "DOCUMENTATION STUB" to find and complete before v1.0.
-```
+
+```text
 
 ## Finding Documentation Stubs
 
 Use this command to find all documentation stubs across the project:
 
 ```bash
+
 # Find all documentation stubs
+
 grep -r "DOCUMENTATION STUB" docs/
 
 # Count total stubs
+
 grep -r "DOCUMENTATION STUB" docs/ | wc -l
-```
+
+```text
 
 ## Stub Completion Status
 
@@ -100,15 +105,20 @@ Before marking documentation complete:
 ## Automation
 
 ```bash
+
 # Count remaining stubs
+
 ./scripts/count_documentation_stubs.sh
 
 # Validate documentation completeness
+
 ./scripts/validate_docs.sh
 
 # Generate API documentation
+
 ./scripts/generate_api_docs.py
-```
+
+```text
 
 ---
 

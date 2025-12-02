@@ -34,14 +34,18 @@ The visualization system transforms project data into actionable insights throug
 #### Status Distribution Analysis
 
 ```bash
+
 # Generate interactive donut chart
+
 $ roadmap visualize status --chart-type donut --format html
 ✅ Status distribution chart generated: .roadmap/artifacts/charts/status_distribution_donut_20241011_143500.html
 
 # Bar chart for milestone analysis
+
 $ roadmap visualize status --milestone "v1.0" --chart-type bar --format png
 ✅ Status chart saved: .roadmap/artifacts/charts/status_distribution_bar_20241011_143515.png
-```
+
+```text
 
 **Output Example**: Visual breakdown showing:
 - 40% Done (4 issues)
@@ -52,66 +56,94 @@ $ roadmap visualize status --milestone "v1.0" --chart-type bar --format png
 #### Burndown Chart Generation
 
 ```bash
+
 # Sprint burndown analysis
+
 $ roadmap visualize burndown --milestone "Sprint 3"
 ✅ Burndown chart generated: .roadmap/artifacts/charts/burndown_chart_20241011_143530.html
 
 # Includes:
+
 # - Ideal burndown line (linear decline)
+
 # - Actual progress line
+
 # - Completion projections
+
 # - Milestone deadline markers
-```
+
+```text
 
 #### Team Velocity Tracking
 
 ```bash
+
 # Weekly velocity trends
+
 $ roadmap visualize velocity --period W --format html
 ✅ Velocity chart generated: .roadmap/artifacts/charts/velocity_chart_20241011_143545.html
 
 # Shows:
+
 # - Issues completed per week
+
 # - Velocity score trends
+
 # - Performance predictions
+
 # - Capacity planning insights
-```
+
+```text
 
 #### Comprehensive Stakeholder Dashboard
 
 ```bash
+
 # Executive-ready dashboard
+
 $ roadmap visualize dashboard --output quarterly_report.html
 ✅ Stakeholder dashboard generated: quarterly_report.html
 
 # Includes:
+
 # - Project overview metrics
+
 # - Status distribution (interactive donut)
+
 # - Milestone progress bars
+
 # - Team velocity trends
+
 # - Workload distribution analysis
+
 # - Professional styling and branding
-```
+
+```text
 
 ### Real-World Analytics Example
 
 **Scenario**: Project manager needs to prepare weekly status report for stakeholders.
 
 ```bash
+
 # 1. Generate comprehensive dashboard
+
 $ roadmap visualize dashboard --milestone "Q4 Release"
 ✅ Dashboard: .roadmap/artifacts/dashboards/stakeholder_dashboard_20241011_143600.html
 
 # 2. Generate milestone-specific charts
+
 $ roadmap visualize milestones --format png
 ✅ Milestone chart: .roadmap/artifacts/charts/milestone_progress_20241011_143615.png
 
 # 3. Team workload analysis
+
 $ roadmap visualize team --format svg
 ✅ Team chart: .roadmap/artifacts/charts/team_workload_20241011_143630.svg
 
 # Result: Complete visual package for stakeholder presentation
-```
+
+```text
 
 **Dashboard Output Features**:
 - **Summary Metrics**: Total issues, completion rate, average cycle time
@@ -123,7 +155,9 @@ $ roadmap visualize team --format svg
 #### YAML Syntax Validation
 
 ```yaml
+
 # Example: Valid issue YAML structure
+
 ---
 id: "feature-auth"
 title: "Implement user authentication"
@@ -143,12 +177,15 @@ labels:
 created: 2024-10-10T10:30:00Z
 updated: 2024-10-10T14:15:00Z
 github_issue: 123
-```
+
+```text
 
 #### Schema Validation with Pydantic
 
 ```python
+
 # Automatic validation ensures data integrity
+
 class Issue(BaseModel):
     id: str = Field(..., regex=r'^[a-zA-Z0-9-_]+$')
     title: str = Field(..., min_length=1, max_length=200)
@@ -159,18 +196,23 @@ class Issue(BaseModel):
     labels: List[str] = Field(default_factory=list)
     created: datetime = Field(default_factory=datetime.now)
     updated: datetime = Field(default_factory=datetime.now)
-```
+
+```text
 
 #### Error Recovery and Backup
 
 ```bash
+
 # Automatic backup before any modification
+
 $ roadmap issue update "auth-feature" --status done
 
 # Creates timestamped backup
+
 .roadmap/.backups/issues_20241010_143022/auth-feature.yaml
 
 # Recovery from corruption
+
 $ roadmap bulk validate .roadmap/
 ❌ .roadmap/issues/corrupted-file.yaml - Invalid YAML syntax
 
@@ -183,40 +225,48 @@ $ cp .roadmap/.backups/issues_20241010_120515/corrupted-file.yaml \
 
 $ roadmap bulk validate .roadmap/
 ✅ All files valid
-```
+
+```text
 
 ### Real-World Example: Data Corruption Recovery
 
 **Scenario**: A team member accidentally corrupts several YAML files during a bulk edit operation.
 
 ```bash
+
 # 1. Detect the problem
+
 $ roadmap bulk validate .roadmap/
 ❌ .roadmap/issues/feature-auth.yaml - Invalid YAML syntax at line 15
 ❌ .roadmap/issues/bug-fix-123.yaml - Missing required field 'title'
 ✅ .roadmap/issues/performance-opt.yaml - Valid
 
 # 2. Check available backups
+
 $ ls .roadmap/.backups/ -la
 drwxr-xr-x  issues_20241010_143022/
 drwxr-xr-x  issues_20241010_120515/
 drwxr-xr-x  milestones_20241010_143022/
 
 # 3. Restore from most recent backup
+
 $ cp .roadmap/.backups/issues_20241010_143022/*.yaml .roadmap/issues/
 
 # 4. Verify restoration
+
 $ roadmap bulk validate .roadmap/
 ✅ Validation complete: 15/15 files valid
 
 # 5. Generate health report
+
 $ roadmap bulk health-report .roadmap/
 📊 Roadmap Health Report
 ✅ All systems healthy
 ├── 15 issues validated
 ├── 5 milestones validated
 └── No integrity issues found
-```
+
+```text
 
 ## 🚀 High-Performance Sync Engine
 
@@ -227,24 +277,33 @@ The high-performance sync engine provides dramatic improvements for large-scale 
 #### Before: Standard Sync
 
 ```bash
+
 # Sequential processing - slow and resource intensive
+
 $ time roadmap sync pull  # Standard mode
 
 # Processing 100 issues sequentially:
+
 # - 100+ individual API calls
+
 # - Sequential file operations
+
 # - No progress feedback
+
 # - Takes ~52 seconds
 
 real    0m52.134s
 user    0m2.341s
 sys     0m0.892s
-```
+
+```text
 
 #### After: High-Performance Sync
 
 ```bash
+
 # Parallel processing - fast and efficient
+
 $ time roadmap sync pull --high-performance
 
 🚀 Using high-performance sync mode...
@@ -268,48 +327,62 @@ $ time roadmap sync pull --high-performance
    ✅ Success rate: 98.1%
 
 real    0m1.300s  # 40x faster!
+
 user    0m0.234s
 sys     0m0.089s
-```
+
+```text
 
 ### Smart Caching System
 
 The caching system minimizes API calls and improves performance through intelligent data management.
 
 ```bash
+
 # First sync: Cache miss - fetches fresh data
+
 $ roadmap sync pull --high-performance
 📞 API calls: 2 (issues + milestones)
 🎯 Cache: 0 hits, 2 misses
 
 # Subsequent syncs within 5 minutes: Cache hit
+
 $ roadmap sync pull --high-performance
 📞 API calls: 0 (using cached data)
 🎯 Cache: 2 hits, 0 misses
 
 # Performance improvement from caching
+
 Time saved: ~1.5 seconds per sync
 API calls saved: 100% (2/2 calls cached)
-```
+
+```text
 
 ### Customizable Performance Parameters
 
 ```bash
+
 # Optimize for different scenarios
 
 # High-end development machine
+
 $ roadmap sync pull --high-performance \
   --workers 16 \           # Utilize all CPU cores
+
   --batch-size 200         # Large batches for maximum throughput
 
 # Network-constrained environment
+
 $ roadmap sync pull --high-performance \
   --workers 4 \            # Fewer workers
+
   --batch-size 25          # Smaller batches
 
 # Rate-limited API environment
+
 $ roadmap sync pull        # Use standard sync to respect rate limits
-```
+
+```text
 
 ## 🗂️ Bulk Operations
 
@@ -318,7 +391,9 @@ $ roadmap sync pull        # Use standard sync to respect rate limits
 Validate entire project structures with comprehensive reporting.
 
 ```bash
+
 # Comprehensive validation of large project
+
 $ roadmap bulk validate /enterprise-project/.roadmap/
 
 🔍 Validating roadmap files...
@@ -341,7 +416,8 @@ Validation Results:
 ├── issues/orphaned-task.yaml: References non-existent milestone 'v0.8'
 ├── milestones/overdue.yaml: Due date is 45 days past
 └── issues/unassigned-critical.yaml: Critical issue without assignee
-```
+
+```text
 
 ### Health Reporting
 
@@ -397,14 +473,17 @@ Analysis Time: 2.3 seconds
 ├── Assign owners to 23 unassigned issues
 ├── Update 5 legacy issues with current labels
 └── Consider closing empty milestone: unused-feature
-```
+
+```text
 
 ### Bulk Field Updates
 
 Perform mass updates across multiple files with conditions and safety checks.
 
 ```bash
+
 # Example: Team reorganization
+
 # Reassign all backend issues from departing team lead
 
 $ roadmap bulk update-field /project/.roadmap/ \
@@ -423,6 +502,7 @@ Would update 23 files:
 Continue? (y/N): y
 
 # Apply the changes
+
 $ roadmap bulk update-field /project/.roadmap/ \
   --field assignee \
   --condition "assignee=former-backend-lead" \
@@ -430,7 +510,8 @@ $ roadmap bulk update-field /project/.roadmap/ \
 
 ✅ Successfully updated 23 files
 📁 Backup created: /project/.roadmap/.backups/bulk_update_20241010_154530/
-```
+
+```text
 
 ## 🔒 File Locking System
 
@@ -439,7 +520,9 @@ $ roadmap bulk update-field /project/.roadmap/ \
 Prevent data corruption during simultaneous operations by multiple users or processes.
 
 ```python
+
 # Internal implementation example
+
 class LockedFileOperations:
     def safe_write_context(self, file_path: Path):
         """Provides safe write context with automatic locking."""
@@ -447,38 +530,47 @@ class LockedFileOperations:
             with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp:
                 yield temp.name
             # Atomic move after successful write
+
             shutil.move(temp.name, file_path)
-```
+
+```text
 
 ### Real-World Scenario: Team Collaboration
 
 **Scenario**: Multiple team members updating issues simultaneously during a sprint planning session.
 
 ```bash
+
 # User 1: Updating issue priority
+
 $ roadmap issue update "auth-feature" --priority critical
 🔒 Acquiring lock for auth-feature.yaml...
 ✅ Issue updated successfully
 
 # User 2: Simultaneously updating same issue status
+
 $ roadmap issue update "auth-feature" --status in-progress
 🔒 Waiting for lock on auth-feature.yaml...
 🔒 Lock acquired
 ✅ Issue updated successfully
 
 # Result: Both updates applied correctly without data corruption
+
 $ roadmap issue list --title "auth-feature"
 ┌─────────────────────────┬──────────────┬──────────┐
 │ Title                   │ Status       │ Priority │
 ├─────────────────────────┼──────────────┼──────────┤
 │ Implement auth feature  │ in-progress  │ critical │
 └─────────────────────────┴──────────────┴──────────┘
-```
+
+```text
 
 ### Lock Management
 
 ```bash
+
 # View active locks during debugging
+
 $ roadmap debug locks list
 🔒 Active File Locks:
 ├── auth-feature.yaml: Locked by PID 12345 (user: alice)
@@ -486,10 +578,12 @@ $ roadmap debug locks list
 └── Lock timeout: 30 seconds
 
 # Force unlock if process crashed (admin only)
+
 $ roadmap debug locks clear --file auth-feature.yaml --force
 ⚠️  Force unlocking auth-feature.yaml
 ✅ Lock cleared
-```
+
+```text
 
 ## ⏱️ Time Estimation and Workload Management
 
@@ -500,18 +594,23 @@ The Roadmap CLI includes comprehensive time estimation features for project plan
 #### Adding Time Estimates
 
 ```bash
+
 # Create issue with time estimate
+
 $ roadmap issue create "Implement OAuth2 authentication" \
   --priority high \
   --assignee "security-team" \
   --estimate 12.0
 
 # Update existing issue estimate
+
 $ roadmap issue update "auth-feature" --estimate 8.5
 
 # Remove estimate (set to 0)
+
 $ roadmap issue update "simple-fix" --estimate 0
-```
+
+```text
 
 #### Smart Time Display
 
@@ -528,7 +627,8 @@ $ roadmap issue list
 │ Database migration     │ review   │ critical │ v2.0      │ 2.0d     │
 │ UI redesign            │ todo     │ medium   │ v2.1      │ 40h      │
 └─────────────────────────┴──────────┴──────────┴───────────┴──────────┘
-```
+
+```text
 
 **Display Logic:**
 - `< 1 hour`: Shows in minutes (e.g., "30m")
@@ -547,7 +647,8 @@ $ roadmap milestone list
 │ v1.1-hotfix     │ open     │ 2024-11-15 │ 80%(4/5) │ 8.5h     │
 │ v2.1-features   │ planning │ 2025-02-28 │ 0%(0/12) │ 240.0h   │
 └─────────────────┴──────────┴────────────┴──────────┴──────────┘
-```
+
+```text
 
 #### Team Workload Analysis
 
@@ -568,29 +669,43 @@ $ roadmap team workload
 ├── Most active: frontend-team (5 in progress)
 ├── Lightest load: qa-team (18.0h total)
 └── Average issue size: 6.8 hours
-```
+
+```text
 
 ### Project Planning Benefits
 
 **Sprint Planning**: Use estimates to size sprints appropriately
+
 ```bash
+
 # Find issues totaling ~40 hours for 1-week sprint
+
 $ roadmap issue list --status todo | grep -E "(2\.0h|4\.0h|8\.0h)"
-```
+
+```text
 
 **Resource Allocation**: Balance workload across team members
+
 ```bash
+
 # Check team capacity before assignment
+
 $ roadmap team workload
 $ roadmap issue update "new-feature" --assignee "qa-team"  # Lightest load
-```
+
+```text
 
 **Timeline Estimation**: Calculate milestone completion dates
+
 ```bash
+
 # Milestone v2.0 has 156.5h remaining
+
 # With 3 developers × 40h/week = 120h/week capacity
+
 # Estimated completion: ~1.3 weeks
-```
+
+```text
 
 ## 📊 Schema Validation and Data Integrity
 
@@ -599,10 +714,13 @@ $ roadmap issue update "new-feature" --assignee "qa-team"  # Lightest load
 Ensure data consistency through comprehensive schema validation.
 
 ```python
+
 # Example validation in action
+
 from roadmap.models import Issue, Priority, Status
 
 # Valid issue creation
+
 issue = Issue(
     id="secure-login",
     title="Implement secure login system",
@@ -611,25 +729,33 @@ issue = Issue(
     milestone="security-phase",
     assignee="security-team"
 )
+
 # ✅ Validation passes
 
 # Invalid data detection
+
 try:
     invalid_issue = Issue(
         id="invalid id with spaces",  # ❌ Invalid characters
+
         title="",                     # ❌ Empty title
+
         priority="super-high",        # ❌ Invalid enum value
+
         status=Status.TODO
     )
 except ValidationError as e:
     print(f"Validation failed: {e}")
     # Provides detailed error messages with field-level specificity
-```
+
+```text
 
 ### Data Migration and Schema Evolution
 
 ```bash
+
 # Future feature: Automatic schema migration
+
 $ roadmap migrate --from v1.0 --to v2.0 .roadmap/
 
 📋 Schema Migration Plan:
@@ -645,14 +771,17 @@ $ roadmap migrate --from v1.0 --to v2.0 .roadmap/
 
 ✅ Migration complete: 347/347 files updated
 📁 Backup created: .roadmap/.backups/migration_v1_to_v2_20241010/
-```
+
+```text
 
 ## 🎛️ Advanced Configuration
 
 ### Environment-Based Configuration
 
 ```yaml
+
 # .roadmap/config.yaml
+
 project:
   name: "Enterprise Application"
   version: "2.0"
@@ -680,12 +809,15 @@ teams:
   frontend:
     members: ["diana", "eve", "frank"]
     default_labels: ["frontend", "ui"]
-```
+
+```text
 
 ### Custom Field Definitions
 
 ```yaml
+
 # Future feature: Custom fields
+
 custom_fields:
   estimated_hours:
     type: integer
@@ -702,7 +834,8 @@ custom_fields:
     type: enum
     values: ["low", "medium", "high", "critical"]
     required: true
-```
+
+```text
 
 ## 🔍 Monitoring and Analytics
 
@@ -711,7 +844,9 @@ custom_fields:
 Track and optimize system performance with detailed metrics.
 
 ```bash
+
 # Performance monitoring during large sync
+
 $ roadmap sync pull --high-performance --monitor
 
 🚀 High-Performance Sync Monitor
@@ -732,12 +867,15 @@ $ roadmap sync pull --high-performance --monitor
 ├── API calls: 2
 ├── Cache hit rate: 95%
 └── Success rate: 100%
-```
+
+```text
 
 ### Usage Analytics
 
 ```bash
+
 # Generate usage report
+
 $ roadmap analytics report --period "last-30-days"
 
 📈 Roadmap Usage Analytics (30 days)
@@ -766,24 +904,29 @@ $ roadmap analytics report --period "last-30-days"
 ├── Consider increasing default batch size
 ├── Schedule weekly bulk validation
 └── Enable auto-sync for alice and bob
-```
+
+```text
 
 ## 🛡️ Security and Best Practices
 
 ### Secure Credential Management
 
 ```bash
+
 # Secure token storage
+
 $ roadmap sync setup --token "$(cat ~/.github-token)" --repo "org/project"
 ✅ Token encrypted and stored securely
 🔐 Using system keychain for storage
 
 # Token rotation
+
 $ roadmap sync delete-token
 $ roadmap sync setup --token "new-token" --repo "org/project"
 ✅ Token updated successfully
 
 # Audit token usage
+
 $ roadmap sync audit
 🔍 Token Usage Audit:
 ├── Created: 2024-09-15 10:30:00
@@ -791,12 +934,15 @@ $ roadmap sync audit
 ├── API calls this month: 1,247
 ├── Rate limit remaining: 4,753/5,000
 └── Permissions: repo, write:issues
-```
+
+```text
 
 ### Data Validation Best Practices
 
 ```bash
+
 # Pre-commit validation
+
 $ cat .git/hooks/pre-commit
 #!/bin/bash
 roadmap bulk validate .roadmap/
@@ -807,6 +953,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Continuous integration
+
 $ cat .github/workflows/roadmap-validation.yml
 name: Roadmap Validation
 on: [push, pull_request]
@@ -821,7 +968,8 @@ jobs:
         run: roadmap bulk validate .roadmap/
       - name: Generate health report
         run: roadmap bulk health-report .roadmap/
-```
+
+```text
 
 ---
 

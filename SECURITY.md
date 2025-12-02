@@ -93,14 +93,18 @@ If you discover a security vulnerability in Roadmap CLI, please report it respon
 Production installations use **0 known CVEs**:
 
 ```bash
+
 # Verify production dependencies
+
 pip install roadmap-cli
 pip-audit  # Should show: No known vulnerabilities found
 
 # Dev-only CVEs are NOT in production
+
 pip install -e ".[dev]"
 pip-audit --dev  # May show dev-only vulnerabilities
-```
+
+```text
 
 ### Dependency Policy
 

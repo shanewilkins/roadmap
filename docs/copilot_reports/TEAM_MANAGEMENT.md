@@ -32,19 +32,24 @@ Comprehensive team collaboration and management system with advanced assignment 
 ## CLI Commands
 
 ```bash
+
 # Team management
+
 roadmap team members --list
 roadmap team assignments --assignee john
 roadmap team workload --team backend
 
 # User notifications
+
 roadmap user notifications --unread
 roadmap user activity --days 7
 
 # Handoff management
+
 roadmap handoff create --from john --to jane --context "API work"
 roadmap handoff-list --pending
-```
+
+```text
 
 ## Team Features
 

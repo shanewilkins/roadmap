@@ -40,7 +40,7 @@ Day 2 audit completed successfully. Found:
 
 #### Credential Storage Flow
 
-```
+```text
 get_token():
   1. Check GITHUB_TOKEN environment variable first
   2. Use platform-specific secure storage (Keychain/SecretService)
@@ -54,7 +54,8 @@ store_token():
 delete_token():
   1. Remove from platform-specific secure storage
   2. No effect on environment variable
-```
+
+```text
 
 **Security Finding:** ✅ Environment variable checked first ensures user can override.
 
@@ -63,16 +64,23 @@ delete_token():
 #### macOS Keychain Security ✅
 
 ```python
+
 # Uses security command with proper flags
+
 cmd = [
     "security",
     "add-generic-password",
     "-s", "roadmap-cli",      # Service name
+
     "-a", "github-token",     # Account name
+
     "-w", token,              # Password
+
     "-U"                       # Update (prevents duplicates)
+
 ]
-```
+
+```text
 
 **Security Analysis:**
 - `-U` flag prevents token duplication in Keychain
@@ -85,12 +93,16 @@ cmd = [
 #### Windows Credential Manager ✅
 
 ```python
+
 # Primary: keyring library (Credential Manager)
+
 keyring.set_password(SERVICE_NAME, target_name, token)
 
 # Fallback: Windows cmdkey utility
+
 cmd = ["cmdkey", f"/generic:roadmap-cli", f"/pass:{token}"]
-```
+
+```text
 
 **Security Analysis:**
 - `keyring` library abstracts credential storage
@@ -103,9 +115,12 @@ cmd = ["cmdkey", f"/generic:roadmap-cli", f"/pass:{token}"]
 #### Linux Secret Service ✅
 
 ```python
+
 # Uses keyring library for Secret Service D-Bus integration
+
 keyring.set_password(SERVICE_NAME, target_name, token)
-```
+
+```text
 
 **Security Analysis:**
 - Secret Service provides Linux equivalent of Keychain/Credential Manager
@@ -119,13 +134,15 @@ keyring.set_password(SERVICE_NAME, target_name, token)
 **Function:** `mask_token(token: str) -> str`
 
 **Implementation:**
+
 ```python
 def mask_token(token: str) -> str:
     """Mask a token for display purposes."""
     if not token or len(token) < 8:
         return "****"
     return f"****{token[-4:]}"
-```
+
+```text
 
 **Security Analysis:**
 - Shows only last 4 characters (e.g., `****abcd`)
@@ -143,14 +160,17 @@ def mask_token(token: str) -> str:
 ```python
 def get_token(self) -> str | None:
     # Check environment variable first (allows user override)
+
     env_token = os.getenv("GITHUB_TOKEN")
     if env_token:
         return env_token
     # Then check secure storage
+
     if self.system == "darwin":
         return self._get_token_keychain()
     # ... etc
-```
+
+```text
 
 **Finding:** ✅ SECURE - Environment variable takes priority
 
@@ -159,10 +179,13 @@ def get_token(self) -> str | None:
 ```python
 try:
     # Credential retrieval logic
+
 except Exception:
     # Silently fail and return None
+
     return None
-```
+
+```text
 
 **Finding:** ✅ SECURE - Credential retrieval won't block CLI
 
@@ -171,8 +194,10 @@ except Exception:
 ```python
 def _store_token_fallback(self, token: str, ...) -> bool:
     # Fallback returns False (doesn't store)
+
     return False
-```
+
+```text
 
 **Finding:** ✅ SECURE - No fallback to plaintext storage
 
@@ -198,15 +223,18 @@ def _store_token_fallback(self, token: str, ...) -> bool:
 ```python
 def SecureFileManager(file_path: str | Path, mode: str = "w", **kwargs):
     # For write operations:
+
     temp_file = tempfile.NamedTemporaryFile(
         mode=mode,
         dir=file_path.parent,  # Same filesystem for atomic move
+
         delete=False
     )
     yield temp_file
     temp_file.close()
     shutil.move(temp_file.name, file_path)  # Atomic operation
-```
+
+```text
 
 **Security Benefits:**
 - Prevents partial writes (file is complete or not visible)
@@ -219,6 +247,7 @@ def SecureFileManager(file_path: str | Path, mode: str = "w", **kwargs):
 ### 2.3 Directory Creation Security
 
 **Implementation:**
+
 ```python
 def ensure_directory_exists(
     directory_path: str | Path,
@@ -231,7 +260,8 @@ def ensure_directory_exists(
         parents=parents,
         exist_ok=exist_ok
     )
-```
+
+```text
 
 **Security Analysis:**
 - Centralizes directory creation to prevent TOCTOU races
@@ -252,14 +282,17 @@ def validate_path(
     allow_absolute: bool = False,
 ) -> Path:
     # Resolves symlinks and normalizes path
+
     resolved_path = path.resolve()
 
     # Checks boundaries if base_dir specified
+
     if base_dir:
         resolved_base = base_dir.resolve()
         if not str(resolved_path).startswith(str(resolved_base)):
             raise PathValidationError(...)
-```
+
+```text
 
 **Security Benefits:**
 - Symlinks are resolved to real paths
@@ -302,10 +335,12 @@ def create_secure_file(
     with open(path, mode, **kwargs) as f:
         try:
             path.chmod(permissions)  # 0o600 = owner only
+
         except (OSError, PermissionError) as e:
             log_security_event("permission_warning", {...})
     yield f
-```
+
+```text
 
 **Security Properties:**
 - Sets permissions to `0o600` (owner read/write only)
@@ -318,7 +353,8 @@ def create_secure_file(
 ### 3.2 Error Handling
 
 **Exception Hierarchy:**
-```
+
+```text
 SecurityError (base)
 ├── PathValidationError
 └── (Other security exceptions)
@@ -327,7 +363,8 @@ FileOperationError (base)
 ├── DirectoryCreationError
 ├── FileReadError
 └── FileWriteError
-```
+
+```text
 
 **Each exception includes:**
 - Operation type
@@ -389,7 +426,7 @@ FileOperationError (base)
 
 ### 4.3 Test Execution Results
 
-```
+```text
 28 passed in 1.44s ✅
 
 TestCredentialSecurity ..................... [7 tests]
@@ -398,7 +435,8 @@ TestPermissionHandling ..................... [4 tests]
 TestCredentialExposurePrevention ........... [4 tests]
 TestSymlinkAndRaceConditions .............. [2 tests]
 TestCredentialManagerError ................. [3 tests]
-```
+
+```text
 
 ---
 

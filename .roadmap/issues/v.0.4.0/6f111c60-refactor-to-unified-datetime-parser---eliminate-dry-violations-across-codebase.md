@@ -32,6 +32,7 @@ completed_date: null
 **🚨 CRITICAL TECHNICAL DEBT: Eliminate 20+ duplicate datetime parsing implementations**
 
 ### **Current Problem:**
+
 - Multiple `_parse_datetime` methods in parser.py (IssueParser, MilestoneParser, ProjectParser)
 - 15+ scattered `fromisoformat(x.replace("Z", "+00:00"))` implementations across modules
 - Inconsistent timezone handling and error behavior
@@ -42,6 +43,7 @@ completed_date: null
 Create a single, centralized datetime parsing system that eliminates all duplication and provides consistent behavior across the entire codebase.
 
 ### **Benefits:**
+
 - ✅ Eliminate ~500+ lines of duplicate code
 - ✅ Single source of truth for datetime parsing
 - ✅ Consistent timezone handling across entire codebase

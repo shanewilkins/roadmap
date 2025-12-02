@@ -32,15 +32,20 @@ High-performance repository scanning engine for analyzing Git repositories, extr
 ## CLI Commands
 
 ```bash
+
 # Scan repository
+
 roadmap ci scan-repository --max-commits 1000
 
 # High-performance mode
+
 roadmap ci scan-repository --high-performance
 
 # Incremental scan
+
 roadmap ci scan-repository --since "2025-01-01"
-```
+
+```text
 
 ## Scanning Modes
 

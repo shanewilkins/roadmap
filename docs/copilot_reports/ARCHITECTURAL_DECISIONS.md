@@ -17,13 +17,15 @@ This document outlines the architectural decisions made for the Roadmap v1.0 cod
 **Decision:** Implement a **strict layered architecture** with clear separation of concerns.
 
 **Structure:**
-```
+
+```text
 roadmap/
 ├── presentation/     (CLI layer - user interface)
 ├── application/      (Use cases & orchestration)
 ├── domain/          (Business logic & models)
 └── infrastructure/  (External systems: DB, GitHub, Git)
-```
+
+```text
 
 **Rationale:**
 - Clear separation of concerns makes code easier to test and maintain
@@ -45,7 +47,8 @@ roadmap/
 **Decision:** Organize CLI commands by **feature/domain** with one command per file.
 
 **Structure:**
-```
+
+```text
 roadmap/presentation/cli/
 ├── __init__.py                  (command registration)
 ├── issues/
@@ -72,7 +75,8 @@ roadmap/presentation/cli/
 └── git/
     ├── __init__.py
     └── hooks.py
-```
+
+```text
 
 **Rationale:**
 - Each command in its own focused file (~100-200 lines)
@@ -94,7 +98,8 @@ roadmap/presentation/cli/
 **Decision:** All validation, formatting, and utility code lives in **`shared/`** directory.
 
 **Structure:**
-```
+
+```text
 roadmap/shared/
 ├── __init__.py
 ├── validation.py        (all validators: issue, milestone, project)
@@ -103,7 +108,8 @@ roadmap/shared/
 ├── constants.py         (app constants & enums)
 ├── logging.py           (logging configuration)
 └── utils.py             (misc utilities)
-```
+
+```text
 
 **Rationale:**
 - Single source of truth for common logic
@@ -129,14 +135,16 @@ roadmap/shared/
 **Decision:** All external system integrations live in **`infrastructure/`** directory.
 
 **Structure:**
-```
+
+```text
 roadmap/infrastructure/
 ├── __init__.py
 ├── github.py            (GitHub API client)
 ├── git.py               (Git integration + hooks)
 ├── storage.py           (Database layer)
 └── persistence.py       (State persistence)
-```
+
+```text
 
 **Rationale:**
 - Clear boundary between "what we do" vs "how we interface with external systems"
@@ -158,7 +166,8 @@ roadmap/infrastructure/
 **Decision:** Refactor `visualization.py` into a **full package** organized by visualization type.
 
 **Structure:**
-```
+
+```text
 roadmap/application/visualization/
 ├── __init__.py              (main export)
 ├── timeline.py              (timeline visualization: ~500 lines)
@@ -170,7 +179,8 @@ roadmap/application/visualization/
 │   ├── json.py              (JSON output for APIs)
 │   └── html.py              (HTML rendering - reserved for future)
 └── formatters.py            (shared formatting utilities)
-```
+
+```text
 
 **Rationale:**
 - Breaks 1487-line monolith into focused modules
@@ -192,7 +202,8 @@ roadmap/application/visualization/
 **Decision:** Organize tests with **unit/integration split** but don't mirror source structure perfectly.
 
 **Structure:**
-```
+
+```text
 tests/
 ├── unit/                        (isolated component tests)
 │   ├── application/
@@ -223,7 +234,8 @@ tests/
 │   └── factories.py             (object factories)
 │
 └── pytest.ini
-```
+
+```text
 
 **Rationale:**
 - Clear unit vs integration distinction
@@ -303,7 +315,7 @@ tests/
 
 ## Dependency Direction (Enforced)
 
-```
+```text
 presentation/cli/        (user interface)
          ↓
     application/         (use cases, services)
@@ -313,7 +325,8 @@ presentation/cli/        (user interface)
   infrastructure/        (external systems)
 
 shared/                  (can be used by any layer)
-```
+
+```text
 
 **Rule:** Only downward dependencies. No upward or circular dependencies.
 
@@ -322,30 +335,35 @@ shared/                  (can be used by any layer)
 ## Layer Responsibilities
 
 ### Presentation Layer (`presentation/`)
+
 - **Responsibility:** User interface (CLI)
 - **Owns:** Command definitions, command handlers, user output
 - **Depends on:** Application layer
 - **Testable:** Via Click's CliRunner
 
 ### Application Layer (`application/`)
+
 - **Responsibility:** Use cases and orchestration
 - **Owns:** Services (IssueService, MilestoneService), visualization
 - **Depends on:** Domain layer, Infrastructure layer
 - **Testable:** With mocked infrastructure
 
 ### Domain Layer (`domain/`)
+
 - **Responsibility:** Business logic and models
 - **Owns:** Issue, Milestone, Project models and their logic
 - **Depends on:** Nothing (pure business logic)
 - **Testable:** Without mocks
 
 ### Infrastructure Layer (`infrastructure/`)
+
 - **Responsibility:** External system communication
 - **Owns:** GitHub client, Git integration, database
 - **Depends on:** Nothing
 - **Testable:** With mocked HTTP/Git calls
 
 ### Shared Layer (`shared/`)
+
 - **Responsibility:** Common utilities and patterns
 - **Owns:** Validation, formatting, errors, constants
 - **Depends on:** Domain layer only
@@ -384,32 +402,50 @@ shared/                  (can be used by any layer)
 ## Import Guidelines
 
 **Good (downward dependencies):**
+
 ```python
+
 # In presentation/cli/issues/create.py
+
 from application.services.issue_service import IssueService
 from shared.validation import validate_issue_title
-```
+
+```text
 
 **Good (shared utilities):**
+
 ```python
+
 # In application/services/issue_service.py
+
 from shared.errors import ValidationError
 from shared.validation import validate_issue_title
-```
+
+```text
 
 **BAD (circular dependencies):**
+
 ```python
+
 # DON'T DO THIS
+
 # In domain/issue.py
+
 from application.services.issue_service import IssueService  # ❌ CIRCULAR
-```
+
+```text
 
 **BAD (upward dependencies):**
+
 ```python
+
 # DON'T DO THIS
+
 # In infrastructure/storage.py
+
 from presentation.cli.issues.create import CreateIssueCommand  # ❌ WRONG DIRECTION
-```
+
+```text
 
 ---
 
@@ -429,6 +465,7 @@ from presentation.cli.issues.create import CreateIssueCommand  # ❌ WRONG DIREC
 ## Appendix: Decision Matrix
 
 | # | Decision | Choice | Rationale |
+
 |---|----------|--------|-----------|
 | 1 | Architecture | Layered | Clear concerns, testable, familiar |
 | 2 | CLI Organization | Feature Hierarchy | Scalable, mirrors backend, ~150 lines per file |

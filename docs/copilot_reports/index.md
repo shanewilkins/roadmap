@@ -18,7 +18,8 @@ A powerful, modern command-line tool for creating and managing project roadmaps 
 
 ```bash
 pip install roadmap-cli
-```
+
+```text
 
 ### GitHub Integration Setup
 
@@ -36,6 +37,7 @@ Get started with GitHub sync in 3 easy steps:
    ```bash
    roadmap credentials set-github-token
    # Enter your token when prompted
+
    ```
 
 4. **Test and sync**:
@@ -49,30 +51,39 @@ Get started with GitHub sync in 3 easy steps:
 ### Basic Usage
 
 ```bash
+
 # Initialize a new roadmap
+
 roadmap init
 
 # Create your first issue
+
 roadmap issue create "Setup project structure" --priority high --type feature
 
 # Create a milestone
+
 roadmap milestone create "v1.0 Release" --due-date 2025-12-31
 
 # View project status
+
 roadmap status
 
 # Export data for analysis
+
 roadmap export issues --format excel
-```
+
+```text
 
 ## 📖 Documentation Structure
 
 ### Getting Started
+
 - **[Installation Guide](INSTALLATION.md)** - Complete setup instructions
 - **[Quick Start](quickstart.md)** - Get up and running in minutes
 - **[User Workflows](USER_WORKFLOWS.md)** - Step-by-step workflows
 
 ### User Guide
+
 - **[Core Concepts](user-guide/concepts.md)** - Understanding roadmaps, issues, and milestones
 - **[Project Management](PROJECT_MANAGEMENT.md)** - Creating and managing projects with timeline tracking
 - **[Issue Management](user-guide/issues.md)** - Creating and managing issues
@@ -82,26 +93,31 @@ roadmap export issues --format excel
 - **[GitHub Integration](user-guide/github.md)** - Sync with GitHub repositories
 
 ### Reference
+
 - **[CLI Reference](CLI_REFERENCE.md)** - Complete command documentation
 - **[API Reference](api/index.md)** - Python API documentation
 - **[Configuration](configuration.md)** - Configuration options and settings
 
 ### Advanced Topics
+
 - **[Performance Optimization](PERFORMANCE_OPTIMIZATION.md)** - Scaling and optimization
 - **[Security Guide](SECURITY.md)** - Security best practices
 - **[Architecture](architecture.md)** - Technical architecture overview
 
 ### Developer Features
+
 - **[Git Hooks Integration](GIT_HOOKS.md)** - Automated workflow with Git hooks 🚧
 - **[CI/CD Integration](CI_CD.md)** - Continuous integration and deployment 🚧
 - **[Repository Scanner](REPOSITORY_SCANNER.md)** - High-performance repository analysis 🚧
 
 ### Analytics & Intelligence
+
 - **[Predictive Analytics](PREDICTIVE_ANALYTICS.md)** - ML-powered forecasting and estimation 🚧
 - **[Enhanced Analytics](ENHANCED_ANALYTICS.md)** - Advanced reporting and insights 🚧
 - **[Visualization Features](VISUALIZATION_FEATURES.md)** - Charts and interactive dashboards
 
 ### Team & Integration
+
 - **[Team Management](TEAM_MANAGEMENT.md)** - Advanced team collaboration features 🚧
 - **[Bulk Operations](BULK_OPERATIONS.md)** - Large-scale data operations 🚧
 - **[Webhook Server](WEBHOOK_SERVER.md)** - Real-time integrations and webhooks 🚧
@@ -111,10 +127,13 @@ roadmap export issues --format excel
 ## 💡 Key Concepts
 
 ### Projects
+
 Projects provide high-level organization and tracking for complex initiatives. They include timeline management, resource planning, and milestone coordination.
 
 ```bash
+
 # Create a project
+
 roadmap project create "Q1 Product Launch" \
   --description "Launch new product features for Q1 2025" \
   --owner "product-team" \
@@ -126,14 +145,19 @@ roadmap project create "Q1 Product Launch" \
   --milestones "Beta Testing"
 
 # Generate project analysis
+
 roadmap project overview --format rich
-```
+
+```text
 
 ### Issues
+
 Issues are the fundamental units of work in your roadmap. Each issue represents a task, feature, bug fix, or any work item that needs to be tracked.
 
 ```bash
+
 # Create an issue
+
 roadmap issue create "Implement user authentication" \\
   --priority critical \\
   --type feature \\
@@ -142,49 +166,68 @@ roadmap issue create "Implement user authentication" \\
   --estimate 8
 
 # List issues with filtering
+
 roadmap issue list --status in-progress --assignee john
-```
+
+```text
 
 ### Milestones
+
 Milestones represent significant project checkpoints or releases. They help organize issues into deliverable chunks.
 
 ```bash
+
 # Create a milestone
+
 roadmap milestone create "Beta Release" \\
   --due-date 2025-06-01 \\
   --description "Initial beta version with core features"
 
 # Assign issues to milestone
+
 roadmap issue update ISSUE_ID --milestone "Beta Release"
-```
+
+```text
 
 ### Team Collaboration
+
 Roadmap CLI supports multi-user workflows with assignment tracking, handoffs, and team analytics.
 
 ```bash
+
 # Assign an issue
+
 roadmap issue update ISSUE_ID --assignee alice
 
 # Hand off to another team member
+
 roadmap handoff ISSUE_ID bob --context "Needs frontend integration"
 
 # View team workload
+
 roadmap team workload
-```
+
+```text
 
 ### Data Export and Analytics
+
 Export your roadmap data for reporting, analysis, and stakeholder communication.
 
 ```bash
+
 # Export issues to Excel
+
 roadmap export issues --format excel --milestone "v1.0"
 
 # Generate analytics dashboard
+
 roadmap analytics --period month --export --format excel
 
 # Export with filtering
+
 roadmap export issues --format csv --status done --priority critical
-```
+
+```text
 
 ## 🏗️ Architecture
 

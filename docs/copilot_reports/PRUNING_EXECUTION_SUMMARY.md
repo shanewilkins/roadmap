@@ -71,17 +71,20 @@ Created comprehensive documentation:
 ## Results
 
 ### Code Reduction
+
 - **Before**: 30,312 lines in 55 modules
 - **After**: ~18,824 lines in 35 modules
 - **Reduction**: 11,488 lines (37.9%) removed from main package
 
 ### Testing Status
+
 - **Total Tests**: 605
 - **Passing**: 594 (98.2%)
 - **Skipped**: 11 (archived feature tests)
 - **Failed**: 0 (all failures related to archived features)
 
 ### v1.0 Core Intact
+
 ✅ Issue management - All commands working
 ✅ Milestone tracking - All commands working
 ✅ Progress reporting - All commands working
@@ -97,7 +100,9 @@ Created comprehensive documentation:
 To restore any feature post-v1.0:
 
 ```bash
+
 # Example: Restore analytics
+
 1. Move module back:
    mv future/analytics.py roadmap/
    mv future/tests/test_analytics.py tests/
@@ -110,7 +115,8 @@ To restore any feature post-v1.0:
 
 4. Run tests:
    poetry run pytest tests/test_analytics.py -v
-```
+
+```text
 
 All archived modules retain imports to core modules, so restoration is straightforward.
 
@@ -119,17 +125,20 @@ All archived modules retain imports to core modules, so restoration is straightf
 ## Files Changed
 
 ### Moved to `future/`
+
 - 20 main modules
 - 15 test files
 - 1 support file (deprecated.py content)
 
 ### Updated
+
 - `roadmap/cli/__init__.py` - Removed Phase 1&2 command registrations
 - `roadmap/git_hooks.py` - Removed CI tracking functionality
 - `tests/conftest.py` - Updated fixtures for archived modules
 - `tests/test_git_hooks.py` - Skipped CI tracking tests
 
 ### Created
+
 - `future/__init__.py`
 - `future/tests/__init__.py`
 - `future/FUTURE_FEATURES.md`

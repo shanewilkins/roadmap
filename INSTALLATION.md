@@ -5,24 +5,32 @@
 ### Production Installation (Recommended for Users)
 
 ```bash
+
 # Using pip (simplest)
+
 pip install roadmap-cli
 
 # Using Poetry (ensures reproducible builds)
+
 poetry install --no-dev
-```
+
+```text
 
 **Result:** Lightweight, secure installation with **0 known CVEs**
 
 ### Development Installation
 
 ```bash
+
 # Install with all development tools
+
 poetry install
 
 # Or if using pip with extras
+
 pip install -e ".[dev]"
-```
+
+```text
 
 **Includes:** Testing frameworks, linters, documentation tools, pre-commit hooks
 
@@ -89,14 +97,18 @@ When you run `poetry install --no-dev` (or `pip install .`), you get:
 To verify your installation has no vulnerabilities:
 
 ```bash
+
 # Install pip-audit
+
 pip install pip-audit
 
 # For production installations
+
 pip-audit
 
 # Expected output: No known vulnerabilities found
-```
+
+```text
 
 ## Docker Deployment
 
@@ -108,16 +120,20 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy only needed files
+
 COPY pyproject.toml setup.cfg README.md LICENSE.md ./
 
 # Install production only
+
 RUN pip install --no-cache-dir .
 
 # Or with Poetry
+
 # RUN pip install poetry && poetry install --no-dev
 
 ENTRYPOINT ["roadmap"]
-```
+
+```text
 
 ## CI/CD Integration
 
@@ -140,15 +156,18 @@ jobs:
           python-version: '3.12'
 
       # Verify security for production
+
       - name: Audit dependencies
         run: |
           pip install pip-audit
           PIPAPI_PYTHON_LOCATION=$(which python) pip-audit
 
       # Install production
+
       - name: Install production
         run: pip install .
-```
+
+```text
 
 ## Troubleshooting
 
@@ -157,55 +176,75 @@ jobs:
 A: Create a separate virtual environment for development:
 
 ```bash
+
 # Development environment
+
 python -m venv venv-dev
 source venv-dev/bin/activate
 poetry install
-```
+
+```text
 
 ```bash
+
 # Production environment
+
 python -m venv venv-prod
 source venv-prod/bin/activate
 poetry install --no-dev
-```
+
+```text
 
 ### Q: How do I know which mode I'm in?
 
 A: Check installed packages:
 
 ```bash
+
 # Production - 50 packages
+
 pip list | wc -l
-```
+
+```text
 
 ```bash
+
 # Development - 80+ packages
+
 pip list | wc -l
-```
+
+```text
 
 Or look for test/dev tools:
 
 ```bash
 pip show pytest  # Not found in production
+
 pip show ruff    # Not found in production
-```
+
+```text
 
 ### Q: Can I switch from dev to production?
 
 A: Yes, create a fresh environment:
 
 ```bash
+
 # Remove old packages
+
 pip uninstall -y -r <(pip freeze)
-```
+
+```text
 
 ```bash
+
 # Or start fresh
+
 python -m venv venv-new
 source venv-new/bin/activate
 poetry install --no-dev
-```
+
+```text
 
 ## Security Notes
 

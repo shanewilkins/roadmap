@@ -1,6 +1,7 @@
 # Code Cleanup Session - November 18, 2025
 
 ## Overview
+
 This document tracks the code cleanup, refactoring, and analysis work performed this afternoon to ensure clean architecture and remove technical debt.
 
 ---
@@ -12,10 +13,12 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 ### Key Metrics
 
 #### Production Code
+
 - **Total Python Files:** 100
 - **Total Lines:** 25,693 LOC
 
 #### By Layer
+
 | Layer | Files | Lines | Avg File Size |
 |-------|-------|-------|---|
 | Domain | 4 | 504 | 126 |
@@ -26,11 +29,13 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 | **Root-level (Legacy)** | **27** | **13,675** | **507** |
 
 #### Test Code
+
 - **Total Test Files:** 83
 - **Total Test Lines:** 31,904 LOC
 - **Test-to-Code Ratio:** 1.24:1
 
 #### By Test Layer
+
 | Layer | Files | Lines |
 |-------|-------|-------|
 | Unit/Domain | 3 | 1,064 |
@@ -66,6 +71,7 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 **Finding:** The root level is cluttered with both legacy code and active utilities that should be organized.
 
 ### Documentation Files
+
 - **Total Doc Lines:** 11,126 LOC
 - **Root-level MD files:** 10 files
 - **Files in docs/:** Most content
@@ -92,6 +98,7 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 **Expected Impact:** Clean, focused codebase with clear imports
 
 ### Deletions Planned
+
 1. Delete `roadmap/core.py` (1,183 lines)
 2. Delete `roadmap/error_handling.py` (498 lines)
 3. Delete `roadmap/validation.py` (513 lines)
@@ -130,6 +137,7 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 **Action:** Move planning and report documents
 
 ### Files to Move
+
 - [ ] REFACTORING_IMPLEMENTATION_PLAN.md
 - [ ] CLI_COMMANDS_COMPARISON.md
 - [ ] PHASE_3_PLAN.md
@@ -141,6 +149,7 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 - [ ] tests/TEST_ORGANIZATION.md
 
 ### Files to Keep at Root
+
 - README.md
 - LICENSE.md
 - CHANGELOG.md
@@ -185,6 +194,7 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 *To be completed at end of session*
 
 ### Work Completed
+
 - [ ] Phase 1: Baseline analysis ✅
 - [ ] Phase 2: Code pruning
 - [ ] Phase 3: Organize docs/reports/
@@ -194,10 +204,12 @@ This document tracks the code cleanup, refactoring, and analysis work performed 
 - [ ] Phase 7: Add validation scripts
 
 ### Metrics
+
 - **Lines Removed:** TBD
 - **Files Deleted:** TBD
 - **Complexity Reduction:** TBD
 - **Test Pass Rate:** TBD
 
 ### Next Actions
+
 - TBD

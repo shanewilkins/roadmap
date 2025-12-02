@@ -92,12 +92,15 @@ All core dependencies:
 **Action Item:** Create GitHub workflow to run pip-audit on every push
 
 ```yaml
+
 # Suggested: .github/workflows/security-audit.yml
+
 - name: Dependency Security Audit
   run: |
     pip install pip-audit
     pip-audit --ignore 19,20,21  # Ignore dev-only CVEs
-```
+
+```text
 
 ---
 
@@ -119,7 +122,8 @@ test_path_validation_rejects_directory_traversal - PASSED
 test_path_validation_rejects_double_dot_sequences - PASSED
 test_path_validation_resolves_symlinks - PASSED
 test_path_validation_with_base_dir - PASSED
-```
+
+```text
 
 **Finding:** `validate_path()` function in `roadmap/shared/security.py` correctly prevents directory traversal attacks.
 
@@ -129,7 +133,8 @@ test_path_validation_with_base_dir - PASSED
 test_cli_rejects_command_injection_in_issue_id - PASSED
 test_cli_rejects_command_injection_in_milestone_name - PASSED
 test_cli_rejects_null_bytes - PASSED
-```
+
+```text
 
 **Finding:** Click framework automatically escapes shell metacharacters. Command injection attempts are safely handled.
 
@@ -137,7 +142,8 @@ test_cli_rejects_null_bytes - PASSED
 
 ```python
 test_datetime_validation_rejects_invalid_formats - PASSED
-```
+
+```text
 
 **Finding:** DateTime parsing uses strict format validation with try/except error handling.
 
@@ -146,7 +152,8 @@ test_datetime_validation_rejects_invalid_formats - PASSED
 ```python
 test_priority_choice_validation - PASSED
 test_type_choice_validation - PASSED
-```
+
+```text
 
 **Finding:** Click's `choice` type validator prevents invalid enum values.
 
@@ -155,7 +162,8 @@ test_type_choice_validation - PASSED
 ```python
 test_export_output_path_validation - PASSED
 test_symlink_following_prevention - PASSED
-```
+
+```text
 
 **Finding:** File paths are validated before operations. Symlink handling is safe.
 
@@ -164,7 +172,8 @@ test_symlink_following_prevention - PASSED
 ```python
 test_cli_handles_unicode_safely - PASSED
 test_markdown_rendering_escapes_html - PASSED
-```
+
+```text
 
 **Finding:** Unicode and special characters are handled safely without security issues.
 
@@ -196,11 +205,16 @@ test_markdown_rendering_escapes_html - PASSED
 ✅ **SECURE:** All YAML parsing uses `yaml.safe_load()`
 
 ```python
+
 # Examples from codebase:
+
 config_data = yaml.safe_load(f) or {}  # cli/github_setup.py
+
 frontmatter = yaml.safe_load(frontmatter_str) or {}  # infrastructure/persistence/parser.py
+
 metadata = yaml.safe_load(yaml_content)  # presentation/cli/projects/list.py
-```
+
+```text
 
 ❌ **NOT FOUND:** No unsafe `yaml.load()` or `yaml.FullLoader` instances
 
@@ -280,6 +294,7 @@ metadata = yaml.safe_load(yaml_content)  # presentation/cli/projects/list.py
 2. **For Production Deployment:**
    ```bash
    # Use clean installs with no optional extras
+
    poetry install --no-extras
    ```
 

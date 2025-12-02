@@ -12,99 +12,155 @@
 ```text
 roadmap/
 ├── domain/                           # Pure business logic & models
+
 │   ├── __init__.py
 │   ├── issue.py                      # Issue model (~100-150 lines)
+
 │   ├── milestone.py                  # Milestone model (~100-150 lines)
+
 │   └── project.py                    # Project model (~80-120 lines)
+
 │
 ├── infrastructure/                   # External system integration
+
 │   ├── __init__.py
 │   ├── github.py                     # GitHub API client (keep 767 lines as is)
+
 │   ├── git.py                        # Git integration (from git_integration.py + git_hooks.py, ~1000 lines)
+
 │   ├── storage.py                    # Database layer (from database.py, ~1200 lines)
+
 │   └── persistence.py                # State persistence utilities
+
 │
 ├── application/                      # Use cases & orchestration
+
 │   ├── __init__.py
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── issue_service.py          # Issue operations (~300-400 lines)
+
 │   │   ├── milestone_service.py      # Milestone operations (~250-300 lines)
+
 │   │   └── project_service.py        # Project operations (~200-250 lines)
+
 │   │
 │   ├── visualization/                # Visualization package (from visualization.py, 1487 lines)
+
 │   │   ├── __init__.py
 │   │   ├── timeline.py               # Timeline visualization (~500 lines)
+
 │   │   ├── progress.py               # Progress/burndown (~600 lines)
+
 │   │   ├── burndown.py               # Burndown analysis (~300 lines)
+
 │   │   ├── formatters.py             # Shared formatting (~87 lines)
+
 │   │   └── renderers/
 │   │       ├── __init__.py
 │   │       ├── text.py               # ASCII rendering (~150 lines)
+
 │   │       ├── json.py               # JSON output (~100 lines)
+
 │   │       └── html.py               # Reserved for future (~50 lines stub)
+
 │   │
 │   └── core.py                       # RoadmapCore orchestrator (from core.py, refactored to ~300 lines)
+
 │
 ├── presentation/                     # CLI interface layer
+
 │   ├── __init__.py
 │   └── cli/
 │       ├── __init__.py               # Command registration
+
 │       ├── issues/
 │       │   ├── __init__.py
 │       │   ├── create.py             # Issue create command (~100-120 lines)
+
 │       │   ├── list.py               # Issue list command (~120-150 lines)
+
 │       │   ├── update.py             # Issue update command (~100-120 lines)
+
 │       │   └── close.py              # Issue close command (~80-100 lines)
+
 │       │
 │       ├── milestones/
 │       │   ├── __init__.py
 │       │   ├── create.py             # Milestone create (~80-100 lines)
+
 │       │   ├── list.py               # Milestone list (~100-120 lines)
+
 │       │   └── update.py             # Milestone update (~80-100 lines)
+
 │       │
 │       ├── projects/
 │       │   ├── __init__.py
 │       │   ├── create.py             # Project create (~80-100 lines)
+
 │       │   └── list.py               # Project list (~80-100 lines)
+
 │       │
 │       ├── progress/
 │       │   ├── __init__.py
 │       │   └── show.py               # Progress display (~100-150 lines)
+
 │       │
 │       ├── data/
 │       │   ├── __init__.py
 │       │   └── export.py             # Data export (~150-200 lines)
+
 │       │
 │       ├── git/
 │       │   ├── __init__.py
 │       │   └── hooks.py              # Git hooks commands (~200-250 lines)
+
 │       │
 │       ├── comment.py                # Issue comment command (~100 lines)
+
 │       ├── utils.py                  # CLI utilities (~80 lines)
+
 │       └── core.py                   # Main CLI entry point (keep as ~1100 lines, minimal refactor)
+
 │
 ├── shared/                           # Common utilities & patterns
+
 │   ├── __init__.py
 │   ├── validation.py                 # All validators (~300-400 lines)
+
 │   ├── formatters.py                 # Output formatting (~150-200 lines)
+
 │   ├── errors.py                     # Exception definitions (~100-150 lines)
+
 │   ├── constants.py                  # App constants & enums (~100-150 lines)
+
 │   ├── logging.py                    # Logging configuration (keep as is)
+
 │   └── utils.py                      # Misc utilities (~100 lines)
+
 │
 ├── core.py                           # DEPRECATED: kept for backward compat (will remove post-refactor)
+
 ├── models.py                         # DEPRECATED: kept for backward compat (will remove post-refactor)
+
 ├── database.py                       # DEPRECATED: moved to infrastructure/storage.py
+
 ├── github_client.py                  # DEPRECATED: moved to infrastructure/github.py
+
 ├── git_integration.py                # DEPRECATED: merged into infrastructure/git.py
+
 ├── git_hooks.py                      # DEPRECATED: merged into infrastructure/git.py
+
 ├── visualization.py                  # DEPRECATED: moved to application/visualization/
+
 │
 ├── (other utilities unchanged)
 │   ├── credentials.py                # Unchanged
+
 │   ├── settings.py                   # Unchanged
+
 │   ├── version.py                    # Unchanged
+
 │   ├── etc.
 │
 ├── __init__.py
@@ -112,6 +168,7 @@ roadmap/
 
 tests/
 ├── unit/                             # Isolated component tests
+
 │   ├── application/
 │   │   ├── test_issue_service.py
 │   │   ├── test_milestone_service.py
@@ -129,6 +186,7 @@ tests/
 │       └── test_storage.py
 │
 ├── integration/                      # Component interaction tests
+
 │   ├── test_cli_issues.py
 │   ├── test_cli_milestones.py
 │   ├── test_github_sync.py
@@ -136,12 +194,17 @@ tests/
 │
 ├── fixtures/
 │   ├── conftest.py                   # Shared fixtures
+
 │   ├── mock_data.py                  # Test data
+
 │   └── factories.py                  # Object factories
+
 │
 ├── (existing tests)                  # Keep as is, gradually migrate to new structure
+
 └── pytest.ini
-```
+
+```text
 
 ## Implementation Phases
 

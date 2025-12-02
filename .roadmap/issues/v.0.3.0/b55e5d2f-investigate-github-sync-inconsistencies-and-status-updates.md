@@ -34,11 +34,13 @@ While the GitHub sync authentication has been fixed, there are inconsistencies b
 ## Issues Observed
 
 ### Local vs GitHub Status Mismatch
+
 - **c0850c90** (Fix broken sync): Local = `done`, GitHub = needs verification
 - **ac64f265** (Add project template): Local = `done`, GitHub = needs verification
 - **88d2e91d** (Test issue): Local = `done`, GitHub = needs verification
 
 ### Sync Authentication Working
+
 - ✅ Connection established successfully
 - ✅ Bidirectional sync runs without errors
 - ✅ New issues sync properly
@@ -65,18 +67,21 @@ While the GitHub sync authentication has been fixed, there are inconsistencies b
 ## Technical Tasks
 
 ### Phase 1: Investigation
+
 - [ ] Check GitHub API token permissions (needs `repo` scope for state changes?)
 - [ ] Review sync code for status update logic
 - [ ] Test manual status sync with verbose logging
 - [ ] Verify GitHub issue state API endpoints
 
 ### Phase 2: Implementation
+
 - [ ] Fix status mapping logic if broken
 - [ ] Implement proper error handling for status updates
 - [ ] Add status sync verification
 - [ ] Test bidirectional status changes
 
 ### Phase 3: Validation
+
 - [ ] Close the three identified issues manually on GitHub as test
 - [ ] Verify new issues sync status changes properly
 - [ ] Document expected sync behavior

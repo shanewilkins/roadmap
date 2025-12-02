@@ -31,7 +31,8 @@ Set up your GitHub repository information:
 ```bash
 roadmap config set github.owner YOUR_GITHUB_USERNAME
 roadmap config set github.repo YOUR_REPOSITORY_NAME
-```
+
+```text
 
 ### 3. Store Your Credentials
 
@@ -39,20 +40,24 @@ roadmap config set github.repo YOUR_REPOSITORY_NAME
 
 ```bash
 roadmap credentials set-github-token
+
 # You'll be prompted to enter your token securely
-```
+
+```text
 
 #### Option B: Environment Variable
 
 ```bash
 export GITHUB_TOKEN="your_token_here"
-```
+
+```text
 
 #### Option C: Configuration File
 
 ```bash
 roadmap config set github.token "your_token_here"
-```
+
+```text
 
 **Security Note**: The keychain storage is the most secure option as it encrypts your token.
 
@@ -62,7 +67,8 @@ Verify your setup works:
 
 ```bash
 roadmap sync test-connection
-```
+
+```text
 
 If successful, you should see a confirmation message.
 
@@ -74,7 +80,8 @@ To perform your first sync and pull existing GitHub issues:
 
 ```bash
 roadmap sync from-github
-```
+
+```text
 
 This will:
 
@@ -88,7 +95,8 @@ To create GitHub issues from your local roadmap:
 
 ```bash
 roadmap sync to-github
-```
+
+```text
 
 ### Bidirectional Sync
 
@@ -96,7 +104,8 @@ For ongoing synchronization in both directions:
 
 ```bash
 roadmap sync bidirectional
-```
+
+```text
 
 This command:
 
@@ -110,59 +119,79 @@ This command:
 You can set up automatic syncing:
 
 ```bash
+
 # Enable automatic sync on issue creation/updates
+
 roadmap config set sync.auto_push true
 roadmap config set sync.auto_pull true
 
 # Set sync interval (in minutes)
+
 roadmap config set sync.interval 15
-```
+
+```text
 
 ## Configuration Options
 
 ### Repository Settings
 
 ```bash
+
 # Basic repository configuration
+
 roadmap config set github.owner "your-username"
 roadmap config set github.repo "your-repository"
 
 # Optional: Use different GitHub API endpoint (for GitHub Enterprise)
+
 roadmap config set github.api_base_url "https://api.github.com"
-```
+
+```text
 
 ### Sync Behavior
 
 ```bash
+
 # Automatic sync settings
+
 roadmap config set sync.auto_push true          # Auto-push local changes
+
 roadmap config set sync.auto_pull false         # Manual pull only
+
 roadmap config set sync.interval 30             # Sync every 30 minutes
 
 # Conflict resolution
+
 roadmap config set sync.conflict_resolution "manual"    # or "github_wins", "local_wins"
 
 # Issue filtering
+
 roadmap config set sync.labels_filter "roadmap"        # Only sync issues with this label
+
 roadmap config set sync.exclude_labels "wontfix,duplicate"  # Exclude these labels
-```
+
+```text
 
 ### Label Mapping
 
 Map roadmap priorities and types to GitHub labels:
 
 ```bash
+
 # Priority mapping
+
 roadmap config set sync.label_map.priority.critical "critical"
 roadmap config set sync.label_map.priority.high "high-priority"
 roadmap config set sync.label_map.priority.medium "medium-priority"
 roadmap config set sync.label_map.priority.low "low-priority"
 
 # Type mapping
+
 roadmap config set sync.label_map.type.feature "enhancement"
 roadmap config set sync.label_map.type.bug "bug"
 roadmap config set sync.label_map.type.task "task"
-```
+
+```text
 
 ## Advanced Features
 
@@ -171,39 +200,52 @@ roadmap config set sync.label_map.type.task "task"
 Sync only specific issues or milestones:
 
 ```bash
+
 # Sync specific issues
+
 roadmap sync issue ISSUE_ID_1 ISSUE_ID_2
 
 # Sync by milestone
+
 roadmap sync milestone "v1.0"
 
 # Sync by assignee
+
 roadmap sync assignee "username"
-```
+
+```text
 
 ### Branch-Based Workflows
 
 Integrate with Git workflows:
 
 ```bash
+
 # Sync issues related to current branch
+
 roadmap sync branch
 
 # Sync issues with specific branch patterns
+
 roadmap sync branch --pattern "feature/*"
-```
+
+```text
 
 ### Batch Operations
 
 Perform bulk operations:
 
 ```bash
+
 # Bulk update issue status
+
 roadmap sync bulk-update --status "in-progress" --assignee "new-assignee"
 
 # Bulk label management
+
 roadmap sync bulk-label --add "sprint-2" --remove "sprint-1"
-```
+
+```text
 
 ## Troubleshooting
 
@@ -240,6 +282,7 @@ When issues conflict between local and GitHub:
    ```bash
    roadmap sync resolve ISSUE_ID --keep-local
    # or
+
    roadmap sync resolve ISSUE_ID --keep-github
    ```
 
@@ -253,15 +296,20 @@ When issues conflict between local and GitHub:
 The `sync bidirectional` command supports different conflict resolution strategies:
 
 ```bash
+
 # Use local_wins strategy (default - recommended)
+
 roadmap sync bidirectional --strategy local_wins
 
 # Use remote_wins strategy (prefer GitHub)
+
 roadmap sync bidirectional --strategy remote_wins
 
 # Use newer_wins strategy (timestamp-based)
+
 roadmap sync bidirectional --strategy newer_wins
-```
+
+```text
 
 #### Important: GitHub Timestamp Race Condition
 
@@ -294,6 +342,7 @@ If you hit GitHub API rate limits:
 2. **Optimize sync frequency**:
    ```bash
    roadmap config set sync.interval 60  # Sync every hour instead
+
    ```
 
 3. **Use conditional requests** (enabled by default):
@@ -387,28 +436,34 @@ jobs:
           roadmap config set github.owner ${{ github.repository_owner }}
           roadmap config set github.repo ${{ github.event.repository.name }}
           roadmap sync bidirectional
-```
+
+```text
 
 ### Team Workflows
 
 Set up different sync configurations for team members:
 
 ```bash
+
 # Product manager - full sync
+
 roadmap config set sync.auto_push true
 roadmap config set sync.auto_pull true
 roadmap config set sync.labels_filter ""
 
 # Developer - selective sync
+
 roadmap config set sync.auto_push false
 roadmap config set sync.auto_pull true
 roadmap config set sync.labels_filter "assigned-to-me"
 
 # QA team - status-focused sync
+
 roadmap config set sync.auto_push true
 roadmap config set sync.auto_pull false
 roadmap config set sync.status_sync_only true
-```
+
+```text
 
 ## Getting Help
 

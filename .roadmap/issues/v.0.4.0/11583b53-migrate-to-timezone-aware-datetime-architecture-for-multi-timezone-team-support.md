@@ -34,21 +34,25 @@ The current roadmap CLI uses timezone-naive datetime objects throughout the code
 ### Current Problems with Timezone-Naive Policy
 
 #### 1. Due Date Ambiguity
+
 - Milestone due dates like "2025-12-31 23:59:59" are ambiguous
 - Users in different timezones interpret deadlines differently
 - 16-hour difference between earliest and latest possible interpretation
 
 #### 2. Activity Timeline Confusion
+
 - Issue creation times appear incorrect to users in different timezones
 - Progress reports become meaningless across distributed teams
 - Historical analysis is skewed by timezone assumptions
 
 #### 3. GitHub API Integration Issues
+
 - GitHub returns timezone-aware datetimes (ISO 8601 with Z suffix)
 - Current system strips timezone info, losing critical context
 - Sync operations can appear to have incorrect timestamps
 
 #### 4. Enterprise Scalability Blocker
+
 - Cannot support distributed teams without proper timezone handling
 - "End of day" deadlines are meaningless without timezone context
 - Sprint planning becomes impossible across timezones
@@ -74,19 +78,25 @@ The current roadmap CLI uses timezone-naive datetime objects throughout the code
 Adopt UTC-based timezone-aware datetime handling with user-local display:
 
 ```python
+
 # Core principle: Store in UTC, display in user's timezone
+
 milestone.due_date = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
 
 # User sees their local time
+
 # London user: "Jan 1, 2026 12:59 AM GMT"
+
 # SF user: "Dec 31, 2025 3:59 PM PST"
-```
+
+```text
 
 ## Implementation Plan
 
 ### Phase 1: Core Infrastructure (2 weeks, 80 hours)
 
 **1.1 Timezone Utilities**
+
 ```python
 from zoneinfo import ZoneInfo
 from datetime import timezone
@@ -100,7 +110,8 @@ def parse_user_input(date_str, user_timezone="UTC"):
     naive_dt = datetime.fromisoformat(date_str)
     user_tz = ZoneInfo(user_timezone)
     return naive_dt.replace(tzinfo=user_tz).astimezone(timezone.utc)
-```
+
+```text
 
 **1.2 Model Updates**
 - Update all datetime fields to be timezone-aware by default
@@ -115,6 +126,7 @@ def parse_user_input(date_str, user_timezone="UTC"):
 ### Phase 2: Data Migration (1 week, 40 hours)
 
 **2.1 Existing Data Migration**
+
 ```python
 def migrate_roadmap_data():
     """Migrate all existing naive datetimes to UTC-aware."""
@@ -124,7 +136,8 @@ def migrate_roadmap_data():
         if issue.updated.tzinfo is None:
             issue.updated = issue.updated.replace(tzinfo=timezone.utc)
         # Save updated issue
-```
+
+```text
 
 **2.2 GitHub Sync Alignment**
 - Remove `.replace(tzinfo=None)` calls in GitHub integration
@@ -134,18 +147,21 @@ def migrate_roadmap_data():
 ### Phase 3: User Experience (2 weeks, 40 hours)
 
 **3.1 User Timezone Preferences**
+
 ```python
 class UserConfig:
     timezone: str = "UTC"  # Default to UTC
 
 # CLI timezone display
+
 @click.option('--timezone', help='Display timezone')
 def list_issues(timezone):
     user_tz = timezone or get_user_config().timezone
     for issue in issues:
         local_time = issue.due_date.astimezone(ZoneInfo(user_tz))
         console.print(f"Due: {local_time}")
-```
+
+```text
 
 **3.2 CLI Enhancements**
 - Add timezone options to all date display commands
@@ -160,12 +176,14 @@ def list_issues(timezone):
 ## Benefits
 
 ### Immediate Benefits
+
 - 🌍 **Global Team Ready**: Support distributed teams from day one
 - 🔗 **Perfect GitHub Sync**: No timezone conversion edge cases
 - 📅 **Clear Deadlines**: "End of day" has specific meaning
 - 📊 **Accurate Analytics**: Timeline analysis works across timezones
 
 ### Long-term Benefits
+
 - 📈 **Enterprise Scalable**: Ready for large distributed organizations
 - 🎯 **Professional UX**: Each user sees times in their local zone
 - 🛡️ **Future-Proof**: No painful migration needed later
