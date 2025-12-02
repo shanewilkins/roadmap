@@ -2,7 +2,7 @@
 id: 480f35d0
 title: Test git integration workflow
 priority: medium
-status: done
+status: closed
 issue_type: other
 milestone: ''
 labels: []

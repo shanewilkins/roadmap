@@ -2,7 +2,7 @@
 id: ed05ce67
 title: Smart notification system with configurable alerts
 priority: high
-status: done
+status: closed
 issue_type: other
 milestone: v.0.3.0
 labels: []

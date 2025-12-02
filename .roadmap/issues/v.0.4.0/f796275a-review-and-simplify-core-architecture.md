@@ -2,9 +2,9 @@
 id: f796275a
 title: Review and Simplify Core Architecture
 priority: high
-status: done
+status: closed
 issue_type: other
-milestone: '0.4'
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-17T17:47:40.981205+00:00'

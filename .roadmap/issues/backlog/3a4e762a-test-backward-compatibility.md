@@ -2,7 +2,7 @@
 id: 3a4e762a
 title: Test backward compatibility
 priority: medium
-status: done
+status: closed
 issue_type: other
 milestone: ''
 labels: []

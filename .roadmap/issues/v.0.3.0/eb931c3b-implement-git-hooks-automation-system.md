@@ -2,7 +2,7 @@
 id: eb931c3b
 title: Implement Git hooks automation system
 priority: high
-status: done
+status: closed
 issue_type: other
 milestone: v.0.3.0
 labels: []

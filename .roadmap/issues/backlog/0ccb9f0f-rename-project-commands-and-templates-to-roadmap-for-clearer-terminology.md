@@ -2,7 +2,7 @@
 id: 0ccb9f0f
 title: Rename project commands and templates to roadmap for clearer terminology
 priority: medium
-status: done
+status: closed
 issue_type: feature
 milestone: ''
 labels: []

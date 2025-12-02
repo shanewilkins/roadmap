@@ -2,7 +2,7 @@
 id: 515a927c
 title: Implement automatic milestone and project progress updates based on issue completion
 priority: high
-status: done
+status: closed
 issue_type: feature
 milestone: v.0.3.0
 labels: []

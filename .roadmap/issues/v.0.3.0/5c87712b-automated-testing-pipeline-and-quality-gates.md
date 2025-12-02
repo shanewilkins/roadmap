@@ -2,7 +2,7 @@
 id: 5c87712b
 title: Automated testing pipeline and quality gates
 priority: high
-status: done
+status: closed
 issue_type: other
 milestone: v.0.3.0
 labels: []

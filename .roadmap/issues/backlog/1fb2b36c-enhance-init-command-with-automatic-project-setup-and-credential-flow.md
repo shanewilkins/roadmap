@@ -2,7 +2,7 @@
 id: 1fb2b36c
 title: Enhance init command with automatic project setup and credential flow
 priority: high
-status: done
+status: closed
 issue_type: feature
 milestone: ''
 labels: []

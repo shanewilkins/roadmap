@@ -2,9 +2,9 @@
 id: 11583b53
 title: Migrate to timezone-aware datetime architecture for multi-timezone team support
 priority: high
-status: done
+status: closed
 issue_type: feature
-milestone: v.0.4.0
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-16T12:44:55.151844+00:00'

@@ -2,7 +2,7 @@
 id: 9a193c41
 title: 'Align CLI with GitHub terminology: rename roadmaps to projects'
 priority: high
-status: done
+status: closed
 issue_type: feature
 milestone: v.0.2.0
 labels: []

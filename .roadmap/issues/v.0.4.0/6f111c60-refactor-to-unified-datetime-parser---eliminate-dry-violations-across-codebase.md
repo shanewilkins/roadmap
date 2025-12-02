@@ -2,9 +2,9 @@
 id: 6f111c60
 title: Refactor to unified datetime parser - eliminate DRY violations across codebase
 priority: high
-status: done
+status: closed
 issue_type: feature
-milestone: v.0.4.0
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-16T20:02:56.042815+00:00'

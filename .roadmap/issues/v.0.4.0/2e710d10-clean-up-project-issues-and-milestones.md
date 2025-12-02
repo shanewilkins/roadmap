@@ -4,7 +4,7 @@ title: Clean Up Project Issues and Milestones
 priority: low
 status: todo
 issue_type: other
-milestone: '0.4'
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-17T17:47:56.417434+00:00'

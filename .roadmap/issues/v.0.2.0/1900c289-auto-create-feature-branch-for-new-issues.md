@@ -2,7 +2,7 @@
 id: 1900c289
 title: Auto-create feature branch for new issues
 priority: medium
-status: done
+status: closed
 issue_type: feature
 milestone: v.0.2.0
 labels:

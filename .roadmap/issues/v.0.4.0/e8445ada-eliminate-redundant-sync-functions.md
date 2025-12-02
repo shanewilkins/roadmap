@@ -4,7 +4,7 @@ title: Eliminate Redundant Sync Functions
 priority: high
 status: todo
 issue_type: other
-milestone: '0.4'
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-17T17:47:49.835163+00:00'

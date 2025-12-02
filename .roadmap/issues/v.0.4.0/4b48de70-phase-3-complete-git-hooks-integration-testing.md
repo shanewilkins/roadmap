@@ -2,9 +2,9 @@
 id: 4b48de70
 title: 'Phase 3: Complete git hooks integration testing'
 priority: high
-status: done
+status: closed
 issue_type: other
-milestone: v.0.4.0
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-17T19:21:44.086738+00:00'

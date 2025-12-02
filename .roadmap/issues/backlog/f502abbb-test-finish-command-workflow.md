@@ -2,7 +2,7 @@
 id: f502abbb
 title: Test finish command workflow
 priority: medium
-status: done
+status: closed
 issue_type: other
 milestone: ''
 labels: []

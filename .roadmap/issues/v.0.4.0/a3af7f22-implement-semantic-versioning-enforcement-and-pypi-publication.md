@@ -2,9 +2,9 @@
 id: a3af7f22
 title: Implement semantic versioning enforcement and PyPI publication
 priority: high
-status: done
+status: closed
 issue_type: other
-milestone: v.0.4.0
+milestone: v.0.6.0
 labels: []
 github_issue: 22
 created: '2025-10-14T15:46:41.872165+00:00'

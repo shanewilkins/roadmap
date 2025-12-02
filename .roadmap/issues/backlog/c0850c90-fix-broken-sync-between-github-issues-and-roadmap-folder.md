@@ -2,7 +2,7 @@
 id: c0850c90
 title: Fix broken sync between GitHub issues and roadmap folder
 priority: high
-status: done
+status: closed
 issue_type: bug
 milestone: ''
 labels: []

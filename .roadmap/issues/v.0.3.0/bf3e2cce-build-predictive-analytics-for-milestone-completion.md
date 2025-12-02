@@ -2,7 +2,7 @@
 id: bf3e2cce
 title: Build predictive analytics for milestone completion
 priority: high
-status: done
+status: closed
 issue_type: other
 milestone: v.0.3.0
 labels: []

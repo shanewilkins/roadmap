@@ -2,9 +2,9 @@
 id: ace5ca29
 title: Add milestone-level kanban board with status columns
 priority: high
-status: done
+status: closed
 issue_type: feature
-milestone: v.0.4.0
+milestone: v.0.6.0
 labels:
 - kanban
 - milestone

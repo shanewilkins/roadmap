@@ -2,7 +2,7 @@
 id: ac64f265
 title: Add project level template
 priority: medium
-status: done
+status: closed
 issue_type: feature
 milestone: ''
 labels: []

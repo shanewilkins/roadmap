@@ -4,7 +4,7 @@ title: Optimize Test Suite Performance
 priority: medium
 status: todo
 issue_type: other
-milestone: '0.4'
+milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-17T17:47:54.208800+00:00'

@@ -2,7 +2,7 @@
 id: 24c3b2d2
 title: GitHub sync not preserving milestone relationships for existing issues
 priority: high
-status: done
+status: closed
 issue_type: bug
 milestone: v.0.2.0
 labels:

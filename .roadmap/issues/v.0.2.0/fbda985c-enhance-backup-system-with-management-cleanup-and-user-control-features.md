@@ -2,7 +2,7 @@
 id: fbda985c
 title: Enhance backup system with management, cleanup, and user control features
 priority: medium
-status: done
+status: closed
 issue_type: feature
 milestone: v.0.2.0
 labels:

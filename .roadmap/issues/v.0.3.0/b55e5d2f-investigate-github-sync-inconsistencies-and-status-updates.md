@@ -2,7 +2,7 @@
 id: b55e5d2f
 title: Investigate GitHub sync inconsistencies and status updates
 priority: high
-status: done
+status: closed
 issue_type: bug
 milestone: v.0.3.0
 labels: []

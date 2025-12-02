@@ -2,7 +2,7 @@
 id: eac994ae
 title: Interactive project dashboard with real-time updates
 priority: high
-status: done
+status: closed
 issue_type: other
 milestone: v.0.3.0
 labels: []
