@@ -103,20 +103,20 @@ ROADMAP_CREDENTIAL_BACKEND=keyring
 
 **NEVER hardcode secrets.** Use:
 
-1. **Kubernetes Secrets:**
+1**Kubernetes Secrets:**
 
    ```bash
    kubectl create secret generic roadmap-secrets --from-literal=GITHUB_TOKEN=...
    ```
 
-2. **Environment Variables (via CI/CD):**
+1**Environment Variables (via CI/CD):**
 
    ```yaml
    env:
      ROADMAP_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
    ```
 
-3. **Systemd EnvironmentFile:**
+1**Systemd EnvironmentFile:**
 
    ```ini
    EnvironmentFile=/etc/roadmap/.env
@@ -303,21 +303,21 @@ find /backups -name "roadmap_*.tar.gz" -mtime +30 -delete
 
 ### Security Hardening
 
-1. **File Permissions:**
+1**File Permissions:**
 
    ```bash
    sudo chmod 700 /var/lib/roadmap
    sudo chmod 600 /etc/roadmap/.env
    ```
 
-2. **Firewall:**
+1**Firewall:**
 
    ```bash
    ufw allow from 10.0.0.0/8 to any port 8000  # Internal only
 
    ```
 
-3. **SELinux (if enabled):**
+1**SELinux (if enabled):**
 
    ```bash
    semanage fcontext -a -t roadmap_data_t "/var/lib/roadmap(/.*)?"
@@ -356,12 +356,12 @@ All production documentation:
 
 ## Next Steps
 
-1. ✅ Choose installation method (pip, poetry, or Docker)
-2. ✅ Run `pip-audit` to verify 0 CVEs
-3. ✅ Copy `.env.production` to `.env` and configure
-4. ✅ Deploy using chosen method (systemd, Kubernetes, etc.)
-5. ✅ Set up monitoring and log rotation
-6. ✅ Schedule daily security audits
+1✅ Choose installation method (pip, poetry, or Docker)
+2✅ Run `pip-audit` to verify 0 CVEs
+3✅ Copy `.env.production` to `.env` and configure
+4✅ Deploy using chosen method (systemd, Kubernetes, etc.)
+5✅ Set up monitoring and log rotation
+6✅ Schedule daily security audits
 
 ---
 

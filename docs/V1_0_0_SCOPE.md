@@ -172,14 +172,14 @@ These existing features from v.0.4.0 continue in v.1.0.0:
 
 Release is ready when **ALL** of these are true:
 
-1. ✅ **Test Coverage**: ≥85% with no failing tests
-2. ✅ **Security**: All audit findings remediated or documented as accepted risks
-3. ✅ **Documentation**: All 8 documentation categories complete and reviewed
-4. ✅ **Performance**: All benchmarks within acceptable ranges
-5. ✅ **Compatibility**: Works on Python 3.10, 3.11, 3.12
-6. ✅ **Review**: Code reviewed by @shanewilkins, tests passing in CI/CD
-7. ✅ **PyPI**: Published with proper metadata and can be installed via pip
-8. ✅ **Announce**: Release notes published, changelog updated
+1✅ **Test Coverage**: ≥85% with no failing tests
+2✅ **Security**: All audit findings remediated or documented as accepted risks
+3✅ **Documentation**: All 8 documentation categories complete and reviewed
+4✅ **Performance**: All benchmarks within acceptable ranges
+5✅ **Compatibility**: Works on Python 3.10, 3.11, 3.12
+6✅ **Review**: Code reviewed by @shanewilkins, tests passing in CI/CD
+7✅ **PyPI**: Published with proper metadata and can be installed via pip
+8✅ **Announce**: Release notes published, changelog updated
 
 ---
 
@@ -192,6 +192,7 @@ Once v.1.0.0 ships, we enforce strict semantic versioning:
 - **v.2.0.0** (major): Breaking changes allowed, requires migration guide
 
 **Guarantees**:
+
 - v.1.x will remain backward compatible with v.1.0.0
 - Breaking changes require major version bump
 - All breaking changes documented in changelog
@@ -266,13 +267,13 @@ Production releases need buffer time for UAT, edge case testing, and validation.
 
 ## Success Metrics for v.1.0.0
 
-**We'll consider v.1.0.0 successful if:**
+### We'll consider v.1.0.0 successful if:
 
-1. Can be installed via `pip install roadmap-cli`
-2. Works reliably on Python 3.10+
-3. Handles 1000+ issues without significant slowdown
-4. Has zero known critical security vulnerabilities
-5. Documentation covers 90%+ of use cases
+1Can be installed via `pip install roadmap-cli`
+2Works reliably on Python 3.10+
+3Handles 1000+ issues without significant slowdown
+4Has zero known critical security vulnerabilities
+5Documentation covers 90%+ of use cases
 
 ---
 

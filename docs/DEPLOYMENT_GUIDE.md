@@ -6,9 +6,9 @@ This guide covers deploying Roadmap CLI in production environments with security
 
 Roadmap CLI production deployments use one of three methods:
 
-1. **pip install** (recommended for most users)
-2. **poetry install --no-dev** (recommended for reproducible builds)
-3. **Docker** (recommended for containerized deployments)
+1**pip install** (recommended for most users)
+2**poetry install --no-dev** (recommended for reproducible builds)
+3**Docker** (recommended for containerized deployments)
 
 All methods result in **0 known CVEs** when properly configured.
 
@@ -278,7 +278,7 @@ ROADMAP_VERIFY_SSL=true
 
 **DO NOT hardcode secrets!** Use one of:
 
-1. **Environment variables** (via secrets manager)
+1**Environment variables** (via secrets manager)
    ```bash
    # Kubernetes
 
@@ -290,7 +290,7 @@ ROADMAP_VERIFY_SSL=true
    docker secret create roadmap_github_token -
    ```
 
-2. **Systemd secrets**
+1**Systemd secrets**
    ```bash
    # /etc/systemd/system/roadmap.service.d/override.conf
 
@@ -299,7 +299,7 @@ ROADMAP_VERIFY_SSL=true
    EnvironmentFile=/etc/roadmap/.env
    ```
 
-3. **HashiCorp Vault**
+1**HashiCorp Vault**
    ```bash
    # Load secrets from Vault
 
@@ -684,14 +684,15 @@ jobs:
 
 ## Key Takeaways
 
-1. **Always use production installation modes** (`--no-dev`, `pip install .`)
-2. **Verify 0 CVEs** before deployment with `pip-audit`
-3. **Use secrets management**, never hardcode credentials
-4. **Monitor logs and metrics** in production
-5. **Perform regular backups** of critical data
-6. **Keep Python updated** to latest patch version (3.12.x)
+1**Always use production installation modes** (`--no-dev`, `pip install .`)
+2**Verify 0 CVEs** before deployment with `pip-audit`
+3**Use secrets management**, never hardcode credentials
+4**Monitor logs and metrics** in production
+5**Perform regular backups** of critical data
+6**Keep Python updated** to latest patch version (3.12.x)
 
 For more information, see:
+
 - `INSTALLATION.md` - Installation methods
 - `PRODUCTION_ENVIRONMENT_VERIFICATION.md` - Security verification details
 - `docs/SECURITY.md` - Security policy and reporting

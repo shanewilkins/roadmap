@@ -10,23 +10,23 @@ An enterprise-grade project management command line tool for implementing **proj
 
 ## 📖 Table of Contents
 
-- [🏗️ The Project-Management-as-Code Philosophy](#️-the-project-management-as-code-philosophy)
+- [🏗️ The Project-Management-as-Code Philosophy](#-the-project-management-as-code-philosophy)
 - [✨ Key Features](#-key-features)
 - [🚀 Quick Start](#-quick-start)
 - [💼 Common Workflows](#-common-workflows)
 - [🎬 Interactive Demos](#-interactive-demos)
 - [📋 Complete Command Reference](#-complete-command-reference)
-- [🏗️ Architecture & Features](#️-architecture--features)
+- [🏗️ Architecture & Features](#-architecture--features)
 - [📁 Project Structure](#-project-structure)
 - [🔄 User Workflows](#-user-workflows)
-- [🛠️ Advanced Configuration](#️-advanced-configuration)
+- [🛠️ Advanced Configuration](#-advanced-configuration)
 - [🧪 Testing & Quality](#-testing--quality)
 - [📈 Performance Benchmarks](#-performance-benchmarks)
 - [🚨 Troubleshooting](#-troubleshooting)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 - [📚 Documentation](#-documentation)
-- [🗺️ Roadmap](#️-roadmap)
+- [🗺️ Roadmap](#-roadmap)
 
 ## 🏗️ The Project-Management-as-Code Philosophy
 
@@ -589,7 +589,8 @@ Roadmap v1.0 implements a **clean, maintainable architecture** organized into fi
 
 ```text
 
-**Key Benefits:**
+### Key Benefits:
+
 - ✅ **Testability**: Each layer independently testable with 87% coverage
 - ✅ **Maintainability**: Clear separation of concerns
 - ✅ **Extensibility**: New features added without affecting existing code
@@ -973,31 +974,31 @@ roadmap sync pull --high-performance  # Check performance report
 
 Roadmap uses a **5-layer clean architecture** for maximum maintainability:
 
-1. **Domain Layer** (`roadmap/domain/`)
+1**Domain Layer** (`roadmap/domain/`)
    - Pure business logic and data models
    - No external dependencies
    - Contains: Issue, Milestone, Project models and enums
    - **Testing**: `tests/unit/domain/`
 
-1. **Infrastructure Layer** (`roadmap/infrastructure/`)
+1**Infrastructure Layer** (`roadmap/infrastructure/`)
    - External system integrations
    - GitHub API, Git operations, file storage
    - Contains: GitHub client, Git commands, database/storage
    - **Testing**: `tests/unit/infrastructure/`
 
-1. **Application Layer** (`roadmap/application/`)
+1**Application Layer** (`roadmap/application/`)
    - Use cases and business logic orchestration
    - Services that combine domain and infrastructure
    - Contains: IssueService, MilestoneService, visualization
    - **Testing**: `tests/unit/application/`
 
-1. **Presentation Layer** (`roadmap/presentation/`)
+1**Presentation Layer** (`roadmap/presentation/`)
    - CLI commands and user interface
    - Maps user commands to application services
    - Contains: `cli/` directory with command modules
    - **Testing**: `tests/integration/`
 
-1. **Shared Layer** (`roadmap/shared/`)
+1**Shared Layer** (`roadmap/shared/`)
    - Common utilities across all layers
    - Validators, formatters, logging, error handling
    - Contains: validation, errors, formatters, constants
@@ -1005,7 +1006,7 @@ Roadmap uses a **5-layer clean architecture** for maximum maintainability:
 
 ### Adding a New Feature
 
-1. **Start with the domain** (if new entity type):
+1**Start with the domain** (if new entity type):
    ```python
    # roadmap/domain/your_entity.py
 
@@ -1013,7 +1014,7 @@ Roadmap uses a **5-layer clean architecture** for maximum maintainability:
        """Your entity model"""
    ```
 
-1. **Add infrastructure** if external integration needed:
+1**Add infrastructure** if external integration needed:
    ```python
    # roadmap/infrastructure/your_integration.py
 
@@ -1021,7 +1022,7 @@ Roadmap uses a **5-layer clean architecture** for maximum maintainability:
        """External API client"""
    ```
 
-1. **Create service** in application layer:
+1**Create service** in application layer:
    ```python
    # roadmap/application/services/your_service.py
 
@@ -1029,7 +1030,7 @@ Roadmap uses a **5-layer clean architecture** for maximum maintainability:
        """Business logic for your feature"""
    ```
 
-1. **Add CLI command** in presentation layer:
+1**Add CLI command** in presentation layer:
    ```python
    # roadmap/presentation/cli/your_domain/your_command.py
 
@@ -1038,7 +1039,7 @@ Roadmap uses a **5-layer clean architecture** for maximum maintainability:
        """User-facing CLI command"""
    ```
 
-1. **Write tests** at each layer:
+1**Write tests** at each layer:
    - Unit tests in `tests/unit/`
    - Integration tests in `tests/integration/`
 
@@ -1083,6 +1084,7 @@ poetry run black roadmap/
 ### Deprecation Policy
 
 Old code is marked with deprecation notices guiding to new locations:
+
 - `roadmap/core.py` → Use `roadmap.application.core`
 - `roadmap/models.py` → Use `roadmap.domain`
 - `roadmap/database.py` → Use `roadmap.infrastructure.storage`
@@ -1092,10 +1094,10 @@ Deprecated files are maintained for backward compatibility but removed in v2.0.
 
 ## 🤝 Contributing
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes with tests**
-4. **Run the full test suite**:
+1**Fork the repository**
+2**Create a feature branch**: `git checkout -b feature/amazing-feature`
+3**Make your changes with tests**
+4**Run the full test suite**:
 
    ```bash
    poetry run pytest --cov=roadmap
@@ -1105,9 +1107,9 @@ Deprecated files are maintained for backward compatibility but removed in v2.0.
    poetry run mypy roadmap
    ```
 
-1. **Commit your changes**: `git commit -m 'Add amazing feature'`
-2. **Push to the branch**: `git push origin feature/amazing-feature`
-3. **Open a Pull Request**
+1**Commit your changes**: `git commit -m 'Add amazing feature'`
+2**Push to the branch**: `git push origin feature/amazing-feature`
+3**Open a Pull Request**
 
 ### Development Environment
 
