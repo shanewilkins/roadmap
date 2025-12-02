@@ -261,6 +261,62 @@ python demos/performance_demo.py
 
 Each demo showcases specific features with examples, benefits, and usage patterns. Perfect for learning new features or demonstrating capabilities to team members.
 
+## 🚀 Production Deployment
+
+### Quick Start - Production Installation
+
+Roadmap CLI is production-ready with **zero known CVEs** in production installations:
+
+```bash
+# Install production only (recommended)
+pip install roadmap-cli
+
+# Verify security
+pip-audit  # Shows: No known vulnerabilities found
+
+# Start using
+roadmap --help
+```
+
+### Installation Methods
+
+Choose the deployment method best for your environment:
+
+| Method | Best For | Command |
+|--------|----------|---------|
+| **pip install** | Most users, simplest setup | `pip install roadmap-cli` |
+| **poetry** | Reproducible builds, teams | `poetry install --no-dev` |
+| **Docker** | Containerized deployments | `docker build -t roadmap-cli:0.4.0 .` |
+
+**Important:** Always use `--no-dev` or production installation methods. This ensures 0 CVEs and minimal footprint.
+
+### Deployment Scenarios
+
+- 🖥️ **Standalone Server** - Systemd service with log rotation
+- ☸️ **Kubernetes** - Deployment manifests with secrets management
+- 🐳 **Docker** - Container with health checks and environment config
+- ☁️ **AWS Lambda** - Serverless execution with event-driven workflows
+- ⚙️ **CI/CD Pipeline** - GitHub Actions, GitLab CI integration
+
+### Security & Monitoring
+
+- ✅ **0 Known CVEs** - Verified with pip-audit
+- 🔒 **Secure Credential Storage** - Keyring/SecretService integration
+- 📊 **Health Checks** - Liveness probes and status endpoints
+- 📈 **Monitoring Ready** - Metrics export and log aggregation support
+- 🛡️ **Hardened Defaults** - SELinux, AppArmor, firewall examples
+
+### Documentation
+
+Complete production guides available:
+
+- **[`INSTALLATION.md`](INSTALLATION.md)** - Installation methods and setup
+- **[`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md)** - Detailed deployment scenarios
+- **[`docs/PRODUCTION_SETUP.md`](docs/PRODUCTION_SETUP.md)** - Quick reference and checklists
+- **[`docs/PRODUCTION_ENVIRONMENT_VERIFICATION.md`](docs/PRODUCTION_ENVIRONMENT_VERIFICATION.md)** - Security verification report
+
+See [Production Deployment](#-production-deployment) for quick start, or [📚 Documentation](#-documentation) for comprehensive guides.
+
 ## 📋 Complete Command Reference
 
 ### Project Initialization
