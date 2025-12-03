@@ -135,6 +135,149 @@ def scan_for_folder_structure_issues(issues_dir: Path, core) -> dict[str, list[d
     return {k: v for k, v in potential_issues.items() if v}
 
 
+def scan_for_old_backups(
+    backups_dir: Path, keep: int = 10
+) -> dict[str, list[dict] | int]:
+    """Scan for old backup files that could be deleted.
+
+    Returns a dict with:
+    - 'files_to_delete': List of backup files that exceed the keep threshold
+    - 'total_size_bytes': Total size of files that could be deleted
+    """
+    result = {"files_to_delete": [], "total_size_bytes": 0}
+
+    if not backups_dir.exists():
+        return result
+
+    backup_files = list(backups_dir.glob("*.backup.md"))  # type: ignore[func-returns-value]
+    if not backup_files:
+        return result
+
+    # Group backups by issue ID
+    backups_by_issue = {}
+    for backup_file in backup_files:
+        parts = backup_file.stem.split("_")
+        issue_key = "_".join(parts[:-1])
+
+        if issue_key not in backups_by_issue:
+            backups_by_issue[issue_key] = []
+
+        stat = backup_file.stat()
+        backups_by_issue[issue_key].append(
+            {
+                "path": backup_file,
+                "mtime": stat.st_mtime,
+                "size": stat.st_size,
+            }
+        )
+
+    # Find files that exceed keep threshold
+    for _issue_key, backups in backups_by_issue.items():
+        backups.sort(key=lambda x: x["mtime"], reverse=True)
+
+        for idx, backup in enumerate(backups):
+            if idx >= keep:
+                result["files_to_delete"].append(
+                    {
+                        "path": backup["path"],
+                        "size": backup["size"],
+                    }
+                )
+                result["total_size_bytes"] += backup["size"]
+
+    return result
+
+
+def scan_for_archivable_issues(core, threshold_days: int = 30) -> list[dict]:
+    """Scan for issues that should be archived (closed >threshold_days ago).
+
+    Returns a list of issue dicts with id, title, status, closed date, and days_since_close.
+    """
+    archivable = []
+
+    try:
+        issues = core.issue_service.list_issues()
+        from datetime import datetime
+
+        now = datetime.now()
+
+        for issue in issues:
+            # Check if issue is closed (by status or by completed_date)
+            if issue.status == "closed" or issue.actual_end_date:
+                # Use actual_end_date or completed_date for closure time
+                closed_dt = None
+                if issue.actual_end_date:
+                    closed_dt = (
+                        issue.actual_end_date
+                        if isinstance(issue.actual_end_date, datetime)
+                        else datetime.fromisoformat(str(issue.actual_end_date))
+                    )
+                elif issue.completed_date:
+                    try:
+                        closed_dt = datetime.fromisoformat(issue.completed_date)
+                    except (ValueError, TypeError):
+                        closed_dt = None
+
+                if closed_dt:
+                    days_closed = (now - closed_dt).days
+                    if days_closed > threshold_days:
+                        archivable.append(
+                            {
+                                "id": issue.id,
+                                "title": issue.title,
+                                "status": issue.status,
+                                "closed_at": closed_dt.isoformat(),
+                                "days_since_close": days_closed,
+                            }
+                        )
+    except Exception as e:
+        logger.debug("scan_archivable_issues_error", error=str(e))
+
+    return archivable
+
+
+def scan_for_archivable_milestones(core, threshold_days: int = 14) -> list[dict]:
+    """Scan for milestones that should be archived (completed >threshold_days ago).
+
+    Returns a list of milestone dicts with name, status, closed date, issue count, and days_since_close.
+    """
+    archivable = []
+
+    try:
+        milestones = core.milestone_service.list_milestones()
+        from datetime import datetime
+
+        now = datetime.now()
+
+        for milestone in milestones:
+            if milestone.status == "closed" and milestone.closed_at:
+                # Parse closed_at if it's a string
+                if isinstance(milestone.closed_at, str):
+                    closed_dt = datetime.fromisoformat(milestone.closed_at)
+                else:
+                    closed_dt = milestone.closed_at
+
+                days_closed = (now - closed_dt).days
+                if days_closed > threshold_days:
+                    # Count issues in this milestone
+                    issues = core.issue_service.list_issues(milestone=milestone.name)
+                    issue_count = len(issues)
+
+                    archivable.append(
+                        {
+                            "name": milestone.name,
+                            "status": milestone.status,
+                            "closed_at": milestone.closed_at,
+                            "days_since_close": days_closed,
+                            "issue_count": issue_count,
+                        }
+                    )
+    except Exception as e:
+        logger.debug("scan_archivable_milestones_error", error=str(e))
+
+    return archivable
+
+
 class HealthStatus(Enum):
     """Health status levels for system components."""
 
@@ -382,6 +525,103 @@ class HealthCheck:
             logger.error("health_check_folder_structure_failed", error=str(e))
             return HealthStatus.UNHEALTHY, f"Error checking folder structure: {e}"
 
+    @staticmethod
+    def check_old_backups() -> tuple[HealthStatus, str]:
+        """Check for old backup files that could be cleaned up.
+
+        Returns:
+            Tuple of (HEALTHY status, informational message) - never degrades health
+        """
+        try:
+            backups_dir = Path(".roadmap/backups")
+            result = scan_for_old_backups(backups_dir, keep=10)
+
+            if not result["files_to_delete"]:
+                logger.debug("health_check_old_backups", status="clean")
+                return (
+                    HealthStatus.HEALTHY,
+                    "Backups are well-maintained",
+                )
+
+            total_size = result["total_size_bytes"]
+            if isinstance(total_size, int):
+                size_mb = total_size / (1024 * 1024)
+            else:
+                size_mb = 0.0
+
+            files_to_delete = result["files_to_delete"]
+            if isinstance(files_to_delete, list):
+                count = len(files_to_delete)
+            else:
+                count = 0
+
+            message = (
+                f"ℹ️  {count} old backup(s) could be deleted (~{size_mb:.2f} MB) - "
+                "Run 'roadmap cleanup' to remove them"
+            )
+            logger.debug(
+                "health_check_old_backups",
+                count=count,
+                size_mb=size_mb,
+            )
+            return HealthStatus.HEALTHY, message
+
+        except Exception as e:
+            logger.debug("health_check_old_backups_failed", error=str(e))
+            return HealthStatus.HEALTHY, "Could not check backups"
+
+    @staticmethod
+    def check_archivable_issues(core) -> tuple[HealthStatus, str]:
+        """Check for closed issues that could be archived.
+
+        Returns:
+            Tuple of (HEALTHY status, informational message) - never degrades health
+        """
+        try:
+            archivable = scan_for_archivable_issues(core, threshold_days=30)
+
+            if not archivable:
+                logger.debug("health_check_archivable_issues", status="none")
+                return HealthStatus.HEALTHY, "No issues need archiving"
+
+            count = len(archivable)
+            message = (
+                f"ℹ️  {count} issue(s) closed >30 days ago could be archived - "
+                "Run 'roadmap archive' to archive them"
+            )
+            logger.debug("health_check_archivable_issues", count=count)
+            return HealthStatus.HEALTHY, message
+
+        except Exception as e:
+            logger.debug("health_check_archivable_issues_failed", error=str(e))
+            return HealthStatus.HEALTHY, "Could not check archivable issues"
+
+    @staticmethod
+    def check_archivable_milestones(core) -> tuple[HealthStatus, str]:
+        """Check for closed milestones that could be archived.
+
+        Returns:
+            Tuple of (HEALTHY status, informational message) - never degrades health
+        """
+        try:
+            archivable = scan_for_archivable_milestones(core, threshold_days=14)
+
+            if not archivable:
+                logger.debug("health_check_archivable_milestones", status="none")
+                return HealthStatus.HEALTHY, "No milestones need archiving"
+
+            count = len(archivable)
+            message = (
+                f"ℹ️  {count} milestone(s) closed >14 days ago could be archived - "
+                "Run 'roadmap archive' to archive them"
+            )
+            logger.debug("health_check_archivable_milestones", count=count)
+            return HealthStatus.HEALTHY, message
+
+        except Exception as e:
+            logger.debug("health_check_archivable_milestones_failed", error=str(e))
+            return HealthStatus.HEALTHY, "Could not check archivable milestones"
+
     @classmethod
     def run_all_checks(cls, core) -> dict[str, tuple[HealthStatus, str]]:
         """Run all health checks and return results.
@@ -402,6 +642,9 @@ class HealthCheck:
             "git_repository": cls.check_git_repository(),
             "duplicate_issues": cls.check_duplicate_issues(core),
             "folder_structure": cls.check_folder_structure(core),
+            "old_backups": cls.check_old_backups(),
+            "archivable_issues": cls.check_archivable_issues(core),
+            "archivable_milestones": cls.check_archivable_milestones(core),
         }
 
         # Count statuses
