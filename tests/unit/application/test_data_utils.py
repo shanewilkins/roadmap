@@ -130,9 +130,9 @@ class TestDataFrameAdapter:
         # Verify data types
         assert pd.api.types.is_datetime64_any_dtype(result["created"])
         assert pd.api.types.is_datetime64_any_dtype(result["updated"])
-        assert pd.api.types.is_categorical_dtype(result["priority"])
-        assert pd.api.types.is_categorical_dtype(result["status"])
-        assert pd.api.types.is_categorical_dtype(result["issue_type"])
+        assert isinstance(result["priority"].dtype, pd.CategoricalDtype)
+        assert isinstance(result["status"].dtype, pd.CategoricalDtype)
+        assert isinstance(result["issue_type"].dtype, pd.CategoricalDtype)
 
         # Verify data content
         assert result.loc[0, "id"] == "issue1"
@@ -191,7 +191,7 @@ class TestDataFrameAdapter:
         # Verify data types
         assert pd.api.types.is_datetime64_any_dtype(result["due_date"])
         assert pd.api.types.is_datetime64_any_dtype(result["created"])
-        assert pd.api.types.is_categorical_dtype(result["status"])
+        assert isinstance(result["status"].dtype, pd.CategoricalDtype)
 
         # Verify data content
         assert result.loc[0, "name"] == "v1.0 Release"
