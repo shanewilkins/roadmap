@@ -73,9 +73,10 @@ class TestInputValidationSecurity:
 
         for payload in injection_payloads:
             # These should be quoted/escaped by Click
-            result = self.runner.invoke(main, ["milestone", "create", payload])
-            # Should handle safely or fail, not execute
-            assert result.exit_code in [0, 1, 2]  # Normal exit codes only
+            with CliRunner().isolated_filesystem():
+                result = CliRunner().invoke(main, ["milestone", "create", payload])
+                # Should handle safely or fail, not execute
+                assert result.exit_code in [0, 1, 2]  # Normal exit codes only
 
     # --- DateTime Injection Tests ---
 
@@ -121,7 +122,8 @@ class TestInputValidationSecurity:
         # These should be treated as literal text, not rendered as HTML
         for xss in xss_attempts:
             # Create an issue with XSS payload
-            self.runner.invoke(main, ["issue", "create", xss])
+            with CliRunner().isolated_filesystem():
+                CliRunner().invoke(main, ["issue", "create", xss])
             # Command should succeed (creating the issue with literal text)
             # but the content should be escaped when displayed
 
@@ -137,7 +139,8 @@ class TestInputValidationSecurity:
         ]
 
         for unicode_input in unicode_inputs:
-            result = self.runner.invoke(main, ["issue", "create", unicode_input])
+            with CliRunner().isolated_filesystem():
+                result = CliRunner().invoke(main, ["issue", "create", unicode_input])
             # Should handle unicode safely
             assert result.exit_code in [0, 1, 2]
 
@@ -148,9 +151,10 @@ class TestInputValidationSecurity:
         invalid_priorities = ["invalid", "super-critical", "urgent!"]
 
         for priority in invalid_priorities:
-            result = self.runner.invoke(
-                main, ["issue", "create", "Test issue", "--priority", priority]
-            )
+            with CliRunner().isolated_filesystem():
+                result = CliRunner().invoke(
+                    main, ["issue", "create", "Test issue", "--priority", priority]
+                )
             # Click should reject invalid choice
             assert result.exit_code == 2 or "Invalid value for" in result.output
 
@@ -159,9 +163,10 @@ class TestInputValidationSecurity:
         invalid_types = ["invalid", "enhancement", "bug-fix"]
 
         for issue_type in invalid_types:
-            result = self.runner.invoke(
-                main, ["issue", "create", "Test", "--type", issue_type]
-            )
+            with CliRunner().isolated_filesystem():
+                result = CliRunner().invoke(
+                    main, ["issue", "create", "Test", "--type", issue_type]
+                )
             # Click should reject invalid choice
             assert result.exit_code == 2 or "Invalid value for" in result.output
 
@@ -203,7 +208,8 @@ class TestInputValidationSecurity:
         """Verify null byte injection is handled safely."""
         # Python's string handling generally prevents this, but test anyway
         try:
-            self.runner.invoke(main, ["issue", "create", "Title\x00Injection"])
+            with CliRunner().isolated_filesystem():
+                CliRunner().invoke(main, ["issue", "create", "Title\x00Injection"])
             # Should handle safely
             assert True
         except Exception:

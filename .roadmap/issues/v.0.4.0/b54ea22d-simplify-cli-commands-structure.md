@@ -1,14 +1,14 @@
 ---
 id: b54ea22d
 title: Simplify CLI Commands Structure
-priority: high
+priority: low
 status: todo
 issue_type: other
 milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-17T17:47:51.993249+00:00'
-updated: '2025-12-03T16:17:00.000000+00:00'
+updated: '2025-12-03T15:13:59.109599+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
