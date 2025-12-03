@@ -2,13 +2,13 @@
 id: f833bc4f
 title: Test timezone-aware issue creation
 priority: high
-status: todo
+status: closed
 issue_type: other
 milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-16T19:41:48.050372+00:00'
-updated: '2025-11-16T19:41:48.050542+00:00'
+updated: '2025-12-03T15:21:32.768443+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

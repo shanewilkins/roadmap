@@ -2,7 +2,7 @@
 id: b54ea22d
 title: Simplify CLI Commands Structure
 priority: high
-status: todo
+status: closed
 issue_type: other
 milestone: v.0.6.0
 labels: []
