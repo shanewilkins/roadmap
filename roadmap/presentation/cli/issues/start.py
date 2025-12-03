@@ -1,4 +1,8 @@
-"""Start issue command."""
+"""Start issue command - thin wrapper around update.
+
+This command is syntactic sugar for: roadmap issue update <ID> --status in-progress
+with optional Git branch creation.
+"""
 
 import click
 
@@ -8,25 +12,6 @@ from roadmap.presentation.cli.performance_tracking import track_database_operati
 from roadmap.shared.console import get_console
 
 console = get_console()
-
-
-def _safe_create_branch(git, issue, checkout=True, force=False):
-    """Call create_branch_for_issue with best-effort compatibility for older signatures.
-
-    Tries the newest signature (checkout, force) first, falls back to older ones.
-    """
-    try:
-        return git.create_branch_for_issue(issue, checkout=checkout, force=force)
-    except TypeError:
-        # Try without force
-        try:
-            return git.create_branch_for_issue(issue, checkout=checkout)
-        except TypeError:
-            # Try fully positional (issue only)
-            try:
-                return git.create_branch_for_issue(issue)
-            except Exception:
-                return False
 
 
 @click.command("start")
@@ -57,7 +42,10 @@ def start_issue(
     branch_name: str,
     force: bool,
 ):
-    """Start work on an issue by recording the actual start date."""
+    """Start work on an issue (sets status to in-progress and records start date).
+
+    Syntactic sugar for: roadmap issue update <ID> --status in-progress
+    """
     from roadmap.cli.start_issue_helpers import (
         StartDateParser,
         StartIssueDisplay,
@@ -88,7 +76,7 @@ def start_issue(
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
-        # Start work on issue
+        # Start work on issue via core.update_issue
         with track_database_operation("update", "issue", entity_id=issue_id):
             success = StartIssueWorkflow.start_work(core, issue_id, start_date)
 
@@ -120,8 +108,8 @@ def _handle_git_branch_creation(core, issue, branch_name, checkout, force, conso
     try:
         if hasattr(core, "git") and core.git.is_git_repository():
             resolved_branch_name = branch_name or core.git.suggest_branch_name(issue)
-            branch_success = _safe_create_branch(
-                core.git, issue, checkout=checkout, force=force
+            branch_success = core.git.create_branch_for_issue(
+                issue, checkout=checkout, force=force
             )
             if branch_success:
                 StartIssueDisplay.show_branch_created(

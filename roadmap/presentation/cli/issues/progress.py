@@ -1,4 +1,7 @@
-"""Update progress command."""
+"""Update progress command - thin wrapper around update.
+
+This command is syntactic sugar for: roadmap issue update <ID> --progress <PERCENT>
+"""
 
 import click
 
@@ -17,7 +20,10 @@ console = get_console()
 @click.pass_context
 @log_command("issue_progress", entity_type="issue", track_duration=True)
 def update_progress(ctx: click.Context, issue_id: str, percentage: float):
-    """Update the progress percentage for an issue (0-100)."""
+    """Update the progress percentage for an issue (0-100).
+
+    Syntactic sugar for: roadmap issue update <ID> --progress <PERCENT>
+    """
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -39,11 +45,11 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
-        # Update progress
+        # Update progress via core.update_issue
         with track_database_operation("update", "issue", entity_id=issue_id):
-            success = core.update_issue(issue_id, progress_percentage=percentage)
+            updated = core.update_issue(issue_id, progress_percentage=percentage)
 
-        if success:
+        if updated:
             console.print(f"📊 Updated progress: {issue.title}", style="bold green")
             console.print(f"   Progress: {percentage:.0f}%", style="cyan")
 

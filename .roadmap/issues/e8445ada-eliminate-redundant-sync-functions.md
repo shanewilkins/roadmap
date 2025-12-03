@@ -1,14 +1,14 @@
 ---
-id: f833bc4f
-title: Test timezone-aware issue creation
+id: e8445ada
+title: Eliminate Redundant Sync Functions
 priority: high
 status: closed
 issue_type: other
 milestone: v.0.6.0
 labels: []
 github_issue: null
-created: '2025-11-16T19:41:48.050372+00:00'
-updated: '2025-12-03T14:14:43.976437+00:00'
+created: '2025-11-17T17:47:49.835163+00:00'
+updated: '2025-12-03T14:14:45.360544+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -24,3 +24,15 @@ git_branches: []
 git_commits: []
 completed_date: null
 ---
+
+# Eliminate Redundant Sync Functions
+
+## Description
+
+Brief description of the issue or feature request.
+
+## Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

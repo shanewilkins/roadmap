@@ -1,4 +1,7 @@
-"""Block issue command."""
+"""Block issue command - thin wrapper around update.
+
+This command is syntactic sugar for: roadmap issue update <ID> --status blocked
+"""
 
 import click
 
@@ -18,7 +21,10 @@ def block_issue(
     issue_id: str,
     reason: str,
 ):
-    """Mark an issue as blocked."""
+    """Mark an issue as blocked (sets status to blocked).
+
+    Syntactic sugar for: roadmap issue update <ID> --status blocked
+    """
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -33,7 +39,7 @@ def block_issue(
         console.print(f"❌ Issue not found: {issue_id}", style="bold red")
         raise click.Abort()
 
-    # Update status to blocked
+    # Update status to blocked via core.update_issue
     updated_issue = core.update_issue(issue_id, status="blocked")
 
     console.print(f"🚫 Blocked issue: {updated_issue.title}", style="bold red")

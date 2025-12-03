@@ -25,22 +25,6 @@ git_commits: []
 completed_date: null
 ---
 
-## Overview
-
-## Overview
-
-Refactor CLI commands across issues, milestones, and projects to achieve consistency, remove redundancy, and align with GitHub naming conventions. The goal is to establish a clean, predictable command structure with:
-
-1. Consistent CRUD operations across all entity types (create, read, update, delete, archive, restore)
-2. Elimination of redundant commands (done.py, finish.py, deprecated wrappers)
-3. Strategic command consolidation using a hybrid approach: monolithic `update` command with convenience wrappers for common operations
-4. GitHub alignment in terminology and field naming
-5. Finalized API foundation for v1.0 release
-
-### Core Principle: Update-Centric Architecture
-
-All state changes route through a unified `update` command, with convenience wrappers (close, block, start, etc.) as syntactic sugar that internally call `update` with appropriate flags. This reduces code duplication while maintaining excellent UX.
-
 ## Description
 
 Refactor CLI commands across issues, milestones, and projects to achieve consistency, remove redundancy, and align with GitHub naming conventions. The goal is to establish a clean, predictable command structure with:
@@ -55,9 +39,7 @@ Refactor CLI commands across issues, milestones, and projects to achieve consist
 
 All state changes route through a unified `update` command, with convenience wrappers (close, block, start, etc.) as syntactic sugar that internally call `update` with appropriate flags. This reduces code duplication while maintaining excellent UX.
 
-## Architecture
-
-### CRUD Pattern (All Entity Types)
+## CRUD Pattern (All Entity Types)
 
 All entities (issues, milestones, projects) support:
 
@@ -68,7 +50,7 @@ All entities (issues, milestones, projects) support:
 - **archive** - Soft delete (standard workflow)
 - **restore** - Unarchive/recover archived entities
 
-### Issue Commands
+## Issue Commands
 
 **Core CRUD:**
 
@@ -102,7 +84,7 @@ All entities (issues, milestones, projects) support:
 - ❌ `done.py` - Redundant with `close`
 - ❌ `finish.py` - Redundant with `close`
 
-### Milestone Commands
+## Milestone Commands
 
 **Core CRUD:**
 
@@ -124,7 +106,7 @@ All entities (issues, milestones, projects) support:
 - `roadmap milestone assign <ID> --issue ISSUE_ID` - Keep or refactor to query?
 - `roadmap milestone recalculate` - Keep (batch calculation, not CRUD)
 
-### Project Commands
+## Project Commands
 
 **Core CRUD:**
 

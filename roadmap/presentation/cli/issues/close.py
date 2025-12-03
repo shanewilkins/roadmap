@@ -1,4 +1,8 @@
-"""Close issue command - unified replacement for 'closed' and 'finish'."""
+"""Close issue command - thin wrapper around update.
+
+This command is syntactic sugar for: roadmap issue update <ID> --status closed
+Delegates to update command for consistent business logic.
+"""
 
 from datetime import datetime
 
@@ -19,7 +23,7 @@ console = get_console()
     "--record-time",
     "-t",
     is_flag=True,
-    help="Record actual completion time and duration",
+    help="Record actual completion time",
 )
 @click.option(
     "--date",
@@ -34,13 +38,11 @@ def close_issue(
     record_time: bool,
     date: str,
 ):
-    """Close an issue (mark as done).
+    """Close an issue (sets status to closed and progress to 100%).
 
-    Unified command that marks an issue as closed and optionally records
-    completion metadata like reason and timing information.
+    Syntactic sugar for: roadmap issue update <ID> --status closed
 
-    Git-aligned terminology: 'close' is used instead of 'closed' for consistency
-    with Git workflows.
+    Options like --reason and --record-time add metadata to the update.
     """
     core = ctx.obj["core"]
 
@@ -57,8 +59,13 @@ def close_issue(
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
+        # Build update kwargs
+        update_kwargs = {
+            "status": "closed",
+            "progress_percentage": 100.0,
+        }
+
         # Parse completion date if record_time is enabled
-        end_date = None
         if record_time:
             if date:
                 try:
@@ -75,50 +82,37 @@ def close_issue(
             else:
                 end_date = datetime.now()
 
-        # Prepare update data
-        update_data = {
-            "status": "closed",
-            "progress_percentage": 100.0,
-        }
+            update_kwargs["actual_end_date"] = end_date
 
-        if record_time and end_date:
-            update_data["actual_end_date"] = end_date
-
-        if reason:
-            # Append reason to existing content
-            content = issue.content or ""
-            completion_note = f"\n\n**Closed:** {reason}"
-            update_data["content"] = content + completion_note
-
-        # Update the issue
+        # Update the issue (this delegates to core.update_issue)
         with track_database_operation(
             "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
         ):
-            success = core.update_issue(issue_id, **update_data)
+            updated_issue = core.update_issue(issue_id, **update_kwargs)
 
-        if success:
-            # Re-fetch issue to display updated values
-            updated = core.get_issue(issue_id)
-            console.print(f"✅ Closed: {updated.title}", style="bold green")
+        if updated_issue:
+            console.print(f"✅ Closed: {updated_issue.title}", style="bold green")
+            console.print("   Status: Closed", style="green")
 
             if reason:
                 console.print(f"   Reason: {reason}", style="cyan")
 
-            if record_time and end_date:
+            if record_time and update_kwargs.get("actual_end_date"):
+                end_date = update_kwargs["actual_end_date"]
                 console.print(
                     f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}",
                     style="cyan",
                 )
 
                 # Show duration if we have start date
-                if updated.actual_start_date:
-                    duration = end_date - updated.actual_start_date
+                if updated_issue.actual_start_date:
+                    duration = end_date - updated_issue.actual_start_date
                     hours = duration.total_seconds() / 3600
                     console.print(f"   Duration: {hours:.1f} hours", style="cyan")
 
                     # Compare with estimate
-                    if updated.estimated_hours:
-                        diff = hours - updated.estimated_hours
+                    if updated_issue.estimated_hours:
+                        diff = hours - updated_issue.estimated_hours
                         if abs(diff) > 0.5:
                             if diff > 0:
                                 console.print(
@@ -132,8 +126,6 @@ def close_issue(
                                 )
                         else:
                             console.print("   ✅ Right on estimate!", style="green")
-
-            console.print("   Status: Closed", style="green")
         else:
             console.print(f"❌ Failed to close issue: {issue_id}", style="bold red")
 
@@ -143,6 +135,6 @@ def close_issue(
             operation="issue_close",
             entity_type="issue",
             entity_id=issue_id,
-            additional_context={"reason": reason, "record_time": record_time},
+            additional_context={"reason": reason},
         )
         console.print(f"❌ Error closing issue: {e}", style="bold red")

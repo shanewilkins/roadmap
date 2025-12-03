@@ -1,4 +1,7 @@
-"""Unblock issue command."""
+"""Unblock issue command - thin wrapper around update.
+
+This command is syntactic sugar for: roadmap issue update <ID> --status in-progress
+"""
 
 import click
 
@@ -14,7 +17,10 @@ console = get_console()
 @click.pass_context
 @handle_cli_errors(command_name="issue unblock")
 def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
-    """Unblock an issue by setting it to in-progress status."""
+    """Unblock an issue by setting status to in-progress.
+
+    Syntactic sugar for: roadmap issue update <ID> --status in-progress
+    """
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -34,20 +40,16 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
         )
         return
 
-    success = core.update_issue(
-        issue_id,
-        status="in-progress",
-        content=(issue.content or "")
-        + (f"\n\n**Unblocked:** {reason}" if reason else ""),
-    )
+    # Update status to in-progress via core.update_issue
+    updated = core.update_issue(issue_id, status="in-progress")
 
-    if success:
-        updated = core.get_issue(issue_id)
+    if updated:
         console.print(f"✅ Unblocked issue: {updated.title}", style="bold green")
         console.print(f"   ID: {issue_id}", style="cyan")
         console.print("   Status: 🔄 In Progress", style="yellow")
         if reason:
             console.print(f"   Reason: {reason}", style="cyan")
+
     else:
         console.print(f"❌ Failed to unblock issue: {issue_id}", style="bold red")
         raise click.Abort()
