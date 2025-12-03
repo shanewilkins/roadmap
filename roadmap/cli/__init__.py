@@ -23,18 +23,18 @@ _commands_registered = False
 
 # Import utility functions that tests need
 try:
-    import git
+    import git as gitpython
 except ImportError:
-    git = None
+    gitpython = None
 
 
 def _get_current_user():
     """Get current user from git config."""
-    if git is None:
+    if gitpython is None:
         return os.environ.get("USER") or os.environ.get("USERNAME")
 
     try:
-        repo = git.Repo(search_parent_directories=True)
+        repo = gitpython.Repo(search_parent_directories=True)
         try:
             name = repo.config_reader().get_value("user", "name")
             return name
@@ -94,7 +94,7 @@ def register_commands():
     # Core v1.0 commands only
     from roadmap.presentation.cli.comment import comment
     from roadmap.presentation.cli.data import data
-    from roadmap.presentation.cli.git import git
+    from roadmap.presentation.cli.git import git as git_cmd
     from roadmap.presentation.cli.issues import issue
     from roadmap.presentation.cli.milestones import milestone
     from roadmap.presentation.cli.progress import progress_reports, recalculate_progress
@@ -104,7 +104,7 @@ def register_commands():
     main.add_command(project)
     main.add_command(issue)
     main.add_command(milestone)
-    main.add_command(git)
+    main.add_command(git_cmd)
     main.add_command(comment)
     main.add_command(recalculate_progress)
     main.add_command(progress_reports)
@@ -139,4 +139,4 @@ except ImportError as e:
 
 
 if __name__ == "__main__":
-    main()
+    main()  # type: ignore[call-arg]

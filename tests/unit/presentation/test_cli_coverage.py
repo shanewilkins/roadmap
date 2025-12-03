@@ -12,9 +12,9 @@ from click.testing import CliRunner
 
 from roadmap.cli import main
 
-pytestmark = pytest.mark.skip(
-    reason="CLI command integration tests - complex Click mocking"
-)
+pytestmark = [
+    pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
+]
 
 
 @pytest.fixture
@@ -262,7 +262,7 @@ class TestCLIHelperFunctions:
             mock_getenv.return_value = "test_user"
             mock_getuser.return_value = "fallback_user"
 
-            user = _get_current_user()
+            user = _get_current_user()  # type: ignore[call-arg]
             # Should return either the mocked value or actual system value
             assert user is not None
             assert isinstance(user, str)
@@ -272,7 +272,7 @@ class TestCLIHelperFunctions:
         from roadmap.presentation.cli import _detect_project_context
 
         with cli_runner.isolated_filesystem():
-            context = _detect_project_context()
+            context = _detect_project_context()  # type: ignore[call-arg]
 
             assert isinstance(context, dict)
             assert "project_name" in context
@@ -285,7 +285,7 @@ class TestCLIInitAdvanced:
     def test_init_with_template(self, cli_runner):
         """Test init with template option."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(
+            result = cli_runner.invoke(  # type: ignore[call-arg]
                 main,
                 ["init", "--template", "basic", "--non-interactive", "--skip-github"],
             )

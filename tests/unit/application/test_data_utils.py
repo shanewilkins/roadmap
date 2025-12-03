@@ -23,7 +23,7 @@ from roadmap.domain import (
 )
 
 # Mark all tests as unit tests
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.unit]
 
 
 class TestDataFrameAdapter:
