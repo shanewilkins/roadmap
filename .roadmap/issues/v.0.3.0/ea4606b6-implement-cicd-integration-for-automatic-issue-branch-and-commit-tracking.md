@@ -22,9 +22,11 @@ handoff_date: null
 git_branches:
 - feature/ea4606b6-ci-integration
 git_commits:
-- abc12345
+- hash: abc12345
 completed_date: null
 ---
+
+
 
 # Implement CI/CD integration for automatic issue branch and commit tracking
 

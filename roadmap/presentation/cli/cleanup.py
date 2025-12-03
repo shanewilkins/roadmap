@@ -7,8 +7,10 @@ import click
 from rich.console import Console
 
 from roadmap.application.health import (
+    fix_malformed_files,
     scan_for_duplicate_issues,
     scan_for_folder_structure_issues,
+    scan_for_malformed_files,
 )
 
 console = Console()
@@ -51,6 +53,11 @@ console = Console()
     is_flag=True,
     help="Only check/report duplicate issues",
 )
+@click.option(
+    "--check-malformed",
+    is_flag=True,
+    help="Only check/report malformed YAML files",
+)
 @click.pass_context
 def cleanup(
     ctx: click.Context,
@@ -61,13 +68,15 @@ def cleanup(
     backups_only: bool,
     check_folders: bool,
     check_duplicates: bool,
+    check_malformed: bool,
 ):
-    """Comprehensive roadmap cleanup - fix backups, folders, and duplicates.
+    """Comprehensive roadmap cleanup - fix backups, folders, duplicates, and malformed files.
 
     By default, performs all cleanup operations:
     1. Removes old backup files (keeps 10 most recent per issue)
     2. Moves misplaced issues to correct milestone folders
     3. Resolves duplicate issues (keeps latest version)
+    4. Fixes malformed YAML in issue files
 
     Use --dry-run to preview all changes without making them.
     Use --force to skip confirmation prompts.
@@ -76,6 +85,7 @@ def cleanup(
     - --backups-only: Only clean up old backups
     - --check-folders: Only report folder structure issues
     - --check-duplicates: Only report duplicate issues
+    - --check-malformed: Only report and fix malformed files
 
     Examples:
         roadmap cleanup                    # Fix everything interactively
@@ -83,6 +93,7 @@ def cleanup(
         roadmap cleanup --force            # Fix everything without prompting
         roadmap cleanup --backups-only     # Only clean up backups
         roadmap cleanup --check-folders    # Only check folder issues
+        roadmap cleanup --check-malformed  # Only fix malformed YAML
     """
     core = ctx.obj["core"]
 
@@ -105,6 +116,10 @@ def cleanup(
         _handle_check_duplicates(issues_dir, roadmap_dir)
         return
 
+    if check_malformed:
+        _handle_check_malformed(issues_dir, roadmap_dir, dry_run, force)
+        return
+
     # Default or backups-only mode: run comprehensive cleanup
     try:
         cleanup_results = {
@@ -112,6 +127,7 @@ def cleanup(
             "backups_freed_mb": 0.0,
             "issues_moved": 0,
             "duplicates_deleted": 0,
+            "malformed_fixed": 0,
         }
 
         # 1. Clean up backups
@@ -123,6 +139,15 @@ def cleanup(
             if not dry_run:
                 _resolve_folder_issues(issues_dir, roadmap_dir, core, force)
                 _resolve_duplicates(issues_dir, roadmap_dir, force)
+
+                # 3. Fix malformed YAML files
+                result = fix_malformed_files(issues_dir, dry_run=False)
+                if result["fixed_files"]:
+                    cleanup_results["malformed_fixed"] = len(result["fixed_files"])
+                    console.print(
+                        f"✅ Fixed {len(result['fixed_files'])} malformed file(s)",
+                        style="green",
+                    )
             else:
                 console.print(
                     "\n[DRY RUN] Folder and duplicate resolution skipped in preview mode"
@@ -195,6 +220,60 @@ def _handle_check_duplicates(issues_dir: Path, roadmap_dir: Path) -> None:
         for file_path in sorted(files):
             console.print(f"    • {file_path.relative_to(roadmap_dir)}", style="dim")
         console.print()
+
+
+def _handle_check_malformed(
+    issues_dir: Path, roadmap_dir: Path, dry_run: bool, force: bool
+) -> None:
+    """Check and fix malformed YAML files."""
+    if not issues_dir.exists():
+        console.print("📋 No issues directory found.", style="yellow")
+        return
+
+    malformed = scan_for_malformed_files(issues_dir)
+
+    if not malformed["malformed_files"]:
+        console.print(
+            "✅ No malformed YAML files found.",
+            style="green",
+        )
+        return
+
+    console.print(
+        f"\n⚠️  Found {len(malformed['malformed_files'])} malformed file(s):\n",
+        style="bold yellow",
+    )
+
+    for file_rel in malformed["malformed_files"]:
+        console.print(f"  • {file_rel}", style="cyan")
+    console.print()
+
+    if dry_run:
+        console.print("[DRY RUN] Would fix the above files", style="dim")
+        return
+
+    if not force:
+        if not click.confirm("Fix malformed files?", default=True):
+            console.print("Skipped.", style="yellow")
+            return
+
+    result = fix_malformed_files(issues_dir, dry_run=False)
+
+    if result["fixed_files"]:
+        console.print(
+            f"✅ Fixed {len(result['fixed_files'])} file(s)",
+            style="green",
+        )
+        for file_rel in result["fixed_files"]:
+            console.print(f"  • {file_rel}", style="dim")
+
+    if result["errors"]:
+        console.print(
+            f"⚠️  Could not fix {len(result['errors'])} file(s)",
+            style="yellow",
+        )
+        for file_rel in result["errors"]:
+            console.print(f"  • {file_rel}", style="dim")
 
 
 def _cleanup_backups(
