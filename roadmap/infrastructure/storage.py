@@ -658,6 +658,50 @@ class StateManager:
             logger.error(f"Failed to check file changes for {file_path}", error=str(e))
             return True  # Assume changed on error
 
+    def _common_sync_entity(
+        self,
+        file_path: Path,
+        entity_type: str,
+        entity_data: dict[str, Any],
+        entity_id: str,
+        db_insert_fn,
+    ) -> bool:
+        """Common logic for syncing any entity file type.
+
+        Args:
+            file_path: Path to the file
+            entity_type: Type of entity ('issue', 'milestone', 'project')
+            entity_data: Parsed YAML data
+            entity_id: The entity ID
+            db_insert_fn: Function to call for database insert
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Update sync status
+            file_stat = file_path.stat()
+            content_hash = self._calculate_file_hash(file_path)
+            self.update_file_sync_status(
+                str(file_path),
+                content_hash,
+                file_stat.st_size,
+                datetime.fromtimestamp(file_stat.st_mtime),
+            )
+
+            # Execute the database insert
+            with self.transaction() as conn:
+                db_insert_fn(conn, entity_data)
+
+            logger.info(
+                f"Synced {entity_type} file: {entity_id}", file_path=str(file_path)
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to sync {entity_type} file {file_path}", error=str(e))
+            return False
+
     def sync_issue_file(self, file_path: Path) -> bool:
         """Sync a single issue file to database."""
         try:
