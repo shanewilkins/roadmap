@@ -2,18 +2,116 @@
 
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import click
+import yaml
 from rich.console import Console
 
 from roadmap.application.health import (
-    fix_malformed_files,
     scan_for_duplicate_issues,
     scan_for_folder_structure_issues,
     scan_for_malformed_files,
 )
 
 console = Console()
+
+
+def fix_malformed_files(issues_dir: Path, dry_run: bool = False) -> dict[str, Any]:
+    """Fix common malformed YAML issues in issue files.
+
+    Returns a dict with:
+    - 'fixed_files': List of files that were fixed
+    - 'errors': List of files that couldn't be fixed
+    """
+    result = {"fixed_files": [], "errors": []}
+
+    if not issues_dir.exists():
+        return result
+
+    malformed_scan = scan_for_malformed_files(issues_dir)
+
+    for file_rel in malformed_scan["malformed_files"]:
+        file_path = issues_dir / file_rel
+
+        try:
+            content = file_path.read_text(encoding="utf-8")
+
+            # Extract frontmatter
+            if not content.startswith("---"):
+                result["errors"].append(file_rel)
+                continue
+
+            parts = content.split("---", 2)
+            if len(parts) < 3:
+                result["errors"].append(file_rel)
+                continue
+
+            frontmatter_str, markdown_content = parts[1], parts[2]
+
+            # Parse and fix common issues
+            try:
+                frontmatter = yaml.safe_load(frontmatter_str)
+            except yaml.YAMLError:
+                result["errors"].append(file_rel)
+                continue
+
+            # Fix git_commits if it's a list of strings instead of dicts
+            if "git_commits" in frontmatter and isinstance(
+                frontmatter["git_commits"], list
+            ):
+                fixed_commits = []
+                needs_fix = False
+                for commit in frontmatter["git_commits"]:
+                    if isinstance(commit, str):
+                        # Convert string commit hash to dict
+                        fixed_commits.append({"hash": commit})
+                        needs_fix = True
+                    else:
+                        fixed_commits.append(commit)
+                if needs_fix:
+                    frontmatter["git_commits"] = fixed_commits
+
+            # Fix git_branches if it's a list of dicts instead of strings
+            if "git_branches" in frontmatter and isinstance(
+                frontmatter["git_branches"], list
+            ):
+                fixed_branches = []
+                needs_fix = False
+                for branch in frontmatter["git_branches"]:
+                    if isinstance(branch, dict):
+                        # Convert dict to string - prefer 'name' field or use as is
+                        if "name" in branch:
+                            fixed_branches.append(branch["name"])
+                        elif isinstance(branch, str):
+                            fixed_branches.append(branch)
+                        else:
+                            fixed_branches.append(str(branch))
+                        needs_fix = True
+                    elif isinstance(branch, str):
+                        fixed_branches.append(branch)
+                    else:
+                        # Convert any other type to string
+                        fixed_branches.append(str(branch))
+                        needs_fix = True
+                if needs_fix:
+                    frontmatter["git_branches"] = fixed_branches
+
+            # Reconstruct the file
+            fixed_frontmatter = yaml.dump(
+                frontmatter, default_flow_style=False, sort_keys=False
+            )
+            fixed_content = f"---\n{fixed_frontmatter}---\n{markdown_content}"
+
+            if not dry_run:
+                file_path.write_text(fixed_content, encoding="utf-8")
+
+            result["fixed_files"].append(file_rel)
+
+        except Exception:
+            result["errors"].append(file_rel)
+
+    return result
 
 
 @click.command()
