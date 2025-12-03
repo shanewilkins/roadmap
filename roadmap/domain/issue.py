@@ -76,6 +76,9 @@ class Issue(BaseModel):
         default_factory=list
     )  # Git commits referencing this issue
     completed_date: str | None = None  # ISO string when issue was completed via Git
+    file_path: str | None = Field(
+        default=None, exclude=True
+    )  # Internal: absolute path where issue file is stored
 
     @property
     def is_backlog(self) -> bool:

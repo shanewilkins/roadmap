@@ -81,6 +81,7 @@ class IssueService:
         )
 
         issue_path = self.issues_dir / issue.filename
+        issue.file_path = str(issue_path)  # Store the path for future updates
         IssueParser.save_issue_file(issue, issue_path)
 
         # Persist to database (non-blocking - file system is primary source of truth)
@@ -135,6 +136,8 @@ class IssueService:
         for issue_file in self.issues_dir.rglob("*.md"):
             try:
                 issue = IssueParser.parse_issue_file(issue_file)
+                # Store the original file path so updates preserve the location
+                issue.file_path = str(issue_file)
 
                 # Apply filters
                 if milestone and issue.milestone != milestone:
@@ -183,14 +186,38 @@ class IssueService:
             issue_id: Issue identifier (ID prefix used in filename)
 
         Returns:
-            Issue object if found, None otherwise
+            Issue object if found, None otherwise.
+
+        Note:
+            If multiple copies exist (due to migration), prefers milestone-specific
+            subdirectories (v.X.X.X) over root directory.
         """
-        for issue_file in self.issues_dir.rglob(f"{issue_id}-*.md"):
-            try:
-                return IssueParser.parse_issue_file(issue_file)
-            except Exception:
-                continue
-        return None
+        from pathlib import Path
+
+        # Find all copies of the issue
+        matching_files = list(self.issues_dir.rglob(f"{issue_id}-*.md"))
+        if not matching_files:
+            return None
+
+        # Prefer milestone-specific subdirectories over root
+        # Sort: milestone subdirs first (v.X.X.X), then root
+        def sort_key(path: Path) -> tuple:
+            # If file is in a milestone subfolder (v.X.X.X), prioritize it
+            if "v." in str(path):
+                return (0, str(path))  # Milestone paths first
+            else:
+                return (1, str(path))  # Root paths second
+
+        matching_files.sort(key=sort_key)
+        issue_file = matching_files[0]
+
+        try:
+            issue = IssueParser.parse_issue_file(issue_file)
+            # Store the original file path so updates preserve the location
+            issue.file_path = str(issue_file)
+            return issue
+        except Exception:
+            return None
 
     def update_issue(self, issue_id: str, **updates) -> Issue | None:
         """Update an existing issue with new field values.
@@ -202,6 +229,8 @@ class IssueService:
         Returns:
             Updated Issue object if found, None otherwise
         """
+        from pathlib import Path
+
         issue = self.get_issue(issue_id)
         if not issue:
             return None
@@ -214,9 +243,16 @@ class IssueService:
         # Update timestamp
         issue.updated = now_utc()
 
-        # Save updated issue
-        issue_path = self.issues_dir / issue.filename
+        # Save updated issue to its original location
+        if issue.file_path:
+            issue_path = Path(issue.file_path)
+        else:
+            # Fallback for issues without stored path (shouldn't happen after fix)
+            issue_path = self.issues_dir / issue.filename
+
         IssueParser.save_issue_file(issue, issue_path)
+
+        return issue
 
         return issue
 
