@@ -15,15 +15,45 @@ console = get_console()
 
 @click.command("view")
 @click.argument("milestone_name")
+@click.option(
+    "--status",
+    type=click.Choice(
+        ["todo", "in-progress", "blocked", "review", "closed"], case_sensitive=False
+    ),
+    multiple=True,
+    help="Filter issues by status (can specify multiple times)",
+)
+@click.option(
+    "--priority",
+    type=click.Choice(["critical", "high", "medium", "low"], case_sensitive=False),
+    multiple=True,
+    help="Filter issues by priority (can specify multiple times)",
+)
+@click.option(
+    "--only-open",
+    is_flag=True,
+    help="Show only open issues (excludes closed)",
+)
 @click.pass_context
-def view_milestone(ctx: click.Context, milestone_name: str):
+def view_milestone(
+    ctx: click.Context,
+    milestone_name: str,
+    status: tuple,
+    priority: tuple,
+    only_open: bool,
+):
     """Display detailed information about a specific milestone.
 
     Shows complete milestone details including progress, statistics,
     issues breakdown, description, and goals in a formatted view.
 
-    Example:
+    Use --status and --priority to filter which issues are displayed.
+
+    Examples:
         roadmap milestone view v.0.5.0
+        roadmap milestone view v.0.5.0 --status todo --status in-progress
+        roadmap milestone view v.0.5.0 --priority high --priority critical
+        roadmap milestone view v.0.5.0 --only-open
     """
     core = ctx.obj["core"]
 
@@ -46,6 +76,30 @@ def view_milestone(ctx: click.Context, milestone_name: str):
     # Get all issues for progress calculation
     all_issues = core.list_issues()
     milestone_issues = milestone.get_issues(all_issues)
+
+    # Apply filters
+    if status or priority or only_open:
+        filtered_issues = []
+        status_lower = tuple(s.lower() for s in status)
+        priority_lower = tuple(p.lower() for p in priority)
+
+        for issue in milestone_issues:
+            # Check status filter
+            if status_lower and issue.status.value not in status_lower:
+                continue
+
+            # Check priority filter
+            if priority_lower and issue.priority.value not in priority_lower:
+                continue
+
+            # Check only-open filter
+            if only_open and issue.status.value == "closed":
+                continue
+
+            filtered_issues.append(issue)
+
+        milestone_issues = filtered_issues
+
     progress_data = core.get_milestone_progress(milestone_name)
 
     # Build header with status badge
