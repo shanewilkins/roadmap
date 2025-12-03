@@ -179,8 +179,16 @@ class TestHealthCheck:
             patch.object(HealthCheck, "check_issues_directory") as mock_issues,
             patch.object(HealthCheck, "check_milestones_directory") as mock_milestones,
             patch.object(HealthCheck, "check_git_repository") as mock_git,
+            patch.object(HealthCheck, "check_database_integrity") as mock_db,
+            patch.object(HealthCheck, "check_data_integrity") as mock_data,
             patch.object(HealthCheck, "check_duplicate_issues") as mock_duplicates,
             patch.object(HealthCheck, "check_folder_structure") as mock_folders,
+            patch.object(HealthCheck, "check_orphaned_issues") as mock_orphaned,
+            patch.object(HealthCheck, "check_old_backups") as mock_backups,
+            patch.object(HealthCheck, "check_archivable_issues") as mock_arch_issues,
+            patch.object(
+                HealthCheck, "check_archivable_milestones"
+            ) as mock_arch_milestones,
         ):
             # Set up mock returns
             ok_status: tuple[HealthStatus, str] = (HealthStatus.HEALTHY, "OK")
@@ -189,8 +197,14 @@ class TestHealthCheck:
             mock_issues.return_value = ok_status
             mock_milestones.return_value = ok_status
             mock_git.return_value = ok_status
+            mock_db.return_value = ok_status
+            mock_data.return_value = ok_status
             mock_duplicates.return_value = ok_status
             mock_folders.return_value = ok_status
+            mock_orphaned.return_value = ok_status
+            mock_backups.return_value = ok_status
+            mock_arch_issues.return_value = ok_status
+            mock_arch_milestones.return_value = ok_status
 
             # Create mock core
             mock_core = MagicMock()
@@ -203,8 +217,14 @@ class TestHealthCheck:
             mock_issues.assert_called_once()
             mock_milestones.assert_called_once()
             mock_git.assert_called_once()
+            mock_db.assert_called_once()
+            mock_data.assert_called_once()
             mock_duplicates.assert_called_once_with(mock_core)
             mock_folders.assert_called_once_with(mock_core)
+            mock_orphaned.assert_called_once_with(mock_core)
+            mock_backups.assert_called_once()
+            mock_arch_issues.assert_called_once_with(mock_core)
+            mock_arch_milestones.assert_called_once_with(mock_core)
 
             # Verify results structure
             assert "roadmap_directory" in checks

@@ -278,6 +278,76 @@ def scan_for_archivable_milestones(core, threshold_days: int = 14) -> list[dict]
     return archivable
 
 
+def scan_for_data_integrity_issues(
+    issues_dir: Path,
+) -> dict[str, list[str]]:
+    """Scan for data integrity issues (orphaned/missing files).
+
+    Returns a dict with:
+    - 'malformed_files': List of files that couldn't be parsed
+    """
+    result = {"malformed_files": []}
+
+    if not issues_dir.exists():
+        return result
+
+    # Scan all issue files recursively
+    for issue_file in issues_dir.rglob("*.md"):
+        if ".backup" in issue_file.name:
+            continue
+
+        try:
+            from roadmap.infrastructure.persistence.parser import IssueParser
+
+            IssueParser.parse_issue_file(issue_file)
+        except Exception:
+            # File couldn't be parsed
+            result["malformed_files"].append(str(issue_file.relative_to(issues_dir)))
+
+    return result
+
+
+def scan_for_orphaned_issues(core) -> list[dict]:
+    """Scan for issues not assigned to any milestone (not in backlog either).
+
+    Returns a list of orphaned issue dicts with id, title, and location.
+    """
+    orphaned = []
+
+    try:
+        issues_dir = Path(".roadmap/issues")
+        if not issues_dir.exists():
+            return orphaned
+
+        issues = core.issue_service.list_issues()
+
+        for issue in issues:
+            # Issue is orphaned if milestone is None or empty string
+            if not issue.milestone or issue.milestone == "":
+                # Check if it's actually in the backlog folder or another location
+                if issue.file_path:
+                    file_path = Path(issue.file_path)
+                    # If it's in a milestone-specific folder but milestone is not set, it's orphaned
+                    relative_path = file_path.relative_to(issues_dir)
+                    parts = relative_path.parts
+
+                    # Check if in a subfolder (not root or backlog)
+                    if len(parts) > 1 and parts[0] not in ("backlog", "."):
+                        orphaned.append(
+                            {
+                                "id": issue.id,
+                                "title": issue.title,
+                                "location": str(file_path),
+                                "folder": parts[0],
+                            }
+                        )
+
+    except Exception as e:
+        logger.debug("scan_orphaned_issues_error", error=str(e))
+
+    return orphaned
+
+
 class HealthStatus(Enum):
     """Health status levels for system components."""
 
@@ -622,6 +692,101 @@ class HealthCheck:
             logger.debug("health_check_archivable_milestones_failed", error=str(e))
             return HealthStatus.HEALTHY, "Could not check archivable milestones"
 
+    @staticmethod
+    def check_database_integrity() -> tuple[HealthStatus, str]:
+        """Check SQLite database integrity.
+
+        Returns:
+            Tuple of (status, message) - DEGRADED if issues found, HEALTHY otherwise
+        """
+        try:
+            import sqlite3
+
+            db_path = Path(".roadmap/db/state.db")
+
+            if not db_path.exists():
+                return HealthStatus.HEALTHY, "Database not initialized"
+
+            conn = sqlite3.connect(str(db_path))
+            cursor = conn.cursor()
+
+            # Run integrity check
+            cursor.execute("PRAGMA integrity_check")
+            result = cursor.fetchone()
+            conn.close()
+
+            if result[0] == "ok":
+                logger.debug("health_check_database_integrity", status="healthy")
+                return HealthStatus.HEALTHY, "Database integrity verified"
+
+            message = f"⚠️ Database integrity issue: {result[0]}"
+            logger.warning("health_check_database_integrity", issue=result[0])
+            return HealthStatus.DEGRADED, message
+
+        except Exception as e:
+            logger.error("health_check_database_integrity_failed", error=str(e))
+            return HealthStatus.UNHEALTHY, f"Could not verify database integrity: {e}"
+
+    @staticmethod
+    def check_data_integrity() -> tuple[HealthStatus, str]:
+        """Check for malformed or corrupted files in the roadmap.
+
+        Returns:
+            Tuple of (status, message) - DEGRADED if issues found, HEALTHY otherwise
+        """
+        try:
+            issues_dir = Path(".roadmap/issues")
+
+            if not issues_dir.exists():
+                return HealthStatus.HEALTHY, "No issues directory to check"
+
+            result = scan_for_data_integrity_issues(issues_dir)
+
+            if not result["malformed_files"]:
+                logger.debug("health_check_data_integrity", status="healthy")
+                return HealthStatus.HEALTHY, "All files are properly formatted"
+
+            count = len(result["malformed_files"])
+            files_list = ", ".join(result["malformed_files"][:3])
+            if count > 3:
+                files_list += f", +{count - 3} more"
+
+            message = (
+                f"⚠️ {count} malformed file(s) found (cannot be parsed): {files_list}"
+            )
+            logger.warning("health_check_data_integrity", count=count)
+            return HealthStatus.DEGRADED, message
+
+        except Exception as e:
+            logger.error("health_check_data_integrity_failed", error=str(e))
+            return HealthStatus.UNHEALTHY, f"Error checking data integrity: {e}"
+
+    @staticmethod
+    def check_orphaned_issues(core) -> tuple[HealthStatus, str]:
+        """Check for issues not assigned to any milestone.
+
+        Returns:
+            Tuple of (DEGRADED status, informational message) if issues found
+        """
+        try:
+            orphaned = scan_for_orphaned_issues(core)
+
+            if not orphaned:
+                logger.debug("health_check_orphaned_issues", status="none")
+                return HealthStatus.HEALTHY, "No orphaned issues found"
+
+            count = len(orphaned)
+            message = (
+                f"⚠️ {count} orphaned issue(s) found (not in any milestone folder): "
+                "These issues are disconnected from your milestone structure"
+            )
+            logger.warning("health_check_orphaned_issues", count=count)
+            return HealthStatus.DEGRADED, message
+
+        except Exception as e:
+            logger.debug("health_check_orphaned_issues_failed", error=str(e))
+            return HealthStatus.HEALTHY, "Could not check for orphaned issues"
+
     @classmethod
     def run_all_checks(cls, core) -> dict[str, tuple[HealthStatus, str]]:
         """Run all health checks and return results.
@@ -640,8 +805,11 @@ class HealthCheck:
             "issues_directory": cls.check_issues_directory(),
             "milestones_directory": cls.check_milestones_directory(),
             "git_repository": cls.check_git_repository(),
+            "database_integrity": cls.check_database_integrity(),
+            "data_integrity": cls.check_data_integrity(),
             "duplicate_issues": cls.check_duplicate_issues(core),
             "folder_structure": cls.check_folder_structure(core),
+            "orphaned_issues": cls.check_orphaned_issues(core),
             "old_backups": cls.check_old_backups(),
             "archivable_issues": cls.check_archivable_issues(core),
             "archivable_milestones": cls.check_archivable_milestones(core),
