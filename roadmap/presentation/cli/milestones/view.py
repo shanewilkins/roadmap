@@ -140,10 +140,11 @@ def view_milestone(ctx: click.Context, milestone_name: str):
     # Issues table
     if milestone_issues:
         issues_table = Table(show_header=True, header_style="bold magenta")
-        issues_table.add_column("ID", style="cyan", width=10)
-        issues_table.add_column("Title", style="white")
-        issues_table.add_column("Status", width=12)
-        issues_table.add_column("Progress", width=12)
+        issues_table.add_column("ID", style="cyan", width=9)
+        issues_table.add_column("Title", style="white", width=20)
+        issues_table.add_column("Status", width=11)
+        issues_table.add_column("Priority", width=9)
+        issues_table.add_column("Progress", width=10)
         issues_table.add_column("Estimate", width=10)
 
         for issue in milestone_issues[:10]:  # Show first 10
@@ -156,10 +157,19 @@ def view_milestone(ctx: click.Context, milestone_name: str):
             }
             status_color = status_colors.get(issue.status.value, "white")
 
+            priority_colors = {
+                "critical": "bold red",
+                "high": "red",
+                "medium": "yellow",
+                "low": "green",
+            }
+            priority_color = priority_colors.get(issue.priority.value, "white")
+
             issues_table.add_row(
                 issue.id,
                 issue.title[:50] + "..." if len(issue.title) > 50 else issue.title,
                 f"[{status_color}]{issue.status.value}[/{status_color}]",
+                f"[{priority_color}]{issue.priority.value}[/{priority_color}]",
                 issue.progress_display,
                 issue.estimated_time_display,
             )
