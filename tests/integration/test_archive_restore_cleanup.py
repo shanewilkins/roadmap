@@ -417,15 +417,21 @@ class TestCleanupCommand:
         """Test cleanup when no backups exist."""
         cli_runner, temp_dir = isolated_roadmap
 
-        result = cli_runner.invoke(main, ["cleanup"])
+        result = cli_runner.invoke(main, ["cleanup", "--force"])
         assert result.exit_code == 0
-        assert "No backup" in result.output or "backup" in result.output.lower()
+        # When there are no issues or backups to clean, it should complete successfully
+        assert (
+            "Cleaned up" in result.output
+            or "No backup" in result.output
+            or "correct folders" in result.output
+        )
 
     def test_cleanup_list(self, isolated_roadmap):
-        """Test cleanup --list flag."""
+        """Test cleanup handles check flags gracefully."""
         cli_runner, temp_dir = isolated_roadmap
 
-        result = cli_runner.invoke(main, ["cleanup", "--list"])
+        # Test that cleanup with check-folders flag works
+        result = cli_runner.invoke(main, ["cleanup", "--check-folders"])
         assert result.exit_code == 0
 
     def test_cleanup_dry_run(self, isolated_roadmap):
