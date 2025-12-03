@@ -81,17 +81,18 @@ def archive_issue(
             console.print("📋 No archived issues.", style="yellow")
             return
 
-        archived_files = list(archive_dir.glob("*.md"))
+        archived_files = list(archive_dir.rglob("*.md"))
         if not archived_files:
             console.print("📋 No archived issues.", style="yellow")
             return
 
         console.print("\n📦 Archived Issues:\n", style="bold blue")
-        for file_path in archived_files:
+        for file_path in sorted(archived_files):
             try:
                 issue = IssueParser.parse_issue_file(file_path)
+                milestone = issue.milestone or "No milestone"
                 console.print(
-                    f"  • {issue.id[:8]} - {issue.title} ({issue.status.value})",
+                    f"  • {issue.id[:8]} - {issue.title} [{milestone}] ({issue.status.value})",
                     style="cyan",
                 )
             except Exception:
@@ -160,11 +161,23 @@ def archive_issue(
             archived_count = 0
 
             for issue in issues_to_archive:
-                # Find the issue file
-                issue_files = list((roadmap_dir / "issues").glob(f"{issue.id[:8]}*.md"))
+                # Find the issue file recursively (in milestone folders)
+                issue_files = list(
+                    (roadmap_dir / "issues").rglob(f"{issue.id[:8]}*.md")
+                )
                 if issue_files:
                     issue_file = issue_files[0]
-                    archive_file = archive_dir / issue_file.name
+
+                    # Determine the archive path - preserve milestone structure
+                    if issue.milestone:
+                        # Create milestone subfolder in archive
+                        milestone_archive_dir = archive_dir / issue.milestone
+                        milestone_archive_dir.mkdir(parents=True, exist_ok=True)
+                        archive_file = milestone_archive_dir / issue_file.name
+                    else:
+                        # No milestone - put in root archive
+                        archive_file = archive_dir / issue_file.name
+
                     issue_file.rename(archive_file)
 
                     # Mark as archived in database
@@ -219,12 +232,22 @@ def archive_issue(
             # Perform archive
             archive_dir.mkdir(parents=True, exist_ok=True)
 
-            # Find the issue file
+            # Find the issue file recursively (in milestone folders)
             assert issue_id is not None  # Should never reach here with None issue_id
-            issue_files = list((roadmap_dir / "issues").glob(f"{issue_id[:8]}*.md"))
+            issue_files = list((roadmap_dir / "issues").rglob(f"{issue_id[:8]}*.md"))
             if issue_files:
                 issue_file = issue_files[0]
-                archive_file = archive_dir / issue_file.name
+
+                # Determine the archive path - preserve milestone structure
+                if issue.milestone:
+                    # Create milestone subfolder in archive
+                    milestone_archive_dir = archive_dir / issue.milestone
+                    milestone_archive_dir.mkdir(parents=True, exist_ok=True)
+                    archive_file = milestone_archive_dir / issue_file.name
+                else:
+                    # No milestone - put in root archive
+                    archive_file = archive_dir / issue_file.name
+
                 issue_file.rename(archive_file)
 
                 # Mark as archived in database
