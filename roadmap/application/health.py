@@ -84,7 +84,7 @@ def scan_for_folder_structure_issues(issues_dir: Path, core) -> dict[str, list[d
                 # Skip files that can't be parsed
                 pass
 
-        # Check milestone folders for issues without milestone assignments
+        # Check milestone folders for issues without milestone assignments or in wrong folders
         for milestone_folder in issues_dir.glob("*/"):
             if milestone_folder.is_dir() and not milestone_folder.name.startswith("."):
                 # Skip backlog folder - those issues are supposed to have no milestone
@@ -101,16 +101,32 @@ def scan_for_folder_structure_issues(issues_dir: Path, core) -> dict[str, list[d
                             continue
 
                         issue = core.issue_service.get_issue(issue_id)
-                        if issue and not issue.milestone:
-                            # Issue in milestone folder but has no milestone assignment
-                            potential_issues["orphaned"].append(
-                                {
-                                    "issue_id": issue.id,
-                                    "title": issue.title,
-                                    "location": str(issue_file),
-                                    "folder": milestone_folder.name,
-                                }
-                            )
+                        if issue:
+                            if not issue.milestone:
+                                # Issue in milestone folder but has no milestone assignment
+                                potential_issues["orphaned"].append(
+                                    {
+                                        "issue_id": issue.id,
+                                        "title": issue.title,
+                                        "location": str(issue_file),
+                                        "folder": milestone_folder.name,
+                                    }
+                                )
+                            elif issue.milestone != milestone_folder.name:
+                                # Issue in wrong milestone folder
+                                potential_issues["misplaced"].append(
+                                    {
+                                        "issue_id": issue.id,
+                                        "title": issue.title,
+                                        "current_location": str(issue_file),
+                                        "assigned_milestone": issue.milestone,
+                                        "expected_location": str(
+                                            issues_dir
+                                            / issue.milestone
+                                            / issue_file.name
+                                        ),
+                                    }
+                                )
                     except Exception:
                         pass
     except Exception as e:
