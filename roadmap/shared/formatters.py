@@ -191,7 +191,6 @@ def format_status_badge(status: str) -> "Text":
         "blocked": "bold red",
         "review": "bold magenta",
         "open": "bold green",
-        "closed": "bold red",
         "active": "bold green",
         "on-hold": "bold yellow",
         "on_hold": "bold yellow",

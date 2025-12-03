@@ -42,7 +42,7 @@ class CredentialManager:
                 # Fallback for unsupported systems
                 return self._store_token_fallback(token, repo_info)
         except Exception as e:
-            raise CredentialManagerError(f"Failed to store token: {e}")
+            raise CredentialManagerError(f"Failed to store token: {e}") from e
 
     def get_token(self) -> str | None:
         """Retrieve GitHub token securely.
@@ -86,7 +86,7 @@ class CredentialManager:
                 # Fallback for unsupported systems
                 return self._delete_token_fallback()
         except Exception as e:
-            raise CredentialManagerError(f"Failed to delete token: {e}")
+            raise CredentialManagerError(f"Failed to delete token: {e}") from e
 
     def is_available(self) -> bool:
         """Check if credential manager is available on this system.
@@ -218,7 +218,7 @@ class CredentialManager:
     def _check_wincred_available(self) -> bool:
         """Check if Windows Credential Manager is available."""
         try:
-            import keyring
+            import keyring  # noqa: F401
 
             return True
         except ImportError:

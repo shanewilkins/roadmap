@@ -540,7 +540,7 @@ class GitHistoryAnalyzer:
 
         # Developer pairs analysis
         collaboration_pairs = Counter()
-        for file_path, devs in shared_files.items():
+        for _file_path, devs in shared_files.items():
             dev_list = list(devs)
             for i in range(len(dev_list)):
                 for j in range(i + 1, len(dev_list)):

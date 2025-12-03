@@ -1,7 +1,8 @@
-defaults: {}
-display: {}
-github:
-  owner: shanewilkins
-  repo: roadmap
-milestones: {}
-sync: {}
+defaults:
+  issue_type: other
+  priority: medium
+features:
+  git_sync: false
+  github_integration: false
+github: null
+project_name: My Roadmap

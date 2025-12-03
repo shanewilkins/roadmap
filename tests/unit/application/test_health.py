@@ -46,14 +46,20 @@ class TestHealthCheck:
             assert "not a directory" in message
 
     def test_check_state_file_healthy(self, tmp_path):
-        """Test health check when state.yaml exists and is readable."""
+        """Test health check when state.db exists and is readable."""
         roadmap_dir = tmp_path / ".roadmap"
-        roadmap_dir.mkdir()
-        state_file = roadmap_dir / "state.yaml"
-        state_file.write_text("project: test")
+        db_dir = roadmap_dir / "db"
+        db_dir.mkdir(parents=True)
+        # Create a valid SQLite database file
+        import sqlite3
+
+        db_file = db_dir / "state.db"
+        conn = sqlite3.connect(str(db_file))
+        conn.execute("CREATE TABLE test (id INTEGER)")
+        conn.close()
 
         with patch("roadmap.application.health.Path") as mock_path:
-            mock_path.return_value = state_file
+            mock_path.return_value = db_file
 
             status, message = HealthCheck.check_state_file()
 
@@ -61,9 +67,9 @@ class TestHealthCheck:
             assert "accessible and readable" in message
 
     def test_check_state_file_not_found(self, tmp_path):
-        """Test health check when state.yaml doesn't exist."""
+        """Test health check when state.db doesn't exist."""
         with patch("roadmap.application.health.Path") as mock_path:
-            mock_path.return_value = tmp_path / ".roadmap" / "state.yaml"
+            mock_path.return_value = tmp_path / ".roadmap" / "db" / "state.db"
 
             status, message = HealthCheck.check_state_file()
 
@@ -71,10 +77,11 @@ class TestHealthCheck:
             assert "not found" in message
 
     def test_check_state_file_empty(self, tmp_path):
-        """Test health check when state.yaml is empty."""
+        """Test health check when state.db is empty."""
         roadmap_dir = tmp_path / ".roadmap"
-        roadmap_dir.mkdir()
-        state_file = roadmap_dir / "state.yaml"
+        db_dir = roadmap_dir / "db"
+        db_dir.mkdir(parents=True)
+        state_file = db_dir / "state.db"
         state_file.write_text("")
 
         with patch("roadmap.application.health.Path") as mock_path:
@@ -164,21 +171,31 @@ class TestHealthCheck:
 
     def test_run_all_checks(self):
         """Test running all health checks."""
+        from unittest.mock import MagicMock
+
         with (
             patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
             patch.object(HealthCheck, "check_state_file") as mock_state,
             patch.object(HealthCheck, "check_issues_directory") as mock_issues,
             patch.object(HealthCheck, "check_milestones_directory") as mock_milestones,
             patch.object(HealthCheck, "check_git_repository") as mock_git,
+            patch.object(HealthCheck, "check_duplicate_issues") as mock_duplicates,
+            patch.object(HealthCheck, "check_folder_structure") as mock_folders,
         ):
             # Set up mock returns
-            mock_roadmap.return_value = (HealthStatus.HEALTHY, "OK")
-            mock_state.return_value = (HealthStatus.HEALTHY, "OK")
-            mock_issues.return_value = (HealthStatus.HEALTHY, "OK")
-            mock_milestones.return_value = (HealthStatus.HEALTHY, "OK")
-            mock_git.return_value = (HealthStatus.HEALTHY, "OK")
+            ok_status: tuple[HealthStatus, str] = (HealthStatus.HEALTHY, "OK")
+            mock_roadmap.return_value = ok_status
+            mock_state.return_value = ok_status
+            mock_issues.return_value = ok_status
+            mock_milestones.return_value = ok_status
+            mock_git.return_value = ok_status
+            mock_duplicates.return_value = ok_status
+            mock_folders.return_value = ok_status
 
-            checks = HealthCheck.run_all_checks()
+            # Create mock core
+            mock_core = MagicMock()
+
+            checks = HealthCheck.run_all_checks(mock_core)
 
             # Verify all checks were called
             mock_roadmap.assert_called_once()
@@ -186,6 +203,8 @@ class TestHealthCheck:
             mock_issues.assert_called_once()
             mock_milestones.assert_called_once()
             mock_git.assert_called_once()
+            mock_duplicates.assert_called_once_with(mock_core)
+            mock_folders.assert_called_once_with(mock_core)
 
             # Verify results structure
             assert "roadmap_directory" in checks
@@ -193,6 +212,8 @@ class TestHealthCheck:
             assert "issues_directory" in checks
             assert "milestones_directory" in checks
             assert "git_repository" in checks
+            assert "duplicate_issues" in checks
+            assert "folder_structure" in checks
 
             # All should be healthy
             for status, _ in checks.values():
@@ -200,7 +221,7 @@ class TestHealthCheck:
 
     def test_get_overall_status_all_healthy(self):
         """Test overall status when all checks are healthy."""
-        checks = {
+        checks: dict[str, tuple[HealthStatus, str]] = {
             "check1": (HealthStatus.HEALTHY, "OK"),
             "check2": (HealthStatus.HEALTHY, "OK"),
             "check3": (HealthStatus.HEALTHY, "OK"),
@@ -212,7 +233,7 @@ class TestHealthCheck:
 
     def test_get_overall_status_one_degraded(self):
         """Test overall status when one check is degraded."""
-        checks = {
+        checks: dict[str, tuple[HealthStatus, str]] = {
             "check1": (HealthStatus.HEALTHY, "OK"),
             "check2": (HealthStatus.DEGRADED, "Warning"),
             "check3": (HealthStatus.HEALTHY, "OK"),
@@ -224,7 +245,7 @@ class TestHealthCheck:
 
     def test_get_overall_status_one_unhealthy(self):
         """Test overall status when one check is unhealthy."""
-        checks = {
+        checks: dict[str, tuple[HealthStatus, str]] = {
             "check1": (HealthStatus.HEALTHY, "OK"),
             "check2": (HealthStatus.DEGRADED, "Warning"),
             "check3": (HealthStatus.UNHEALTHY, "Error"),
@@ -236,7 +257,7 @@ class TestHealthCheck:
 
     def test_get_overall_status_multiple_unhealthy(self):
         """Test overall status with multiple unhealthy checks."""
-        checks = {
+        checks: dict[str, tuple[HealthStatus, str]] = {
             "check1": (HealthStatus.UNHEALTHY, "Error 1"),
             "check2": (HealthStatus.DEGRADED, "Warning"),
             "check3": (HealthStatus.UNHEALTHY, "Error 2"),

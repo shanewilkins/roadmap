@@ -427,15 +427,19 @@ def status(ctx: click.Context) -> None:
 
 
 @click.command()
-def health() -> None:
+@click.pass_context
+def health(ctx: click.Context) -> None:
     """Check system health and component status."""
     log = logger.bind(operation="health")
     log.info("starting_health_check")
 
     console.print("🏥 System Health Check", style="bold blue")
 
+    # Get core from context
+    core = ctx.obj["core"]
+
     # Run all health checks
-    checks = HealthCheck.run_all_checks()
+    checks = HealthCheck.run_all_checks(core)
     overall_status = HealthCheck.get_overall_status(checks)
 
     # Display results

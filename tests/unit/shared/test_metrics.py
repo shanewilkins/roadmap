@@ -95,7 +95,7 @@ class TestMetricsCollector:
         """Test stats calculation with all successful operations."""
         collector = MetricsCollector()
 
-        for i in range(10):
+        for _i in range(10):
             metric = OperationMetric(operation="test", duration_ms=100.0, success=True)
             collector.record(metric)
 
@@ -111,12 +111,12 @@ class TestMetricsCollector:
         collector = MetricsCollector()
 
         # 7 successful, 3 failed
-        for i in range(7):
+        for _i in range(7):
             collector.record(
                 OperationMetric(operation="success", duration_ms=100.0, success=True)
             )
 
-        for i in range(3):
+        for _i in range(3):
             collector.record(
                 OperationMetric(
                     operation="failure",
@@ -184,7 +184,7 @@ class TestMetricsCollector:
         collector = MetricsCollector()
 
         # Add some metrics
-        for i in range(5):
+        for _i in range(5):
             collector.record(
                 OperationMetric(operation="test", duration_ms=100.0, success=True)
             )

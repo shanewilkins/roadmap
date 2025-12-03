@@ -232,7 +232,7 @@ if __name__ == "__main__":
     # Save detailed report (convert sets to lists for JSON serialization)
     def convert_sets(obj):
         if isinstance(obj, set):
-            return sorted(list(obj))
+            return sorted(obj)
         elif isinstance(obj, dict):
             return {k: convert_sets(v) for k, v in obj.items()}
         elif isinstance(obj, list):

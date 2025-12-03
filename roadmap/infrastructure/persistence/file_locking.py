@@ -6,10 +6,11 @@ import json
 import os
 import tempfile
 import time
+from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Lock
-from typing import Any, ContextManager
+from typing import Any
 
 from ...shared.file_utils import ensure_directory_exists
 
@@ -91,7 +92,7 @@ class FileLock:
                     if self.lock_file:
                         self.lock_file.close()
                         self.lock_file = None
-                    raise FileLockError(f"Failed to acquire lock: {e}")
+                    raise FileLockError(f"Failed to acquire lock: {e}") from e
 
         # Timeout reached
         if self.lock_file:
@@ -118,7 +119,7 @@ class FileLock:
             return True
 
         except Exception as e:
-            raise FileLockError(f"Failed to release lock: {e}")
+            raise FileLockError(f"Failed to release lock: {e}") from e
 
     def is_locked(self) -> bool:
         """Check if the file is currently locked."""
@@ -165,7 +166,7 @@ class LockManager:
 
     def lock_file(
         self, file_path: Path, timeout: float | None = None
-    ) -> ContextManager[FileLock]:
+    ) -> AbstractContextManager[FileLock]:
         """Get a context manager for file locking."""
         timeout = timeout or self.default_timeout
         file_str = str(file_path)
@@ -288,7 +289,7 @@ class LockedFileOperations:
                 # Clean up temp file if it exists
                 if "tmp_path" in locals() and tmp_path.exists():
                     tmp_path.unlink()
-                raise FileLockError(f"Failed to write file: {e}")
+                raise FileLockError(f"Failed to write file: {e}") from e
 
     def update_file_locked(
         self, file_path: Path, updater_func, timeout: float | None = None
