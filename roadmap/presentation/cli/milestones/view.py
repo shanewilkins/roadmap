@@ -160,10 +160,6 @@ def view_milestone(
     stats.add_column("Key", style="dim")
     stats.add_column("Value")
 
-    # Get all issues for this milestone
-    all_issues = core.list_issues()
-    milestone_issues = [i for i in all_issues if i.milestone == milestone_name]
-
     # Calculate total estimated time
     total_estimated = sum(i.estimated_hours or 0 for i in milestone_issues)
     if total_estimated > 0:
