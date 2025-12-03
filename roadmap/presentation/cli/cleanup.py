@@ -28,6 +28,7 @@ console = Console()
 )
 @click.option(
     "--list",
+    "list_files",
     is_flag=True,
     help="List files that would be deleted without actually deleting",
 )
@@ -68,7 +69,7 @@ def cleanup(
     ctx: click.Context,
     keep: int,
     days: int | None,
-    list: bool,
+    list_files: bool,
     dry_run: bool,
     force: bool,
     check_duplicates: bool,
@@ -472,7 +473,7 @@ def cleanup(
         size_mb = total_size / (1024 * 1024)
 
         # Display list mode
-        if list:
+        if list_files:
             console.print(
                 f"\n📋 Backup files to be deleted ({len(files_to_delete)} files, {size_mb:.2f} MB):\n",
                 style="bold blue",
