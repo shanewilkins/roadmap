@@ -176,6 +176,35 @@ class InitializationWorkflow:
         """Create the basic roadmap structure."""
         self.core.initialize()
 
+    def ensure_gitignore_entry(self) -> None:
+        """Ensure config.yaml is in .gitignore to prevent accidental commits."""
+        gitignore_path = Path.cwd() / ".gitignore"
+        config_entry = ".roadmap/config.yaml"
+        config_entry_with_comment = (
+            ".roadmap/config.yaml  # Local user configuration (not to be shared)"
+        )
+
+        # If .gitignore doesn't exist, create it
+        if not gitignore_path.exists():
+            gitignore_path.write_text(
+                f"{config_entry_with_comment}\n" ".env.local\n" ".env.*.local\n"
+            )
+            return
+
+        # Read existing .gitignore
+        content = gitignore_path.read_text()
+
+        # Check if entry already exists (with or without comment)
+        if config_entry in content:
+            return  # Already there
+
+        # Append entry to .gitignore
+        if not content.endswith("\n"):
+            content += "\n"
+
+        content += f"\n{config_entry_with_comment}\n"
+        gitignore_path.write_text(content)
+
     def record_created_paths(self, manifest: InitializationManifest) -> None:
         """Record all created paths in the manifest."""
         manifest.add_path(self.core.roadmap_dir)

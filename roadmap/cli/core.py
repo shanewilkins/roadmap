@@ -205,6 +205,7 @@ def init(
         ):
             workflow.create_structure()
             workflow.record_created_paths(manifest)
+            workflow.ensure_gitignore_entry()
 
         ctx.obj["core"] = custom_core
 
