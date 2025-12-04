@@ -4,11 +4,11 @@ title: Timeline and Gantt chart visualization
 priority: medium
 status: todo
 issue_type: other
-milestone: ''
+milestone: Future (Post-v1.0)
 labels: []
 github_issue: 30
 created: '2025-10-14T14:18:18.947332+00:00'
-updated: '2025-11-16T13:41:23.314881'
+updated: '2025-12-04T23:37:49.129030+00:00'
 assignee: ''
 estimated_hours: 5.0
 due_date: null

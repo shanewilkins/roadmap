@@ -4,11 +4,11 @@ title: Team workload analysis and capacity planning
 priority: medium
 status: todo
 issue_type: other
-milestone: ''
+milestone: Future (Post-v1.0)
 labels: []
 github_issue: 31
 created: '2025-10-14T14:18:29.392002+00:00'
-updated: '2025-11-16T13:41:23.316405'
+updated: '2025-12-04T23:37:50.450960+00:00'
 assignee: ''
 estimated_hours: 4.0
 due_date: null

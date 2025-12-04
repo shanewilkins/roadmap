@@ -4,11 +4,11 @@ title: Build developer SDK and integration platform
 priority: medium
 status: todo
 issue_type: other
-milestone: ''
+milestone: Future (Post-v1.0)
 labels: []
 github_issue: 32
 created: '2025-10-14T15:46:35.942526+00:00'
-updated: '2025-11-16T13:41:23.319467'
+updated: '2025-12-04T23:37:46.476050+00:00'
 assignee: ''
 estimated_hours: 24.0
 due_date: null

@@ -4,11 +4,11 @@ title: Build enterprise SSO and role-based access control
 priority: high
 status: todo
 issue_type: other
-milestone: ''
+milestone: Future (Post-v1.0)
 labels: []
 github_issue: 19
 created: '2025-10-14T15:46:20.506536+00:00'
-updated: '2025-11-16T13:41:23.286420'
+updated: '2025-12-04T23:37:45.132291+00:00'
 assignee: shanewilkins
 estimated_hours: 24.0
 due_date: null
