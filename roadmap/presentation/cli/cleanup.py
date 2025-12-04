@@ -13,6 +13,7 @@ from roadmap.application.health import (
     scan_for_folder_structure_issues,
     scan_for_malformed_files,
 )
+from roadmap.presentation.cli.logging_decorators import verbose_output
 
 console = Console()
 
@@ -156,6 +157,13 @@ def fix_malformed_files(issues_dir: Path, dry_run: bool = False) -> dict[str, An
     is_flag=True,
     help="Only check/report malformed YAML files",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed debug information",
+)
+@verbose_output
 @click.pass_context
 def cleanup(
     ctx: click.Context,
@@ -167,6 +175,7 @@ def cleanup(
     check_folders: bool,
     check_duplicates: bool,
     check_malformed: bool,
+    verbose: bool,
 ):
     """Comprehensive roadmap cleanup - fix backups, folders, duplicates, and malformed files.
 

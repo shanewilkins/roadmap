@@ -6,6 +6,7 @@ user actions, and outcomes for comprehensive audit trail and debugging.
 
 import functools
 import os
+import sys
 import time
 from collections.abc import Callable
 from typing import Any
@@ -122,6 +123,49 @@ def log_command(
         return wrapper
 
     return decorator
+
+
+def verbose_output(func: Callable) -> Callable:
+    """Decorator to add --verbose flag for controlling debug output visibility.
+
+    Suppresses stderr (where debug logs go) by default for clean output.
+    When --verbose/-v is passed, all debug information is shown.
+
+    Requires the decorated function to have a 'verbose' parameter.
+
+    Example:
+        @verbose_output
+        @click.command()
+        @click.option("--verbose", "-v", is_flag=True, ...)
+        def my_command(verbose):
+            # debug logs output suppressed unless verbose=True
+            ...
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs) -> Any:
+        # Extract verbose flag from kwargs (it's passed as a parameter)
+        verbose = kwargs.get("verbose", False)
+
+        devnull = None
+        old_stderr = None
+
+        # Suppress stderr logs unless verbose (startup messages and debug logs go there)
+        if not verbose:
+            devnull = open(os.devnull, "w")
+            old_stderr = sys.stderr
+            sys.stderr = devnull
+
+        try:
+            return func(*args, **kwargs)
+        finally:
+            # Restore stderr before exiting
+            if old_stderr is not None:
+                sys.stderr = old_stderr
+            if devnull is not None:
+                devnull.close()
+
+    return wrapper
 
 
 def log_audit_event(

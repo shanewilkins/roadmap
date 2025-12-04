@@ -7,7 +7,7 @@ from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import MilestoneParser
 from roadmap.presentation.cli.error_logging import log_error_with_context
-from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.logging_decorators import log_command, verbose_output
 from roadmap.shared.file_utils import ensure_directory_exists
 
 console = Console()
@@ -30,7 +30,14 @@ console = Console()
     is_flag=True,
     help="Skip confirmation prompt",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed debug information",
+)
 @click.pass_context
+@verbose_output
 @log_command("milestone_restore", entity_type="milestone", track_duration=True)
 def restore_milestone(
     ctx: click.Context,
@@ -38,6 +45,7 @@ def restore_milestone(
     all: bool,
     dry_run: bool,
     force: bool,
+    verbose: bool,
 ):
     """Restore an archived milestone back to active milestones.
 

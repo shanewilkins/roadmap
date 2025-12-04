@@ -7,7 +7,7 @@ from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.infrastructure.persistence.parser import IssueParser
 from roadmap.presentation.cli.error_logging import log_error_with_context
-from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.logging_decorators import log_command, verbose_output
 
 console = Console()
 
@@ -34,7 +34,14 @@ console = Console()
     is_flag=True,
     help="Skip confirmation prompt",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed debug information",
+)
 @click.pass_context
+@verbose_output
 @log_command("issue_restore", entity_type="issue", track_duration=True)
 def restore_issue(
     ctx: click.Context,
@@ -43,6 +50,7 @@ def restore_issue(
     status: str | None,
     dry_run: bool,
     force: bool,
+    verbose: bool,
 ):
     """Restore an archived issue back to active issues.
 

@@ -30,6 +30,7 @@ from roadmap.cli.init_workflow import (
     show_dry_run_info,
 )
 from roadmap.domain import Status
+from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.shared.console import get_console
 from roadmap.shared.logging import get_logger
 
@@ -433,6 +434,7 @@ def status(ctx: click.Context) -> None:
     is_flag=True,
     help="Show detailed debug information and all health check logs",
 )
+@verbose_output
 @click.pass_context
 def health(ctx: click.Context, verbose: bool) -> None:
     """Check system health and component status.
@@ -442,80 +444,55 @@ def health(ctx: click.Context, verbose: bool) -> None:
 
     Use --verbose to see all debug logs and detailed check information.
     """
-    import os
-    import sys
+    log = logger.bind(operation="health")
+    log.info("starting_health_check", verbose=verbose)
 
-    devnull = None
-    old_stderr = None
+    console.print("🏥 System Health Check", style="bold blue")
 
-    # Suppress stderr logs unless verbose (startup messages and debug logs go there)
-    if not verbose:
-        devnull = open(os.devnull, "w")
-        old_stderr = sys.stderr
-        sys.stderr = devnull
+    # Get core from context
+    core = ctx.obj["core"]
 
-    try:
-        log = logger.bind(operation="health")
-        log.info("starting_health_check", verbose=verbose)
+    # Run all health checks
+    checks = HealthCheck.run_all_checks(core)
+    overall_status = HealthCheck.get_overall_status(checks)
 
-        console.print("🏥 System Health Check", style="bold blue")
+    # Display results
+    console.print()
+    for check_name, (status, message) in checks.items():
+        # Format check name
+        display_name = check_name.replace("_", " ").title()
 
-        # Get core from context
-        core = ctx.obj["core"]
-
-        # Run all health checks
-        checks = HealthCheck.run_all_checks(core)
-        overall_status = HealthCheck.get_overall_status(checks)
-
-        # Restore stderr before printing results
-        if old_stderr is not None:
-            sys.stderr = old_stderr
-            devnull.close()
-
-        # Display results
-        console.print()
-        for check_name, (status, message) in checks.items():
-            # Format check name
-            display_name = check_name.replace("_", " ").title()
-
-            # Choose emoji and style based on status
-            if status == HealthStatus.HEALTHY:
-                emoji = "✅"
-                style = "green"
-            elif status == HealthStatus.DEGRADED:
-                emoji = "⚠️"
-                style = "yellow"
-            else:  # UNHEALTHY
-                emoji = "❌"
-                style = "red"
-
-            console.print(f"{emoji} {display_name}: {message}", style=style)
-
-        # Display overall status
-        console.print()
-        if overall_status == HealthStatus.HEALTHY:
-            console.print("✨ Overall Status: HEALTHY", style="bold green")
-            log.info("health_check_completed", status="healthy")
-        elif overall_status == HealthStatus.DEGRADED:
-            console.print("⚠️  Overall Status: DEGRADED", style="bold yellow")
-            console.print(
-                "   Some components have issues but system is functional", style="dim"
-            )
-            log.warning("health_check_completed", status="degraded")
+        # Choose emoji and style based on status
+        if status == HealthStatus.HEALTHY:
+            emoji = "✅"
+            style = "green"
+        elif status == HealthStatus.DEGRADED:
+            emoji = "⚠️"
+            style = "yellow"
         else:  # UNHEALTHY
-            console.print("❌ Overall Status: UNHEALTHY", style="bold red")
-            console.print(
-                "   Critical issues detected - system may not function properly",
-                style="dim",
-            )
-            log.error("health_check_completed", status="unhealthy")
+            emoji = "❌"
+            style = "red"
 
-    finally:
-        # Restore stderr if it's still redirected
-        if old_stderr is not None and sys.stderr != old_stderr:
-            sys.stderr = old_stderr
-        if devnull is not None:
-            devnull.close()
+        console.print(f"{emoji} {display_name}: {message}", style=style)
+
+    # Display overall status
+    console.print()
+    if overall_status == HealthStatus.HEALTHY:
+        console.print("✨ Overall Status: HEALTHY", style="bold green")
+        log.info("health_check_completed", status="healthy")
+    elif overall_status == HealthStatus.DEGRADED:
+        console.print("⚠️  Overall Status: DEGRADED", style="bold yellow")
+        console.print(
+            "   Some components have issues but system is functional", style="dim"
+        )
+        log.warning("health_check_completed", status="degraded")
+    else:  # UNHEALTHY
+        console.print("❌ Overall Status: UNHEALTHY", style="bold red")
+        console.print(
+            "   Critical issues detected - system may not function properly",
+            style="dim",
+        )
+        log.error("health_check_completed", status="unhealthy")
 
 
 # Helper functions for init command

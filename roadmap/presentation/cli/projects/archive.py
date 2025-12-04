@@ -7,7 +7,7 @@ from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import ProjectParser
 from roadmap.presentation.cli.error_logging import log_error_with_context
-from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.logging_decorators import log_command, verbose_output
 from roadmap.shared.file_utils import ensure_directory_exists
 
 console = Console()
@@ -31,7 +31,14 @@ console = Console()
     is_flag=True,
     help="Skip confirmation prompt",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed debug information",
+)
 @click.pass_context
+@verbose_output
 @log_command("project_archive", entity_type="project", track_duration=True)
 def archive_project(
     ctx: click.Context,
@@ -39,6 +46,7 @@ def archive_project(
     list_archived: bool,
     dry_run: bool,
     force: bool,
+    verbose: bool,
 ):
     """Archive a project by moving it to .roadmap/archive/projects/.
 

@@ -7,7 +7,7 @@ from rich.console import Console
 
 from roadmap.infrastructure.persistence.parser import IssueParser
 from roadmap.presentation.cli.error_logging import log_error_with_context
-from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.logging_decorators import log_command, verbose_output
 
 console = Console()
 
@@ -74,7 +74,14 @@ def _determine_archive_path(
     is_flag=True,
     help="Skip confirmation prompt",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed debug information",
+)
 @click.pass_context
+@verbose_output
 @log_command("issue_archive", entity_type="issue", track_duration=True)
 def archive_issue(
     ctx: click.Context,
@@ -84,6 +91,7 @@ def archive_issue(
     list_archived: bool,
     dry_run: bool,
     force: bool,
+    verbose: bool,
 ):
     """Archive an issue by moving it to .roadmap/archive/issues/.
 
