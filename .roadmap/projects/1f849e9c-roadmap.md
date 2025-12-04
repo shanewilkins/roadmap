@@ -1,19 +1,19 @@
 ---
-name: roadmap
+name: Roadmap
 description: A project managed with Roadmap CLI
 owner: shanewilkins
 priority: high
 status: active
-created: 2025-12-03T10:03:20.229064
-updated: 2025-12-03T10:03:20.229064
+created: 2025-12-04T14:09:11.642490
+updated: 2025-12-04T14:09:11.642490
 github_repo: shanewilkins/roadmap
 timeline:
-  start_date: 2025-12-03T10:03:20.229064
+  start_date: 2025-12-04T14:09:11.642490
   target_end_date: null
 tags: []
 ---
 
-# roadmap
+# Roadmap
 
 ## Overview
 

@@ -48,6 +48,7 @@ from ..domain import (
 from ..infrastructure.git import GitIntegration
 from ..infrastructure.persistence.parser import IssueParser, MilestoneParser
 from ..infrastructure.storage import StateManager
+from ..shared.config_manager import ConfigManager
 from ..shared.errors import (
     ErrorHandler,
     ErrorSeverity,
@@ -810,9 +811,12 @@ Project notes and additional context.
             Current user's name from config if set, None otherwise
         """
         try:
-            config = self.load_config()
+            config_manager = ConfigManager(self.config_file)
+            config = config_manager.load()
             if config and hasattr(config, "user"):
-                return getattr(config.user, "name", None)
+                user = getattr(config, "user", None)
+                if user and hasattr(user, "name"):
+                    return user.name
         except Exception:
             pass
 

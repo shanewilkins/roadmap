@@ -184,24 +184,29 @@ class TestRoadmapCoreTeamManagement:
 
     def test_get_current_user_from_github(self, core):
         """Test getting current user from config."""
-        # Mock load_config to return a config with a user
-        from unittest.mock import Mock
+        # Mock ConfigManager to return a config with a user
+        from unittest.mock import Mock, patch
 
         mock_config = Mock()
         mock_user = Mock()
         mock_user.name = "test_user"
         mock_config.user = mock_user
 
-        with patch.object(core, "load_config", return_value=mock_config):
+        with patch("roadmap.application.core.ConfigManager") as mock_cm_class:
+            mock_cm_instance = Mock()
+            mock_cm_instance.load.return_value = mock_config
+            mock_cm_class.return_value = mock_cm_instance
+
             current_user = core.get_current_user()
             assert current_user == "test_user"
 
     def test_get_current_user_no_github_config(self, core):
         """Test getting current user when config is not found."""
-        # Mock load_config to raise an exception
-        with patch.object(
-            core, "load_config", side_effect=Exception("Config not found")
-        ):
+        # Mock ConfigManager to raise an exception
+        from unittest.mock import patch
+
+        with patch("roadmap.application.core.ConfigManager") as mock_cm_class:
+            mock_cm_class.side_effect = Exception("Config not found")
             current_user = core.get_current_user()
             assert current_user is None
 

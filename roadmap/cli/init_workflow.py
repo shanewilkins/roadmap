@@ -176,6 +176,35 @@ class InitializationWorkflow:
         """Create the basic roadmap structure."""
         self.core.initialize()
 
+    def generate_config_file(self, user_name: str | None = None) -> None:
+        """Generate the config file with user information.
+
+        Args:
+            user_name: User name to store in config, auto-detected if None
+        """
+        from roadmap.shared.config_manager import ConfigManager
+
+        # Auto-detect user if not provided
+        if not user_name:
+            user_name = ConfigManager.auto_detect_user()
+            if not user_name:
+                user_name = "unknown"
+
+        # Auto-detect GitHub info
+        github_owner = ConfigManager.auto_detect_github_username()
+
+        # Create default config
+        config = ConfigManager.create_default_config(
+            user_name=user_name,
+            github_owner=github_owner,
+            github_repo=None,  # User would configure repo separately
+            github_enabled=False,  # Disabled by default
+        )
+
+        # Save config
+        manager = ConfigManager(self.core.config_file)
+        manager.save(config)
+
     def ensure_gitignore_entry(self) -> None:
         """Ensure config.yaml is in .gitignore to prevent accidental commits."""
         gitignore_path = Path.cwd() / ".gitignore"

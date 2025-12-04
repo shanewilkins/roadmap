@@ -134,7 +134,7 @@ def init(
     """
     log = logger.bind(
         operation="init",
-        name=name,
+        roadmap_name=name,
         skip_github=skip_github,
         interactive=interactive,
         dry_run=dry_run,
@@ -204,6 +204,7 @@ def init(
             f"🗂️  Creating roadmap structure in {name}/...", spinner="dots"
         ):
             workflow.create_structure()
+            workflow.generate_config_file()
             workflow.record_created_paths(manifest)
             workflow.ensure_gitignore_entry()
 
