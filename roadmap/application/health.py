@@ -199,7 +199,9 @@ def scan_for_archivable_issues(core, threshold_days: int = 30) -> list[dict]:
         issues = core.issue_service.list_issues()
         from datetime import datetime
 
-        now = datetime.now()
+        from roadmap.shared.timezone_utils import now_utc
+
+        now = now_utc()  # Use timezone-aware UTC time
 
         for issue in issues:
             # Check if issue is closed (by status or by completed_date)
@@ -219,17 +221,26 @@ def scan_for_archivable_issues(core, threshold_days: int = 30) -> list[dict]:
                         closed_dt = None
 
                 if closed_dt:
-                    days_closed = (now - closed_dt).days
-                    if days_closed > threshold_days:
-                        archivable.append(
-                            {
-                                "id": issue.id,
-                                "title": issue.title,
-                                "status": issue.status,
-                                "closed_at": closed_dt.isoformat(),
-                                "days_since_close": days_closed,
-                            }
-                        )
+                    try:
+                        # Ensure both are timezone-aware for comparison
+                        if closed_dt.tzinfo is None:
+                            from datetime import timezone
+
+                            closed_dt = closed_dt.replace(tzinfo=timezone.utc)
+                        days_closed = (now - closed_dt).days
+                        if days_closed > threshold_days:
+                            archivable.append(
+                                {
+                                    "id": issue.id,
+                                    "title": issue.title,
+                                    "status": issue.status,
+                                    "closed_at": closed_dt.isoformat(),
+                                    "days_since_close": days_closed,
+                                }
+                            )
+                    except TypeError:
+                        # Skip if datetime arithmetic fails
+                        continue
     except Exception as e:
         logger.debug("scan_archivable_issues_error", error=str(e))
 
@@ -315,7 +326,7 @@ def scan_for_orphaned_issues(core) -> list[dict]:
     orphaned = []
 
     try:
-        issues_dir = Path(".roadmap/issues")
+        issues_dir = Path(".roadmap/issues").resolve()  # Convert to absolute path
         if not issues_dir.exists():
             return orphaned
 
@@ -326,21 +337,27 @@ def scan_for_orphaned_issues(core) -> list[dict]:
             if not issue.milestone or issue.milestone == "":
                 # Check if it's actually in the backlog folder or another location
                 if issue.file_path:
-                    file_path = Path(issue.file_path)
-                    # If it's in a milestone-specific folder but milestone is not set, it's orphaned
-                    relative_path = file_path.relative_to(issues_dir)
-                    parts = relative_path.parts
+                    try:
+                        file_path = Path(
+                            issue.file_path
+                        ).resolve()  # Ensure absolute path
+                        # If it's in a milestone-specific folder but milestone is not set, it's orphaned
+                        relative_path = file_path.relative_to(issues_dir)
+                        parts = relative_path.parts
 
-                    # Check if in a subfolder (not root or backlog)
-                    if len(parts) > 1 and parts[0] not in ("backlog", "."):
-                        orphaned.append(
-                            {
-                                "id": issue.id,
-                                "title": issue.title,
-                                "location": str(file_path),
-                                "folder": parts[0],
-                            }
-                        )
+                        # Check if in a subfolder (not root or backlog)
+                        if len(parts) > 1 and parts[0] not in ("backlog", "."):
+                            orphaned.append(
+                                {
+                                    "id": issue.id,
+                                    "title": issue.title,
+                                    "location": str(file_path),
+                                    "folder": parts[0],
+                                }
+                            )
+                    except (ValueError, RuntimeError):
+                        # File path is not relative to issues_dir, skip it
+                        continue
 
     except Exception as e:
         logger.debug("scan_orphaned_issues_error", error=str(e))
