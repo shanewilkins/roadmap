@@ -194,16 +194,28 @@ def init(
             )
             if not workflow.cleanup_existing():
                 return
+        elif custom_core.is_initialized():
+            console.print(
+                f"ℹ️  Roadmap already initialized in {name}/",
+                style="cyan",
+            )
+            console.print(
+                "    Updating configuration while preserving existing data.",
+                style="dim",
+            )
+            console.print()
 
         # Step 1: Detect context
         detected_info = _detect_project_context()
         _show_detected_context(detected_info, interactive)
 
-        # Step 2: Create roadmap structure
+        # Step 2: Create roadmap structure (preserving existing data)
         with console.status(
             f"🗂️  Creating roadmap structure in {name}/...", spinner="dots"
         ):
-            workflow.create_structure()
+            # Use preserve-data version to avoid destroying existing issues/milestones
+            if not workflow.create_structure_preserve_data():
+                return
             workflow.generate_config_file()
             workflow.record_created_paths(manifest)
             workflow.ensure_gitignore_entry()

@@ -12,6 +12,7 @@ from typing import Any
 
 from roadmap.application.core import RoadmapCore
 from roadmap.shared.console import get_console
+from roadmap.shared.security import create_secure_directory
 
 console = get_console()
 
@@ -103,9 +104,12 @@ class InitializationValidator:
         if not core.is_initialized():
             return True, None
 
-        if not force:
-            return False, "Roadmap already initialized. Use --force to reinitialize."
+        # If force is true, we'll be doing a full reset
+        if force:
+            return True, None
 
+        # If roadmap exists but force is not specified, we allow init to continue
+        # to update config/metadata without destroying existing data
         return True, None
 
     @staticmethod
@@ -175,6 +179,53 @@ class InitializationWorkflow:
     def create_structure(self) -> None:
         """Create the basic roadmap structure."""
         self.core.initialize()
+
+    def create_structure_preserve_data(self) -> bool:
+        """Create roadmap structure while preserving existing data.
+
+        If roadmap already exists, creates only missing directories and templates.
+        Returns True if successful, False otherwise.
+        """
+        try:
+            roadmap_dir = self.core.roadmap_dir
+
+            # If directory doesn't exist, just do normal init
+            if not roadmap_dir.exists():
+                self.core.initialize()
+                return True
+
+            # Roadmap exists - create only missing parts
+            # Ensure subdirectories exist
+            for subdir in [
+                self.core.issues_dir,
+                self.core.milestones_dir,
+                self.core.projects_dir,
+                self.core.templates_dir,
+                self.core.artifacts_dir,
+            ]:
+                create_secure_directory(subdir, 0o755)
+
+            # Create templates only if missing
+            self._create_missing_templates()
+
+            # Update .gitignore (safe to call multiple times)
+            self.core._update_gitignore()
+
+            return True
+        except Exception as e:
+            console.print(f"❌ Failed to create structure: {e}", style="bold red")
+            return False
+
+    def _create_missing_templates(self) -> None:
+        """Create template files only if they don't exist."""
+        templates_dir = self.core.templates_dir
+
+        # Check if templates already exist
+        if list(templates_dir.glob("*.md")):
+            return  # Templates already exist, skip
+
+        # Otherwise create them
+        self.core._create_default_templates()
 
     def generate_config_file(self, user_name: str | None = None) -> None:
         """Generate the config file with user information.
