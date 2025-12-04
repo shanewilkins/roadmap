@@ -12,6 +12,40 @@ from roadmap.presentation.cli.logging_decorators import log_command
 console = Console()
 
 
+def _determine_archive_path(
+    archive_dir: Path, issue_file: Path, issues_dir: Path
+) -> Path:
+    """Determine archive path preserving folder structure.
+
+    If issue is in a subfolder (e.g., backlog, v.0.6.0), preserve that structure
+    in the archive. Otherwise, place in root archive directory.
+
+    Args:
+        archive_dir: The archive root directory
+        issue_file: The issue file path
+        issues_dir: The active issues directory
+
+    Returns:
+        The destination path for archiving
+    """
+    # Get relative path from issues_dir to issue_file
+    try:
+        rel_path = issue_file.relative_to(issues_dir)
+    except ValueError:
+        # File is not under issues_dir, put in root
+        return archive_dir / issue_file.name
+
+    # If file is directly in issues_dir (no parent folder), put in archive root
+    if len(rel_path.parts) == 1:
+        return archive_dir / issue_file.name
+
+    # Preserve the parent folder structure
+    # e.g., backlog/c0850c90-fix.md -> archive/issues/backlog/c0850c90-fix.md
+    dest_dir = archive_dir / rel_path.parent
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    return dest_dir / issue_file.name
+
+
 @click.command()
 @click.argument("issue_id", required=False)
 @click.option(
@@ -168,15 +202,10 @@ def archive_issue(
                 if issue_files:
                     issue_file = issue_files[0]
 
-                    # Determine the archive path - preserve milestone structure
-                    if issue.milestone:
-                        # Create milestone subfolder in archive
-                        milestone_archive_dir = archive_dir / issue.milestone
-                        milestone_archive_dir.mkdir(parents=True, exist_ok=True)
-                        archive_file = milestone_archive_dir / issue_file.name
-                    else:
-                        # No milestone - put in root archive
-                        archive_file = archive_dir / issue_file.name
+                    # Determine the archive path - preserve folder structure
+                    archive_file = _determine_archive_path(
+                        archive_dir, issue_file, roadmap_dir / "issues"
+                    )
 
                     issue_file.rename(archive_file)
 
@@ -238,15 +267,10 @@ def archive_issue(
             if issue_files:
                 issue_file = issue_files[0]
 
-                # Determine the archive path - preserve milestone structure
-                if issue.milestone:
-                    # Create milestone subfolder in archive
-                    milestone_archive_dir = archive_dir / issue.milestone
-                    milestone_archive_dir.mkdir(parents=True, exist_ok=True)
-                    archive_file = milestone_archive_dir / issue_file.name
-                else:
-                    # No milestone - put in root archive
-                    archive_file = archive_dir / issue_file.name
+                # Determine the archive path - preserve folder structure
+                archive_file = _determine_archive_path(
+                    archive_dir, issue_file, roadmap_dir / "issues"
+                )
 
                 issue_file.rename(archive_file)
 
