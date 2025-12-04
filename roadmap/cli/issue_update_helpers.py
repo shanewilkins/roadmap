@@ -2,7 +2,7 @@
 Helper classes for issue update operations.
 """
 
-from roadmap.domain import Priority
+from roadmap.domain import Priority, Status
 
 
 class IssueUpdateBuilder:
@@ -33,7 +33,7 @@ class IssueUpdateBuilder:
         if priority:
             updates["priority"] = Priority(priority)
         if status:
-            updates["status"] = status
+            updates["status"] = Status(status)
         if assignee is not None:
             assignee_value = IssueUpdateBuilder._resolve_assignee(
                 assignee, core, console
@@ -103,7 +103,9 @@ class IssueUpdateDisplay:
                 "milestone",
                 "description",
             ]:
-                console.print(f"   {field}: {value}", style="cyan")
+                # Format enum values to show just the string value
+                display_value = value.value if hasattr(value, "value") else value
+                console.print(f"   {field}: {display_value}", style="cyan")
 
         if reason:
             console.print(f"   reason: {reason}", style="dim")
