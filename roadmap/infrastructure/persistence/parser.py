@@ -52,7 +52,7 @@ class FrontmatterParser:
         try:
             frontmatter = yaml.safe_load(frontmatter_str) or {}
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML frontmatter: {e}")
+            raise ValueError(f"Invalid YAML frontmatter: {e}") from e
 
         return frontmatter, markdown_content.strip()
 
@@ -124,13 +124,34 @@ class IssueParser:
                 frontmatter["handoff_date"], "file"
             )
 
-        # Convert string enums back to enum objects
+        # Convert string enums back to enum objects with validation
         if "priority" in frontmatter:
-            frontmatter["priority"] = Priority(frontmatter["priority"])
+            try:
+                frontmatter["priority"] = Priority(frontmatter["priority"])
+            except ValueError as e:
+                valid_priorities = [p.value for p in Priority]
+                raise ValueError(
+                    f"Invalid priority '{frontmatter['priority']}' in {file_path}. "
+                    f"Valid priority values are: {', '.join(valid_priorities)}"
+                ) from e
         if "status" in frontmatter:
-            frontmatter["status"] = Status(frontmatter["status"])
+            try:
+                frontmatter["status"] = Status(frontmatter["status"])
+            except ValueError as e:
+                valid_statuses = [s.value for s in Status]
+                raise ValueError(
+                    f"Invalid status '{frontmatter['status']}' in {file_path}. "
+                    f"Valid status values are: {', '.join(valid_statuses)}"
+                ) from e
         if "issue_type" in frontmatter:
-            frontmatter["issue_type"] = IssueType(frontmatter["issue_type"])
+            try:
+                frontmatter["issue_type"] = IssueType(frontmatter["issue_type"])
+            except ValueError as e:
+                valid_types = [t.value for t in IssueType]
+                raise ValueError(
+                    f"Invalid issue_type '{frontmatter['issue_type']}' in {file_path}. "
+                    f"Valid type values are: {', '.join(valid_types)}"
+                ) from e
 
         # Ensure dependencies are lists
         if "depends_on" not in frontmatter:
@@ -195,6 +216,31 @@ class IssueParser:
                 content=data.get("content", ""),
             )
             return True, issue, None
+        except ValueError as e:
+            # Check if it's an enum validation error
+            error_str = str(e)
+            if "status" in error_str:
+                valid_statuses = [s.value for s in Status]
+                return (
+                    False,
+                    None,
+                    f"Invalid status in {file_path}: {e}. Valid values: {', '.join(valid_statuses)}",
+                )
+            elif "priority" in error_str:
+                valid_priorities = [p.value for p in Priority]
+                return (
+                    False,
+                    None,
+                    f"Invalid priority in {file_path}: {e}. Valid values: {', '.join(valid_priorities)}",
+                )
+            elif "issue_type" in error_str:
+                valid_types = [t.value for t in IssueType]
+                return (
+                    False,
+                    None,
+                    f"Invalid issue_type in {file_path}: {e}. Valid values: {', '.join(valid_types)}",
+                )
+            return False, None, f"Error creating Issue object: {e}"
         except Exception as e:
             return False, None, f"Error creating Issue object: {e}"
 
@@ -228,9 +274,16 @@ class MilestoneParser:
                     frontmatter[date_field], "file"
                 )
 
-        # Convert string enums back to enum objects
+        # Convert string enums back to enum objects with validation
         if "status" in frontmatter:
-            frontmatter["status"] = MilestoneStatus(frontmatter["status"])
+            try:
+                frontmatter["status"] = MilestoneStatus(frontmatter["status"])
+            except ValueError as e:
+                valid_statuses = [s.value for s in MilestoneStatus]
+                raise ValueError(
+                    f"Invalid status '{frontmatter['status']}' in {file_path}. "
+                    f"Valid status values are: {', '.join(valid_statuses)}"
+                ) from e
 
         # Set content
         frontmatter["content"] = content
@@ -283,6 +336,16 @@ class MilestoneParser:
                 content=data.get("content", ""),
             )
             return True, milestone, None
+        except ValueError as e:
+            # Check if it's an enum validation error
+            if "status" in str(e):
+                valid_statuses = [s.value for s in MilestoneStatus]
+                return (
+                    False,
+                    None,
+                    f"Invalid status in {file_path}: {e}. Valid values: {', '.join(valid_statuses)}",
+                )
+            return False, None, f"Error creating Milestone object: {e}"
         except Exception as e:
             return False, None, f"Error creating Milestone object: {e}"
 

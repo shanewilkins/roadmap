@@ -245,6 +245,63 @@ class TestMilestoneArchiveRestore:
         assert result.exit_code == 0
         assert "Archived" in result.output
 
+    def test_archive_milestone_with_issues_folder(
+        self, roadmap_with_issues_and_milestones
+    ):
+        """Test that archiving a milestone also archives its issues folder if it exists."""
+        cli_runner, temp_dir, issues = roadmap_with_issues_and_milestones
+
+        roadmap_dir = Path(temp_dir) / ".roadmap"
+
+        # Create an empty issues folder for v1.0 to simulate real scenario
+        # (in production, a milestone's issues folder would exist if issues were assigned)
+        issues_dir = roadmap_dir / "issues" / "v1.0"
+        issues_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create a dummy issue file in the folder
+        (issues_dir / "test-issue.md").write_text("# Test Issue\nstatus: closed")
+
+        # Verify issues folder exists before archiving
+        assert issues_dir.exists(), "Issues folder should exist before archiving"
+
+        # Archive the milestone
+        result = cli_runner.invoke(
+            main,
+            ["milestone", "archive", "v1.0", "--force"],
+        )
+
+        assert (
+            result.exit_code == 0
+        ), f"Archive command failed (exit {result.exit_code}): {result.output}"
+        assert "Archived" in result.output or "Moved" in result.output
+
+        # Verify milestone file was archived
+        archive_milestones_dir = roadmap_dir / "archive" / "milestones"
+        assert (
+            archive_milestones_dir.exists()
+        ), "Archive milestones directory should exist"
+
+        milestone_files = list(archive_milestones_dir.glob("*.md"))
+        assert (
+            len(milestone_files) > 0
+        ), f"No milestone files found in {archive_milestones_dir}"
+
+        # Verify issues folder was also archived
+        assert (
+            not issues_dir.exists()
+        ), "Issues folder should not exist in active directory after archiving"
+
+        archive_issues_dir = roadmap_dir / "archive" / "issues" / "v1.0"
+        assert (
+            archive_issues_dir.exists()
+        ), "Issues folder should be moved to archive/issues/"
+
+        # Verify the issue file was moved
+        archived_issue_file = archive_issues_dir / "test-issue.md"
+        assert (
+            archived_issue_file.exists()
+        ), "Issue file should be moved to archived folder"
+
     def test_archive_list_milestones(self, roadmap_with_issues_and_milestones):
         """Test listing archived milestones."""
         cli_runner, temp_dir, issues = roadmap_with_issues_and_milestones

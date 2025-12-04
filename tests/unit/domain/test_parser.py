@@ -265,7 +265,7 @@ Issue with invalid enum values.
             f.write(content)
             f.flush()
 
-            with pytest.raises(ValueError, match="is not a valid Priority"):
+            with pytest.raises(ValueError, match="Invalid priority"):
                 IssueParser.parse_issue_file(Path(f.name))
 
     def test_parse_issue_file_with_invalid_dates(self):

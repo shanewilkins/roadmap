@@ -1,5 +1,6 @@
 """Archive milestone command - move closed milestones to archive."""
 
+import shutil
 from pathlib import Path
 
 import click
@@ -151,6 +152,7 @@ def archive_milestone(
 
             # Archive each milestone
             ensure_directory_exists(archive_dir)
+            archive_issues_dir = roadmap_dir / "archive" / "issues"
             archived_count = 0
 
             for milestone in milestones:
@@ -168,6 +170,16 @@ def archive_milestone(
                 if milestone_file and milestone_file.exists():
                     archive_file = archive_dir / milestone_file.name
                     milestone_file.rename(archive_file)
+
+                    # Also move associated issues folder if it exists
+                    issues_dir = roadmap_dir / "issues" / milestone.name
+                    if issues_dir.exists():
+                        ensure_directory_exists(archive_issues_dir)
+                        dest_issues_dir = archive_issues_dir / milestone.name
+                        # Remove destination if it already exists
+                        if dest_issues_dir.exists():
+                            shutil.rmtree(dest_issues_dir)
+                        issues_dir.rename(dest_issues_dir)
 
                     # Mark as archived in database
                     try:
@@ -193,6 +205,8 @@ def archive_milestone(
                     f"❌ Milestone '{milestone_name}' not found.", style="bold red"
                 )
                 ctx.exit(1)
+
+            assert milestone_name is not None
 
             if milestone.status.value != "closed":
                 console.print(
@@ -250,6 +264,21 @@ def archive_milestone(
 
             archive_file = archive_dir / milestone_file.name
             milestone_file.rename(archive_file)
+
+            # Also move associated issues folder if it exists
+            issues_dir = roadmap_dir / "issues" / milestone_name
+            archive_issues_dir = roadmap_dir / "archive" / "issues"
+            if issues_dir.exists():
+                ensure_directory_exists(archive_issues_dir)
+                dest_issues_dir = archive_issues_dir / milestone_name
+                # Remove destination if it already exists
+                if dest_issues_dir.exists():
+                    shutil.rmtree(dest_issues_dir)
+                issues_dir.rename(dest_issues_dir)
+                console.print(
+                    f"  Moved issues to .roadmap/archive/issues/{milestone_name}/",
+                    style="dim",
+                )
 
             # Mark as archived in database
             try:
