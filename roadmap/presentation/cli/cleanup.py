@@ -163,8 +163,8 @@ def fix_malformed_files(issues_dir: Path, dry_run: bool = False) -> dict[str, An
     is_flag=True,
     help="Show detailed debug information",
 )
-@verbose_output
 @click.pass_context
+@verbose_output
 def cleanup(
     ctx: click.Context,
     keep: int,

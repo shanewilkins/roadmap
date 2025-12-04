@@ -434,8 +434,8 @@ def status(ctx: click.Context) -> None:
     is_flag=True,
     help="Show detailed debug information and all health check logs",
 )
-@verbose_output
 @click.pass_context
+@verbose_output
 def health(ctx: click.Context, verbose: bool) -> None:
     """Check system health and component status.
 

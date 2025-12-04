@@ -128,42 +128,60 @@ def log_command(
 def verbose_output(func: Callable) -> Callable:
     """Decorator to add --verbose flag for controlling debug output visibility.
 
-    Suppresses stderr (where debug logs go) by default for clean output.
+    Suppresses debug logs by default for clean output.
     When --verbose/-v is passed, all debug information is shown.
 
+    Works by disabling the console handler unless verbose is True.
+
     Requires the decorated function to have a 'verbose' parameter.
+    Works with Click commands using @click.pass_context.
+
+    The decorator should be placed BEFORE @click.pass_context in the decorator stack.
 
     Example:
         @verbose_output
+        @click.pass_context
         @click.command()
         @click.option("--verbose", "-v", is_flag=True, ...)
-        def my_command(verbose):
+        def my_command(ctx, verbose):
             # debug logs output suppressed unless verbose=True
             ...
     """
+    import logging
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> Any:
-        # Extract verbose flag from kwargs (it's passed as a parameter)
+        # Extract verbose flag from kwargs (it's passed as a Click option)
+        # Click passes options as keyword arguments after ctx
         verbose = kwargs.get("verbose", False)
 
-        devnull = None
-        old_stderr = None
-
-        # Suppress stderr logs unless verbose (startup messages and debug logs go there)
+        # Suppress console logging unless verbose
         if not verbose:
-            devnull = open(os.devnull, "w")
-            old_stderr = sys.stderr
-            sys.stderr = devnull
+            # Get the roadmap logger and disable the console handler
+            roadmap_logger = logging.getLogger("roadmap")
+            # Find and disable the console handler
+            for handler in roadmap_logger.handlers[:]:
+                if (
+                    isinstance(handler, logging.StreamHandler)
+                    and handler.stream == sys.stderr
+                ):
+                    handler.setLevel(logging.CRITICAL)  # Effectively disable it
 
         try:
             return func(*args, **kwargs)
         finally:
-            # Restore stderr before exiting
-            if old_stderr is not None:
-                sys.stderr = old_stderr
-            if devnull is not None:
-                devnull.close()
+            # Re-enable console logging
+            if not verbose:
+                roadmap_logger = logging.getLogger("roadmap")
+                for handler in roadmap_logger.handlers[:]:
+                    if (
+                        isinstance(handler, logging.StreamHandler)
+                        and handler.stream == sys.stderr
+                    ):
+                        # Restore the handler to its original level (usually DEBUG or INFO)
+                        handler.setLevel(
+                            logging.DEBUG if sys.stderr.isatty() else logging.WARNING
+                        )
 
     return wrapper
 
