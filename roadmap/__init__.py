@@ -1,6 +1,6 @@
 """Roadmap CLI - A command line tool for creating and managing roadmaps."""
 
-__version__ = "0.4.0"
+__version__ = "0.6.0"
 
 # Legacy exports - use layer-specific imports instead
 # from roadmap.domain import Issue, Milestone
