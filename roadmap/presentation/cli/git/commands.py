@@ -3,6 +3,8 @@
 import click
 from rich.console import Console
 
+from roadmap.domain import Status
+
 from .status_display import GitStatusDisplay
 
 console = Console()
@@ -116,8 +118,8 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
             console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
 
             # Update issue status to in-progress if it's todo
-            if issue.status == "todo":
-                core.update_issue(issue_id, status="in-progress")
+            if issue.status == Status.TODO:
+                core.update_issue(issue_id, status=Status.IN_PROGRESS)
                 console.print("📊 Updated issue status to: in-progress", style="yellow")
         else:
             # Try a direct git fallback (useful if create_branch_for_issue is not available or failed)
@@ -129,8 +131,8 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
                         f"✅ Checked out branch: {branch_name}", style="green"
                     )
                 console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
-                if issue.status == "todo":
-                    core.update_issue(issue_id, status="in-progress")
+                if issue.status == Status.TODO:
+                    core.update_issue(issue_id, status=Status.IN_PROGRESS)
                     console.print(
                         "📊 Updated issue status to: in-progress", style="yellow"
                     )

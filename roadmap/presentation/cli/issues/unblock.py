@@ -5,6 +5,7 @@ This command is syntactic sugar for: roadmap issue update <ID> --status in-progr
 
 import click
 
+from roadmap.domain import Status
 from roadmap.shared.cli_errors import handle_cli_errors
 from roadmap.shared.console import get_console
 
@@ -41,7 +42,7 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
         return
 
     # Update status to in-progress via core.update_issue
-    updated = core.update_issue(issue_id, status="in-progress")
+    updated = core.update_issue(issue_id, status=Status.IN_PROGRESS)
 
     if updated:
         console.print(f"✅ Unblocked issue: {updated.title}", style="bold green")

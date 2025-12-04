@@ -8,6 +8,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.domain import Status
 from roadmap.presentation.cli.error_logging import log_error_with_context
 from roadmap.presentation.cli.logging_decorators import log_command
 from roadmap.presentation.cli.performance_tracking import track_database_operation
@@ -61,7 +62,7 @@ def close_issue(
 
         # Build update kwargs
         update_kwargs = {
-            "status": "closed",
+            "status": Status.CLOSED,
             "progress_percentage": 100.0,
         }
 

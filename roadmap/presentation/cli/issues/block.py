@@ -5,6 +5,7 @@ This command is syntactic sugar for: roadmap issue update <ID> --status blocked
 
 import click
 
+from roadmap.domain import Status
 from roadmap.shared.cli_errors import handle_cli_errors
 from roadmap.shared.console import get_console
 
@@ -40,7 +41,7 @@ def block_issue(
         raise click.Abort()
 
     # Update status to blocked via core.update_issue
-    updated_issue = core.update_issue(issue_id, status="blocked")
+    updated_issue = core.update_issue(issue_id, status=Status.BLOCKED)
 
     console.print(f"🚫 Blocked issue: {updated_issue.title}", style="bold red")
     console.print(f"   ID: {updated_issue.id}", style="cyan")
