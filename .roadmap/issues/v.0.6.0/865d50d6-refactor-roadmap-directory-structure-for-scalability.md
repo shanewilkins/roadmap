@@ -2,13 +2,13 @@
 id: 865d50d6
 title: Refactor .roadmap directory structure for scalability
 priority: high
-status: blocked
+status: todo
 issue_type: feature
 milestone: v.0.6.0
 labels: []
 github_issue: null
 created: '2025-11-26T19:23:01.575872+00:00'
-updated: '2025-12-03T15:09:44.514817+00:00'
+updated: '2025-12-04T18:57:53.282796+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

@@ -8,14 +8,17 @@ from rich.table import Table
 from rich.text import Text
 
 from roadmap.domain.issue import Status
+from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.shared.console import get_console
 
 console = get_console()
 
 
 @click.command("today")
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
-def today(ctx: click.Context):
+@verbose_output
+def today(ctx: click.Context, verbose: bool):
     """Show your daily workflow summary.
 
     Displays:

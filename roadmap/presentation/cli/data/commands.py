@@ -3,6 +3,7 @@
 import click
 
 from roadmap.domain import Issue
+from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -36,8 +37,10 @@ def data():
 )
 @click.option("--output", "-o", help="Output file path")
 @click.option("--filter", help="Filter criteria (simple key=value)")
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
-def export(ctx: click.Context, format: str, output: str, filter: str):
+@verbose_output
+def export(ctx: click.Context, format: str, output: str, filter: str, verbose: bool):
     """Export roadmap issues to JSON, CSV or Markdown.
 
     The --filter argument supports a simple key=value filter (e.g. assignee=alice).
@@ -136,8 +139,10 @@ def _export_and_write(issues, format_type: str, output_path: str):
     help="Report type",
 )
 @click.option("--output", "-o", help="Output file path")
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
-def generate_report(ctx: click.Context, type: str, output: str):
+@verbose_output
+def generate_report(ctx: click.Context, type: str, output: str, verbose: bool):
     """Generate detailed reports and analytics."""
     console.print(f"📈 Generating {type} report...", style="bold blue")
     # Implementation would go here

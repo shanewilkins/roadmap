@@ -173,6 +173,7 @@ Thumbs.db
 # Roadmap local data and backups
 .roadmap/backups/
 .roadmap/artifacts/
+.roadmap/logs/
 .roadmap/*.tmp
 .roadmap/*.lock
 

@@ -5,7 +5,7 @@ from datetime import datetime
 import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
-from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.logging_decorators import log_command, verbose_output
 from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 
@@ -16,9 +16,13 @@ console = get_console()
 @click.argument("name")
 @click.option("--description", "-d", default="", help="Milestone description")
 @click.option("--due-date", help="Due date for milestone (YYYY-MM-DD format)")
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@verbose_output
 @log_command("milestone_create", entity_type="milestone", track_duration=True)
-def create_milestone(ctx: click.Context, name: str, description: str, due_date: str):
+def create_milestone(
+    ctx: click.Context, name: str, description: str, due_date: str, verbose: bool
+):
     """Create a new milestone."""
     core = ctx.obj["core"]
 

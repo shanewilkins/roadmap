@@ -8,6 +8,7 @@ from roadmap.cli.issue_filters import (
     IssueQueryService,
     WorkloadCalculator,
 )
+from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
 
@@ -56,7 +57,9 @@ console = get_console()
 @click.option(
     "--overdue", is_flag=True, help="Show only overdue issues (past due date)"
 )
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@verbose_output
 def list_issues(
     ctx: click.Context,
     filter_type: str,
@@ -72,6 +75,7 @@ def list_issues(
     priority: str,
     issue_type: str,
     overdue: bool,
+    verbose: bool,
 ):
     """List all issues with various filtering options.
 

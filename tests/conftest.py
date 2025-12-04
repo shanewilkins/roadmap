@@ -7,6 +7,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from roadmap.shared.logging import configure_for_testing
+
 from .unit.domain.test_data_factory import TestDataFactory
 from .unit.shared.test_utils import (
     assert_in_output,
@@ -14,6 +16,12 @@ from .unit.shared.test_utils import (
     clean_cli_output,
     strip_ansi,
 )
+
+
+@pytest.fixture(autouse=True, scope="session")
+def setup_test_logging():
+    """Configure logging for all tests to prevent production logging from breaking tests."""
+    configure_for_testing()
 
 
 @pytest.fixture

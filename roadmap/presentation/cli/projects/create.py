@@ -5,7 +5,7 @@ from datetime import datetime
 import click
 
 from roadmap.presentation.cli.error_logging import log_error_with_context
-from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.logging_decorators import log_command, verbose_output
 from roadmap.presentation.cli.performance_tracking import (
     track_file_operation,
 )
@@ -58,7 +58,9 @@ console = get_console()
     multiple=True,
     help="Milestone names (can be specified multiple times)",
 )
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@verbose_output
 @log_command("project_create", entity_type="project", track_duration=True)
 def create_project(
     ctx: click.Context,
@@ -70,6 +72,7 @@ def create_project(
     target_end_date: str,
     estimated_hours: float,
     milestones: tuple,
+    verbose: bool,
 ):
     """Create a new project."""
     core = ctx.obj["core"]

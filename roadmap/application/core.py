@@ -424,11 +424,12 @@ Project notes and additional context.
         roadmap_patterns = [
             f"{self.roadmap_dir_name}/artifacts/",
             f"{self.roadmap_dir_name}/backups/",
+            f"{self.roadmap_dir_name}/logs/",
             f"{self.roadmap_dir_name}/*.tmp",
             f"{self.roadmap_dir_name}/*.lock",
         ]
         gitignore_comment = (
-            "# Roadmap local data (generated exports, backups, temp files)"
+            "# Roadmap local data (generated exports, backups, logs, temp files)"
         )
 
         # Read existing .gitignore if it exists

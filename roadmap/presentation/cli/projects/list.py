@@ -3,6 +3,7 @@
 import click
 from rich.table import Table
 
+from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -26,13 +27,16 @@ console = get_console()
 @click.option(
     "--overdue", is_flag=True, help="Show only overdue projects (past target end date)"
 )
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@verbose_output
 def list_projects(
     ctx: click.Context,
     status: str | None,
     owner: str | None,
     priority: str | None,
     overdue: bool,
+    verbose: bool,
 ):
     """List all projects with optional filtering."""
     core = ctx.obj["core"]

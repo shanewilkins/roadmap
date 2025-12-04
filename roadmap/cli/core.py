@@ -103,7 +103,9 @@ except Exception:
 @click.option(
     "--force", is_flag=True, help="Force re-initialization when roadmap already exists"
 )
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@verbose_output
 def init(
     ctx: click.Context,
     name: str,
@@ -119,6 +121,7 @@ def init(
     template: str,
     template_path: str | None,
     github_token: str | None,
+    verbose: bool,
 ) -> None:
     """Initialize a new roadmap with automatic project setup and credential flow.
 
@@ -333,8 +336,10 @@ def _configure_github(
 
 
 @click.command()
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
-def status(ctx: click.Context) -> None:
+@verbose_output
+def status(ctx: click.Context, verbose: bool) -> None:
     """Show the current status of the roadmap."""
     log = logger.bind(operation="status")
     log.info("starting_status")

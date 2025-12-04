@@ -9,7 +9,7 @@ from roadmap.cli.issue_creation import (
 )
 from roadmap.domain import IssueType, Priority
 from roadmap.presentation.cli.error_logging import log_error_with_context
-from roadmap.presentation.cli.logging_decorators import log_command
+from roadmap.presentation.cli.logging_decorators import log_command, verbose_output
 from roadmap.presentation.cli.performance_tracking import track_database_operation
 from roadmap.shared.console import get_console
 from roadmap.shared.errors import ErrorHandler, ValidationError
@@ -52,7 +52,9 @@ console = get_console()
 @click.option(
     "--force", is_flag=True, help="Force branch creation even if working tree is dirty"
 )
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@verbose_output
 @log_command("issue_create", entity_type="issue", track_duration=True)
 def create_issue(
     ctx: click.Context,
@@ -69,6 +71,7 @@ def create_issue(
     checkout: bool,
     branch_name: str,
     force: bool,
+    verbose: bool,
 ):
     """Create a new issue."""
     core = ctx.obj["core"]

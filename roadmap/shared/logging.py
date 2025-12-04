@@ -5,7 +5,6 @@ import logging
 import logging.config
 import logging.handlers
 import random
-import sys
 import time
 import uuid
 from contextlib import contextmanager
@@ -60,6 +59,7 @@ def setup_logging(
     log_to_file: bool = True,
     log_dir: str | Path | None = None,
     debug_mode: bool = False,
+    console_level: str | None = None,
     custom_levels: dict[str, str] | None = None,
 ) -> structlog.stdlib.BoundLogger:
     """Set up structured logging for the roadmap application.
@@ -67,15 +67,17 @@ def setup_logging(
     Args:
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_to_file: Whether to log to file in addition to console
-        log_dir: Directory for log files (defaults to ~/.roadmap/logs)
+        log_dir: Directory for log files (defaults to .roadmap/logs in current working directory)
         debug_mode: Enable debug mode with verbose output
+        console_level: Override console handler level (e.g., "INFO" for --verbose)
+                      If None, defaults to DEBUG if debug_mode else WARNING
         custom_levels: Dict of logger_name: level for per-component log levels
 
     Returns:
         Configured structlog logger
     """
     if log_dir is None:
-        log_dir = Path.home() / ".roadmap" / "logs"
+        log_dir = Path.cwd() / ".roadmap" / "logs"
     else:
         log_dir = Path(log_dir)
 
@@ -84,18 +86,24 @@ def setup_logging(
     log_file = log_dir / "roadmap.log"
 
     # Configure standard library logging
+    # Use explicit sys.stderr for console to ensure logs go to stderr, not stdout
+    # Determine console level: explicit override > debug_mode > default WARNING
+    if console_level is None:
+        console_level = "DEBUG" if debug_mode else "WARNING"
+
     handlers: dict[str, Any] = {
         "console": {
             "class": "logging.StreamHandler",
-            "level": "WARNING" if not debug_mode else "DEBUG",
+            "level": console_level,
             "formatter": "console",
-            "stream": sys.stderr,
+            "stream": "ext://sys.stderr",  # Explicitly use stderr
         }
     }
 
     formatters = {
         "console": {
-            "format": "%(message)s"  # Rich console handles formatting
+            "format": "%(asctime)s [%(levelname)8s] %(name)s: %(message)s",
+            "datefmt": "%Y-%m-%dT%H:%M:%SZ",
         }
     }
 
@@ -156,13 +164,14 @@ def setup_logging(
         "loggers": loggers_config,
         "root": {
             "level": "WARNING",
-            "handlers": ["console"] if not log_to_file else [],
+            "handlers": list(handlers.keys()),  # Use all configured handlers
         },
     }
 
     logging.config.dictConfig(config)
 
     # Configure structlog with enhanced processors
+    # Route through stdlib logging handlers (console → stderr, file → JSON)
     structlog.configure(
         processors=[
             # Add correlation ID first (before any filtering)
@@ -171,13 +180,13 @@ def setup_logging(
             scrub_sensitive_data,
             # Add standard metadata
             structlog.stdlib.add_log_level,
-            structlog.stdlib.add_logger_name,
+            # NOTE: Do NOT use add_logger_name when using render_to_log_kwargs
+            # because it creates a "logger" key that becomes "name" kwarg in LogRecord,
+            # causing: KeyError: "Attempt to overwrite 'name' in LogRecord"
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
-            # Processor chain for console output
-            structlog.dev.ConsoleRenderer(colors=sys.stderr.isatty())
-            if not log_to_file or debug_mode
-            else structlog.processors.JSONRenderer(),
+            # Convert to stdlib logging kwargs and pass through to handlers
+            structlog.stdlib.render_to_log_kwargs,
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),
@@ -371,6 +380,11 @@ def log_operation(operation: str, **context):
     return decorator
 
 
+# Initialize logging at module load time
+# This is the single source of truth for production logging configuration
+setup_logging(log_level="INFO", debug_mode=False, log_to_file=True)
+
+
 def should_sample(sample_rate: float = 0.1) -> bool:
     """Determine if this log entry should be sampled.
 
@@ -388,7 +402,12 @@ def should_sample(sample_rate: float = 0.1) -> bool:
     return random.random() < sample_rate
 
 
-# Initialize default logger (can be reconfigured later)
+# Configure logging with production defaults at module load time
+# This ensures all loggers use stderr by default
+# Tests can override by calling configure_for_testing()
+setup_logging(log_level="INFO", debug_mode=False, log_to_file=True)
+
+# Get default logger instance
 logger = structlog.get_logger("roadmap")
 
 
@@ -396,9 +415,15 @@ def configure_for_testing():
     """Configure minimal logging for tests."""
     logging.basicConfig(level=logging.CRITICAL)
     structlog.configure(
-        processors=[structlog.testing.TestingRenderer()],  # type: ignore[attr-defined]
+        processors=[
+            # Minimal processors for testing
+            structlog.stdlib.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso"),
+            # Use PrintLogger for simple output
+            structlog.dev.ConsoleRenderer(),
+        ],
         wrapper_class=structlog.stdlib.BoundLogger,
-        logger_factory=structlog.stdlib.LoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 

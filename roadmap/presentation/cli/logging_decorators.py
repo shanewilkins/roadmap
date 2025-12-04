@@ -155,33 +155,33 @@ def verbose_output(func: Callable) -> Callable:
         # Click passes options as keyword arguments after ctx
         verbose = kwargs.get("verbose", False)
 
-        # Suppress console logging unless verbose
-        if not verbose:
-            # Get the roadmap logger and disable the console handler
-            roadmap_logger = logging.getLogger("roadmap")
-            # Find and disable the console handler
-            for handler in roadmap_logger.handlers[:]:
-                if (
-                    isinstance(handler, logging.StreamHandler)
-                    and handler.stream == sys.stderr
-                ):
-                    handler.setLevel(logging.CRITICAL)  # Effectively disable it
+        # Adjust console logging based on verbose flag
+        roadmap_logger = logging.getLogger("roadmap")
+        original_levels = {}
+
+        # Find and adjust the console handler
+        for handler in roadmap_logger.handlers[:]:
+            if (
+                isinstance(handler, logging.StreamHandler)
+                and handler.stream == sys.stderr
+            ):
+                # Store original level for restoration later
+                original_levels[id(handler)] = handler.level
+
+                if verbose:
+                    # With --verbose, show INFO and above
+                    handler.setLevel(logging.INFO)
+                else:
+                    # Without --verbose, suppress to CRITICAL (effectively disable console output)
+                    handler.setLevel(logging.CRITICAL)
 
         try:
             return func(*args, **kwargs)
         finally:
-            # Re-enable console logging
-            if not verbose:
-                roadmap_logger = logging.getLogger("roadmap")
-                for handler in roadmap_logger.handlers[:]:
-                    if (
-                        isinstance(handler, logging.StreamHandler)
-                        and handler.stream == sys.stderr
-                    ):
-                        # Restore the handler to its original level (usually DEBUG or INFO)
-                        handler.setLevel(
-                            logging.DEBUG if sys.stderr.isatty() else logging.WARNING
-                        )
+            # Restore handler levels
+            for handler in roadmap_logger.handlers[:]:
+                if id(handler) in original_levels:
+                    handler.setLevel(original_levels[id(handler)])
 
     return wrapper
 

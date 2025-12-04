@@ -3,6 +3,7 @@
 import click
 from rich.table import Table
 
+from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -10,8 +11,10 @@ console = get_console()
 
 @click.command("list")
 @click.option("--overdue", is_flag=True, help="Show only overdue milestones")
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
-def list_milestones(ctx: click.Context, overdue: bool):
+@verbose_output
+def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
     """List all milestones."""
     core = ctx.obj["core"]
 
