@@ -194,6 +194,7 @@ def view_milestone(
         issues_table.add_column("Title", style="white", width=20)
         issues_table.add_column("Status", width=11)
         issues_table.add_column("Priority", width=9)
+        issues_table.add_column("Assignee", width=12)
         issues_table.add_column("Progress", width=10)
         issues_table.add_column("Estimate", width=10)
 
@@ -215,11 +216,16 @@ def view_milestone(
             }
             priority_color = priority_colors.get(issue.priority.value, "white")
 
+            assignee_display = (
+                issue.assignee if issue.assignee else "[dim]Unassigned[/dim]"
+            )
+
             issues_table.add_row(
                 issue.id,
                 issue.title[:50] + "..." if len(issue.title) > 50 else issue.title,
                 f"[{status_color}]{issue.status.value}[/{status_color}]",
                 f"[{priority_color}]{issue.priority.value}[/{priority_color}]",
+                assignee_display,
                 issue.progress_display,
                 issue.estimated_time_display,
             )
