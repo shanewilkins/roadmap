@@ -804,24 +804,19 @@ Project notes and additional context.
             return []
 
     def get_current_user(self) -> str | None:
-        """Get the current GitHub user.
+        """Get the current user from config.
 
         Returns:
-            Current user's GitHub username if configured, None otherwise
+            Current user's name from config if set, None otherwise
         """
         try:
-            from ..infrastructure.github import GitHubClient
-
-            token, owner, repo = self._get_github_config()
-            if not token or not owner or not repo:
-                return None
-
-            # Get current user
-            client = GitHubClient(token=token, owner=owner, repo=repo)
-            return client.get_current_user()
+            config = self.load_config()
+            if config and hasattr(config, "user"):
+                return getattr(config.user, "name", None)
         except Exception:
-            # Return None if GitHub is not configured or accessible
-            return None
+            pass
+
+        return None
 
     def get_assigned_issues(self, assignee: str) -> list[Issue]:
         """Get all issues assigned to a specific user."""

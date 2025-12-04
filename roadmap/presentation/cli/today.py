@@ -42,22 +42,9 @@ def today(ctx: click.Context, verbose: bool):
         return
 
     try:
-        # Get user identity - try multiple sources
-        current_user = None
-
-        # 1. Try from GitHub configuration first
+        # Get user identity from config (single source of truth), fallback to environment for testing
         current_user = core.get_current_user()
 
-        # 2. Fallback: Try from config file if GitHub not available
-        if not current_user:
-            try:
-                config = core.load_config()
-                if config and hasattr(config, "github"):
-                    current_user = getattr(config.github, "username", None)
-            except Exception:
-                pass
-
-        # 3. Fallback: Try from environment variable (useful for testing/CI)
         if not current_user:
             import os
 
@@ -65,7 +52,7 @@ def today(ctx: click.Context, verbose: bool):
 
         if not current_user:
             console.print(
-                "❌ No user configured. Set ROADMAP_USER or configure GitHub.",
+                "❌ No user configured. Initialize with 'roadmap init' or set ROADMAP_USER.",
                 style="bold red",
             )
             return

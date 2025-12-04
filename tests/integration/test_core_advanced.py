@@ -183,31 +183,30 @@ class TestRoadmapCoreTeamManagement:
         assert len(team_members) == 0
 
     def test_get_current_user_from_github(self, core):
-        """Test getting current user from GitHub API."""
-        # Mock GitHub client
-        with patch("roadmap.infrastructure.github.GitHubClient") as mock_github_client:
-            mock_client = Mock()
-            mock_client.get_current_user.return_value = "current_user"
-            mock_github_client.return_value = mock_client
+        """Test getting current user from config."""
+        # Mock load_config to return a config with a user
+        from unittest.mock import Mock
 
-            # Mock GitHub config
-            with patch.object(core, "_get_github_config") as mock_config:
-                mock_config.return_value = ("token", "owner", "repo")
+        mock_config = Mock()
+        mock_user = Mock()
+        mock_user.name = "test_user"
+        mock_config.user = mock_user
 
-                current_user = core.get_current_user()
-                assert current_user == "current_user"
+        with patch.object(core, "load_config", return_value=mock_config):
+            current_user = core.get_current_user()
+            assert current_user == "test_user"
 
     def test_get_current_user_no_github_config(self, core):
-        """Test getting current user when GitHub is not configured."""
-        # Mock GitHub config to return None
-        with patch.object(core, "_get_github_config") as mock_config:
-            mock_config.return_value = (None, None, None)
-
+        """Test getting current user when config is not found."""
+        # Mock load_config to raise an exception
+        with patch.object(
+            core, "load_config", side_effect=Exception("Config not found")
+        ):
             current_user = core.get_current_user()
             assert current_user is None
 
     def test_get_current_user_github_api_error(self, core):
-        """Test getting current user when GitHub API fails."""
+        """Test getting current user when config read fails."""
         # Mock GitHub client to raise exception
         with patch("roadmap.infrastructure.github.GitHubClient") as mock_github_client:
             mock_github_client.side_effect = Exception("API Error")
