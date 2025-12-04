@@ -23,11 +23,11 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: 📦 Install Roadmap CLI
+    - name: 📦 Install Dependencies
       run: |
         pip install --upgrade pip
-        # TODO: Replace with actual PyPI package when published
-        pip install roadmap-cli
+        pip install poetry
+        poetry install
 
     - name: 🎯 Track Recent Changes
       run: |
@@ -36,15 +36,15 @@ jobs:
         # Initialize roadmap if needed
         if [ ! -f ".roadmap/config.yaml" ]; then
           echo "🚀 First time setup - initializing roadmap..."
-          roadmap init --name "${{ github.repository }}" --auto-confirm
+          poetry run roadmap init --name "${{ github.repository }}" --auto-confirm
         fi
 
         # Track recent commits
-        roadmap ci scan-repository --max-commits 5
+        poetry run roadmap ci scan-repository --max-commits 5
 
         # Show current status
         echo "📊 Current roadmap status:"
-        roadmap status
+        poetry run roadmap status
 
     - name: ✅ Validate Setup
       run: |
