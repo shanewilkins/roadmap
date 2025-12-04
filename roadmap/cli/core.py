@@ -427,58 +427,95 @@ def status(ctx: click.Context) -> None:
 
 
 @click.command()
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed debug information and all health check logs",
+)
 @click.pass_context
-def health(ctx: click.Context) -> None:
-    """Check system health and component status."""
-    log = logger.bind(operation="health")
-    log.info("starting_health_check")
+def health(ctx: click.Context, verbose: bool) -> None:
+    """Check system health and component status.
 
-    console.print("🏥 System Health Check", style="bold blue")
+    By default, shows a summary of health checks with status indicators
+    and suppresses debug logging output for a clean display.
 
-    # Get core from context
-    core = ctx.obj["core"]
+    Use --verbose to see all debug logs and detailed check information.
+    """
+    import os
+    import sys
 
-    # Run all health checks
-    checks = HealthCheck.run_all_checks(core)
-    overall_status = HealthCheck.get_overall_status(checks)
+    devnull = None
+    old_stderr = None
 
-    # Display results
-    console.print()
-    for check_name, (status, message) in checks.items():
-        # Format check name
-        display_name = check_name.replace("_", " ").title()
+    # Suppress stderr logs unless verbose (startup messages and debug logs go there)
+    if not verbose:
+        devnull = open(os.devnull, "w")
+        old_stderr = sys.stderr
+        sys.stderr = devnull
 
-        # Choose emoji and style based on status
-        if status == HealthStatus.HEALTHY:
-            emoji = "✅"
-            style = "green"
-        elif status == HealthStatus.DEGRADED:
-            emoji = "⚠️"
-            style = "yellow"
+    try:
+        log = logger.bind(operation="health")
+        log.info("starting_health_check", verbose=verbose)
+
+        console.print("🏥 System Health Check", style="bold blue")
+
+        # Get core from context
+        core = ctx.obj["core"]
+
+        # Run all health checks
+        checks = HealthCheck.run_all_checks(core)
+        overall_status = HealthCheck.get_overall_status(checks)
+
+        # Restore stderr before printing results
+        if old_stderr is not None:
+            sys.stderr = old_stderr
+            devnull.close()
+
+        # Display results
+        console.print()
+        for check_name, (status, message) in checks.items():
+            # Format check name
+            display_name = check_name.replace("_", " ").title()
+
+            # Choose emoji and style based on status
+            if status == HealthStatus.HEALTHY:
+                emoji = "✅"
+                style = "green"
+            elif status == HealthStatus.DEGRADED:
+                emoji = "⚠️"
+                style = "yellow"
+            else:  # UNHEALTHY
+                emoji = "❌"
+                style = "red"
+
+            console.print(f"{emoji} {display_name}: {message}", style=style)
+
+        # Display overall status
+        console.print()
+        if overall_status == HealthStatus.HEALTHY:
+            console.print("✨ Overall Status: HEALTHY", style="bold green")
+            log.info("health_check_completed", status="healthy")
+        elif overall_status == HealthStatus.DEGRADED:
+            console.print("⚠️  Overall Status: DEGRADED", style="bold yellow")
+            console.print(
+                "   Some components have issues but system is functional", style="dim"
+            )
+            log.warning("health_check_completed", status="degraded")
         else:  # UNHEALTHY
-            emoji = "❌"
-            style = "red"
+            console.print("❌ Overall Status: UNHEALTHY", style="bold red")
+            console.print(
+                "   Critical issues detected - system may not function properly",
+                style="dim",
+            )
+            log.error("health_check_completed", status="unhealthy")
 
-        console.print(f"{emoji} {display_name}: {message}", style=style)
-
-    # Display overall status
-    console.print()
-    if overall_status == HealthStatus.HEALTHY:
-        console.print("✨ Overall Status: HEALTHY", style="bold green")
-        log.info("health_check_completed", status="healthy")
-    elif overall_status == HealthStatus.DEGRADED:
-        console.print("⚠️  Overall Status: DEGRADED", style="bold yellow")
-        console.print(
-            "   Some components have issues but system is functional", style="dim"
-        )
-        log.warning("health_check_completed", status="degraded")
-    else:  # UNHEALTHY
-        console.print("❌ Overall Status: UNHEALTHY", style="bold red")
-        console.print(
-            "   Critical issues detected - system may not function properly",
-            style="dim",
-        )
-        log.error("health_check_completed", status="unhealthy")
+    finally:
+        # Restore stderr if it's still redirected
+        if old_stderr is not None and sys.stderr != old_stderr:
+            sys.stderr = old_stderr
+        if devnull is not None:
+            devnull.close()
 
 
 # Helper functions for init command
