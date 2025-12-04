@@ -118,7 +118,7 @@ class TestIssueArchiveRestore:
 
         result = cli_runner.invoke(
             main,
-            ["issue", "archive", "--all-done", "--force"],
+            ["issue", "archive", "--all-closed", "--force"],
         )
 
         assert result.exit_code == 0
@@ -195,7 +195,7 @@ class TestIssueArchiveRestore:
         # Archive all done issues
         result = cli_runner.invoke(
             main,
-            ["issue", "archive", "--all-done", "--force"],
+            ["issue", "archive", "--all-closed", "--force"],
         )
         assert result.exit_code == 0
 

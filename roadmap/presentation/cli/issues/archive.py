@@ -49,9 +49,9 @@ def _determine_archive_path(
 @click.command()
 @click.argument("issue_id", required=False)
 @click.option(
-    "--all-done",
+    "--all-closed",
     is_flag=True,
-    help="Archive all done/completed issues",
+    help="Archive all closed issues",
 )
 @click.option(
     "--orphaned",
@@ -86,7 +86,7 @@ def _determine_archive_path(
 def archive_issue(
     ctx: click.Context,
     issue_id: str | None,
-    all_done: bool,
+    all_closed: bool,
     orphaned: bool,
     list_archived: bool,
     dry_run: bool,
@@ -101,7 +101,7 @@ def archive_issue(
 
     Examples:
         roadmap issue archive 8a00a17e
-        roadmap issue archive --all-done
+        roadmap issue archive --all-closed
         roadmap issue archive --orphaned --dry-run
         roadmap issue archive --list
     """
@@ -141,16 +141,16 @@ def archive_issue(
                 console.print(f"  • {file_path.stem} (parse error)", style="red")
         return
 
-    if not issue_id and not all_done and not orphaned:
+    if not issue_id and not all_closed and not orphaned:
         console.print(
-            "❌ Error: Specify an issue ID, --all-done, or --orphaned",
+            "❌ Error: Specify an issue ID, --all-closed, or --orphaned",
             style="bold red",
         )
         ctx.exit(1)
 
-    if sum([bool(issue_id), all_done, orphaned]) > 1:
+    if sum([bool(issue_id), all_closed, orphaned]) > 1:
         console.print(
-            "❌ Error: Specify only one of: issue ID, --all-done, or --orphaned",
+            "❌ Error: Specify only one of: issue ID, --all-closed, or --orphaned",
             style="bold red",
         )
         ctx.exit(1)
@@ -159,11 +159,11 @@ def archive_issue(
         roadmap_dir = Path.cwd() / ".roadmap"
         archive_dir = roadmap_dir / "archive" / "issues"
 
-        if all_done or orphaned:
+        if all_closed or orphaned:
             # Get all issues
             all_issues = core.list_issues()
 
-            if all_done:
+            if all_closed:
                 issues_to_archive = [
                     i for i in all_issues if i.status.value == "closed"
                 ]
