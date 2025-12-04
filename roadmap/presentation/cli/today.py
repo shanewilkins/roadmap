@@ -8,6 +8,7 @@ from rich.table import Table
 from rich.text import Text
 
 from roadmap.domain.issue import Status
+from roadmap.domain.milestone import MilestoneStatus
 from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.shared.console import get_console
 
@@ -19,15 +20,15 @@ console = get_console()
 @click.pass_context
 @verbose_output
 def today(ctx: click.Context, verbose: bool):
-    """Show your daily workflow summary.
+    """Show your daily workflow summary for the upcoming milestone.
 
-    Displays:
+    Displays your assigned issues for the next upcoming milestone:
     - Current in-progress issues assigned to you
     - Overdue issues
-    - Upcoming high-priority tasks
+    - High-priority tasks to start
     - Today's completed work
 
-    This is your daily standup command - quick overview of what you're working on.
+    Only shows issues assigned to you in the upcoming milestone.
 
     Example:
         roadmap today
@@ -41,40 +42,89 @@ def today(ctx: click.Context, verbose: bool):
         return
 
     try:
-        # Get user identity
-        config = core.load_config()
+        # Get user identity - try multiple sources
         current_user = None
-        if config and hasattr(config, "github") and config.github:
-            current_user = getattr(config.github, "username", None)
+
+        # 1. Try from GitHub configuration first
+        current_user = core.get_current_user()
+
+        # 2. Fallback: Try from config file if GitHub not available
+        if not current_user:
+            try:
+                config = core.load_config()
+                if config and hasattr(config, "github"):
+                    current_user = getattr(config.github, "username", None)
+            except Exception:
+                pass
+
+        # 3. Fallback: Try from environment variable (useful for testing/CI)
+        if not current_user:
+            import os
+
+            current_user = os.getenv("ROADMAP_USER")
+
+        if not current_user:
+            console.print(
+                "❌ No user configured. Set ROADMAP_USER or configure GitHub.",
+                style="bold red",
+            )
+            return
+
+        # Get upcoming milestone
+        milestones = core.list_milestones()
+        # Filter open milestones and sort by due date
+        open_milestones = [m for m in milestones if m.status == MilestoneStatus.OPEN]
+        upcoming_milestone = None
+        if open_milestones:
+            # Sort by due date (None dates last), get the first with a due date
+            sorted_milestones = sorted(
+                open_milestones,
+                key=lambda m: (m.due_date is None, m.due_date or datetime.max),
+            )
+            upcoming_milestone = sorted_milestones[0]
+
+        if not upcoming_milestone:
+            console.print(
+                "❌ No upcoming milestones found. Create one with: [cyan]roadmap milestone create[/cyan]",
+                style="bold red",
+            )
+            return
 
         # Get all issues
         all_issues = core.list_issues()
 
-        # Filter issues assigned to current user
-        if current_user:
-            my_issues = [i for i in all_issues if i.assignee == current_user]
-        else:
-            # If no user configured, show all issues
-            my_issues = all_issues
+        # Filter: assigned to current user AND in upcoming milestone
+        my_milestone_issues = [
+            i
+            for i in all_issues
+            if i.assignee == current_user and i.milestone == upcoming_milestone.name
+        ]
+
+        if not my_milestone_issues:
+            console.print(
+                f"✅ No issues assigned to you in [bold]{upcoming_milestone.name}[/bold]",
+                style="green",
+            )
+            return
 
         # Categorize issues
-        in_progress = [i for i in my_issues if i.status == Status.IN_PROGRESS]
+        in_progress = [i for i in my_milestone_issues if i.status == Status.IN_PROGRESS]
         overdue = [
             i
-            for i in my_issues
+            for i in my_milestone_issues
             if i.due_date
             and i.due_date.replace(tzinfo=None) < datetime.now()
             and i.status != Status.CLOSED
         ]
-        blocked = [i for i in my_issues if i.status == Status.BLOCKED]
+        blocked = [i for i in my_milestone_issues if i.status == Status.BLOCKED]
         todo_high_priority = [
             i
-            for i in my_issues
+            for i in my_milestone_issues
             if i.status == Status.TODO and i.priority.value in ["critical", "high"]
         ][:3]  # Top 3
         completed_today = [
             i
-            for i in my_issues
+            for i in my_milestone_issues
             if i.status == Status.CLOSED
             and i.actual_end_date
             and i.actual_end_date.date() == datetime.now().date()
@@ -82,11 +132,15 @@ def today(ctx: click.Context, verbose: bool):
 
         # Build header
         header = Text()
-        if current_user:
-            header.append("Daily Summary for ", style="dim")
-            header.append(current_user, style="bold cyan")
-        else:
-            header.append("Daily Summary", style="bold cyan")
+        header.append("Daily Summary - ", style="dim")
+        header.append(current_user, style="bold cyan")
+        header.append("\nMilestone: ", style="dim")
+        header.append(upcoming_milestone.name, style="bold yellow")
+        if upcoming_milestone.due_date:
+            header.append(
+                f" (due {upcoming_milestone.due_date.strftime('%Y-%m-%d')})",
+                style="dim",
+            )
         header.append(f"\n{datetime.now().strftime('%A, %B %d, %Y')}", style="dim")
 
         console.print(Panel(header, border_style="cyan"))
@@ -109,7 +163,7 @@ def today(ctx: click.Context, verbose: bool):
                     issue.id,
                     issue.title[:60] + "..." if len(issue.title) > 60 else issue.title,
                     issue.progress_display,
-                    issue.milestone or "Backlog",
+                    issue.priority.value,
                 )
 
             console.print(progress_table)
@@ -162,13 +216,13 @@ def today(ctx: click.Context, verbose: bool):
             )
             blocked_table.add_column("ID", style="cyan", width=10)
             blocked_table.add_column("Title", style="white")
-            blocked_table.add_column("Milestone", width=15)
+            blocked_table.add_column("Priority", width=10)
 
             for issue in blocked:
                 blocked_table.add_row(
                     issue.id,
                     issue.title[:60] + "..." if len(issue.title) > 60 else issue.title,
-                    issue.milestone or "Backlog",
+                    issue.priority.value,
                 )
 
             console.print(blocked_table)

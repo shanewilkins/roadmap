@@ -1,7 +1,7 @@
 """Integration tests for the 'roadmap today' command.
 
-Tests the daily workflow summary command that shows in-progress, overdue,
-blocked, upcoming, and completed tasks.
+Tests the daily workflow summary command that shows issues assigned to
+the current user in the upcoming milestone.
 """
 
 import re
@@ -23,7 +23,8 @@ def cli_runner():
 def roadmap_with_workflow_items(cli_runner):
     """Create an isolated roadmap with issues in various states.
 
-    Creates issues with different priorities and types.
+    Creates issues with different priorities and types assigned to a user
+    in an upcoming milestone.
 
     Yields:
         tuple: (cli_runner, temp_dir_path)
@@ -31,7 +32,7 @@ def roadmap_with_workflow_items(cli_runner):
     with cli_runner.isolated_filesystem():
         temp_dir = Path.cwd()
 
-        # Initialize a roadmap
+        # Initialize a roadmap without GitHub
         result = cli_runner.invoke(
             main,
             [
@@ -44,7 +45,20 @@ def roadmap_with_workflow_items(cli_runner):
         )
         assert result.exit_code == 0, f"Init failed: {result.output}"
 
-        # Create various issues with different priorities
+        # Create a milestone
+        result = cli_runner.invoke(
+            main,
+            [
+                "milestone",
+                "create",
+                "v1.0",
+                "--description",
+                "First release",
+            ],
+        )
+        assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
+
+        # Create various issues with different priorities assigned to testuser
         issues = [
             ("High priority task 1", "high", "feature"),
             ("High priority task 2", "high", "bug"),
@@ -64,6 +78,10 @@ def roadmap_with_workflow_items(cli_runner):
                     issue_type,
                     "--priority",
                     priority,
+                    "--assignee",
+                    "testuser",
+                    "--milestone",
+                    "v1.0",
                 ],
             )
             assert result.exit_code == 0, f"Issue creation failed: {result.output}"
@@ -78,29 +96,31 @@ class TestTodayCommand:
         """Test that today command executes without errors."""
         cli_runner, temp_dir = roadmap_with_workflow_items
 
-        result = cli_runner.invoke(main, ["today"], catch_exceptions=False)
+        result = cli_runner.invoke(
+            main, ["today"], catch_exceptions=False, env={"ROADMAP_USER": "testuser"}
+        )
 
         assert result.exit_code == 0, f"Today command failed: {result.output}"
 
     def test_today_displays_header(self, roadmap_with_workflow_items):
-        """Test that today command displays a header with current date."""
+        """Test that today command displays a header with milestone info."""
         cli_runner, temp_dir = roadmap_with_workflow_items
 
-        result = cli_runner.invoke(main, ["today"], catch_exceptions=False)
+        result = cli_runner.invoke(
+            main, ["today"], catch_exceptions=False, env={"ROADMAP_USER": "testuser"}
+        )
 
         assert result.exit_code == 0
-        # Should contain date-related text
-        assert (
-            "Daily" in result.output
-            or "Today" in result.output
-            or "Summary" in result.output
-        )
+        # Should contain milestone and user info
+        assert "v1.0" in result.output or "Milestone" in result.output
 
     def test_today_shows_high_priority_tasks(self, roadmap_with_workflow_items):
         """Test that today command shows high priority tasks."""
         cli_runner, temp_dir = roadmap_with_workflow_items
 
-        result = cli_runner.invoke(main, ["today"], catch_exceptions=False)
+        result = cli_runner.invoke(
+            main, ["today"], catch_exceptions=False, env={"ROADMAP_USER": "testuser"}
+        )
 
         assert result.exit_code == 0
         # Should show at least some high priority tasks
@@ -110,7 +130,9 @@ class TestTodayCommand:
         """Test that today command shows summary statistics."""
         cli_runner, temp_dir = roadmap_with_workflow_items
 
-        result = cli_runner.invoke(main, ["today"], catch_exceptions=False)
+        result = cli_runner.invoke(
+            main, ["today"], catch_exceptions=False, env={"ROADMAP_USER": "testuser"}
+        )
 
         assert result.exit_code == 0
         # Should contain counts or statistics
@@ -118,9 +140,9 @@ class TestTodayCommand:
         assert re.search(r"\d+", result.output), "No statistics found in output"
 
     def test_today_with_empty_roadmap(self, cli_runner):
-        """Test today command with no issues."""
+        """Test today command with no upcoming milestones."""
         with cli_runner.isolated_filesystem():
-            # Initialize empty roadmap
+            # Initialize empty roadmap without GitHub
             result = cli_runner.invoke(
                 main,
                 [
@@ -133,15 +155,12 @@ class TestTodayCommand:
             )
             assert result.exit_code == 0
 
-            result = cli_runner.invoke(main, ["today"], catch_exceptions=False)
-
-            assert result.exit_code == 0
-            # Should handle empty case gracefully
-            # May show "No issues" or "0 in progress" or similar
-            output_lower = result.output.lower()
-            assert (
-                "0" in result.output
-                or "no" in output_lower
-                or "empty" in output_lower
-                or "nothing" in output_lower
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                catch_exceptions=False,
+                env={"ROADMAP_USER": "testuser"},
             )
+
+            # Should fail with message about no upcoming milestones
+            assert "No upcoming milestones" in result.output
