@@ -1,0 +1,294 @@
+"""Tests for GitHubIntegrationService."""
+
+from unittest.mock import Mock, patch
+
+import pytest
+
+from roadmap.application.services.github_integration_service import (
+    GitHubIntegrationService,
+)
+
+
+class TestGitHubIntegrationService:
+    """Test suite for GitHubIntegrationService."""
+
+    @pytest.fixture
+    def root_path(self, tmp_path):
+        """Create a temporary root path."""
+        return tmp_path
+
+    @pytest.fixture
+    def config_file(self, root_path):
+        """Create a mock config file path."""
+        return root_path / "config.yaml"
+
+    @pytest.fixture
+    def service(self, root_path, config_file):
+        """Create a service instance."""
+        return GitHubIntegrationService(root_path=root_path, config_file=config_file)
+
+    def test_init_creates_service(self, service, root_path, config_file):
+        """Test that service initializes correctly."""
+        assert service.root_path == root_path
+        assert service.config_file == config_file
+        assert service._team_members_cache is None
+        assert service._cache_timestamp is None
+
+    def test_get_github_config_not_configured(self, service):
+        """Test get_github_config when GitHub is not configured."""
+        with patch(
+            "roadmap.application.services.github_integration_service.ConfigManager"
+        ) as mock_config_cls:
+            mock_config = Mock()
+            mock_config.load.return_value = Mock(github=None)
+            mock_config_cls.return_value = mock_config
+            result = service.get_github_config()
+            assert result == (None, None, None)
+
+    def test_get_github_config_configured(self, service):
+        """Test get_github_config when GitHub is configured."""
+        with patch(
+            "roadmap.application.services.github_integration_service.ConfigManager"
+        ) as mock_config_cls:
+            mock_config = Mock()
+            mock_config.load.return_value = Mock(
+                github={"owner": "test-owner", "repo": "test-repo"}
+            )
+            mock_config_cls.return_value = mock_config
+
+            with patch(
+                "roadmap.application.services.github_integration_service.get_credential_manager"
+            ) as mock_cred:
+                mock_cred.return_value.get_token.return_value = "test-token"
+                token, owner, repo = service.get_github_config()
+                assert token == "test-token"
+                assert owner == "test-owner"
+                assert repo == "test-repo"
+
+    def test_get_github_config_from_env(self, service):
+        """Test get_github_config retrieves token from environment."""
+        with patch(
+            "roadmap.application.services.github_integration_service.ConfigManager"
+        ) as mock_config_cls:
+            mock_config = Mock()
+            mock_config.load.return_value = Mock(
+                github={"owner": "test-owner", "repo": "test-repo"}
+            )
+            mock_config_cls.return_value = mock_config
+
+            with patch(
+                "roadmap.application.services.github_integration_service.get_credential_manager"
+            ) as mock_cred:
+                mock_cred.return_value.get_token.return_value = None
+                with patch(
+                    "roadmap.application.services.github_integration_service.os.getenv",
+                    return_value="env-token",
+                ):
+                    token, owner, repo = service.get_github_config()
+                    assert token == "env-token"
+
+    def test_get_team_members_github_not_configured(self, service):
+        """Test get_team_members when GitHub is not configured."""
+        with patch.object(
+            service, "get_github_config", return_value=(None, None, None)
+        ):
+            result = service.get_team_members()
+            assert result == []
+
+    def test_get_team_members_success(self, service):
+        """Test get_team_members retrieves members from GitHub."""
+        with patch.object(
+            service, "get_github_config", return_value=("token", "owner", "repo")
+        ):
+            with patch(
+                "roadmap.application.services.github_integration_service.GitHubClient"
+            ) as mock_client_cls:
+                mock_client = Mock()
+                mock_client.get_team_members.return_value = ["user1", "user2"]
+                mock_client_cls.return_value = mock_client
+                result = service.get_team_members()
+                assert result == ["user1", "user2"]
+
+    def test_get_team_members_error_handling(self, service):
+        """Test get_team_members handles errors gracefully."""
+        with patch.object(
+            service, "get_github_config", side_effect=Exception("API error")
+        ):
+            result = service.get_team_members()
+            assert result == []
+
+    def test_get_current_user_found(self, service, config_file):
+        """Test get_current_user when user is configured."""
+        with patch(
+            "roadmap.application.services.github_integration_service.ConfigManager"
+        ) as mock_config_cls:
+            mock_config = Mock()
+            mock_user = Mock()
+            mock_user.name = "test-user"
+            mock_config.load.return_value = Mock(user=mock_user)
+            mock_config_cls.return_value = mock_config
+
+            result = service.get_current_user()
+            assert result == "test-user"
+
+    def test_get_current_user_not_found(self, service):
+        """Test get_current_user when user is not configured."""
+        with patch(
+            "roadmap.application.services.github_integration_service.ConfigManager"
+        ) as mock_config_cls:
+            mock_config = Mock()
+            mock_config.load.return_value = Mock(user=None)
+            mock_config_cls.return_value = mock_config
+
+            result = service.get_current_user()
+            assert result is None
+
+    def test_get_cached_team_members_first_call(self, service):
+        """Test get_cached_team_members caches on first call."""
+        with patch.object(service, "get_team_members", return_value=["user1", "user2"]):
+            result = service.get_cached_team_members()
+            assert result == ["user1", "user2"]
+            assert service._team_members_cache == ["user1", "user2"]
+
+    def test_get_cached_team_members_uses_cache(self, service):
+        """Test get_cached_team_members uses cache within 5 minutes."""
+        from datetime import datetime
+
+        service._team_members_cache = ["cached_user"]
+        service._cache_timestamp = datetime.now()
+
+        with patch.object(service, "get_team_members") as mock_get:
+            result = service.get_cached_team_members()
+            assert result == ["cached_user"]
+            mock_get.assert_not_called()
+
+    def test_validate_assignee_empty(self, service):
+        """Test validate_assignee rejects empty assignee."""
+        is_valid, error_msg = service.validate_assignee("")
+        assert is_valid is False
+        assert "empty" in error_msg.lower()
+
+    def test_validate_assignee_whitespace(self, service):
+        """Test validate_assignee rejects whitespace-only assignee."""
+        is_valid, error_msg = service.validate_assignee("   ")
+        assert is_valid is False
+
+    def test_validate_assignee_github_not_configured(self, service):
+        """Test validate_assignee allows any user when GitHub not configured."""
+        with patch.object(
+            service, "get_github_config", return_value=(None, None, None)
+        ):
+            is_valid, error_msg = service.validate_assignee("any-user")
+            assert is_valid is True
+            assert error_msg == ""
+
+    def test_validate_assignee_in_cached_members(self, service):
+        """Test validate_assignee succeeds for cached team member."""
+        with patch.object(
+            service, "get_github_config", return_value=("token", "owner", "repo")
+        ):
+            with patch.object(
+                service, "get_cached_team_members", return_value=["user1", "user2"]
+            ):
+                is_valid, error_msg = service.validate_assignee("user1")
+                assert is_valid is True
+                assert error_msg == ""
+
+    def test_validate_assignee_github_validation_success(self, service):
+        """Test validate_assignee with successful GitHub validation."""
+        with patch.object(
+            service, "get_github_config", return_value=("token", "owner", "repo")
+        ):
+            with patch.object(service, "get_cached_team_members", return_value=[]):
+                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client:
+                    mock_client.return_value.validate_assignee.return_value = (
+                        True,
+                        "",
+                    )
+                    is_valid, error_msg = service.validate_assignee("new-user")
+                    assert is_valid is True
+
+    def test_validate_assignee_github_validation_failure(self, service):
+        """Test validate_assignee with failed GitHub validation."""
+        with patch.object(
+            service, "get_github_config", return_value=("token", "owner", "repo")
+        ):
+            with patch.object(service, "get_cached_team_members", return_value=[]):
+                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client:
+                    mock_client.return_value.validate_assignee.return_value = (
+                        False,
+                        "User not found",
+                    )
+                    is_valid, error_msg = service.validate_assignee("invalid-user")
+                    assert is_valid is False
+                    assert "not found" in error_msg.lower()
+
+    def test_validate_assignee_with_strategy(self, service):
+        """Test validate_assignee uses strategy when available."""
+        with patch(
+            "roadmap.application.assignee_validation.AssigneeValidationStrategy"
+        ) as mock_strategy:
+            mock_strategy.return_value.validate.return_value = (
+                True,
+                "",
+                "canonical-id",
+            )
+            is_valid, error_msg = service.validate_assignee("user")
+            assert is_valid is True
+            assert service._last_canonical_assignee == "canonical-id"
+
+    @pytest.mark.skip(reason="IdentityManager is a future feature not yet available")
+    def test_get_canonical_assignee_from_identity_manager(self, service):
+        """Test get_canonical_assignee retrieves from identity manager."""
+        with patch("roadmap.future.identity.IdentityManager") as mock_manager:
+            mock_profile = Mock(canonical_id="canonical-id")
+            mock_manager.return_value.resolve_assignee.return_value = (
+                True,
+                "result",
+                mock_profile,
+            )
+            result = service.get_canonical_assignee("user")
+            assert result == "canonical-id"
+
+    @pytest.mark.skip(reason="IdentityManager is a future feature not yet available")
+    def test_get_canonical_assignee_fallback(self, service):
+        """Test get_canonical_assignee falls back to original."""
+        with patch("roadmap.future.identity.IdentityManager") as mock_manager:
+            mock_manager.return_value.resolve_assignee.side_effect = Exception(
+                "Not available"
+            )
+            result = service.get_canonical_assignee("user")
+            assert result == "user"
+
+    def test_get_last_canonical_assignee(self, service):
+        """Test get_last_canonical_assignee returns stored value."""
+        service._last_canonical_assignee = "test-canonical"
+        result = service.get_last_canonical_assignee()
+        assert result == "test-canonical"
+
+    def test_clear_cache(self, service):
+        """Test clear_cache resets cache."""
+        from datetime import datetime
+
+        service._team_members_cache = ["user1"]
+        service._cache_timestamp = datetime.now()
+
+        service.clear_cache()
+        assert service._team_members_cache is None
+        assert service._cache_timestamp is None
+
+    def test_service_integration_workflow(self, service):
+        """Test basic service workflow."""
+        with patch.object(
+            service, "get_github_config", return_value=("token", "owner", "repo")
+        ):
+            with patch.object(
+                service, "get_cached_team_members", return_value=["user1"]
+            ):
+                # Validate user
+                is_valid, _ = service.validate_assignee("user1")
+                assert is_valid is True
+
+                # Get canonical form
+                canonical = service.get_canonical_assignee("user1")
+                assert canonical == "user1"
