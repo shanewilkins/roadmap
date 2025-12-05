@@ -2,7 +2,7 @@
 id: eac05773
 title: Implement team onboarding architecture - project detection on init
 priority: high
-status: todo
+status: in-progress
 issue_type: other
 milestone: v0.7.0
 labels: []
@@ -16,12 +16,13 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 25
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
 git_branches: []
-git_commits: []
+git_commits:
+  - "24c5b47"
 completed_date: null
 ---
 
@@ -36,10 +37,10 @@ Projects should be committed to git and detected during init, not generated loca
 ## Implementation Plan
 
 ### Phase 1: Project Detection in Init
-- [ ] Add detection logic to check if `.roadmap/projects/` already contains `.md` files
-- [ ] If projects exist, load them instead of generating new ones
-- [ ] Update `init()` in `roadmap/cli/core.py` to skip project creation if projects already exist
-- [ ] Add test: `test_init_joins_existing_project()`
+- [x] Add detection logic to check if `.roadmap/projects/` already contains `.md` files
+- [x] If projects exist, load them instead of generating new ones
+- [x] Update `init()` in `roadmap/cli/core.py` to skip project creation if projects already exist
+- [x] Add comprehensive tests (12 integration tests covering all scenarios)
 
 ### Phase 2: Config Refactoring
 - [ ] Split config model into shared (`config.yaml`) and local (`config.yaml.local`)
