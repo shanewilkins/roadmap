@@ -43,11 +43,11 @@ Projects should be committed to git and detected during init, not generated loca
 - [x] Add comprehensive tests (12 integration tests covering all scenarios)
 
 ### Phase 2: Config Refactoring
-- [ ] Split config model into shared (`config.yaml`) and local (`config.yaml.local`)
-- [ ] Update `ConfigManager` to handle `.local` pattern
-- [ ] Modify `.gitignore` to commit `config.yaml` but exclude `*.local` files
-- [ ] User-specific settings (GitHub tokens, UI preferences) go in `.local`
-- [ ] Add test: `test_config_local_overrides_shared()`
+- [x] Split config model into shared (`config.yaml`) and local (`config.yaml.local`)
+- [x] Update `ConfigManager` to handle `.local` pattern
+- [x] Modify `.gitignore` to commit `config.yaml` but exclude `*.local` files
+- [x] User-specific settings (GitHub tokens, UI preferences) go in `.local`
+- [x] Add test: `test_config_local_overrides_shared()` (14 comprehensive config tests added)
 
 ### Phase 3: Init Messaging & UX
 - [ ] Detect 'new project creation' vs 'joining existing project'
