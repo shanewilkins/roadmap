@@ -176,7 +176,8 @@ Thumbs.db
 .roadmap/backups/
 .roadmap/artifacts/
 .roadmap/logs/
-.roadmap/config.yaml  # Local user configuration (not to be shared)
+.roadmap/*.local  # User-specific local overrides (not to be shared)
+.roadmap/config.yaml.local  # User settings override file (gitignored)
 .roadmap/*.tmp
 .roadmap/*.lock
 
