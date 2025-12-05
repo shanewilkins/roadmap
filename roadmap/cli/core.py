@@ -222,24 +222,49 @@ def init(
 
         ctx.obj["core"] = custom_core
 
-        # Step 3: Create main project (unless skipped)
+        # Step 3: Detect or create main project (unless skipped)
         project_info = None
         if not skip_project:
-            project_info = _create_main_project(
-                custom_core,
-                manifest,
-                project_name,
-                description,
-                detected_info,
-                interactive,
-                template,
-                yes,
-                template_path,
-            )
-            if project_info:
-                console.print(
-                    f"✅ Created main project: {project_info['name']} (ID: {project_info['id'][:8]})"
+            # Check for existing projects
+            existing_projects = _detect_existing_projects(custom_core.projects_dir)
+
+            if existing_projects:
+                # Join existing project(s)
+                console.print("✅ Joined existing project(s):", style="green")
+                for proj in existing_projects:
+                    console.print(f"  • {proj['name']} (ID: {proj['id'][:8]})")
+
+                # Use the first project as the primary project info
+                if existing_projects:
+                    project_info = {
+                        "name": existing_projects[0]["name"],
+                        "id": existing_projects[0]["id"],
+                        "action": "joined",
+                    }
+
+                    if len(existing_projects) > 1 and interactive:
+                        console.print(
+                            f"\n  💡 {len(existing_projects)} projects found. All will be available.",
+                            style="dim",
+                        )
+            else:
+                # Create new project
+                project_info = _create_main_project(
+                    custom_core,
+                    manifest,
+                    project_name,
+                    description,
+                    detected_info,
+                    interactive,
+                    template,
+                    yes,
+                    template_path,
                 )
+                if project_info:
+                    project_info["action"] = "created"
+                    console.print(
+                        f"✅ Created main project: {project_info['name']} (ID: {project_info['id'][:8]})"
+                    )
 
         # Step 4: Configure GitHub integration (unless skipped)
         github_configured = _configure_github(
@@ -270,6 +295,36 @@ def init(
         workflow.rollback_on_error()
     finally:
         lock.release()
+
+
+def _detect_existing_projects(projects_dir: Path) -> list[dict]:
+    """Detect existing projects in the projects directory.
+
+    Returns:
+        List of dicts with 'name' and 'id' for each existing project
+    """
+    existing_projects = []
+
+    if not projects_dir.exists():
+        return existing_projects
+
+    from roadmap.infrastructure.persistence.parser import ProjectParser
+
+    for project_file in projects_dir.glob("*.md"):
+        try:
+            project = ProjectParser.parse_project_file(project_file)
+            existing_projects.append(
+                {
+                    "name": project.name,
+                    "id": project.id,
+                    "file": project_file.name,
+                }
+            )
+        except Exception:
+            # Skip projects that can't be parsed
+            continue
+
+    return existing_projects
 
 
 def _show_detected_context(detected_info: dict, interactive: bool) -> None:
