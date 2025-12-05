@@ -8,10 +8,10 @@ import click
 import yaml
 from rich.console import Console
 
-from roadmap.application.health import (
-    scan_for_duplicate_issues,
-    scan_for_folder_structure_issues,
-    scan_for_malformed_files,
+from roadmap.application.services.data_integrity_validator_service import (
+    DuplicateIssuesValidator,
+    FolderStructureValidator,
+    DataIntegrityValidator,
 )
 from roadmap.presentation.cli.logging_decorators import verbose_output
 
@@ -30,7 +30,7 @@ def fix_malformed_files(issues_dir: Path, dry_run: bool = False) -> dict[str, An
     if not issues_dir.exists():
         return result
 
-    malformed_scan = scan_for_malformed_files(issues_dir)
+    malformed_scan = DataIntegrityValidator.scan_for_data_integrity_issues(issues_dir)
 
     for file_rel in malformed_scan["malformed_files"]:
         file_path = issues_dir / file_rel
@@ -271,7 +271,7 @@ def _handle_check_folders(issues_dir: Path, roadmap_dir: Path, core: object) -> 
         console.print("📋 No issues directory found.", style="yellow")
         return
 
-    issues = scan_for_folder_structure_issues(issues_dir, core)
+    issues = FolderStructureValidator.scan_for_folder_structure_issues(issues_dir, core)
 
     if not issues:
         console.print(
@@ -308,7 +308,7 @@ def _handle_check_duplicates(issues_dir: Path, roadmap_dir: Path) -> None:
         console.print("📋 No issues directory found.", style="yellow")
         return
 
-    duplicates = scan_for_duplicate_issues(issues_dir)
+    duplicates = DuplicateIssuesValidator.scan_for_duplicate_issues(issues_dir)
 
     if not duplicates:
         console.print(
@@ -337,7 +337,7 @@ def _handle_check_malformed(
         console.print("📋 No issues directory found.", style="yellow")
         return
 
-    malformed = scan_for_malformed_files(issues_dir)
+    malformed = DataIntegrityValidator.scan_for_data_integrity_issues(issues_dir)
 
     if not malformed["malformed_files"]:
         console.print(
@@ -509,7 +509,7 @@ def _resolve_folder_issues(
     if not issues_dir.exists():
         return
 
-    issues = scan_for_folder_structure_issues(issues_dir, core)
+    issues = FolderStructureValidator.scan_for_folder_structure_issues(issues_dir, core)
 
     if not issues:
         return
@@ -605,7 +605,7 @@ def _resolve_duplicates(issues_dir: Path, roadmap_dir: Path, force: bool) -> Non
     if not issues_dir.exists():
         return
 
-    duplicates = scan_for_duplicate_issues(issues_dir)
+    duplicates = DuplicateIssuesValidator.scan_for_duplicate_issues(issues_dir)
 
     if not duplicates:
         return

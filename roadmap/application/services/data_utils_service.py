@@ -561,7 +561,8 @@ class QueryBuilder:
             return df
 
         search_columns: list[str] = (
-            columns if columns is not None
+            columns
+            if columns is not None
             else df.select_dtypes(include=["object"]).columns.tolist()
         )
 
