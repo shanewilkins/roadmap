@@ -13,8 +13,10 @@ from pathlib import Path
 from typing import Any
 
 from ..shared.logging import get_logger
+from .persistence.conflict_resolver import ConflictResolver
 from .persistence.database_manager import DatabaseManager
 from .persistence.file_synchronizer import FileSynchronizer
+from .persistence.sync_state_tracker import SyncStateTracker
 
 logger = get_logger(__name__)
 
@@ -42,6 +44,10 @@ class StateManager:
         self._file_synchronizer = FileSynchronizer(
             self._db_manager._get_connection, self._db_manager.transaction
         )
+        self._sync_state_tracker = SyncStateTracker(self._db_manager._get_connection)
+        self._conflict_resolver = ConflictResolver(
+            self.db_path.parent
+        )  # data_dir is parent of db file
 
         # Expose database manager's _local for backward compatibility with tests
         self._local = self._db_manager._local

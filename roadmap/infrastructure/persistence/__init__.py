@@ -16,17 +16,21 @@ Modules:
 - file_locking.py: File-based locking mechanism
 """
 
+from .conflict_resolver import ConflictResolver
 from .database_manager import DatabaseManager
 from .file_synchronizer import FileSynchronizer
 from .parser import FrontmatterParser, IssueParser, MilestoneParser, ProjectParser
 from .persistence import enhanced_persistence
+from .sync_state_tracker import SyncStateTracker
 
 __all__ = [
+    "ConflictResolver",
     "DatabaseManager",
     "FileSynchronizer",
     "FrontmatterParser",
     "IssueParser",
     "MilestoneParser",
     "ProjectParser",
+    "SyncStateTracker",
     "enhanced_persistence",
 ]
