@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from roadmap.application.data.data_utils import (
+from roadmap.application.services.data_utils_service import (
     DataAnalyzer,
     DataFrameAdapter,
     QueryBuilder,

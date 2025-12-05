@@ -560,14 +560,15 @@ class QueryBuilder:
         if df.empty or not search_term:
             return df
 
-        if columns is None:
-            # Search all text/object columns
-            columns = df.select_dtypes(include=["object"]).columns.tolist()
+        search_columns: list[str] = (
+            columns if columns is not None
+            else df.select_dtypes(include=["object"]).columns.tolist()
+        )
 
         # Create search mask
         mask = pd.Series(False, index=df.index)
 
-        for column in columns:
+        for column in search_columns:
             if column in df.columns:
                 mask |= (
                     df[column]

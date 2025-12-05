@@ -120,7 +120,7 @@ class GitHubValidator:
 
         # Do full validation via API
         try:
-            from ..infrastructure.github import GitHubClient
+            from ...infrastructure.github import GitHubClient
 
             client = GitHubClient(token=self.token, owner=self.owner, repo=self.repo)
             github_valid, github_error = client.validate_assignee(assignee)

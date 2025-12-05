@@ -14,7 +14,9 @@ class TestHealthCheck:
         roadmap_dir = tmp_path / ".roadmap"
         roadmap_dir.mkdir()
 
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_dir = mock_path.return_value
             mock_dir.exists.return_value = True
             mock_dir.is_dir.return_value = True
@@ -27,7 +29,9 @@ class TestHealthCheck:
 
     def test_check_roadmap_directory_not_initialized(self, tmp_path):
         """Test health check when .roadmap directory doesn't exist."""
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_dir = mock_path.return_value
             mock_dir.exists.return_value = False
 
@@ -38,7 +42,9 @@ class TestHealthCheck:
 
     def test_check_roadmap_directory_not_directory(self, tmp_path):
         """Test health check when .roadmap exists but is not a directory."""
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_dir = mock_path.return_value
             mock_dir.exists.return_value = True
             mock_dir.is_dir.return_value = False
@@ -61,7 +67,9 @@ class TestHealthCheck:
         conn.execute("CREATE TABLE test (id INTEGER)")
         conn.close()
 
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.return_value = db_file
 
             status, message = HealthCheck.check_state_file()
@@ -71,7 +79,9 @@ class TestHealthCheck:
 
     def test_check_state_file_not_found(self, tmp_path):
         """Test health check when state.db doesn't exist."""
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.return_value = tmp_path / ".roadmap" / "db" / "state.db"
 
             status, message = HealthCheck.check_state_file()
@@ -87,7 +97,9 @@ class TestHealthCheck:
         state_file = db_dir / "state.db"
         state_file.write_text("")
 
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.return_value = state_file
 
             status, message = HealthCheck.check_state_file()
@@ -100,7 +112,9 @@ class TestHealthCheck:
         issues_dir = tmp_path / ".roadmap" / "issues"
         issues_dir.mkdir(parents=True)
 
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.return_value = issues_dir
 
             status, message = HealthCheck.check_issues_directory()
@@ -110,7 +124,9 @@ class TestHealthCheck:
 
     def test_check_issues_directory_not_found(self, tmp_path):
         """Test health check when issues directory doesn't exist."""
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.return_value = tmp_path / ".roadmap" / "issues"
 
             status, message = HealthCheck.check_issues_directory()
@@ -123,7 +139,9 @@ class TestHealthCheck:
         milestones_dir = tmp_path / ".roadmap" / "milestones"
         milestones_dir.mkdir(parents=True)
 
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.return_value = milestones_dir
 
             status, message = HealthCheck.check_milestones_directory()
@@ -133,7 +151,9 @@ class TestHealthCheck:
 
     def test_check_milestones_directory_not_found(self, tmp_path):
         """Test health check when milestones directory doesn't exist."""
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.return_value = tmp_path / ".roadmap" / "milestones"
 
             status, message = HealthCheck.check_milestones_directory()
@@ -148,7 +168,9 @@ class TestHealthCheck:
         head_file = git_dir / "HEAD"
         head_file.write_text("ref: refs/heads/master")
 
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_path.side_effect = lambda p: (
                 git_dir
                 if str(p) == ".git"
@@ -164,7 +186,9 @@ class TestHealthCheck:
 
     def test_check_git_repository_not_initialized(self, tmp_path):
         """Test health check when Git repository doesn't exist."""
-        with patch("roadmap.application.validators_infrastructure.Path") as mock_path:
+        with patch(
+            "roadmap.application.services.infrastructure_validator_service.Path"
+        ) as mock_path:
             mock_dir = mock_path.return_value
             mock_dir.exists.return_value = False
 

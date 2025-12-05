@@ -2,7 +2,7 @@
 
 from unittest.mock import Mock, patch
 
-from roadmap.application.assignee_validation import (
+from roadmap.application.services.assignee_validation_service import (
     AssigneeValidationResult,
     AssigneeValidationStrategy,
     GitHubValidator,

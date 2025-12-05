@@ -226,7 +226,7 @@ class TestGitHubIntegrationService:
     def test_validate_assignee_with_strategy(self, service):
         """Test validate_assignee uses strategy when available."""
         with patch(
-            "roadmap.application.assignee_validation.AssigneeValidationStrategy"
+            "roadmap.application.services.assignee_validation_service.AssigneeValidationStrategy"
         ) as mock_strategy:
             mock_strategy.return_value.validate.return_value = (
                 True,

@@ -192,7 +192,9 @@ class TestRoadmapCoreTeamManagement:
         # Mock ConfigManager to raise an exception
         from unittest.mock import patch
 
-        with patch("roadmap.application.core.ConfigManager") as mock_cm_class:
+        with patch(
+            "roadmap.application.services.github_integration_service.ConfigManager"
+        ) as mock_cm_class:
             mock_cm_class.side_effect = Exception("Config not found")
             current_user = core.get_current_user()
             assert current_user is None
@@ -202,7 +204,9 @@ class TestRoadmapCoreTeamManagement:
         # Mock ConfigManager to raise exception during load
         from unittest.mock import patch
 
-        with patch("roadmap.application.core.ConfigManager") as mock_cm_class:
+        with patch(
+            "roadmap.application.services.github_integration_service.ConfigManager"
+        ) as mock_cm_class:
             mock_cm_instance = Mock()
             mock_cm_instance.load.side_effect = Exception("Config error")
             mock_cm_class.return_value = mock_cm_instance

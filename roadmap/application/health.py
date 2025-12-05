@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 
 from ..shared.logging import get_logger
-from .validators_infrastructure import (
+from .services.infrastructure_validator_service import (
     InfrastructureValidator,
 )
 

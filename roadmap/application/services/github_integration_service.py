@@ -156,7 +156,7 @@ class GitHubIntegrationService:
             - (False, error_message) if invalid
         """
         try:
-            from roadmap.application.assignee_validation import (
+            from roadmap.application.services.assignee_validation_service import (
                 AssigneeValidationStrategy,
             )
 
