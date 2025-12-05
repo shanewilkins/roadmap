@@ -14,6 +14,7 @@ from typing import Any
 
 from roadmap.domain.milestone import MilestoneStatus
 from roadmap.domain.project import Project
+from roadmap.infrastructure.file_enumeration import FileEnumerationService
 from roadmap.infrastructure.persistence.parser import MilestoneParser, ProjectParser
 from roadmap.infrastructure.storage import StateManager
 from roadmap.shared.timezone_utils import now_utc
@@ -40,13 +41,10 @@ class ProjectService:
         Returns:
             List of Project objects sorted by creation date
         """
-        projects = []
-        for project_file in self.projects_dir.rglob("*.md"):
-            try:
-                project = ProjectParser.parse_project_file(project_file)
-                projects.append(project)
-            except Exception:
-                continue
+        projects = FileEnumerationService.enumerate_and_parse(
+            self.projects_dir,
+            ProjectParser.parse_project_file,
+        )
 
         projects.sort(key=lambda x: x.created)
         return projects
@@ -60,14 +58,17 @@ class ProjectService:
         Returns:
             Project object if found, None otherwise
         """
-        for project_file in self.projects_dir.rglob("*.md"):
-            try:
-                project = ProjectParser.parse_project_file(project_file)
-                if project.id.startswith(project_id):
-                    return project
-            except Exception:
-                continue
-        return None
+
+        def id_matcher(project: Project) -> bool:
+            return project.id.startswith(project_id)
+
+        projects = FileEnumerationService.enumerate_with_filter(
+            self.projects_dir,
+            ProjectParser.parse_project_file,
+            id_matcher,
+        )
+
+        return projects[0] if projects else None
 
     def save_project(self, project: Project) -> bool:
         """Save an updated project to disk.
@@ -187,20 +188,22 @@ class ProjectService:
             }
 
         # Get milestones for this project
+        milestones = FileEnumerationService.enumerate_and_parse(
+            self.milestones_dir,
+            MilestoneParser.parse_milestone_file,
+        )
+
+        # Build lookup for project's milestones
         milestone_statuses = {}
         completed_count = 0
 
         for milestone_name in project.milestones:
-            for milestone_file in self.milestones_dir.rglob("*.md"):
-                try:
-                    milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                    if milestone.name == milestone_name:
-                        milestone_statuses[milestone_name] = milestone.status.value
-                        if milestone.status == MilestoneStatus.CLOSED:
-                            completed_count += 1
-                        break
-                except Exception:
-                    continue
+            for milestone in milestones:
+                if milestone.name == milestone_name:
+                    milestone_statuses[milestone_name] = milestone.status.value
+                    if milestone.status == MilestoneStatus.CLOSED:
+                        completed_count += 1
+                    break
 
         total = len(project.milestones)
         progress = (completed_count / total * 100) if total > 0 else 0.0

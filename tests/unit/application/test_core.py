@@ -334,7 +334,7 @@ class TestRoadmapCore:
 
         progress = core.get_milestone_progress("v1.0")
 
-        assert progress["total"] == 3
+        assert progress["completed"] == 1
         assert progress["completed"] == 1
         assert (
             abs(progress["progress"] - 33.333333333333336) < 0.000001

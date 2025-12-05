@@ -51,6 +51,10 @@ class Milestone(BaseModel):
     actual_start_date: datetime | None = None
     actual_end_date: datetime | None = None
 
+    file_path: str | None = Field(
+        default=None, exclude=True
+    )  # Internal: absolute path where milestone file is stored
+
     def get_issues(self, all_issues):
         """Get all issues assigned to this milestone.
 

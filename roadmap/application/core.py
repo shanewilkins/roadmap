@@ -611,11 +611,18 @@ Project notes and additional context.
             return False
 
         issue.milestone = milestone_name
+        from pathlib import Path
+
         from ..shared.timezone_utils import now_utc
 
         issue.updated = now_utc()
 
-        issue_path = self.issues_dir / issue.filename
+        # Use the file_path if available (preserves original location)
+        if hasattr(issue, "file_path") and issue.file_path:
+            issue_path = Path(issue.file_path)
+        else:
+            issue_path = self.issues_dir / issue.filename
+
         IssueParser.save_issue_file(issue, issue_path)
 
         return True

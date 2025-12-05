@@ -14,13 +14,9 @@ Extracted from core.py to separate business logic.
 from pathlib import Path
 
 from roadmap.domain.issue import Issue, IssueType, Priority, Status
+from roadmap.infrastructure.file_enumeration import FileEnumerationService
 from roadmap.infrastructure.persistence.parser import IssueParser
 from roadmap.infrastructure.storage import StateManager
-from roadmap.shared.errors import (
-    ErrorHandler,
-    ErrorSeverity,
-    FileOperationError,
-)
 from roadmap.shared.timezone_utils import now_utc
 
 
@@ -132,41 +128,25 @@ class IssueService:
         Returns:
             List of Issue objects matching all filters, sorted by priority then date
         """
-        issues = []
-        for issue_file in self.issues_dir.rglob("*.md"):
-            try:
-                issue = IssueParser.parse_issue_file(issue_file)
-                # Store the original file path so updates preserve the location
-                issue.file_path = str(issue_file)
+        # Use FileEnumerationService to enumerate and parse all issue files
+        issues = FileEnumerationService.enumerate_and_parse(
+            self.issues_dir, IssueParser.parse_issue_file
+        )
 
-                # Apply filters
-                if milestone and issue.milestone != milestone:
-                    continue
-                if status and issue.status != status:
-                    continue
-                if priority and issue.priority != priority:
-                    continue
-                if issue_type and issue.issue_type != issue_type:
-                    continue
-                if assignee and issue.assignee != assignee:
-                    continue
-
-                issues.append(issue)
-            except Exception as e:
-                # Log parsing error but continue processing other files
-                error_handler = ErrorHandler()
-                error_handler.handle_error(
-                    FileOperationError(
-                        f"Skipping malformed issue file: {issue_file.name}",
-                        file_path=issue_file,
-                        operation="parse_issue",
-                        severity=ErrorSeverity.LOW,
-                        cause=e,
-                    ),
-                    show_traceback=False,
-                    exit_on_critical=False,
-                )
+        # Apply filters
+        filtered_issues = []
+        for issue in issues:
+            if milestone and issue.milestone != milestone:
                 continue
+            if status and issue.status != status:
+                continue
+            if priority and issue.priority != priority:
+                continue
+            if issue_type and issue.issue_type != issue_type:
+                continue
+            if assignee and issue.assignee != assignee:
+                continue
+            filtered_issues.append(issue)
 
         # Sort by priority then by creation date
         priority_order = {
@@ -175,9 +155,11 @@ class IssueService:
             Priority.MEDIUM: 2,
             Priority.LOW: 3,
         }
-        issues.sort(key=lambda x: (priority_order.get(x.priority, 999), x.created))
+        filtered_issues.sort(
+            key=lambda x: (priority_order.get(x.priority, 999), x.created)
+        )
 
-        return issues
+        return filtered_issues
 
     def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID.
@@ -192,32 +174,16 @@ class IssueService:
             If multiple copies exist (due to migration), prefers milestone-specific
             subdirectories (v.X.X.X) over root directory.
         """
-        from pathlib import Path
+        # Use FileEnumerationService to find the issue by ID
+        issue = FileEnumerationService.find_by_id(
+            self.issues_dir, issue_id, IssueParser.parse_issue_file
+        )
 
-        # Find all copies of the issue
-        matching_files = list(self.issues_dir.rglob(f"{issue_id}-*.md"))
-        if not matching_files:
-            return None
-
-        # Prefer milestone-specific subdirectories over root
-        # Sort: milestone subdirs first (v.X.X.X), then root
-        def sort_key(path: Path) -> tuple:
-            # If file is in a milestone subfolder (v.X.X.X), prioritize it
-            if "v." in str(path):
-                return (0, str(path))  # Milestone paths first
-            else:
-                return (1, str(path))  # Root paths second
-
-        matching_files.sort(key=sort_key)
-        issue_file = matching_files[0]
-
-        try:
-            issue = IssueParser.parse_issue_file(issue_file)
+        if issue and hasattr(issue, "file_path"):
             # Store the original file path so updates preserve the location
-            issue.file_path = str(issue_file)
-            return issue
-        except Exception:
-            return None
+            issue.file_path = str(issue.file_path)
+
+        return issue
 
     def update_issue(self, issue_id: str, **updates) -> Issue | None:
         """Update an existing issue with new field values.
@@ -254,8 +220,6 @@ class IssueService:
 
         return issue
 
-        return issue
-
     def delete_issue(self, issue_id: str) -> bool:
         """Delete an issue.
 
@@ -265,6 +229,7 @@ class IssueService:
         Returns:
             True if deleted successfully, False if not found
         """
+        # Find and delete the issue file by ID pattern
         for issue_file in self.issues_dir.rglob(f"{issue_id}-*.md"):
             try:
                 issue_file.unlink()

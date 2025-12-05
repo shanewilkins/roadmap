@@ -15,7 +15,6 @@ from .services.data_integrity_validator_service import (
 )
 from .services.infrastructure_validator_service import (
     InfrastructureValidator,
-    HealthStatus as InfrastructureHealthStatus,
 )
 
 logger = get_logger(__name__)
@@ -27,7 +26,6 @@ class HealthStatus(Enum):
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
-
 
 
 class HealthCheck:
@@ -49,89 +47,95 @@ class HealthCheck:
     def check_roadmap_directory() -> tuple[HealthStatus, str]:
         """Check if .roadmap directory exists and is accessible.
 
-        Delegates to InfrastructureValidator.
+        Delegates to RoadmapDirectoryValidator.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        validator = InfrastructureValidator()
-        status_str, message = validator.roadmap_dir_validator.check_roadmap_directory()
+        from .services.infrastructure_validator_service import RoadmapDirectoryValidator
+
+        status_str, message = RoadmapDirectoryValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
     def check_state_file() -> tuple[HealthStatus, str]:
         """Check if state database exists and is readable.
 
-        Delegates to InfrastructureValidator.
+        Delegates to StateFileValidator.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        validator = InfrastructureValidator()
-        status_str, message = validator.state_file_validator.check_state_file()
+        from .services.infrastructure_validator_service import StateFileValidator
+
+        status_str, message = StateFileValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
     def check_issues_directory() -> tuple[HealthStatus, str]:
         """Check if issues directory exists and is accessible.
 
-        Delegates to InfrastructureValidator.
+        Delegates to IssuesDirectoryValidator.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        validator = InfrastructureValidator()
-        status_str, message = validator.issues_dir_validator.check_issues_directory()
+        from .services.infrastructure_validator_service import IssuesDirectoryValidator
+
+        status_str, message = IssuesDirectoryValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
     def check_milestones_directory() -> tuple[HealthStatus, str]:
         """Check if milestones directory exists and is accessible.
 
-        Delegates to InfrastructureValidator.
+        Delegates to MilestonesDirectoryValidator.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        validator = InfrastructureValidator()
-        status_str, message = (
-            validator.milestones_dir_validator.check_milestones_directory()
+        from .services.infrastructure_validator_service import (
+            MilestonesDirectoryValidator,
         )
+
+        status_str, message = MilestonesDirectoryValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
     def check_git_repository() -> tuple[HealthStatus, str]:
         """Check if Git repository exists and is accessible.
 
-        Delegates to InfrastructureValidator.
+        Delegates to GitRepositoryValidator.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        validator = InfrastructureValidator()
-        status_str, message = validator.git_repo_validator.check_git_repository()
+        from .services.infrastructure_validator_service import GitRepositoryValidator
+
+        status_str, message = GitRepositoryValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
     def check_database_integrity() -> tuple[HealthStatus, str]:
         """Check SQLite database integrity.
 
-        Delegates to InfrastructureValidator.
+        Delegates to DatabaseIntegrityValidator.
 
         Returns:
             Tuple of (status, message) - DEGRADED if issues found, HEALTHY otherwise
         """
-        validator = InfrastructureValidator()
-        status_str, message = (
-            validator.db_integrity_validator.check_database_integrity()
+        from .services.infrastructure_validator_service import (
+            DatabaseIntegrityValidator,
         )
+
+        status_str, message = DatabaseIntegrityValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
     def check_duplicate_issues(core) -> tuple[HealthStatus, str]:
         """Check for duplicate issues.
 
-        Delegates to DataIntegrityValidatorService.
+        Delegates to DuplicateIssuesValidator.
 
         Returns:
             Tuple of (status, message) describing the health check result
@@ -140,14 +144,14 @@ class HealthCheck:
             DuplicateIssuesValidator,
         )
 
-        status_str, message = DuplicateIssuesValidator.check_duplicate_issues(core)
+        status_str, message = DuplicateIssuesValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
     def check_folder_structure(core) -> tuple[HealthStatus, str]:
         """Check if issues are in correct milestone folders.
 
-        Delegates to DataIntegrityValidatorService.
+        Delegates to FolderStructureValidator.
 
         Returns:
             Tuple of (status, message) describing the health check result
@@ -156,7 +160,7 @@ class HealthCheck:
             FolderStructureValidator,
         )
 
-        status_str, message = FolderStructureValidator.check_folder_structure(core)
+        status_str, message = FolderStructureValidator.check()
         return HealthStatus(status_str), message
 
     @staticmethod
@@ -202,8 +206,8 @@ class HealthCheck:
             ArchivableMilestonesValidator,
         )
 
-        status_str, message = (
-            ArchivableMilestonesValidator.check_archivable_milestones(core)
+        status_str, message = ArchivableMilestonesValidator.check_archivable_milestones(
+            core
         )
         return HealthStatus(status_str), message
 

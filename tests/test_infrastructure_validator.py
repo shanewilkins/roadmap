@@ -38,7 +38,7 @@ class TestRoadmapDirectoryValidator:
         mock_dir.__truediv__.return_value = mock_test_file
         mock_path.return_value = mock_dir
 
-        status, message = RoadmapDirectoryValidator.check_roadmap_directory()
+        status, message = RoadmapDirectoryValidator.check()
 
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
@@ -52,7 +52,7 @@ class TestRoadmapDirectoryValidator:
         mock_dir.exists.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = RoadmapDirectoryValidator.check_roadmap_directory()
+        status, message = RoadmapDirectoryValidator.check()
 
         assert status == HealthStatus.DEGRADED
         assert "not initialized" in message.lower()
@@ -65,7 +65,7 @@ class TestRoadmapDirectoryValidator:
         mock_dir.is_dir.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = RoadmapDirectoryValidator.check_roadmap_directory()
+        status, message = RoadmapDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
@@ -81,7 +81,7 @@ class TestRoadmapDirectoryValidator:
         mock_dir.__truediv__.return_value = mock_test_file
         mock_path.return_value = mock_dir
 
-        status, message = RoadmapDirectoryValidator.check_roadmap_directory()
+        status, message = RoadmapDirectoryValidator.check()
 
         assert status == HealthStatus.DEGRADED
         assert "not writable" in message.lower()
@@ -91,10 +91,10 @@ class TestRoadmapDirectoryValidator:
         """Test exception handling in roadmap directory check."""
         mock_path.side_effect = Exception("Unexpected error")
 
-        status, message = RoadmapDirectoryValidator.check_roadmap_directory()
+        status, message = RoadmapDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
-        assert "Error checking .roadmap directory" in message
+        assert "Error checking roadmap_directory" in message
 
 
 class TestStateFileValidator:
@@ -126,7 +126,7 @@ class TestStateFileValidator:
                 )
             ),
         ):
-            status, message = StateFileValidator.check_state_file()
+            status, message = StateFileValidator.check()
 
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
@@ -138,7 +138,7 @@ class TestStateFileValidator:
         mock_file.exists.return_value = False
         mock_path.return_value = mock_file
 
-        status, message = StateFileValidator.check_state_file()
+        status, message = StateFileValidator.check()
 
         assert status == HealthStatus.DEGRADED
         assert "not found" in message.lower()
@@ -151,7 +151,7 @@ class TestStateFileValidator:
         mock_file.stat.return_value.st_size = 0
         mock_path.return_value = mock_file
 
-        status, message = StateFileValidator.check_state_file()
+        status, message = StateFileValidator.check()
 
         assert status == HealthStatus.DEGRADED
         assert "empty" in message.lower()
@@ -165,7 +165,7 @@ class TestStateFileValidator:
         mock_file.stat.return_value.st_size = 1024
         mock_path.return_value = mock_file
 
-        status, message = StateFileValidator.check_state_file()
+        status, message = StateFileValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "Cannot read state.db" in message
@@ -175,10 +175,10 @@ class TestStateFileValidator:
         """Test exception handling in state file check."""
         mock_path.side_effect = Exception("Unexpected error")
 
-        status, message = StateFileValidator.check_state_file()
+        status, message = StateFileValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
-        assert "Error checking state.db" in message
+        assert "Error checking state_file" in message
 
 
 class TestIssuesDirectoryValidator:
@@ -193,7 +193,7 @@ class TestIssuesDirectoryValidator:
         mock_dir.iterdir.return_value = iter([])
         mock_path.return_value = mock_dir
 
-        status, message = IssuesDirectoryValidator.check_issues_directory()
+        status, message = IssuesDirectoryValidator.check()
 
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
@@ -205,7 +205,7 @@ class TestIssuesDirectoryValidator:
         mock_dir.exists.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = IssuesDirectoryValidator.check_issues_directory()
+        status, message = IssuesDirectoryValidator.check()
 
         assert status == HealthStatus.DEGRADED
         assert "not found" in message.lower()
@@ -218,7 +218,7 @@ class TestIssuesDirectoryValidator:
         mock_dir.is_dir.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = IssuesDirectoryValidator.check_issues_directory()
+        status, message = IssuesDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
@@ -232,7 +232,7 @@ class TestIssuesDirectoryValidator:
         mock_dir.iterdir.side_effect = OSError("Permission denied")
         mock_path.return_value = mock_dir
 
-        status, message = IssuesDirectoryValidator.check_issues_directory()
+        status, message = IssuesDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "Cannot read issues directory" in message
@@ -242,10 +242,10 @@ class TestIssuesDirectoryValidator:
         """Test exception handling in issues directory check."""
         mock_path.side_effect = Exception("Unexpected error")
 
-        status, message = IssuesDirectoryValidator.check_issues_directory()
+        status, message = IssuesDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
-        assert "Error checking issues directory" in message
+        assert "Error checking issues_directory" in message
 
 
 class TestMilestonesDirectoryValidator:
@@ -260,7 +260,7 @@ class TestMilestonesDirectoryValidator:
         mock_dir.iterdir.return_value = iter([])
         mock_path.return_value = mock_dir
 
-        status, message = MilestonesDirectoryValidator.check_milestones_directory()
+        status, message = MilestonesDirectoryValidator.check()
 
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
@@ -272,7 +272,7 @@ class TestMilestonesDirectoryValidator:
         mock_dir.exists.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = MilestonesDirectoryValidator.check_milestones_directory()
+        status, message = MilestonesDirectoryValidator.check()
 
         assert status == HealthStatus.DEGRADED
         assert "not found" in message.lower()
@@ -285,7 +285,7 @@ class TestMilestonesDirectoryValidator:
         mock_dir.is_dir.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = MilestonesDirectoryValidator.check_milestones_directory()
+        status, message = MilestonesDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
@@ -299,7 +299,7 @@ class TestMilestonesDirectoryValidator:
         mock_dir.iterdir.side_effect = OSError("Permission denied")
         mock_path.return_value = mock_dir
 
-        status, message = MilestonesDirectoryValidator.check_milestones_directory()
+        status, message = MilestonesDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "Cannot read milestones directory" in message
@@ -309,10 +309,10 @@ class TestMilestonesDirectoryValidator:
         """Test exception handling in milestones directory check."""
         mock_path.side_effect = Exception("Unexpected error")
 
-        status, message = MilestonesDirectoryValidator.check_milestones_directory()
+        status, message = MilestonesDirectoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
-        assert "Error checking milestones directory" in message
+        assert "Error checking milestones_directory" in message
 
 
 class TestGitRepositoryValidator:
@@ -326,7 +326,7 @@ class TestGitRepositoryValidator:
         mock_dir.is_dir.return_value = True
         mock_path.return_value = mock_dir
 
-        status, message = GitRepositoryValidator.check_git_repository()
+        status, message = GitRepositoryValidator.check()
 
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
@@ -338,7 +338,7 @@ class TestGitRepositoryValidator:
         mock_dir.exists.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = GitRepositoryValidator.check_git_repository()
+        status, message = GitRepositoryValidator.check()
 
         assert status == HealthStatus.DEGRADED
         assert ".git not found" in message
@@ -351,7 +351,7 @@ class TestGitRepositoryValidator:
         mock_dir.is_dir.return_value = False
         mock_path.return_value = mock_dir
 
-        status, message = GitRepositoryValidator.check_git_repository()
+        status, message = GitRepositoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
@@ -361,10 +361,10 @@ class TestGitRepositoryValidator:
         """Test exception handling in Git repository check."""
         mock_path.side_effect = Exception("Unexpected error")
 
-        status, message = GitRepositoryValidator.check_git_repository()
+        status, message = GitRepositoryValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
-        assert "Error checking Git repository" in message
+        assert "Error checking git_repository" in message
 
 
 class TestDatabaseIntegrityValidator:
@@ -378,7 +378,7 @@ class TestDatabaseIntegrityValidator:
         mock_state_mgr._get_connection.return_value = mock_conn
         mock_state_manager_class.return_value = mock_state_mgr
 
-        status, message = DatabaseIntegrityValidator.check_database_integrity()
+        status, message = DatabaseIntegrityValidator.check()
 
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
@@ -393,7 +393,7 @@ class TestDatabaseIntegrityValidator:
         mock_state_mgr._get_connection.return_value = mock_conn
         mock_state_manager_class.return_value = mock_state_mgr
 
-        status, message = DatabaseIntegrityValidator.check_database_integrity()
+        status, message = DatabaseIntegrityValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         assert "Database query failed" in message
@@ -405,7 +405,7 @@ class TestDatabaseIntegrityValidator:
         """Test database initialization failure."""
         mock_state_manager_class.side_effect = Exception("Cannot connect")
 
-        status, message = DatabaseIntegrityValidator.check_database_integrity()
+        status, message = DatabaseIntegrityValidator.check()
 
         assert status == HealthStatus.UNHEALTHY
         # Can be either message since the exception can be caught at either level
@@ -418,12 +418,12 @@ class TestDatabaseIntegrityValidator:
 class TestInfrastructureValidator:
     """Tests for InfrastructureValidator orchestrator."""
 
-    @patch.object(RoadmapDirectoryValidator, "check_roadmap_directory")
-    @patch.object(StateFileValidator, "check_state_file")
-    @patch.object(IssuesDirectoryValidator, "check_issues_directory")
-    @patch.object(MilestonesDirectoryValidator, "check_milestones_directory")
-    @patch.object(GitRepositoryValidator, "check_git_repository")
-    @patch.object(DatabaseIntegrityValidator, "check_database_integrity")
+    @patch.object(RoadmapDirectoryValidator, "check")
+    @patch.object(StateFileValidator, "check")
+    @patch.object(IssuesDirectoryValidator, "check")
+    @patch.object(MilestonesDirectoryValidator, "check")
+    @patch.object(GitRepositoryValidator, "check")
+    @patch.object(DatabaseIntegrityValidator, "check")
     def test_run_all_infrastructure_checks_all_healthy(
         self,
         mock_db_check,
@@ -451,12 +451,12 @@ class TestInfrastructureValidator:
         assert checks["git_repository"] == (HealthStatus.HEALTHY, "Git OK")
         assert checks["database_integrity"] == (HealthStatus.HEALTHY, "DB OK")
 
-    @patch.object(RoadmapDirectoryValidator, "check_roadmap_directory")
-    @patch.object(StateFileValidator, "check_state_file")
-    @patch.object(IssuesDirectoryValidator, "check_issues_directory")
-    @patch.object(MilestonesDirectoryValidator, "check_milestones_directory")
-    @patch.object(GitRepositoryValidator, "check_git_repository")
-    @patch.object(DatabaseIntegrityValidator, "check_database_integrity")
+    @patch.object(RoadmapDirectoryValidator, "check")
+    @patch.object(StateFileValidator, "check")
+    @patch.object(IssuesDirectoryValidator, "check")
+    @patch.object(MilestonesDirectoryValidator, "check")
+    @patch.object(GitRepositoryValidator, "check")
+    @patch.object(DatabaseIntegrityValidator, "check")
     def test_run_all_infrastructure_checks_mixed_status(
         self,
         mock_db_check,
@@ -484,12 +484,12 @@ class TestInfrastructureValidator:
         assert checks["git_repository"][0] == HealthStatus.HEALTHY
         assert checks["database_integrity"][0] == HealthStatus.HEALTHY
 
-    @patch.object(RoadmapDirectoryValidator, "check_roadmap_directory")
-    @patch.object(StateFileValidator, "check_state_file")
-    @patch.object(IssuesDirectoryValidator, "check_issues_directory")
-    @patch.object(MilestonesDirectoryValidator, "check_milestones_directory")
-    @patch.object(GitRepositoryValidator, "check_git_repository")
-    @patch.object(DatabaseIntegrityValidator, "check_database_integrity")
+    @patch.object(RoadmapDirectoryValidator, "check")
+    @patch.object(StateFileValidator, "check")
+    @patch.object(IssuesDirectoryValidator, "check")
+    @patch.object(MilestonesDirectoryValidator, "check")
+    @patch.object(GitRepositoryValidator, "check")
+    @patch.object(DatabaseIntegrityValidator, "check")
     def test_run_all_infrastructure_checks_exception(
         self,
         mock_db_check,
@@ -513,12 +513,12 @@ class TestInfrastructureValidator:
         assert "error" in checks
         assert checks["error"][0] == HealthStatus.UNHEALTHY
 
-    @patch.object(RoadmapDirectoryValidator, "check_roadmap_directory")
-    @patch.object(StateFileValidator, "check_state_file")
-    @patch.object(IssuesDirectoryValidator, "check_issues_directory")
-    @patch.object(MilestonesDirectoryValidator, "check_milestones_directory")
-    @patch.object(GitRepositoryValidator, "check_git_repository")
-    @patch.object(DatabaseIntegrityValidator, "check_database_integrity")
+    @patch.object(RoadmapDirectoryValidator, "check")
+    @patch.object(StateFileValidator, "check")
+    @patch.object(IssuesDirectoryValidator, "check")
+    @patch.object(MilestonesDirectoryValidator, "check")
+    @patch.object(GitRepositoryValidator, "check")
+    @patch.object(DatabaseIntegrityValidator, "check")
     def test_get_overall_status_all_healthy(
         self,
         mock_db_check,
@@ -542,12 +542,12 @@ class TestInfrastructureValidator:
 
         assert overall_status == HealthStatus.HEALTHY
 
-    @patch.object(RoadmapDirectoryValidator, "check_roadmap_directory")
-    @patch.object(StateFileValidator, "check_state_file")
-    @patch.object(IssuesDirectoryValidator, "check_issues_directory")
-    @patch.object(MilestonesDirectoryValidator, "check_milestones_directory")
-    @patch.object(GitRepositoryValidator, "check_git_repository")
-    @patch.object(DatabaseIntegrityValidator, "check_database_integrity")
+    @patch.object(RoadmapDirectoryValidator, "check")
+    @patch.object(StateFileValidator, "check")
+    @patch.object(IssuesDirectoryValidator, "check")
+    @patch.object(MilestonesDirectoryValidator, "check")
+    @patch.object(GitRepositoryValidator, "check")
+    @patch.object(DatabaseIntegrityValidator, "check")
     def test_get_overall_status_degraded(
         self,
         mock_db_check,
@@ -571,12 +571,12 @@ class TestInfrastructureValidator:
 
         assert overall_status == HealthStatus.DEGRADED
 
-    @patch.object(RoadmapDirectoryValidator, "check_roadmap_directory")
-    @patch.object(StateFileValidator, "check_state_file")
-    @patch.object(IssuesDirectoryValidator, "check_issues_directory")
-    @patch.object(MilestonesDirectoryValidator, "check_milestones_directory")
-    @patch.object(GitRepositoryValidator, "check_git_repository")
-    @patch.object(DatabaseIntegrityValidator, "check_database_integrity")
+    @patch.object(RoadmapDirectoryValidator, "check")
+    @patch.object(StateFileValidator, "check")
+    @patch.object(IssuesDirectoryValidator, "check")
+    @patch.object(MilestonesDirectoryValidator, "check")
+    @patch.object(GitRepositoryValidator, "check")
+    @patch.object(DatabaseIntegrityValidator, "check")
     def test_get_overall_status_unhealthy(
         self,
         mock_db_check,

@@ -7,247 +7,224 @@ Handles validation of:
 - Issues and milestones directories
 - Git repository status
 - Database integrity
+
+Uses BaseValidator abstract class to eliminate boilerplate and ensure
+consistent error handling and logging across all validators.
 """
 
 from pathlib import Path
 
+from roadmap.application.services.base_validator import BaseValidator, HealthStatus
 from roadmap.shared.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-class HealthStatus:
-    """Health status constants."""
-
-    HEALTHY = "healthy"
-    DEGRADED = "degraded"
-    UNHEALTHY = "unhealthy"
-
-
-class RoadmapDirectoryValidator:
+class RoadmapDirectoryValidator(BaseValidator):
     """Validator for .roadmap directory."""
 
     @staticmethod
-    def check_roadmap_directory() -> tuple[str, str]:
+    def get_check_name() -> str:
+        return "roadmap_directory"
+
+    @staticmethod
+    def perform_check() -> tuple[str, str]:
         """Check if .roadmap directory exists and is accessible.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        try:
-            roadmap_dir = Path(".roadmap")
-            if not roadmap_dir.exists():
-                return HealthStatus.DEGRADED, ".roadmap directory not initialized"
+        roadmap_dir = Path(".roadmap")
+        if not roadmap_dir.exists():
+            return HealthStatus.DEGRADED, ".roadmap directory not initialized"
 
-            if not roadmap_dir.is_dir():
-                return (
-                    HealthStatus.UNHEALTHY,
-                    ".roadmap exists but is not a directory",
-                )
-
-            # Check if directory is writable
-            test_file = roadmap_dir / ".health_check"
-            try:
-                test_file.touch()
-                test_file.unlink()
-            except OSError:
-                return HealthStatus.DEGRADED, ".roadmap directory is not writable"
-
-            logger.debug("health_check_roadmap_directory", status="healthy")
+        if not roadmap_dir.is_dir():
             return (
-                HealthStatus.HEALTHY,
-                ".roadmap directory is accessible and writable",
+                HealthStatus.UNHEALTHY,
+                ".roadmap exists but is not a directory",
             )
 
-        except Exception as e:
-            logger.error("health_check_roadmap_directory_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking .roadmap directory: {e}"
+        # Check if directory is writable
+        test_file = roadmap_dir / ".health_check"
+        try:
+            test_file.touch()
+            test_file.unlink()
+        except OSError:
+            return HealthStatus.DEGRADED, ".roadmap directory is not writable"
+
+        return (
+            HealthStatus.HEALTHY,
+            ".roadmap directory is accessible and writable",
+        )
 
 
-class StateFileValidator:
+class StateFileValidator(BaseValidator):
     """Validator for state database file."""
 
     @staticmethod
-    def check_state_file() -> tuple[str, str]:
+    def get_check_name() -> str:
+        return "state_file"
+
+    @staticmethod
+    def perform_check() -> tuple[str, str]:
         """Check if state database exists and is readable.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
+        state_db = Path(".roadmap/db/state.db")
+
+        if not state_db.exists():
+            return (
+                HealthStatus.DEGRADED,
+                "state.db not found (project not initialized)",
+            )
+
+        # Check if file is readable and has content
         try:
-            state_db = Path(".roadmap/db/state.db")
+            size = state_db.stat().st_size
+            if size == 0:
+                return HealthStatus.DEGRADED, "state.db is empty"
 
-            if not state_db.exists():
-                return (
-                    HealthStatus.DEGRADED,
-                    "state.db not found (project not initialized)",
-                )
+            # Try to open it to verify it's accessible
+            with open(state_db, "rb") as f:
+                f.read(16)  # Read SQLite header
 
-            # Check if file is readable and has content
-            try:
-                size = state_db.stat().st_size
-                if size == 0:
-                    return HealthStatus.DEGRADED, "state.db is empty"
+        except OSError as e:
+            return HealthStatus.UNHEALTHY, f"Cannot read state.db: {e}"
 
-                # Try to open it to verify it's accessible
-                with open(state_db, "rb") as f:
-                    f.read(16)  # Read SQLite header
-
-            except OSError as e:
-                return HealthStatus.UNHEALTHY, f"Cannot read state.db: {e}"
-
-            logger.debug("health_check_state_file", status="healthy")
-            return HealthStatus.HEALTHY, "state.db is accessible and readable"
-
-        except Exception as e:
-            logger.error("health_check_state_file_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking state.db: {e}"
+        return HealthStatus.HEALTHY, "state.db is accessible and readable"
 
 
-class IssuesDirectoryValidator:
+class IssuesDirectoryValidator(BaseValidator):
     """Validator for issues directory."""
 
     @staticmethod
-    def check_issues_directory() -> tuple[str, str]:
+    def get_check_name() -> str:
+        return "issues_directory"
+
+    @staticmethod
+    def perform_check() -> tuple[str, str]:
         """Check if issues directory exists and is accessible.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
+        issues_dir = Path(".roadmap/issues")
+
+        if not issues_dir.exists():
+            return HealthStatus.DEGRADED, "issues directory not found"
+
+        if not issues_dir.is_dir():
+            return (
+                HealthStatus.UNHEALTHY,
+                "issues path exists but is not a directory",
+            )
+
+        # Check if directory is readable
         try:
-            issues_dir = Path(".roadmap/issues")
+            list(issues_dir.iterdir())
+        except OSError as e:
+            return HealthStatus.UNHEALTHY, f"Cannot read issues directory: {e}"
 
-            if not issues_dir.exists():
-                return HealthStatus.DEGRADED, "issues directory not found"
-
-            if not issues_dir.is_dir():
-                return (
-                    HealthStatus.UNHEALTHY,
-                    "issues path exists but is not a directory",
-                )
-
-            # Check if directory is readable
-            try:
-                list(issues_dir.iterdir())
-            except OSError as e:
-                return HealthStatus.UNHEALTHY, f"Cannot read issues directory: {e}"
-
-            logger.debug("health_check_issues_directory", status="healthy")
-            return HealthStatus.HEALTHY, "issues directory is accessible"
-
-        except Exception as e:
-            logger.error("health_check_issues_directory_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking issues directory: {e}"
+        return HealthStatus.HEALTHY, "issues directory is accessible"
 
 
-class MilestonesDirectoryValidator:
+class MilestonesDirectoryValidator(BaseValidator):
     """Validator for milestones directory."""
 
     @staticmethod
-    def check_milestones_directory() -> tuple[str, str]:
+    def get_check_name() -> str:
+        return "milestones_directory"
+
+    @staticmethod
+    def perform_check() -> tuple[str, str]:
         """Check if milestones directory exists and is accessible.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
+        milestones_dir = Path(".roadmap/milestones")
+
+        if not milestones_dir.exists():
+            return HealthStatus.DEGRADED, "milestones directory not found"
+
+        if not milestones_dir.is_dir():
+            return (
+                HealthStatus.UNHEALTHY,
+                "milestones path exists but is not a directory",
+            )
+
+        # Check if directory is readable
         try:
-            milestones_dir = Path(".roadmap/milestones")
+            list(milestones_dir.iterdir())
+        except OSError as e:
+            return (
+                HealthStatus.UNHEALTHY,
+                f"Cannot read milestones directory: {e}",
+            )
 
-            if not milestones_dir.exists():
-                return HealthStatus.DEGRADED, "milestones directory not found"
-
-            if not milestones_dir.is_dir():
-                return (
-                    HealthStatus.UNHEALTHY,
-                    "milestones path exists but is not a directory",
-                )
-
-            # Check if directory is readable
-            try:
-                list(milestones_dir.iterdir())
-            except OSError as e:
-                return (
-                    HealthStatus.UNHEALTHY,
-                    f"Cannot read milestones directory: {e}",
-                )
-
-            logger.debug("health_check_milestones_directory", status="healthy")
-            return HealthStatus.HEALTHY, "milestones directory is accessible"
-
-        except Exception as e:
-            logger.error("health_check_milestones_directory_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking milestones directory: {e}"
+        return HealthStatus.HEALTHY, "milestones directory is accessible"
 
 
-class GitRepositoryValidator:
+class GitRepositoryValidator(BaseValidator):
     """Validator for Git repository."""
 
     @staticmethod
-    def check_git_repository() -> tuple[str, str]:
+    def get_check_name() -> str:
+        return "git_repository"
+
+    @staticmethod
+    def perform_check() -> tuple[str, str]:
         """Check if Git repository exists and is accessible.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        try:
-            git_dir = Path(".git")
+        git_dir = Path(".git")
 
-            if not git_dir.exists():
-                return (
-                    HealthStatus.DEGRADED,
-                    "not a Git repository (.git not found)",
-                )
+        if not git_dir.exists():
+            return (
+                HealthStatus.DEGRADED,
+                "not a Git repository (.git not found)",
+            )
 
-            if not git_dir.is_dir():
-                return (
-                    HealthStatus.UNHEALTHY,
-                    ".git exists but is not a directory",
-                )
+        if not git_dir.is_dir():
+            return (
+                HealthStatus.UNHEALTHY,
+                ".git exists but is not a directory",
+            )
 
-            logger.debug("health_check_git_repository", status="healthy")
-            return HealthStatus.HEALTHY, "Git repository is accessible"
-
-        except Exception as e:
-            logger.error("health_check_git_repository_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking Git repository: {e}"
+        return HealthStatus.HEALTHY, "Git repository is accessible"
 
 
-class DatabaseIntegrityValidator:
+class DatabaseIntegrityValidator(BaseValidator):
     """Validator for database integrity."""
 
     @staticmethod
-    def check_database_integrity() -> tuple[str, str]:
+    def get_check_name() -> str:
+        return "database_integrity"
+
+    @staticmethod
+    def perform_check() -> tuple[str, str]:
         """Check if database is accessible and can be queried.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
+        # Import here to avoid circular imports
+        from roadmap.infrastructure.storage import StateManager
+
         try:
-            # Import here to avoid circular imports
-            from roadmap.infrastructure.storage import StateManager
-
-            try:
-                state_mgr = StateManager()
-                # Try a simple query to verify DB is healthy
-                conn = state_mgr._get_connection()
-                conn.execute("SELECT 1")
-                logger.debug("health_check_database_integrity", status="healthy")
-                return HealthStatus.HEALTHY, "Database is accessible and responsive"
-            except Exception as e:
-                logger.error(
-                    "health_check_database_integrity_query_failed",
-                    error=str(e),
-                )
-                return (
-                    HealthStatus.UNHEALTHY,
-                    f"Database query failed: {e}",
-                )
-
+            state_mgr = StateManager()
+            # Try a simple query to verify DB is healthy
+            conn = state_mgr._get_connection()
+            conn.execute("SELECT 1")
+            return HealthStatus.HEALTHY, "Database is accessible and responsive"
         except Exception as e:
-            logger.error("health_check_database_integrity_failed", error=str(e))
             return (
                 HealthStatus.UNHEALTHY,
-                f"Error checking database integrity: {e}",
+                f"Database query failed: {e}",
             )
 
 
@@ -272,20 +249,12 @@ class InfrastructureValidator:
         checks = {}
 
         try:
-            checks["roadmap_directory"] = (
-                RoadmapDirectoryValidator.check_roadmap_directory()
-            )
-            checks["state_file"] = StateFileValidator.check_state_file()
-            checks["issues_directory"] = (
-                IssuesDirectoryValidator.check_issues_directory()
-            )
-            checks["milestones_directory"] = (
-                MilestonesDirectoryValidator.check_milestones_directory()
-            )
-            checks["git_repository"] = GitRepositoryValidator.check_git_repository()
-            checks["database_integrity"] = (
-                DatabaseIntegrityValidator.check_database_integrity()
-            )
+            checks["roadmap_directory"] = RoadmapDirectoryValidator.check()
+            checks["state_file"] = StateFileValidator.check()
+            checks["issues_directory"] = IssuesDirectoryValidator.check()
+            checks["milestones_directory"] = MilestonesDirectoryValidator.check()
+            checks["git_repository"] = GitRepositoryValidator.check()
+            checks["database_integrity"] = DatabaseIntegrityValidator.check()
 
             return checks
         except Exception as e:

@@ -18,6 +18,7 @@ from typing import Any
 
 from roadmap.domain.issue import Status
 from roadmap.domain.milestone import Milestone, MilestoneStatus
+from roadmap.infrastructure.file_enumeration import FileEnumerationService
 from roadmap.infrastructure.persistence.parser import IssueParser, MilestoneParser
 from roadmap.infrastructure.storage import StateManager
 from roadmap.shared.timezone_utils import now_utc
@@ -96,14 +97,14 @@ class MilestoneService:
         Returns:
             List of Milestone objects sorted by due date then name
         """
-        milestones = []
-        for milestone_file in self.milestones_dir.rglob("*.md"):
-            try:
-                milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                if status is None or milestone.status == status:
-                    milestones.append(milestone)
-            except Exception:
-                continue
+        milestones = FileEnumerationService.enumerate_and_parse(
+            self.milestones_dir,
+            MilestoneParser.parse_milestone_file,
+        )
+
+        # Filter by status if provided
+        if status is not None:
+            milestones = [m for m in milestones if m.status == status]
 
         # Sort by due date (earliest first), then by name
         def get_sortable_date(milestone):
@@ -126,14 +127,17 @@ class MilestoneService:
         Returns:
             Milestone object if found, None otherwise
         """
-        for milestone_file in self.milestones_dir.rglob("*.md"):
-            try:
-                milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                if milestone.name == name:
-                    return milestone
-            except Exception:
-                continue
-        return None
+
+        def name_matcher(milestone: Milestone) -> bool:
+            return milestone.name == name
+
+        milestones = FileEnumerationService.enumerate_with_filter(
+            self.milestones_dir,
+            MilestoneParser.parse_milestone_file,
+            name_matcher,
+        )
+
+        return milestones[0] if milestones else None
 
     def update_milestone(
         self,
@@ -173,7 +177,7 @@ class MilestoneService:
 
         milestone.updated = now_utc()
 
-        # Save the updated milestone
+        # Find and save the milestone file
         for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
                 test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
@@ -199,15 +203,24 @@ class MilestoneService:
             return False
 
         # Unassign all issues from this milestone
-        for issue_file in self.issues_dir.rglob("*.md"):
-            try:
-                issue = IssueParser.parse_issue_file(issue_file)
-                if issue.milestone == name:
-                    issue.milestone = None
-                    issue.updated = now_utc()
-                    IssueParser.save_issue_file(issue, issue_file)
-            except Exception:
-                continue
+        issues = FileEnumerationService.enumerate_and_parse(
+            self.issues_dir,
+            IssueParser.parse_issue_file,
+        )
+
+        for issue in issues:
+            if issue.milestone == name:
+                issue.milestone = None
+                issue.updated = now_utc()
+                # Find and save the issue file
+                for issue_file in self.issues_dir.rglob("*.md"):
+                    try:
+                        test_issue = IssueParser.parse_issue_file(issue_file)
+                        if test_issue.id == issue.id:
+                            IssueParser.save_issue_file(issue, issue_file)
+                            break
+                    except Exception:
+                        continue
 
         # Delete the milestone file
         for milestone_file in self.milestones_dir.rglob("*.md"):
@@ -229,25 +242,26 @@ class MilestoneService:
         Returns:
             Dict with total, completed, progress percentage, and status breakdown
         """
-        issues = []
-        for issue_file in self.issues_dir.rglob("*.md"):
-            try:
-                issue = IssueParser.parse_issue_file(issue_file)
-                if issue.milestone == milestone_name:
-                    issues.append(issue)
-            except Exception:
-                continue
+        issues = FileEnumerationService.enumerate_and_parse(
+            self.issues_dir,
+            IssueParser.parse_issue_file,
+        )
 
-        if not issues:
+        # Filter issues for this milestone
+        milestone_issues = [i for i in issues if i.milestone == milestone_name]
+
+        if not milestone_issues:
             return {"total": 0, "completed": 0, "progress": 0.0, "by_status": {}}
 
-        total = len(issues)
-        completed = len([i for i in issues if i.status == Status.CLOSED])
+        total = len(milestone_issues)
+        completed = len([i for i in milestone_issues if i.status == Status.CLOSED])
         progress = (completed / total) * 100 if total > 0 else 0.0
 
         by_status = {}
         for status in Status:
-            by_status[status.value] = len([i for i in issues if i.status == status])
+            by_status[status.value] = len(
+                [i for i in milestone_issues if i.status == status]
+            )
 
         return {
             "total": total,

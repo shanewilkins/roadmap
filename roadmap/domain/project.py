@@ -47,6 +47,10 @@ class Project(BaseModel):
     completion_velocity: float | None = None  # Milestones/week
     risk_level: RiskLevel = RiskLevel.LOW
 
+    file_path: str | None = Field(
+        default=None, exclude=True
+    )  # Internal: absolute path where project file is stored
+
     def get_milestones(self, all_milestones):
         """Get all milestones assigned to this project.
 
