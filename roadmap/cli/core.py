@@ -6,9 +6,6 @@ These are the fundamental commands needed to get started with Roadmap.
 from pathlib import Path
 
 import click
-from rich.progress import BarColumn, Progress, TextColumn
-from rich.table import Table
-from rich.text import Text
 
 from roadmap.application.core import RoadmapCore
 from roadmap.application.health import HealthCheck, HealthStatus
@@ -25,7 +22,6 @@ from roadmap.cli.init_workflow import (
     InitializationWorkflow,
     show_dry_run_info,
 )
-from roadmap.domain import Status
 from roadmap.presentation.cli.logging_decorators import verbose_output
 from roadmap.presentation.cli.presentation.project_initialization_presenter import (
     ProjectInitializationPresenter,
@@ -395,6 +391,17 @@ def _configure_github(
 @verbose_output
 def status(ctx: click.Context, verbose: bool) -> None:
     """Show the current status of the roadmap."""
+    from roadmap.presentation.cli.presentation.project_status_presenter import (
+        IssueStatusPresenter,
+        MilestoneProgressPresenter,
+        RoadmapStatusPresenter,
+    )
+    from roadmap.presentation.cli.services.project_status_service import (
+        IssueStatisticsService,
+        MilestoneProgressService,
+        StatusDataService,
+    )
+
     log = logger.bind(operation="status")
     log.info("starting_status")
 
@@ -408,82 +415,45 @@ def status(ctx: click.Context, verbose: bool) -> None:
         return
 
     try:
-        console.print("📊 Roadmap Status", style="bold blue")
+        RoadmapStatusPresenter.show_status_header()
 
-        # Get all issues and milestones from files (more reliable than database)
-        issues = core.list_issues()
-        milestones = core.list_milestones()
-
+        # Gather status data
+        status_data = StatusDataService.gather_status_data(core)
         log.info(
             "status_data_retrieved",
-            issue_count=len(issues),
-            milestone_count=len(milestones),
+            issue_count=status_data["issue_count"],
+            milestone_count=status_data["milestone_count"],
         )
 
-        if not issues and not milestones:
-            console.print("\n📝 No issues or milestones found.", style="yellow")
-            console.print("Get started with:")
-            console.print("  roadmap issue create 'My first issue'")
-            console.print("  roadmap milestone create 'My first milestone'")
+        if not status_data["has_data"]:
+            RoadmapStatusPresenter.show_empty_state()
             return
 
-        # Show milestone progress
-        if milestones:
-            console.print("\n🎯 Milestones:", style="bold cyan")
-            for ms in milestones:
-                progress = core.db.get_milestone_progress(ms.name)
-                console.print(f"\n  {ms.name}")
+        # Compute milestone progress
+        milestone_progress = MilestoneProgressService.get_all_milestones_progress(
+            core, status_data["milestones"]
+        )
+        status_data["milestone_progress"] = milestone_progress
 
-                if progress["total"] > 0:
-                    with Progress(
-                        TextColumn("[progress.description]{task.description}"),
-                        BarColumn(),
-                        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-                        console=console,
-                        transient=True,
-                    ) as progress_bar:
-                        progress_bar.add_task(
-                            f"    Progress ({progress['completed']}/{progress['total']})",
-                            total=progress["total"],
-                            completed=progress["completed"],
-                        )
-                else:
-                    console.print("    No issues assigned", style="dim")
+        # Compute issue statistics
+        issue_counts = IssueStatisticsService.get_all_status_counts(
+            status_data["issues"]
+        )
+        status_data["issue_counts"] = issue_counts
+
+        # Show milestone progress
+        if status_data["milestones"]:
+            MilestoneProgressPresenter.show_all_milestones(
+                status_data["milestones"],
+                status_data["milestone_progress"],
+            )
 
         # Show issues by status
-        console.print("\n📋 Issues by Status:", style="bold cyan")
-
-        # Count issues by status from the issues list
-        from collections import Counter
-
-        status_counts = Counter(issue.status for issue in issues)
-
-        if status_counts:
-            status_table = Table(show_header=False, box=None)
-            status_table.add_column("Status", style="white", width=15)
-            status_table.add_column("Count", style="cyan", width=10)
-
-            for status in Status:
-                count = status_counts.get(status, 0)
-                if count > 0:  # Only show statuses that have issues
-                    status_style = {
-                        Status.TODO: "white",
-                        Status.IN_PROGRESS: "yellow",
-                        Status.BLOCKED: "red",
-                        Status.REVIEW: "blue",
-                        Status.CLOSED: "green",
-                    }.get(status, "white")
-
-                    status_table.add_row(
-                        Text(f"  {status.value}", style=status_style), str(count)
-                    )
-
-            console.print(status_table)
-        else:
-            console.print("  No issues found", style="dim")
+        IssueStatusPresenter.show_all_issue_statuses(status_data["issue_counts"])
 
     except Exception as e:
-        console.print(f"❌ Failed to show status: {e}", style="bold red")
+        log.exception("status_error", error=str(e))
+        RoadmapStatusPresenter.show_error(str(e))
 
 
 @click.command()
