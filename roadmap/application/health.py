@@ -6,6 +6,9 @@ from enum import Enum
 from pathlib import Path
 
 from ..shared.logging import get_logger
+from .validators_infrastructure import (
+    InfrastructureValidator,
+)
 
 logger = get_logger(__name__)
 
@@ -407,168 +410,81 @@ class HealthCheck:
 
     This class provides methods to check the health of various system
     components including file system, database, and Git repository.
+
+    Infrastructure validators are delegated to InfrastructureValidator.
     """
+
+    def __init__(self):
+        """Initialize HealthCheck with infrastructure validator."""
+        self.infrastructure_validator = InfrastructureValidator()
 
     @staticmethod
     def check_roadmap_directory() -> tuple[HealthStatus, str]:
         """Check if .roadmap directory exists and is accessible.
 
+        Delegates to InfrastructureValidator.
+
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        try:
-            roadmap_dir = Path(".roadmap")
-            if not roadmap_dir.exists():
-                return HealthStatus.DEGRADED, ".roadmap directory not initialized"
-
-            if not roadmap_dir.is_dir():
-                return HealthStatus.UNHEALTHY, ".roadmap exists but is not a directory"
-
-            # Check if directory is writable
-            test_file = roadmap_dir / ".health_check"
-            try:
-                test_file.touch()
-                test_file.unlink()
-            except OSError:
-                return HealthStatus.DEGRADED, ".roadmap directory is not writable"
-
-            logger.debug("health_check_roadmap_directory", status="healthy")
-            return HealthStatus.HEALTHY, ".roadmap directory is accessible and writable"
-
-        except Exception as e:
-            logger.error("health_check_roadmap_directory_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking .roadmap directory: {e}"
+        validator = InfrastructureValidator()
+        status_str, message = validator.roadmap_dir_validator.check_roadmap_directory()
+        # Convert ValidatorHealthStatus strings to HealthStatus enum
+        return HealthStatus(status_str), message
 
     @staticmethod
     def check_state_file() -> tuple[HealthStatus, str]:
         """Check if state database exists and is readable.
 
+        Delegates to InfrastructureValidator.
+
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        try:
-            state_db = Path(".roadmap/db/state.db")
-
-            if not state_db.exists():
-                return (
-                    HealthStatus.DEGRADED,
-                    "state.db not found (project not initialized)",
-                )
-
-            # Check if file is readable and has content
-            try:
-                size = state_db.stat().st_size
-                if size == 0:
-                    return HealthStatus.DEGRADED, "state.db is empty"
-
-                # Try to open it to verify it's accessible
-                with open(state_db, "rb") as f:
-                    f.read(16)  # Read SQLite header
-
-            except OSError as e:
-                return HealthStatus.UNHEALTHY, f"Cannot read state.db: {e}"
-
-            logger.debug("health_check_state_file", status="healthy")
-            return HealthStatus.HEALTHY, "state.db is accessible and readable"
-
-        except Exception as e:
-            logger.error("health_check_state_file_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking state.db: {e}"
+        validator = InfrastructureValidator()
+        status_str, message = validator.state_file_validator.check_state_file()
+        return HealthStatus(status_str), message
 
     @staticmethod
     def check_issues_directory() -> tuple[HealthStatus, str]:
         """Check if issues directory exists and is accessible.
 
+        Delegates to InfrastructureValidator.
+
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        try:
-            issues_dir = Path(".roadmap/issues")
-
-            if not issues_dir.exists():
-                return HealthStatus.DEGRADED, "issues directory not found"
-
-            if not issues_dir.is_dir():
-                return (
-                    HealthStatus.UNHEALTHY,
-                    "issues path exists but is not a directory",
-                )
-
-            # Check if directory is readable
-            try:
-                list(issues_dir.iterdir())
-            except OSError as e:
-                return HealthStatus.UNHEALTHY, f"Cannot read issues directory: {e}"
-
-            logger.debug("health_check_issues_directory", status="healthy")
-            return HealthStatus.HEALTHY, "issues directory is accessible"
-
-        except Exception as e:
-            logger.error("health_check_issues_directory_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking issues directory: {e}"
+        validator = InfrastructureValidator()
+        status_str, message = validator.issues_dir_validator.check_issues_directory()
+        return HealthStatus(status_str), message
 
     @staticmethod
     def check_milestones_directory() -> tuple[HealthStatus, str]:
         """Check if milestones directory exists and is accessible.
 
+        Delegates to InfrastructureValidator.
+
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        try:
-            milestones_dir = Path(".roadmap/milestones")
-
-            if not milestones_dir.exists():
-                return HealthStatus.DEGRADED, "milestones directory not found"
-
-            if not milestones_dir.is_dir():
-                return (
-                    HealthStatus.UNHEALTHY,
-                    "milestones path exists but is not a directory",
-                )
-
-            # Check if directory is readable
-            try:
-                list(milestones_dir.iterdir())
-            except OSError as e:
-                return HealthStatus.UNHEALTHY, f"Cannot read milestones directory: {e}"
-
-            logger.debug("health_check_milestones_directory", status="healthy")
-            return HealthStatus.HEALTHY, "milestones directory is accessible"
-
-        except Exception as e:
-            logger.error("health_check_milestones_directory_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking milestones directory: {e}"
+        validator = InfrastructureValidator()
+        status_str, message = (
+            validator.milestones_dir_validator.check_milestones_directory()
+        )
+        return HealthStatus(status_str), message
 
     @staticmethod
     def check_git_repository() -> tuple[HealthStatus, str]:
         """Check if Git repository exists and is accessible.
 
+        Delegates to InfrastructureValidator.
+
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        try:
-            git_dir = Path(".git")
-
-            if not git_dir.exists():
-                return HealthStatus.DEGRADED, "Git repository not initialized"
-
-            if not git_dir.is_dir():
-                return HealthStatus.UNHEALTHY, ".git exists but is not a directory"
-
-            # Check if HEAD file exists (basic git repo validation)
-            head_file = git_dir / "HEAD"
-            if not head_file.exists():
-                return (
-                    HealthStatus.UNHEALTHY,
-                    "Git repository appears corrupt (no HEAD)",
-                )
-
-            logger.debug("health_check_git_repository", status="healthy")
-            return HealthStatus.HEALTHY, "Git repository is accessible"
-
-        except Exception as e:
-            logger.error("health_check_git_repository_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Error checking Git repository: {e}"
+        validator = InfrastructureValidator()
+        status_str, message = validator.git_repo_validator.check_git_repository()
+        return HealthStatus(status_str), message
 
     @staticmethod
     def check_duplicate_issues(core) -> tuple[HealthStatus, str]:
@@ -742,36 +658,16 @@ class HealthCheck:
     def check_database_integrity() -> tuple[HealthStatus, str]:
         """Check SQLite database integrity.
 
+        Delegates to InfrastructureValidator.
+
         Returns:
             Tuple of (status, message) - DEGRADED if issues found, HEALTHY otherwise
         """
-        try:
-            import sqlite3
-
-            db_path = Path(".roadmap/db/state.db")
-
-            if not db_path.exists():
-                return HealthStatus.HEALTHY, "Database not initialized"
-
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-
-            # Run integrity check
-            cursor.execute("PRAGMA integrity_check")
-            result = cursor.fetchone()
-            conn.close()
-
-            if result[0] == "ok":
-                logger.debug("health_check_database_integrity", status="healthy")
-                return HealthStatus.HEALTHY, "Database integrity verified"
-
-            message = f"⚠️ Database integrity issue: {result[0]}"
-            logger.warning("health_check_database_integrity", issue=result[0])
-            return HealthStatus.DEGRADED, message
-
-        except Exception as e:
-            logger.error("health_check_database_integrity_failed", error=str(e))
-            return HealthStatus.UNHEALTHY, f"Could not verify database integrity: {e}"
+        validator = InfrastructureValidator()
+        status_str, message = (
+            validator.db_integrity_validator.check_database_integrity()
+        )
+        return HealthStatus(status_str), message
 
     @staticmethod
     def check_data_integrity() -> tuple[HealthStatus, str]:
