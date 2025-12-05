@@ -13,11 +13,19 @@ import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TypedDict
 
 from roadmap.shared.logging import get_logger
 from roadmap.shared.timezone_utils import now_utc
 
 logger = get_logger(__name__)
+
+
+class BackupScanResult(TypedDict):
+    """Type definition for backup scan results."""
+
+    files_to_delete: list[dict]
+    total_size_bytes: int
 
 
 class HealthStatus:
@@ -218,14 +226,14 @@ class BackupValidator:
     @staticmethod
     def scan_for_old_backups(
         backups_dir: Path, keep: int = 10
-    ) -> dict[str, list[dict] | int]:
+    ) -> BackupScanResult:
         """Scan for old backup files that could be deleted.
 
         Returns a dict with:
         - 'files_to_delete': List of backup files that exceed the keep threshold
-        - 'total_size_bytes': Total size of files that could be deleted
+        - 'total_size_bytes': Total size of files that could be deleted (int)
         """
-        result = {"files_to_delete": [], "total_size_bytes": 0}
+        result: BackupScanResult = {"files_to_delete": [], "total_size_bytes": 0}
 
         if not backups_dir.exists():
             return result
