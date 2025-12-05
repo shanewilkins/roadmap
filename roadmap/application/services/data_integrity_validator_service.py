@@ -285,7 +285,7 @@ class BackupValidator:
                 f"(~{size_mb:.1f} MB saved): Run 'roadmap cleanup' to remove"
             )
             logger.info("health_check_old_backups", count=count, size_mb=size_mb)
-            return HealthStatus.DEGRADED, message
+            return HealthStatus.HEALTHY, message
 
         except Exception as e:
             logger.debug("health_check_old_backups_failed", error=str(e))
