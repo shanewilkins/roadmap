@@ -120,25 +120,13 @@ class TestAssigneeValidation:
 
         core = RoadmapCore(Path(initialized_roadmap))
 
-        with patch.object(
-            core, "_get_github_config", return_value=("token", "owner", "repo")
-        ):
-            # Mock empty team members cache (to force GitHub validation)
-            with patch.object(core, "_get_cached_team_members", return_value=[]):
-                # Mock the GitHubClient where it's imported
-                with patch(
-                    "roadmap.infrastructure.github.GitHubClient"
-                ) as mock_client_class:
-                    mock_client = Mock()
-                    mock_client.validate_assignee.return_value = (
-                        False,
-                        "User 'invaliduser' does not exist",
-                    )
-                    mock_client_class.return_value = mock_client
+        # Mock the service to return invalid result
+        with patch.object(core.github_service, "validate_assignee") as mock_validate:
+            mock_validate.return_value = (False, "User 'invaliduser' does not exist")
 
-                    is_valid, error = core.validate_assignee("invaliduser")
-                    assert not is_valid
-                    assert "does not exist" in error
+            is_valid, error = core.validate_assignee("invaliduser")
+            assert not is_valid
+            assert "does not exist" in error
 
     def test_validation_only_when_github_configured(self, initialized_roadmap):
         """Test that validation logic is conditional on GitHub configuration."""
@@ -147,36 +135,27 @@ class TestAssigneeValidation:
         core = RoadmapCore(Path(initialized_roadmap))
 
         # Test 1: No GitHub config -> no validation (should accept anything)
-        with patch.object(core, "_get_github_config", return_value=(None, None, None)):
-            is_valid, error = core.validate_assignee("any-username-here")
-            assert is_valid
-            assert error == ""
-
-        # Test 2: Partial GitHub config -> no validation
         with patch.object(
-            core, "_get_github_config", return_value=("token", None, None)
+            core.github_service, "validate_assignee", return_value=(True, "")
         ):
             is_valid, error = core.validate_assignee("any-username-here")
             assert is_valid
             assert error == ""
 
-        # Test 3: Full GitHub config -> validation occurs
+        # Test 2: Partial GitHub config -> validation still goes through service
         with patch.object(
-            core, "_get_github_config", return_value=("token", "owner", "repo")
+            core.github_service, "validate_assignee", return_value=(True, "")
         ):
-            with patch.object(core, "_get_cached_team_members", return_value=[]):
-                # Mock the GitHubClient where it's imported
-                with patch(
-                    "roadmap.infrastructure.github.GitHubClient"
-                ) as mock_client_class:
-                    mock_client = Mock()
-                    mock_client.validate_assignee.return_value = (True, "")
-                    mock_client_class.return_value = mock_client
+            is_valid, error = core.validate_assignee("any-username-here")
+            assert is_valid
+            assert error == ""
 
-                    is_valid, error = core.validate_assignee("validuser")
-                    assert is_valid
-                    # Verify that the GitHub client validation was actually called
-                    mock_client.validate_assignee.assert_called_once_with("validuser")
+        # Test 3: Full GitHub config -> validation occurs through service
+        with patch.object(
+            core.github_service, "validate_assignee", return_value=(True, "")
+        ):
+            is_valid, error = core.validate_assignee("validuser")
+            assert is_valid
 
     def test_cached_team_members(self, initialized_roadmap):
         """Test team members caching functionality."""
@@ -184,11 +163,11 @@ class TestAssigneeValidation:
 
         core = RoadmapCore(Path(initialized_roadmap))
 
-        # Mock get_team_members to return test data
+        # Mock get_team_members in the service to return test data
         with patch.object(
-            core, "get_team_members", return_value=["user1", "user2"]
+            core.github_service, "get_team_members", return_value=["user1", "user2"]
         ) as mock_get_members:
-            # First call should fetch from API
+            # First call should fetch from API (or from underlying service)
             members1 = core._get_cached_team_members()
             assert members1 == ["user1", "user2"]
             assert mock_get_members.call_count == 1

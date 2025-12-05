@@ -1,15 +1,12 @@
 """Today command - daily workflow summary."""
 
-from datetime import datetime
-
 import click
-from rich.panel import Panel
-from rich.table import Table
-from rich.text import Text
 
-from roadmap.domain.issue import Status
-from roadmap.domain.milestone import MilestoneStatus
 from roadmap.presentation.cli.logging_decorators import verbose_output
+from roadmap.presentation.cli.presentation.daily_summary_presenter import (
+    DailySummaryPresenter,
+)
+from roadmap.presentation.cli.services.daily_summary_service import DailySummaryService
 from roadmap.shared.console import get_console
 
 console = get_console()
@@ -42,253 +39,15 @@ def today(ctx: click.Context, verbose: bool):
         return
 
     try:
-        # Get user identity from config (single source of truth), fallback to environment for testing
-        current_user = core.get_current_user()
+        # Use service to get daily summary data
+        service = DailySummaryService(core)
+        data = service.get_daily_summary_data()
 
-        if not current_user:
-            import os
+        # Use presenter to render the data
+        DailySummaryPresenter.render(data)
 
-            current_user = os.getenv("ROADMAP_USER")
-
-        if not current_user:
-            console.print(
-                "❌ No user configured. Initialize with 'roadmap init' or set ROADMAP_USER.",
-                style="bold red",
-            )
-            return
-
-        # Get upcoming milestone
-        milestones = core.list_milestones()
-        # Filter open milestones and sort by due date
-        open_milestones = [m for m in milestones if m.status == MilestoneStatus.OPEN]
-        upcoming_milestone = None
-        if open_milestones:
-            # Sort by due date (None dates last), get the first with a due date
-            sorted_milestones = sorted(
-                open_milestones,
-                key=lambda m: (m.due_date is None, m.due_date or datetime.max),
-            )
-            upcoming_milestone = sorted_milestones[0]
-
-        if not upcoming_milestone:
-            console.print(
-                "❌ No upcoming milestones found. Create one with: [cyan]roadmap milestone create[/cyan]",
-                style="bold red",
-            )
-            return
-
-        # Get all issues
-        all_issues = core.list_issues()
-
-        # Filter: assigned to current user AND in upcoming milestone
-        my_milestone_issues = [
-            i
-            for i in all_issues
-            if i.assignee == current_user and i.milestone == upcoming_milestone.name
-        ]
-
-        if not my_milestone_issues:
-            console.print(
-                f"✅ No issues assigned to you in [bold]{upcoming_milestone.name}[/bold]",
-                style="green",
-            )
-            return
-
-        # Categorize issues
-        in_progress = [i for i in my_milestone_issues if i.status == Status.IN_PROGRESS]
-        overdue = [
-            i
-            for i in my_milestone_issues
-            if i.due_date
-            and i.due_date.replace(tzinfo=None) < datetime.now()
-            and i.status != Status.CLOSED
-        ]
-        blocked = [i for i in my_milestone_issues if i.status == Status.BLOCKED]
-        todo_high_priority = [
-            i
-            for i in my_milestone_issues
-            if i.status == Status.TODO and i.priority.value in ["critical", "high"]
-        ][:3]  # Top 3
-        completed_today = [
-            i
-            for i in my_milestone_issues
-            if i.status == Status.CLOSED
-            and i.actual_end_date
-            and i.actual_end_date.date() == datetime.now().date()
-        ]
-
-        # Build header
-        header = Text()
-        header.append("Daily Summary - ", style="dim")
-        header.append(current_user, style="bold cyan")
-        header.append("\nMilestone: ", style="dim")
-        header.append(upcoming_milestone.name, style="bold yellow")
-        if upcoming_milestone.due_date:
-            header.append(
-                f" (due {upcoming_milestone.due_date.strftime('%Y-%m-%d')})",
-                style="dim",
-            )
-        header.append(f"\n{datetime.now().strftime('%A, %B %d, %Y')}", style="dim")
-
-        console.print(Panel(header, border_style="cyan"))
-
-        # Section 1: Currently In Progress
-        if in_progress:
-            progress_table = Table(
-                show_header=True,
-                header_style="bold yellow",
-                title="🚀 In Progress",
-                title_style="bold yellow",
-            )
-            progress_table.add_column("ID", style="cyan", width=10)
-            progress_table.add_column("Title", style="white")
-            progress_table.add_column("Progress", width=12)
-            progress_table.add_column("Milestone", width=15)
-
-            for issue in in_progress:
-                progress_table.add_row(
-                    issue.id,
-                    issue.title[:60] + "..." if len(issue.title) > 60 else issue.title,
-                    issue.progress_display,
-                    issue.priority.value,
-                )
-
-            console.print(progress_table)
-            console.print()
-        else:
-            console.print(
-                Panel(
-                    "[dim]No issues currently in progress[/dim]",
-                    title="🚀 In Progress",
-                    title_align="left",
-                    border_style="yellow",
-                )
-            )
-            console.print()
-
-        # Section 2: Overdue Items (if any)
-        if overdue:
-            overdue_table = Table(
-                show_header=True,
-                header_style="bold red",
-                title="⚠️  Overdue",
-                title_style="bold red",
-            )
-            overdue_table.add_column("ID", style="cyan", width=10)
-            overdue_table.add_column("Title", style="white")
-            overdue_table.add_column("Due Date", width=12, style="red")
-            overdue_table.add_column("Priority", width=10)
-
-            for issue in overdue:
-                days_overdue = (
-                    datetime.now() - issue.due_date.replace(tzinfo=None)
-                ).days
-                overdue_table.add_row(
-                    issue.id,
-                    issue.title[:50] + "..." if len(issue.title) > 50 else issue.title,
-                    f"{issue.due_date.strftime('%Y-%m-%d')} ({days_overdue}d)",
-                    issue.priority.value,
-                )
-
-            console.print(overdue_table)
-            console.print()
-
-        # Section 3: Blocked Items (if any)
-        if blocked:
-            blocked_table = Table(
-                show_header=True,
-                header_style="bold red",
-                title="🚫 Blocked",
-                title_style="bold red",
-            )
-            blocked_table.add_column("ID", style="cyan", width=10)
-            blocked_table.add_column("Title", style="white")
-            blocked_table.add_column("Priority", width=10)
-
-            for issue in blocked:
-                blocked_table.add_row(
-                    issue.id,
-                    issue.title[:60] + "..." if len(issue.title) > 60 else issue.title,
-                    issue.priority.value,
-                )
-
-            console.print(blocked_table)
-            console.print()
-
-        # Section 4: Up Next (high priority todos)
-        if todo_high_priority:
-            next_table = Table(
-                show_header=True,
-                header_style="bold blue",
-                title="📋 Up Next (High Priority)",
-                title_style="bold blue",
-            )
-            next_table.add_column("ID", style="cyan", width=10)
-            next_table.add_column("Title", style="white")
-            next_table.add_column("Priority", width=10)
-            next_table.add_column("Estimate", width=10)
-
-            for issue in todo_high_priority:
-                priority_color = (
-                    "bold red" if issue.priority.value == "critical" else "red"
-                )
-                next_table.add_row(
-                    issue.id,
-                    issue.title[:55] + "..." if len(issue.title) > 55 else issue.title,
-                    f"[{priority_color}]{issue.priority.value}[/{priority_color}]",
-                    issue.estimated_time_display,
-                )
-
-            console.print(next_table)
-            console.print()
-
-        # Section 5: Completed Today
-        if completed_today:
-            done_table = Table(
-                show_header=True,
-                header_style="bold green",
-                title="✅ Completed Today",
-                title_style="bold green",
-            )
-            done_table.add_column("ID", style="cyan", width=10)
-            done_table.add_column("Title", style="white")
-            done_table.add_column("Completed", width=12)
-
-            for issue in completed_today:
-                done_table.add_row(
-                    issue.id,
-                    issue.title[:60] + "..." if len(issue.title) > 60 else issue.title,
-                    issue.actual_end_date.strftime("%H:%M"),
-                )
-
-            console.print(done_table)
-            console.print()
-
-        # Summary footer
-        summary = Text()
-        summary.append("\n📊 Summary: ", style="bold")
-        summary.append(f"{len(in_progress)} in progress", style="yellow")
-        summary.append(" • ", style="dim")
-        summary.append(f"{len(overdue)} overdue", style="red" if overdue else "dim")
-        summary.append(" • ", style="dim")
-        summary.append(f"{len(blocked)} blocked", style="red" if blocked else "dim")
-        summary.append(" • ", style="dim")
-        summary.append(f"{len(completed_today)} completed today", style="green")
-
-        console.print(summary)
-
-        # Helpful tips
-        if not in_progress and todo_high_priority:
-            console.print(
-                f"\n💡 Tip: Start work on an issue with: [cyan]roadmap issue start {todo_high_priority[0].id}[/cyan]",
-                style="dim",
-            )
-        elif overdue:
-            console.print(
-                f"\n💡 Tip: View overdue issue details with: [cyan]roadmap issue view {overdue[0].id}[/cyan]",
-                style="dim",
-            )
-
+    except ValueError as e:
+        console.print(f"❌ {e}", style="bold red")
     except Exception as e:
         console.print(f"❌ Failed to generate daily summary: {e}", style="bold red")
         import traceback

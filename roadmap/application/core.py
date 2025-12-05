@@ -48,18 +48,13 @@ from ..domain import (
 from ..infrastructure.git import GitIntegration
 from ..infrastructure.persistence.parser import IssueParser, MilestoneParser
 from ..infrastructure.storage import StateManager
-from ..shared.config_manager import ConfigManager
-from ..shared.errors import (
-    ErrorHandler,
-    ErrorSeverity,
-    ValidationError,
-)
 from ..shared.security import (
     create_secure_directory,
     create_secure_file,
 )
 from .services import (
     ConfigurationService,
+    GitHubIntegrationService,
     IssueService,
     MilestoneService,
     ProjectService,
@@ -91,6 +86,11 @@ class RoadmapCore:
         # Initialize database manager
         self.db = StateManager(self.db_dir / "state.db")
 
+        # Initialize GitHub integration service
+        self.github_service = GitHubIntegrationService(
+            root_path=self.root_path, config_file=self.config_file
+        )
+
         # Initialize service layer
         self.issue_service = IssueService(self.db, self.issues_dir)
         self.milestone_service = MilestoneService(
@@ -101,13 +101,6 @@ class RoadmapCore:
         )
         self.visualization_service = VisualizationService(self.db, self.artifacts_dir)
         self.config_service = ConfigurationService()
-
-        # Cache for team members to avoid repeated API calls
-        self._team_members_cache = None
-        self._cache_timestamp = None
-
-        # Cache for canonical assignee resolution
-        self._last_canonical_assignee = None
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
@@ -756,71 +749,30 @@ Project notes and additional context.
 
         Returns:
             Tuple of (token, owner, repo) or (None, None, None) if not configured
+
+        Note: This method delegates to GitHubIntegrationService for actual implementation.
         """
-        try:
-            from ..infrastructure.security.credentials import get_credential_manager
-
-            config = self.load_config()
-            github_config = config.github or {}
-
-            # Get owner and repo from config
-            owner = github_config.get("owner")
-            repo = github_config.get("repo")
-
-            if not owner or not repo:
-                return None, None, None
-
-            # Get token from credentials manager or environment
-            credential_manager = get_credential_manager()
-            token = credential_manager.get_token()
-
-            if not token:
-                import os
-
-                token = os.getenv("GITHUB_TOKEN")
-
-            return token, owner, repo
-
-        except Exception:
-            return None, None, None
+        return self.github_service.get_github_config()
 
     def get_team_members(self) -> list[str]:
         """Get team members from GitHub repository.
 
         Returns:
             List of usernames if GitHub is configured, empty list otherwise
+
+        Note: This method delegates to GitHubIntegrationService for actual implementation.
         """
-        try:
-            from ..infrastructure.github import GitHubClient
-
-            token, owner, repo = self._get_github_config()
-            if not token or not owner or not repo:
-                return []
-
-            # Get team members
-            client = GitHubClient(token=token, owner=owner, repo=repo)
-            return client.get_team_members()
-        except Exception:
-            # Return empty list if GitHub is not configured or accessible
-            return []
+        return self.github_service.get_team_members()
 
     def get_current_user(self) -> str | None:
         """Get the current user from config.
 
         Returns:
             Current user's name from config if set, None otherwise
-        """
-        try:
-            config_manager = ConfigManager(self.config_file)
-            config = config_manager.load()
-            if config and hasattr(config, "user"):
-                user = getattr(config, "user", None)
-                if user and hasattr(user, "name"):
-                    return user.name
-        except Exception:
-            pass
 
-        return None
+        Note: This method delegates to GitHubIntegrationService for actual implementation.
+        """
+        return self.github_service.get_current_user()
 
     def get_assigned_issues(self, assignee: str) -> list[Issue]:
         """Get all issues assigned to a specific user."""
@@ -851,23 +803,11 @@ Project notes and additional context.
         return assigned_issues
 
     def _get_cached_team_members(self) -> list[str]:
-        """Get team members with caching (5 minute cache)."""
-        from datetime import datetime, timedelta
+        """Get team members with caching (5 minute cache).
 
-        # Check if cache is valid (5 minutes)
-        if (
-            self._team_members_cache is not None
-            and self._cache_timestamp is not None
-            and datetime.now() - self._cache_timestamp < timedelta(minutes=5)
-        ):
-            return self._team_members_cache
-
-        # Refresh cache
-        team_members = self.get_team_members()
-        self._team_members_cache = team_members
-        self._cache_timestamp = datetime.now()
-
-        return team_members
+        Note: This method delegates to GitHubIntegrationService for actual implementation.
+        """
+        return self.github_service.get_cached_team_members()
 
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:
         """Validate an assignee using the identity management system.
@@ -882,41 +822,11 @@ Project notes and additional context.
             Tuple of (is_valid, error_message)
             - (True, "") if valid (backward compatible)
             - (False, error_message) if invalid
+
+        Note: This method delegates to GitHubIntegrationService for actual implementation.
         """
-        try:
-            from .assignee_validation import AssigneeValidationStrategy
-
-            # Get GitHub config if available
-            github_config = None
-            try:
-                token, owner, repo = self._get_github_config()
-                if token and owner and repo:
-                    github_config = (token, owner, repo)
-            except Exception:
-                pass
-
-            # Get cached team members
-            cached_members = None
-            try:
-                cached_members = self._get_cached_team_members()
-            except Exception:
-                pass
-
-            # Use validation strategy
-            strategy = AssigneeValidationStrategy(
-                self.root_path, github_config, cached_members
-            )
-            is_valid, error_message, canonical_id = strategy.validate(assignee)
-
-            if is_valid:
-                self._last_canonical_assignee = canonical_id
-                return True, ""
-            else:
-                return False, error_message
-
-        except Exception:
-            # Fall back to legacy validation if strategy fails
-            return self._legacy_validate_assignee(assignee)
+        is_valid, error_msg = self.github_service.validate_assignee(assignee)
+        return is_valid, error_msg
 
     def _legacy_validate_assignee(self, assignee: str) -> tuple[bool, str]:
         """Legacy validation fallback for when validation strategy fails.
@@ -926,59 +836,10 @@ Project notes and additional context.
 
         Returns:
             Tuple of (is_valid, error_message)
+
+        Note: This method delegates to GitHubIntegrationService for actual implementation.
         """
-        if not assignee or not assignee.strip():
-            return False, "Assignee cannot be empty"
-
-        assignee = assignee.strip()
-
-        try:
-            token, owner, repo = self._get_github_config()
-            if not token or not owner or not repo:
-                # If GitHub is not configured, allow any assignee without validation
-                # This supports local-only roadmap usage without GitHub integration
-                self._last_canonical_assignee = assignee
-                return True, ""
-
-            # GitHub is configured - perform validation against repository access
-
-            # First check against cached team members for performance
-            team_members = self._get_cached_team_members()
-            if team_members and assignee in team_members:
-                self._last_canonical_assignee = assignee
-                return True, ""
-
-            # If not in cache or cache is empty, do full validation via API
-            from ..infrastructure.github import GitHubClient
-
-            client = GitHubClient(token=token, owner=owner, repo=repo)
-
-            # This will do the full GitHub API validation
-            github_valid, github_error = client.validate_assignee(assignee)
-            if github_valid:
-                self._last_canonical_assignee = assignee
-                return True, ""
-            else:
-                return False, github_error
-
-        except Exception as fallback_error:
-            # If validation fails due to network/API issues, allow the assignment
-            # but log a warning that validation couldn't be performed
-            error_handler = ErrorHandler()
-            error_handler.handle_error(
-                ValidationError(
-                    f"Could not validate assignee '{assignee}' - validation unavailable",
-                    field="assignee",
-                    value=assignee,
-                    severity=ErrorSeverity.WARNING,
-                    cause=fallback_error,
-                ),
-                show_traceback=False,
-                exit_on_critical=False,
-            )
-            warning_msg = f"Warning: Could not validate assignee (validation unavailable): {str(fallback_error)}"
-            self._last_canonical_assignee = assignee
-            return True, warning_msg
+        return self.github_service._legacy_validate_assignee(assignee)
 
     def get_canonical_assignee(self, assignee: str) -> str:
         """Get the canonical form of an assignee name.
@@ -990,23 +851,10 @@ Project notes and additional context.
 
         Returns:
             Canonical assignee name (may be same as input if no mapping exists)
+
+        Note: This method delegates to GitHubIntegrationService for actual implementation.
         """
-        # Try to get from identity management system
-        try:
-            from roadmap.future.identity import IdentityManager
-
-            identity_manager = IdentityManager(self.root_path)
-            is_valid, result, profile = identity_manager.resolve_assignee(assignee)
-
-            if is_valid and profile:
-                return profile.canonical_id
-            elif is_valid:
-                return result
-        except Exception:
-            pass
-
-        # Fallback to original assignee
-        return assignee
+        return self.github_service.get_canonical_assignee(assignee)
 
     # Git Integration Methods
 

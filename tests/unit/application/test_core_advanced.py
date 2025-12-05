@@ -153,25 +153,20 @@ class TestRoadmapCoreTeamManagement:
 
     def test_get_team_members(self, core):
         """Test getting team members from GitHub API."""
-        # Mock GitHub client since get_team_members calls GitHub API
-        with patch("roadmap.infrastructure.github.GitHubClient") as mock_github_client:
-            mock_client = Mock()
-            mock_client.get_team_members.return_value = [
+        # Mock the github_service since get_team_members delegates to it
+        with patch.object(core.github_service, "get_team_members") as mock_get_members:
+            mock_get_members.return_value = [
                 "alice@example.com",
                 "bob@example.com",
             ]
-            mock_github_client.return_value = mock_client
 
-            # Mock GitHub config
-            with patch.object(core, "_get_github_config") as mock_config:
-                mock_config.return_value = ("token", "owner", "repo")
+            team_members = core.get_team_members()
 
-                team_members = core.get_team_members()
-
-                # Should return team members from GitHub API
-                assert len(team_members) == 2
-                assert "alice@example.com" in team_members
-                assert "bob@example.com" in team_members
+            # Should return team members from github_service
+            assert len(team_members) == 2
+            assert "alice@example.com" in team_members
+            assert "bob@example.com" in team_members
+            mock_get_members.assert_called_once()
 
     def test_get_team_members_empty(self, core):
         """Test getting team members when no issues have assignees."""
@@ -184,21 +179,13 @@ class TestRoadmapCoreTeamManagement:
 
     def test_get_current_user_from_github(self, core):
         """Test getting current user from config."""
-        # Mock ConfigManager to return a config with a user
-        from unittest.mock import Mock, patch
-
-        mock_config = Mock()
-        mock_user = Mock()
-        mock_user.name = "test_user"
-        mock_config.user = mock_user
-
-        with patch("roadmap.application.core.ConfigManager") as mock_cm_class:
-            mock_cm_instance = Mock()
-            mock_cm_instance.load.return_value = mock_config
-            mock_cm_class.return_value = mock_cm_instance
+        # Mock the github_service since get_current_user delegates to it
+        with patch.object(core.github_service, "get_current_user") as mock_get_user:
+            mock_get_user.return_value = "test_user"
 
             current_user = core.get_current_user()
             assert current_user == "test_user"
+            mock_get_user.assert_called_once()
 
     def test_get_current_user_no_github_config(self, core):
         """Test getting current user when config is not found."""
@@ -213,7 +200,7 @@ class TestRoadmapCoreTeamManagement:
     def test_get_current_user_github_api_error(self, core):
         """Test getting current user when config read fails."""
         # Mock ConfigManager to raise exception during load
-        from unittest.mock import Mock, patch
+        from unittest.mock import patch
 
         with patch("roadmap.application.core.ConfigManager") as mock_cm_class:
             mock_cm_instance = Mock()
@@ -329,54 +316,34 @@ class TestRoadmapCoreGitHubIntegration:
 
     def test_get_github_config_from_config_file(self, core):
         """Test getting GitHub config from roadmap config."""
-        # Mock the config loading and credential manager
-        with patch.object(core, "load_config") as mock_load:
-            mock_config = Mock()
-            mock_config.github = {"owner": "test_owner", "repo": "test_repo"}
-            mock_load.return_value = mock_config
+        # Mock the service's get_github_config method directly
+        with patch.object(core.github_service, "get_github_config") as mock_config:
+            mock_config.return_value = ("test_token", "test_owner", "test_repo")
 
-            # Mock credential manager
-            with patch(
-                "roadmap.infrastructure.security.credentials.get_credential_manager"
-            ) as mock_cred_mgr:
-                mock_manager = Mock()
-                mock_manager.get_token.return_value = "test_token"
-                mock_cred_mgr.return_value = mock_manager
+            token, owner, repo = core._get_github_config()
 
-                token, owner, repo = core._get_github_config()
-
-                assert token == "test_token"
-                assert owner == "test_owner"
-                assert repo == "test_repo"
+            assert token == "test_token"
+            assert owner == "test_owner"
+            assert repo == "test_repo"
 
     @patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"})
     def test_get_github_config_from_environment(self, core):
         """Test getting GitHub token from environment variables."""
-        # Mock config loading to return valid config without token
-        with patch.object(core, "load_config") as mock_load:
-            mock_config = Mock()
-            mock_config.github = {"owner": "test_owner", "repo": "test_repo"}
-            mock_load.return_value = mock_config
+        # Mock the service to return token from environment
+        with patch.object(core.github_service, "get_github_config") as mock_config:
+            mock_config.return_value = ("env_token", "test_owner", "test_repo")
 
-            # Mock credential manager to return None (no stored token)
-            with patch(
-                "roadmap.infrastructure.security.credentials.get_credential_manager"
-            ) as mock_cred_mgr:
-                mock_manager = Mock()
-                mock_manager.get_token.return_value = None
-                mock_cred_mgr.return_value = mock_manager
+            token, owner, repo = core._get_github_config()
 
-                token, owner, repo = core._get_github_config()
-
-                assert token == "env_token"
-                assert owner == "test_owner"
-                assert repo == "test_repo"
+            assert token == "env_token"
+            assert owner == "test_owner"
+            assert repo == "test_repo"
 
     def test_get_github_config_no_config(self, core):
         """Test getting GitHub config when none is available."""
-        # Mock config loading to raise exception
-        with patch.object(core, "load_config") as mock_load:
-            mock_load.side_effect = Exception("Config not found")
+        # Mock the service to return None values
+        with patch.object(core.github_service, "get_github_config") as mock_config:
+            mock_config.return_value = (None, None, None)
 
             token, owner, repo = core._get_github_config()
 
