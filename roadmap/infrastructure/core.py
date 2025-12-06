@@ -58,6 +58,7 @@ from roadmap.infrastructure.initialization import InitializationManager
 from roadmap.infrastructure.issue_operations import IssueOperations
 from roadmap.infrastructure.milestone_operations import MilestoneOperations
 from roadmap.infrastructure.project_operations import ProjectOperations
+from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
 
 
 class RoadmapCore:
@@ -113,6 +114,9 @@ class RoadmapCore:
 
         # Initialize manager for project operations
         self._project_ops = ProjectOperations(self.project_service)
+
+        # Initialize manager for git integration operations
+        self._git_ops = GitIntegrationOps(self.git, self)
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
@@ -566,127 +570,35 @@ class RoadmapCore:
 
     def get_git_context(self) -> dict[str, Any]:
         """Get Git repository context information."""
-        if not self.git.is_git_repository():
-            return {"is_git_repo": False}
-
-        context: dict[str, Any] = {"is_git_repo": True}
-        context.update(self.git.get_repository_info())
-
-        # Current branch info
-        current_branch = self.git.get_current_branch()
-        if current_branch:
-            context["current_branch"] = current_branch.name
-
-            # Try to find linked issue
-            issue_id = current_branch.extract_issue_id()
-            if issue_id:
-                issue = self.get_issue(issue_id)
-                if issue:
-                    context["linked_issue"] = {
-                        "id": issue.id,
-                        "title": issue.title,
-                        "status": issue.status.value,
-                        "priority": issue.priority.value,
-                    }
-
-        return context
+        return self._git_ops.get_git_context()
 
     def get_current_user_from_git(self) -> str | None:
         """Get current user from Git configuration."""
-        return self.git.get_current_user()
+        return self._git_ops.get_current_user_from_git()
 
     def create_issue_with_git_branch(self, title: str, **kwargs) -> Issue | None:
         """Create an issue and optionally create a Git branch for it."""
-        # Extract git-specific arguments
-        auto_create_branch = kwargs.pop("auto_create_branch", False)
-        checkout_branch = kwargs.pop("checkout_branch", True)
-
-        # Create the issue first
-        issue = self.create_issue(title, **kwargs)
-        if not issue:
-            return None
-
-        # If we're in a Git repo and auto_create_branch is requested
-        if auto_create_branch and self.git.is_git_repository():
-            self.git.create_branch_for_issue(issue, checkout=checkout_branch)
-
-        return issue
+        return self._git_ops.create_issue_with_git_branch(title, **kwargs)
 
     def link_issue_to_current_branch(self, issue_id: str) -> bool:
         """Link an issue to the current Git branch."""
-        if not self.git.is_git_repository():
-            return False
-
-        current_branch = self.git.get_current_branch()
-        if not current_branch:
-            return False
-
-        issue = self.get_issue(issue_id)
-        if not issue:
-            return False
-
-        # Add branch information to issue metadata
-        if not hasattr(issue, "git_branches"):
-            issue.git_branches = []
-
-        if current_branch.name not in issue.git_branches:
-            issue.git_branches.append(current_branch.name)
-
-        # Update the issue
-        return self.update_issue(issue_id, git_branches=issue.git_branches) is not None
+        return self._git_ops.link_issue_to_current_branch(issue_id)
 
     def get_commits_for_issue(self, issue_id: str, since: str | None = None) -> list:
         """Get Git commits that reference this issue."""
-        if not self.git.is_git_repository():
-            return []
-
-        return self.git.get_commits_for_issue(issue_id, since)
+        return self._git_ops.get_commits_for_issue(issue_id, since)
 
     def update_issue_from_git_activity(self, issue_id: str) -> bool:
         """Update issue progress and status based on Git commit activity."""
-        if not self.git.is_git_repository():
-            return False
-
-        commits = self.get_commits_for_issue(issue_id)
-        if not commits:
-            return False
-
-        # Get the most recent commit with roadmap updates
-        latest_updates = {}
-        for commit in commits:
-            updates = self.git.parse_commit_message_for_updates(commit)
-            if updates:
-                latest_updates.update(updates)
-
-        if latest_updates:
-            # Update the issue with the extracted information
-            self.update_issue(issue_id, **latest_updates)
-            return True
-
-        return False
+        return self._git_ops.update_issue_from_git_activity(issue_id)
 
     def suggest_branch_name_for_issue(self, issue_id: str) -> str | None:
         """Suggest a branch name for an issue."""
-        issue = self.get_issue(issue_id)
-        if not issue or not self.git.is_git_repository():
-            return None
-
-        return self.git.suggest_branch_name(issue)
+        return self._git_ops.suggest_branch_name_for_issue(issue_id)
 
     def get_branch_linked_issues(self) -> dict[str, list[str]]:
         """Get mapping of branches to their linked issue IDs."""
-        if not self.git.is_git_repository():
-            return {}
-
-        branches = self.git.get_all_branches()
-        branch_issues = {}
-
-        for branch in branches:
-            issue_id = branch.extract_issue_id()
-            if issue_id and self.get_issue(issue_id):
-                branch_issues[branch.name] = [issue_id]
-
-        return branch_issues
+        return self._git_ops.get_branch_linked_issues()
 
     def validate_milestone_naming_consistency(self) -> list[dict[str, str]]:
         """Check for inconsistencies between milestone filenames and name fields.
