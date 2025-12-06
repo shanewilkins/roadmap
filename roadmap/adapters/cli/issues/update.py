@@ -64,7 +64,7 @@ def update_issue(
 
     try:
         # Check if issue exists
-        issue = core.get_issue(issue_id)
+        issue = core.issues.get(issue_id)
         if not issue:
             _get_console().print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
@@ -94,7 +94,7 @@ def update_issue(
         with track_database_operation(
             "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
         ):
-            updated_issue = core.update_issue(issue_id, **updates)
+            updated_issue = core.issues.update(issue_id, **updates)
 
         # Display results
         IssueUpdateDisplay.show_update_result(

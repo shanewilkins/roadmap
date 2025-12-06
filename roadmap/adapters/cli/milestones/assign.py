@@ -27,7 +27,7 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
 
     try:
         with track_database_operation("update", "milestone", warn_threshold_ms=2000):
-            success = core.assign_issue_to_milestone(issue_id, milestone_name)
+            success = core.issues.assign_to_milestone(issue_id, milestone_name)
 
         if success:
             console.print(

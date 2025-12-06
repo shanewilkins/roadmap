@@ -35,13 +35,13 @@ def block_issue(
         raise click.Abort()
 
     # Check if issue exists
-    issue = core.get_issue(issue_id)
+    issue = core.issues.get(issue_id)
     if not issue:
         console.print(f"❌ Issue not found: {issue_id}", style="bold red")
         raise click.Abort()
 
     # Update status to blocked via core.update_issue
-    updated_issue = core.update_issue(issue_id, status=Status.BLOCKED)
+    updated_issue = core.issues.update(issue_id, status=Status.BLOCKED)
 
     console.print(f"🚫 Blocked issue: {updated_issue.title}", style="bold red")
     console.print(f"   ID: {updated_issue.id}", style="cyan")

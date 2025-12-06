@@ -84,7 +84,7 @@ class MilestoneProgressService:
             }
         """
         try:
-            progress = core.get_milestone_progress(milestone_name)
+            progress = core.milestones.get_progress(milestone_name)
             return {
                 "total": progress.get("total", 0),
                 "completed": progress.get("completed", 0),
@@ -176,7 +176,7 @@ class MilestoneListService:
         """
         try:
             # Get milestones
-            milestones = self.core.list_milestones()
+            milestones = self.core.milestones.list()
 
             # Apply filters
             milestones = MilestoneFilterService.filter_milestones(
@@ -184,7 +184,7 @@ class MilestoneListService:
             )
 
             # Get all issues for estimates
-            all_issues = self.core.list_issues()
+            all_issues = self.core.issues.list()
 
             # Compute progress for each milestone
             progress = MilestoneProgressService.get_all_milestones_progress(

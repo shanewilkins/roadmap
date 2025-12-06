@@ -161,7 +161,7 @@ def archive_issue(
 
         if all_closed or orphaned:
             # Get all issues
-            all_issues = core.list_issues()
+            all_issues = core.issues.list()
 
             if all_closed:
                 issues_to_archive = [
@@ -235,7 +235,7 @@ def archive_issue(
 
         else:
             # Archive single issue
-            issue = core.get_issue(issue_id)
+            issue = core.issues.get(issue_id)
             if not issue:
                 console.print(f"❌ Issue '{issue_id}' not found.", style="bold red")
                 ctx.exit(1)

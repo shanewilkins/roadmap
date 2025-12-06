@@ -196,7 +196,7 @@ class TestRoadmapCoreIssueAssignment:
         )
 
         # Assign issue to milestone
-        result = core.assign_issue_to_milestone(issue.id, "Test Milestone")
+        result = core.issues.assign_to_milestone(issue.id, "Test Milestone")
         assert result is True
 
         # Verify assignment
@@ -210,7 +210,7 @@ class TestRoadmapCoreIssueAssignment:
             name="Test Milestone", description="Milestone description"
         )
 
-        result = core.assign_issue_to_milestone("nonexistent-id", "Test Milestone")
+        result = core.issues.assign_to_milestone("nonexistent-id", "Test Milestone")
         assert result is False
 
     def test_assign_issue_to_milestone_milestone_not_found(self, core):
@@ -218,12 +218,12 @@ class TestRoadmapCoreIssueAssignment:
         # Create issue
         issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
-        result = core.assign_issue_to_milestone(issue.id, "Nonexistent Milestone")
+        result = core.issues.assign_to_milestone(issue.id, "Nonexistent Milestone")
         assert result is False
 
     def test_assign_issue_to_milestone_both_not_found(self, core):
         """Test assigning nonexistent issue to nonexistent milestone."""
-        result = core.assign_issue_to_milestone(
+        result = core.issues.assign_to_milestone(
             "nonexistent-id", "Nonexistent Milestone"
         )
         assert result is False
@@ -257,9 +257,9 @@ class TestRoadmapCoreMilestoneProgress:
         core.issues.update(issue3.id, status=Status.TODO)
 
         # Assign all issues to milestone
-        core.assign_issue_to_milestone(issue1.id, "Test Milestone")
-        core.assign_issue_to_milestone(issue2.id, "Test Milestone")
-        core.assign_issue_to_milestone(issue3.id, "Test Milestone")
+        core.issues.assign_to_milestone(issue1.id, "Test Milestone")
+        core.issues.assign_to_milestone(issue2.id, "Test Milestone")
+        core.issues.assign_to_milestone(issue3.id, "Test Milestone")
 
         # Get progress
         progress = core.milestones.get_progress("Test Milestone")
@@ -319,7 +319,7 @@ class TestRoadmapCoreBacklogOperations:
         core.issues.create(title="Backlog Issue 2", priority=Priority.LOW)
 
         # Assign one issue to milestone
-        core.assign_issue_to_milestone(issue1.id, "Test Milestone")
+        core.issues.assign_to_milestone(issue1.id, "Test Milestone")
 
         # Get backlog
         backlog = core.issues.get_backlog()
@@ -340,7 +340,7 @@ class TestRoadmapCoreBacklogOperations:
 
         # Create issue and assign it
         issue = core.issues.create(title="Assigned Issue", priority=Priority.HIGH)
-        core.assign_issue_to_milestone(issue.id, "Test Milestone")
+        core.issues.assign_to_milestone(issue.id, "Test Milestone")
 
         # Backlog should be empty
         backlog = core.issues.get_backlog()
@@ -358,19 +358,19 @@ class TestRoadmapCoreBacklogOperations:
         issue3 = core.issues.create(title="Another for M1", priority=Priority.LOW)
 
         # Assign issues to milestones
-        core.assign_issue_to_milestone(issue1.id, "Milestone 1")
-        core.assign_issue_to_milestone(issue2.id, "Milestone 2")
-        core.assign_issue_to_milestone(issue3.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue1.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue2.id, "Milestone 2")
+        core.issues.assign_to_milestone(issue3.id, "Milestone 1")
 
         # Get milestone 1 issues
-        m1_issues = core.get_milestone_issues("Milestone 1")
+        m1_issues = core.issues.get_by_milestone("Milestone 1")
         assert len(m1_issues) == 2
         m1_titles = [issue.title for issue in m1_issues]
         assert "Issue for M1" in m1_titles
         assert "Another for M1" in m1_titles
 
         # Get milestone 2 issues
-        m2_issues = core.get_milestone_issues("Milestone 2")
+        m2_issues = core.issues.get_by_milestone("Milestone 2")
         assert len(m2_issues) == 1
         assert m2_issues[0].title == "Issue for M2"
 
@@ -383,12 +383,12 @@ class TestRoadmapCoreBacklogOperations:
         core.issues.create(title="Unassigned Issue", priority=Priority.MEDIUM)
 
         # Should return empty list
-        issues = core.get_milestone_issues("Empty Milestone")
+        issues = core.issues.get_by_milestone("Empty Milestone")
         assert len(issues) == 0
 
     def test_get_milestone_issues_nonexistent_milestone(self, core):
         """Test getting issues for nonexistent milestone."""
-        issues = core.get_milestone_issues("Nonexistent Milestone")
+        issues = core.issues.get_by_milestone("Nonexistent Milestone")
         assert len(issues) == 0
 
 

@@ -46,7 +46,7 @@ def git_status(ctx: click.Context):
     display = GitStatusDisplay(console)
 
     try:
-        git_context = core.get_git_context()
+        git_context = core.git.get_context()
 
         if not git_context.get("is_git_repo", False):
             display.show_not_git_repo()
@@ -56,7 +56,7 @@ def git_status(ctx: click.Context):
         display.show_repository_info(git_context)
         display.show_current_branch(git_context)
 
-        branch_issues = core.get_branch_linked_issues()
+        branch_issues = core.git.get_branch_linked_issues()
         current_branch = git_context.get("current_branch", "")
         display.show_branch_issue_links(branch_issues, current_branch, core)
 
@@ -87,7 +87,7 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
         return
 
     try:
-        issue = core.get_issue(issue_id)
+        issue = core.issues.get(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
@@ -119,7 +119,7 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
 
             # Update issue status to in-progress if it's todo
             if issue.status == Status.TODO:
-                core.update_issue(issue_id, status=Status.IN_PROGRESS)
+                core.issues.update(issue_id, status=Status.IN_PROGRESS)
                 console.print("📊 Updated issue status to: in-progress", style="yellow")
         else:
             # Try a direct git fallback (useful if create_branch_for_issue is not available or failed)
@@ -132,7 +132,7 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
                     )
                 console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
                 if issue.status == Status.TODO:
-                    core.update_issue(issue_id, status=Status.IN_PROGRESS)
+                    core.issues.update(issue_id, status=Status.IN_PROGRESS)
                     console.print(
                         "📊 Updated issue status to: in-progress", style="yellow"
                     )
@@ -161,7 +161,7 @@ def git_link(ctx: click.Context, issue_id: str):
         return
 
     try:
-        issue = core.get_issue(issue_id)
+        issue = core.issues.get(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return

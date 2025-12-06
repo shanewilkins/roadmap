@@ -41,7 +41,7 @@ class DailySummaryService:
             Current user name or None if not found
         """
         # Get user identity from config (single source of truth)
-        current_user = self.core.get_current_user()
+        current_user = self.core.team.get_current_user()
 
         if not current_user:
             # Fallback to environment for testing
@@ -57,7 +57,7 @@ class DailySummaryService:
         Returns:
             Milestone object or None if no open milestones exist
         """
-        milestones = self.core.list_milestones()
+        milestones = self.core.milestones.list()
 
         # Filter open milestones and sort by due date
         open_milestones = [m for m in milestones if m.status == MilestoneStatus.OPEN]
@@ -146,7 +146,7 @@ class DailySummaryService:
         logger.debug("Upcoming milestone", milestone=upcoming_milestone.name)
 
         # Get all issues
-        all_issues = self.core.list_issues()
+        all_issues = self.core.issues.list()
 
         # Filter: assigned to current user AND in upcoming milestone
         my_milestone_issues = [

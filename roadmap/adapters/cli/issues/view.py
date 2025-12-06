@@ -32,7 +32,7 @@ def view_issue(ctx: click.Context, issue_id: str):
         return
 
     # Get the issue
-    issue = core.get_issue(issue_id)
+    issue = core.issues.get(issue_id)
     if not issue:
         console.print(f"❌ Issue '{issue_id}' not found.", style="bold red")
         console.print(

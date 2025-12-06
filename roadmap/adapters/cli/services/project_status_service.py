@@ -38,8 +38,8 @@ class StatusDataService:
             }
         """
         try:
-            issues = core.list_issues()
-            milestones = core.list_milestones()
+            issues = core.issues.list()
+            milestones = core.milestones.list()
 
             return {
                 "issues": issues,

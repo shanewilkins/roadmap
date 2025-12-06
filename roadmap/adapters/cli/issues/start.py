@@ -71,7 +71,7 @@ def start_issue(
             return
 
         # Get the issue
-        issue = core.get_issue(issue_id)
+        issue = core.issues.get(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return

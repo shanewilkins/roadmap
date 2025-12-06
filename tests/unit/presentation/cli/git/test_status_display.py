@@ -178,7 +178,7 @@ class TestGitStatusDisplay:
         mock_core = Mock()
         mock_issue = Mock()
         mock_issue.title = "Test Issue"
-        mock_core.get_issue.return_value = mock_issue
+        mock_core.issues.get.return_value = mock_issue
 
         branch_issues = {"feature/test": ["ISS-123"]}
 
@@ -198,7 +198,7 @@ class TestGitStatusDisplay:
         mock_issue2 = Mock()
         mock_issue2.title = "Second Issue"
 
-        mock_core.get_issue.side_effect = [mock_issue1, mock_issue2]
+        mock_core.issues.get.side_effect = [mock_issue1, mock_issue2]
 
         branch_issues = {
             "feature/first": ["ISS-1"],
@@ -208,13 +208,13 @@ class TestGitStatusDisplay:
         display.show_branch_issue_links(branch_issues, "main", mock_core)
 
         assert console.print.call_count >= 3  # Header + 2 links
-        mock_core.get_issue.assert_any_call("ISS-1")
-        mock_core.get_issue.assert_any_call("ISS-2")
+        mock_core.issues.get.assert_any_call("ISS-1")
+        mock_core.issues.get.assert_any_call("ISS-2")
 
     def test_show_branch_issue_links_skips_none_issues(self, display, console):
         """show_branch_issue_links should skip branches with None issues."""
         mock_core = Mock()
-        mock_core.get_issue.return_value = None
+        mock_core.issues.get.return_value = None
 
         branch_issues = {"feature/test": ["ISS-MISSING"]}
 

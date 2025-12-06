@@ -116,7 +116,7 @@ class TestDailySummaryServiceMilestoneSelection:
                 due_date=today + timedelta(days=10),
             ),
         ]
-        core.list_milestones.return_value = milestones
+        core.milestones.list.return_value = milestones
 
         service = DailySummaryService(core)
         milestone = service.get_upcoming_milestone()
@@ -276,7 +276,7 @@ class TestDailySummaryServiceGetDailySummaryData:
     def test_get_daily_summary_data_returns_complete_structure(self):
         """Test that get_daily_summary_data returns all required fields."""
         core = MagicMock()
-        core.get_current_user.return_value = "alice"
+        core.team.get_current_user.return_value = "alice"
 
         today = datetime.now()
         milestone = Milestone(
@@ -285,7 +285,7 @@ class TestDailySummaryServiceGetDailySummaryData:
             status=MilestoneStatus.OPEN,
             due_date=today + timedelta(days=10),
         )
-        core.list_milestones.return_value = [milestone]
+        core.milestones.list.return_value = [milestone]
 
         issue = Issue(
             id="TASK-1",
@@ -295,7 +295,7 @@ class TestDailySummaryServiceGetDailySummaryData:
             priority=Priority.HIGH,
             milestone="v1.0",
         )
-        core.list_issues.return_value = [issue]
+        core.issues.list.return_value = [issue]
 
         service = DailySummaryService(core)
         data = service.get_daily_summary_data()

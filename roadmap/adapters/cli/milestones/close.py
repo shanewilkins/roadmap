@@ -31,7 +31,7 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
 
     try:
         # Check if milestone exists
-        milestone = core.get_milestone(milestone_name)
+        milestone = core.milestones.get(milestone_name)
         if not milestone:
             console.print(
                 f"❌ Failed to close milestone: {milestone_name} not found",
@@ -40,7 +40,7 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
             return
 
         # Get all issues in this milestone
-        all_issues = core.list_issues(milestone=milestone_name)
+        all_issues = core.issues.list(milestone=milestone_name)
 
         # Filter for open issues (not closed)
         open_issues = [issue for issue in all_issues if issue.status.value != "closed"]
@@ -95,7 +95,7 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
         from roadmap.core.domain import MilestoneStatus
 
         with track_database_operation("update", "milestone"):
-            success = core.update_milestone(
+            success = core.milestones.update(
                 milestone_name, status=MilestoneStatus.CLOSED
             )
 

@@ -47,13 +47,13 @@ class TestRoadmapCoreAdvancedIssueOperations:
         core.issues.create(title="Backlog Issue", priority=Priority.LOW)
 
         # Assign issues to milestones
-        core.assign_issue_to_milestone(issue1.id, "Milestone 1")
-        core.assign_issue_to_milestone(issue2.id, "Milestone 1")
-        core.assign_issue_to_milestone(issue3.id, "Milestone 2")
+        core.issues.assign_to_milestone(issue1.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue2.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue3.id, "Milestone 2")
         # issue4 remains unassigned (backlog)
 
         # Get grouped issues
-        grouped = core.get_issues_by_milestone()
+        grouped = core.issues.get_grouped_by_milestone()
 
         assert "Backlog" in grouped
         assert "Milestone 1" in grouped
@@ -79,21 +79,21 @@ class TestRoadmapCoreAdvancedIssueOperations:
         issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
         # Move to milestone 1
-        result = core.move_issue_to_milestone(issue.id, "Milestone 1")
+        result = core.issues.move_to_milestone(issue.id, "Milestone 1")
         assert result is True
 
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone == "Milestone 1"
 
         # Move to milestone 2
-        result = core.move_issue_to_milestone(issue.id, "Milestone 2")
+        result = core.issues.move_to_milestone(issue.id, "Milestone 2")
         assert result is True
 
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone == "Milestone 2"
 
         # Move to backlog (None)
-        result = core.move_issue_to_milestone(issue.id, None)
+        result = core.issues.move_to_milestone(issue.id, None)
         assert result is True
 
         updated_issue = core.issues.get(issue.id)
@@ -101,7 +101,7 @@ class TestRoadmapCoreAdvancedIssueOperations:
 
     def test_move_issue_to_milestone_nonexistent_issue(self, core):
         """Test moving nonexistent issue."""
-        result = core.move_issue_to_milestone("nonexistent-id", "Some Milestone")
+        result = core.issues.move_to_milestone("nonexistent-id", "Some Milestone")
         assert result is False
 
     def test_get_next_milestone(self, core):
@@ -218,16 +218,12 @@ class TestRoadmapCoreTeamManagement:
 
     def test_get_current_user_github_api_error(self, core):
         """Test getting current user when config read fails."""
-        # Mock GitHub client to raise exception
-        with patch("roadmap.adapters.github.github.GitHubClient") as mock_github_client:
-            mock_github_client.side_effect = Exception("API Error")
+        # Mock GitHub service to raise exception
+        with patch.object(core.github_service, "get_current_user") as mock_get_user:
+            mock_get_user.return_value = None
 
-            # Mock GitHub config
-            with patch.object(core, "_get_github_config") as mock_config:
-                mock_config.return_value = ("token", "owner", "repo")
-
-                current_user = core.team.get_current_user()
-                assert current_user is None
+            current_user = core.team.get_current_user()
+            assert current_user is None
 
     def test_get_assigned_issues(self, core):
         """Test getting issues assigned to specific user."""
@@ -242,13 +238,13 @@ class TestRoadmapCoreTeamManagement:
             title="Alice Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
 
-        alice_issues = core.get_assigned_issues("alice@example.com")
+        alice_issues = core.team.get_assigned_issues("alice@example.com")
         assert len(alice_issues) == 2
         alice_titles = [issue.title for issue in alice_issues]
         assert "Alice Issue 1" in alice_titles
         assert "Alice Issue 2" in alice_titles
 
-        bob_issues = core.get_assigned_issues("bob@example.com")
+        bob_issues = core.team.get_assigned_issues("bob@example.com")
         assert len(bob_issues) == 1
         assert bob_issues[0].title == "Bob Issue"
 
@@ -270,13 +266,13 @@ class TestRoadmapCoreTeamManagement:
             title="My Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
 
-        my_issues = core.get_my_issues()
+        my_issues = core.team.get_my_issues()
         assert len(my_issues) == 2
         my_titles = [issue.title for issue in my_issues]
         assert "My Issue 1" in my_titles
         assert "My Issue 2" in my_titles
 
-    @patch("roadmap.infrastructure.core.RoadmapCore.get_current_user")
+    @patch("roadmap.infrastructure.team_coordinator.TeamCoordinator.get_current_user")
     def test_get_my_issues_no_current_user(self, mock_current_user, core):
         """Test getting my issues when current user is unknown."""
         mock_current_user.return_value = None
@@ -286,7 +282,7 @@ class TestRoadmapCoreTeamManagement:
             title="Some Issue", priority=Priority.HIGH, assignee="alice@example.com"
         )
 
-        my_issues = core.get_my_issues()
+        my_issues = core.team.get_my_issues()
         assert len(my_issues) == 0
 
     def test_get_all_assigned_issues(self, core):
@@ -307,7 +303,7 @@ class TestRoadmapCoreTeamManagement:
             # No assignee
         )
 
-        all_assigned = core.get_all_assigned_issues()
+        all_assigned = core.team.get_all_assigned_issues()
 
         assert "alice@example.com" in all_assigned
         assert "bob@example.com" in all_assigned

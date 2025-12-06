@@ -48,7 +48,7 @@ class StartIssueWorkflow:
         Returns:
             Updated issue if successful, None otherwise
         """
-        return core.update_issue(
+        return core.issues.update(
             issue_id,
             actual_start_date=start_date,
             status=Status.IN_PROGRESS,

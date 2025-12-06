@@ -168,7 +168,7 @@ def restore_issue(
                         # Update via core to ensure proper handling
                         file_path.rename(dest_file)
                         # Re-load and update status
-                        core.update_issue(id, status=status)
+                        core.issues.update(id, status=status)
                     else:
                         file_path.rename(dest_file)
 
@@ -266,7 +266,7 @@ def restore_issue(
 
             # Update status if requested
             if status:
-                core.update_issue(issue.id, status=status)
+                core.issues.update(issue.id, status=status)
 
             console.print(
                 f"\n✅ Restored issue '{issue.id[:8]}' to .roadmap/issues/",

@@ -103,7 +103,7 @@ def archive_project(
         archive_dir = roadmap_dir / "archive" / "projects"
 
         # Archive single project
-        project = core.get_project(project_name)
+        project = core.projects.get(project_name)
         if not project:
             console.print(f"❌ Project '{project_name}' not found.", style="bold red")
             ctx.exit(1)

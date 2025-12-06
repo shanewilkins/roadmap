@@ -153,6 +153,15 @@ class IssueOperations:
         if not issue:
             return False
 
+        # Validate milestone exists by checking file using same logic as Milestone.filename
+        safe_name = "".join(
+            c for c in milestone_name if c.isalnum() or c in (" ", "-", "_")
+        ).strip()
+        safe_name = safe_name.replace(" ", "-").lower()
+        milestone_file = self.issues_dir.parent / "milestones" / f"{safe_name}.md"
+        if not milestone_file.exists():
+            return False
+
         # Set the milestone
         issue.milestone = milestone_name
         issue.updated = now_utc()

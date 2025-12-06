@@ -45,7 +45,7 @@ def update_milestone(
 
     try:
         # Check if milestone exists
-        milestone = core.get_milestone(milestone_name)
+        milestone = core.milestones.get(milestone_name)
         if not milestone:
             console.print(f"❌ Milestone not found: {milestone_name}", style="bold red")
             return
@@ -89,7 +89,7 @@ def update_milestone(
 
         # Update the milestone
         with track_database_operation("update", "milestone", warn_threshold_ms=2000):
-            success = core.update_milestone(milestone_name, **updates)
+            success = core.milestones.update(milestone_name, **updates)
 
         if not success:
             console.print(
@@ -98,7 +98,7 @@ def update_milestone(
             return
 
         # Re-fetch the milestone to show updated values
-        updated_milestone = core.get_milestone(updates.get("name", milestone_name))
+        updated_milestone = core.milestones.get(updates.get("name", milestone_name))
 
         console.print(
             f"✅ Updated milestone: {updated_milestone.name}", style="bold green"

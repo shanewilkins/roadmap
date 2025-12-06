@@ -305,14 +305,13 @@ class TestRoadmapCore:
 
         issue = core.issues.create("Test Issue")
 
-        # The coordinator allows assigning to any milestone name
-        # without validating it exists (lazy validation)
+        # Assigning to a non-existent milestone returns False
         success = core.issues.assign_to_milestone(issue.id, "nonexistent")
-        assert success is True
+        assert success is False
 
-        # Verify the assignment was made
+        # Verify the assignment was NOT made
         updated_issue = core.issues.get(issue.id)
-        assert updated_issue.milestone == "nonexistent"
+        assert updated_issue.milestone is None
 
     def test_get_milestone_progress(self, core):
         """Test getting milestone progress."""

@@ -92,7 +92,7 @@ class GitStatusDisplay:
 
         for branch, issue_ids in branch_issues.items():
             for issue_id in issue_ids:
-                issue = core.get_issue(issue_id)
+                issue = core.issues.get(issue_id)
                 if issue:
                     self._show_branch_issue_link(branch, issue, current_branch)
 

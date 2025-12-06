@@ -27,7 +27,7 @@ def milestone_kanban(
 
     try:
         # Get milestone
-        milestone = core.get_milestone(milestone_name)
+        milestone = core.milestones.get(milestone_name)
         if not milestone:
             console.print(
                 f"❌ Milestone '{milestone_name}' not found", style="bold red"
@@ -35,7 +35,7 @@ def milestone_kanban(
             return
 
         # Get all issues for this milestone
-        all_issues = core.list_issues()
+        all_issues = core.issues.list()
         milestone_issues = [
             issue for issue in all_issues if issue.milestone == milestone_name
         ]

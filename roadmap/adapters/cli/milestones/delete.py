@@ -34,7 +34,7 @@ def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
                 return
 
         with track_database_operation("delete", "milestone"):
-            success = core.delete_milestone(milestone_name)
+            success = core.milestones.delete(milestone_name)
         if success:
             console.print(f"✅ Deleted milestone: {milestone_name}", style="bold green")
         else:

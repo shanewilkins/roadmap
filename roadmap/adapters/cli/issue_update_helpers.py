@@ -72,7 +72,7 @@ class IssueUpdateBuilder:
             console.print(f"⚠️  {result}", style="bold yellow")
             return assignee
         else:
-            canonical_assignee = core.get_canonical_assignee(assignee)
+            canonical_assignee = core.team.get_canonical_assignee(assignee)
             if canonical_assignee != assignee:
                 console.print(
                     f"🔄 Resolved '{assignee}' to '{canonical_assignee}'",

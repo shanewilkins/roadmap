@@ -55,7 +55,7 @@ def close_issue(
 
     try:
         # Check if issue exists
-        issue = core.get_issue(issue_id)
+        issue = core.issues.get(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
@@ -89,7 +89,7 @@ def close_issue(
         with track_database_operation(
             "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
         ):
-            updated_issue = core.update_issue(issue_id, **update_kwargs)
+            updated_issue = core.issues.update(issue_id, **update_kwargs)
 
         if updated_issue:
             console.print(f"✅ Closed: {updated_issue.title}", style="bold green")

@@ -64,32 +64,36 @@ class IssueQueryService:
         """
         # Handle special assignee filters first
         if my_issues:
-            return self.core.get_my_issues(), "my"
+            return self.core.team.get_my_issues(), "my"
 
         if assignee:
-            return self.core.get_assigned_issues(assignee), f"assigned to {assignee}"
+            return self.core.team.get_assigned_issues(
+                assignee
+            ), f"assigned to {assignee}"
 
         # Get base set of issues
         if backlog or unassigned:
-            return self.core.get_backlog_issues(), "backlog"
+            return self.core.issues.get_backlog(), "backlog"
 
         if next_milestone:
-            next_ms = self.core.get_next_milestone()
+            next_ms = self.core.milestones.get_next()
             if not next_ms:
                 return [], ""  # Handled by caller
             return (
-                self.core.get_milestone_issues(next_ms.name),
+                self.core.issues.get_by_milestone(next_ms.name),
                 f"next milestone ({next_ms.name})",
             )
 
         if milestone:
-            return self.core.get_milestone_issues(milestone), f"milestone '{milestone}'"
+            return self.core.issues.get_by_milestone(
+                milestone
+            ), f"milestone '{milestone}'"
 
         # Handle overdue filter
         if overdue:
             from datetime import datetime
 
-            all_issues = self.core.list_issues()
+            all_issues = self.core.issues.list()
             overdue_issues = [
                 issue
                 for issue in all_issues
@@ -99,7 +103,7 @@ class IssueQueryService:
             return overdue_issues, "overdue"
 
         # Show all issues
-        return self.core.list_issues(), "all"
+        return self.core.issues.list(), "all"
 
     def apply_additional_filters(
         self,

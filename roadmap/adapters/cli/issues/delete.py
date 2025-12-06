@@ -31,7 +31,7 @@ def delete_issue(
         raise click.Abort()
 
     # Check if issue exists
-    issue = core.get_issue(issue_id)
+    issue = core.issues.get(issue_id)
     if not issue:
         console.print(f"❌ Issue not found: {issue_id}", style="bold red")
         raise click.Abort()
@@ -44,7 +44,7 @@ def delete_issue(
 
     # Delete the issue
     with track_database_operation("delete", "issue", entity_id=issue_id):
-        core.delete_issue(issue_id)
+        core.issues.delete(issue_id)
 
     console.print(f"[green]✅ Permanently deleted issue: {issue.title}[/green]")
     console.print(f"   ID: {issue_id}", style="dim")

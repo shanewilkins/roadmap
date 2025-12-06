@@ -29,15 +29,15 @@ def recalculate_milestone_progress(
         )
 
         # Load all data
-        all_issues = core.list_issues()
-        all_milestones = core.list_milestones()
+        all_issues = core.issues.list()
+        all_milestones = core.milestones.list()
 
         # Create progress engine
         engine = ProgressCalculationEngine(method=method)
 
         if milestone_name:
             # Recalculate specific milestone
-            milestone = core.get_milestone(milestone_name)
+            milestone = core.milestones.get(milestone_name)
             if not milestone:
                 console.print(
                     f"❌ Milestone '{milestone_name}' not found", style="bold red"

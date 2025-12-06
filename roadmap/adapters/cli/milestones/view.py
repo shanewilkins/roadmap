@@ -64,7 +64,7 @@ def view_milestone(
         return
 
     # Get the milestone
-    milestone = core.get_milestone(milestone_name)
+    milestone = core.milestones.get(milestone_name)
     if not milestone:
         console.print(f"❌ Milestone '{milestone_name}' not found.", style="bold red")
         console.print(
@@ -74,7 +74,7 @@ def view_milestone(
         ctx.exit(1)
 
     # Get all issues for progress calculation
-    all_issues = core.list_issues()
+    all_issues = core.issues.list()
     milestone_issues = milestone.get_issues(all_issues)
 
     # Apply filters
@@ -100,7 +100,7 @@ def view_milestone(
 
         milestone_issues = filtered_issues
 
-    progress_data = core.get_milestone_progress(milestone_name)
+    progress_data = core.milestones.get_progress(milestone_name)
 
     # Build header with status badge
     status_color = "green" if milestone.status.value == "closed" else "yellow"

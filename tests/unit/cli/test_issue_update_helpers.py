@@ -94,7 +94,7 @@ class TestIssueUpdateBuilder:
         """build_updates should include validated assignee."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (True, None)
-        mock_core.get_canonical_assignee.return_value = "testuser"
+        mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
 
         result = IssueUpdateBuilder.build_updates(

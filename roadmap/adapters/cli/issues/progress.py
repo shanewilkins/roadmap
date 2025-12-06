@@ -40,14 +40,14 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
 
     try:
         # Get the issue
-        issue = core.get_issue(issue_id)
+        issue = core.issues.get(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
         # Update progress via core.update_issue
         with track_database_operation("update", "issue", entity_id=issue_id):
-            updated = core.update_issue(issue_id, progress_percentage=percentage)
+            updated = core.issues.update(issue_id, progress_percentage=percentage)
 
         if updated:
             console.print(f"📊 Updated progress: {issue.title}", style="bold green")
@@ -65,7 +65,7 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
             else:
                 status_msg = "In Progress"
                 if issue.status == Status.TODO:
-                    core.update_issue(issue_id, status=Status.IN_PROGRESS)
+                    core.issues.update(issue_id, status=Status.IN_PROGRESS)
                     console.print(
                         "   Status: Auto-updated to In Progress", style="yellow"
                     )

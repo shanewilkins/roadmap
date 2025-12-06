@@ -518,7 +518,7 @@ class WorkflowAutomation:
         results = {"synced_issues": 0, "updated_issues": [], "errors": []}
 
         try:
-            issues = self.core.list_issues()
+            issues = self.core.issues.list()
             commits = self.git_integration.get_recent_commits(count=100)
 
             # Build commit lookup by issue references

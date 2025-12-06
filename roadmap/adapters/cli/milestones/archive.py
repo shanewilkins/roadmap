@@ -121,7 +121,7 @@ def archive_milestone(
 
         if all_closed:
             # Get all milestones and filter for closed ones
-            all_milestones = core.list_milestones()
+            all_milestones = core.milestones.list()
             milestones = [m for m in all_milestones if m.status.value == "closed"]
 
             if not milestones:
@@ -199,7 +199,7 @@ def archive_milestone(
 
         else:
             # Archive single milestone
-            milestone = core.get_milestone(milestone_name)
+            milestone = core.milestones.get(milestone_name)
             if not milestone:
                 console.print(
                     f"❌ Milestone '{milestone_name}' not found.", style="bold red"

@@ -32,7 +32,7 @@ def view_project(ctx: click.Context, project_id: str):
         return
 
     # Get the project
-    project = core.get_project(project_id)
+    project = core.projects.get(project_id)
     if not project:
         console.print(f"❌ Project '{project_id}' not found.", style="bold red")
         console.print(
@@ -118,7 +118,7 @@ def view_project(ctx: click.Context, project_id: str):
 
     # Milestones section
     if project.milestones:
-        all_milestones = core.list_milestones()
+        all_milestones = core.milestones.list()
 
         milestones_table = Table(show_header=True, header_style="bold magenta")
         milestones_table.add_column("Milestone", style="cyan")
@@ -131,7 +131,7 @@ def view_project(ctx: click.Context, project_id: str):
                 (m for m in all_milestones if m.name == milestone_name), None
             )
             if milestone:
-                progress_data = core.get_milestone_progress(milestone_name)
+                progress_data = core.milestones.get_progress(milestone_name)
                 completed = progress_data.get("completed", 0)
                 total = progress_data.get("total", 0)
                 progress_str = f"{completed}/{total}"

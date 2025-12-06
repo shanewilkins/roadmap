@@ -29,13 +29,13 @@ def add_dependency(ctx: click.Context, issue_id: str, dependency_id: str):
 
     try:
         # Get the issue
-        issue = core.get_issue(issue_id)
+        issue = core.issues.get(issue_id)
         if not issue:
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
         # Check if dependency issue exists
-        dependency_issue = core.get_issue(dependency_id)
+        dependency_issue = core.issues.get(dependency_id)
         if not dependency_issue:
             console.print(
                 f"❌ Dependency issue not found: {dependency_id}", style="bold red"
@@ -46,7 +46,7 @@ def add_dependency(ctx: click.Context, issue_id: str, dependency_id: str):
         current_deps = issue.depends_on or []
         if dependency_id not in current_deps:
             current_deps.append(dependency_id)
-            core.update_issue(issue_id, depends_on=current_deps)
+            core.issues.update(issue_id, depends_on=current_deps)
             console.print(
                 f"✅ Added dependency: {dependency_issue.title}", style="bold green"
             )

@@ -86,7 +86,7 @@ def _get_core(ctx: click.Context):
 def _load_and_filter_issues(core, filter_str: str):
     """Load issues and apply filter if provided."""
     try:
-        issues = core.list_issues()
+        issues = core.issues.list()
     except Exception as e:
         console.print(f"❌ Failed to list issues: {e}", style="bold red")
         return []

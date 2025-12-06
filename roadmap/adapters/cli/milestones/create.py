@@ -46,7 +46,7 @@ def create_milestone(
 
     try:
         with track_database_operation("create", "milestone", warn_threshold_ms=2000):
-            milestone = core.create_milestone(
+            milestone = core.milestones.create(
                 name=name, description=description, due_date=parsed_due_date
             )
         console.print(f"✅ Created milestone: {milestone.name}", style="bold green")

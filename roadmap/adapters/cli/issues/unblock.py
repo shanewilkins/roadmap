@@ -30,7 +30,7 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
         )
         raise click.Abort()
 
-    issue = core.get_issue(issue_id)
+    issue = core.issues.get(issue_id)
     if not issue:
         console.print(f"❌ Issue not found: {issue_id}", style="bold red")
         raise click.Abort()
@@ -42,7 +42,7 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
         return
 
     # Update status to in-progress via core.update_issue
-    updated = core.update_issue(issue_id, status=Status.IN_PROGRESS)
+    updated = core.issues.update(issue_id, status=Status.IN_PROGRESS)
 
     if updated:
         console.print(f"✅ Unblocked issue: {updated.title}", style="bold green")
