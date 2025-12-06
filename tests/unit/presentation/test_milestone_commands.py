@@ -3,7 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli import main
+from roadmap.adapters.cli import main
 from tests.unit.shared.test_utils import strip_ansi
 
 pytestmark = pytest.mark.skip(

@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli import main
+from roadmap.adapters.cli import main
 
 
 @pytest.fixture

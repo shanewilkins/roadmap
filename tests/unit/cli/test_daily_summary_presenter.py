@@ -9,11 +9,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from rich.console import Console
 
-from roadmap.domain.issue import Issue, Priority, Status
-from roadmap.domain.milestone import Milestone, MilestoneStatus
-from roadmap.presentation.cli.presentation.daily_summary_presenter import (
+from roadmap.adapters.cli.presentation.daily_summary_presenter import (
     DailySummaryPresenter,
 )
+from roadmap.core.domain.issue import Issue, Priority, Status
+from roadmap.core.domain.milestone import Milestone, MilestoneStatus
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ def sample_data():
 class TestDailySummaryPresenterRender:
     """Test main render method."""
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_calls_all_section_renderers(self, mock_console_module, sample_data):
         """Test that render method calls all sub-renderers."""
         with (
@@ -126,7 +126,7 @@ class TestDailySummaryPresenterRender:
             mock_summary.assert_called_once()
             mock_tips.assert_called_once()
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_handles_empty_sections(self, mock_console_module):
         """Test that render handles data with empty sections gracefully."""
         empty_data = {
@@ -153,7 +153,7 @@ class TestDailySummaryPresenterRender:
 class TestDailySummaryPresenterHeader:
     """Test header rendering."""
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_header_includes_user_info(self, mock_console):
         """Test that header includes user information."""
         milestone = Milestone(
@@ -176,7 +176,7 @@ class TestDailySummaryPresenterHeader:
         # Verify console.print was called (at least once for the Panel)
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_header_includes_milestone_info(self, mock_console):
         """Test that header includes milestone information."""
         milestone = MagicMock()
@@ -199,7 +199,7 @@ class TestDailySummaryPresenterHeader:
 class TestDailySummaryPresenterSections:
     """Test individual section rendering."""
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_in_progress_shows_issues(self, mock_console, sample_data):
         """Test that in-progress section renders issues."""
         issues = sample_data["issues"]["in_progress"]
@@ -208,14 +208,14 @@ class TestDailySummaryPresenterSections:
 
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_in_progress_with_no_issues(self, mock_console):
         """Test that in-progress section handles empty list."""
         DailySummaryPresenter._render_in_progress([])
 
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_overdue_shows_days_overdue(self, mock_console):
         """Test that overdue section shows days calculation."""
         overdue_issue = Issue(
@@ -231,7 +231,7 @@ class TestDailySummaryPresenterSections:
 
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_blocked_indicates_blocker(self, mock_console):
         """Test that blocked section indicates blocking status."""
         blocked_issue = Issue(
@@ -246,7 +246,7 @@ class TestDailySummaryPresenterSections:
 
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_up_next_limits_to_three(self, mock_console):
         """Test that up-next section shows max 3 issues."""
         issues = [
@@ -265,7 +265,7 @@ class TestDailySummaryPresenterSections:
         # Should render only top 3
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_completed_today_shows_completion_time(self, mock_console):
         """Test that completed section shows completion times."""
         completed_issue = Issue(
@@ -285,14 +285,14 @@ class TestDailySummaryPresenterSections:
 class TestDailySummaryPresenterSummary:
     """Test summary section rendering."""
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_summary_shows_counts(self, mock_console, sample_data):
         """Test that summary section shows issue counts."""
         DailySummaryPresenter._render_summary(sample_data["issues"])
 
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_summary_with_empty_issues(self, mock_console):
         """Test that summary handles empty issue list."""
         empty_issues = {
@@ -311,14 +311,14 @@ class TestDailySummaryPresenterSummary:
 class TestDailySummaryPresenterTips:
     """Test tips/suggestions rendering."""
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_tips_with_data(self, mock_console, sample_data):
         """Test that tips section renders when data provided."""
         DailySummaryPresenter._render_tips(sample_data)
 
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_tips_suggests_starting_work_when_idle(self, mock_console):
         """Test that tips suggest starting work when nothing in progress."""
         data = {
@@ -339,7 +339,7 @@ class TestDailySummaryPresenterTips:
 
         assert mock_console.print.called
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_tips_suggests_addressing_overdue(self, mock_console):
         """Test that tips suggest addressing overdue when present."""
         data = {
@@ -364,7 +364,7 @@ class TestDailySummaryPresenterTips:
 class TestDailySummaryPresenterIntegration:
     """Integration tests for presenter."""
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_full_render_cycle_with_realistic_data(self, mock_console, sample_data):
         """Test complete render cycle with realistic sample data."""
         try:
@@ -373,7 +373,7 @@ class TestDailySummaryPresenterIntegration:
         except Exception as e:
             pytest.fail(f"Full render cycle failed: {e}")
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_produces_console_output(self, mock_console, sample_data):
         """Test that render produces console output."""
         DailySummaryPresenter.render(sample_data)
@@ -381,7 +381,7 @@ class TestDailySummaryPresenterIntegration:
         # Should call print multiple times for different sections
         assert mock_console.print.call_count >= 5  # header + at least 4 sections
 
-    @patch("roadmap.presentation.cli.presentation.daily_summary_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_doesnt_crash_with_special_characters(self, mock_console):
         """Test that render handles special characters in titles gracefully."""
         issue_with_special_chars = Issue(

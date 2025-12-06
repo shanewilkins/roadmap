@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 import yaml
 
-from roadmap.cli import main
+from roadmap.adapters.cli import main
 
 pytestmark = pytest.mark.skip(
     reason="CLI command integration tests - complex Click mocking"

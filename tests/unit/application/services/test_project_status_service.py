@@ -4,8 +4,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.application.services.project_status_service import ProjectStatusService
+from roadmap.core.services.project_status_service import ProjectStatusService
+from roadmap.infrastructure.core import RoadmapCore
 
 
 class TestProjectStatusService:

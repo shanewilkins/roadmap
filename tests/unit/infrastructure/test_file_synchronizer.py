@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.infrastructure.persistence.database_manager import DatabaseManager
-from roadmap.infrastructure.persistence.file_synchronizer import FileSynchronizer
+from roadmap.adapters.persistence.database_manager import DatabaseManager
+from roadmap.adapters.persistence.file_synchronizer import FileSynchronizer
 
 
 class TestFileSynchronizer:

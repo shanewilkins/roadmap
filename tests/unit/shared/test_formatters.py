@@ -1,6 +1,6 @@
 """Unit tests for formatters module."""
 
-from roadmap.shared.formatters import (
+from roadmap.common.formatters import (
     _format_table_simple,
     format_header,
     format_panel,

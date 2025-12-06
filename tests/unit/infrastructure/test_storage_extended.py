@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.infrastructure.storage import StateManager
+from roadmap.adapters.persistence.storage import StateManager
 
 
 @pytest.fixture

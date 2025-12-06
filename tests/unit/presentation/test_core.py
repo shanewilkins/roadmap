@@ -2,7 +2,7 @@
 
 from click.testing import CliRunner
 
-from roadmap.cli import main
+from roadmap.adapters.cli import main
 
 
 def test_cli_version():

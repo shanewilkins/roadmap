@@ -5,14 +5,14 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.domain import Comment
-from roadmap.infrastructure.github import GitHubClient
+from roadmap.adapters.github.github import GitHubClient
+from roadmap.core.domain import Comment
 
 
 @pytest.fixture
 def mock_github_client():
     """Create a mock GitHub client."""
-    with patch("roadmap.infrastructure.github.GitHubClient._check_repository"):
+    with patch("roadmap.adapters.github.github.GitHubClient._check_repository"):
         client = GitHubClient(token="fake-token", owner="test-owner", repo="test-repo")
         return client
 
@@ -55,7 +55,7 @@ class TestComment:
 class TestGitHubClientComments:
     """Test GitHub client comment methods."""
 
-    @patch("roadmap.infrastructure.github.GitHubClient._make_request")
+    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
     def test_get_issue_comments(self, mock_request, mock_github_client):
         """Test getting comments for an issue."""
         # Mock API response
@@ -96,7 +96,7 @@ class TestGitHubClientComments:
             "GET", "/repos/test-owner/test-repo/issues/1/comments"
         )
 
-    @patch("roadmap.infrastructure.github.GitHubClient._make_request")
+    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
     def test_create_issue_comment(self, mock_request, mock_github_client):
         """Test creating a comment on an issue."""
         # Mock API response
@@ -126,7 +126,7 @@ class TestGitHubClientComments:
             json={"body": "This is a new comment"},
         )
 
-    @patch("roadmap.infrastructure.github.GitHubClient._make_request")
+    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
     def test_update_issue_comment(self, mock_request, mock_github_client):
         """Test updating an existing comment."""
         # Mock API response
@@ -157,7 +157,7 @@ class TestGitHubClientComments:
             json={"body": "This is an updated comment"},
         )
 
-    @patch("roadmap.infrastructure.github.GitHubClient._make_request")
+    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
     def test_delete_issue_comment(self, mock_request, mock_github_client):
         """Test deleting a comment."""
         # Test the method
@@ -168,7 +168,7 @@ class TestGitHubClientComments:
             "DELETE", "/repos/test-owner/test-repo/issues/comments/123456"
         )
 
-    @patch("roadmap.infrastructure.github.GitHubClient._make_request")
+    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
     def test_get_issue_comments_empty(self, mock_request, mock_github_client):
         """Test getting comments when there are none."""
         # Mock empty API response
@@ -190,7 +190,7 @@ class TestCommentCLI:
     def test_comment_help_available(self):
         """Test that comment commands are available in CLI."""
         # This is a basic test to ensure the commands are properly registered
-        from roadmap.cli import main
+        from roadmap.adapters.cli import main
 
         # The main function should have a comment group
         comment_group = None
@@ -212,7 +212,7 @@ class TestBlockedStatus:
 
     def test_blocked_status_enum(self):
         """Test that blocked status is properly defined."""
-        from roadmap.domain import Status
+        from roadmap.core.domain import Status
 
         assert Status.BLOCKED == "blocked"
         assert Status.BLOCKED in Status
@@ -229,10 +229,10 @@ class TestBlockedStatus:
         """Test that GitHub client handles blocked status."""
         from unittest.mock import patch
 
-        from roadmap.domain import Status
-        from roadmap.infrastructure.github import GitHubClient
+        from roadmap.adapters.github.github import GitHubClient
+        from roadmap.core.domain import Status
 
-        with patch("roadmap.infrastructure.github.GitHubClient._check_repository"):
+        with patch("roadmap.adapters.github.github.GitHubClient._check_repository"):
             client = GitHubClient(token="fake-token", owner="test", repo="test")
 
             # Test status to labels
@@ -247,9 +247,9 @@ class TestBlockedStatus:
         """Test that blocked status label is included in default setup."""
         from unittest.mock import Mock, patch
 
-        from roadmap.infrastructure.github import GitHubClient
+        from roadmap.adapters.github.github import GitHubClient
 
-        with patch("roadmap.infrastructure.github.GitHubClient._check_repository"):
+        with patch("roadmap.adapters.github.github.GitHubClient._check_repository"):
             with patch(
                 "roadmap.github_client.GitHubClient._make_request"
             ) as mock_request:

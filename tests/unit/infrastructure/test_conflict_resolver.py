@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.infrastructure.persistence.conflict_resolver import ConflictResolver
-from roadmap.infrastructure.persistence.database_manager import DatabaseManager
-from roadmap.infrastructure.persistence.sync_state_tracker import SyncStateTracker
+from roadmap.adapters.persistence.conflict_resolver import ConflictResolver
+from roadmap.adapters.persistence.database_manager import DatabaseManager
+from roadmap.adapters.persistence.sync_state_tracker import SyncStateTracker
 
 
 class TestConflictResolver:

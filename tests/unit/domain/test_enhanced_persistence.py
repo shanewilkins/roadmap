@@ -4,12 +4,12 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from roadmap.domain import Issue, Milestone, MilestoneStatus, Priority, Status
-from roadmap.infrastructure.persistence.parser import IssueParser, MilestoneParser
-from roadmap.infrastructure.persistence.persistence import (
+from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
+from roadmap.adapters.persistence.persistence import (
     EnhancedYAMLPersistence,
     YAMLRecoveryManager,
 )
+from roadmap.core.domain import Issue, Milestone, MilestoneStatus, Priority, Status
 
 
 class TestYAMLRecoveryManager:

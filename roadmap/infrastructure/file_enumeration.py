@@ -36,7 +36,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from roadmap.shared.logging import get_logger
+from roadmap.common.logging import get_logger
 
 logger = get_logger(__name__)
 

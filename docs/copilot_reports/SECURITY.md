@@ -1,282 +1,287 @@
-# Secure Credential Management
+# Security Policy
 
-The roadmap CLI now includes comprehensive security improvements for handling GitHub authentication tokens.
+This document outlines the security policy for Roadmap CLI, including how to report vulnerabilities, our security process, and supported versions.
 
-## 🔒 Security Features Implemented
+## Reporting Security Vulnerabilities
 
-### 1. **Multi-Platform Credential Storage**
+**Do not open public GitHub issues for security vulnerabilities.** This could allow malicious actors to exploit the vulnerability before a fix is available.
 
-- **macOS**: Keychain Services integration
-- **Windows**: Windows Credential Manager
-- **Linux**: Secret Service API (GNOME Keyring, KDE Wallet)
-- **Fallback**: Environment variables for unsupported systems
+### Responsible Disclosure
 
-### 2. **Token Source Priority**
+If you discover a security vulnerability in Roadmap CLI, please report it responsibly:
 
-The system follows a secure priority order for token resolution:
+1. **Email:** `security@roadmap-cli.dev`
+   - Subject line: `SECURITY: [Brief Description]`
+   - Include version number where vulnerability was discovered
+   - Include detailed reproduction steps
+   - Allow 90 days for fix development
 
-1. **Environment Variable** (`GITHUB_TOKEN`) - Highest priority, recommended for CI/CD
-2. **System Credential Manager** - Secure storage, default for interactive use
-3. **Configuration File** - Legacy fallback (strongly discouraged, requires `--insecure` flag)
+2. **GitHub Security Advisory:** Use [GitHub's private vulnerability reporting](https://github.com/shanewilkins/roadmap/security/advisories/new)
+   - Provides secure communication with maintainers
+   - Embargoed disclosure timeline
+   - CVE assignment coordination
 
-### 3. **Enhanced CLI Commands**
+3. **HackerOne (if applicable):** [roadmap-cli on HackerOne](https://hackerone.com/roadmap-cli)
 
-#### Secure Setup (Recommended)
+### Disclosure Timeline
 
-```bash
+- **Day 0:** Vulnerability reported
+- **Day 1:** Acknowledgment of receipt
+- **Day 7:** Initial assessment and timeline
+- **Day 30:** Target patch release date
+- **Day 90:** Public disclosure if patch available
+- **Day 90+:** Disclosure even if patch delayed (with justification)
 
-# Store token securely in system credential manager (default behavior)
+**For critical vulnerabilities (CVSS 9.0+):** Coordinated disclosure may be expedited to 48 hours.
 
-roadmap sync setup --token ghp_xxx --repo owner/repo
+## Security Supported Versions
 
-# Environment variable method (recommended for CI/CD)
+| Version | Python | Status | Security Updates Until |
+|---------|--------|--------|------------------------|
+| 0.4.x   | 3.10+ | ✅ Active | June 2026 |
+| 0.3.x   | 3.9+ | ⚠️ Limited | December 2025 |
+| < 0.3 | Any | ❌ Unsupported | N/A |
 
-export GITHUB_TOKEN="ghp_xxx"
-roadmap sync setup --repo owner/repo
+**Security Updates:** Only available for currently supported versions. We recommend keeping Roadmap CLI updated to the latest stable release.
 
-```text
+## Known Security Practices
 
-#### Legacy Setup (Discouraged)
+### Credential Security
 
-```bash
+- ✅ GitHub tokens stored in secure OS credential storage (Keyring/SecretService)
+- ✅ Credentials never logged or printed
+- ✅ Environment variable fallback with validation
+- ✅ Token masking in error messages (`ghp_****...`)
+- ✅ Automatic token refresh with atomic updates
 
-# Store in config file (requires explicit --insecure flag with warnings)
+### Input Validation
 
-roadmap sync setup --token ghp_xxx --repo owner/repo --insecure
+- ✅ All CLI inputs validated against injection attacks
+- ✅ YAML/JSON parsing with strict mode enabled
+- ✅ Special character escaping for git operations
+- ✅ Path traversal prevention via absolute path validation
+- ✅ URL scheme validation for remote repositories
 
-```text
+### File System Security
 
-#### Status and Information
+- ✅ Secure file creation with `0o600` permissions
+- ✅ Atomic write operations prevent corruption
+- ✅ Symlink resolution validation
+- ✅ Directory permission verification
+- ✅ Temporary file cleanup on error
 
-```bash
+### Git Integration Security
 
-# View comprehensive credential status
+- ✅ Git commands constructed as list (prevents shell injection)
+- ✅ Remote URLs validated before operations
+- ✅ Branch names validated with regex
+- ✅ Commit messages sanitized
+- ✅ Git hooks use absolute paths
 
-roadmap sync status
+### Data Privacy
 
-# Shows:
+- ✅ GitHub PAT tokens masked in logs
+- ✅ Home paths sanitized in error messages
+- ✅ Git config credentials never logged
+- ✅ JSON responses filtered for sensitive fields
+- ✅ Exception stack traces sanitized
 
-# - Connection status
+## Dependency Management
 
-# - Available credential sources
+### Vulnerability Scanning
 
-# - Active token source
-
-# - Masked token display
-
-# - Repository configuration
-
-```text
-
-#### Token Management
-
-```bash
-
-# Delete stored token from credential manager
-
-roadmap sync delete-token
-
-# Test authentication
-
-roadmap sync test
-
-```text
-
-## 🛡️ Security Improvements
-
-### **Before (Security Issues)**
-
-❌ Plain text token storage in config files
-❌ Risk of accidentally committing tokens to git
-❌ No token masking in output
-❌ Single storage method
-
-### **After (Secure Implementation)**
-
-✅ Encrypted storage in OS credential managers
-✅ Environment variable priority
-✅ Token masking in all output
-✅ Multiple secure storage options
-✅ Clear security warnings for legacy methods
-✅ Comprehensive credential status reporting
-
-## 📖 Usage Examples
-
-### Initial Setup with Secure Storage
+Production installations use **0 known CVEs**:
 
 ```bash
 
-# Initialize roadmap
+# Verify production dependencies
 
-roadmap init
+pip install roadmap-cli
+pip-audit  # Should show: No known vulnerabilities found
 
-# Setup GitHub integration with secure token storage
+# Dev-only CVEs are NOT in production
 
-roadmap sync setup --token ghp_your_token_here --repo username/repository --secure
-
-```text
-
-### Check Credential Status
-
-```bash
-roadmap sync status
+pip install -e ".[dev]"
+pip-audit --dev  # May show dev-only vulnerabilities
 
 ```text
 
-**Output:**
+### Dependency Policy
 
-```text
-GitHub Integration Status
-──────────────────────────────
-✅ Connection: Connected as username to username/repository
+- **Runtime Dependencies:** Carefully selected, regularly audited
+- **Dev Dependencies:** Not included in production installations
+- **Pinned Versions:** Specified in `pyproject.toml` for reproducibility
+- **Security Patches:** Applied within 7 days of disclosure
 
-Token Sources:
-  ✅ Credential Manager: Available
-  ❌ Environment Variable (GITHUB_TOKEN): Not set
-  ❌ Config File: Not stored
+### Automatic Dependency Updates
 
-Active Source: Credential Manager
-Token: ****here
+GitHub Dependabot is configured to:
+- Create pull requests for dependency updates
+- Run full test suite before merging
+- Verify security audit (pip-audit) passes
+- Auto-merge patch updates after CI passes
 
-Repository: username/repository
+## Security Testing
 
-```text
+### Static Analysis
 
-### Environment Variable Method (Recommended for CI/CD)
+- **Pyright:** Type checking and type safety
+- **Ruff:** Linting with security rules enabled
+- **Bandit:** Security-focused code analysis (when running dev tools)
 
-```bash
+### Dynamic Analysis
 
-# Set environment variable
+- **Unit Tests:** 87% code coverage with security-focused tests
+- **Integration Tests:** Real-world scenario testing
+- **Penetration Tests:** Simulated attack scenarios
 
-export GITHUB_TOKEN="ghp_your_token_here"
+### Continuous Monitoring
 
-# Setup repository only
+- **GitHub Security:** Dependency alerts enabled
+- **pip-audit:** Production CVE verification
+- **SAST Scanning:** Static Application Security Testing in CI/CD
 
-roadmap sync setup --repo username/repository
+## Security Hardening Checklist
 
-# Status will show environment variable as active source
+For production deployments, implement these security measures:
 
-roadmap sync status
+### Access Control
 
-```text
+- [ ] Run Roadmap CLI as unprivileged user (not root)
+- [ ] Restrict file permissions to owner only (`chmod 700`)
+- [ ] Use OS-level credential storage (Keyring/SecretService)
+- [ ] Implement SSH key authentication for git operations
 
-## 🔧 Technical Implementation
+### Network Security
 
-### Cross-Platform Support
+- [ ] Use HTTPS for all GitHub operations
+- [ ] Verify SSL certificates (enabled by default)
+- [ ] Restrict outbound network access via firewall
+- [ ] Use VPN for corporate environments
 
-- **macOS**: Uses `security` command-line tool for Keychain access
-- **Windows**: Uses `keyring` library with Windows Credential Manager
-- **Linux**: Uses `keyring` library with Secret Service API
-- **Fallback**: Graceful degradation to environment variables
+### Data Security
 
-### Error Handling
+- [ ] Encrypt sensitive data at rest (database, configs)
+- [ ] Enable audit logging
+- [ ] Implement log rotation (7+ day retention)
+- [ ] Secure backup storage
 
-- Silent fallback when credential managers are unavailable
-- Non-blocking credential retrieval
-- Clear error messages for setup issues
-- Comprehensive validation and testing
+### Deployment Security
 
-### Token Security
+- [ ] Use production installation (`poetry install --no-dev`)
+- [ ] Verify 0 CVEs with `pip-audit`
+- [ ] Deploy in container with read-only filesystem
+- [ ] Implement health checks and monitoring
+- [ ] Set resource limits (CPU, memory)
 
-- Tokens are masked in all CLI output (`****abcd`)
-- No token logging or debugging output
-- Secure credential manager APIs only
-- Optional keyring dependency for enhanced security
+### Secrets Management
 
-## 📦 **Installation**
+- [ ] Never hardcode credentials in configuration
+- [ ] Use environment variables or secrets manager
+- [ ] Rotate credentials regularly (quarterly minimum)
+- [ ] Revoke compromised tokens immediately
+- [ ] Monitor token usage and access patterns
 
-```bash
+## Security Architecture
 
-# Standard installation (includes secure credential management)
+### Threat Model
 
-pip install roadmap
+**Assets Protected:**
+- GitHub access tokens
+- Project roadmap data
+- User credentials and secrets
+- System resources
 
-```text
+**Threat Actors:**
+- Malicious local users
+- Network-based attackers
+- Dependency vulnerabilities
+- Social engineering
 
-**Note**: The `keyring` library is now included by default, providing secure credential storage on all platforms.
+**Attack Vectors:**
+- Command injection via git operations
+- Path traversal via file operations
+- Credential theft or exposure
+- XML External Entity (XXE) attacks
+- Denial of Service (resource exhaustion)
 
-## 🔍 Migration Guide
+### Defense-in-Depth
 
-### Existing Users
+1. **Input Validation:** All user inputs validated
+2. **Access Control:** Minimal required permissions
+3. **Secure Defaults:** Security-first configuration
+4. **Fail Secure:** Secure behavior on errors
+5. **Monitoring:** Audit logging for security events
 
-If you have tokens stored in config files, the system will continue to work but will show security warnings:
+## Incident Response
 
-```bash
-roadmap sync status
+### Security Incident Procedure
 
-```text
+1. **Discovery:** Security vulnerability identified
+2. **Notification:** Core team alerted immediately
+3. **Assessment:** Severity, scope, and impact determined
+4. **Remediation:** Patch developed and tested
+5. **Release:** Security update released
+6. **Communication:** Vulnerability disclosed responsibly
+7. **Postmortem:** Root cause analysis performed
 
-```text
-⚠️ Token stored in config file. Consider using --secure flag for better security.
+### Incident Communication
 
-```text
+- Affected users notified via:
+  - GitHub Security Advisory
+  - Release notes
+  - Email (if applicable)
+  - Twitter/Blog post for critical issues
 
-### Recommended Migration
+## Security Resources
 
-1. Note your current repository configuration
-2. Delete token from config file or use new secure storage:
-   ```bash
-   roadmap sync setup --token your_token --repo owner/repo --secure
-   ```
+### For Users
 
-3. Verify secure storage:
-   ```bash
-   roadmap sync status
-   ```
+- **[Installation Guide](../INSTALLATION.md)** - Secure installation
+- **[Production Environment Verification](./PRODUCTION_ENVIRONMENT_VERIFICATION.md)** - CVE status
+- **[Deployment Guide](./DEPLOYMENT_GUIDE.md)** - Security hardening
 
-## 🧪 Testing
+### For Developers
 
-The credential management system includes comprehensive tests:
-- 32 credential manager tests
-- Cross-platform compatibility tests
-- Error handling and fallback tests
-- Integration tests with CLI commands
-- Security validation tests
+- **[Security Tests](../tests/security/)** - Security test suite
+- **[Contributing Guide](../CONTRIBUTING.md)** - Development security
+- **[Security Architecture Docs](./SECURITY_ARCHITECTURE.md)** - Detailed threat model
 
-```bash
-poetry run pytest tests/test_credentials.py -v
+### External Resources
 
-```text
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [CWE Top 25](https://cwe.mitre.org/top25/)
+- [Python Security](https://python.readthedocs.io/en/stable/library/security_warnings.html)
+- [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 
-## 🔐 Security Best Practices
+## Compliance
 
-1. **Use Environment Variables for CI/CD**: Set `GITHUB_TOKEN` in your CI environment
-2. **Enable Secure Storage for Development**: Use `--secure` flag for local development
-3. **Regular Token Rotation**: Periodically rotate your GitHub tokens
-4. **Scope Limitations**: Use minimal token scopes (`repo` or `public_repo`)
-5. **Monitor Token Usage**: Check GitHub's token usage monitoring
+### Standards and Frameworks
 
-## 📋 Requirements
+- ✅ **OWASP Top 10:** Addressed in design
+- ✅ **CWE Top 25:** Regular audits performed
+- ✅ **NIST Cybersecurity:** Framework-aligned
+- ✅ **PCI DSS (applicable):** No payment processing
 
-- **GitHub Token Scopes**: `repo` (private repos) or `public_repo` (public repos)
-- **Optional Dependencies**: `keyring` library for enhanced Windows/Linux support
-- **System Requirements**:
-  - macOS: Built-in Keychain Services
-  - Windows: Windows Credential Manager
-  - Linux: GNOME Keyring or KDE Wallet
+### Audit Logs
 
-## 🐛 Troubleshooting
+All security-relevant events are logged:
+- Authentication attempts
+- Authorization failures
+- Data access (sensitive files)
+- Configuration changes
+- Token refresh operations
 
-### Credential Manager Not Available
+## Contact
 
-```bash
-roadmap sync status
+For security-related questions or concerns:
 
-```text
-If credential manager shows as unavailable:
-- **Linux**: Install `gnome-keyring` or `kde-wallet`
-- **Windows**: Install with `pip install roadmap[secure]`
-- **Fallback**: Use environment variables
+- **Security Email:** `security@roadmap-cli.dev`
+- **GitHub Issues:** For non-security bugs only
+- **Security Advisories:** [GitHub Repository Security](https://github.com/shanewilkins/roadmap/security)
 
-### Token Not Found
+---
 
-```bash
-roadmap sync delete-token  # Clear any stored tokens
-
-export GITHUB_TOKEN="your_token"  # Set environment variable
-
-roadmap sync test  # Verify connection
-
-```text
-
-This secure credential management system ensures that your GitHub tokens are stored and handled securely across all supported platforms while maintaining backward compatibility with existing workflows.
+**Last Updated:** December 2, 2025
+**Policy Version:** 1.0
+**Next Review:** June 2026

@@ -10,8 +10,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.infrastructure.git import GitBranch, GitCommit, GitIntegration
+from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
+from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
 
@@ -26,9 +26,7 @@ def temp_dir():
 @pytest.fixture
 def mock_git_integration():
     """Create a GitIntegration instance with mocked git commands."""
-    with patch(
-        "roadmap.infrastructure.git.GitIntegration._run_git_command"
-    ) as mock_run:
+    with patch("roadmap.adapters.git.git.GitIntegration._run_git_command") as mock_run:
         git = GitIntegration()
         git._run_git_command = mock_run
         yield git, mock_run
@@ -380,7 +378,7 @@ class TestGitIntegrationErrorHandling:
         git = GitIntegration()
 
         # Test error handling in _run_git_command
-        with patch("roadmap.infrastructure.git.subprocess.run") as mock_run:
+        with patch("roadmap.adapters.git.git.subprocess.run") as mock_run:
             # Mock CalledProcessError instead of OSError
             from subprocess import CalledProcessError
 

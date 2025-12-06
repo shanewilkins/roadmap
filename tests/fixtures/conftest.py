@@ -304,7 +304,7 @@ version: "1.0.0"
 
         # Initialize roadmap core
         with patch("roadmap.core.RoadmapCore.initialize"):
-            from roadmap.application.core import RoadmapCore
+            from roadmap.infrastructure.core import RoadmapCore
 
             core = RoadmapCore()
             core.is_initialized = Mock(return_value=True)

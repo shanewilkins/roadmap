@@ -10,13 +10,13 @@ Tests cover:
 
 from unittest.mock import MagicMock, patch
 
-from roadmap.domain import Status
-from roadmap.presentation.cli.services.project_status_service import (
+from roadmap.adapters.cli.services.project_status_service import (
     IssueStatisticsService,
     MilestoneProgressService,
     RoadmapSummaryService,
     StatusDataService,
 )
+from roadmap.core.domain import Status
 
 
 class TestStatusDataService:
@@ -279,7 +279,7 @@ class TestRoadmapSummaryService:
         assert result["completed_milestones"] == 0
 
     @patch(
-        "roadmap.presentation.cli.services.project_status_service.MilestoneProgressService"
+        "roadmap.adapters.cli.services.project_status_service.MilestoneProgressService"
     )
     def test_compute_roadmap_summary_with_issues(self, mock_service_class):
         """Test summary with issues."""
@@ -303,7 +303,7 @@ class TestRoadmapSummaryService:
         assert result["total_milestones"] == 0
 
     @patch(
-        "roadmap.presentation.cli.services.project_status_service.MilestoneProgressService"
+        "roadmap.adapters.cli.services.project_status_service.MilestoneProgressService"
     )
     def test_compute_roadmap_summary_with_milestones(self, mock_service_class):
         """Test summary with milestones."""
@@ -326,7 +326,7 @@ class TestRoadmapSummaryService:
         assert result["completed_milestones"] == 1  # Only v1.0 is 100%
 
     @patch(
-        "roadmap.presentation.cli.services.project_status_service.MilestoneProgressService"
+        "roadmap.adapters.cli.services.project_status_service.MilestoneProgressService"
     )
     def test_compute_roadmap_summary_full(self, mock_service_class):
         """Test full summary with issues and milestones."""
@@ -360,7 +360,7 @@ class TestRoadmapSummaryService:
         mock_milestones = []
 
         with patch(
-            "roadmap.presentation.cli.services.project_status_service.MilestoneProgressService.get_all_milestones_progress"
+            "roadmap.adapters.cli.services.project_status_service.MilestoneProgressService.get_all_milestones_progress"
         ) as mock_progress:
             mock_progress.side_effect = Exception("DB error")
             result = RoadmapSummaryService.compute_roadmap_summary(

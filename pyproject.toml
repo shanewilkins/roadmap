@@ -118,7 +118,7 @@ myst-parser = "^4.0.0"
 radon = "^6.0.1"
 
 [tool.poetry.scripts]
-roadmap = "roadmap.cli:main"
+roadmap = "roadmap.adapters.cli:main"
 
 [build-system]
 requires = ["poetry-core"]

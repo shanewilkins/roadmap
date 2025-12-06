@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.domain import MilestoneStatus, Priority, Status
+from roadmap.core.domain import MilestoneStatus, Priority, Status
+from roadmap.infrastructure.core import RoadmapCore
 
 
 class TestRoadmapCore:

@@ -5,9 +5,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.services.project_service import ProjectService
-from roadmap.domain.milestone import MilestoneStatus
-from roadmap.domain.project import Project, ProjectStatus
+from roadmap.core.domain.milestone import MilestoneStatus
+from roadmap.core.domain.project import Project, ProjectStatus
+from roadmap.core.services.project_service import ProjectService
 
 
 @pytest.fixture
@@ -82,7 +82,7 @@ class TestProjectServiceList:
         """Test listing returns all project files."""
         # Create project files
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             return_value=sample_project,
         ):
             # Create dummy files
@@ -115,7 +115,7 @@ class TestProjectServiceList:
         (temp_dirs["projects"] / "project2.md").touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             side_effect=[project1, project2],
         ):
             projects = project_service.list_projects()
@@ -130,7 +130,7 @@ class TestProjectServiceList:
         (temp_dirs["projects"] / "invalid.md").touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             side_effect=Exception("Parse error"),
         ):
             projects = project_service.list_projects()
@@ -147,7 +147,7 @@ class TestProjectServiceGet:
         (temp_dirs["projects"] / "project.md").touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             return_value=sample_project,
         ):
             project = project_service.get_project("PROJ-001")
@@ -169,7 +169,7 @@ class TestProjectServiceGet:
         (temp_dirs["projects"] / "project.md").touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             return_value=sample_project,
         ):
             # Should match with partial ID
@@ -183,7 +183,7 @@ class TestProjectServiceGet:
         (temp_dirs["projects"] / "invalid.md").touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             side_effect=Exception("Parse error"),
         ):
             project = project_service.get_project("PROJ-001")
@@ -202,13 +202,13 @@ class TestProjectServiceSave:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=sample_project,
             ),
             patch(
-                "roadmap.application.services.project_service.ProjectParser.save_project_file"
+                "roadmap.core.services.project_service.ProjectParser.save_project_file"
             ) as mock_save,
-            patch("roadmap.application.services.project_service.now_utc") as mock_now,
+            patch("roadmap.core.services.project_service.now_utc") as mock_now,
         ):
             mock_now.return_value = datetime(2025, 1, 20, tzinfo=timezone.utc)
 
@@ -225,9 +225,9 @@ class TestProjectServiceSave:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.save_project_file"
+                "roadmap.core.services.project_service.ProjectParser.save_project_file"
             ) as mock_save,
-            patch("roadmap.application.services.project_service.now_utc") as mock_now,
+            patch("roadmap.core.services.project_service.now_utc") as mock_now,
         ):
             mock_now.return_value = datetime(2025, 1, 20, tzinfo=timezone.utc)
 
@@ -249,13 +249,13 @@ class TestProjectServiceSave:
         # Parse error means it won't find existing file, will save as new
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 side_effect=Exception("Parse error"),
             ),
             patch(
-                "roadmap.application.services.project_service.ProjectParser.save_project_file"
+                "roadmap.core.services.project_service.ProjectParser.save_project_file"
             ) as mock_save,
-            patch("roadmap.application.services.project_service.now_utc"),
+            patch("roadmap.core.services.project_service.now_utc"),
         ):
             result = project_service.save_project(sample_project)
 
@@ -318,7 +318,7 @@ class TestProjectServiceUpdate:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=sample_project,
             ),
             patch.object(project_service, "save_project", return_value=True),
@@ -345,7 +345,7 @@ class TestProjectServiceUpdate:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=sample_project,
             ),
             patch.object(
@@ -364,7 +364,7 @@ class TestProjectServiceUpdate:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=sample_project,
             ),
             patch.object(project_service, "save_project", return_value=True),
@@ -386,7 +386,7 @@ class TestProjectServiceDelete:
         project_file.touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             return_value=sample_project,
         ):
             result = project_service.delete_project("PROJ-001")
@@ -408,7 +408,7 @@ class TestProjectServiceDelete:
         project_file.touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             return_value=sample_project,
         ):
             result = project_service.delete_project("PROJ")
@@ -421,7 +421,7 @@ class TestProjectServiceDelete:
         (temp_dirs["projects"] / "invalid.md").touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             side_effect=Exception("Parse error"),
         ):
             result = project_service.delete_project("PROJ-001")
@@ -455,7 +455,7 @@ class TestProjectServiceProgress:
         (temp_dirs["projects"] / "project.md").touch()
 
         with patch(
-            "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
             return_value=project_without_milestones,
         ):
             progress = project_service.calculate_progress("PROJ-002")
@@ -465,7 +465,7 @@ class TestProjectServiceProgress:
 
     def test_calculate_progress_all_completed(self, project_service, temp_dirs):
         """Test progress calculation with all milestones completed."""
-        from roadmap.domain.milestone import Milestone
+        from roadmap.core.domain.milestone import Milestone
 
         # Create project with 2 milestones
         project = Project(
@@ -489,11 +489,11 @@ class TestProjectServiceProgress:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=project,
             ),
             patch(
-                "roadmap.application.services.project_service.MilestoneParser.parse_milestone_file",
+                "roadmap.core.services.project_service.MilestoneParser.parse_milestone_file",
                 side_effect=[milestone1, milestone2],
             ),
         ):
@@ -507,7 +507,7 @@ class TestProjectServiceProgress:
 
     def test_calculate_progress_partial(self, project_service, temp_dirs):
         """Test progress calculation with partial completion."""
-        from roadmap.domain.milestone import Milestone
+        from roadmap.core.domain.milestone import Milestone
 
         project = Project(
             id="PROJ-001",
@@ -530,11 +530,11 @@ class TestProjectServiceProgress:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=project,
             ),
             patch(
-                "roadmap.application.services.project_service.MilestoneParser.parse_milestone_file",
+                "roadmap.core.services.project_service.MilestoneParser.parse_milestone_file",
                 side_effect=[milestone1, milestone2],
             ),
         ):
@@ -554,7 +554,7 @@ class TestProjectServiceComplete:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=sample_project,
             ),
             patch.object(project_service, "save_project", return_value=True),
@@ -578,7 +578,7 @@ class TestProjectServiceComplete:
 
         with (
             patch(
-                "roadmap.application.services.project_service.ProjectParser.parse_project_file",
+                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
                 return_value=sample_project,
             ),
             patch.object(

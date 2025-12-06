@@ -1,5 +1,5 @@
-from roadmap.domain import Issue, Priority, Status
-from roadmap.infrastructure.git import GitIntegration
+from roadmap.adapters.git.git import GitIntegration
+from roadmap.core.domain import Issue, Priority, Status
 
 
 def make_issue():

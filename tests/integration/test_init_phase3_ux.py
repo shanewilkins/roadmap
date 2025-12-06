@@ -13,7 +13,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from roadmap.cli.core import init
+from roadmap.adapters.cli.core import init
 
 
 class TestInitMessagingPhase3:

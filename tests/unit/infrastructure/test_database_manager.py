@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.infrastructure.persistence.database_manager import (
+from roadmap.adapters.persistence.database_manager import (
     DatabaseManager,
 )
 

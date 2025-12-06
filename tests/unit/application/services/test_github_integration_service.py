@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.services.github_integration_service import (
+from roadmap.core.services.github_integration_service import (
     GitHubIntegrationService,
 )
 
@@ -37,7 +37,7 @@ class TestGitHubIntegrationService:
     def test_get_github_config_not_configured(self, service):
         """Test get_github_config when GitHub is not configured."""
         with patch(
-            "roadmap.application.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_config.load.return_value = Mock(github=None)
@@ -48,7 +48,7 @@ class TestGitHubIntegrationService:
     def test_get_github_config_configured(self, service):
         """Test get_github_config when GitHub is configured."""
         with patch(
-            "roadmap.application.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_config.load.return_value = Mock(
@@ -57,7 +57,7 @@ class TestGitHubIntegrationService:
             mock_config_cls.return_value = mock_config
 
             with patch(
-                "roadmap.application.services.github_integration_service.get_credential_manager"
+                "roadmap.core.services.github_integration_service.get_credential_manager"
             ) as mock_cred:
                 mock_cred.return_value.get_token.return_value = "test-token"
                 token, owner, repo = service.get_github_config()
@@ -68,7 +68,7 @@ class TestGitHubIntegrationService:
     def test_get_github_config_from_env(self, service):
         """Test get_github_config retrieves token from environment."""
         with patch(
-            "roadmap.application.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_config.load.return_value = Mock(
@@ -77,11 +77,11 @@ class TestGitHubIntegrationService:
             mock_config_cls.return_value = mock_config
 
             with patch(
-                "roadmap.application.services.github_integration_service.get_credential_manager"
+                "roadmap.core.services.github_integration_service.get_credential_manager"
             ) as mock_cred:
                 mock_cred.return_value.get_token.return_value = None
                 with patch(
-                    "roadmap.application.services.github_integration_service.os.getenv",
+                    "roadmap.core.services.github_integration_service.os.getenv",
                     return_value="env-token",
                 ):
                     token, owner, repo = service.get_github_config()
@@ -101,7 +101,7 @@ class TestGitHubIntegrationService:
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
             with patch(
-                "roadmap.application.services.github_integration_service.GitHubClient"
+                "roadmap.core.services.github_integration_service.GitHubClient"
             ) as mock_client_cls:
                 mock_client = Mock()
                 mock_client.get_team_members.return_value = ["user1", "user2"]
@@ -120,7 +120,7 @@ class TestGitHubIntegrationService:
     def test_get_current_user_found(self, service, config_file):
         """Test get_current_user when user is configured."""
         with patch(
-            "roadmap.application.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_user = Mock()
@@ -134,7 +134,7 @@ class TestGitHubIntegrationService:
     def test_get_current_user_not_found(self, service):
         """Test get_current_user when user is not configured."""
         with patch(
-            "roadmap.application.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_config.load.return_value = Mock(user=None)
@@ -200,7 +200,9 @@ class TestGitHubIntegrationService:
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
             with patch.object(service, "get_cached_team_members", return_value=[]):
-                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client:
+                with patch(
+                    "roadmap.adapters.github.github.GitHubClient"
+                ) as mock_client:
                     mock_client.return_value.validate_assignee.return_value = (
                         True,
                         "",
@@ -214,7 +216,9 @@ class TestGitHubIntegrationService:
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
             with patch.object(service, "get_cached_team_members", return_value=[]):
-                with patch("roadmap.infrastructure.github.GitHubClient") as mock_client:
+                with patch(
+                    "roadmap.adapters.github.github.GitHubClient"
+                ) as mock_client:
                     mock_client.return_value.validate_assignee.return_value = (
                         False,
                         "User not found",
@@ -226,7 +230,7 @@ class TestGitHubIntegrationService:
     def test_validate_assignee_with_strategy(self, service):
         """Test validate_assignee uses strategy when available."""
         with patch(
-            "roadmap.application.services.assignee_validation_service.AssigneeValidationStrategy"
+            "roadmap.core.services.assignee_validation_service.AssigneeValidationStrategy"
         ) as mock_strategy:
             mock_strategy.return_value.validate.return_value = (
                 True,

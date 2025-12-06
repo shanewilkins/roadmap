@@ -12,7 +12,7 @@ from typing import Any
 
 import toml
 
-from .domain import Issue, Milestone
+from .core.domain import Issue, Milestone
 
 
 class SemanticVersion:

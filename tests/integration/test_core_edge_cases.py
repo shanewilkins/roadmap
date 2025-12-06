@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.domain import Priority, Status
+from roadmap.core.domain import Priority, Status
+from roadmap.infrastructure.core import RoadmapCore
 
 
 @pytest.fixture
@@ -214,7 +214,7 @@ This issue is missing the title field.
         with pytest.raises(ValueError, match="Roadmap not initialized"):
             core.create_milestone("Test Milestone", "Description")
 
-    @patch("roadmap.infrastructure.persistence.parser.IssueParser.parse_issue_file")
+    @patch("roadmap.adapters.persistence.parser.IssueParser.parse_issue_file")
     def test_list_issues_with_parser_exception(self, mock_parse, initialized_core):
         """Test list_issues handles parser exceptions gracefully."""
         # Create a valid issue first

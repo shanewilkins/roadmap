@@ -6,9 +6,9 @@ import tempfile
 import pytest
 from click.testing import CliRunner
 
-from roadmap.application.core import RoadmapCore
-from roadmap.cli import main
-from roadmap.domain import Issue, Milestone, Status
+from roadmap.adapters.cli import main
+from roadmap.core.domain import Issue, Milestone, Status
+from roadmap.infrastructure.core import RoadmapCore
 
 
 class TestEstimatedTimeModel:

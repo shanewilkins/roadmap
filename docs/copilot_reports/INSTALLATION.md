@@ -1,745 +1,268 @@
-# Roadmap CLI Installation and Setup Guide
+# Installation Guide
 
-Complete guide for installing and configuring the Roadmap CLI tool for various environments and use cases.
+## Quick Start
 
-## 🚀 Quick Installation
-
-### Option 1: Install from PyPI (Recommended)
+### Production Installation (Recommended for Users)
 
 ```bash
 
-# Install the latest stable version
+# Using pip (simplest)
 
 pip install roadmap-cli
 
-# Verify installation
+# Using Poetry (ensures reproducible builds)
 
-roadmap --version
+poetry install --no-dev
 
 ```text
 
-### Option 2: Install from Source
+**Result:** Lightweight, secure installation with **0 known CVEs**
+
+### Development Installation
 
 ```bash
 
-# Clone the repository
-
-git clone https://github.com/yourusername/roadmap.git
-cd roadmap
-
-# Install with Poetry (recommended for development)
-
-poetry install
-poetry shell
-
-# Or install with pip
-
-pip install -e .
-
-```text
-
-### Option 3: Install with pipx (Isolated Environment)
-
-```bash
-
-# Install pipx if not already installed
-
-pip install --user pipx
-pipx ensurepath
-
-# Install roadmap-cli in isolated environment
-
-pipx install roadmap-cli
-
-# Verify installation
-
-roadmap --version
-
-```text
-
-## 📋 System Requirements
-
-### Minimum Requirements
-
-- **Python**: 3.12+ (recommended), 3.8+ (minimum)
-- **Operating System**: macOS, Linux, Windows
-- **Memory**: 256MB RAM
-- **Storage**: 50MB free space
-
-### Recommended Requirements
-
-- **Python**: 3.12+ for best performance
-- **Memory**: 1GB RAM for large projects (1000+ issues)
-- **Storage**: 500MB for backups and caching
-- **Network**: Stable internet for GitHub sync
-
-### Python Version Compatibility
-
-| Python Version | Support Status | Notes |
-|----------------|----------------|-------|
-| 3.12+ | ✅ Recommended | Latest features, best performance |
-| 3.11 | ✅ Fully Supported | Excellent performance |
-| 3.10 | ✅ Fully Supported | Good performance |
-| 3.9 | ✅ Supported | Basic features work |
-| 3.8 | ⚠️ Minimum | Limited features |
-| < 3.8 | ❌ Not Supported | Please upgrade Python |
-
-## 🔧 Initial Setup
-
-### 1. Basic Project Initialization
-
-```bash
-
-# Navigate to your project directory
-
-cd /path/to/your/project
-
-# Initialize a new roadmap
-
-roadmap init
-
-# Verify initialization
-
-roadmap status
-
-```text
-
-**Expected Output:**
-
-```text
-🗺️  Initializing new roadmap...
-✅ Roadmap initialized successfully!
-
-Created the following structure:
-  .roadmap/
-  ├── issues/
-  ├── milestones/
-  ├── templates/
-  └── config.yaml
-
-Try: roadmap issue create 'My first issue'
-
-```text
-
-### 2. Configuration File Setup
-
-The initialization creates a `config.yaml` file that you can customize:
-
-```yaml
-
-# .roadmap/config.yaml
-
-project:
-  name: "My Project"
-  description: "Project roadmap and issue tracking"
-  version: "1.0.0"
-
-github:
-  # Will be configured during sync setup
-
-  repository: null
-  token: null
-
-settings:
-  default_priority: "medium"
-  default_assignee: null
-  auto_backup: true
-  validation_strict: true
-
-performance:
-  sync_workers: 8
-  batch_size: 50
-  cache_ttl: 300  # 5 minutes
-
-```text
-
-## 🔐 GitHub Integration Setup
-
-### 1. Generate GitHub Token
-
-**Step-by-step GitHub token creation:**
-
-1. **Go to GitHub Settings**
-   - Visit: https://github.com/settings/tokens
-   - Click "Generate new token" → "Generate new token (classic)"
-
-2. **Configure Token Permissions**
-   ```
-
-   ✅ repo (for private repositories)
-   ✅ public_repo (for public repositories)
-   ✅ write:issues (to create and update issues)
-   ✅ read:org (to access organization repositories)
-   ```
-
-3. **Set Token Expiration**
-   - Choose appropriate expiration (30-90 days recommended)
-   - Set up calendar reminder for renewal
-
-4. **Copy Token**
-   - Copy the generated token immediately
-   - Store securely (you won't see it again)
-
-### 2. Configure GitHub Integration
-
-```bash
-
-# Basic setup
-
-roadmap sync setup \
-  --token "your-github-token" \
-  --repo "username/repository-name"
-
-# Enterprise GitHub setup
-
-roadmap sync setup \
-  --token "enterprise-token" \
-  --repo "org/project" \
-  --github-url "https://github.enterprise.com"
-
-# Test the connection
-
-roadmap sync test
-
-```text
-
-**Expected Output:**
-
-```text
-🔍 Testing GitHub connection...
-✅ Successfully connected to GitHub
-✅ Repository access confirmed: username/repository
-✅ Issue creation permissions verified
-✅ Milestone access permissions verified
-🎉 GitHub integration is working correctly!
-
-```text
-
-### 3. Environment Variables (Alternative)
-
-For CI/CD or automated environments:
-
-```bash
-
-# Set environment variables
-
-export ROADMAP_GITHUB_TOKEN="your-token"
-export ROADMAP_GITHUB_REPO="username/repository"
-export ROADMAP_GITHUB_URL="https://api.github.com"  # Optional
-
-# Test without explicit setup
-
-roadmap sync test
-
-```text
-
-## 🏢 Enterprise Environment Setup
-
-### 1. Enterprise GitHub Integration
-
-```bash
-
-# Setup for GitHub Enterprise Server
-
-roadmap sync setup \
-  --token "enterprise-token" \
-  --repo "organization/project" \
-  --github-url "https://github.company.com"
-
-# Test enterprise connection
-
-roadmap sync test --verbose
-
-```text
-
-### 2. Proxy Configuration
-
-For environments behind corporate proxies:
-
-```bash
-
-# Set proxy environment variables
-
-export HTTP_PROXY="http://proxy.company.com:8080"
-export HTTPS_PROXY="http://proxy.company.com:8080"
-export NO_PROXY="localhost,127.0.0.1,.company.com"
-
-# Test connection through proxy
-
-roadmap sync test
-
-```text
-
-### 3. SSL Certificate Handling
-
-```bash
-
-# For environments with custom CA certificates
-
-export REQUESTS_CA_BUNDLE="/path/to/company-ca-bundle.pem"
-
-# For development/testing only (not recommended)
-
-roadmap sync setup \
-  --token "token" \
-  --repo "org/repo" \
-  --insecure  # Skips SSL verification
-
-```text
-
-## 👥 Team Setup
-
-### 1. Shared Repository Configuration
-
-For teams sharing a single roadmap:
-
-```bash
-
-# Team lead initial setup
-
-roadmap init
-roadmap sync setup --token "team-token" --repo "team/project"
-
-# Import existing GitHub issues
-
-roadmap sync pull --high-performance
-
-# Create shared backup
-
-roadmap bulk backup .roadmap/ --destination ./shared-backups/
-
-```text
-
-### 2. Individual Developer Setup
-
-For team members joining an existing project:
-
-```bash
-
-# Clone project repository
-
-git clone https://github.com/team/project.git
-cd project
-
-# Setup roadmap CLI
-
-roadmap sync setup --token "personal-token" --repo "team/project"
-
-# Sync latest data
-
-roadmap sync pull --high-performance
-
-# Verify setup
-
-roadmap status
-
-```text
-
-### 3. CI/CD Integration
-
-**GitHub Actions Example:**
-
-```yaml
-
-# .github/workflows/roadmap-sync.yml
-
-name: Roadmap Sync
-on:
-  schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
-
-  workflow_dispatch:
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: Install Roadmap CLI
-        run: pip install roadmap-cli
-
-      - name: Setup GitHub integration
-        env:
-          GITHUB_TOKEN: ${{ secrets.ROADMAP_GITHUB_TOKEN }}
-        run: |
-          roadmap sync setup \
-            --token "$GITHUB_TOKEN" \
-            --repo "${{ github.repository }}"
-
-      - name: Sync roadmap
-        run: roadmap sync pull --high-performance
-
-      - name: Validate roadmap
-        run: roadmap bulk validate .roadmap/
-
-      - name: Commit changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .roadmap/
-          git diff --staged --quiet || git commit -m "Auto-sync roadmap"
-          git push
-
-```text
-
-## 🔧 Development Environment Setup
-
-### 1. Poetry Setup (Recommended for Development)
-
-```bash
-
-# Install Poetry if not already installed
-
-curl -sSL https://install.python-poetry.org | python3 -
-
-# Clone and setup development environment
-
-git clone https://github.com/yourusername/roadmap.git
-cd roadmap
-
-# Install dependencies
+# Install with all development tools
 
 poetry install
 
-# Activate virtual environment
+# Or if using pip with extras
 
-poetry shell
-
-# Run in development mode
-
-poetry run roadmap --help
+pip install -e ".[dev]"
 
 ```text
 
-### 2. Development Configuration
+**Includes:** Testing frameworks, linters, documentation tools, pre-commit hooks
+
+## Why Two Installation Modes?
+
+### Production (--no-dev)
+
+- **50 packages** installed
+- **0 CVEs** (verified with pip-audit)
+- Minimal footprint, faster installation
+- All runtime functionality included
+
+### Development
+
+- **80+ packages** installed
+- Includes: pytest, ruff, pyright, sphinx, mkdocs
+- Pre-commit hooks for code quality
+- Documentation tools for development
+
+## Production Installation Details
+
+When you run `poetry install --no-dev` (or `pip install .`), you get:
+
+✅ **Core Runtime Dependencies:**
+
+- Click (CLI framework)
+- Pydantic (data validation)
+- PyYAML (config files)
+- Requests + aiohttp (HTTP)
+- Pandas + matplotlib + plotly (data visualization)
+- Keyring (credential storage)
+- GitPython (git integration)
+- Dynaconf (configuration management)
+
+❌ **Excluded Dev Dependencies:**
+
+- pytest, pytest-cov, pytest-asyncio (testing)
+- ruff, pyright (linting/type checking)
+- sphinx, mkdocs (documentation)
+- pre-commit (git hooks)
+
+## Configuration Files
+
+### pyproject.toml
+
+- Contains production dependency specification
+- Marked with installation instructions
+- Use `poetry install --no-dev` for production
+
+### setup.cfg
+
+- Pip configuration file
+- Supports standard `pip install .` workflow
+- Ensures pip defaults to production-only
+
+### .env.production
+
+- Reference template for production deployments
+- Copy to `.env` for production settings
+- Includes recommended production flags
+
+## Verification
+
+To verify your installation has no vulnerabilities:
 
 ```bash
 
-# Enable verbose logging
+# Install pip-audit
 
-export ROADMAP_LOG_LEVEL=DEBUG
+pip install pip-audit
 
-# Use development configuration
+# For production installations
 
-export ROADMAP_CONFIG_PATH=./dev-config.yaml
+pip-audit
 
-# Enable development features
-
-export ROADMAP_DEV_MODE=true
+# Expected output: No known vulnerabilities found
 
 ```text
 
-### 3. Testing Setup
+## Docker Deployment
 
-```bash
-
-# Run tests
-
-poetry run pytest
-
-# Run tests with coverage
-
-poetry run pytest --cov=roadmap --cov-report=html
-
-# Run performance tests
-
-poetry run pytest tests/test_performance_sync.py -v
-
-# Run integration tests
-
-poetry run pytest tests/test_integration.py -v
-
-```text
-
-## 🐳 Docker Setup
-
-### 1. Using Pre-built Docker Image
-
-```bash
-
-# Pull the official image
-
-docker pull roadmap-cli:latest
-
-# Run with mounted volume
-
-docker run -v $(pwd):/workspace roadmap-cli:latest init
-
-# Run with environment variables
-
-docker run \
-  -e ROADMAP_GITHUB_TOKEN="your-token" \
-  -e ROADMAP_GITHUB_REPO="user/repo" \
-  -v $(pwd):/workspace \
-  roadmap-cli:latest sync pull
-
-```text
-
-### 2. Building Custom Docker Image
+For Docker production builds:
 
 ```dockerfile
-
-# Dockerfile
-
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install roadmap CLI
+# Copy only needed files
 
-RUN pip install roadmap-cli
+COPY pyproject.toml setup.cfg README.md LICENSE.md ./
 
-# Set working directory for roadmap files
+# Install production only
 
-WORKDIR /workspace
+RUN pip install --no-cache-dir .
 
-# Default command
+# Or with Poetry
 
-CMD ["roadmap", "--help"]
+# RUN pip install poetry && poetry install --no-dev
+
+ENTRYPOINT ["roadmap"]
+
+```text
+
+## CI/CD Integration
+
+### GitHub Actions Example
+
+```yaml
+name: Production Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # Verify security for production
+
+      - name: Audit dependencies
+        run: |
+          pip install pip-audit
+          PIPAPI_PYTHON_LOCATION=$(which python) pip-audit
+
+      # Install production
+
+      - name: Install production
+        run: pip install .
+
+```text
+
+## Troubleshooting
+
+### Q: I want to use development tools but keep my environment clean
+
+A: Create a separate virtual environment for development:
+
+```bash
+
+# Development environment
+
+python -m venv venv-dev
+source venv-dev/bin/activate
+poetry install
 
 ```text
 
 ```bash
 
-# Build and run
+# Production environment
 
-docker build -t my-roadmap-cli .
-docker run -v $(pwd):/workspace my-roadmap-cli init
+python -m venv venv-prod
+source venv-prod/bin/activate
+poetry install --no-dev
 
 ```text
 
-## 🔍 Troubleshooting Installation
+### Q: How do I know which mode I'm in?
 
-### Common Issues and Solutions
-
-#### 1. Python Version Issues
+A: Check installed packages:
 
 ```bash
 
-# Check Python version
+# Production - 50 packages
 
-python --version
-python3 --version
-
-# If using old Python version
-
-# Option 1: Use pyenv to install Python 3.12
-
-curl https://pyenv.run | bash
-pyenv install 3.12.0
-pyenv global 3.12.0
-
-# Option 2: Use conda
-
-conda create -n roadmap python=3.12
-conda activate roadmap
-pip install roadmap-cli
+pip list | wc -l
 
 ```text
-
-#### 2. Permission Issues
 
 ```bash
 
-# If getting permission errors
+# Development - 80+ packages
 
-# Option 1: Install with --user flag
-
-pip install --user roadmap-cli
-
-# Option 2: Use virtual environment
-
-python -m venv roadmap-env
-source roadmap-env/bin/activate  # On Windows: roadmap-env\Scripts\activate
-
-pip install roadmap-cli
+pip list | wc -l
 
 ```text
 
-#### 3. Network/Proxy Issues
+Or look for test/dev tools:
+
+```bash
+pip show pytest  # Not found in production
+
+pip show ruff    # Not found in production
+
+```text
+
+### Q: Can I switch from dev to production?
+
+A: Yes, create a fresh environment:
 
 ```bash
 
-# Configure pip for proxy
+# Remove old packages
 
-pip install --proxy http://proxy.company.com:8080 roadmap-cli
-
-# Or set environment variables
-
-export HTTP_PROXY=http://proxy.company.com:8080
-export HTTPS_PROXY=http://proxy.company.com:8080
-pip install roadmap-cli
+pip uninstall -y -r <(pip freeze)
 
 ```text
-
-#### 4. GitHub Connection Issues
 
 ```bash
 
-# Test GitHub connectivity
+# Or start fresh
 
-curl -H "Authorization: token your-token" https://api.github.com/user
-
-# Check repository access
-
-curl -H "Authorization: token your-token" \
-     https://api.github.com/repos/username/repository
-
-# Verify token permissions
-
-roadmap sync test --verbose
+python -m venv venv-new
+source venv-new/bin/activate
+poetry install --no-dev
 
 ```text
 
-### Performance Optimization
+## Security Notes
 
-#### 1. Large Repository Setup
+- Production installations have **0 known CVEs**
+- Development installations include tools with CVEs (expected for dev)
+- Regular `pip-audit` checks recommended in CI/CD
+- See `docs/PRODUCTION_ENVIRONMENT_VERIFICATION.md` for verification details
 
-For repositories with 1000+ issues:
+## Version Requirements
 
-```bash
-
-# Optimize performance settings
-
-roadmap sync pull --high-performance \
-  --workers 16 \           # Increase workers
-
-  --batch-size 200         # Larger batches
-
-# Enable caching
-
-export ROADMAP_CACHE_TTL=600  # 10 minutes
-
-# Use SSD storage for .roadmap directory
-
-```text
-
-#### 2. Memory Optimization
-
-For memory-constrained environments:
-
-```bash
-
-# Reduce memory usage
-
-roadmap sync pull --high-performance \
-  --workers 2 \            # Fewer workers
-
-  --batch-size 10          # Smaller batches
-
-# Process in chunks
-
-roadmap sync pull --issues    # Issues only first
-
-roadmap sync pull --milestones  # Then milestones
-
-```text
-
-## 🎯 Best Practices
-
-### 1. Security Best Practices
-
-```bash
-
-# Use environment variables for tokens
-
-echo 'export ROADMAP_GITHUB_TOKEN="your-token"' >> ~/.bashrc
-source ~/.bashrc
-
-# Set restrictive permissions on config files
-
-chmod 600 .roadmap/config.yaml
-
-# Regularly rotate GitHub tokens
-
-roadmap sync delete-token
-roadmap sync setup --token "new-token" --repo "user/repo"
-
-```text
-
-### 2. Backup Best Practices
-
-```bash
-
-# Set up automated backups
-
-# Add to crontab (crontab -e):
-
-0 6 * * * cd /path/to/project && roadmap bulk backup .roadmap/
-
-# Configure backup retention
-
-find .roadmap/.backups -type d -mtime +30 -exec rm -rf {} \;
-
-```text
-
-### 3. Team Collaboration Best Practices
-
-```bash
-
-# Establish team conventions
-
-roadmap issue create "Team: Use consistent labeling" \
-  --labels team,process,documentation
-
-# Set up shared configuration
-
-cat > .roadmap/team-config.yaml << EOF
-teams:
-  backend:
-    default_labels: [backend, api]
-    members: [alice, bob]
-  frontend:
-    default_labels: [frontend, ui]
-    members: [charlie, diana]
-EOF
-
-```text
-
-## 📚 Next Steps
-
-After successful installation and setup:
-
-1. **Read the User Workflows Guide**: [USER_WORKFLOWS.md](USER_WORKFLOWS.md)
-2. **Explore CLI Commands**: [CLI_REFERENCE.md](CLI_REFERENCE.md)
-3. **Review Feature Showcase**: [FEATURE_SHOWCASE.md](FEATURE_SHOWCASE.md)
-4. **Check Performance Guide**: [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)
-
-## 🆘 Getting Help
-
-- **Documentation**: Check the complete documentation suite
-- **GitHub Issues**: Report bugs and request features
-- **Community**: Join discussions and get help from other users
-- **Support**: Contact maintainers for enterprise support
+- **Python:** 3.10, 3.11, 3.12 (tested and supported)
+- **Poetry:** 1.2+ (recommended for reproducible builds)
+- **Pip:** 21.0+ (standard pip install support)
 
 ---
 
-**Quick Start Summary:**
+For more information, see:
 
-```bash
-
-# 1. Install
-
-pip install roadmap-cli
-
-# 2. Initialize
-
-roadmap init
-
-# 3. Setup GitHub (optional)
-
-roadmap sync setup --token "your-token" --repo "user/repo"
-
-# 4. Start using
-
-roadmap issue create "My first issue"
-roadmap milestone create "v1.0"
-roadmap sync pull --high-performance
-
-```text
+- `docs/PRODUCTION_ENVIRONMENT_VERIFICATION.md` - Security verification report
+- `pyproject.toml` - Dependency specifications
+- `.env.production` - Production configuration template

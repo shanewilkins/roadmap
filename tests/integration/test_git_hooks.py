@@ -9,10 +9,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.domain import Priority, Status
-from roadmap.infrastructure.git import GitIntegration
-from roadmap.infrastructure.git_hooks import GitHookManager, WorkflowAutomation
+from roadmap.adapters.git.git import GitIntegration
+from roadmap.adapters.git.git_hooks import GitHookManager, WorkflowAutomation
+from roadmap.core.domain import Priority, Status
+from roadmap.infrastructure.core import RoadmapCore
 
 
 @pytest.mark.integration
@@ -117,7 +117,7 @@ class TestGitHookManager:
         assert "GitHookManager" in content
         assert "RoadmapCore" in content
 
-    @patch("roadmap.infrastructure.git_hooks.GitIntegration")
+    @patch("roadmap.adapters.git.git_hooks.GitIntegration")
     def test_handle_post_commit(self, mock_git_integration, temp_git_repo):
         """Test post-commit hook handler."""
         _, core = temp_git_repo
@@ -326,7 +326,7 @@ class TestWorkflowAutomation:
         assert not Path(".roadmap_automation_config.json").exists()
         assert not Path(".roadmap_progress_tracking.json").exists()
 
-    @patch("roadmap.infrastructure.git_hooks.GitIntegration")
+    @patch("roadmap.adapters.git.git_hooks.GitIntegration")
     def test_sync_all_issues_with_git(self, mock_git_integration, temp_git_repo):
         """Test syncing all issues with Git activity."""
         _, core = temp_git_repo
@@ -470,7 +470,7 @@ class TestWorkflowAutomation:
         automation = WorkflowAutomation(core)
 
         # Create a mock commit that references the issue
-        from roadmap.infrastructure.git import GitCommit
+        from roadmap.adapters.git.git import GitCommit
 
         mock_commit = GitCommit(
             hash="abc123",

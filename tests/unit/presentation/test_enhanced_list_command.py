@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 import pytest
 from click.testing import CliRunner
 
-from roadmap.application.core import RoadmapCore
-from roadmap.cli import main
-from roadmap.domain import Milestone, MilestoneStatus, Priority, Status
+from roadmap.adapters.cli import main
+from roadmap.core.domain import Milestone, MilestoneStatus, Priority, Status
+from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.skip(
     reason="CLI command integration tests - complex Click mocking"
@@ -56,7 +56,7 @@ def temp_roadmap():
                 status=MilestoneStatus.OPEN,
             )
             milestone_path = core.milestones_dir / future_milestone.filename
-            from roadmap.infrastructure.persistence.parser import MilestoneParser
+            from roadmap.adapters.persistence.parser import MilestoneParser
 
             MilestoneParser.save_milestone_file(future_milestone, milestone_path)
 

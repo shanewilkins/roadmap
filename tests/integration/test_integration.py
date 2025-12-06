@@ -12,9 +12,9 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from roadmap.application.core import RoadmapCore
-from roadmap.cli import main
-from roadmap.domain import Priority, Status
+from roadmap.adapters.cli import main
+from roadmap.core.domain import Priority, Status
+from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.filesystem
 
@@ -22,7 +22,7 @@ pytestmark = pytest.mark.filesystem
 @pytest.fixture
 def mock_github_client():
     """Mock GitHub client for integration operations."""
-    with patch("roadmap.infrastructure.github.GitHubClient") as mock_client_class:
+    with patch("roadmap.adapters.github.github.GitHubClient") as mock_client_class:
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 

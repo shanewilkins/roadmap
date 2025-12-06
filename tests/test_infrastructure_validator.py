@@ -13,7 +13,7 @@ Covers:
 
 from unittest.mock import MagicMock, patch
 
-from roadmap.application.services.infrastructure_validator_service import (
+from roadmap.core.services.infrastructure_validator_service import (
     DatabaseIntegrityValidator,
     GitRepositoryValidator,
     HealthStatus,
@@ -28,7 +28,7 @@ from roadmap.application.services.infrastructure_validator_service import (
 class TestRoadmapDirectoryValidator:
     """Tests for RoadmapDirectoryValidator."""
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_roadmap_directory_healthy(self, mock_path):
         """Test healthy .roadmap directory."""
         mock_dir = MagicMock()
@@ -45,7 +45,7 @@ class TestRoadmapDirectoryValidator:
         mock_test_file.touch.assert_called_once()
         mock_test_file.unlink.assert_called_once()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_roadmap_directory_not_exists(self, mock_path):
         """Test missing .roadmap directory."""
         mock_dir = MagicMock()
@@ -57,7 +57,7 @@ class TestRoadmapDirectoryValidator:
         assert status == HealthStatus.DEGRADED
         assert "not initialized" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_roadmap_directory_not_a_directory(self, mock_path):
         """Test .roadmap exists but is not a directory."""
         mock_dir = MagicMock()
@@ -70,7 +70,7 @@ class TestRoadmapDirectoryValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_roadmap_directory_not_writable(self, mock_path):
         """Test .roadmap directory is not writable."""
         mock_dir = MagicMock()
@@ -86,7 +86,7 @@ class TestRoadmapDirectoryValidator:
         assert status == HealthStatus.DEGRADED
         assert "not writable" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_roadmap_directory_exception(self, mock_path):
         """Test exception handling in roadmap directory check."""
         mock_path.side_effect = Exception("Unexpected error")
@@ -100,7 +100,7 @@ class TestRoadmapDirectoryValidator:
 class TestStateFileValidator:
     """Tests for StateFileValidator."""
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     @patch("builtins.open", create=True)
     def test_check_state_file_healthy(self, mock_open_func, mock_path):
         """Test healthy state.db file."""
@@ -131,7 +131,7 @@ class TestStateFileValidator:
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_state_file_not_exists(self, mock_path):
         """Test missing state.db file."""
         mock_file = MagicMock()
@@ -143,7 +143,7 @@ class TestStateFileValidator:
         assert status == HealthStatus.DEGRADED
         assert "not found" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_state_file_empty(self, mock_path):
         """Test empty state.db file."""
         mock_file = MagicMock()
@@ -157,7 +157,7 @@ class TestStateFileValidator:
         assert "empty" in message.lower()
 
     @patch("builtins.open", side_effect=OSError("Permission denied"))
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_state_file_not_readable(self, mock_path, mock_open):
         """Test state.db file is not readable."""
         mock_file = MagicMock()
@@ -170,7 +170,7 @@ class TestStateFileValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "Cannot read state.db" in message
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_state_file_exception(self, mock_path):
         """Test exception handling in state file check."""
         mock_path.side_effect = Exception("Unexpected error")
@@ -184,7 +184,7 @@ class TestStateFileValidator:
 class TestIssuesDirectoryValidator:
     """Tests for IssuesDirectoryValidator."""
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_issues_directory_healthy(self, mock_path):
         """Test healthy issues directory."""
         mock_dir = MagicMock()
@@ -198,7 +198,7 @@ class TestIssuesDirectoryValidator:
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_issues_directory_not_exists(self, mock_path):
         """Test missing issues directory."""
         mock_dir = MagicMock()
@@ -210,7 +210,7 @@ class TestIssuesDirectoryValidator:
         assert status == HealthStatus.DEGRADED
         assert "not found" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_issues_directory_not_a_directory(self, mock_path):
         """Test issues path exists but is not a directory."""
         mock_dir = MagicMock()
@@ -223,7 +223,7 @@ class TestIssuesDirectoryValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_issues_directory_not_readable(self, mock_path):
         """Test issues directory is not readable."""
         mock_dir = MagicMock()
@@ -237,7 +237,7 @@ class TestIssuesDirectoryValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "Cannot read issues directory" in message
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_issues_directory_exception(self, mock_path):
         """Test exception handling in issues directory check."""
         mock_path.side_effect = Exception("Unexpected error")
@@ -251,7 +251,7 @@ class TestIssuesDirectoryValidator:
 class TestMilestonesDirectoryValidator:
     """Tests for MilestonesDirectoryValidator."""
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_milestones_directory_healthy(self, mock_path):
         """Test healthy milestones directory."""
         mock_dir = MagicMock()
@@ -265,7 +265,7 @@ class TestMilestonesDirectoryValidator:
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_milestones_directory_not_exists(self, mock_path):
         """Test missing milestones directory."""
         mock_dir = MagicMock()
@@ -277,7 +277,7 @@ class TestMilestonesDirectoryValidator:
         assert status == HealthStatus.DEGRADED
         assert "not found" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_milestones_directory_not_a_directory(self, mock_path):
         """Test milestones path exists but is not a directory."""
         mock_dir = MagicMock()
@@ -290,7 +290,7 @@ class TestMilestonesDirectoryValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_milestones_directory_not_readable(self, mock_path):
         """Test milestones directory is not readable."""
         mock_dir = MagicMock()
@@ -304,7 +304,7 @@ class TestMilestonesDirectoryValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "Cannot read milestones directory" in message
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_milestones_directory_exception(self, mock_path):
         """Test exception handling in milestones directory check."""
         mock_path.side_effect = Exception("Unexpected error")
@@ -318,7 +318,7 @@ class TestMilestonesDirectoryValidator:
 class TestGitRepositoryValidator:
     """Tests for GitRepositoryValidator."""
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_git_repository_healthy(self, mock_path):
         """Test healthy Git repository."""
         mock_dir = MagicMock()
@@ -331,7 +331,7 @@ class TestGitRepositoryValidator:
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_git_repository_not_exists(self, mock_path):
         """Test missing Git repository."""
         mock_dir = MagicMock()
@@ -343,7 +343,7 @@ class TestGitRepositoryValidator:
         assert status == HealthStatus.DEGRADED
         assert ".git not found" in message
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_git_repository_not_a_directory(self, mock_path):
         """Test .git exists but is not a directory."""
         mock_dir = MagicMock()
@@ -356,7 +356,7 @@ class TestGitRepositoryValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "not a directory" in message.lower()
 
-    @patch("roadmap.application.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.infrastructure_validator_service.Path")
     def test_check_git_repository_exception(self, mock_path):
         """Test exception handling in Git repository check."""
         mock_path.side_effect = Exception("Unexpected error")
@@ -370,7 +370,7 @@ class TestGitRepositoryValidator:
 class TestDatabaseIntegrityValidator:
     """Tests for DatabaseIntegrityValidator."""
 
-    @patch("roadmap.infrastructure.storage.StateManager")
+    @patch("roadmap.adapters.persistence.storage.StateManager")
     def test_check_database_integrity_healthy(self, mock_state_manager_class):
         """Test healthy database."""
         mock_state_mgr = MagicMock()
@@ -384,7 +384,7 @@ class TestDatabaseIntegrityValidator:
         assert "accessible" in message.lower()
         mock_conn.execute.assert_called_once_with("SELECT 1")
 
-    @patch("roadmap.infrastructure.storage.StateManager")
+    @patch("roadmap.adapters.persistence.storage.StateManager")
     def test_check_database_integrity_query_failed(self, mock_state_manager_class):
         """Test database query failure."""
         mock_state_mgr = MagicMock()
@@ -398,7 +398,7 @@ class TestDatabaseIntegrityValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "Database query failed" in message
 
-    @patch("roadmap.infrastructure.storage.StateManager")
+    @patch("roadmap.adapters.persistence.storage.StateManager")
     def test_check_database_integrity_initialization_failed(
         self, mock_state_manager_class
     ):

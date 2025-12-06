@@ -10,9 +10,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.domain.issue import Issue, Priority, Status
-from roadmap.domain.milestone import Milestone, MilestoneStatus
-from roadmap.presentation.cli.services.daily_summary_service import DailySummaryService
+from roadmap.adapters.cli.services.daily_summary_service import DailySummaryService
+from roadmap.core.domain.issue import Issue, Priority, Status
+from roadmap.core.domain.milestone import Milestone, MilestoneStatus
 
 
 class TestDailySummaryServiceUserResolution:

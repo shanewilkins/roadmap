@@ -48,7 +48,7 @@ def safe_working_directory(directory):
             os.chdir(os.path.expanduser("~"))
 
 
-from roadmap.shared.security import (
+from roadmap.common.security import (
     PathValidationError,
     SecurityError,
     cleanup_old_backups,
@@ -176,7 +176,7 @@ class TestCreateSecureFile:
             with create_secure_file(invalid_path):
                 pass
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_create_secure_file_logging(self, mock_log):
         """Test that security events are logged properly."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -250,7 +250,7 @@ class TestCreateSecureDirectory:
             ):
                 create_secure_directory(Path("/invalid/path"))
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_create_secure_directory_logging(self, mock_log):
         """Test directory creation logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -365,7 +365,7 @@ class TestValidatePath:
                 result = validate_path("safe_file.txt", str(base_dir))
                 assert result.name == "safe_file.txt"
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_validate_path_logging_success(self, mock_log):
         """Test successful path validation logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -393,7 +393,7 @@ class TestValidatePath:
             )
             assert success_logged
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_validate_path_logging_failure(self, mock_log):
         """Test failed path validation logging."""
         with pytest.raises(PathValidationError):
@@ -494,7 +494,7 @@ class TestSanitizeFilename:
         assert "\0" not in result
         assert result == "file_name.txt"
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_sanitize_filename_logging(self, mock_log):
         """Test filename sanitization logging."""
         original = "dangerous<file>.txt"
@@ -558,7 +558,7 @@ class TestCreateSecureTempFile:
         ):
             create_secure_temp_file()
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_create_secure_temp_file_logging(self, mock_log):
         """Test temp file creation logging."""
         temp_file = create_secure_temp_file()
@@ -616,7 +616,7 @@ class TestSecureFilePermissions:
             with pytest.raises(SecurityError, match="Failed to set secure permissions"):
                 secure_file_permissions(test_file)
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_secure_file_permissions_logging(self, mock_log):
         """Test permission setting logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -845,7 +845,7 @@ class TestValidateExportSize:
 
             validate_export_size(empty_file, max_size_mb=1)
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_validate_export_size_logging_large_file(self, mock_log):
         """Test logging of large file detection."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -988,7 +988,7 @@ class TestCleanupOldBackups:
                     # The important thing is it doesn't crash
                     assert result >= 0  # Should return a non-negative count
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_cleanup_old_backups_logging(self, mock_log):
         """Test backup cleanup logging."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1069,7 +1069,7 @@ class TestSecurityIntegration:
 
     def test_security_logging_integration(self):
         """Test that all security operations properly log events."""
-        from roadmap.shared.security import security_logger
+        from roadmap.common.security import security_logger
 
         # Clean up any existing handlers to ensure test isolation
         for handler in security_logger.handlers[:]:
@@ -1141,7 +1141,7 @@ class TestSecurityIntegration:
 
             assert safe_file.exists()
 
-    @patch("roadmap.shared.security.log_security_event")
+    @patch("roadmap.common.security.log_security_event")
     def test_comprehensive_logging_coverage(self, mock_log):
         """Test that all major security operations log events."""
         with tempfile.TemporaryDirectory() as temp_dir:

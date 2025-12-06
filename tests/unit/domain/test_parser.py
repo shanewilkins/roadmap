@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.domain import Issue, Milestone, MilestoneStatus, Priority, Status
-from roadmap.infrastructure.persistence.parser import (
+from roadmap.adapters.persistence.parser import (
     FrontmatterParser,
     IssueParser,
     MilestoneParser,
 )
+from roadmap.core.domain import Issue, Milestone, MilestoneStatus, Priority, Status
 
 pytestmark = pytest.mark.unit
 

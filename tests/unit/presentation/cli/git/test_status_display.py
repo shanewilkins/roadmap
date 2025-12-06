@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from roadmap.presentation.cli.git.status_display import GitStatusDisplay
+from roadmap.adapters.cli.git.status_display import GitStatusDisplay
 
 
 class TestGitStatusDisplay:

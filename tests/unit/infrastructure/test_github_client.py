@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
-from roadmap.domain import Priority, Status
-from roadmap.infrastructure.github import GitHubAPIError, GitHubClient
+from roadmap.adapters.github.github import GitHubAPIError, GitHubClient
+from roadmap.core.domain import Priority, Status
 
 pytestmark = pytest.mark.unit
 
@@ -19,7 +19,7 @@ class TestGitHubClient:
     def mock_session(self):
         """Mock requests session."""
         with patch(
-            "roadmap.infrastructure.github.requests.Session"
+            "roadmap.adapters.github.github.requests.Session"
         ) as mock_session_class:
             mock_session = Mock()
             mock_session_class.return_value = mock_session
@@ -38,7 +38,7 @@ class TestGitHubClient:
         assert client.repo == "test_repo"
 
     @patch.dict("os.environ", {}, clear=True)
-    @patch("roadmap.infrastructure.github.get_credential_manager")
+    @patch("roadmap.adapters.github.github.get_credential_manager")
     def test_initialization_without_token_raises_error(self, mock_credential_manager):
         """Test that missing token raises error."""
         # Mock credential manager to return None
@@ -429,7 +429,7 @@ class TestGitHubClientErrorHandling:
     def mock_session(self):
         """Mock requests session."""
         with patch(
-            "roadmap.infrastructure.github.requests.Session"
+            "roadmap.adapters.github.github.requests.Session"
         ) as mock_session_class:
             mock_session = Mock()
             mock_session_class.return_value = mock_session

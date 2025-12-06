@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.cli import main
+from roadmap.adapters.cli import main
 
 
 @pytest.fixture(autouse=True)
@@ -69,7 +69,7 @@ def cli_isolated_fs():
 @pytest.fixture
 def initialized_roadmap(temp_dir):
     """Provide a temporary directory with an initialized roadmap."""
-    from roadmap.application.core import RoadmapCore
+    from roadmap.infrastructure.core import RoadmapCore
 
     # Initialize the roadmap
     manager = RoadmapCore()
@@ -81,7 +81,7 @@ def initialized_roadmap(temp_dir):
 @pytest.fixture
 def mock_github_client():
     """Mock GitHub client for testing sync operations."""
-    with patch("roadmap.infrastructure.github.GitHubClient") as mock:
+    with patch("roadmap.adapters.github.github.GitHubClient") as mock:
         # Mock successful authentication
         mock.return_value.test_connection.return_value = True
         mock.return_value.get_issues.return_value = []

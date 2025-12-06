@@ -10,7 +10,7 @@ from typing import Any
 
 from dynaconf import Dynaconf, Validator  # type: ignore[import-not-found]
 
-from .shared.logging import get_logger
+from .common.logging import get_logger
 
 logger = get_logger(__name__)
 

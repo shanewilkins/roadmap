@@ -6,13 +6,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.domain import (
+from roadmap.core.domain import (
     IssueType,
     MilestoneStatus,
     Priority,
     Status,
 )
+from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
 
@@ -86,7 +86,7 @@ class TestRoadmapCoreUncoveredLines:
 
         # Mock parser to raise exception on this file
         with patch(
-            "roadmap.infrastructure.persistence.parser.MilestoneParser.parse_milestone_file"
+            "roadmap.adapters.persistence.parser.MilestoneParser.parse_milestone_file"
         ) as mock_parse:
             mock_parse.side_effect = Exception("Parse error")
 
@@ -286,7 +286,7 @@ class TestRoadmapCoreUncoveredLines:
 
                     # Test invalid assignee - falls back to GitHub validation
                     with patch(
-                        "roadmap.infrastructure.github.GitHubClient"
+                        "roadmap.adapters.github.github.GitHubClient"
                     ) as mock_github:
                         mock_client = Mock()
                         mock_client.validate_assignee.return_value = (
@@ -344,7 +344,7 @@ class TestRoadmapCoreUncoveredLines:
 
                     # Mock GitHub client to raise exception
                     with patch(
-                        "roadmap.infrastructure.github.GitHubClient"
+                        "roadmap.adapters.github.github.GitHubClient"
                     ) as mock_github:
                         mock_github.side_effect = Exception("Network error")
 
@@ -384,7 +384,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_security_and_logging_integration(self, core):
         """Test security logging integration in various operations."""
         # Test issue creation with security logging
-        with patch("roadmap.shared.security.log_security_event"):
+        with patch("roadmap.common.security.log_security_event"):
             issue = core.create_issue(
                 title="Security Test Issue", priority=Priority.HIGH
             )
@@ -418,7 +418,7 @@ class TestRoadmapCoreUncoveredLines:
             milestone_file = (
                 core.milestones_dir / f"{milestone2.name.lower().replace(' ', '_')}.md"
             )
-            from roadmap.infrastructure.persistence.parser import MilestoneParser
+            from roadmap.adapters.persistence.parser import MilestoneParser
 
             MilestoneParser.save_milestone_file(milestone2, milestone_file)
 

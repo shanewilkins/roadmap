@@ -9,9 +9,9 @@ Tests cover:
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-from roadmap.presentation.cli.services.milestone_list_service import (
+from roadmap.adapters.cli.services.milestone_list_service import (
     MilestoneFilterService,
     MilestoneListService,
     MilestoneProgressService,
@@ -87,9 +87,7 @@ class TestMilestoneProgressService:
             "completed": 7,
         }
 
-        result = MilestoneProgressService.get_milestone_progress(
-            mock_core, "v1.0"
-        )
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
 
         assert result["total"] == 10
         assert result["completed"] == 7
@@ -103,9 +101,7 @@ class TestMilestoneProgressService:
             "completed": 0,
         }
 
-        result = MilestoneProgressService.get_milestone_progress(
-            mock_core, "v1.0"
-        )
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
 
         assert result["total"] == 0
         assert result["completed"] == 0
@@ -119,9 +115,7 @@ class TestMilestoneProgressService:
             "completed": 10,
         }
 
-        result = MilestoneProgressService.get_milestone_progress(
-            mock_core, "v1.0"
-        )
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
 
         assert result["percentage"] == 100.0
 
@@ -130,9 +124,7 @@ class TestMilestoneProgressService:
         mock_core = MagicMock()
         mock_core.get_milestone_progress.side_effect = Exception("DB error")
 
-        result = MilestoneProgressService.get_milestone_progress(
-            mock_core, "v1.0"
-        )
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
 
         assert result["total"] == 0
         assert result["completed"] == 0
@@ -174,9 +166,7 @@ class TestMilestoneTimeEstimateService:
         mock_ms.name = "v1.0"
         mock_ms.get_estimated_time_display.return_value = "32 hours"
 
-        result = MilestoneTimeEstimateService.get_milestone_time_estimate(
-            mock_ms, []
-        )
+        result = MilestoneTimeEstimateService.get_milestone_time_estimate(mock_ms, [])
 
         assert result == "32 hours"
 
@@ -186,9 +176,7 @@ class TestMilestoneTimeEstimateService:
         mock_ms.name = "v1.0"
         mock_ms.get_estimated_time_display.return_value = None
 
-        result = MilestoneTimeEstimateService.get_milestone_time_estimate(
-            mock_ms, []
-        )
+        result = MilestoneTimeEstimateService.get_milestone_time_estimate(mock_ms, [])
 
         assert result == "-"
 
@@ -198,9 +186,7 @@ class TestMilestoneTimeEstimateService:
         mock_ms.name = "v1.0"
         mock_ms.get_estimated_time_display.side_effect = Exception("Error")
 
-        result = MilestoneTimeEstimateService.get_milestone_time_estimate(
-            mock_ms, []
-        )
+        result = MilestoneTimeEstimateService.get_milestone_time_estimate(mock_ms, [])
 
         assert result == "-"
 

@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.domain import IssueType, Priority
-from roadmap.infrastructure.git_hooks import GitHookManager, WorkflowAutomation
+from roadmap.adapters.git.git_hooks import GitHookManager, WorkflowAutomation
+from roadmap.core.domain import IssueType, Priority
+from roadmap.infrastructure.core import RoadmapCore
 
 
 @pytest.mark.integration

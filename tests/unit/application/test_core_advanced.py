@@ -8,11 +8,11 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.domain import (
+from roadmap.core.domain import (
     Priority,
     Status,
 )
+from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
 
@@ -193,7 +193,7 @@ class TestRoadmapCoreTeamManagement:
         from unittest.mock import patch
 
         with patch(
-            "roadmap.application.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_cm_class:
             mock_cm_class.side_effect = Exception("Config not found")
             current_user = core.get_current_user()
@@ -205,7 +205,7 @@ class TestRoadmapCoreTeamManagement:
         from unittest.mock import patch
 
         with patch(
-            "roadmap.application.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_cm_class:
             mock_cm_instance = Mock()
             mock_cm_instance.load.side_effect = Exception("Config error")
@@ -237,7 +237,7 @@ class TestRoadmapCoreTeamManagement:
         assert len(bob_issues) == 1
         assert bob_issues[0].title == "Bob Issue"
 
-    @patch("roadmap.application.core.RoadmapCore.get_current_user")
+    @patch("roadmap.infrastructure.core.RoadmapCore.get_current_user")
     def test_get_my_issues(self, mock_current_user, core):
         """Test getting issues assigned to current user."""
         mock_current_user.return_value = "alice@example.com"
@@ -261,7 +261,7 @@ class TestRoadmapCoreTeamManagement:
         assert "My Issue 1" in my_titles
         assert "My Issue 2" in my_titles
 
-    @patch("roadmap.application.core.RoadmapCore.get_current_user")
+    @patch("roadmap.infrastructure.core.RoadmapCore.get_current_user")
     def test_get_my_issues_no_current_user(self, mock_current_user, core):
         """Test getting my issues when current user is unknown."""
         mock_current_user.return_value = None
@@ -355,7 +355,7 @@ class TestRoadmapCoreGitHubIntegration:
             assert owner is None
             assert repo is None
 
-    @patch("roadmap.application.core.RoadmapCore._get_cached_team_members")
+    @patch("roadmap.infrastructure.core.RoadmapCore._get_cached_team_members")
     def test_get_cached_team_members(self, mock_cached, core):
         """Test getting cached team members."""
         mock_cached.return_value = ["alice@example.com", "bob@example.com"]

@@ -8,10 +8,9 @@ Tests cover:
 - Empty state handling
 """
 
-from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from roadmap.presentation.cli.presentation.milestone_list_presenter import (
+from roadmap.adapters.cli.presentation.milestone_list_presenter import (
     MilestoneListPresenter,
     MilestoneTablePresenter,
 )
@@ -20,14 +19,16 @@ from roadmap.presentation.cli.presentation.milestone_list_presenter import (
 class TestMilestoneTablePresenter:
     """Tests for milestone table rendering."""
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_display_milestone_table_empty(self, mock_console):
         """Test displaying empty milestone table."""
-        MilestoneTablePresenter.display_milestone_table([], {}, {}, lambda x: ("-", None))
+        MilestoneTablePresenter.display_milestone_table(
+            [], {}, {}, lambda x: ("-", None)
+        )
 
         mock_console.print.assert_called_once()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_display_milestone_table_single_milestone(self, mock_console):
         """Test displaying table with single milestone."""
         mock_ms = MagicMock()
@@ -47,7 +48,7 @@ class TestMilestoneTablePresenter:
 
         mock_console.print.assert_called_once()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_display_milestone_table_multiple_milestones(self, mock_console):
         """Test displaying table with multiple milestones."""
         mock_ms1 = MagicMock()
@@ -75,7 +76,7 @@ class TestMilestoneTablePresenter:
 
         mock_console.print.assert_called_once()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_display_milestone_table_with_overdue_styling(self, mock_console):
         """Test displaying table with overdue styling."""
         mock_ms = MagicMock()
@@ -95,7 +96,7 @@ class TestMilestoneTablePresenter:
 
         mock_console.print.assert_called_once()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_display_milestone_table_missing_data(self, mock_console):
         """Test displaying table with missing progress/estimate data."""
         mock_ms = MagicMock()
@@ -115,12 +116,10 @@ class TestMilestoneTablePresenter:
 
         mock_console.print.assert_called_once()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_display_milestone_table_exception(self, mock_console):
         """Test handling exceptions during table display."""
-        MilestoneTablePresenter.display_milestone_table(
-            [], {}, {}, None
-        )
+        MilestoneTablePresenter.display_milestone_table([], {}, {}, None)
 
         # Should call console.print for error message
         assert mock_console.print.call_count >= 1
@@ -129,7 +128,7 @@ class TestMilestoneTablePresenter:
 class TestMilestoneListPresenter:
     """Tests for milestone list presentation."""
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_show_empty_state(self, mock_console):
         """Test displaying empty state."""
         MilestoneListPresenter.show_empty_state()
@@ -137,15 +136,17 @@ class TestMilestoneListPresenter:
         # Should print twice (message + instruction)
         assert mock_console.print.call_count == 2
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_show_no_upcoming_milestones(self, mock_console):
         """Test displaying no upcoming milestones message."""
         MilestoneListPresenter.show_no_upcoming_milestones()
 
         assert mock_console.print.call_count == 2
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.MilestoneTablePresenter.display_milestone_table")
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch(
+        "roadmap.adapters.cli.presentation.milestone_list_presenter.MilestoneTablePresenter.display_milestone_table"
+    )
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_show_milestones_list_empty(self, mock_console, mock_table):
         """Test showing milestones list when empty."""
         milestones_data = {
@@ -163,8 +164,10 @@ class TestMilestoneListPresenter:
         assert mock_console.print.call_count == 2
         mock_table.assert_not_called()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.MilestoneTablePresenter.display_milestone_table")
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch(
+        "roadmap.adapters.cli.presentation.milestone_list_presenter.MilestoneTablePresenter.display_milestone_table"
+    )
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_show_milestones_list_with_data(self, mock_console, mock_table):
         """Test showing milestones list with data."""
         mock_ms = MagicMock()
@@ -182,7 +185,7 @@ class TestMilestoneListPresenter:
         # Should call table display
         mock_table.assert_called_once()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_show_error(self, mock_console):
         """Test displaying error message."""
         error_msg = "Database connection failed"
@@ -193,8 +196,10 @@ class TestMilestoneListPresenter:
         call_args = str(mock_console.print.call_args)
         assert "Failed" in call_args or "error" in call_args.lower()
 
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.MilestoneTablePresenter.display_milestone_table")
-    @patch("roadmap.presentation.cli.presentation.milestone_list_presenter.console")
+    @patch(
+        "roadmap.adapters.cli.presentation.milestone_list_presenter.MilestoneTablePresenter.display_milestone_table"
+    )
+    @patch("roadmap.adapters.cli.presentation.milestone_list_presenter.console")
     def test_show_milestones_list_with_multiple(self, mock_console, mock_table):
         """Test showing milestones list with multiple milestones."""
         mock_ms1 = MagicMock()

@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.shared.logging import configure_for_testing
+from roadmap.common.logging import configure_for_testing
 
 from .unit.domain.test_data_factory import TestDataFactory
 from .unit.shared.test_utils import (
@@ -312,7 +312,7 @@ version: "1.0.0"
 
         # Initialize roadmap core
         with patch("roadmap.core.RoadmapCore.initialize"):
-            from roadmap.application.core import RoadmapCore
+            from roadmap.infrastructure.core import RoadmapCore
 
             core = RoadmapCore()
             core.is_initialized = Mock(return_value=True)

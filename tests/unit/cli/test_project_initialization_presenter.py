@@ -10,7 +10,7 @@ Tests cover:
 
 from unittest.mock import patch
 
-from roadmap.presentation.cli.presentation.project_initialization_presenter import (
+from roadmap.adapters.cli.presentation.project_initialization_presenter import (
     ProjectInitializationPresenter,
 )
 
@@ -18,9 +18,7 @@ from roadmap.presentation.cli.presentation.project_initialization_presenter impo
 class TestProjectInitializationPresenter:
     """Tests for project initialization presenter."""
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_detected_context_with_git_repo(self, mock_console):
         """Test display of detected context with git repository."""
         detected_info = {
@@ -39,9 +37,7 @@ class TestProjectInitializationPresenter:
         assert any("owner/repo" in str(call) for call in calls)
         assert any("MyProject" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_detected_context_without_git_repo_interactive(self, mock_console):
         """Test display of detected context without git repo in interactive mode."""
         detected_info = {
@@ -59,9 +55,7 @@ class TestProjectInitializationPresenter:
         calls = mock_console.print.call_args_list
         assert any("git init" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_detected_context_without_git_repo_non_interactive(self, mock_console):
         """Test display of detected context without git repo in non-interactive mode."""
         detected_info = {
@@ -81,7 +75,7 @@ class TestProjectInitializationPresenter:
         assert len(git_init_calls) == 0
 
     @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.click.prompt"
+        "roadmap.adapters.cli.presentation.project_initialization_presenter.click.prompt"
     )
     def test_prompt_project_name_interactive(self, mock_prompt):
         """Test prompting for project name in interactive mode."""
@@ -95,7 +89,7 @@ class TestProjectInitializationPresenter:
         mock_prompt.assert_called_once()
 
     @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.click.prompt"
+        "roadmap.adapters.cli.presentation.project_initialization_presenter.click.prompt"
     )
     def test_prompt_project_name_with_yes_flag(self, mock_prompt):
         """Test that --yes flag skips prompting."""
@@ -107,7 +101,7 @@ class TestProjectInitializationPresenter:
         mock_prompt.assert_not_called()
 
     @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.click.prompt"
+        "roadmap.adapters.cli.presentation.project_initialization_presenter.click.prompt"
     )
     def test_prompt_project_name_non_interactive(self, mock_prompt):
         """Test that non-interactive mode uses suggested name."""
@@ -119,7 +113,7 @@ class TestProjectInitializationPresenter:
         mock_prompt.assert_not_called()
 
     @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.click.prompt"
+        "roadmap.adapters.cli.presentation.project_initialization_presenter.click.prompt"
     )
     def test_prompt_project_description_interactive(self, mock_prompt):
         """Test prompting for project description."""
@@ -133,7 +127,7 @@ class TestProjectInitializationPresenter:
         mock_prompt.assert_called_once()
 
     @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.click.prompt"
+        "roadmap.adapters.cli.presentation.project_initialization_presenter.click.prompt"
     )
     def test_prompt_project_description_with_yes_flag(self, mock_prompt):
         """Test that --yes flag skips description prompt."""
@@ -144,9 +138,7 @@ class TestProjectInitializationPresenter:
         assert result == "Default"
         mock_prompt.assert_not_called()
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_project_creation_status(self, mock_console):
         """Test display of project creation status."""
         ProjectInitializationPresenter.show_project_creation_status()
@@ -154,9 +146,7 @@ class TestProjectInitializationPresenter:
         calls = mock_console.print.call_args_list
         assert any("Creating main project" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_project_created(self, mock_console):
         """Test display of successful project creation."""
         project_info = {"name": "MyProject", "id": "abc123xyz"}
@@ -167,9 +157,7 @@ class TestProjectInitializationPresenter:
         assert any("MyProject" in str(call) for call in calls)
         assert any("abc12" in str(call) for call in calls)  # Truncated ID
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_existing_projects_single(self, mock_console):
         """Test display of single existing project."""
         projects = [{"name": "ExistingProject", "id": "existing123"}]
@@ -179,9 +167,7 @@ class TestProjectInitializationPresenter:
         calls = mock_console.print.call_args_list
         assert any("ExistingProject" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_existing_projects_multiple(self, mock_console):
         """Test display of multiple existing projects."""
         projects = [
@@ -198,9 +184,7 @@ class TestProjectInitializationPresenter:
         assert any("Project3" in str(call) for call in calls)
         assert any("3 projects" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_success_summary_with_github(self, mock_console):
         """Test success summary with GitHub integration."""
         project_info = {"name": "MyProject", "id": "abc123xyz"}
@@ -220,9 +204,7 @@ class TestProjectInitializationPresenter:
         assert "MyProject" in call_str
         assert "GitHub" in call_str
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_success_summary_without_github(self, mock_console):
         """Test success summary without GitHub integration."""
         project_info = {"name": "MyProject", "id": "abc123xyz"}
@@ -240,9 +222,7 @@ class TestProjectInitializationPresenter:
         assert "Setup Complete" in call_str
         assert "git init" in call_str
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_success_summary_no_project(self, mock_console):
         """Test success summary when no project was created."""
         detected_info = {"has_git": True}
@@ -258,9 +238,7 @@ class TestProjectInitializationPresenter:
         call_str = str(calls)
         assert "Setup Complete" in call_str
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_warning(self, mock_console):
         """Test display of warning message."""
         ProjectInitializationPresenter.show_warning(
@@ -271,9 +249,7 @@ class TestProjectInitializationPresenter:
         assert any("Test warning" in str(call) for call in calls)
         assert any("Additional context" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_warning_no_context(self, mock_console):
         """Test display of warning without context."""
         ProjectInitializationPresenter.show_warning("Simple warning")
@@ -281,9 +257,7 @@ class TestProjectInitializationPresenter:
         calls = mock_console.print.call_args_list
         assert any("Simple warning" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_error(self, mock_console):
         """Test display of error message."""
         ProjectInitializationPresenter.show_error("Test error message")
@@ -291,9 +265,7 @@ class TestProjectInitializationPresenter:
         calls = mock_console.print.call_args_list
         assert any("Test error message" in str(call) for call in calls)
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_success_summary_output_structure(self, mock_console):
         """Test that success summary has expected output sections."""
         project_info = {"name": "TestProj", "id": "test123xyz"}
@@ -315,9 +287,7 @@ class TestProjectInitializationPresenter:
         assert "Learn More" in call_str
         assert "Pro Tips" in call_str
 
-    @patch(
-        "roadmap.presentation.cli.presentation.project_initialization_presenter.console"
-    )
+    @patch("roadmap.adapters.cli.presentation.project_initialization_presenter.console")
     def test_show_success_summary_git_disabled_shows_tips(self, mock_console):
         """Test that git initialization tips shown when git not available."""
         detected_info = {"has_git": False}

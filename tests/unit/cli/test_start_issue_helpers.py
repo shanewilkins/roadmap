@@ -5,12 +5,12 @@ Tests for start issue helpers.
 from datetime import datetime
 from unittest.mock import Mock
 
-from roadmap.cli.start_issue_helpers import (
+from roadmap.adapters.cli.start_issue_helpers import (
     StartDateParser,
     StartIssueDisplay,
     StartIssueWorkflow,
 )
-from roadmap.domain import Status
+from roadmap.core.domain import Status
 
 
 class TestStartDateParser:

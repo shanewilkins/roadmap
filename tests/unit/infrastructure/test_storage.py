@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.infrastructure.storage import StateManager
+from roadmap.adapters.persistence.storage import StateManager
 
 
 class TestStateManager:

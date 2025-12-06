@@ -6,14 +6,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.infrastructure.security.credentials import CredentialManager, mask_token
-from roadmap.shared.file_utils import (
+from roadmap.common.file_utils import (
     SecureFileManager,
     ensure_directory_exists,
     safe_read_file,
     safe_write_file,
 )
-from roadmap.shared.security import create_secure_directory, create_secure_file
+from roadmap.common.security import create_secure_directory, create_secure_file
+from roadmap.infrastructure.security.credentials import CredentialManager, mask_token
 
 
 class TestCredentialSecurity:
@@ -149,11 +149,11 @@ class TestFileSystemSecurity:
 
     def test_safe_write_file_creates_atomic_operations(self):
         """Verify safe_write_file uses atomic writes by default."""
-        with patch("roadmap.shared.file_utils.SecureFileManager") as mock_secure:
+        with patch("roadmap.common.file_utils.SecureFileManager") as mock_secure:
             mock_secure.return_value.__enter__ = MagicMock()
             mock_secure.return_value.__exit__ = MagicMock(return_value=None)
 
-            with patch("roadmap.shared.file_utils.ensure_directory_exists"):
+            with patch("roadmap.common.file_utils.ensure_directory_exists"):
                 try:
                     safe_write_file(Path("/test/file.txt"), "content")
                     # SecureFileManager should be called (atomic operation)
@@ -175,7 +175,7 @@ class TestFileSystemSecurity:
 
     def test_backup_file_creation_preserves_content(self):
         """Verify backup file creation preserves original content."""
-        from roadmap.shared.file_utils import backup_file
+        from roadmap.common.file_utils import backup_file
 
         with patch("shutil.copy2"):
             try:
@@ -202,7 +202,7 @@ class TestFileSystemSecurity:
 
     def test_file_operations_error_includes_path_info(self):
         """Verify file operation errors include path information."""
-        from roadmap.shared.file_utils import FileOperationError
+        from roadmap.common.file_utils import FileOperationError
 
         error = FileOperationError("Test error", Path("/test/file.txt"), "write")
 
@@ -243,7 +243,7 @@ class TestPermissionHandling:
 
     def test_secure_directory_creates_parent_ownership(self):
         """Verify secure directory creation doesn't expose sensitive paths."""
-        with patch("roadmap.shared.security.ensure_directory_exists") as mock_ensure:
+        with patch("roadmap.common.security.ensure_directory_exists") as mock_ensure:
             try:
                 create_secure_directory(Path("/test/.roadmap/secure"))
                 # Should not expose full path in logs
@@ -253,7 +253,7 @@ class TestPermissionHandling:
 
     def test_permission_errors_dont_fail_operations(self):
         """Verify permission errors are logged but don't block operations."""
-        from roadmap.shared.security import log_security_event
+        from roadmap.common.security import log_security_event
 
         # Verify security logging is available
         assert callable(log_security_event) or True  # May not be importable

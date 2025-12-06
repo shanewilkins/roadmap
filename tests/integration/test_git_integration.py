@@ -9,10 +9,10 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from roadmap.application.core import RoadmapCore
-from roadmap.cli import main
-from roadmap.domain import IssueType, Priority
-from roadmap.infrastructure.git import GitBranch, GitCommit, GitIntegration
+from roadmap.adapters.cli import main
+from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
+from roadmap.core.domain import IssueType, Priority
+from roadmap.infrastructure.core import RoadmapCore
 
 
 class TestGitCommit:
@@ -194,7 +194,7 @@ class TestGitIntegration:
         finally:
             self.tearDown()
 
-    @patch("roadmap.infrastructure.git.GitIntegration._run_git_command")
+    @patch("roadmap.adapters.git.git.GitIntegration._run_git_command")
     def test_get_recent_commits(self, mock_git_cmd):
         """Test getting recent commits."""
         # Mock git log output
@@ -358,7 +358,7 @@ class TestGitIntegrationCore:
         subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
 
         # Refresh git integration after git repo is created
-        from roadmap.infrastructure.git import GitIntegration
+        from roadmap.adapters.git.git import GitIntegration
 
         self.core.git = GitIntegration(self.core.root_path)
 
@@ -409,7 +409,7 @@ class TestGitIntegrationCore:
         finally:
             self.tearDown()
 
-    @patch("roadmap.infrastructure.git.GitIntegration.get_commits_for_issue")
+    @patch("roadmap.adapters.git.git.GitIntegration.get_commits_for_issue")
     def test_update_issue_from_git_activity(self, mock_get_commits):
         """Test updating issue from Git commit activity."""
         self.setUp()

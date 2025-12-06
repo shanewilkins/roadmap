@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.services.configuration_service import ConfigurationService
+from roadmap.core.services.configuration_service import ConfigurationService
 
 
 @pytest.fixture
@@ -33,11 +33,11 @@ def mock_credential_manager():
 def config_service(mock_settings, mock_credential_manager):
     """Create a ConfigurationService with mocked dependencies."""
     with patch(
-        "roadmap.application.services.configuration_service.CredentialManager",
+        "roadmap.core.services.configuration_service.CredentialManager",
         return_value=mock_credential_manager,
     ):
         with patch(
-            "roadmap.application.services.configuration_service.settings", mock_settings
+            "roadmap.core.services.configuration_service.settings", mock_settings
         ):
             service = ConfigurationService()
             service._settings = mock_settings
@@ -51,7 +51,7 @@ class TestConfigurationServiceInit:
     def test_init_creates_credential_manager(self):
         """Test initialization creates credential manager."""
         with patch(
-            "roadmap.application.services.configuration_service.CredentialManager"
+            "roadmap.core.services.configuration_service.CredentialManager"
         ) as mock_cm:
             service = ConfigurationService()
 

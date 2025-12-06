@@ -8,13 +8,13 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.domain import (
+from roadmap.core.domain import (
     IssueType,
     MilestoneStatus,
     Priority,
     Status,
 )
+from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
 
@@ -167,7 +167,7 @@ class TestRoadmapCoreMilestoneOperations:
 
         # Mock parser to raise exception
         with patch(
-            "roadmap.infrastructure.persistence.parser.MilestoneParser.save_milestone_file"
+            "roadmap.adapters.persistence.parser.MilestoneParser.save_milestone_file"
         ) as mock_save:
             mock_save.side_effect = Exception("Save failed")
 
@@ -408,7 +408,7 @@ class TestRoadmapCoreErrorHandling:
 
         # All these should raise ValueError
         with pytest.raises(ValueError, match="Roadmap not initialized"):
-            from roadmap.domain import Priority
+            from roadmap.core.domain import Priority
 
             core.create_issue("Test", priority=Priority.HIGH)
 
@@ -606,7 +606,7 @@ class TestRoadmapCoreAdvancedOperations:
         assert hasattr(core.git, "repo_path")
         assert core.git.repo_path == core.root_path
 
-    @patch("roadmap.infrastructure.persistence.parser.IssueParser.save_issue_file")
+    @patch("roadmap.adapters.persistence.parser.IssueParser.save_issue_file")
     def test_security_integration(self, mock_save, core):
         """Test that security functions are used in operations."""
         # IssueParser.save_issue_file should be called during issue creation

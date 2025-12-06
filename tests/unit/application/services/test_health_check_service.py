@@ -4,9 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.application.core import RoadmapCore
-from roadmap.application.health import HealthCheck, HealthStatus
-from roadmap.application.services.health_check_service import HealthCheckService
+from roadmap.core.services.health_check_service import HealthCheckService
+from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.health import HealthCheck, HealthStatus
 
 
 class TestHealthCheckService:

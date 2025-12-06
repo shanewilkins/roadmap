@@ -10,14 +10,14 @@ Comprehensive test coverage for:
 from enum import Enum
 from unittest.mock import Mock, patch
 
-from roadmap.application.health import HealthStatus as ApplicationHealthStatus
-from roadmap.application.services.base_validator import (
+from roadmap.common.decorators import service_operation
+from roadmap.common.status_utils import StatusSummary
+from roadmap.core.services.base_validator import (
     BaseValidator,
     HealthStatus,
 )
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
-from roadmap.shared.decorators import service_operation
-from roadmap.shared.status_utils import StatusSummary
+from roadmap.infrastructure.health import HealthStatus as ApplicationHealthStatus
 
 # ============================================================================
 # BaseValidator Tests
@@ -89,7 +89,7 @@ class TestBaseValidator:
 
     def test_check_logs_success(self):
         """Test that successful checks are logged."""
-        with patch("roadmap.application.services.base_validator.logger") as mock_logger:
+        with patch("roadmap.core.services.base_validator.logger") as mock_logger:
             ConcreteValidator.check()
             mock_logger.debug.assert_called_once()
             call_args = mock_logger.debug.call_args
@@ -97,7 +97,7 @@ class TestBaseValidator:
 
     def test_check_logs_failure(self):
         """Test that failures are logged."""
-        with patch("roadmap.application.services.base_validator.logger") as mock_logger:
+        with patch("roadmap.core.services.base_validator.logger") as mock_logger:
             FailingValidator.check()
             mock_logger.error.assert_called_once()
             call_args = mock_logger.error.call_args
@@ -168,7 +168,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise ValueError("Error message")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             mock_logger.error.assert_called_once()
@@ -180,7 +180,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise ValueError("Warning message")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             mock_logger.warning.assert_called_once()
@@ -192,7 +192,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise ValueError("Debug message")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             mock_logger.debug.assert_called_once()
@@ -204,7 +204,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise ValueError("Info message")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             mock_logger.info.assert_called_once()
@@ -224,7 +224,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise ValueError("Original error")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             # The message is the first positional arg
@@ -241,7 +241,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise ValueError("Error with traceback")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             call_kwargs = mock_logger.error.call_args[1]
@@ -255,7 +255,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise ValueError("Error without traceback")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             call_kwargs = mock_logger.error.call_args[1]
@@ -268,7 +268,7 @@ class TestServiceOperationDecorator:
         def failing_func(self):
             raise RuntimeError("Runtime error")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
             call_kwargs = mock_logger.error.call_args[1]
@@ -281,7 +281,7 @@ class TestServiceOperationDecorator:
         def my_special_operation(self):
             raise ValueError("Error")
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             my_special_operation(mock_self)
             call_kwargs = mock_logger.error.call_args[1]
@@ -294,7 +294,7 @@ class TestServiceOperationDecorator:
         def successful_func(self):
             return {"result": "success"}
 
-        with patch("roadmap.shared.decorators.logger") as mock_logger:
+        with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             successful_func(mock_self)
             mock_logger.debug.assert_called_once()

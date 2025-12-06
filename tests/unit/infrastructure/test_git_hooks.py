@@ -7,9 +7,9 @@ from unittest.mock import Mock, mock_open, patch
 
 import pytest
 
-from roadmap.domain import Issue, Status
-from roadmap.infrastructure.git import GitCommit
-from roadmap.infrastructure.git_hooks import GitHookManager, WorkflowAutomation
+from roadmap.adapters.git.git import GitCommit
+from roadmap.adapters.git.git_hooks import GitHookManager, WorkflowAutomation
+from roadmap.core.domain import Issue, Status
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def mock_git_integration():
 def hook_manager(mock_core, mock_git_integration):
     """Create a GitHookManager instance with mocked dependencies."""
     with patch(
-        "roadmap.infrastructure.git_hooks.GitIntegration",
+        "roadmap.adapters.git.git_hooks.GitIntegration",
         return_value=mock_git_integration,
     ):
         manager = GitHookManager(mock_core)
@@ -45,7 +45,7 @@ def hook_manager(mock_core, mock_git_integration):
 def workflow_automation(mock_core, mock_git_integration):
     """Create a WorkflowAutomation instance with mocked dependencies."""
     with patch(
-        "roadmap.infrastructure.git_hooks.GitIntegration",
+        "roadmap.adapters.git.git_hooks.GitIntegration",
         return_value=mock_git_integration,
     ):
         automation = WorkflowAutomation(mock_core)
@@ -70,7 +70,7 @@ class TestGitHookManagerInit:
 
     def test_init_with_git_repository(self, mock_core):
         """Test initialization in a Git repository."""
-        with patch("roadmap.infrastructure.git_hooks.GitIntegration") as mock_git_class:
+        with patch("roadmap.adapters.git.git_hooks.GitIntegration") as mock_git_class:
             mock_git = Mock()
             mock_git.is_git_repository.return_value = True
             mock_git_class.return_value = mock_git
@@ -82,7 +82,7 @@ class TestGitHookManagerInit:
 
     def test_init_without_git_repository(self, mock_core):
         """Test initialization outside a Git repository."""
-        with patch("roadmap.infrastructure.git_hooks.GitIntegration") as mock_git_class:
+        with patch("roadmap.adapters.git.git_hooks.GitIntegration") as mock_git_class:
             mock_git = Mock()
             mock_git.is_git_repository.return_value = False
             mock_git_class.return_value = mock_git
@@ -520,7 +520,7 @@ class TestWorkflowAutomationSync:
                 return_value=True,
             ) as mock_sync,
             patch(
-                "roadmap.infrastructure.git_hooks.GitCommit.extract_roadmap_references",
+                "roadmap.adapters.git.git_hooks.GitCommit.extract_roadmap_references",
                 return_value=["TEST-001"],
             ),
         ):
@@ -570,7 +570,7 @@ class TestWorkflowAutomationSync:
                 side_effect=Exception("Sync error"),
             ),
             patch(
-                "roadmap.infrastructure.git_hooks.GitCommit.extract_roadmap_references",
+                "roadmap.adapters.git.git_hooks.GitCommit.extract_roadmap_references",
                 return_value=["TEST-001"],
             ),
         ):
@@ -601,7 +601,7 @@ class TestWorkflowAutomationSync:
         progress_commit.extract_progress_info = Mock(return_value=50.0)
 
         with patch(
-            "roadmap.infrastructure.git_hooks.IssueParser.save_issue_file"
+            "roadmap.adapters.git.git_hooks.IssueParser.save_issue_file"
         ) as mock_save:
             result = workflow_automation._sync_issue_with_commits(
                 issue, [progress_commit]
@@ -626,7 +626,7 @@ class TestWorkflowAutomationSync:
         sample_commit.extract_progress_info = Mock(return_value=None)
 
         with patch(
-            "roadmap.infrastructure.git_hooks.IssueParser.save_issue_file"
+            "roadmap.adapters.git.git_hooks.IssueParser.save_issue_file"
         ) as mock_save:
             result = workflow_automation._sync_issue_with_commits(
                 issue, [sample_commit]
@@ -652,7 +652,7 @@ class TestWorkflowAutomationSync:
         # Mock the methods on the commit instance
         sample_commit.extract_progress_info = Mock(return_value=None)
 
-        with patch("roadmap.infrastructure.git_hooks.IssueParser.save_issue_file"):
+        with patch("roadmap.adapters.git.git_hooks.IssueParser.save_issue_file"):
             result = workflow_automation._sync_issue_with_commits(
                 issue, [sample_commit]
             )
