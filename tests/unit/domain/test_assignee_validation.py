@@ -54,17 +54,17 @@ class TestAssigneeValidation:
         core = RoadmapCore(Path(initialized_roadmap))
 
         # Test empty string
-        is_valid, error = core.validate_assignee("")
+        is_valid, error = core.team.validate_assignee("")
         assert not is_valid
         assert "cannot be empty" in error.lower()
 
         # Test None
-        is_valid, error = core.validate_assignee(None)  # type: ignore[arg-type]
+        is_valid, error = core.team.validate_assignee(None)  # type: ignore[arg-type]
         assert not is_valid
         assert "cannot be empty" in error.lower()
 
         # Test whitespace
-        is_valid, error = core.validate_assignee("   ")
+        is_valid, error = core.team.validate_assignee("   ")
         assert not is_valid
         assert "cannot be empty" in error.lower()
 
@@ -81,17 +81,17 @@ class TestAssigneeValidation:
         # Mock no GitHub configuration (local-only usage)
         with patch.object(core, "_get_github_config", return_value=(None, None, None)):
             # Should accept any assignee without validation
-            is_valid, error = core.validate_assignee("localuser")
+            is_valid, error = core.team.validate_assignee("localuser")
             assert is_valid
             assert error == ""
 
             # Should also accept usernames that wouldn't exist on GitHub
-            is_valid, error = core.validate_assignee("john.doe@company.com")
+            is_valid, error = core.team.validate_assignee("john.doe@company.com")
             assert is_valid
             assert error == ""
 
             # Should accept simple names
-            is_valid, error = core.validate_assignee("alice")
+            is_valid, error = core.team.validate_assignee("alice")
             assert is_valid
             assert error == ""
 
@@ -110,7 +110,7 @@ class TestAssigneeValidation:
             core._team_members_cache = ["validuser", "anotheruser"]
             core._cache_timestamp = datetime.now()
 
-            is_valid, error = core.validate_assignee("validuser")
+            is_valid, error = core.team.validate_assignee("validuser")
             assert is_valid
             assert error == ""
 
@@ -124,7 +124,7 @@ class TestAssigneeValidation:
         with patch.object(core.github_service, "validate_assignee") as mock_validate:
             mock_validate.return_value = (False, "User 'invaliduser' does not exist")
 
-            is_valid, error = core.validate_assignee("invaliduser")
+            is_valid, error = core.team.validate_assignee("invaliduser")
             assert not is_valid
             assert "does not exist" in error
 
@@ -138,7 +138,7 @@ class TestAssigneeValidation:
         with patch.object(
             core.github_service, "validate_assignee", return_value=(True, "")
         ):
-            is_valid, error = core.validate_assignee("any-username-here")
+            is_valid, error = core.team.validate_assignee("any-username-here")
             assert is_valid
             assert error == ""
 
@@ -146,7 +146,7 @@ class TestAssigneeValidation:
         with patch.object(
             core.github_service, "validate_assignee", return_value=(True, "")
         ):
-            is_valid, error = core.validate_assignee("any-username-here")
+            is_valid, error = core.team.validate_assignee("any-username-here")
             assert is_valid
             assert error == ""
 
@@ -154,7 +154,7 @@ class TestAssigneeValidation:
         with patch.object(
             core.github_service, "validate_assignee", return_value=(True, "")
         ):
-            is_valid, error = core.validate_assignee("validuser")
+            is_valid, error = core.team.validate_assignee("validuser")
             assert is_valid
 
     def test_cached_team_members(self, initialized_roadmap):

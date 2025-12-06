@@ -8,7 +8,10 @@ from roadmap.adapters.cli.performance_tracking import track_database_operation
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 
-console = get_console()
+
+def _get_console():
+    """Get console instance at runtime to respect Click's test environment."""
+    return get_console()
 
 
 @click.command("update")
@@ -54,7 +57,7 @@ def update_issue(
     core = ctx.obj["core"]
 
     if not core.is_initialized():
-        console.print(
+        _get_console().print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
         return
@@ -63,7 +66,7 @@ def update_issue(
         # Check if issue exists
         issue = core.get_issue(issue_id)
         if not issue:
-            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+            _get_console().print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
         # Build update dictionary
@@ -76,7 +79,7 @@ def update_issue(
             description,
             estimate,
             core,
-            console,
+            _get_console(),
         )
 
         # Check for assignee validation failure
@@ -84,7 +87,7 @@ def update_issue(
             raise click.Abort()
 
         if not updates:
-            console.print("❌ No updates specified", style="bold red")
+            _get_console().print("❌ No updates specified", style="bold red")
             raise click.Abort()
 
         # Update the issue
@@ -94,7 +97,9 @@ def update_issue(
             updated_issue = core.update_issue(issue_id, **updates)
 
         # Display results
-        IssueUpdateDisplay.show_update_result(updated_issue, updates, reason, console)
+        IssueUpdateDisplay.show_update_result(
+            updated_issue, updates, reason, _get_console()
+        )
 
     except click.Abort:
         raise

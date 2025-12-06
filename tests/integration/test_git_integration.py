@@ -359,8 +359,12 @@ class TestGitIntegrationCore:
 
         # Refresh git integration after git repo is created
         from roadmap.adapters.git.git import GitIntegration
+        from roadmap.infrastructure.git_coordinator import GitCoordinator
+        from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
 
-        self.core.git = GitIntegration(self.core.root_path)
+        git_integration = GitIntegration(self.core.root_path)
+        git_ops = GitIntegrationOps(git_integration, self.core)
+        self.core.git = GitCoordinator(git_ops)
 
     def tearDown(self):
         """Clean up test environment."""
@@ -373,7 +377,7 @@ class TestGitIntegrationCore:
         """Test getting Git context information."""
         self.setUp()
         try:
-            context = self.core.get_git_context()
+            context = self.core.git.get_context()
 
             assert context["is_git_repo"] is True
             assert "current_branch" in context
@@ -384,7 +388,7 @@ class TestGitIntegrationCore:
         """Test getting current user from Git."""
         self.setUp()
         try:
-            user = self.core.get_current_user_from_git()
+            user = self.core.git.get_current_user()
             assert user == "Test User"
         finally:
             self.tearDown()
@@ -394,13 +398,13 @@ class TestGitIntegrationCore:
         self.setUp()
         try:
             # Create an issue
-            issue = self.core.create_issue(
+            issue = self.core.issues.create(
                 title="Implement User Authentication",
                 priority=Priority.HIGH,
                 issue_type=IssueType.FEATURE,
             )
 
-            branch_name = self.core.suggest_branch_name_for_issue(issue.id)
+            branch_name = self.core.git.suggest_branch_name(issue.id)
 
             assert branch_name is not None
             assert issue.id in branch_name
@@ -415,7 +419,7 @@ class TestGitIntegrationCore:
         self.setUp()
         try:
             # Create an issue
-            issue = self.core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
+            issue = self.core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
             # Mock commit with progress info
             mock_commit = GitCommit(
@@ -428,12 +432,12 @@ class TestGitIntegrationCore:
             mock_get_commits.return_value = [mock_commit]
 
             # Update issue from Git activity
-            success = self.core.update_issue_from_git_activity(issue.id)
+            success = self.core.git.update_issue_from_activity(issue.id)
 
             assert success is True
 
             # Check that issue was updated
-            updated_issue = self.core.get_issue(issue.id)
+            updated_issue = self.core.issues.get(issue.id)
             assert updated_issue.progress_percentage == 75.0
         finally:
             self.tearDown()

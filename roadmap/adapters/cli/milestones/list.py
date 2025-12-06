@@ -11,7 +11,10 @@ from roadmap.adapters.cli.services.milestone_list_service import (
 )
 from roadmap.common.console import get_console
 
-console = get_console()
+
+def _get_console():
+    """Get console instance at runtime to respect Click's test environment."""
+    return get_console()
 
 
 @click.command("list")
@@ -24,7 +27,7 @@ def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
     core = ctx.obj["core"]
 
     if not core.is_initialized():
-        console.print(
+        _get_console().print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
         return

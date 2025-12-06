@@ -88,7 +88,7 @@ class GitIntegrationOps:
         checkout_branch = kwargs.pop("checkout_branch", True)
 
         # Create the issue first
-        issue = self.core.create_issue(title, **kwargs)
+        issue = self.core.issues.create(title, **kwargs)
         if not issue:
             return None
 

@@ -23,7 +23,7 @@ class TestCoreEdgeCases:
     def test_list_issues_with_malformed_files(self, initialized_core):
         """Test listing issues when some files are malformed."""
         # Create a valid issue
-        initialized_core.create_issue("Valid Issue")
+        initialized_core.issues.create("Valid Issue")
 
         # Create a malformed file in the issues directory
         malformed_file = initialized_core.issues_dir / "malformed.md"
@@ -32,28 +32,28 @@ class TestCoreEdgeCases:
         )
 
         # List issues should skip the malformed file and return only valid ones
-        issues = initialized_core.list_issues()
+        issues = initialized_core.issues.list()
         assert len(issues) == 1
         assert issues[0].title == "Valid Issue"
 
     def test_list_issues_with_empty_files(self, initialized_core):
         """Test listing issues when some files are empty."""
         # Create a valid issue
-        initialized_core.create_issue("Valid Issue")
+        initialized_core.issues.create("Valid Issue")
 
         # Create an empty file in the issues directory
         empty_file = initialized_core.issues_dir / "empty.md"
         empty_file.write_text("")
 
         # List issues should skip the empty file
-        issues = initialized_core.list_issues()
+        issues = initialized_core.issues.list()
         assert len(issues) == 1
         assert issues[0].title == "Valid Issue"
 
     def test_list_issues_with_corrupted_frontmatter(self, initialized_core):
         """Test listing issues with corrupted YAML frontmatter."""
         # Create a valid issue
-        initialized_core.create_issue("Valid Issue")
+        initialized_core.issues.create("Valid Issue")
 
         # Create a file with corrupted frontmatter
         corrupted_file = initialized_core.issues_dir / "corrupted.md"
@@ -69,14 +69,14 @@ This issue has corrupted YAML frontmatter.
         )
 
         # List issues should skip the corrupted file
-        issues = initialized_core.list_issues()
+        issues = initialized_core.issues.list()
         assert len(issues) == 1
         assert issues[0].title == "Valid Issue"
 
     def test_list_issues_with_missing_required_fields(self, initialized_core):
         """Test listing issues with missing required fields."""
         # Create a valid issue
-        initialized_core.create_issue("Valid Issue")
+        initialized_core.issues.create("Valid Issue")
 
         # Create a file with missing required fields
         missing_fields_file = initialized_core.issues_dir / "missing-fields.md"
@@ -91,63 +91,63 @@ This issue is missing the title field.
         )
 
         # List issues should skip the file with missing fields
-        issues = initialized_core.list_issues()
+        issues = initialized_core.issues.list()
         assert len(issues) == 1
         assert issues[0].title == "Valid Issue"
 
     def test_list_issues_with_complex_filtering(self, initialized_core):
         """Test complex filtering scenarios."""
         # Create issues with various attributes
-        issue1 = initialized_core.create_issue("Issue 1", priority=Priority.HIGH)
-        issue2 = initialized_core.create_issue("Issue 2", priority=Priority.LOW)
-        initialized_core.create_issue("Issue 3", priority=Priority.HIGH)
+        issue1 = initialized_core.issues.create("Issue 1", priority=Priority.HIGH)
+        issue2 = initialized_core.issues.create("Issue 2", priority=Priority.LOW)
+        initialized_core.issues.create("Issue 3", priority=Priority.HIGH)
 
         # Update issue statuses
-        initialized_core.update_issue(issue1.id, status=Status.IN_PROGRESS)
-        initialized_core.update_issue(issue2.id, status=Status.CLOSED)
+        initialized_core.issues.update(issue1.id, status=Status.IN_PROGRESS)
+        initialized_core.issues.update(issue2.id, status=Status.CLOSED)
 
         # Create a milestone and assign issues
-        initialized_core.create_milestone("Test Milestone", "Test description")
+        initialized_core.milestones.create("Test Milestone", "Test description")
         initialized_core.move_issue_to_milestone(issue1.id, "Test Milestone")
 
         # Test filtering by multiple criteria
         # High priority, in-progress issues
-        issues = initialized_core.list_issues(
+        issues = initialized_core.issues.list(
             priority=Priority.HIGH, status=Status.IN_PROGRESS
         )
         assert len(issues) == 1
         assert issues[0].id == issue1.id
 
         # Issues in specific milestone with high priority
-        issues = initialized_core.list_issues(
+        issues = initialized_core.issues.list(
             milestone="Test Milestone", priority=Priority.HIGH
         )
         assert len(issues) == 1
         assert issues[0].id == issue1.id
 
         # Issues with no milestone (backlog)
-        issues = initialized_core.list_issues(milestone=None)
+        issues = initialized_core.issues.list(milestone=None)
         backlog_issues = [i for i in issues if i.milestone is None or i.milestone == ""]
         assert len(backlog_issues) >= 2  # issue2 and issue3
 
     def test_get_issue_nonexistent(self, initialized_core):
         """Test getting a non-existent issue."""
-        issue = initialized_core.get_issue("nonexistent-id")
+        issue = initialized_core.issues.get("nonexistent-id")
         assert issue is None
 
     def test_update_issue_nonexistent(self, initialized_core):
         """Test updating a non-existent issue."""
-        result = initialized_core.update_issue("nonexistent-id", title="New Title")
+        result = initialized_core.issues.update("nonexistent-id", title="New Title")
         assert result is None
 
     def test_delete_issue_nonexistent(self, initialized_core):
         """Test deleting a non-existent issue."""
-        result = initialized_core.delete_issue("nonexistent-id")
+        result = initialized_core.issues.delete("nonexistent-id")
         assert result is False
 
     def test_move_issue_to_nonexistent_milestone(self, initialized_core):
         """Test moving issue to non-existent milestone."""
-        issue = initialized_core.create_issue("Test Issue")
+        issue = initialized_core.issues.create("Test Issue")
 
         result = initialized_core.move_issue_to_milestone(
             issue.id, "Nonexistent Milestone"
@@ -156,7 +156,7 @@ This issue is missing the title field.
 
     def test_move_nonexistent_issue_to_milestone(self, initialized_core):
         """Test moving non-existent issue to milestone."""
-        initialized_core.create_milestone("Test Milestone", "Test description")
+        initialized_core.milestones.create("Test Milestone", "Test description")
 
         result = initialized_core.move_issue_to_milestone(
             "nonexistent-id", "Test Milestone"
@@ -166,27 +166,27 @@ This issue is missing the title field.
     def test_list_issues_with_assignee_edge_cases(self, initialized_core):
         """Test assignee filtering edge cases."""
         # Create issues with various assignee states
-        issue1 = initialized_core.create_issue("Issue 1")
-        issue2 = initialized_core.create_issue("Issue 2")
-        initialized_core.create_issue("Issue 3")
+        issue1 = initialized_core.issues.create("Issue 1")
+        issue2 = initialized_core.issues.create("Issue 2")
+        initialized_core.issues.create("Issue 3")
 
         # Set different assignee states
-        initialized_core.update_issue(issue1.id, assignee="alice")
-        initialized_core.update_issue(issue2.id, assignee="")  # Empty string
+        initialized_core.issues.update(issue1.id, assignee="alice")
+        initialized_core.issues.update(issue2.id, assignee="")  # Empty string
         # issue3 stays with assignee=None
 
         # Test filtering by assignee
-        issues = initialized_core.list_issues(assignee="alice")
+        issues = initialized_core.issues.list(assignee="alice")
         assert len(issues) == 1
         assert issues[0].id == issue1.id
 
         # Test that when assignee="" (empty string), the filter is not applied
         # because empty string is falsy, so all issues are returned
-        issues = initialized_core.list_issues(assignee="")
+        issues = initialized_core.issues.list(assignee="")
         assert len(issues) == 3  # All issues returned
 
         # Test that when no assignee filter is provided, all issues are returned
-        all_issues = initialized_core.list_issues()
+        all_issues = initialized_core.issues.list()
         assert len(all_issues) == 3
 
     def test_initialize_already_initialized_directory(self, temp_dir):
@@ -206,19 +206,19 @@ This issue is missing the title field.
         core = RoadmapCore()
 
         with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.create_issue("Test Issue")
+            core.issues.create("Test Issue")
 
         with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.list_issues()
+            core.issues.list()
 
         with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.create_milestone("Test Milestone", "Description")
+            core.milestones.create("Test Milestone", "Description")
 
     @patch("roadmap.adapters.persistence.parser.IssueParser.parse_issue_file")
     def test_list_issues_with_parser_exception(self, mock_parse, initialized_core):
         """Test list_issues handles parser exceptions gracefully."""
         # Create a valid issue first
-        issue = initialized_core.create_issue("Valid Issue")
+        issue = initialized_core.issues.create("Valid Issue")
 
         # Mock the parser to raise an exception for some files
         def side_effect(file_path):
@@ -236,7 +236,7 @@ This issue is missing the title field.
         problem_file.write_text("Some content")
 
         # List issues should handle the exception and continue
-        issues = initialized_core.list_issues()
+        issues = initialized_core.issues.list()
         assert len(issues) == 1  # Only the valid issue should be returned
 
     def test_file_operations_with_permission_errors(self, initialized_core):
@@ -244,7 +244,7 @@ This issue is missing the title field.
         import stat
 
         # Create an issue
-        issue = initialized_core.create_issue("Test Issue")
+        issue = initialized_core.issues.create("Test Issue")
         issue_file = initialized_core.issues_dir / issue.filename
 
         try:
@@ -254,7 +254,7 @@ This issue is missing the title field.
             # Try to update the issue (should handle permission error gracefully)
             # Note: This might not always fail on all systems, so we just ensure it doesn't crash
             try:
-                initialized_core.update_issue(issue.id, title="New Title")
+                initialized_core.issues.update(issue.id, title="New Title")
                 # If it succeeds, that's fine too
             except PermissionError:
                 # If it fails with permission error, that's expected

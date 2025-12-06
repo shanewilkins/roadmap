@@ -11,6 +11,7 @@ Handles all business logic related to:
 import getpass
 import re
 import subprocess
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -432,9 +433,9 @@ class ProjectCreationService:
                 )
 
             # Save project file
-            project_id = core._generate_id()[:8]
+            project_id = str(uuid.uuid4())[:8]
             project_filename = (
-                f"{project_id}-{core._normalize_filename(project_name)}.md"
+                f"{project_id}-{project_name.lower().replace(' ', '-')}.md"
             )
             project_file = core.roadmap_dir / "projects" / project_filename
 

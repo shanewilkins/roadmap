@@ -89,7 +89,7 @@ def create_issue(
 
         # Create the issue
         with track_database_operation("create", "issue", warn_threshold_ms=2000):
-            issue = core.create_issue(
+            issue = core.issues.create(
                 title=title,
                 priority=Priority(priority),
                 issue_type=IssueType(issue_type),

@@ -10,7 +10,10 @@ import click
 
 from roadmap.common.console import get_console
 
-console = get_console()
+
+# Get console at runtime to ensure proper stream setup in test environments
+def _get_console():
+    return get_console()
 
 
 class AssigneeResolver:
@@ -30,9 +33,9 @@ class AssigneeResolver:
         """
         # Auto-detect from Git if not provided
         if not assignee and auto_detect:
-            git_user = self.core.get_current_user_from_git()
+            git_user = self.core.git.get_current_user()
             if git_user:
-                console.print(
+                get_console().print(
                     f"🔍 Auto-detected assignee from Git: {git_user}", style="dim"
                 )
                 assignee = git_user
@@ -41,19 +44,21 @@ class AssigneeResolver:
             return None
 
         # Validate assignee
-        is_valid, result = self.core.validate_assignee(assignee)
+        is_valid, result = self.core.team.validate_assignee(assignee)
         if not is_valid:
-            console.print(f"❌ Invalid assignee: {result}", style="bold red")
+            get_console().print(f"❌ Invalid assignee: {result}", style="bold red")
             raise click.Abort()
 
         if result and "Warning:" in result:
-            console.print(f"⚠️  {result}", style="bold yellow")
+            get_console().print(f"⚠️  {result}", style="bold yellow")
             return assignee
 
         # Get canonical name
-        canonical = self.core.get_canonical_assignee(assignee)
+        canonical = self.core.team.get_canonical_assignee(assignee)
         if canonical != assignee:
-            console.print(f"🔄 Resolved '{assignee}' to '{canonical}'", style="dim")
+            get_console().print(
+                f"🔄 Resolved '{assignee}' to '{canonical}'", style="dim"
+            )
 
         return canonical
 
@@ -78,7 +83,7 @@ class GitBranchCreator:
             Tuple of (success, branch_name)
         """
         if not hasattr(self.core, "git") or not self.core.git.is_git_repository():
-            console.print(
+            _get_console().print(
                 "⚠️  Not in a Git repository, skipping branch creation", style="yellow"
             )
             return False, None
@@ -93,7 +98,7 @@ class GitBranchCreator:
 
         # Check for uncommitted changes
         if self._has_uncommitted_changes():
-            console.print(
+            _get_console().print(
                 "⚠️  Working tree has uncommitted changes — branch creation skipped. Use --force to override.",
                 style="yellow",
             )
@@ -107,7 +112,7 @@ class GitBranchCreator:
             return True, resolved_name
 
         # All strategies failed
-        console.print(
+        _get_console().print(
             "⚠️  Failed to create or checkout branch. See git for details.",
             style="yellow",
         )
@@ -177,9 +182,9 @@ class GitBranchCreator:
 
     def _show_success_message(self, branch_name: str, checkout: bool) -> None:
         """Display success message for branch creation."""
-        console.print(f"🌿 Created Git branch: {branch_name}", style="green")
+        _get_console().print(f"🌿 Created Git branch: {branch_name}", style="green")
         if checkout:
-            console.print(f"✅ Checked out branch: {branch_name}", style="green")
+            _get_console().print(f"✅ Checked out branch: {branch_name}", style="green")
 
 
 class IssueDisplayFormatter:
@@ -190,29 +195,29 @@ class IssueDisplayFormatter:
         issue, milestone: str | None, assignee: str | None
     ) -> None:
         """Display information about a newly created issue."""
-        console.print(f"✅ Created issue: {issue.title}", style="bold green")
-        console.print(f"   ID: {issue.id}", style="cyan")
-        console.print(f"   Type: {issue.issue_type.value.title()}", style="blue")
-        console.print(f"   Priority: {issue.priority.value}", style="yellow")
+        _get_console().print(f"✅ Created issue: {issue.title}", style="bold green")
+        _get_console().print(f"   ID: {issue.id}", style="cyan")
+        _get_console().print(f"   Type: {issue.issue_type.value.title()}", style="blue")
+        _get_console().print(f"   Priority: {issue.priority.value}", style="yellow")
 
         if milestone:
-            console.print(f"   Milestone: {milestone}", style="blue")
+            _get_console().print(f"   Milestone: {milestone}", style="blue")
 
         # Show assignee from issue object (which has the canonical/resolved value)
         if issue.assignee:
-            console.print(f"   Assignee: {issue.assignee}", style="magenta")
+            _get_console().print(f"   Assignee: {issue.assignee}", style="magenta")
 
         if issue.estimated_hours:
-            console.print(
+            _get_console().print(
                 f"   Estimated: {issue.estimated_time_display}", style="green"
             )
 
         if hasattr(issue, "depends_on") and issue.depends_on:
-            console.print(
+            _get_console().print(
                 f"   Depends on: {', '.join(issue.depends_on)}", style="orange1"
             )
 
         if hasattr(issue, "blocks") and issue.blocks:
-            console.print(f"   Blocks: {', '.join(issue.blocks)}", style="red1")
+            _get_console().print(f"   Blocks: {', '.join(issue.blocks)}", style="red1")
 
-        console.print(f"   File: .roadmap/issues/{issue.filename}", style="dim")
+        _get_console().print(f"   File: .roadmap/issues/{issue.filename}", style="dim")

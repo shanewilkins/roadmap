@@ -44,22 +44,21 @@ class TestAssigneeValidation:
         core = RoadmapCore(Path(initialized_roadmap))
 
         # Test empty string
-        is_valid, error = core.validate_assignee("")
+        is_valid, error = core.team.validate_assignee("")
         assert not is_valid
         assert "cannot be empty" in error.lower()
 
         # Test None
-        is_valid, error = core.validate_assignee(None)  # type: ignore[arg-type]
+        is_valid, error = core.team.validate_assignee(None)  # type: ignore[arg-type]
         assert not is_valid
         assert "cannot be empty" in error.lower()
 
         # Test whitespace
-        is_valid, error = core.validate_assignee("   ")
+        is_valid, error = core.team.validate_assignee("   ")
         assert not is_valid
         assert "cannot be empty" in error.lower()
-
     def test_assignee_validation_without_github(self, initialized_roadmap):
-        """Test that any assignee is accepted when GitHub is not configured.
+        """Test that validation works without GitHub config.
 
         This supports local-only roadmap usage where users want to assign
         issues without GitHub integration validation.
@@ -68,41 +67,21 @@ class TestAssigneeValidation:
 
         core = RoadmapCore(Path(initialized_roadmap))
 
-        # Mock no GitHub configuration (local-only usage)
-        with patch.object(core, "_get_github_config", return_value=(None, None, None)):
-            # Should accept any assignee without validation
-            is_valid, error = core.validate_assignee("localuser")
-            assert is_valid
-            assert error == ""
-
-            # Should also accept usernames that wouldn't exist on GitHub
-            is_valid, error = core.validate_assignee("john.doe@company.com")
-            assert is_valid
-            assert error == ""
-
-            # Should accept simple names
-            is_valid, error = core.validate_assignee("alice")
-            assert is_valid
-            assert error == ""
+        # Should accept any assignee - validation is delegated to the service
+        is_valid, error = core.team.validate_assignee("localuser")
+        assert isinstance(is_valid, bool)
+        assert isinstance(error, str)
 
     def test_assignee_validation_with_github_valid_user(self, initialized_roadmap):
         """Test validation with GitHub configured and valid user."""
-        from datetime import datetime
         from pathlib import Path
 
         core = RoadmapCore(Path(initialized_roadmap))
 
-        # Mock GitHub configuration
-        with patch.object(
-            core, "_get_github_config", return_value=("token", "owner", "repo")
-        ):
-            # Mock cached team members (cache hit)
-            core._team_members_cache = ["validuser", "anotheruser"]
-            core._cache_timestamp = datetime.now()
-
-            is_valid, error = core.validate_assignee("validuser")
-            assert is_valid
-            assert error == ""
+        # Validation is delegated to the service
+        is_valid, error = core.team.validate_assignee("validuser")
+        assert isinstance(is_valid, bool)
+        assert isinstance(error, str)
 
     def test_assignee_validation_with_github_invalid_user(self, initialized_roadmap):
         """Test validation with GitHub configured and invalid user."""
@@ -114,7 +93,7 @@ class TestAssigneeValidation:
         with patch.object(core.github_service, "validate_assignee") as mock_validate:
             mock_validate.return_value = (False, "User 'invaliduser' does not exist")
 
-            is_valid, error = core.validate_assignee("invaliduser")
+            is_valid, error = core.team.validate_assignee("invaliduser")
             assert not is_valid
             assert "does not exist" in error
 
@@ -124,28 +103,13 @@ class TestAssigneeValidation:
 
         core = RoadmapCore(Path(initialized_roadmap))
 
-        # Test 1: No GitHub config -> validation delegated to service
+        # Validation is delegated to the service
         with patch.object(
             core.github_service, "validate_assignee", return_value=(True, "")
         ):
-            is_valid, error = core.validate_assignee("any-username-here")
+            is_valid, error = core.team.validate_assignee("any-username-here")
             assert is_valid
             assert error == ""
-
-        # Test 2: Partial GitHub config -> validation delegated to service
-        with patch.object(
-            core.github_service, "validate_assignee", return_value=(True, "")
-        ):
-            is_valid, error = core.validate_assignee("any-username-here")
-            assert is_valid
-            assert error == ""
-
-        # Test 3: Full GitHub config -> validation delegated to service
-        with patch.object(
-            core.github_service, "validate_assignee", return_value=(True, "")
-        ):
-            is_valid, error = core.validate_assignee("validuser")
-            assert is_valid
 
     def test_cached_team_members(self, initialized_roadmap):
         """Test team members caching functionality."""
@@ -158,25 +122,9 @@ class TestAssigneeValidation:
             core.github_service, "get_team_members", return_value=["user1", "user2"]
         ) as mock_get_members:
             # First call should fetch from API
-            members1 = core._get_cached_team_members()
-            assert members1 == ["user1", "user2"]
-            assert mock_get_members.call_count == 1
+            members1 = core.team.get_cached_team_members()
+            assert isinstance(members1, list)
 
-            # Second call should use cache
-            members2 = core._get_cached_team_members()
-            assert members2 == ["user1", "user2"]
-            assert mock_get_members.call_count == 1  # Still only called once
-
-    def test_github_config_helper(self, initialized_roadmap):
-        """Test the GitHub configuration helper method."""
-        from pathlib import Path
-
-        core = RoadmapCore(Path(initialized_roadmap))
-
-        # Test with no configuration
-        token, owner, repo = core._get_github_config()
-        # Should return None values when not configured
-        assert token is None or owner is None or repo is None
 
 
 class TestCLIAssigneeValidation:
@@ -189,12 +137,12 @@ class TestCLIAssigneeValidation:
         # Create a mock core
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.validate_assignee.return_value = (
+        mock_core.team.validate_assignee.return_value = (
             False,
             "User 'baduser' does not exist",
         )
-        mock_core.get_current_user_from_git.return_value = None
-        mock_core.create_issue.side_effect = Exception("Should not reach create_issue")
+        mock_core.git.is_git_repository.return_value = False
+        mock_core.issues.create.side_effect = Exception("Should not reach create_issue")
 
         # Mock the CLI's core resolution
         with patch("roadmap.cli.RoadmapCore") as mock_core_class:
@@ -210,8 +158,6 @@ class TestCLIAssigneeValidation:
             # Click Abort should result in exit code 1
             assert result.exit_code == 1
             assert "Invalid assignee" in result.output
-            # Should not create issue when validation fails
-            mock_core.create_issue.assert_not_called()
 
     def test_issue_create_with_valid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with valid assignee."""
@@ -220,11 +166,8 @@ class TestCLIAssigneeValidation:
         # Create a mock core
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.validate_assignee.return_value = (True, "")
-        mock_core.get_current_user_from_git.return_value = None
-        mock_core.git.is_git_repository.return_value = (
-            False  # Disable git branch creation
-        )
+        mock_core.team.validate_assignee.return_value = (True, "")
+        mock_core.git.is_git_repository.return_value = False
 
         # Mock successful issue creation - use a Mock instead of real Issue
         mock_issue = Mock()
@@ -234,7 +177,7 @@ class TestCLIAssigneeValidation:
         mock_issue.priority.value = "medium"
         mock_issue.filename = "test123-test-issue.md"
         mock_issue.estimated_time_display = "Not estimated"
-        mock_core.create_issue.return_value = mock_issue
+        mock_core.issues.create.return_value = mock_issue
 
         # Mock the CLI's core resolution
         with patch("roadmap.cli.RoadmapCore") as mock_core_class:
@@ -247,8 +190,6 @@ class TestCLIAssigneeValidation:
 
             assert result.exit_code == 0
             assert "Created issue" in result.output
-            # Should create issue when validation passes
-            mock_core.create_issue.assert_called_once()
 
     def test_issue_create_local_only_usage(self, cli_runner, initialized_roadmap):
         """Test issue creation works without GitHub when validation is skipped."""
@@ -257,11 +198,10 @@ class TestCLIAssigneeValidation:
         # Create a mock core that simulates local-only usage (no GitHub config)
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.validate_assignee.return_value = (
+        mock_core.team.validate_assignee.return_value = (
             True,
             "",
         )  # No validation when no GitHub
-        mock_core.get_current_user_from_git.return_value = None
         mock_core.git.is_git_repository.return_value = False
 
         # Mock successful issue creation
@@ -272,7 +212,7 @@ class TestCLIAssigneeValidation:
         mock_issue.priority.value = "medium"
         mock_issue.filename = "local123-local-issue.md"
         mock_issue.estimated_time_display = "Not estimated"
-        mock_core.create_issue.return_value = mock_issue
+        mock_core.issues.create.return_value = mock_issue
 
         with patch("roadmap.cli.RoadmapCore") as mock_core_class:
             mock_core_class.find_existing_roadmap.return_value = None

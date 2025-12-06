@@ -67,8 +67,21 @@ def get_console() -> Console:
     Returns a console with colors disabled during testing or when
     output is not going to a terminal.
     """
-    # For now, simply disable colors during testing - Click's CliRunner doesn't properly set testing environment
     import sys
+
+    # Check if we're in a test that's using Click's test runner
+    try:
+        import click
+
+        ctx = click.get_current_context(silent=True)
+        if ctx and hasattr(ctx, "obj"):
+            # We're in a Click context, use it if it has a file
+            if hasattr(ctx.obj, "write"):
+                return Console(
+                    file=ctx.obj, force_terminal=False, no_color=True, width=80
+                )
+    except Exception:
+        pass
 
     if any(
         [
@@ -77,6 +90,7 @@ def get_console() -> Console:
             "_pytest" in [m.split(".")[0] for m in sys.modules.keys()],
         ]
     ):
-        return Console(force_terminal=False, no_color=True, width=80)
+        # In testing, explicitly use stdout so Click's test runner can capture it
+        return Console(file=sys.stdout, force_terminal=False, no_color=True, width=80)
     else:
         return Console()

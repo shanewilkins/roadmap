@@ -109,13 +109,13 @@ class RoadmapConfig:
         user_data = data.get("user", {})
         user = UserConfig(**user_data) if user_data else None
 
-        paths_data = data.get("paths", {})
+        paths_data = data.get("paths", {}) or {}
         paths = PathsConfig(**paths_data)
 
-        github_data = data.get("github", {})
+        github_data = data.get("github", {}) or {}
         github = GitHubConfig(**github_data)
 
-        display_data = data.get("display", {})
+        display_data = data.get("display", {}) or {}
         display = DisplayConfig(**display_data)
 
         if not user:

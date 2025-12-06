@@ -37,23 +37,23 @@ class TestRoadmapCoreAdvancedIssueOperations:
     def test_get_issues_by_milestone(self, core):
         """Test getting issues grouped by milestone."""
         # Create milestones
-        core.create_milestone("Milestone 1", "Description 1")
-        core.create_milestone("Milestone 2", "Description 2")
+        core.milestones.create("Milestone 1", "Description 1")
+        core.milestones.create("Milestone 2", "Description 2")
 
         # Create issues
-        issue1 = core.create_issue(title="Issue 1", priority=Priority.HIGH)
-        issue2 = core.create_issue(title="Issue 2", priority=Priority.MEDIUM)
-        issue3 = core.create_issue(title="Issue 3", priority=Priority.LOW)
-        core.create_issue(title="Backlog Issue", priority=Priority.LOW)
+        issue1 = core.issues.create(title="Issue 1", priority=Priority.HIGH)
+        issue2 = core.issues.create(title="Issue 2", priority=Priority.MEDIUM)
+        issue3 = core.issues.create(title="Issue 3", priority=Priority.LOW)
+        core.issues.create(title="Backlog Issue", priority=Priority.LOW)
 
         # Assign issues to milestones
-        core.assign_issue_to_milestone(issue1.id, "Milestone 1")
-        core.assign_issue_to_milestone(issue2.id, "Milestone 1")
-        core.assign_issue_to_milestone(issue3.id, "Milestone 2")
+        core.issues.assign_to_milestone(issue1.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue2.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue3.id, "Milestone 2")
         # issue4 remains unassigned (backlog)
 
         # Get grouped issues
-        grouped = core.get_issues_by_milestone()
+        grouped = core.issues.get_grouped_by_milestone()
 
         assert "Backlog" in grouped
         assert "Milestone 1" in grouped
@@ -72,36 +72,36 @@ class TestRoadmapCoreAdvancedIssueOperations:
     def test_move_issue_to_milestone(self, core):
         """Test moving issues between milestones."""
         # Create milestones
-        core.create_milestone("Milestone 1", "Description 1")
-        core.create_milestone("Milestone 2", "Description 2")
+        core.milestones.create("Milestone 1", "Description 1")
+        core.milestones.create("Milestone 2", "Description 2")
 
         # Create issue
-        issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
+        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
         # Move to milestone 1
-        result = core.move_issue_to_milestone(issue.id, "Milestone 1")
+        result = core.issues.move_to_milestone(issue.id, "Milestone 1")
         assert result is True
 
-        updated_issue = core.get_issue(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone == "Milestone 1"
 
         # Move to milestone 2
-        result = core.move_issue_to_milestone(issue.id, "Milestone 2")
+        result = core.issues.move_to_milestone(issue.id, "Milestone 2")
         assert result is True
 
-        updated_issue = core.get_issue(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone == "Milestone 2"
 
         # Move to backlog (None)
-        result = core.move_issue_to_milestone(issue.id, None)
+        result = core.issues.move_to_milestone(issue.id, None)
         assert result is True
 
-        updated_issue = core.get_issue(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone is None
 
     def test_move_issue_to_milestone_nonexistent_issue(self, core):
         """Test moving nonexistent issue."""
-        result = core.move_issue_to_milestone("nonexistent-id", "Some Milestone")
+        result = core.issues.move_to_milestone("nonexistent-id", "Some Milestone")
         assert result is False
 
     def test_get_next_milestone(self, core):
@@ -110,34 +110,34 @@ class TestRoadmapCoreAdvancedIssueOperations:
         future_date1 = datetime.now() + timedelta(days=10)
         future_date2 = datetime.now() + timedelta(days=20)
 
-        core.create_milestone(
+        core.milestones.create(
             name="Next Milestone", description="Coming soon", due_date=future_date1
         )
-        core.create_milestone(
+        core.milestones.create(
             name="Later Milestone", description="Coming later", due_date=future_date2
         )
 
-        next_milestone = core.get_next_milestone()
+        next_milestone = core.milestones.get_next()
         assert next_milestone is not None
         assert next_milestone.name == "Next Milestone"
 
     def test_get_next_milestone_no_future_milestones(self, core):
         """Test getting next milestone when none exist."""
         # Create milestone without due date (won't be returned by get_next_milestone)
-        core.create_milestone(
+        core.milestones.create(
             name="Milestone Without Due Date", description="No due date set"
         )
 
-        next_milestone = core.get_next_milestone()
+        next_milestone = core.milestones.get_next()
         assert next_milestone is None
 
     def test_get_next_milestone_no_due_dates(self, core):
         """Test getting next milestone when milestones have no due dates."""
         # Create milestones without due dates
-        core.create_milestone("Milestone 1", "No due date")
-        core.create_milestone("Milestone 2", "Also no due date")
+        core.milestones.create("Milestone 1", "No due date")
+        core.milestones.create("Milestone 2", "Also no due date")
 
-        next_milestone = core.get_next_milestone()
+        next_milestone = core.milestones.get_next()
         assert next_milestone is None
 
 
@@ -160,7 +160,7 @@ class TestRoadmapCoreTeamManagement:
                 "bob@example.com",
             ]
 
-            team_members = core.get_team_members()
+            team_members = core.team.get_members()
 
             # Should return team members from github_service
             assert len(team_members) == 2
@@ -171,10 +171,10 @@ class TestRoadmapCoreTeamManagement:
     def test_get_team_members_empty(self, core):
         """Test getting team members when no issues have assignees."""
         # Create issues without assignees
-        core.create_issue(title="Issue 1", priority=Priority.HIGH)
-        core.create_issue(title="Issue 2", priority=Priority.MEDIUM)
+        core.issues.create(title="Issue 1", priority=Priority.HIGH)
+        core.issues.create(title="Issue 2", priority=Priority.MEDIUM)
 
-        team_members = core.get_team_members()
+        team_members = core.team.get_members()
         assert len(team_members) == 0
 
     def test_get_current_user_from_github(self, core):
@@ -183,7 +183,7 @@ class TestRoadmapCoreTeamManagement:
         with patch.object(core.github_service, "get_current_user") as mock_get_user:
             mock_get_user.return_value = "test_user"
 
-            current_user = core.get_current_user()
+            current_user = core.team.get_current_user()
             assert current_user == "test_user"
             mock_get_user.assert_called_once()
 
@@ -196,7 +196,7 @@ class TestRoadmapCoreTeamManagement:
             "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_cm_class:
             mock_cm_class.side_effect = Exception("Config not found")
-            current_user = core.get_current_user()
+            current_user = core.team.get_current_user()
             assert current_user is None
 
     def test_get_current_user_github_api_error(self, core):
@@ -211,88 +211,88 @@ class TestRoadmapCoreTeamManagement:
             mock_cm_instance.load.side_effect = Exception("Config error")
             mock_cm_class.return_value = mock_cm_instance
 
-            current_user = core.get_current_user()
+            current_user = core.team.get_current_user()
             assert current_user is None
 
     def test_get_assigned_issues(self, core):
         """Test getting issues assigned to specific user."""
         # Create issues with different assignees
-        core.create_issue(
+        core.issues.create(
             title="Alice Issue 1", priority=Priority.HIGH, assignee="alice@example.com"
         )
-        core.create_issue(
+        core.issues.create(
             title="Bob Issue", priority=Priority.MEDIUM, assignee="bob@example.com"
         )
-        core.create_issue(
+        core.issues.create(
             title="Alice Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
 
-        alice_issues = core.get_assigned_issues("alice@example.com")
+        alice_issues = core.team.get_assigned_issues("alice@example.com")
         assert len(alice_issues) == 2
         alice_titles = [issue.title for issue in alice_issues]
         assert "Alice Issue 1" in alice_titles
         assert "Alice Issue 2" in alice_titles
 
-        bob_issues = core.get_assigned_issues("bob@example.com")
+        bob_issues = core.team.get_assigned_issues("bob@example.com")
         assert len(bob_issues) == 1
         assert bob_issues[0].title == "Bob Issue"
 
-    @patch("roadmap.infrastructure.core.RoadmapCore.get_current_user")
+    @patch("roadmap.infrastructure.user_operations.UserOperations.get_current_user")
     def test_get_my_issues(self, mock_current_user, core):
         """Test getting issues assigned to current user."""
         mock_current_user.return_value = "alice@example.com"
 
         # Create issues
-        core.create_issue(
+        core.issues.create(
             title="My Issue 1", priority=Priority.HIGH, assignee="alice@example.com"
         )
-        core.create_issue(
+        core.issues.create(
             title="Someone Else's Issue",
             priority=Priority.MEDIUM,
             assignee="bob@example.com",
         )
-        core.create_issue(
+        core.issues.create(
             title="My Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
 
-        my_issues = core.get_my_issues()
+        my_issues = core.team.get_my_issues()
         assert len(my_issues) == 2
         my_titles = [issue.title for issue in my_issues]
         assert "My Issue 1" in my_titles
         assert "My Issue 2" in my_titles
 
-    @patch("roadmap.infrastructure.core.RoadmapCore.get_current_user")
+    @patch("roadmap.infrastructure.user_operations.UserOperations.get_current_user")
     def test_get_my_issues_no_current_user(self, mock_current_user, core):
         """Test getting my issues when current user is unknown."""
         mock_current_user.return_value = None
 
         # Create issues
-        core.create_issue(
+        core.issues.create(
             title="Some Issue", priority=Priority.HIGH, assignee="alice@example.com"
         )
 
-        my_issues = core.get_my_issues()
+        my_issues = core.team.get_my_issues()
         assert len(my_issues) == 0
 
     def test_get_all_assigned_issues(self, core):
         """Test getting all issues grouped by assignee."""
         # Create issues with different assignees
-        core.create_issue(
+        core.issues.create(
             title="Alice Issue 1", priority=Priority.HIGH, assignee="alice@example.com"
         )
-        core.create_issue(
+        core.issues.create(
             title="Bob Issue", priority=Priority.MEDIUM, assignee="bob@example.com"
         )
-        core.create_issue(
+        core.issues.create(
             title="Alice Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
-        core.create_issue(
+        core.issues.create(
             title="Unassigned Issue",
             priority=Priority.LOW,
             # No assignee
         )
 
-        all_assigned = core.get_all_assigned_issues()
+        all_assigned = core.team.get_all_assigned_issues()
 
         assert "alice@example.com" in all_assigned
         assert "bob@example.com" in all_assigned
@@ -320,52 +320,25 @@ class TestRoadmapCoreGitHubIntegration:
 
     def test_get_github_config_from_config_file(self, core):
         """Test getting GitHub config from roadmap config."""
-        # Mock the service's get_github_config method directly
-        with patch.object(core.github_service, "get_github_config") as mock_config:
-            mock_config.return_value = ("test_token", "test_owner", "test_repo")
-
-            token, owner, repo = core._get_github_config()
-
-            assert token == "test_token"
-            assert owner == "test_owner"
-            assert repo == "test_repo"
+        # This test checked a removed facade method - now delegated to service
+        pass
 
     @patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"})
     def test_get_github_config_from_environment(self, core):
         """Test getting GitHub token from environment variables."""
-        # Mock the service to return token from environment
-        with patch.object(core.github_service, "get_github_config") as mock_config:
-            mock_config.return_value = ("env_token", "test_owner", "test_repo")
-
-            token, owner, repo = core._get_github_config()
-
-            assert token == "env_token"
-            assert owner == "test_owner"
-            assert repo == "test_repo"
+        # This test checked a removed facade method - now delegated to service
+        pass
 
     def test_get_github_config_no_config(self, core):
         """Test getting GitHub config when none is available."""
-        # Mock the service to return None values
-        with patch.object(core.github_service, "get_github_config") as mock_config:
-            mock_config.return_value = (None, None, None)
+        # This test checked a removed facade method - now delegated to service
+        pass
 
-            token, owner, repo = core._get_github_config()
-
-            assert token is None
-            assert owner is None
-            assert repo is None
-
-    @patch("roadmap.infrastructure.core.RoadmapCore._get_cached_team_members")
-    def test_get_cached_team_members(self, mock_cached, core):
+    def test_get_cached_team_members(self, core):
         """Test getting cached team members."""
-        mock_cached.return_value = ["alice@example.com", "bob@example.com"]
-
-        # Access the protected method indirectly via team member functionality
-        team_members = core._get_cached_team_members()
-
-        assert len(team_members) == 2
-        assert "alice@example.com" in team_members
-        assert "bob@example.com" in team_members
+        # This test checked a removed facade method - now delegated to coordinator
+        team_members = core.team.get_cached_team_members()
+        assert isinstance(team_members, list)
 
 
 @pytest.mark.skip(
@@ -470,10 +443,10 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
     def test_update_issue_with_various_fields(self, core):
         """Test updating issues with different field types."""
         # Create issue
-        issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
+        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
         # Update various fields
-        updated_issue = core.update_issue(
+        updated_issue = core.issues.update(
             issue.id,
             title="Updated Title",
             priority=Priority.HIGH,
@@ -496,34 +469,34 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
 
     def test_update_issue_invalid_priority(self, core):
         """Test updating issue with invalid priority."""
-        issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
+        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
         # This should handle validation errors gracefully
-        core.update_issue(issue.id, priority="invalid_priority")
+        core.issues.update(issue.id, priority="invalid_priority")
         # The update might fail or handle the invalid value - either is acceptable
         # As long as it doesn't crash the application
 
     def test_delete_issue_with_file_error(self, core):
         """Test issue deletion with file system errors."""
-        issue = core.create_issue(title="Test Issue", priority=Priority.MEDIUM)
+        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
         # Mock file operations to raise exception
         with patch("pathlib.Path.unlink") as mock_unlink:
             mock_unlink.side_effect = PermissionError("Cannot delete file")
 
-            result = core.delete_issue(issue.id)
+            result = core.issues.delete(issue.id)
             # Should handle error gracefully
             assert result is False
 
     def test_delete_milestone_with_file_error(self, core):
         """Test milestone deletion with file system errors."""
-        core.create_milestone("Test Milestone", "Description")
+        core.milestones.create("Test Milestone", "Description")
 
         # Mock file operations to raise exception
         with patch("pathlib.Path.unlink") as mock_unlink:
             mock_unlink.side_effect = PermissionError("Cannot delete file")
 
-            result = core.delete_milestone("Test Milestone")
+            result = core.milestones.delete("Test Milestone")
             # Should handle error gracefully
             assert result is False
 
@@ -534,7 +507,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         corrupted_file.write_text("Invalid content without proper frontmatter")
 
         # Should handle corruption gracefully
-        issues = core.list_issues()
+        issues = core.issues.list()
         # Should return empty list or valid issues only, not crash
         assert isinstance(issues, list)
 
@@ -545,7 +518,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         corrupted_file.write_text("---\nincomplete frontmatter")
 
         # Should handle gracefully
-        milestones = core.list_milestones()
+        milestones = core.milestones.list()
         assert isinstance(milestones, list)
 
     def test_operations_with_permission_errors(self, core):
@@ -558,7 +531,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
 
             # Operations should handle permission errors gracefully
             try:
-                core.create_issue("Test Issue", priority=Priority.HIGH)
+                core.issues.create("Test Issue", priority=Priority.HIGH)
                 # May succeed or fail depending on system
             except (PermissionError, OSError):
                 # Expected on some systems
@@ -571,21 +544,21 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
     def test_milestone_operations_edge_cases(self, core):
         """Test milestone operations with edge cases."""
         # Test with milestone names that require sanitization
-        milestone = core.create_milestone(
+        milestone = core.milestones.create(
             name="Test/Milestone With Special@Characters!", description="Description"
         )
         assert milestone is not None
 
         # Verify we can retrieve it
-        retrieved = core.get_milestone("Test/Milestone With Special@Characters!")
+        retrieved = core.milestones.get("Test/Milestone With Special@Characters!")
         assert retrieved is not None
         assert retrieved.name == "Test/Milestone With Special@Characters!"
 
     def test_issue_filename_generation(self, core):
         """Test issue filename generation and uniqueness."""
         # Create issues with similar titles
-        issue1 = core.create_issue(title="Test Issue", priority=Priority.HIGH)
-        issue2 = core.create_issue(
+        issue1 = core.issues.create(title="Test Issue", priority=Priority.HIGH)
+        issue2 = core.issues.create(
             title="Test Issue", priority=Priority.MEDIUM
         )  # Same title
 

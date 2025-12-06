@@ -30,19 +30,19 @@ def temp_roadmap():
             core.initialize()
 
             # Create test issues
-            issue1 = core.create_issue("Open Todo Issue", priority=Priority.HIGH)
-            issue2 = core.create_issue("Blocked Issue", priority=Priority.MEDIUM)
-            issue3 = core.create_issue("Done Issue", priority=Priority.LOW)
-            core.create_issue(
+            issue1 = core.issues.create("Open Todo Issue", priority=Priority.HIGH)
+            issue2 = core.issues.create("Blocked Issue", priority=Priority.MEDIUM)
+            issue3 = core.issues.create("Done Issue", priority=Priority.LOW)
+            core.issues.create(
                 "Backlog Issue", priority=Priority.CRITICAL
             )  # No milestone
 
             # Update statuses after creation
-            core.update_issue(issue2.id, status=Status.BLOCKED)
-            core.update_issue(issue3.id, status=Status.CLOSED)
+            core.issues.update(issue2.id, status=Status.BLOCKED)
+            core.issues.update(issue3.id, status=Status.CLOSED)
 
             # Create test milestone and assign issues
-            core.create_milestone("Test Sprint", "Test sprint description")
+            core.milestones.create("Test Sprint", "Test sprint description")
             core.move_issue_to_milestone(issue1.id, "Test Sprint")
             core.move_issue_to_milestone(issue2.id, "Test Sprint")
             core.move_issue_to_milestone(issue3.id, "Test Sprint")
@@ -61,7 +61,7 @@ def temp_roadmap():
             MilestoneParser.save_milestone_file(future_milestone, milestone_path)
 
             # Create issue for future milestone
-            issue5 = core.create_issue("Future Issue", priority=Priority.HIGH)
+            issue5 = core.issues.create("Future Issue", priority=Priority.HIGH)
             core.move_issue_to_milestone(issue5.id, "Future Sprint")
 
             yield core

@@ -123,7 +123,7 @@ class TestGitHookManager:
         _, core = temp_git_repo
 
         # Create a test issue
-        issue = core.create_issue("Test issue", Priority.MEDIUM)
+        issue = core.issues.create("Test issue", Priority.MEDIUM)
 
         # Mock Git integration
         mock_git = Mock()
@@ -146,13 +146,13 @@ class TestGitHookManager:
         hook_manager.git_integration = mock_git
 
         # Manually update the issue to simulate what auto_update_issues_from_commits would do
-        core.update_issue(issue.id, progress_percentage=50.0, status=Status.IN_PROGRESS)
+        core.issues.update(issue.id, progress_percentage=50.0, status=Status.IN_PROGRESS)
 
         # Handle post-commit
         hook_manager.handle_post_commit()
 
         # Verify issue was updated
-        updated_issue = core.get_issue(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.progress_percentage == 50.0
         assert updated_issue.status == Status.IN_PROGRESS
 
@@ -162,7 +162,7 @@ class TestGitHookManager:
         _, core = temp_git_repo
 
         # Create a test issue in TODO status
-        issue = core.create_issue("Test issue", Priority.MEDIUM)
+        issue = core.issues.create("Test issue", Priority.MEDIUM)
 
         # Mock git commands for current branch and merge target
         mock_subprocess.side_effect = [
@@ -181,7 +181,7 @@ class TestGitHookManager:
 
         # Since we're not on a main branch and don't have commits to process,
         # the hook should not change the issue status
-        updated_issue = core.get_issue(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.status == Status.TODO  # Should remain unchanged
         assert updated_issue.progress_percentage is None  # Should remain unchanged
 
@@ -193,7 +193,7 @@ class TestGitHookManager:
         _, core = temp_git_repo
 
         # Create test issue and branch
-        issue = core.create_issue("Feature branch issue", Priority.HIGH)
+        issue = core.issues.create("Feature branch issue", Priority.HIGH)
 
         with patch("roadmap.git_hooks.GitIntegration") as mock_git_integration:
             mock_git = Mock()
@@ -332,9 +332,9 @@ class TestWorkflowAutomation:
         _, core = temp_git_repo
 
         # Create test issues
-        issue1 = core.create_issue("Issue 1", Priority.HIGH)
-        issue2 = core.create_issue("Issue 2", Priority.MEDIUM)
-        issue3 = core.create_issue("Issue 3", Priority.LOW)  # No commits
+        issue1 = core.issues.create("Issue 1", Priority.HIGH)
+        issue2 = core.issues.create("Issue 2", Priority.MEDIUM)
+        issue3 = core.issues.create("Issue 3", Priority.LOW)  # No commits
 
         # Mock Git integration
         mock_git = Mock()
@@ -369,18 +369,18 @@ class TestWorkflowAutomation:
         assert len(results["errors"]) == 0
 
         # Verify issue updates
-        updated_issue1 = core.get_issue(issue1.id)
+        updated_issue1 = core.issues.get(issue1.id)
         assert updated_issue1.progress_percentage == 75.0
         assert updated_issue1.status == Status.IN_PROGRESS
         assert hasattr(updated_issue1, "git_commits")
         assert len(updated_issue1.git_commits) == 1
 
-        updated_issue2 = core.get_issue(issue2.id)
+        updated_issue2 = core.issues.get(issue2.id)
         assert updated_issue2.status == Status.CLOSED
         assert updated_issue2.progress_percentage == 100.0
 
         # Issue 3 should be unchanged
-        updated_issue3 = core.get_issue(issue3.id)
+        updated_issue3 = core.issues.get(issue3.id)
         assert updated_issue3.status == Status.TODO
         assert (
             updated_issue3.progress_percentage is None
@@ -391,7 +391,7 @@ class TestWorkflowAutomation:
         """Test syncing individual issue with multiple commits."""
         _, core = temp_git_repo
 
-        issue = core.create_issue("Progressive issue", Priority.HIGH)
+        issue = core.issues.create("Progressive issue", Priority.HIGH)
         automation = WorkflowAutomation(core)
 
         # Create mock commits showing progress
@@ -416,7 +416,7 @@ class TestWorkflowAutomation:
         assert updated
 
         # Verify final state
-        updated_issue = core.get_issue(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.progress_percentage == 100.0
         assert updated_issue.status == Status.CLOSED
         assert updated_issue.completed_date is not None
@@ -465,7 +465,7 @@ class TestWorkflowAutomation:
         _, core = temp_git_repo
 
         # Create issue with invalid data to trigger error
-        issue = core.create_issue("Test issue", Priority.MEDIUM)
+        issue = core.issues.create("Test issue", Priority.MEDIUM)
 
         automation = WorkflowAutomation(core)
 
@@ -505,33 +505,33 @@ class TestWorkflowAutomation:
         _, core = temp_git_repo
 
         # Create milestone and issues
-        milestone = core.create_milestone("Test Milestone", "2024-12-31")
+        milestone = core.milestones.create("Test Milestone", "2024-12-31")
 
-        issue1 = core.create_issue("Issue 1", Priority.MEDIUM, milestone=milestone.name)
-        issue2 = core.create_issue("Issue 2", Priority.MEDIUM, milestone=milestone.name)
-        issue3 = core.create_issue("Issue 3", Priority.MEDIUM, milestone=milestone.name)
+        issue1 = core.issues.create("Issue 1", Priority.MEDIUM, milestone=milestone.name)
+        issue2 = core.issues.create("Issue 2", Priority.MEDIUM, milestone=milestone.name)
+        issue3 = core.issues.create("Issue 3", Priority.MEDIUM, milestone=milestone.name)
 
         automation = WorkflowAutomation(core)
 
         # Complete some issues
-        core.update_issue(issue1.id, status=Status.CLOSED)
-        core.update_issue(issue2.id, status=Status.CLOSED)
+        core.issues.update(issue1.id, status=Status.CLOSED)
+        core.issues.update(issue2.id, status=Status.CLOSED)
         # Issue 3 remains TODO
 
         # Update milestone progress
         automation.hook_manager._update_milestone_progress()
 
         # Check milestone progress
-        milestone_progress = core.get_milestone_progress(milestone.name)
+        milestone_progress = core.milestones.get_progress(milestone.name)
         expected_progress = (2 / 3) * 100  # 2 out of 3 issues complete
         assert abs(milestone_progress["progress"] - expected_progress) < 0.1
 
         # Complete last issue
-        core.update_issue(issue3.id, status=Status.CLOSED)
+        core.issues.update(issue3.id, status=Status.CLOSED)
         automation.hook_manager._update_milestone_progress()
 
         # Milestone should now be completed
-        final_milestone_progress = core.get_milestone_progress(milestone.name)
+        final_milestone_progress = core.milestones.get_progress(milestone.name)
         assert final_milestone_progress["progress"] >= 100
 
 
@@ -577,7 +577,7 @@ class TestGitHooksIntegration:
         assert all(results.values())
 
         # Create issue with Git branch
-        issue = core.create_issue("Implement feature X", Priority.HIGH)
+        issue = core.issues.create("Implement feature X", Priority.HIGH)
 
         # Create and checkout branch
         branch_name = f"feature/{issue.id}-implement-feature-x"
@@ -585,7 +585,7 @@ class TestGitHooksIntegration:
 
         # Link issue to branch
         issue.git_branches = [branch_name]
-        core.update_issue(issue.id, git_branches=[branch_name])
+        core.issues.update(issue.id, git_branches=[branch_name])
 
         # Make commits with progress tracking
         commits_data = [
@@ -613,7 +613,7 @@ class TestGitHooksIntegration:
         automation.sync_all_issues_with_git()
 
         # Check if the issue was updated with git information
-        updated_issue = automation.core.get_issue(issue.id)
+        updated_issue = automation.core.issues.get(issue.id)
 
         # The key test is that the issue was properly tracked and updated
         # Test the git integration is working even if sync count is 0 due to prior processing
@@ -646,7 +646,7 @@ class TestGitHooksIntegration:
         assert success
 
         # Create test issue
-        issue = core.create_issue("Hook test issue", Priority.MEDIUM)
+        issue = core.issues.create("Hook test issue", Priority.MEDIUM)
 
         # Create commit
         test_file = Path("hook_test.py")
@@ -661,7 +661,7 @@ class TestGitHooksIntegration:
         hook_manager.handle_post_commit()
 
         # Verify issue was updated
-        updated_issue = core.get_issue(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.progress_percentage == 50.0
         assert updated_issue.status == Status.IN_PROGRESS
         assert len(updated_issue.git_commits) >= 1
@@ -673,7 +673,7 @@ class TestGitHooksIntegration:
         """Test branch context file management."""
         _, core = git_repo_with_roadmap
 
-        issue = core.create_issue("Context test", Priority.LOW)
+        issue = core.issues.create("Context test", Priority.LOW)
         branch_name = f"feature/{issue.id}-context-test"
 
         # Create and checkout branch

@@ -303,8 +303,6 @@ class TestProjectCreationService:
         # Setup mock
         mock_core = MagicMock(spec=RoadmapCore)
         mock_core.roadmap_dir = tmp_path / ".roadmap"
-        mock_core._generate_id.return_value = "abc123xyz"
-        mock_core._normalize_filename.return_value = "test-project"
 
         # Create projects directory
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
@@ -320,9 +318,9 @@ class TestProjectCreationService:
         )
 
         assert result is not None
-        assert result["id"] == "abc123xy"
+        assert len(result["id"]) == 8  # UUID-like ID (8 chars)
         assert result["name"] == "Test Project"
-        assert result["filename"] == "abc123xy-test-project.md"
+        assert result["filename"] == f"{result['id']}-test-project.md"
 
         # Verify file was created
         project_file = mock_core.roadmap_dir / "projects" / result["filename"]
@@ -336,8 +334,6 @@ class TestProjectCreationService:
         """Test project creation with custom template."""
         mock_core = MagicMock(spec=RoadmapCore)
         mock_core.roadmap_dir = tmp_path / ".roadmap"
-        mock_core._generate_id.return_value = "def456uvwx"
-        mock_core._normalize_filename.return_value = "custom-proj"
 
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
 
@@ -369,8 +365,6 @@ class TestProjectCreationService:
         """Test that invalid custom template falls back to standard template."""
         mock_core = MagicMock(spec=RoadmapCore)
         mock_core.roadmap_dir = tmp_path / ".roadmap"
-        mock_core._generate_id.return_value = "ghi789abcd"
-        mock_core._normalize_filename.return_value = "fallback-proj"
 
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
 
@@ -386,6 +380,7 @@ class TestProjectCreationService:
         )
 
         assert result is not None
+        assert len(result["id"]) == 8  # UUID-like ID
         project_file = mock_core.roadmap_dir / "projects" / result["filename"]
         content = project_file.read_text()
         # Should have software template content since custom template doesn't exist

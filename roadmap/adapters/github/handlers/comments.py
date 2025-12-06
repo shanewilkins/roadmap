@@ -1,0 +1,113 @@
+"""GitHub Comments handler."""
+
+from roadmap.adapters.github.handlers.base import BaseGitHubHandler
+from roadmap.common.datetime_parser import parse_github_datetime
+from roadmap.core.domain import Comment
+
+
+class CommentsHandler(BaseGitHubHandler):
+    """Handler for GitHub Comments API operations."""
+
+    def get_issue_comments(self, issue_number: int) -> list[Comment]:
+        """Get all comments for a specific issue.
+
+        Args:
+            issue_number: GitHub issue number
+
+        Returns:
+            List of Comment objects
+        """
+        self._check_repository()
+
+        response = self._make_request(
+            "GET", f"/repos/{self.owner}/{self.repo}/issues/{issue_number}/comments"
+        )
+
+        comments = []
+        for comment_data in response.json():
+            comment = Comment(
+                id=comment_data["id"],
+                issue_id=str(issue_number),
+                author=comment_data["user"]["login"],
+                body=comment_data["body"],
+                created_at=parse_github_datetime(comment_data["created_at"]),
+                updated_at=parse_github_datetime(comment_data["updated_at"]),
+                github_url=comment_data["html_url"],
+            )
+            comments.append(comment)
+
+        return comments
+
+    def create_issue_comment(self, issue_number: int, body: str) -> Comment:
+        """Create a new comment on an issue.
+
+        Args:
+            issue_number: GitHub issue number
+            body: Comment content (markdown)
+
+        Returns:
+            Created Comment object
+        """
+        self._check_repository()
+
+        data = {"body": body}
+
+        response = self._make_request(
+            "POST",
+            f"/repos/{self.owner}/{self.repo}/issues/{issue_number}/comments",
+            json=data,
+        )
+
+        comment_data = response.json()
+        return Comment(
+            id=comment_data["id"],
+            issue_id=str(issue_number),
+            author=comment_data["user"]["login"],
+            body=comment_data["body"],
+            created_at=parse_github_datetime(comment_data["created_at"]),
+            updated_at=parse_github_datetime(comment_data["updated_at"]),
+            github_url=comment_data["html_url"],
+        )
+
+    def update_issue_comment(self, comment_id: int, body: str) -> Comment:
+        """Update an existing comment.
+
+        Args:
+            comment_id: GitHub comment ID
+            body: Updated comment content (markdown)
+
+        Returns:
+            Updated Comment object
+        """
+        self._check_repository()
+
+        data = {"body": body}
+
+        response = self._make_request(
+            "PATCH",
+            f"/repos/{self.owner}/{self.repo}/issues/comments/{comment_id}",
+            json=data,
+        )
+
+        comment_data = response.json()
+        return Comment(
+            id=comment_data["id"],
+            issue_id="",  # We don't get issue number from this endpoint
+            author=comment_data["user"]["login"],
+            body=comment_data["body"],
+            created_at=parse_github_datetime(comment_data["created_at"]),
+            updated_at=parse_github_datetime(comment_data["updated_at"]),
+            github_url=comment_data["html_url"],
+        )
+
+    def delete_issue_comment(self, comment_id: int) -> None:
+        """Delete a comment.
+
+        Args:
+            comment_id: GitHub comment ID
+        """
+        self._check_repository()
+
+        self._make_request(
+            "DELETE", f"/repos/{self.owner}/{self.repo}/issues/comments/{comment_id}"
+        )

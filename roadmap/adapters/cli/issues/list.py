@@ -12,7 +12,10 @@ from roadmap.adapters.cli.logging_decorators import verbose_output
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 
-console = get_console()
+
+def _get_console():
+    """Get console instance at runtime to respect Click's test environment."""
+    return get_console()
 
 
 @click.command("list")
@@ -85,7 +88,7 @@ def list_issues(
     core = ctx.obj["core"]
 
     if not core.is_initialized():
-        console.print(
+        _get_console().print(
             "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
         )
         return
@@ -100,7 +103,7 @@ def list_issues(
             assignee, my_issues, backlog, unassigned, next_milestone, milestone
         )
         if not is_valid:
-            console.print(f"❌ {error_msg}", style="bold red")
+            _get_console().print(f"❌ {error_msg}", style="bold red")
             return
 
         # Get filtered issues using query service
@@ -117,10 +120,10 @@ def list_issues(
 
         # Handle next milestone not found
         if next_milestone and not issues and not filter_description:
-            console.print(
+            _get_console().print(
                 "📋 No upcoming milestones with due dates found.", style="yellow"
             )
-            console.print(
+            _get_console().print(
                 "Create one with: roadmap milestone create 'Milestone name' --due-date YYYY-MM-DD",
                 style="dim",
             )
