@@ -209,7 +209,7 @@ class InitializationWorkflow:
             self._create_missing_templates()
 
             # Update .gitignore (safe to call multiple times)
-            self.core._update_gitignore()
+            self.core._init_manager._update_gitignore()
 
             return True
         except Exception as e:
@@ -224,8 +224,8 @@ class InitializationWorkflow:
         if list(templates_dir.glob("*.md")):
             return  # Templates already exist, skip
 
-        # Otherwise create them
-        self.core._create_default_templates()
+        # Otherwise create them via initialization manager
+        self.core._init_manager._create_default_templates()
 
     def generate_config_file(self, user_name: str | None = None) -> None:
         """Generate the config file with user information.

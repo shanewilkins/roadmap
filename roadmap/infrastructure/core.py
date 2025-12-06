@@ -31,18 +31,13 @@ See: docs/ARCHITECTURE.md for the new structure.
 See: REFACTORING_IMPLEMENTATION_PLAN.md for migration details.
 """
 
-import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from roadmap.adapters.git.git import GitIntegration
 from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
 from roadmap.adapters.persistence.storage import StateManager
-from roadmap.common.security import (
-    create_secure_directory,
-    create_secure_file,
-)
 from roadmap.core.domain import (
     Issue,
     IssueType,
@@ -59,6 +54,7 @@ from roadmap.core.services import (
     MilestoneService,
     ProjectService,
 )
+from roadmap.infrastructure.initialization import InitializationManager
 
 
 class RoadmapCore:
@@ -101,9 +97,34 @@ class RoadmapCore:
         # visualization_service moved to future/
         self.config_service = ConfigurationService()
 
+        # Initialize manager for setup/initialization logic
+        self._init_manager = InitializationManager(
+            self.root_path, self.roadmap_dir_name
+        )
+
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
-        return self.roadmap_dir.exists() and self.config_file.exists()
+        return self._init_manager.is_initialized()
+
+    @classmethod
+    def find_existing_roadmap(
+        cls, root_path: Path | None = None
+    ) -> "RoadmapCore | None":
+        """Find an existing roadmap directory in the current path.
+
+        Searches for common roadmap directory names and returns a RoadmapCore
+        instance if found, or None if no roadmap is detected.
+        """
+        manager = InitializationManager.find_existing_roadmap(root_path)
+        if manager:
+            return cls(
+                root_path=manager.root_path, roadmap_dir_name=manager.roadmap_dir_name
+            )
+        return None
+
+    def initialize(self) -> None:
+        """Initialize a new roadmap in the current directory."""
+        self._init_manager.initialize()
 
     def ensure_database_synced(
         self, force_rebuild: bool = False, show_progress: bool = True
@@ -195,257 +216,6 @@ class RoadmapCore:
         except Exception as e:
             if show_progress:
                 console.print(f"[yellow]⚠️  Git hooks setup failed: {e}[/yellow]")
-
-    @classmethod
-    def find_existing_roadmap(
-        cls, root_path: Path | None = None
-    ) -> Optional["RoadmapCore"]:
-        """Find an existing roadmap directory in the current path.
-
-        Searches for common roadmap directory names and returns a RoadmapCore
-        instance if found, or None if no roadmap is detected.
-        """
-        search_path = root_path or Path.cwd()
-
-        # Common roadmap directory names to search for
-        possible_names = [".roadmap"]
-
-        # Also check for any directory containing the expected structure
-        for item in search_path.iterdir():
-            if item.is_dir():
-                possible_names.append(item.name)
-
-        # Check each possible directory
-        for dir_name in possible_names:
-            try:
-                potential_core = cls(root_path=search_path, roadmap_dir_name=dir_name)
-                if potential_core.is_initialized():
-                    return potential_core
-            except (OSError, PermissionError, sqlite3.OperationalError):
-                # Skip directories that can't be accessed or have permission issues
-                continue
-
-        return None
-
-    def initialize(self) -> None:
-        """Initialize a new roadmap in the current directory."""
-        if self.is_initialized():
-            raise ValueError("Roadmap already initialized in this directory")
-
-        # Create directory structure with secure permissions
-        create_secure_directory(
-            self.roadmap_dir, 0o755
-        )  # Owner full, group/other read/execute
-        create_secure_directory(self.issues_dir, 0o755)
-        create_secure_directory(self.milestones_dir, 0o755)
-        create_secure_directory(self.projects_dir, 0o755)
-        create_secure_directory(self.templates_dir, 0o755)
-        create_secure_directory(self.artifacts_dir, 0o755)
-
-        # Update .gitignore to exclude roadmap local data
-        self._update_gitignore()
-
-        # Copy templates
-        self._create_default_templates()
-
-        # Create default config file (config.yaml)
-        self._create_default_config()
-
-    def _create_default_templates(self) -> None:
-        """Create default templates."""
-        # Issue template
-        issue_template = """---
-id: "{{ issue_id }}"
-title: "{{ title }}"
-priority: "medium"
-status: "todo"
-milestone: ""
-labels: []
-github_issue: null
-created: "{{ created_date }}"
-updated: "{{ updated_date }}"
-assignee: ""
----
-
-# {{ title }}
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
-## Technical Notes
-
-Any technical details, considerations, or implementation notes.
-
-## Related Issues
-
-- Links to related issues
-- Dependencies
-
-## Additional Context
-
-Any additional context, screenshots, or examples."""
-
-        with create_secure_file(self.templates_dir / "issue.md", "w", 0o644) as f:
-            f.write(issue_template)
-
-        # Milestone template
-        milestone_template = """---
-name: "{{ milestone_name }}"
-description: "{{ description }}"
-due_date: "{{ due_date }}"
-status: "open"
-github_milestone: null
-created: "{{ created_date }}"
-updated: "{{ updated_date }}"
----
-
-# {{ milestone_name }}
-
-## Description
-
-{{ description }}
-
-## Goals
-
-- [ ] Goal 1
-- [ ] Goal 2
-- [ ] Goal 3
-
-## Success Criteria
-
-Define what success looks like for this milestone.
-
-## Notes
-
-Any additional notes or considerations for this milestone."""
-
-        with create_secure_file(self.templates_dir / "milestone.md", "w", 0o644) as f:
-            f.write(milestone_template)
-
-        # Project template
-        project_template = """---
-id: "{{ project_id }}"
-name: "{{ project_name }}"
-description: "{{ project_description }}"
-status: "planning"
-priority: "medium"
-owner: "{{ project_owner }}"
-start_date: "{{ start_date }}"
-target_end_date: "{{ target_end_date }}"
-actual_end_date: null
-created: "{{ created_date }}"
-updated: "{{ updated_date }}"
-milestones:
-  - "{{ milestone_1 }}"
-  - "{{ milestone_2 }}"
-estimated_hours: {{ estimated_hours }}
-actual_hours: null
----
-
-# {{ project_name }}
-
-## Project Overview
-
-{{ project_description }}
-
-**Project Owner:** {{ project_owner }}
-**Status:** {{ status }}
-**Timeline:** {{ start_date }} → {{ target_end_date }}
-
-## Objectives
-
-- [ ] Objective 1
-- [ ] Objective 2
-- [ ] Objective 3
-
-## Milestones & Timeline
-
-{% for milestone in milestones %}
-- **{{ milestone }}** - [Link to milestone](../milestones/{{ milestone }}.md)
-{% endfor %}
-
-## Timeline Tracking
-
-- **Start Date:** {{ start_date }}
-- **Target End Date:** {{ target_end_date }}
-- **Actual End Date:** {{ actual_end_date }}
-- **Estimated Hours:** {{ estimated_hours }}
-- **Actual Hours:** {{ actual_hours }}
-
-## Notes
-
-Project notes and additional context.
-
----
-*Last updated: {{ updated_date }}*"""
-
-        with create_secure_file(self.templates_dir / "project.md", "w", 0o644) as f:
-            f.write(project_template)
-
-    def _create_default_config(self) -> None:
-        """Create default configuration file."""
-        import yaml
-
-        config_data = {
-            "project_name": "My Roadmap",
-            "github": None,
-            "defaults": {
-                "priority": "medium",
-                "issue_type": "other",
-            },
-            "features": {
-                "github_integration": False,
-                "git_sync": False,
-            },
-        }
-
-        with create_secure_file(self.config_file, "w", 0o644) as f:
-            yaml.dump(config_data, f, default_flow_style=False)
-
-    def _update_gitignore(self) -> None:
-        """Update .gitignore to exclude roadmap local data from version control."""
-        gitignore_path = self.root_path / ".gitignore"
-
-        # Define patterns to ignore relative to project root
-        roadmap_patterns = [
-            f"{self.roadmap_dir_name}/artifacts/",
-            f"{self.roadmap_dir_name}/backups/",
-            f"{self.roadmap_dir_name}/logs/",
-            f"{self.roadmap_dir_name}/*.tmp",
-            f"{self.roadmap_dir_name}/*.lock",
-        ]
-        gitignore_comment = (
-            "# Roadmap local data (generated exports, backups, logs, temp files)"
-        )
-
-        # Read existing .gitignore if it exists
-        existing_lines = []
-        if gitignore_path.exists():
-            existing_lines = gitignore_path.read_text().splitlines()
-
-        # Check which patterns are already present
-        missing_patterns = []
-        for pattern in roadmap_patterns:
-            if not any(line.strip() == pattern for line in existing_lines):
-                missing_patterns.append(pattern)
-
-        if missing_patterns:
-            # Add missing patterns to .gitignore
-            if existing_lines and not existing_lines[-1].strip() == "":
-                existing_lines.append("")  # Add blank line if needed
-
-            existing_lines.append(gitignore_comment)
-            existing_lines.extend(missing_patterns)
-
-            # Write updated .gitignore
-            gitignore_path.write_text("\n".join(existing_lines) + "\n")
 
     def load_config(self) -> Any:
         """Load roadmap configuration.
