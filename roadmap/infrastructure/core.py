@@ -56,6 +56,7 @@ from roadmap.core.services import (
 )
 from roadmap.infrastructure.initialization import InitializationManager
 from roadmap.infrastructure.issue_operations import IssueOperations
+from roadmap.infrastructure.milestone_operations import MilestoneOperations
 
 
 class RoadmapCore:
@@ -105,6 +106,9 @@ class RoadmapCore:
 
         # Initialize manager for issue operations
         self._issue_ops = IssueOperations(self.issue_service, self.issues_dir)
+
+        # Initialize manager for milestone operations
+        self._milestone_ops = MilestoneOperations(self.milestone_service)
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
@@ -310,7 +314,7 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        return self.milestone_service.create_milestone(
+        return self._milestone_ops.create_milestone(
             name=name, description=description, due_date=due_date
         )
 
@@ -319,11 +323,11 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        return self.milestone_service.list_milestones()
+        return self._milestone_ops.list_milestones()
 
     def get_milestone(self, name: str) -> Milestone | None:
         """Get a specific milestone by name (searches by YAML name field, not filename)."""
-        return self.milestone_service.get_milestone(name)
+        return self._milestone_ops.get_milestone(name)
 
     def delete_milestone(self, name: str) -> bool:
         """Delete a milestone and unassign all issues from it.
@@ -337,7 +341,7 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized")
 
-        return self.milestone_service.delete_milestone(name)
+        return self._milestone_ops.delete_milestone(name)
 
     def update_milestone(
         self,
@@ -362,15 +366,12 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized")
 
-        return (
-            self.milestone_service.update_milestone(
-                name=name,
-                description=description,
-                due_date=due_date,
-                clear_due_date=clear_due_date,
-                status=status,
-            )
-            is not None
+        return self._milestone_ops.update_milestone(
+            name=name,
+            description=description,
+            due_date=due_date,
+            clear_due_date=clear_due_date,
+            status=status,
         )
 
     def assign_issue_to_milestone(self, issue_id: str, milestone_name: str) -> bool:
@@ -383,7 +384,7 @@ class RoadmapCore:
 
     def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
         """Get progress statistics for a milestone."""
-        return self.milestone_service.get_milestone_progress(milestone_name)
+        return self._milestone_ops.get_milestone_progress(milestone_name)
 
     # Project management methods
     def list_projects(self) -> list[Project]:
@@ -443,34 +444,7 @@ class RoadmapCore:
 
     def get_next_milestone(self) -> Milestone | None:
         """Get the next upcoming milestone based on due date."""
-        milestones = self.list_milestones()
-
-        # Filter for open milestones with due dates
-        upcoming_milestones = [
-            m
-            for m in milestones
-            if m.status == MilestoneStatus.OPEN and m.due_date is not None
-        ]
-
-        if not upcoming_milestones:
-            return None
-
-        # Sort by due date and return the earliest
-        # Handle timezone-aware vs timezone-naive datetime comparison
-        def get_sortable_date(milestone):
-            due_date = milestone.due_date
-            # due_date should not be None since we filtered above, but be safe
-            if due_date is None:
-                from datetime import datetime
-
-                return datetime.max  # Put None dates at the end
-            # Convert timezone-aware dates to naive for comparison
-            if due_date.tzinfo is not None:
-                return due_date.replace(tzinfo=None)
-            return due_date
-
-        upcoming_milestones.sort(key=get_sortable_date)
-        return upcoming_milestones[0]
+        return self._milestone_ops.get_next_milestone()
 
     def _get_github_config(self) -> tuple[str | None, str | None, str | None]:
         """Get GitHub configuration from config file and credentials.

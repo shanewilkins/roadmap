@@ -1,0 +1,152 @@
+"""Milestone Operations Module - Handles all milestone-related CRUD operations.
+
+This module encapsulates milestone management responsibilities extracted from RoadmapCore,
+including creating, reading, updating, and deleting milestones, as well as milestone-related
+queries and progress tracking.
+
+Responsibilities:
+- Milestone CRUD operations (create, list, get, update, delete)
+- Milestone progress tracking
+- Next milestone calculation
+"""
+
+from datetime import datetime
+from typing import Any
+
+from roadmap.core.domain import Milestone, MilestoneStatus
+from roadmap.core.services import MilestoneService
+
+
+class MilestoneOperations:
+    """Manager for milestone-related operations."""
+
+    def __init__(self, milestone_service: MilestoneService):
+        """Initialize milestone operations manager.
+
+        Args:
+            milestone_service: The MilestoneService instance for database operations
+        """
+        self.milestone_service = milestone_service
+
+    def create_milestone(
+        self, name: str, description: str = "", due_date: datetime | None = None
+    ) -> Milestone:
+        """Create a new milestone.
+
+        Args:
+            name: Milestone name
+            description: Milestone description (optional)
+            due_date: Due date for the milestone (optional)
+
+        Returns:
+            Created Milestone object
+        """
+        return self.milestone_service.create_milestone(
+            name=name, description=description, due_date=due_date
+        )
+
+    def list_milestones(self) -> list[Milestone]:
+        """List all milestones.
+
+        Returns:
+            List of Milestone objects
+        """
+        return self.milestone_service.list_milestones()
+
+    def get_milestone(self, name: str) -> Milestone | None:
+        """Get a specific milestone by name.
+
+        Args:
+            name: Name of the milestone (searches by YAML name field, not filename)
+
+        Returns:
+            Milestone object if found, None otherwise
+        """
+        return self.milestone_service.get_milestone(name)
+
+    def delete_milestone(self, name: str) -> bool:
+        """Delete a milestone and unassign all issues from it.
+
+        Args:
+            name: Name of the milestone to delete
+
+        Returns:
+            True if milestone was deleted, False if not found
+        """
+        return self.milestone_service.delete_milestone(name)
+
+    def update_milestone(
+        self,
+        name: str,
+        description: str | None = None,
+        due_date: datetime | None = None,
+        clear_due_date: bool = False,
+        status: str | None = None,
+    ) -> bool:
+        """Update a milestone's properties.
+
+        Args:
+            name: Name of the milestone to update
+            description: New description (None to keep current)
+            due_date: New due date (None to keep current)
+            clear_due_date: If True, remove the due date
+            status: New status (None to keep current)
+
+        Returns:
+            True if milestone was updated, False if not found
+        """
+        return (
+            self.milestone_service.update_milestone(
+                name=name,
+                description=description,
+                due_date=due_date,
+                clear_due_date=clear_due_date,
+                status=status,
+            )
+            is not None
+        )
+
+    def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
+        """Get progress statistics for a milestone.
+
+        Args:
+            milestone_name: Name of the milestone
+
+        Returns:
+            Dictionary containing progress metrics (completed, total, percentage, etc.)
+        """
+        return self.milestone_service.get_milestone_progress(milestone_name)
+
+    def get_next_milestone(self) -> Milestone | None:
+        """Get the next upcoming milestone based on due date.
+
+        Returns:
+            The upcoming milestone with the earliest due date, or None if no upcoming milestones
+        """
+        milestones = self.list_milestones()
+
+        # Filter for open milestones with due dates
+        upcoming_milestones = [
+            m
+            for m in milestones
+            if m.status == MilestoneStatus.OPEN and m.due_date is not None
+        ]
+
+        if not upcoming_milestones:
+            return None
+
+        # Sort by due date and return the earliest
+        # Handle timezone-aware vs timezone-naive datetime comparison
+        def get_sortable_date(milestone: Milestone) -> datetime:
+            """Extract sortable date from milestone."""
+            due_date = milestone.due_date
+            # due_date should not be None since we filtered above, but be safe
+            if due_date is None:
+                return datetime.max  # Put None dates at the end
+            # Convert timezone-aware dates to naive for comparison
+            if due_date.tzinfo is not None:
+                return due_date.replace(tzinfo=None)
+            return due_date
+
+        upcoming_milestones.sort(key=get_sortable_date)
+        return upcoming_milestones[0]
