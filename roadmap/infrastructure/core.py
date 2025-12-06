@@ -57,6 +57,7 @@ from roadmap.core.services import (
 from roadmap.infrastructure.initialization import InitializationManager
 from roadmap.infrastructure.issue_operations import IssueOperations
 from roadmap.infrastructure.milestone_operations import MilestoneOperations
+from roadmap.infrastructure.project_operations import ProjectOperations
 
 
 class RoadmapCore:
@@ -109,6 +110,9 @@ class RoadmapCore:
 
         # Initialize manager for milestone operations
         self._milestone_ops = MilestoneOperations(self.milestone_service)
+
+        # Initialize manager for project operations
+        self._project_ops = ProjectOperations(self.project_service)
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
@@ -392,18 +396,18 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        return self.project_service.list_projects()
+        return self._project_ops.list_projects()
 
     def get_project(self, project_id: str) -> Project | None:
         """Get a specific project by ID."""
-        return self.project_service.get_project(project_id)
+        return self._project_ops.get_project(project_id)
 
     def save_project(self, project: Project) -> bool:
         """Save an updated project to disk."""
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized")
 
-        return self.project_service.save_project(project)
+        return self._project_ops.save_project(project)
 
     def update_project(self, project_id: str, **updates) -> Project | None:
         """Update a project with the given fields.
@@ -418,7 +422,7 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized")
 
-        return self.project_service.update_project(project_id, **updates)
+        return self._project_ops.update_project(project_id, **updates)
 
     def get_backlog_issues(self) -> list[Issue]:
         """Get all issues not assigned to any milestone (backlog)."""
