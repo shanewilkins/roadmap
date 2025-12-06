@@ -16,7 +16,12 @@ class BaseGitHubHandler:
 
     BASE_URL = "https://api.github.com"
 
-    def __init__(self, session: requests.Session, owner: str | None = None, repo: str | None = None):
+    def __init__(
+        self,
+        session: requests.Session,
+        owner: str | None = None,
+        repo: str | None = None,
+    ):
         """Initialize handler with GitHub API session.
 
         Args:

@@ -247,14 +247,3 @@ class RoadmapCore:
                 self.__dict__.update(data)
 
         return ConfigObject(config_data)
-
-
-
-
-
-
-
-
-
-
-

@@ -112,7 +112,6 @@ class TestRoadmapCore:
         issue_file = core.issues_dir / issue.filename
         assert issue_file.exists()
 
-
     def test_list_issues_empty(self, core):
         """Test listing issues when none exist."""
         core.initialize()
@@ -310,7 +309,7 @@ class TestRoadmapCore:
         # without validating it exists (lazy validation)
         success = core.issues.assign_to_milestone(issue.id, "nonexistent")
         assert success is True
-        
+
         # Verify the assignment was made
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone == "nonexistent"

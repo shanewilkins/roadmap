@@ -57,6 +57,7 @@ class TestAssigneeValidation:
         is_valid, error = core.team.validate_assignee("   ")
         assert not is_valid
         assert "cannot be empty" in error.lower()
+
     def test_assignee_validation_without_github(self, initialized_roadmap):
         """Test that validation works without GitHub config.
 
@@ -124,7 +125,6 @@ class TestAssigneeValidation:
             # First call should fetch from API
             members1 = core.team.get_cached_team_members()
             assert isinstance(members1, list)
-
 
 
 class TestCLIAssigneeValidation:

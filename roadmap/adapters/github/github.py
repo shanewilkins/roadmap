@@ -142,13 +142,3 @@ class GitHubClient:
         self._check_repository()
         response = self._make_request("GET", f"/repos/{self.owner}/{self.repo}")
         return response.json()
-
-
-
-
-
-
-
-
-
-

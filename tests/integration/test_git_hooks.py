@@ -146,7 +146,9 @@ class TestGitHookManager:
         hook_manager.git_integration = mock_git
 
         # Manually update the issue to simulate what auto_update_issues_from_commits would do
-        core.issues.update(issue.id, progress_percentage=50.0, status=Status.IN_PROGRESS)
+        core.issues.update(
+            issue.id, progress_percentage=50.0, status=Status.IN_PROGRESS
+        )
 
         # Handle post-commit
         hook_manager.handle_post_commit()
@@ -507,9 +509,15 @@ class TestWorkflowAutomation:
         # Create milestone and issues
         milestone = core.milestones.create("Test Milestone", "2024-12-31")
 
-        issue1 = core.issues.create("Issue 1", Priority.MEDIUM, milestone=milestone.name)
-        issue2 = core.issues.create("Issue 2", Priority.MEDIUM, milestone=milestone.name)
-        issue3 = core.issues.create("Issue 3", Priority.MEDIUM, milestone=milestone.name)
+        issue1 = core.issues.create(
+            "Issue 1", Priority.MEDIUM, milestone=milestone.name
+        )
+        issue2 = core.issues.create(
+            "Issue 2", Priority.MEDIUM, milestone=milestone.name
+        )
+        issue3 = core.issues.create(
+            "Issue 3", Priority.MEDIUM, milestone=milestone.name
+        )
 
         automation = WorkflowAutomation(core)
 

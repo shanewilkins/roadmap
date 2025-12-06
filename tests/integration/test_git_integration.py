@@ -419,7 +419,9 @@ class TestGitIntegrationCore:
         self.setUp()
         try:
             # Create an issue
-            issue = self.core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
+            issue = self.core.issues.create(
+                title="Test Issue", priority=Priority.MEDIUM
+            )
 
             # Mock commit with progress info
             mock_commit = GitCommit(

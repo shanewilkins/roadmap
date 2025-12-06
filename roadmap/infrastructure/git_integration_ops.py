@@ -11,7 +11,7 @@ Responsibilities:
 - Git activity-based issue updates
 """
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from roadmap.adapters.git.git import GitIntegration
 
@@ -52,7 +52,7 @@ class GitIntegrationOps:
             # Try to find linked issue
             issue_id = current_branch.extract_issue_id()
             if issue_id:
-                issue = self.core.get_issue(issue_id)
+                issue = self.core.issues.get(issue_id)
                 if issue:
                     context["linked_issue"] = {
                         "id": issue.id,
@@ -114,7 +114,7 @@ class GitIntegrationOps:
         if not current_branch:
             return False
 
-        issue = self.core.get_issue(issue_id)
+        issue = self.core.issues.get(issue_id)
         if not issue:
             return False
 
@@ -126,7 +126,10 @@ class GitIntegrationOps:
             issue.git_branches.append(current_branch.name)
 
         # Update the issue
-        return self.core.update_issue(issue_id, git_branches=issue.git_branches) is not None
+        return (
+            self.core.issues.update(issue_id, git_branches=issue.git_branches)
+            is not None
+        )
 
     def get_commits_for_issue(self, issue_id: str, since: str | None = None) -> list:
         """Get Git commits that reference this issue.
@@ -168,7 +171,7 @@ class GitIntegrationOps:
 
         if latest_updates:
             # Update the issue with the extracted information
-            self.core.update_issue(issue_id, **latest_updates)
+            self.core.issues.update(issue_id, **latest_updates)
             return True
 
         return False
@@ -182,7 +185,7 @@ class GitIntegrationOps:
         Returns:
             Suggested branch name, or None if issue not found or not in git repo
         """
-        issue = self.core.get_issue(issue_id)
+        issue = self.core.issues.get(issue_id)
         if not issue or not self.git.is_git_repository():
             return None
 
@@ -202,7 +205,7 @@ class GitIntegrationOps:
 
         for branch in branches:
             issue_id = branch.extract_issue_id()
-            if issue_id and self.core.get_issue(issue_id):
+            if issue_id and self.core.issues.get(issue_id):
                 branch_issues[branch.name] = [issue_id]
 
         return branch_issues

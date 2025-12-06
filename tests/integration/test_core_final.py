@@ -307,7 +307,9 @@ class TestRoadmapCoreUncoveredLines:
                         )
                         mock_github.return_value = mock_client
 
-                        is_valid, error = core.team.validate_assignee("unknown@example.com")
+                        is_valid, error = core.team.validate_assignee(
+                            "unknown@example.com"
+                        )
                         assert is_valid is False
                         assert "User not found" in error
 
@@ -359,7 +361,9 @@ class TestRoadmapCoreUncoveredLines:
                         mock_github.side_effect = Exception("Network error")
 
                         # Should fall back to legacy validation which allows any assignee when GitHub fails
-                        is_valid, error = core.team.validate_assignee("test@example.com")
+                        is_valid, error = core.team.validate_assignee(
+                            "test@example.com"
+                        )
                         assert is_valid is True  # Should allow with fallback
                         assert (
                             "Warning" in error
@@ -441,7 +445,9 @@ class TestRoadmapCoreUncoveredLines:
             title="Issue 2", priority=Priority.MEDIUM, milestone="Sprint 1"
         )
         core.issues.create(title="Issue 3", priority=Priority.LOW, milestone="Sprint 2")
-        core.issues.create(title="Issue 4", priority=Priority.HIGH, milestone="Sprint 1")
+        core.issues.create(
+            title="Issue 4", priority=Priority.HIGH, milestone="Sprint 1"
+        )
         core.issues.create(title="Issue 5", priority=Priority.MEDIUM)  # Backlog
 
         # Get grouped issues
