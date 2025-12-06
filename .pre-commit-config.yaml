@@ -41,13 +41,6 @@ repos:
         pass_filenames: true
         stages: [commit]
         # Checks: CC warn at B (5-7) / fail at C+ (8+), file length warn at 300 LOC / fail at 400 LOC
-      - id: pylint-file-length
-        name: pylint - max file length (300 LOC)
-        entry: poetry run pylint --disable=all --enable=too-many-lines
-        language: system
-        types: [python]
-        pass_filenames: true
-        # Uses .pylintrc for max-module-lines=300
 
   # Run type checking (before cosmetic fixes)
   - repo: https://github.com/RobertCraigie/pyright-python
