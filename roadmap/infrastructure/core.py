@@ -55,6 +55,7 @@ from roadmap.core.services import (
     ProjectService,
 )
 from roadmap.infrastructure.initialization import InitializationManager
+from roadmap.infrastructure.issue_operations import IssueOperations
 
 
 class RoadmapCore:
@@ -101,6 +102,9 @@ class RoadmapCore:
         self._init_manager = InitializationManager(
             self.root_path, self.roadmap_dir_name
         )
+
+        # Initialize manager for issue operations
+        self._issue_ops = IssueOperations(self.issue_service, self.issues_dir)
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
@@ -255,7 +259,7 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        return self.issue_service.create_issue(
+        return self._issue_ops.create_issue(
             title=title,
             priority=priority,
             issue_type=issue_type,
@@ -279,7 +283,7 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-        return self.issue_service.list_issues(
+        return self._issue_ops.list_issues(
             milestone=milestone,
             status=status,
             priority=priority,
@@ -289,15 +293,15 @@ class RoadmapCore:
 
     def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID."""
-        return self.issue_service.get_issue(issue_id)
+        return self._issue_ops.get_issue(issue_id)
 
     def update_issue(self, issue_id: str, **updates) -> Issue | None:
         """Update an existing issue."""
-        return self.issue_service.update_issue(issue_id, **updates)
+        return self._issue_ops.update_issue(issue_id, **updates)
 
     def delete_issue(self, issue_id: str) -> bool:
         """Delete an issue."""
-        return self.issue_service.delete_issue(issue_id)
+        return self._issue_ops.delete_issue(issue_id)
 
     def create_milestone(
         self, name: str, description: str = "", due_date: datetime | None = None
@@ -371,30 +375,11 @@ class RoadmapCore:
 
     def assign_issue_to_milestone(self, issue_id: str, milestone_name: str) -> bool:
         """Assign an issue to a milestone."""
-        issue = self.get_issue(issue_id)
-        if not issue:
+        # Validate milestone exists
+        if not self.get_milestone(milestone_name):
             return False
 
-        milestone = self.get_milestone(milestone_name)
-        if not milestone:
-            return False
-
-        issue.milestone = milestone_name
-        from pathlib import Path
-
-        from roadmap.common.timezone_utils import now_utc
-
-        issue.updated = now_utc()
-
-        # Use the file_path if available (preserves original location)
-        if hasattr(issue, "file_path") and issue.file_path:
-            issue_path = Path(issue.file_path)
-        else:
-            issue_path = self.issues_dir / issue.filename
-
-        IssueParser.save_issue_file(issue, issue_path)
-
-        return True
+        return self._issue_ops.assign_issue_to_milestone(issue_id, milestone_name)
 
     def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
         """Get progress statistics for a milestone."""
@@ -436,58 +421,25 @@ class RoadmapCore:
 
     def get_backlog_issues(self) -> list[Issue]:
         """Get all issues not assigned to any milestone (backlog)."""
-        all_issues = self.list_issues()
-        return [issue for issue in all_issues if issue.is_backlog]
+        return self._issue_ops.get_backlog_issues()
 
     def get_milestone_issues(self, milestone_name: str) -> list[Issue]:
         """Get all issues assigned to a specific milestone."""
-        all_issues = self.list_issues()
-        return [issue for issue in all_issues if issue.milestone == milestone_name]
+        return self._issue_ops.get_milestone_issues(milestone_name)
 
     def get_issues_by_milestone(self) -> dict[str, list[Issue]]:
         """Get all issues grouped by milestone, including backlog."""
-        all_issues = self.list_issues()
-        grouped = {"Backlog": []}
-
-        # Add backlog issues
-        for issue in all_issues:
-            if issue.is_backlog:
-                grouped["Backlog"].append(issue)
-            else:
-                milestone_name = issue.milestone
-                if milestone_name is None:
-                    # Issues without milestone go to Backlog
-                    grouped["Backlog"].append(issue)
-                else:
-                    if milestone_name not in grouped:
-                        grouped[milestone_name] = []
-                    grouped[milestone_name].append(issue)
-
-        return grouped
+        return self._issue_ops.get_issues_by_milestone()
 
     def move_issue_to_milestone(
         self, issue_id: str, milestone_name: str | None
     ) -> bool:
         """Move an issue to a milestone or to backlog if milestone_name is None."""
-        issue = self.get_issue(issue_id)
-        if not issue:
-            return False
-
         # Validate milestone exists if provided
         if milestone_name and not self.get_milestone(milestone_name):
             return False
 
-        # Update issue milestone
-        issue.milestone = milestone_name
-        from roadmap.common.timezone_utils import now_utc
-
-        issue.updated = now_utc()
-
-        # Save updated issue
-        issue_path = self.issues_dir / issue.filename
-        IssueParser.save_issue_file(issue, issue_path)
-
-        return True
+        return self._issue_ops.move_issue_to_milestone(issue_id, milestone_name)
 
     def get_next_milestone(self) -> Milestone | None:
         """Get the next upcoming milestone based on due date."""
