@@ -121,7 +121,7 @@ class TestAssigneeValidation:
         # Mock get_team_members in the service to return test data
         with patch.object(
             core.github_service, "get_team_members", return_value=["user1", "user2"]
-        ) as mock_get_members:
+        ):
             # First call should fetch from API
             members1 = core.team.get_cached_team_members()
             assert isinstance(members1, list)
@@ -228,6 +228,6 @@ class TestCLIAssigneeValidation:
             assert result.exit_code == 0
             assert "Created issue" in result.output
             # Validation should have been called but returned success
-            mock_core.validate_assignee.assert_called_once_with("alice.local")
+            mock_core.team.validate_assignee.assert_called_once_with("alice.local")
             # Issue should have been created successfully
-            mock_core.create_issue.assert_called_once()
+            mock_core.issues.create.assert_called_once()

@@ -7,7 +7,7 @@ Provides a focused API for all milestone-related concerns.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from roadmap.core.domain import Milestone
 from roadmap.infrastructure.milestone_consistency_validator import (
@@ -15,19 +15,29 @@ from roadmap.infrastructure.milestone_consistency_validator import (
 )
 from roadmap.infrastructure.milestone_operations import MilestoneOperations
 
+if TYPE_CHECKING:
+    from roadmap.infrastructure.core import RoadmapCore
+
 
 class MilestoneCoordinator:
     """Coordinates all milestone-related operations."""
 
-    def __init__(self, milestone_ops: MilestoneOperations, milestones_dir):
+    def __init__(
+        self,
+        milestone_ops: MilestoneOperations,
+        milestones_dir,
+        core: RoadmapCore | None = None,
+    ):
         """Initialize coordinator with milestone operations manager.
 
         Args:
             milestone_ops: MilestoneOperations instance
             milestones_dir: Path to milestones directory
+            core: RoadmapCore instance for initialization checks
         """
         self._ops = milestone_ops
         self._consistency_validator = MilestoneConsistencyValidator(milestones_dir)
+        self._core = core
 
     # CRUD Operations
     def create(

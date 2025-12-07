@@ -13,18 +13,21 @@ from roadmap.infrastructure.issue_operations import IssueOperations
 
 if TYPE_CHECKING:
     from roadmap.core.domain import Issue
+    from roadmap.infrastructure.core import RoadmapCore
 
 
 class IssueCoordinator:
     """Coordinates all issue-related operations."""
 
-    def __init__(self, issue_ops: IssueOperations):
+    def __init__(self, issue_ops: IssueOperations, core: RoadmapCore | None = None):
         """Initialize coordinator with issue operations manager.
 
         Args:
             issue_ops: IssueOperations instance
+            core: RoadmapCore instance for initialization checks
         """
         self._ops = issue_ops
+        self._core = core
 
     # CRUD Operations
     def create(
@@ -40,8 +43,6 @@ class IssueCoordinator:
         blocks: list[str] | None = None,
     ) -> Issue:
         """Create a new issue."""
-        # Note: Initialization check happens at the service/persistence layer
-        # The coordinator doesn't need to check - the issue service will handle it
         return self._ops.create_issue(
             title=title,
             priority=priority,

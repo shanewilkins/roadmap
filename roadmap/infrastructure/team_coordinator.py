@@ -6,20 +6,27 @@ Provides a focused API for all team and user management concerns.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from roadmap.core.domain import Issue
 from roadmap.infrastructure.user_operations import UserOperations
+
+if TYPE_CHECKING:
+    from roadmap.infrastructure.core import RoadmapCore
 
 
 class TeamCoordinator:
     """Coordinates all team and user-related operations."""
 
-    def __init__(self, user_ops: UserOperations):
+    def __init__(self, user_ops: UserOperations, core: RoadmapCore | None = None):
         """Initialize coordinator with user operations manager.
 
         Args:
             user_ops: UserOperations instance
+            core: RoadmapCore instance for initialization checks
         """
         self._ops = user_ops
+        self._core = core
 
     def get_members(self) -> list[str]:
         """Get team members from GitHub repository.

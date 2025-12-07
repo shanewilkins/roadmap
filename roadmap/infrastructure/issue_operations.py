@@ -239,8 +239,16 @@ class IssueOperations:
         if not issue:
             return False
 
-        # Note: Validation of milestone existence should be done by caller
-        # if needed - we just update the field here
+        # Validate milestone exists if milestone_name is provided (None is valid for backlog)
+        if milestone_name is not None:
+            # Check if milestone file exists
+            safe_name = "".join(
+                c for c in milestone_name if c.isalnum() or c in (" ", "-", "_")
+            ).strip()
+            safe_name = safe_name.replace(" ", "-").lower()
+            milestone_file = self.issues_dir.parent / "milestones" / f"{safe_name}.md"
+            if not milestone_file.exists():
+                return False
 
         # Update issue milestone
         issue.milestone = milestone_name

@@ -199,8 +199,8 @@ class TestEndToEndWorkflows:
         # Create a new core instance (simulating restart)
         core2 = RoadmapCore()
 
-        issues2 = core2.list_issues()
-        milestones2 = core2.list_milestones()
+        issues2 = core2.issues.list()
+        milestones2 = core2.milestones.list()
 
         assert len(issues2) == 1
         assert len(milestones2) == 1

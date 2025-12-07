@@ -98,6 +98,11 @@ class RoadmapCore:
             self.db, self.projects_dir, self.milestones_dir
         )
 
+        # Keep reference to init manager for setup (needed before creating coordinators)
+        self._init_manager = InitializationManager(
+            self.root_path, self.roadmap_dir_name
+        )
+
         # Initialize operations managers
         issue_ops = IssueOperations(self.issue_service, self.issues_dir)
         milestone_ops = MilestoneOperations(self.milestone_service)
@@ -105,22 +110,24 @@ class RoadmapCore:
         user_ops = UserOperations(self.github_service, self.issue_service)
         git_ops = GitIntegrationOps(self._git, self)
 
-        # Initialize domain coordinators
-        self.issues = IssueCoordinator(issue_ops)
-        self.milestones = MilestoneCoordinator(milestone_ops, self.milestones_dir)
-        self.projects = ProjectCoordinator(project_ops)
-        self.team = TeamCoordinator(user_ops)
-        self.git = GitCoordinator(git_ops)
-        self.validation = ValidationCoordinator(self.github_service)
-
-        # Keep reference to init manager for setup
-        self._init_manager = InitializationManager(
-            self.root_path, self.roadmap_dir_name
+        # Initialize domain coordinators (pass self for initialization check)
+        self.issues = IssueCoordinator(issue_ops, core=self)
+        self.milestones = MilestoneCoordinator(
+            milestone_ops, self.milestones_dir, core=self
         )
+        self.projects = ProjectCoordinator(project_ops, core=self)
+        self.team = TeamCoordinator(user_ops, core=self)
+        self.git = GitCoordinator(git_ops, core=self)
+        self.validation = ValidationCoordinator(self.github_service, core=self)
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
         return self._init_manager.is_initialized()
+
+    def _check_initialized(self) -> None:
+        """Check that roadmap is initialized and raise if not."""
+        if not self.is_initialized():
+            raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
     @classmethod
     def find_existing_roadmap(
@@ -231,6 +238,10 @@ class RoadmapCore:
     # ========== BACKWARD COMPATIBILITY WRAPPERS ==========
     # These methods delegate to domain coordinators for backward compatibility
     # New code should use: core.issues.method(), core.milestones.method(), etc.
+
+    def get_issues_by_milestone(self) -> dict[str, list]:
+        """Get all issues grouped by milestone (backward compatibility wrapper)."""
+        return self.issues.get_grouped_by_milestone()
 
     def load_config(self):
         """Load roadmap configuration."""

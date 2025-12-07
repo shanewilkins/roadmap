@@ -6,20 +6,27 @@ Provides a focused API for all project-related concerns.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from roadmap.core.domain import Project
 from roadmap.infrastructure.project_operations import ProjectOperations
+
+if TYPE_CHECKING:
+    from roadmap.infrastructure.core import RoadmapCore
 
 
 class ProjectCoordinator:
     """Coordinates all project-related operations."""
 
-    def __init__(self, project_ops: ProjectOperations):
+    def __init__(self, project_ops: ProjectOperations, core: RoadmapCore | None = None):
         """Initialize coordinator with project operations manager.
 
         Args:
             project_ops: ProjectOperations instance
+            core: RoadmapCore instance for initialization checks
         """
         self._ops = project_ops
+        self._core = core
 
     def list(self) -> list[Project]:
         """List all projects."""

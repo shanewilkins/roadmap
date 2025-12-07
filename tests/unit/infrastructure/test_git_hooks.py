@@ -506,7 +506,7 @@ class TestWorkflowAutomationSync:
             title="Test Issue",
             status=Status.TODO,
         )
-        mock_core.list_issues.return_value = [issue]
+        mock_core.issues.list.return_value = [issue]
 
         # Mock commit with issue reference
         workflow_automation.git_integration.get_recent_commits.return_value = [
@@ -557,7 +557,7 @@ class TestWorkflowAutomationSync:
             title="Test Issue",
             status=Status.TODO,
         )
-        mock_core.list_issues.return_value = [issue]
+        mock_core.issues.list.return_value = [issue]
 
         workflow_automation.git_integration.get_recent_commits.return_value = [
             sample_commit

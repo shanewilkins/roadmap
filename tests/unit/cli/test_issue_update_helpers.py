@@ -233,7 +233,7 @@ class TestIssueUpdateBuilder:
         """build_updates should handle multiple update fields."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (True, None)
-        mock_core.get_canonical_assignee.return_value = "testuser"
+        mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
 
         result = IssueUpdateBuilder.build_updates(
@@ -270,7 +270,7 @@ class TestIssueUpdateBuilder:
         """_resolve_assignee should return canonical assignee for valid user."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (True, None)
-        mock_core.get_canonical_assignee.return_value = "canonicaluser"
+        mock_core.team.get_canonical_assignee.return_value = "canonicaluser"
         mock_console = Mock()
 
         result = IssueUpdateBuilder._resolve_assignee(
@@ -279,7 +279,7 @@ class TestIssueUpdateBuilder:
 
         assert result == "canonicaluser"
         mock_core.validate_assignee.assert_called_once_with("testuser")
-        mock_core.get_canonical_assignee.assert_called_once_with("testuser")
+        mock_core.team.get_canonical_assignee.assert_called_once_with("testuser")
 
     def test_resolve_assignee_invalid(self):
         """_resolve_assignee should return False for invalid user."""
@@ -314,7 +314,7 @@ class TestIssueUpdateBuilder:
         """_resolve_assignee should show when name is resolved to canonical form."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (True, None)
-        mock_core.get_canonical_assignee.return_value = "john.doe"
+        mock_core.team.get_canonical_assignee.return_value = "john.doe"
         mock_console = Mock()
 
         result = IssueUpdateBuilder._resolve_assignee(
@@ -329,7 +329,7 @@ class TestIssueUpdateBuilder:
         """_resolve_assignee should not show resolution message when name unchanged."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (True, None)
-        mock_core.get_canonical_assignee.return_value = "testuser"
+        mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
 
         result = IssueUpdateBuilder._resolve_assignee(

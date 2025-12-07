@@ -92,7 +92,7 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
             console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
-        branch_name = core.suggest_branch_name_for_issue(issue_id)
+        branch_name = core.git.suggest_branch_name(issue_id)
         if not branch_name:
             console.print(
                 "❌ Could not suggest branch name for issue", style="bold red"
@@ -172,7 +172,7 @@ def git_link(ctx: click.Context, issue_id: str):
             return
 
         # Link the issue to the current branch
-        success = core.link_issue_to_current_branch(issue_id)
+        success = core.git.link_issue_to_branch(issue_id)
 
         if success:
             console.print(

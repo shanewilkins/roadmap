@@ -6,24 +6,29 @@ Provides a focused API for all git integration concerns.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from roadmap.adapters.git.git import GitIntegration
 from roadmap.core.domain import Issue
 from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
 
+if TYPE_CHECKING:
+    from roadmap.infrastructure.core import RoadmapCore
+
 
 class GitCoordinator:
     """Coordinates all git-related operations."""
 
-    def __init__(self, git_ops: GitIntegrationOps):
+    def __init__(self, git_ops: GitIntegrationOps, core: RoadmapCore | None = None):
         """Initialize coordinator with git operations manager.
 
         Args:
             git_ops: GitIntegrationOps instance
+            core: RoadmapCore instance for initialization checks
         """
         self._ops: GitIntegrationOps = git_ops
         self._git: GitIntegration = git_ops.git
+        self._core = core
 
     def get_context(self) -> dict[str, Any]:
         """Get Git repository context information."""

@@ -56,17 +56,18 @@ class TestStartIssueWorkflow:
     """Test start issue workflow orchestration."""
 
     def test_start_work_updates_issue(self):
-        """start_work should call core.update_issue with correct parameters."""
+        """start_work should call core.issues.update with correct parameters."""
         mock_core = Mock()
+        mock_core.issues = Mock()
         mock_issue = Mock()
-        mock_core.update_issue.return_value = mock_issue
+        mock_core.issues.update.return_value = mock_issue
 
         issue_id = "ISS-123"
         start_date = datetime(2024, 1, 15, 10, 30)
 
         result = StartIssueWorkflow.start_work(mock_core, issue_id, start_date)
 
-        mock_core.update_issue.assert_called_once_with(
+        mock_core.issues.update.assert_called_once_with(
             issue_id,
             actual_start_date=start_date,
             status=Status.IN_PROGRESS,
@@ -77,7 +78,8 @@ class TestStartIssueWorkflow:
     def test_start_work_returns_none_on_failure(self):
         """start_work should return None when update fails."""
         mock_core = Mock()
-        mock_core.update_issue.return_value = None
+        mock_core.issues = Mock()
+        mock_core.issues.update.return_value = None
 
         result = StartIssueWorkflow.start_work(mock_core, "ISS-123", datetime.now())
 

@@ -34,8 +34,17 @@ def mock_git_integration():
 
 @pytest.fixture
 def mock_roadmap_core():
-    """Create a mock RoadmapCore for testing."""
-    core = Mock(spec=RoadmapCore)
+    """Create a mock RoadmapCore for testing with coordinator structure."""
+    from unittest.mock import MagicMock
+
+    core = MagicMock(spec=RoadmapCore)
+    # Set up coordinator mocks that the API requires
+    core.issues = MagicMock()
+    core.milestones = MagicMock()
+    core.projects = MagicMock()
+    core.team = MagicMock()
+    core.git = MagicMock()
+    core.validation = MagicMock()
     return core
 
 
@@ -149,12 +158,12 @@ class TestGitIntegrationIssueCreation:
         git, mock_run = mock_git_integration
 
         # Mock no existing issue
-        mock_roadmap_core.get_issue.return_value = None
+        mock_roadmap_core.issues.get.return_value = None
 
         # Mock created issue
         created_issue = Mock()
         created_issue.id = "new-issue-123"
-        mock_roadmap_core.create_issue.return_value = created_issue
+        mock_roadmap_core.issues.create.return_value = created_issue
 
         # Mock current user
         git.get_current_user = Mock(return_value="testuser")
@@ -172,8 +181,8 @@ class TestGitIntegrationIssueCreation:
             assert result == "new-issue-123"
 
             # Verify issue was created with correct data
-            mock_roadmap_core.create_issue.assert_called_once()
-            call_args = mock_roadmap_core.create_issue.call_args[1]
+            mock_roadmap_core.issues.create.assert_called_once()
+            call_args = mock_roadmap_core.issues.create.call_args[1]
             assert call_args["title"] == "Test Feature"
             assert call_args["assignee"] == "testuser"
             assert call_args["status"] == "in_progress"
@@ -193,11 +202,11 @@ class TestGitIntegrationIssueCreation:
     def test_auto_create_issue_from_branch_exception(
         self, mock_git_integration, mock_roadmap_core
     ):
-        """Test graceful handling of exceptions during issue creation."""
+        """Test exception handling during issue creation."""
         git, mock_run = mock_git_integration
 
         # Mock exception during issue creation
-        mock_roadmap_core.create_issue.side_effect = Exception("Creation failed")
+        mock_roadmap_core.issues.create.side_effect = Exception("Creation failed")
         git.get_current_user = Mock(return_value="testuser")
 
         with patch.object(git, "_extract_title_from_branch_name", return_value="Test"):
@@ -220,7 +229,7 @@ class TestGitIntegrationIssueCreation:
         # Mock successful creation
         created_issue = Mock()
         created_issue.id = "current-123"
-        mock_roadmap_core.create_issue.return_value = created_issue
+        mock_roadmap_core.issues.create.return_value = created_issue
         git.get_current_user = Mock(return_value="testuser")
 
         with patch.object(

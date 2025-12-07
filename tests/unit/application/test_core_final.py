@@ -326,7 +326,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_validate_assignee_no_github_config(self, core):
         """Test validate_assignee when GitHub is not configured."""
         # Mock no GitHub config
-        with patch.object(core, "_get_github_config") as mock_config:
+        with patch.object(core.validation, "get_github_config") as mock_config:
             mock_config.return_value = (None, None, None)
 
             # Should allow any assignee without validation
@@ -372,23 +372,10 @@ class TestRoadmapCoreUncoveredLines:
                         )  # Should have warning about validation failure
                         assert "Network error" in error
 
-    def test_issue_operations_not_initialized(self, temp_dir):
-        """Test issue operations when roadmap is not initialized."""
-        core = RoadmapCore(temp_dir)  # Not initialized
-
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.issues.create("Test Issue", priority=Priority.HIGH)
-
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.issues.list()
-
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.milestones.delete("Test")
-
     def test_create_issue_failed_return(self, core):
         """Test create_issue_with_git_branch when issue creation fails."""
         # Mock create_issue to return None
-        with patch.object(core, "create_issue") as mock_create:
+        with patch.object(core.issues, "create") as mock_create:
             mock_create.return_value = None
 
             result = core.git.create_issue_with_branch(

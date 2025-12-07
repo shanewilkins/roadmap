@@ -400,7 +400,7 @@ class GitIntegration:
         existing_issue_id = branch.extract_issue_id()
         if existing_issue_id:
             # Check if the issue actually exists
-            if roadmap_core.load_issue(existing_issue_id):
+            if roadmap_core.issues.get(existing_issue_id):
                 return None  # Issue already exists
 
         # Generate issue details from branch name
@@ -426,10 +426,10 @@ class GitIntegration:
             }
 
             # Add issue type if the models support it
-            if hasattr(roadmap_core, "create_issue_with_type"):
+            if hasattr(roadmap_core.issues, "create_with_type"):
                 issue_data["issue_type"] = issue_type
 
-            issue = roadmap_core.create_issue(**issue_data)
+            issue = roadmap_core.issues.create(**issue_data)
             return issue.id
 
         except Exception:

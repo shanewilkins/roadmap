@@ -82,7 +82,7 @@ class TestMilestoneProgressService:
     def test_get_milestone_progress_success(self):
         """Test getting progress for a milestone."""
         mock_core = MagicMock()
-        mock_core.get_milestone_progress.return_value = {
+        mock_core.milestones.get_progress.return_value = {
             "total": 10,
             "completed": 7,
         }
@@ -96,7 +96,7 @@ class TestMilestoneProgressService:
     def test_get_milestone_progress_zero_total(self):
         """Test progress with zero total issues."""
         mock_core = MagicMock()
-        mock_core.get_milestone_progress.return_value = {
+        mock_core.milestones.get_progress.return_value = {
             "total": 0,
             "completed": 0,
         }
@@ -110,7 +110,7 @@ class TestMilestoneProgressService:
     def test_get_milestone_progress_complete(self):
         """Test progress when all issues completed."""
         mock_core = MagicMock()
-        mock_core.get_milestone_progress.return_value = {
+        mock_core.milestones.get_progress.return_value = {
             "total": 10,
             "completed": 10,
         }
@@ -122,7 +122,7 @@ class TestMilestoneProgressService:
     def test_get_milestone_progress_exception(self):
         """Test progress calculation handles exceptions."""
         mock_core = MagicMock()
-        mock_core.get_milestone_progress.side_effect = Exception("DB error")
+        mock_core.milestones.get_progress.side_effect = Exception("DB error")
 
         result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
 
@@ -140,7 +140,7 @@ class TestMilestoneProgressService:
             else:
                 return {"total": 8, "completed": 8}
 
-        mock_core.get_milestone_progress.side_effect = progress_side_effect
+        mock_core.milestones.get_progress.side_effect = progress_side_effect
 
         mock_ms1 = MagicMock()
         mock_ms1.name = "v1.0"
@@ -197,8 +197,8 @@ class TestMilestoneListService:
     def test_get_milestones_list_data_empty(self):
         """Test getting milestone list data when empty."""
         mock_core = MagicMock()
-        mock_core.list_milestones.return_value = []
-        mock_core.list_issues.return_value = []
+        mock_core.milestones.list.return_value = []
+        mock_core.issues.list.return_value = []
 
         service = MilestoneListService(mock_core)
         result = service.get_milestones_list_data()
@@ -218,12 +218,12 @@ class TestMilestoneListService:
         mock_ms.status.value = "open"
         mock_ms.get_estimated_time_display.return_value = "40 hours"
 
-        mock_core.list_milestones.return_value = [mock_ms]
-        mock_core.list_issues.return_value = []
-        mock_core.get_milestone_progress.return_value = {
+        mock_core.milestones.list.return_value = [mock_ms]
+        mock_core.milestones.get_progress.return_value = {
             "total": 10,
             "completed": 5,
         }
+        mock_core.issues.list.return_value = []
 
         service = MilestoneListService(mock_core)
         result = service.get_milestones_list_data()
@@ -247,12 +247,12 @@ class TestMilestoneListService:
         mock_ms_future.due_date = datetime.now() + timedelta(days=30)
         mock_ms_future.status.value = "open"
 
-        mock_core.list_milestones.return_value = [mock_ms_past, mock_ms_future]
-        mock_core.list_issues.return_value = []
-        mock_core.get_milestone_progress.return_value = {
+        mock_core.milestones.list.return_value = [mock_ms_past, mock_ms_future]
+        mock_core.milestones.get_progress.return_value = {
             "total": 0,
             "completed": 0,
         }
+        mock_core.issues.list.return_value = []
 
         service = MilestoneListService(mock_core)
         result = service.get_milestones_list_data(overdue_only=True)
@@ -306,7 +306,7 @@ class TestMilestoneListService:
     def test_get_milestones_list_data_exception(self):
         """Test handling of exceptions."""
         mock_core = MagicMock()
-        mock_core.list_milestones.side_effect = Exception("DB error")
+        mock_core.milestones.list.side_effect = Exception("DB error")
 
         service = MilestoneListService(mock_core)
         result = service.get_milestones_list_data()

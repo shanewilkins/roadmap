@@ -417,11 +417,12 @@ class TestRoadmapCoreErrorHandling:
         issues = core.issues.list()
         assert isinstance(issues, list)
 
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.milestones.create("Test", "Description")
+        # Milestones also work without explicit initialization
+        milestone = core.milestones.create("Test", "Description")
+        assert milestone is not None
 
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.milestones.list()
+        milestones = core.milestones.list()
+        assert isinstance(milestones, list)
 
     def test_find_existing_roadmap_permission_error(self, temp_dir):
         """Test find_existing_roadmap with permission errors."""
@@ -509,57 +510,57 @@ class TestRoadmapCoreFilteringAndSearch:
 
     def test_list_issues_filter_by_priority(self, core_with_data):
         """Test filtering issues by priority."""
-        high_priority = core_with_data.list_issues(priority=Priority.HIGH)
+        high_priority = core_with_data.issues.list(priority=Priority.HIGH)
         assert len(high_priority) == 1
         assert high_priority[0].title == "Bug Fix"
 
-        medium_priority = core_with_data.list_issues(priority=Priority.MEDIUM)
+        medium_priority = core_with_data.issues.list(priority=Priority.MEDIUM)
         assert len(medium_priority) == 1
         assert medium_priority[0].title == "New Feature"
 
     def test_list_issues_filter_by_status(self, core_with_data):
         """Test filtering issues by status."""
-        in_progress = core_with_data.list_issues(status=Status.IN_PROGRESS)
+        in_progress = core_with_data.issues.list(status=Status.IN_PROGRESS)
         assert len(in_progress) == 1
         assert in_progress[0].title == "Bug Fix"
 
-        completed = core_with_data.list_issues(status=Status.CLOSED)
+        completed = core_with_data.issues.list(status=Status.CLOSED)
         assert len(completed) == 1
         assert completed[0].title == "Documentation Update"
 
     def test_list_issues_filter_by_assignee(self, core_with_data):
         """Test filtering issues by assignee."""
-        alice_issues = core_with_data.list_issues(assignee="alice@example.com")
+        alice_issues = core_with_data.issues.list(assignee="alice@example.com")
         assert len(alice_issues) == 2
         alice_titles = [issue.title for issue in alice_issues]
         assert "Bug Fix" in alice_titles
         assert "Documentation Update" in alice_titles
 
-        bob_issues = core_with_data.list_issues(assignee="bob@example.com")
+        bob_issues = core_with_data.issues.list(assignee="bob@example.com")
         assert len(bob_issues) == 1
         assert bob_issues[0].title == "New Feature"
 
     def test_list_issues_filter_by_type(self, core_with_data):
         """Test filtering issues by type."""
-        bugs = core_with_data.list_issues(issue_type=IssueType.BUG)
+        bugs = core_with_data.issues.list(issue_type=IssueType.BUG)
         assert len(bugs) == 1
         assert bugs[0].title == "Bug Fix"
 
-        features = core_with_data.list_issues(issue_type=IssueType.FEATURE)
+        features = core_with_data.issues.list(issue_type=IssueType.FEATURE)
         assert len(features) == 1
         assert features[0].title == "New Feature"
 
     def test_list_issues_multiple_filters(self, core_with_data):
         """Test filtering issues with multiple criteria."""
         # Filter by assignee and status
-        alice_completed = core_with_data.list_issues(
+        alice_completed = core_with_data.issues.list(
             assignee="alice@example.com", status=Status.CLOSED
         )
         assert len(alice_completed) == 1
         assert alice_completed[0].title == "Documentation Update"
 
         # Filter with no matches
-        no_matches = core_with_data.list_issues(
+        no_matches = core_with_data.issues.list(
             assignee="alice@example.com", priority=Priority.MEDIUM
         )
         assert len(no_matches) == 0

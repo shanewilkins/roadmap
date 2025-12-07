@@ -304,14 +304,15 @@ class TestRoadmapCore:
         core.initialize()
 
         issue = core.issues.create("Test Issue")
+        original_milestone = issue.milestone
 
         # Assigning to a non-existent milestone returns False
         success = core.issues.assign_to_milestone(issue.id, "nonexistent")
         assert success is False
 
-        # Verify the assignment was NOT made
+        # Verify the assignment was NOT made (milestone should remain unchanged)
         updated_issue = core.issues.get(issue.id)
-        assert updated_issue.milestone is None
+        assert updated_issue.milestone == original_milestone
 
     def test_get_milestone_progress(self, core):
         """Test getting milestone progress."""

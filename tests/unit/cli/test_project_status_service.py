@@ -25,8 +25,8 @@ class TestStatusDataService:
     def test_gather_status_data_empty(self):
         """Test gathering data when no issues or milestones."""
         mock_core = MagicMock()
-        mock_core.list_issues.return_value = []
-        mock_core.list_milestones.return_value = []
+        mock_core.issues.list.return_value = []
+        mock_core.milestones.list.return_value = []
 
         result = StatusDataService.gather_status_data(mock_core)
 
@@ -40,8 +40,8 @@ class TestStatusDataService:
         """Test gathering data with issues."""
         mock_core = MagicMock()
         mock_issues = [MagicMock(), MagicMock(), MagicMock()]
-        mock_core.list_issues.return_value = mock_issues
-        mock_core.list_milestones.return_value = []
+        mock_core.issues.list.return_value = mock_issues
+        mock_core.milestones.list.return_value = []
 
         result = StatusDataService.gather_status_data(mock_core)
 
@@ -54,8 +54,8 @@ class TestStatusDataService:
         """Test gathering data with milestones."""
         mock_core = MagicMock()
         mock_milestones = [MagicMock(), MagicMock()]
-        mock_core.list_issues.return_value = []
-        mock_core.list_milestones.return_value = mock_milestones
+        mock_core.issues.list.return_value = []
+        mock_core.milestones.list.return_value = mock_milestones
 
         result = StatusDataService.gather_status_data(mock_core)
 
@@ -69,8 +69,8 @@ class TestStatusDataService:
         mock_core = MagicMock()
         mock_issues = [MagicMock(), MagicMock()]
         mock_milestones = [MagicMock()]
-        mock_core.list_issues.return_value = mock_issues
-        mock_core.list_milestones.return_value = mock_milestones
+        mock_core.issues.list.return_value = mock_issues
+        mock_core.milestones.list.return_value = mock_milestones
 
         result = StatusDataService.gather_status_data(mock_core)
 
@@ -81,7 +81,7 @@ class TestStatusDataService:
     def test_gather_status_data_handles_exception(self):
         """Test that exceptions are handled gracefully."""
         mock_core = MagicMock()
-        mock_core.list_issues.side_effect = Exception("Database error")
+        mock_core.issues.list.side_effect = Exception("Database error")
 
         result = StatusDataService.gather_status_data(mock_core)
 

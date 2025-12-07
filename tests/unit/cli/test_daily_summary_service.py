@@ -21,18 +21,18 @@ class TestDailySummaryServiceUserResolution:
     def test_get_current_user_from_core(self):
         """Test that user is retrieved from core when available."""
         core = MagicMock()
-        core.get_current_user.return_value = "alice"
+        core.team.get_current_user.return_value = "alice"
 
         service = DailySummaryService(core)
         user = service.get_current_user()
 
         assert user == "alice"
-        core.get_current_user.assert_called_once()
+        core.team.get_current_user.assert_called_once()
 
     def test_get_current_user_from_env_when_core_returns_none(self):
         """Test that ROADMAP_USER env var is used when core returns None."""
         core = MagicMock()
-        core.get_current_user.return_value = None
+        core.team.get_current_user.return_value = None
 
         with patch.dict(os.environ, {"ROADMAP_USER": "bob"}):
             service = DailySummaryService(core)
@@ -43,7 +43,7 @@ class TestDailySummaryServiceUserResolution:
     def test_get_current_user_raises_when_no_user_found(self):
         """Test that ValueError is raised when no user can be resolved."""
         core = MagicMock()
-        core.get_current_user.return_value = None
+        core.team.get_current_user.return_value = None
 
         with patch.dict(os.environ, {}, clear=True):
             service = DailySummaryService(core)
@@ -80,7 +80,7 @@ class TestDailySummaryServiceMilestoneSelection:
                 due_date=today + timedelta(days=5),
             ),
         ]
-        core.list_milestones.return_value = milestones
+        core.milestones.list.return_value = milestones
 
         service = DailySummaryService(core)
         milestone = service.get_upcoming_milestone()
@@ -90,7 +90,7 @@ class TestDailySummaryServiceMilestoneSelection:
     def test_get_upcoming_milestone_raises_when_no_open_milestones(self):
         """Test that ValueError is raised when no open milestones exist."""
         core = MagicMock()
-        core.list_milestones.return_value = []
+        core.milestones.list.return_value = []
 
         service = DailySummaryService(core)
         # get_upcoming_milestone returns None, but get_daily_summary_data raises ValueError
@@ -322,8 +322,8 @@ class TestDailySummaryServiceGetDailySummaryData:
     def test_get_daily_summary_data_raises_when_no_milestone(self):
         """Test that error is raised when no upcoming milestone exists."""
         core = MagicMock()
-        core.get_current_user.return_value = "alice"
-        core.list_milestones.return_value = []
+        core.team.get_current_user.return_value = "alice"
+        core.milestones.list.return_value = []
 
         service = DailySummaryService(core)
         with pytest.raises(ValueError):

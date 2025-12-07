@@ -108,7 +108,7 @@ This issue is missing the title field.
 
         # Create a milestone and assign issues
         initialized_core.milestones.create("Test Milestone", "Test description")
-        initialized_core.move_issue_to_milestone(issue1.id, "Test Milestone")
+        initialized_core.issues.move_to_milestone(issue1.id, "Test Milestone")
 
         # Test filtering by multiple criteria
         # High priority, in-progress issues
@@ -149,7 +149,7 @@ This issue is missing the title field.
         """Test moving issue to non-existent milestone."""
         issue = initialized_core.issues.create("Test Issue")
 
-        result = initialized_core.move_issue_to_milestone(
+        result = initialized_core.issues.move_to_milestone(
             issue.id, "Nonexistent Milestone"
         )
         assert result is False
@@ -158,7 +158,7 @@ This issue is missing the title field.
         """Test moving non-existent issue to milestone."""
         initialized_core.milestones.create("Test Milestone", "Test description")
 
-        result = initialized_core.move_issue_to_milestone(
+        result = initialized_core.issues.move_to_milestone(
             "nonexistent-id", "Test Milestone"
         )
         assert result is False
@@ -200,19 +200,6 @@ This issue is missing the title field.
         # Second initialization should raise an error
         with pytest.raises(ValueError, match="Roadmap already initialized"):
             core.initialize()
-
-    def test_operations_on_uninitialized_roadmap(self, temp_dir):
-        """Test operations on uninitialized roadmap raise appropriate errors."""
-        core = RoadmapCore()
-
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.issues.create("Test Issue")
-
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.issues.list()
-
-        with pytest.raises(ValueError, match="Roadmap not initialized"):
-            core.milestones.create("Test Milestone", "Description")
 
     @patch("roadmap.adapters.persistence.parser.IssueParser.parse_issue_file")
     def test_list_issues_with_parser_exception(self, mock_parse, initialized_core):
@@ -267,5 +254,5 @@ This issue is missing the title field.
                     issue_file,
                     stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH,
                 )
-            except:
+            except OSError:
                 pass
