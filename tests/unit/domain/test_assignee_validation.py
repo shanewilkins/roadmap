@@ -68,9 +68,6 @@ class TestAssigneeValidation:
         assert not is_valid
         assert "cannot be empty" in error.lower()
 
-    @pytest.mark.xfail(
-        reason="Tests mock non-existent RoadmapCore method (_get_github_config)"
-    )
     def test_assignee_validation_without_github(self, initialized_roadmap):
         """Test that any assignee is accepted when GitHub is not configured.
 
@@ -82,7 +79,7 @@ class TestAssigneeValidation:
         core = RoadmapCore(Path(initialized_roadmap))
 
         # Mock no GitHub configuration (local-only usage)
-        with patch.object(core, "_get_github_config", return_value=(None, None, None)):
+        with patch.object(core.validation, "get_github_config", return_value=(None, None, None)):
             # Should accept any assignee without validation
             is_valid, error = core.team.validate_assignee("localuser")
             assert is_valid

@@ -329,64 +329,55 @@ class TestRoadmapCoreGitHubIntegration:
         core.initialize()
         return core
 
-    @pytest.mark.xfail(
-        reason="_get_github_config method no longer exists in RoadmapCore"
-    )
     def test_get_github_config_from_config_file(self, core):
         """Test getting GitHub config from roadmap config."""
         # Mock the service's get_github_config method directly
-        with patch.object(core.github_service, "get_github_config") as mock_config:
+        with patch.object(core.validation, "get_github_config") as mock_config:
             mock_config.return_value = ("test_token", "test_owner", "test_repo")
 
-            token, owner, repo = core._get_github_config()
+            token, owner, repo = core.validation.get_github_config()
 
             assert token == "test_token"
             assert owner == "test_owner"
             assert repo == "test_repo"
 
-    @pytest.mark.xfail(
-        reason="_get_github_config method no longer exists in RoadmapCore"
-    )
     @patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"})
     def test_get_github_config_from_environment(self, core):
         """Test getting GitHub token from environment variables."""
         # Mock the service's method to return token from environment
-        with patch.object(core.github_service, "get_github_config") as mock_config:
+        with patch.object(core.validation, "get_github_config") as mock_config:
             mock_config.return_value = ("env_token", "test_owner", "test_repo")
 
-            token, owner, repo = core._get_github_config()
+            token, owner, repo = core.validation.get_github_config()
 
             assert token == "env_token"
             assert owner == "test_owner"
             assert repo == "test_repo"
 
-    @pytest.mark.xfail(
-        reason="_get_github_config method no longer exists in RoadmapCore"
-    )
     def test_get_github_config_no_config(self, core):
         """Test getting GitHub config when none is available."""
         # Mock the service to return None values
-        with patch.object(core.github_service, "get_github_config") as mock_config:
+        with patch.object(core.validation, "get_github_config") as mock_config:
             mock_config.return_value = (None, None, None)
 
-            token, owner, repo = core._get_github_config()
+            token, owner, repo = core.validation.get_github_config()
 
             assert token is None
             assert owner is None
             assert repo is None
 
-    @pytest.mark.xfail(reason="_get_cached_team_members method no longer exists")
-    @patch("roadmap.infrastructure.core.RoadmapCore._get_cached_team_members")
-    def test_get_cached_team_members(self, mock_cached, core):
+    def test_get_cached_team_members(self, core):
         """Test getting cached team members."""
-        mock_cached.return_value = ["alice@example.com", "bob@example.com"]
+        # Mock the team coordinator's get_members method
+        with patch.object(core.team, "get_members") as mock_members:
+            mock_members.return_value = ["alice@example.com", "bob@example.com"]
 
-        # Access the protected method indirectly via team member functionality
-        team_members = core._get_cached_team_members()
+            # Access team members via team coordinator
+            team_members = core.team.get_members()
 
-        assert len(team_members) == 2
-        assert "alice@example.com" in team_members
-        assert "bob@example.com" in team_members
+            assert len(team_members) == 2
+            assert "alice@example.com" in team_members
+            assert "bob@example.com" in team_members
 
 
 @pytest.mark.skip(
