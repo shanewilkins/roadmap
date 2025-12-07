@@ -38,7 +38,7 @@ class TestProjectDetectionService:
         result = ProjectDetectionService.detect_existing_projects(projects_dir)
         assert result == []
 
-    @patch("roadmap.adapters.cli.services.project_initialization_service.ProjectParser")
+    @patch("roadmap.core.services.project_init.detection.ProjectParser")
     def test_detect_existing_projects_with_projects(self, mock_parser, tmp_path):
         """Test detection of multiple existing projects."""
         projects_dir = tmp_path / "projects"
@@ -67,7 +67,7 @@ class TestProjectDetectionService:
         assert result[1]["name"] == "Project 2"
         assert result[1]["id"] == "def456"
 
-    @patch("roadmap.adapters.cli.services.project_initialization_service.ProjectParser")
+    @patch("roadmap.core.services.project_init.detection.ProjectParser")
     def test_detect_existing_projects_parse_error(self, mock_parser, tmp_path):
         """Test that projects that fail to parse are skipped."""
         projects_dir = tmp_path / "projects"
@@ -299,7 +299,7 @@ class TestProjectTemplateService:
 class TestProjectCreationService:
     """Tests for project creation."""
 
-    @patch("roadmap.adapters.cli.services.project_initialization_service.RoadmapCore")
+    @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_success(self, mock_core_class, tmp_path):
         """Test successful project creation."""
         # Setup mock
@@ -331,7 +331,7 @@ class TestProjectCreationService:
         assert "Test Project" in content
         assert "A test project" in content
 
-    @patch("roadmap.adapters.cli.services.project_initialization_service.RoadmapCore")
+    @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_with_custom_template(self, mock_core_class, tmp_path):
         """Test project creation with custom template."""
         mock_core = MagicMock(spec=RoadmapCore)
@@ -360,7 +360,7 @@ class TestProjectCreationService:
         assert "Custom" in content
         assert "Custom content here" in content
 
-    @patch("roadmap.adapters.cli.services.project_initialization_service.RoadmapCore")
+    @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_with_invalid_template_fallback(
         self, mock_core_class, tmp_path
     ):
@@ -391,7 +391,7 @@ class TestProjectCreationService:
     @pytest.mark.skip(
         reason="Tests for planned but never-implemented RoadmapCore methods (_generate_id, _normalize_filename). Core project creation is tested elsewhere."
     )
-    @patch("roadmap.adapters.cli.services.project_initialization_service.RoadmapCore")
+    @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_creates_directory(self, mock_core_class, tmp_path):
         """Test that project creation creates projects directory if missing."""
         mock_core = MagicMock(spec=RoadmapCore)
@@ -419,7 +419,7 @@ class TestProjectCreationService:
     @pytest.mark.skip(
         reason="Tests for planned but never-implemented RoadmapCore methods (_generate_id, _normalize_filename). Error handling is tested elsewhere."
     )
-    @patch("roadmap.adapters.cli.services.project_initialization_service.RoadmapCore")
+    @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_handles_file_write_error(self, mock_core_class, tmp_path):
         """Test graceful handling of file write errors."""
         mock_core = MagicMock(spec=RoadmapCore)
