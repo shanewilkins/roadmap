@@ -7,10 +7,8 @@ project detection, creation, GitHub setup, and validation.
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.cli.init_workflow import (
-    InitializationValidator,
-    InitializationWorkflow,
-)
+from roadmap.adapters.cli.init_validator import InitializationValidator
+from roadmap.adapters.cli.init_workflow import InitializationWorkflow
 from roadmap.adapters.persistence.parser import ProjectParser
 from roadmap.common.logging import get_logger
 from roadmap.infrastructure.core import RoadmapCore

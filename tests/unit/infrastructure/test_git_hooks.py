@@ -70,7 +70,9 @@ class TestGitHookManagerInit:
 
     def test_init_with_git_repository(self, mock_core):
         """Test initialization in a Git repository."""
-        with patch("roadmap.adapters.git.git_hooks.GitIntegration") as mock_git_class:
+        with patch(
+            "roadmap.adapters.git.git_hooks_manager.GitIntegration"
+        ) as mock_git_class:
             mock_git = Mock()
             mock_git.is_git_repository.return_value = True
             mock_git_class.return_value = mock_git
@@ -82,7 +84,9 @@ class TestGitHookManagerInit:
 
     def test_init_without_git_repository(self, mock_core):
         """Test initialization outside a Git repository."""
-        with patch("roadmap.adapters.git.git_hooks.GitIntegration") as mock_git_class:
+        with patch(
+            "roadmap.adapters.git.git_hooks_manager.GitIntegration"
+        ) as mock_git_class:
             mock_git = Mock()
             mock_git.is_git_repository.return_value = False
             mock_git_class.return_value = mock_git

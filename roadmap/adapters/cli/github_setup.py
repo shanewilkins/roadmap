@@ -222,3 +222,125 @@ def show_github_setup_instructions(github_repo: str, yes: bool) -> bool:
         return False
 
     return True
+
+
+class GitHubInitializationService:
+    """Orchestrates GitHub integration setup during initialization."""
+
+    def __init__(self, core: RoadmapCore):
+        self.core = core
+        self.presenter = None  # Set by caller if needed
+
+    def setup(
+        self,
+        skip_github: bool,
+        github_repo: str | None,
+        detected_info: dict,
+        interactive: bool,
+        yes: bool,
+        github_token: str | None,
+        presenter=None,
+    ) -> bool:
+        """
+        Set up GitHub integration if requested.
+
+        Returns:
+            True if configured, False if skipped or failed
+        """
+        self.presenter = presenter
+
+        if skip_github:
+            return False
+
+        repo_name = github_repo or detected_info.get("git_repo")
+        if not repo_name:
+            return False
+
+        return self._configure_integration(
+            repo_name, interactive, yes, token=github_token
+        )
+
+    def _configure_integration(
+        self,
+        github_repo: str,
+        interactive: bool,
+        yes: bool = False,
+        token: str | None = None,
+    ) -> bool:
+        """Set up GitHub integration with credential flow."""
+        try:
+            # Import GitHub client and credential manager
+            if GitHubClient is None or CredentialManager is None:
+                raise ImportError("GitHub integration dependencies not available")
+
+            # Show setup instructions and get confirmation
+            if interactive and not yes:
+                if not show_github_setup_instructions(github_repo, yes):
+                    return False
+
+            # Initialize managers
+            cred_manager = CredentialManager()
+            token_resolver = GitHubTokenResolver(cred_manager)
+
+            # Get existing token
+            existing_token = token_resolver.get_existing_token()
+
+            # Resolve which token to use
+            use_token, should_continue = token_resolver.resolve_token(
+                token, interactive, yes, existing_token
+            )
+            if not should_continue or not use_token:
+                return False
+
+            # Test the connection
+            if self.presenter:
+                self.presenter.present_github_testing()
+            else:
+                console.print("🧪 Testing GitHub connection...", style="cyan")
+
+            github_client = GitHubClient(use_token)
+            validator = GitHubSetupValidator(github_client)
+
+            # Validate authentication
+            auth_success, username = validator.validate_authentication()
+            if not auth_success:
+                if interactive and not yes:
+                    if not click.confirm(
+                        "Continue without GitHub integration? (recommended to skip until token is fixed)"
+                    ):
+                        return False
+                return False
+
+            # Validate repository access
+            repo_success, _ = validator.validate_repository_access(github_repo)
+            if not repo_success:
+                if interactive and not yes:
+                    if not click.confirm("Continue with GitHub integration anyway?"):
+                        return False
+
+            # Store credentials if new/different
+            if use_token != existing_token:
+                cred_manager.store_token(use_token)
+                if self.presenter:
+                    self.presenter.present_github_credentials_stored()
+                else:
+                    console.print("✅ GitHub credentials stored", style="green")
+
+            # Save configuration
+            config_manager = GitHubConfigManager(self.core)
+            config_manager.save_github_config(github_repo)
+
+            return True
+
+        except ImportError:
+            if self.presenter:
+                self.presenter.present_github_unavailable("Dependencies not installed")
+            else:
+                console.print("⚠️  GitHub dependencies not installed", style="yellow")
+            return False
+        except Exception as e:
+            if self.presenter:
+                self.presenter.present_github_setup_failed(str(e))
+            else:
+                console.print(f"❌ GitHub setup failed: {e}", style="red")
+            return False

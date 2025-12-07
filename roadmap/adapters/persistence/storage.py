@@ -17,6 +17,12 @@ from roadmap.common.logging import get_logger
 from .conflict_resolver import ConflictResolver
 from .database_manager import DatabaseManager
 from .file_synchronizer import FileSynchronizer
+from .repositories import (
+    IssueRepository,
+    MilestoneRepository,
+    ProjectRepository,
+    SyncStateRepository,
+)
 from .sync_state_tracker import SyncStateTracker
 
 logger = get_logger(__name__)
@@ -29,7 +35,12 @@ class DatabaseError(Exception):
 
 
 class StateManager:
-    """SQLite-based state manager for roadmap data."""
+    """SQLite-based state manager for roadmap data.
+
+    This class serves as a facade, delegating entity-specific operations
+    to specialized repository classes while maintaining connection management
+    and transaction handling.
+    """
 
     def __init__(self, db_path: str | Path | None = None):
         """Initialize the state manager.
@@ -49,6 +60,20 @@ class StateManager:
         self._conflict_resolver = ConflictResolver(
             self.db_path.parent
         )  # data_dir is parent of db file
+
+        # Initialize repositories
+        self._project_repo = ProjectRepository(
+            self._db_manager._get_connection, self._db_manager.transaction
+        )
+        self._milestone_repo = MilestoneRepository(
+            self._db_manager._get_connection, self._db_manager.transaction
+        )
+        self._issue_repo = IssueRepository(
+            self._db_manager._get_connection, self._db_manager.transaction
+        )
+        self._sync_state_repo = SyncStateRepository(
+            self._db_manager._get_connection, self._db_manager.transaction
+        )
 
         # Expose database manager's _local for backward compatibility with tests
         self._local = self._db_manager._local
@@ -77,298 +102,77 @@ class StateManager:
         """Check if database is properly initialized."""
         return self._db_manager.is_initialized()
 
-    # Project operations
+    # ========== Project operations (delegated to ProjectRepository) ==========
     def create_project(self, project_data: dict[str, Any]) -> str:
         """Create a new project."""
-        with self.transaction() as conn:
-            conn.execute(
-                """
-                INSERT INTO projects (id, name, description, status, metadata)
-                VALUES (?, ?, ?, ?, ?)
-            """,
-                (
-                    project_data["id"],
-                    project_data["name"],
-                    project_data.get("description"),
-                    project_data.get("status", "active"),
-                    project_data.get("metadata"),
-                ),
-            )
-
-        logger.info("Created project", project_id=project_data["id"])
-        return project_data["id"]
+        return self._project_repo.create(project_data)
 
     def get_project(self, project_id: str) -> dict[str, Any] | None:
         """Get project by ID."""
-        conn = self._get_connection()
-        row = conn.execute(
-            "SELECT * FROM projects WHERE id = ?", (project_id,)
-        ).fetchone()
-
-        return dict(row) if row else None
+        return self._project_repo.get(project_id)
 
     def list_projects(self) -> list[dict[str, Any]]:
         """List all projects."""
-        conn = self._get_connection()
-        rows = conn.execute(
-            "SELECT * FROM projects ORDER BY created_at DESC"
-        ).fetchall()
-        return [dict(row) for row in rows]
+        return self._project_repo.list_all()
 
     def update_project(self, project_id: str, updates: dict[str, Any]) -> bool:
         """Update project."""
-        if not updates:
-            return False
-
-        set_clause = ", ".join(f"{key} = ?" for key in updates.keys())
-        values = list(updates.values()) + [project_id]
-
-        with self.transaction() as conn:
-            cursor = conn.execute(
-                f"""
-                UPDATE projects SET {set_clause} WHERE id = ?
-            """,
-                values,
-            )
-
-        updated = cursor.rowcount > 0
-        if updated:
-            logger.info(
-                "Updated project", project_id=project_id, updates=list(updates.keys())
-            )
-
-        return updated
+        return self._project_repo.update(project_id, updates)
 
     def delete_project(self, project_id: str) -> bool:
         """Delete project and all related data."""
-        with self.transaction() as conn:
-            cursor = conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
-
-        deleted = cursor.rowcount > 0
-        if deleted:
-            logger.info("Deleted project", project_id=project_id)
-
-        return deleted
+        return self._project_repo.delete(project_id)
 
     def mark_project_archived(self, project_id: str, archived: bool = True) -> bool:
-        """Mark a project as archived or unarchived.
+        """Mark a project as archived or unarchived."""
+        return self._project_repo.mark_archived(project_id, archived)
 
-        Args:
-            project_id: Project identifier
-            archived: True to archive, False to unarchive
-
-        Returns:
-            True if successful, False otherwise
-        """
-        with self.transaction() as conn:
-            if archived:
-                cursor = conn.execute(
-                    "UPDATE projects SET archived = 1, archived_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (project_id,),
-                )
-            else:
-                cursor = conn.execute(
-                    "UPDATE projects SET archived = 0, archived_at = NULL WHERE id = ?",
-                    (project_id,),
-                )
-
-        updated = cursor.rowcount > 0
-        if updated:
-            action = "archived" if archived else "unarchived"
-            logger.info(f"Project {action}", project_id=project_id)
-
-        return updated
-
-    def mark_milestone_archived(self, milestone_id: str, archived: bool = True) -> bool:
-        """Mark a milestone as archived or unarchived."""
-        with self.transaction() as conn:
-            if archived:
-                cursor = conn.execute(
-                    "UPDATE milestones SET archived = 1, archived_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (milestone_id,),
-                )
-            else:
-                cursor = conn.execute(
-                    "UPDATE milestones SET archived = 0, archived_at = NULL WHERE id = ?",
-                    (milestone_id,),
-                )
-
-        updated = cursor.rowcount > 0
-        if updated:
-            action = "archived" if archived else "unarchived"
-            logger.info(f"Milestone {action}", milestone_id=milestone_id)
-
-        return updated
-
-    def mark_issue_archived(self, issue_id: str, archived: bool = True) -> bool:
-        """Mark an issue as archived or unarchived."""
-        with self.transaction() as conn:
-            if archived:
-                cursor = conn.execute(
-                    "UPDATE issues SET archived = 1, archived_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (issue_id,),
-                )
-            else:
-                cursor = conn.execute(
-                    "UPDATE issues SET archived = 0, archived_at = NULL WHERE id = ?",
-                    (issue_id,),
-                )
-
-        updated = cursor.rowcount > 0
-        if updated:
-            action = "archived" if archived else "unarchived"
-            logger.info(f"Issue {action}", issue_id=issue_id)
-
-        return updated
-
-    # Milestone operations
+    # ========== Milestone operations (delegated to MilestoneRepository) ==========
     def create_milestone(self, milestone_data: dict[str, Any]) -> str:
         """Create a new milestone."""
-        with self.transaction() as conn:
-            conn.execute(
-                """
-                INSERT INTO milestones (id, project_id, title, description, status, due_date, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    milestone_data["id"],
-                    milestone_data.get("project_id"),
-                    milestone_data.get("title"),
-                    milestone_data.get("description"),
-                    milestone_data.get("status", "open"),
-                    milestone_data.get("due_date"),
-                    milestone_data.get("metadata"),
-                ),
-            )
-
-        logger.info("Created milestone", milestone_id=milestone_data["id"])
-        return milestone_data["id"]
+        return self._milestone_repo.create(milestone_data)
 
     def get_milestone(self, milestone_id: str) -> dict[str, Any] | None:
         """Get milestone by ID."""
-        conn = self._get_connection()
-        row = conn.execute(
-            "SELECT * FROM milestones WHERE id = ?", (milestone_id,)
-        ).fetchone()
-
-        return dict(row) if row else None
+        return self._milestone_repo.get(milestone_id)
 
     def update_milestone(self, milestone_id: str, updates: dict[str, Any]) -> bool:
         """Update milestone."""
-        if not updates:
-            return False
+        return self._milestone_repo.update(milestone_id, updates)
 
-        set_clause = ", ".join(f"{key} = ?" for key in updates.keys())
-        values = list(updates.values()) + [milestone_id]
+    def mark_milestone_archived(self, milestone_id: str, archived: bool = True) -> bool:
+        """Mark a milestone as archived or unarchived."""
+        return self._milestone_repo.mark_archived(milestone_id, archived)
 
-        with self.transaction() as conn:
-            cursor = conn.execute(
-                f"""
-                UPDATE milestones SET {set_clause} WHERE id = ?
-            """,
-                values,
-            )
-
-        updated = cursor.rowcount > 0
-        if updated:
-            logger.info(
-                "Updated milestone",
-                milestone_id=milestone_id,
-                updates=list(updates.keys()),
-            )
-
-        return updated
-
-    # Issue operations
+    # ========== Issue operations (delegated to IssueRepository) ==========
     def create_issue(self, issue_data: dict[str, Any]) -> str:
         """Create a new issue."""
-        with self.transaction() as conn:
-            conn.execute(
-                """
-                INSERT INTO issues (id, project_id, milestone_id, title, description, status, priority, issue_type, assignee, estimate_hours, due_date, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    issue_data["id"],
-                    issue_data.get("project_id"),
-                    issue_data.get("milestone_id"),
-                    issue_data.get("title"),
-                    issue_data.get("description"),
-                    issue_data.get("status", "open"),
-                    issue_data.get("priority", "medium"),
-                    issue_data.get("issue_type", "task"),
-                    issue_data.get("assignee"),
-                    issue_data.get("estimate_hours"),
-                    issue_data.get("due_date"),
-                    issue_data.get("metadata"),
-                ),
-            )
-
-        logger.info("Created issue", issue_id=issue_data["id"])
-        return issue_data["id"]
+        return self._issue_repo.create(issue_data)
 
     def get_issue(self, issue_id: str) -> dict[str, Any] | None:
         """Get issue by ID."""
-        conn = self._get_connection()
-        row = conn.execute("SELECT * FROM issues WHERE id = ?", (issue_id,)).fetchone()
-
-        return dict(row) if row else None
+        return self._issue_repo.get(issue_id)
 
     def update_issue(self, issue_id: str, updates: dict[str, Any]) -> bool:
         """Update issue."""
-        if not updates:
-            return False
-
-        set_clause = ", ".join(f"{key} = ?" for key in updates.keys())
-        values = list(updates.values()) + [issue_id]
-
-        with self.transaction() as conn:
-            cursor = conn.execute(
-                f"""
-                UPDATE issues SET {set_clause} WHERE id = ?
-            """,
-                values,
-            )
-
-        updated = cursor.rowcount > 0
-        if updated:
-            logger.info(
-                "Updated issue", issue_id=issue_id, updates=list(updates.keys())
-            )
-
-        return updated
+        return self._issue_repo.update(issue_id, updates)
 
     def delete_issue(self, issue_id: str) -> bool:
         """Delete issue."""
-        with self.transaction() as conn:
-            cursor = conn.execute("DELETE FROM issues WHERE id = ?", (issue_id,))
+        return self._issue_repo.delete(issue_id)
 
-        deleted = cursor.rowcount > 0
-        if deleted:
-            logger.info("Deleted issue", issue_id=issue_id)
+    def mark_issue_archived(self, issue_id: str, archived: bool = True) -> bool:
+        """Mark an issue as archived or unarchived."""
+        return self._issue_repo.mark_archived(issue_id, archived)
 
-        return deleted
-
-    # Similar methods would be implemented for milestones, issues, etc.
-    # For brevity, I'll add the key ones:
-
+    # ========== Sync state operations (delegated to SyncStateRepository) ==========
     def get_sync_state(self, key: str) -> str | None:
         """Get sync state value."""
-        conn = self._get_connection()
-        row = conn.execute(
-            "SELECT value FROM sync_state WHERE key = ?", (key,)
-        ).fetchone()
-        return row["value"] if row else None
+        return self._sync_state_repo.get(key)
 
     def set_sync_state(self, key: str, value: str):
         """Set sync state value."""
-        with self.transaction() as conn:
-            conn.execute(
-                """
-                INSERT OR REPLACE INTO sync_state (key, value) VALUES (?, ?)
-            """,
-                (key, value),
-            )
+        self._sync_state_repo.set(key, value)
 
     def close(self):
         """Close database connections."""

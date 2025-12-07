@@ -1,3 +1,5 @@
+import subprocess
+
 from roadmap.adapters.git.git import GitIntegration
 from roadmap.core.domain import Issue, Priority, Status
 
@@ -24,22 +26,28 @@ def test_suggest_branch_uses_template(tmp_path):
     assert name.startswith("feat/abc12345/")
 
 
-def test_create_branch_allows_force_on_dirty_tree(tmp_path, monkeypatch):
+def test_create_branch_allows_force_on_dirty_tree(tmp_path):
+    """Test that create_branch can create branch with force=True even on dirty tree."""
+    # Initialize a real git repo
+    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"], cwd=tmp_path, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True
+    )
+
+    # Create and commit a file so repo has a HEAD
+    (tmp_path / "README.md").write_text("# Repo")
+    subprocess.run(["git", "add", "README.md"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=tmp_path, check=True)
+
+    # Create a modification (staged)
+    (tmp_path / "modified.py").write_text("code")
+    subprocess.run(["git", "add", "modified.py"], cwd=tmp_path, check=True)
+
     g = GitIntegration(repo_path=tmp_path)
-    (tmp_path / ".git").mkdir()
-    g._git_dir = tmp_path / ".git"
-
-    # Simulate dirty status, but allow branch creation when force=True
-    def run_git(args, cwd=None):
-        if args[:2] == ["status", "--porcelain"]:
-            return " M modified.py"
-        if args[:3] == ["rev-parse", "--abbrev-ref", "HEAD"]:
-            return "main"
-        if args[:3] == ["checkout", "-b", "feature/abc12345-test-issue"]:
-            return "Switched to branch 'feature/abc12345-test-issue'"
-        return ""
-
-    monkeypatch.setattr(g, "_run_git_command", run_git)
     issue = make_issue()
+    # Should succeed with force=True despite dirty tree
     success = g.create_branch_for_issue(issue, checkout=True, force=True)
     assert success is True

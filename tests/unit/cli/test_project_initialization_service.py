@@ -388,8 +388,8 @@ class TestProjectCreationService:
         # Should have software template content since custom template doesn't exist
         assert "Develop core functionality" in content
 
-    @pytest.mark.xfail(
-        reason="Tests mock non-existent RoadmapCore methods (_generate_id, _normalize_filename)"
+    @pytest.mark.skip(
+        reason="Tests for planned but never-implemented RoadmapCore methods (_generate_id, _normalize_filename). Core project creation is tested elsewhere."
     )
     @patch("roadmap.adapters.cli.services.project_initialization_service.RoadmapCore")
     def test_create_project_creates_directory(self, mock_core_class, tmp_path):
@@ -416,8 +416,8 @@ class TestProjectCreationService:
         # Directory should be created
         assert (mock_core.roadmap_dir / "projects").exists()
 
-    @pytest.mark.xfail(
-        reason="Tests mock non-existent RoadmapCore methods (_generate_id, _normalize_filename)"
+    @pytest.mark.skip(
+        reason="Tests for planned but never-implemented RoadmapCore methods (_generate_id, _normalize_filename). Error handling is tested elsewhere."
     )
     @patch("roadmap.adapters.cli.services.project_initialization_service.RoadmapCore")
     def test_create_project_handles_file_write_error(self, mock_core_class, tmp_path):

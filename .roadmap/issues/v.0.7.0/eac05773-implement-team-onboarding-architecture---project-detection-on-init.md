@@ -22,9 +22,10 @@ previous_assignee: null
 handoff_date: null
 git_branches: []
 git_commits:
-  - "24c5b47"
+- hash: 24c5b47
 completed_date: null
 ---
+
 
 # Implement team onboarding architecture - project detection on init
 

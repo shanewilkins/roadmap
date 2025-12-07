@@ -33,5 +33,5 @@ def test_untracked_files_do_not_block_branch_creation(tmp_path):
 
     # Branch should exist
     branch_name = g.suggest_branch_name(issue)
-    exists = g._run_git_command(["rev-parse", "--verify", branch_name])
+    exists = g.executor.run(["rev-parse", "--verify", branch_name])
     assert exists

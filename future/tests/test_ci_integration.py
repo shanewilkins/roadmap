@@ -16,10 +16,10 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
+from roadmap.adapters.git.git_hooks import GitHookManager
 from roadmap.application.services import RoadmapCore
 from roadmap.cli.ci import ci
 from roadmap.domain import IssueType, Priority
-from roadmap.infrastructure.git_hooks import GitHookManager
 from roadmap.repository_scanner import AdvancedRepositoryScanner, RepositoryScanConfig
 
 
@@ -745,7 +745,7 @@ class TestGitHooksIntegration:
 
         # Test post-commit hook logic
         try:
-            hook_manager.on_post_commit()
+            hook_manager.handle_post_commit()
             # Should handle commit processing
         except Exception:
             # Expected if git commands fail in test environment
@@ -753,7 +753,7 @@ class TestGitHooksIntegration:
 
         # Test pre-push hook logic
         try:
-            hook_manager.on_pre_push()
+            hook_manager.handle_pre_push()
             # Should handle pre-push validation
         except Exception:
             # Expected if git commands fail in test environment

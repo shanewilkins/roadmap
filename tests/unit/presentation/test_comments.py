@@ -4,17 +4,18 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
-from roadmap.adapters.github.github import GitHubClient
+from roadmap.adapters.github.handlers.comments import CommentsHandler
 from roadmap.core.domain import Comment
 
 
 @pytest.fixture
-def mock_github_client():
-    """Create a mock GitHub client."""
-    with patch("roadmap.adapters.github.github.GitHubClient._check_repository"):
-        client = GitHubClient(token="fake-token", owner="test-owner", repo="test-repo")
-        return client
+def mock_comments_handler():
+    """Create a mock comments handler."""
+    mock_session = Mock(spec=requests.Session)
+    handler = CommentsHandler(session=mock_session, owner="test-owner", repo="test-repo")
+    return handler
 
 
 class TestComment:
@@ -52,14 +53,10 @@ class TestComment:
         assert comment.github_url is None
 
 
-class TestGitHubClientComments:
-    """Test GitHub client comment methods."""
+class TestCommentsHandler:
+    """Test CommentsHandler methods."""
 
-    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
-    @pytest.mark.xfail(
-        reason="GitHubClient.get_issue_comments moved to CommentsHandler"
-    )
-    def test_get_issue_comments(self, mock_request, mock_github_client):
+    def test_get_issue_comments(self, mock_comments_handler):
         """Test getting comments for an issue."""
         # Mock API response
         mock_response = Mock()
@@ -81,29 +78,26 @@ class TestGitHubClientComments:
                 "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
             },
         ]
-        mock_request.return_value = mock_response
 
-        # Test the method
-        comments = mock_github_client.get_issue_comments(1)
+        # Mock the _make_request method
+        with patch.object(mock_comments_handler, "_make_request", return_value=mock_response):
+            # Test the method
+            comments = mock_comments_handler.get_issue_comments(1)
 
-        assert len(comments) == 2
-        assert comments[0].id == 123456
-        assert comments[0].author == "user1"
-        assert comments[0].body == "This is the first comment"
-        assert comments[1].id == 123457
-        assert comments[1].author == "user2"
-        assert comments[1].body == "This is the second comment"
+            assert len(comments) == 2
+            assert comments[0].id == 123456
+            assert comments[0].author == "user1"
+            assert comments[0].body == "This is the first comment"
+            assert comments[1].id == 123457
+            assert comments[1].author == "user2"
+            assert comments[1].body == "This is the second comment"
 
-        # Verify the API call
-        mock_request.assert_called_once_with(
-            "GET", "/repos/test-owner/test-repo/issues/1/comments"
-        )
+            # Verify the API call
+            mock_comments_handler._make_request.assert_called_once_with(
+                "GET", "/repos/test-owner/test-repo/issues/1/comments"
+            )
 
-    @pytest.mark.xfail(
-        reason="GitHubClient.create_issue_comment moved to CommentsHandler"
-    )
-    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
-    def test_create_issue_comment(self, mock_request, mock_github_client):
+    def test_create_issue_comment(self, mock_comments_handler):
         """Test creating a comment on an issue."""
         # Mock API response
         mock_response = Mock()
@@ -115,28 +109,25 @@ class TestGitHubClientComments:
             "updated_at": "2023-01-01T12:00:00Z",
             "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
         }
-        mock_request.return_value = mock_response
 
-        # Test the method
-        comment = mock_github_client.create_issue_comment(1, "This is a new comment")
+        # Mock the _make_request method
+        with patch.object(mock_comments_handler, "_make_request", return_value=mock_response):
+            # Test the method
+            comment = mock_comments_handler.create_issue_comment(1, "This is a new comment")
 
-        assert comment.id == 123456
-        assert comment.author == "testuser"
-        assert comment.body == "This is a new comment"
-        assert comment.issue_id == "1"
+            assert comment.id == 123456
+            assert comment.author == "testuser"
+            assert comment.body == "This is a new comment"
+            assert comment.issue_id == "1"
 
-        # Verify the API call
-        mock_request.assert_called_once_with(
-            "POST",
-            "/repos/test-owner/test-repo/issues/1/comments",
-            json={"body": "This is a new comment"},
-        )
+            # Verify the API call
+            mock_comments_handler._make_request.assert_called_once_with(
+                "POST",
+                "/repos/test-owner/test-repo/issues/1/comments",
+                json={"body": "This is a new comment"},
+            )
 
-    @pytest.mark.xfail(
-        reason="GitHubClient.update_issue_comment moved to CommentsHandler"
-    )
-    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
-    def test_update_issue_comment(self, mock_request, mock_github_client):
+    def test_update_issue_comment(self, mock_comments_handler):
         """Test updating an existing comment."""
         # Mock API response
         mock_response = Mock()
@@ -148,54 +139,50 @@ class TestGitHubClientComments:
             "updated_at": "2023-01-01T13:00:00Z",
             "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
         }
-        mock_request.return_value = mock_response
 
-        # Test the method
-        comment = mock_github_client.update_issue_comment(
-            123456, "This is an updated comment"
-        )
+        # Mock the _make_request method
+        with patch.object(mock_comments_handler, "_make_request", return_value=mock_response):
+            # Test the method
+            comment = mock_comments_handler.update_issue_comment(
+                123456, "This is an updated comment"
+            )
 
-        assert comment.id == 123456
-        assert comment.author == "testuser"
-        assert comment.body == "This is an updated comment"
+            assert comment.id == 123456
+            assert comment.author == "testuser"
+            assert comment.body == "This is an updated comment"
 
-        # Verify the API call
-        mock_request.assert_called_once_with(
-            "PATCH",
-            "/repos/test-owner/test-repo/issues/comments/123456",
-            json={"body": "This is an updated comment"},
-        )
+            # Verify the API call
+            mock_comments_handler._make_request.assert_called_once_with(
+                "PATCH",
+                "/repos/test-owner/test-repo/issues/comments/123456",
+                json={"body": "This is an updated comment"},
+            )
 
-    @pytest.mark.xfail(
-        reason="GitHubClient.delete_issue_comment moved to CommentsHandler"
-    )
-    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
-    def test_delete_issue_comment(self, mock_request, mock_github_client):
+    def test_delete_issue_comment(self, mock_comments_handler):
         """Test deleting a comment."""
-        # Test the method
-        mock_github_client.delete_issue_comment(123456)
+        # Mock the _make_request method
+        with patch.object(mock_comments_handler, "_make_request"):
+            # Test the method
+            mock_comments_handler.delete_issue_comment(123456)
 
-        # Verify the API call
-        mock_request.assert_called_once_with(
-            "DELETE", "/repos/test-owner/test-repo/issues/comments/123456"
-        )
+            # Verify the API call
+            mock_comments_handler._make_request.assert_called_once_with(
+                "DELETE", "/repos/test-owner/test-repo/issues/comments/123456"
+            )
 
-    @pytest.mark.xfail(
-        reason="GitHubClient.get_issue_comments moved to CommentsHandler"
-    )
-    @patch("roadmap.adapters.github.github.GitHubClient._make_request")
-    def test_get_issue_comments_empty(self, mock_request, mock_github_client):
+    def test_get_issue_comments_empty(self, mock_comments_handler):
         """Test getting comments when there are none."""
         # Mock empty API response
         mock_response = Mock()
         mock_response.json.return_value = []
-        mock_request.return_value = mock_response
 
-        # Test the method
-        comments = mock_github_client.get_issue_comments(1)
+        # Mock the _make_request method
+        with patch.object(mock_comments_handler, "_make_request", return_value=mock_response):
+            # Test the method
+            comments = mock_comments_handler.get_issue_comments(1)
 
-        assert len(comments) == 0
-        assert comments == []
+            assert len(comments) == 0
+            assert comments == []
 
 
 @pytest.mark.skip(reason="Comment CLI commands not yet implemented")

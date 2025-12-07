@@ -216,7 +216,7 @@ class RoadmapCore:
     def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
         """Ensure git hooks are installed for automatic sync."""
         try:
-            from roadmap.infrastructure.git_hooks import GitHookManager
+            from roadmap.adapters.git.git_hooks import GitHookManager
 
             hook_manager = GitHookManager(self)
 
