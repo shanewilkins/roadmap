@@ -2,7 +2,6 @@
 
 import click
 
-from roadmap.adapters.cli.logging_decorators import verbose_output
 from roadmap.adapters.cli.presentation.milestone_list_presenter import (
     MilestoneListPresenter,
 )
@@ -10,6 +9,7 @@ from roadmap.adapters.cli.services.milestone_list_service import (
     MilestoneListService,
 )
 from roadmap.common.console import get_console
+from roadmap.infrastructure.logging import verbose_output
 
 
 def _get_console():

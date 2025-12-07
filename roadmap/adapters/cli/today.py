@@ -2,12 +2,12 @@
 
 import click
 
-from roadmap.adapters.cli.logging_decorators import verbose_output
 from roadmap.adapters.cli.presentation.daily_summary_presenter import (
     DailySummaryPresenter,
 )
 from roadmap.adapters.cli.services.daily_summary_service import DailySummaryService
 from roadmap.common.console import get_console
+from roadmap.infrastructure.logging import verbose_output
 
 console = get_console()
 

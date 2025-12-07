@@ -2,12 +2,12 @@
 
 import click
 
-from roadmap.adapters.cli.error_logging import log_error_with_context
-from roadmap.adapters.cli.logging_decorators import log_command
-from roadmap.adapters.cli.performance_tracking import (
+from roadmap.common.console import get_console
+from roadmap.infrastructure.logging import (
+    log_command,
+    log_error_with_context,
     track_file_operation,
 )
-from roadmap.common.console import get_console
 
 console = get_console()
 

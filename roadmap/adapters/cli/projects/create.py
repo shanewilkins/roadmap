@@ -4,13 +4,14 @@ from datetime import datetime
 
 import click
 
-from roadmap.adapters.cli.error_logging import log_error_with_context
-from roadmap.adapters.cli.logging_decorators import log_command, verbose_output
-from roadmap.adapters.cli.performance_tracking import (
-    track_file_operation,
-)
 from roadmap.common.console import get_console
 from roadmap.common.file_utils import ensure_directory_exists
+from roadmap.infrastructure.logging import (
+    log_command,
+    log_error_with_context,
+    track_file_operation,
+    verbose_output,
+)
 
 # Initialize console
 console = get_console()

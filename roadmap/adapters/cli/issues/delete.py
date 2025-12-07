@@ -2,10 +2,9 @@
 
 import click
 
-from roadmap.adapters.cli.logging_decorators import log_command
-from roadmap.adapters.cli.performance_tracking import track_database_operation
 from roadmap.common.cli_errors import handle_cli_errors
 from roadmap.common.console import get_console
+from roadmap.infrastructure.logging import log_command, track_database_operation
 
 console = get_console()
 

@@ -86,7 +86,7 @@ def register_commands():
     main.add_command(today)
 
     # Register cleanup command
-    from roadmap.adapters.cli.cleanup import cleanup
+    from roadmap.infrastructure.maintenance import cleanup
 
     main.add_command(cleanup)
 

@@ -4,11 +4,11 @@ Tests for issue update helpers.
 
 from unittest.mock import Mock
 
-from roadmap.adapters.cli.issue_update_helpers import (
+from roadmap.core.domain import Priority
+from roadmap.core.services.issue_helpers import (
     IssueUpdateBuilder,
     IssueUpdateDisplay,
 )
-from roadmap.core.domain import Priority
 
 
 class TestIssueUpdateBuilder:

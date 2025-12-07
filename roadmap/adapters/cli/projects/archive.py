@@ -5,10 +5,13 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from roadmap.adapters.cli.error_logging import log_error_with_context
-from roadmap.adapters.cli.logging_decorators import log_command, verbose_output
 from roadmap.adapters.persistence.parser import ProjectParser
 from roadmap.common.file_utils import ensure_directory_exists
+from roadmap.infrastructure.logging import (
+    log_command,
+    log_error_with_context,
+    verbose_output,
+)
 
 console = Console()
 

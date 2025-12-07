@@ -2,14 +2,14 @@
 
 import click
 
-from roadmap.adapters.cli.issue_filters import (
+from roadmap.common.console import get_console
+from roadmap.common.errors import ErrorHandler, ValidationError
+from roadmap.core.services.issue_helpers import (
     IssueFilterValidator,
     IssueQueryService,
     WorkloadCalculator,
 )
-from roadmap.adapters.cli.logging_decorators import verbose_output
-from roadmap.common.console import get_console
-from roadmap.common.errors import ErrorHandler, ValidationError
+from roadmap.infrastructure.logging import verbose_output
 from roadmap.shared import IssueTableFormatter
 
 

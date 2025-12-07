@@ -1,10 +1,11 @@
-"""
-DEPRECATED: Use roadmap.shared.formatters instead.
+"""DEPRECATED: Backward compatibility facade for kanban helpers.
 
-This module is kept for backward compatibility.
-All business logic has been moved to shared.formatters.
+Use roadmap.core.services.issue_helpers instead.
 """
 
-from roadmap.shared.formatters import KanbanLayout, KanbanOrganizer
+from roadmap.core.services.issue_helpers import (
+    KanbanLayout,
+    KanbanOrganizer,
+)
 
 __all__ = ["KanbanLayout", "KanbanOrganizer"]

@@ -3,8 +3,8 @@
 import click
 from rich.table import Table
 
-from roadmap.adapters.cli.logging_decorators import verbose_output
 from roadmap.common.console import get_console
+from roadmap.infrastructure.logging import verbose_output
 
 console = get_console()
 

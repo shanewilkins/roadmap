@@ -2,9 +2,9 @@
 
 import click
 
-from roadmap.adapters.cli.logging_decorators import verbose_output
 from roadmap.common.console import get_console
 from roadmap.core.domain import Issue
+from roadmap.infrastructure.logging import verbose_output
 
 console = get_console()
 

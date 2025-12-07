@@ -3,15 +3,15 @@
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.cli.init_utils import (
-    InitializationLock,
-    InitializationManifest,
-)
-from roadmap.adapters.cli.init_validator import InitializationValidator
-from roadmap.adapters.cli.init_workflow import InitializationWorkflow
 from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectCreationService,
     ProjectDetectionService,
+)
+from roadmap.core.services.initialization import (
+    InitializationLock,
+    InitializationManifest,
+    InitializationValidator,
+    InitializationWorkflow,
 )
 from roadmap.infrastructure.core import RoadmapCore
 

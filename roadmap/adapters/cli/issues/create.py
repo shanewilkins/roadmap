@@ -2,13 +2,16 @@
 
 import click
 
-from roadmap.adapters.cli.error_logging import log_error_with_context
-from roadmap.adapters.cli.logging_decorators import log_command, verbose_output
-from roadmap.adapters.cli.performance_tracking import track_database_operation
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.core.domain import IssueType, Priority
 from roadmap.core.services import IssueCreationService
+from roadmap.infrastructure.logging import (
+    log_command,
+    log_error_with_context,
+    track_database_operation,
+    verbose_output,
+)
 
 console = get_console()
 

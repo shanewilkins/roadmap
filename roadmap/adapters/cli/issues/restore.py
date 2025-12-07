@@ -5,9 +5,12 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
-from roadmap.adapters.cli.error_logging import log_error_with_context
-from roadmap.adapters.cli.logging_decorators import log_command, verbose_output
 from roadmap.adapters.persistence.parser import IssueParser
+from roadmap.infrastructure.logging import (
+    log_command,
+    log_error_with_context,
+    verbose_output,
+)
 
 console = Console()
 

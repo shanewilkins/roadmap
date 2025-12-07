@@ -6,11 +6,13 @@ with optional Git branch creation.
 
 import click
 
-from roadmap.adapters.cli.error_logging import log_error_with_context
-from roadmap.adapters.cli.logging_decorators import log_command
-from roadmap.adapters.cli.performance_tracking import track_database_operation
 from roadmap.common.console import get_console
 from roadmap.core.services import StartIssueService
+from roadmap.infrastructure.logging import (
+    log_command,
+    log_error_with_context,
+    track_database_operation,
+)
 
 console = get_console()
 
