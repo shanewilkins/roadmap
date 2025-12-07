@@ -8,7 +8,7 @@ from typing import Any
 from rich.console import Console
 from rich.panel import Panel
 
-from roadmap.common.error_base import ErrorCategory, ErrorSeverity, RoadmapError
+from roadmap.common.errors.error_base import ErrorCategory, ErrorSeverity, RoadmapError
 
 
 class ErrorHandler:

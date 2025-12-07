@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from roadmap.common.error_base import ErrorCategory, ErrorSeverity, RoadmapError
+from roadmap.common.errors.error_base import ErrorCategory, ErrorSeverity, RoadmapError
 
 
 class ParseError(RoadmapError):

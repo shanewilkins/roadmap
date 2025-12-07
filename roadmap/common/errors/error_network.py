@@ -1,6 +1,6 @@
 """Network and GitHub API related error classes."""
 
-from roadmap.common.error_base import ErrorCategory, ErrorSeverity, RoadmapError
+from roadmap.common.errors.error_base import ErrorCategory, ErrorSeverity, RoadmapError
 
 
 class NetworkError(RoadmapError):
