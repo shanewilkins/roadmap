@@ -17,9 +17,12 @@ from roadmap.core.services import IssueService, MilestoneService, ProjectService
 
 from .configuration_service import ConfigurationService
 from .github_integration_service import GitHubIntegrationService
+from .issue_creation_service import IssueCreationService
 from .issue_service import IssueService
+from .issue_update_service import IssueUpdateService
 from .milestone_service import MilestoneService
 from .project_service import ProjectService
+from .start_issue_service import StartIssueService
 
 __all__ = [
     "IssueService",
@@ -27,4 +30,7 @@ __all__ = [
     "ProjectService",
     "ConfigurationService",
     "GitHubIntegrationService",
+    "IssueCreationService",
+    "IssueUpdateService",
+    "StartIssueService",
 ]

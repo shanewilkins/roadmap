@@ -7,6 +7,7 @@ from roadmap.adapters.cli.logging_decorators import log_command
 from roadmap.adapters.cli.performance_tracking import track_database_operation
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
+from roadmap.core.services import IssueUpdateService
 
 
 def _get_console():
@@ -49,11 +50,6 @@ def update_issue(
     reason: str,
 ):
     """Update an existing issue."""
-    from roadmap.adapters.cli.issue_update_helpers import (
-        IssueUpdateBuilder,
-        IssueUpdateDisplay,
-    )
-
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -63,6 +59,9 @@ def update_issue(
         return
 
     try:
+        # Create issue update service
+        service = IssueUpdateService(core)
+
         # Check if issue exists
         issue = core.issues.get(issue_id)
         if not issue:
@@ -70,7 +69,7 @@ def update_issue(
             return
 
         # Build update dictionary
-        updates = IssueUpdateBuilder.build_updates(
+        updates = service.build_update_dict(
             title,
             priority,
             status,
@@ -78,8 +77,6 @@ def update_issue(
             milestone,
             description,
             estimate,
-            core,
-            _get_console(),
         )
 
         # Check for assignee validation failure
@@ -97,9 +94,7 @@ def update_issue(
             updated_issue = core.issues.update(issue_id, **updates)
 
         # Display results
-        IssueUpdateDisplay.show_update_result(
-            updated_issue, updates, reason, _get_console()
-        )
+        service.display_update_result(updated_issue, updates, reason)
 
     except click.Abort:
         raise

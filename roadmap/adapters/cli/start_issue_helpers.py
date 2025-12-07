@@ -1,76 +1,49 @@
 """
-Helpers for start issue command.
+DEPRECATED: Use roadmap.core.services.StartIssueService instead.
+
+This module is kept for backward compatibility with tests.
+All business logic has been moved to StartIssueService.
 """
 
-from datetime import datetime
+from roadmap.core.services import StartIssueService
 
-from roadmap.core.domain import Status
+__all__ = ["StartDateParser", "StartIssueWorkflow", "StartIssueDisplay"]
 
 
 class StartDateParser:
-    """Parse start date from string input."""
+    """DEPRECATED: Use StartIssueService.parse_start_date instead."""
 
     @staticmethod
-    def parse_start_date(date_str: str | None) -> datetime | None:
-        """
-        Parse start date from string.
-
-        Args:
-            date_str: Date string in format YYYY-MM-DD or YYYY-MM-DD HH:MM
-
-        Returns:
-            Parsed datetime or None if invalid
-        """
-        if not date_str:
-            return datetime.now()
-
-        # Try full datetime format first
+    def parse_start_date(date_str=None):
+        """DEPRECATED: Use StartIssueService.parse_start_date instead."""
         try:
-            return datetime.strptime(date_str, "%Y-%m-%d %H:%M")
-        except ValueError:
-            pass
-
-        # Try date-only format
-        try:
-            return datetime.strptime(date_str, "%Y-%m-%d")
+            return StartIssueService.parse_start_date(date_str)
         except ValueError:
             return None
 
 
 class StartIssueWorkflow:
-    """Orchestrate starting work on an issue."""
+    """DEPRECATED: Use StartIssueService instead."""
 
     @staticmethod
-    def start_work(core, issue_id: str, start_date: datetime):
-        """
-        Update issue to start work.
-
-        Returns:
-            Updated issue if successful, None otherwise
-        """
-        return core.issues.update(
-            issue_id,
-            actual_start_date=start_date,
-            status=Status.IN_PROGRESS,
-            progress_percentage=0.0,
-        )
+    def start_work(core, issue_id, start_date):
+        """DEPRECATED: Use StartIssueService.start_work instead."""
+        service = StartIssueService(core)
+        return service.start_work(issue_id, start_date)
 
     @staticmethod
-    def should_create_branch(git_branch_flag: bool, core) -> bool:
-        """Determine if git branch should be created based on flag and config."""
-        if git_branch_flag:
-            return True
-
-        # Check config for auto_branch default (disabled for now - can be re-enabled later)
-        return False
+    def should_create_branch(git_branch_flag, core):
+        """DEPRECATED: Use StartIssueService.should_create_branch instead."""
+        service = StartIssueService(core)
+        return service.should_create_branch(git_branch_flag)
 
 
 class StartIssueDisplay:
-    """Display results of starting an issue."""
+    """DEPRECATED: Use StartIssueService display methods instead."""
 
     @staticmethod
-    def show_started(issue, start_date: datetime, console):
-        """Display success message for started issue."""
+    def show_started(issue, start_date, console):
+        """DEPRECATED: Use StartIssueService.display_started instead."""
         console.print(f"🚀 Started work on: {issue.title}", style="bold green")
         console.print(
             f"   Started: {start_date.strftime('%Y-%m-%d %H:%M')}", style="cyan"
@@ -78,21 +51,15 @@ class StartIssueDisplay:
         console.print("   Status: In Progress", style="yellow")
 
     @staticmethod
-    def show_branch_created(branch_name: str, checkout: bool, console):
-        """Display git branch creation success."""
-        console.print(
-            f"🌿 Created Git branch: {branch_name}",
-            style="green",
-        )
+    def show_branch_created(branch_name, checkout, console):
+        """DEPRECATED: Use StartIssueService.display_branch_created instead."""
+        console.print(f"🌿 Created Git branch: {branch_name}", style="green")
         if checkout:
-            console.print(
-                f"✅ Checked out branch: {branch_name}",
-                style="green",
-            )
+            console.print(f"✅ Checked out branch: {branch_name}", style="green")
 
     @staticmethod
     def show_branch_warning(core, console):
-        """Display warning when branch creation fails."""
+        """DEPRECATED: Use StartIssueService.display_branch_warning instead."""
         try:
             status_output = core.git._run_git_command(["status", "--porcelain"]) or ""
             if status_output.strip():

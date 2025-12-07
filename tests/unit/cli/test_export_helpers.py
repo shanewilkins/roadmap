@@ -7,8 +7,8 @@ import json
 from io import StringIO
 from unittest.mock import Mock
 
-from roadmap.adapters.cli.export_helpers import IssueExporter
 from roadmap.core.domain import Issue, IssueType, Priority, Status
+from roadmap.shared.formatters import IssueExporter
 
 
 class TestIssueExporter:

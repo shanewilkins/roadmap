@@ -5,8 +5,8 @@ Tests for kanban board helpers.
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-from roadmap.adapters.cli.kanban_helpers import KanbanLayout, KanbanOrganizer
 from roadmap.core.domain import Issue, Priority, Status
+from roadmap.shared.formatters import KanbanLayout, KanbanOrganizer
 
 
 class TestKanbanOrganizer:

@@ -2,8 +2,8 @@
 
 import click
 
-from roadmap.adapters.cli.kanban_helpers import KanbanLayout, KanbanOrganizer
 from roadmap.common.console import get_console
+from roadmap.shared import KanbanLayout, KanbanOrganizer
 
 console = get_console()
 

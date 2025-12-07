@@ -1,33 +1,33 @@
 """
-Helper classes for issue update operations.
+DEPRECATED: Use roadmap.core.services.IssueUpdateService instead.
+
+This module is kept for backward compatibility with tests.
+All business logic has been moved to IssueUpdateService.
 """
 
 from roadmap.core.domain import Priority, Status
 
+__all__ = ["IssueUpdateBuilder", "IssueUpdateDisplay"]
+
 
 class IssueUpdateBuilder:
-    """Build update dictionary from CLI parameters."""
+    """DEPRECATED: Use IssueUpdateService.build_update_dict instead."""
 
     @staticmethod
     def build_updates(
-        title: str | None,
-        priority: str | None,
-        status: str | None,
-        assignee: str | None,
-        milestone: str | None,
-        description: str | None,
-        estimate: float | None,
-        core,
-        console,
-    ) -> dict:
-        """
-        Build update dictionary from provided parameters.
-
-        Returns:
-            Dictionary of updates to apply to the issue
-        """
+        title=None,
+        priority=None,
+        status=None,
+        assignee=None,
+        milestone=None,
+        description=None,
+        estimate=None,
+        core=None,
+        console=None,
+    ):
+        """DEPRECATED: Use IssueUpdateService.build_update_dict instead."""
+        # Keep original implementation for test compatibility
         updates = {}
-
         if title:
             updates["title"] = title
         if priority:
@@ -38,7 +38,7 @@ class IssueUpdateBuilder:
             assignee_value = IssueUpdateBuilder._resolve_assignee(
                 assignee, core, console
             )
-            if assignee_value is not False:  # False means validation failed
+            if assignee_value is not False:
                 updates["assignee"] = assignee_value
         if milestone:
             updates["milestone"] = milestone
@@ -46,24 +46,13 @@ class IssueUpdateBuilder:
             updates["description"] = description
         if estimate is not None:
             updates["estimated_hours"] = estimate
-
         return updates
 
     @staticmethod
-    def _resolve_assignee(assignee: str, core, console):
-        """
-        Resolve and validate assignee.
-
-        Returns:
-            - Resolved assignee string
-            - None for unassignment (empty string)
-            - False if validation failed
-        """
-        # Convert empty string to None for proper unassignment
+    def _resolve_assignee(assignee, core, console):
+        """DEPRECATED: Use IssueUpdateService.resolve_assignee_for_update instead."""
         if assignee == "":
             return None
-
-        # Validate assignee
         is_valid, result = core.validate_assignee(assignee)
         if not is_valid:
             console.print(f"❌ Invalid assignee: {result}", style="bold red")
@@ -75,22 +64,19 @@ class IssueUpdateBuilder:
             canonical_assignee = core.team.get_canonical_assignee(assignee)
             if canonical_assignee != assignee:
                 console.print(
-                    f"🔄 Resolved '{assignee}' to '{canonical_assignee}'",
-                    style="dim",
+                    f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim"
                 )
             return canonical_assignee
 
 
 class IssueUpdateDisplay:
-    """Display issue update results."""
+    """DEPRECATED: Use IssueUpdateService.display_update_result instead."""
 
     @staticmethod
-    def show_update_result(updated_issue, updates: dict, reason: str | None, console):
-        """Display the results of an issue update."""
+    def show_update_result(updated_issue, updates, reason, console):
+        """DEPRECATED: Use IssueUpdateService.display_update_result instead."""
         console.print(f"✅ Updated issue: {updated_issue.title}", style="bold green")
         console.print(f"   ID: {updated_issue.id}", style="cyan")
-
-        # Show what was updated
         for field, value in updates.items():
             if field == "estimated_hours":
                 display_value = updated_issue.estimated_time_display
@@ -103,9 +89,7 @@ class IssueUpdateDisplay:
                 "milestone",
                 "description",
             ]:
-                # Format enum values to show just the string value
                 display_value = value.value if hasattr(value, "value") else value
                 console.print(f"   {field}: {display_value}", style="cyan")
-
         if reason:
             console.print(f"   reason: {reason}", style="dim")

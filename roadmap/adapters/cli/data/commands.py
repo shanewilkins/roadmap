@@ -107,7 +107,7 @@ def _load_and_filter_issues(core, filter_str: str):
 
 def _export_and_write(issues, format_type: str, output_path: str):
     """Format issues and write to file or stdout."""
-    from roadmap.adapters.cli.export_helpers import IssueExporter
+    from roadmap.shared import IssueExporter
 
     try:
         if format_type == "json":

@@ -2,7 +2,6 @@
 
 import click
 
-from roadmap.adapters.cli.issue_display import IssueTableFormatter
 from roadmap.adapters.cli.issue_filters import (
     IssueFilterValidator,
     IssueQueryService,
@@ -11,6 +10,7 @@ from roadmap.adapters.cli.issue_filters import (
 from roadmap.adapters.cli.logging_decorators import verbose_output
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
+from roadmap.shared import IssueTableFormatter
 
 
 def _get_console():

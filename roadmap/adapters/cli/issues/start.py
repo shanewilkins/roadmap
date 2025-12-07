@@ -10,6 +10,7 @@ from roadmap.adapters.cli.error_logging import log_error_with_context
 from roadmap.adapters.cli.logging_decorators import log_command
 from roadmap.adapters.cli.performance_tracking import track_database_operation
 from roadmap.common.console import get_console
+from roadmap.core.services import StartIssueService
 
 console = get_console()
 
@@ -46,12 +47,6 @@ def start_issue(
 
     Syntactic sugar for: roadmap issue update <ID> --status in-progress
     """
-    from roadmap.adapters.cli.start_issue_helpers import (
-        StartDateParser,
-        StartIssueDisplay,
-        StartIssueWorkflow,
-    )
-
     core = ctx.obj["core"]
 
     if not core.is_initialized():
@@ -61,9 +56,13 @@ def start_issue(
         return
 
     try:
+        # Create start issue service
+        service = StartIssueService(core)
+
         # Parse start date
-        start_date = StartDateParser.parse_start_date(date)
-        if start_date is None:
+        try:
+            start_date = service.parse_start_date(date)
+        except ValueError:
             console.print(
                 "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
                 style="bold red",
@@ -78,15 +77,15 @@ def start_issue(
 
         # Start work on issue via core.update_issue
         with track_database_operation("update", "issue", entity_id=issue_id):
-            success = StartIssueWorkflow.start_work(core, issue_id, start_date)
+            success = service.start_work(issue_id, start_date)
 
         if success:
-            StartIssueDisplay.show_started(issue, start_date, console)
+            service.display_started(issue, start_date)
 
             # Handle git branch creation
-            if StartIssueWorkflow.should_create_branch(git_branch, core):
+            if service.should_create_branch(git_branch):
                 _handle_git_branch_creation(
-                    core, issue, branch_name, checkout, force, console
+                    core, service, issue, branch_name, checkout, force
                 )
         else:
             console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
@@ -101,22 +100,17 @@ def start_issue(
         console.print(f"❌ Failed to start issue: {e}", style="bold red")
 
 
-def _handle_git_branch_creation(core, issue, branch_name, checkout, force, console):
+def _handle_git_branch_creation(core, service, issue, branch_name, checkout, force):
     """Handle git branch creation for started issue."""
-    from roadmap.adapters.cli.start_issue_helpers import StartIssueDisplay
-
     try:
         if hasattr(core, "git") and core.git.is_git_repository():
-            resolved_branch_name = branch_name or core.git.suggest_branch_name(issue)
-            branch_success = core.git.create_branch_for_issue(
+            success, resolved_branch_name = service.core.git.create_branch_for_issue(
                 issue, checkout=checkout, force=force
             )
-            if branch_success:
-                StartIssueDisplay.show_branch_created(
-                    resolved_branch_name, checkout, console
-                )
+            if success and resolved_branch_name:
+                service.display_branch_created(resolved_branch_name, checkout)
             else:
-                StartIssueDisplay.show_branch_warning(core, console)
+                service.display_branch_warning()
         else:
             console.print(
                 "⚠️  Not in a Git repository, skipping branch creation",

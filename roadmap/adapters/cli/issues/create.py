@@ -3,16 +3,12 @@
 import click
 
 from roadmap.adapters.cli.error_logging import log_error_with_context
-from roadmap.adapters.cli.issue_creation import (
-    AssigneeResolver,
-    GitBranchCreator,
-    IssueDisplayFormatter,
-)
 from roadmap.adapters.cli.logging_decorators import log_command, verbose_output
 from roadmap.adapters.cli.performance_tracking import track_database_operation
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.core.domain import IssueType, Priority
+from roadmap.core.services import IssueCreationService
 
 console = get_console()
 
@@ -83,9 +79,11 @@ def create_issue(
         return
 
     try:
+        # Create issue creation service
+        service = IssueCreationService(core)
+
         # Resolve assignee with auto-detection and validation
-        assignee_resolver = AssigneeResolver(core)
-        canonical_assignee = assignee_resolver.resolve_assignee(assignee)
+        canonical_assignee = service.resolve_and_validate_assignee(assignee)
 
         # Create the issue
         with track_database_operation("create", "issue", warn_threshold_ms=2000):
@@ -102,12 +100,11 @@ def create_issue(
             )
 
         # Display issue information
-        IssueDisplayFormatter.display_created_issue(issue, milestone, assignee)
+        service.format_created_issue_display(issue, milestone)
 
         # Create Git branch if requested
         if git_branch:
-            branch_creator = GitBranchCreator(core)
-            branch_creator.create_branch(issue, branch_name, checkout, force)
+            service.create_branch_for_issue(issue, branch_name, checkout, force)
 
     except click.Abort:
         raise
