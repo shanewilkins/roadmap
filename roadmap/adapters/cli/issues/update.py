@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.core.services import IssueUpdateService
@@ -39,6 +40,7 @@ def _get_console():
 @click.option("--reason", "-r", help="Reason for the update")
 @click.pass_context
 @log_command("issue_update", entity_type="issue", track_duration=True)
+@require_initialized
 def update_issue(
     ctx: click.Context,
     issue_id: str,
@@ -54,21 +56,9 @@ def update_issue(
     """Update an existing issue."""
     core = ctx.obj["core"]
 
-    if not core.is_initialized():
-        _get_console().print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
-
     try:
         # Create issue update service
         service = IssueUpdateService(core)
-
-        # Check if issue exists
-        issue = core.issues.get(issue_id)
-        if not issue:
-            _get_console().print(f"❌ Issue not found: {issue_id}", style="bold red")
-            return
 
         # Build update dictionary
         updates = service.build_update_dict(

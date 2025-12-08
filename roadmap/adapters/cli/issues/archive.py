@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.infrastructure.logging import (
     log_command,
@@ -257,6 +258,7 @@ def _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force):
 @click.pass_context
 @verbose_output
 @log_command("issue_archive", entity_type="issue", track_duration=True)
+@require_initialized
 def archive_issue(
     ctx: click.Context,
     issue_id: str | None,
@@ -280,13 +282,6 @@ def archive_issue(
         roadmap issue archive --list
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.",
-            style="bold red",
-        )
-        ctx.exit(1)
 
     if list_archived:
         _show_archived_issues()

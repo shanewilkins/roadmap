@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.core.domain import IssueType, Priority
@@ -55,6 +56,7 @@ console = get_console()
 @click.pass_context
 @verbose_output
 @log_command("issue_create", entity_type="issue", track_duration=True)
+@require_initialized
 def create_issue(
     ctx: click.Context,
     title: str,
@@ -74,12 +76,6 @@ def create_issue(
 ):
     """Create a new issue."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         # Create issue creation service

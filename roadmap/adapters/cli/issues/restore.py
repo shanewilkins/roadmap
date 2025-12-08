@@ -5,6 +5,7 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.infrastructure.logging import (
     log_command,
@@ -255,6 +256,7 @@ def _restore_single_issue(
 @click.pass_context
 @verbose_output
 @log_command("issue_restore", entity_type="issue", track_duration=True)
+@require_initialized
 def restore_issue(
     ctx: click.Context,
     issue_id: str | None,
@@ -277,13 +279,6 @@ def restore_issue(
         roadmap issue restore 8a00a17e --dry-run
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.",
-            style="bold red",
-        )
-        ctx.exit(1)
 
     if not _validate_restore_arguments(issue_id, all):
         ctx.exit(1)

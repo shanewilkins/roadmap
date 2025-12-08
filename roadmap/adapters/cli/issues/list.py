@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.core.services.issue_helpers import (
@@ -169,6 +170,7 @@ def _display_issues_with_filters(
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
 @verbose_output
+@require_initialized
 def list_issues(
     ctx: click.Context,
     filter_type: str,
@@ -192,12 +194,6 @@ def list_issues(
     Equivalent to: roadmap issue list --backlog
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        _get_console().print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     # Handle positional filter_type argument
     if filter_type and filter_type.lower() == "backlog":
