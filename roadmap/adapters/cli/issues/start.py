@@ -6,13 +6,13 @@ with optional Git branch creation.
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.core.services import StartIssueService
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
 )
 
@@ -111,11 +111,17 @@ def start_issue(
                 console.print(line, style="bold red")
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="issue_start",
+        handle_cli_error(
+            error=e,
+            operation="start_issue",
             entity_type="issue",
             entity_id=issue_id,
+            context={
+                "git_branch": git_branch,
+                "checkout": checkout,
+                "branch_name": branch_name,
+            },
+            fatal=True,
         )
         lines = format_operation_failure(
             action="start",
@@ -143,6 +149,14 @@ def _handle_git_branch_creation(core, service, issue, branch_name, checkout, for
                 style="yellow",
             )
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="create_git_branch",
+            entity_type="issue",
+            entity_id=issue.id,
+            context={"branch_name": branch_name},
+            fatal=False,
+        )
         console.print(
             f"⚠️  Git branch creation skipped due to error: {e}", style="yellow"
         )

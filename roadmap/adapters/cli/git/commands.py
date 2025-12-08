@@ -3,6 +3,7 @@
 import click
 from rich.console import Console
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.core.domain import Issue, Status
 
@@ -59,6 +60,14 @@ def git_status(ctx: click.Context):
         display.show_recent_commits(core)
 
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="git_status",
+            entity_type="git",
+            entity_id="repository",
+            context={},
+            fatal=False,
+        )
         display.show_error(e)
 
 
@@ -103,6 +112,14 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
                 console.print("❌ Failed to create branch", style="bold red")
 
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="create_git_branch",
+            entity_type="issue",
+            entity_id=issue_id,
+            context={"checkout": checkout},
+            fatal=True,
+        )
         console.print(f"❌ Failed to create Git branch: {e}", style="bold red")
 
 
@@ -158,10 +175,26 @@ def _safe_create_branch(git, issue, checkout=True) -> bool:
     """
     try:
         return git.create_branch_for_issue(issue, checkout=checkout)
-    except TypeError:
+    except TypeError as e:
+        handle_cli_error(
+            error=e,
+            operation="create_branch_for_issue",
+            entity_type="issue",
+            entity_id=issue.id,
+            context={"checkout": checkout, "error_type": "TypeError"},
+            fatal=False,
+        )
         try:
             return git.create_branch_for_issue(issue)
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="create_branch_for_issue_fallback",
+                entity_type="issue",
+                entity_id=issue.id,
+                context={},
+                fatal=False,
+            )
             return False
 
 
@@ -228,4 +261,12 @@ def git_link(ctx: click.Context, issue_id: str):
             console.print("❌ Failed to link issue to branch", style="bold red")
 
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="link_issue_to_branch",
+            entity_type="issue",
+            entity_id=issue_id,
+            context={},
+            fatal=True,
+        )
         console.print(f"❌ Failed to link issue to Git branch: {e}", style="bold red")

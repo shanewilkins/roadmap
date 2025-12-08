@@ -5,7 +5,9 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 
 from roadmap.adapters.cli.cli_confirmations import confirm_action
-from roadmap.adapters.cli.cli_error_handlers import display_operation_error
+from roadmap.adapters.cli.cli_error_handlers import (
+    handle_cli_error,
+)
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.console import get_console
@@ -57,7 +59,15 @@ def _get_archived_milestones(archive_dir):
         try:
             milestone = MilestoneParser.parse_milestone_file(file_path)
             milestones_info.append((file_path, milestone.name))
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="parse_archived_milestone",
+                entity_type="milestone",
+                entity_id=file_path.stem,
+                context={"archive_dir": str(archive_dir)},
+                fatal=False,
+            )
             continue
 
     return milestones_info if milestones_info else None
@@ -70,7 +80,15 @@ def _find_archived_milestone(archive_dir, milestone_name):
             milestone = MilestoneParser.parse_milestone_file(file_path)
             if milestone.name == milestone_name:
                 return file_path
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="find_archived_milestone",
+                entity_type="milestone",
+                entity_id=file_path.stem,
+                context={"milestone_name": milestone_name},
+                fatal=False,
+            )
             continue
     return None
 
@@ -83,6 +101,14 @@ def _restore_milestone_file(core, archive_file, active_dir, milestone_name):
     try:
         core.db.mark_milestone_archived(milestone_name, archived=False)
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="mark_milestone_restored",
+            entity_type="milestone",
+            entity_id=milestone_name,
+            context={"dest_file": str(dest_file)},
+            fatal=False,
+        )
         console.print(
             f"⚠️  Warning: Failed to mark milestone as restored: {e}",
             style="yellow",
@@ -258,11 +284,16 @@ def restore_milestone(
             )
 
     except Exception as e:
-        display_operation_error(
-            operation="restore",
+        handle_cli_error(
+            error=e,
+            operation="restore_milestone",
             entity_type="milestone",
             entity_id=milestone_name or "unknown",
-            error=str(e),
-            log_context={"milestone_name": milestone_name},
+            context={
+                "all": all,
+                "dry_run": dry_run,
+                "force": force,
+            },
+            fatal=True,
         )
         ctx.exit(1)

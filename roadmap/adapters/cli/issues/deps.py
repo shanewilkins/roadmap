@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
 
@@ -45,4 +46,12 @@ def add_dependency(ctx: click.Context, issue_id: str, dependency_id: str):
             console.print("⚠️ Dependency already exists", style="yellow")
 
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="add_dependency",
+            entity_type="issue",
+            entity_id=issue_id,
+            context={"dependency_id": dependency_id},
+            fatal=True,
+        )
         console.print(f"❌ Failed to add dependency: {e}", style="bold red")
