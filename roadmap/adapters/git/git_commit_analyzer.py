@@ -156,8 +156,99 @@ class GitCommitAnalyzer:
 
         return updates
 
+    def _extract_commit_reference(self, commit: "GitCommit") -> dict:
+        """Extract commit reference metadata."""
+        return {
+            "hash": commit.hash,
+            "message": commit.message,
+            "date": commit.date.isoformat() if commit.date else None,
+        }
+
+    def _build_update_data(self, issue, commit: "GitCommit", updates: dict) -> dict:
+        """Build update data from commit and parsed updates."""
+        update_data = {}
+
+        # Apply status and progress updates
+        if "status" in updates:
+            update_data["status"] = updates["status"]
+        if "progress_percentage" in updates:
+            update_data["progress_percentage"] = updates["progress_percentage"]
+
+        # Add commit reference to content
+        commit_note = (
+            f"\n\n**Auto-updated from commit {commit.short_hash}:** {commit.message}"
+        )
+        if issue.content:
+            update_data["content"] = issue.content + commit_note
+        else:
+            update_data["content"] = commit_note.strip()
+
+        # Add commit to git_commits list if not already present
+        current_commits = issue.git_commits or []
+        commit_ref = self._extract_commit_reference(commit)
+        if not any(c.get("hash") == commit.hash for c in current_commits):
+            current_commits.append(commit_ref)
+        update_data["git_commits"] = current_commits
+
+        return update_data
+
+    def _process_single_issue(
+        self,
+        roadmap_core,
+        issue_id: str,
+        commit: "GitCommit",
+        updates: dict,
+        results: dict,
+    ) -> None:
+        """Process a single issue update from a commit."""
+        try:
+            # Load the issue
+            issue = roadmap_core.issues.get(issue_id)
+            if not issue:
+                results["errors"].append(f"Issue {issue_id} not found")
+                return
+
+            # Build and apply updates
+            update_data = self._build_update_data(issue, commit, updates)
+            roadmap_core.issues.update(issue_id, **update_data)
+
+            # Track result
+            if updates.get("status") == "closed":
+                results["closed"].append(issue_id)
+            else:
+                results["updated"].append(issue_id)
+
+        except Exception as e:
+            results["errors"].append(f"Error updating issue {issue_id}: {str(e)}")
+
+    def _process_commit_issues(
+        self, roadmap_core, commit: "GitCommit", results: dict
+    ) -> None:
+        """Process all issues referenced in a commit."""
+        try:
+            # Get referenced issues
+            issue_ids = commit.extract_roadmap_references()
+            if not issue_ids:
+                return
+
+            # Parse updates from commit message
+            updates = self.parse_commit_message_for_updates(commit)
+            if not updates:
+                return
+
+            # Update each issue
+            for issue_id in issue_ids:
+                self._process_single_issue(
+                    roadmap_core, issue_id, commit, updates, results
+                )
+
+        except Exception as e:
+            results["errors"].append(
+                f"Error processing commit {commit.short_hash}: {str(e)}"
+            )
+
     def auto_update_issues_from_commits(
-        self, roadmap_core, commits: list[GitCommit] | None = None
+        self, roadmap_core, commits: list["GitCommit"] | None = None
     ) -> dict[str, list[str]]:
         """Automatically update issues based on commit messages.
 
@@ -174,70 +265,6 @@ class GitCommitAnalyzer:
         results = {"updated": [], "closed": [], "errors": []}
 
         for commit in commits:
-            try:
-                # Get referenced issues
-                issue_ids = commit.extract_roadmap_references()
-                if not issue_ids:
-                    continue
-
-                # Parse updates from commit message
-                updates = self.parse_commit_message_for_updates(commit)
-                if not updates:
-                    continue
-
-                for issue_id in issue_ids:
-                    try:
-                        # Load the issue
-                        issue = roadmap_core.issues.get(issue_id)
-                        if not issue:
-                            results["errors"].append(f"Issue {issue_id} not found")
-                            continue
-
-                        # Apply updates
-                        update_data = {}
-                        if "status" in updates:
-                            update_data["status"] = updates["status"]
-                        if "progress_percentage" in updates:
-                            update_data["progress_percentage"] = updates[
-                                "progress_percentage"
-                            ]
-
-                        # Add commit reference to content
-                        commit_note = f"\n\n**Auto-updated from commit {commit.short_hash}:** {commit.message}"
-                        if issue.content:
-                            update_data["content"] = issue.content + commit_note
-                        else:
-                            update_data["content"] = commit_note.strip()
-
-                        # Add commit to git_commits list if not already present
-                        current_commits = issue.git_commits or []
-                        commit_ref = {
-                            "hash": commit.hash,
-                            "message": commit.message,
-                            "date": commit.date.isoformat() if commit.date else None,
-                        }
-                        if not any(
-                            c.get("hash") == commit.hash for c in current_commits
-                        ):
-                            current_commits.append(commit_ref)
-                        update_data["git_commits"] = current_commits
-
-                        # Update the issue
-                        roadmap_core.issues.update(issue_id, **update_data)
-
-                        if updates.get("status") == "closed":
-                            results["closed"].append(issue_id)
-                        else:
-                            results["updated"].append(issue_id)
-
-                    except Exception as e:
-                        results["errors"].append(
-                            f"Error updating issue {issue_id}: {str(e)}"
-                        )
-
-            except Exception as e:
-                results["errors"].append(
-                    f"Error processing commit {commit.short_hash}: {str(e)}"
-                )
+            self._process_commit_issues(roadmap_core, commit, results)
 
         return results
