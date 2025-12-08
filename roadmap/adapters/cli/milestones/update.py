@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,
@@ -88,6 +89,7 @@ def _display_update_results(updated_milestone, updates, clear_due_date):
 )
 @click.option("--clear-due-date", is_flag=True, help="Clear the due date")
 @click.pass_context
+@require_initialized
 @log_command("milestone_update", entity_type="milestone", track_duration=True)
 def update_milestone(
     ctx: click.Context,
@@ -100,12 +102,6 @@ def update_milestone(
 ):
     """Update an existing milestone."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         milestone = core.milestones.get(milestone_name)

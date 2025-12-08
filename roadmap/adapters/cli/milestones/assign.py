@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,
@@ -16,16 +17,11 @@ console = get_console()
 @click.argument("issue_id")
 @click.argument("milestone_name")
 @click.pass_context
+@require_initialized
 @log_command("milestone_assign", entity_type="milestone", track_duration=True)
 def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
     """Assign an issue to a milestone."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         with track_database_operation("update", "milestone", warn_threshold_ms=2000):

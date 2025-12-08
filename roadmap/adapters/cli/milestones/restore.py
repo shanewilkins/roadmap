@@ -5,6 +5,7 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 from rich.console import Console  # type: ignore[import-untyped]
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.infrastructure.logging import (
@@ -210,6 +211,7 @@ def _restore_single_milestone(
     help="Show detailed debug information",
 )
 @click.pass_context
+@require_initialized
 @verbose_output
 @log_command("milestone_restore", entity_type="milestone", track_duration=True)
 def restore_milestone(
@@ -231,13 +233,6 @@ def restore_milestone(
         roadmap milestone restore "v1.0" --dry-run
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.",
-            style="bold red",
-        )
-        ctx.exit(1)
 
     if not _validate_restore_arguments(milestone_name, all):
         ctx.exit(1)

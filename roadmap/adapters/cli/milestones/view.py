@@ -8,6 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -221,6 +222,7 @@ def _extract_description_and_goals(content):
     help="Show only open issues (excludes closed)",
 )
 @click.pass_context
+@require_initialized
 def view_milestone(
     ctx: click.Context,
     milestone_name: str,
@@ -242,12 +244,6 @@ def view_milestone(
         roadmap milestone view v.0.5.0 --only-open
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     milestone = core.milestones.get(milestone_name)
     if not milestone:

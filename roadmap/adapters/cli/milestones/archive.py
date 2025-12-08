@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.infrastructure.logging import (
@@ -272,6 +273,7 @@ def _archive_all_closed_milestones(core, roadmap_dir, dry_run, force):
     help="Show detailed debug information",
 )
 @click.pass_context
+@require_initialized
 @verbose_output
 @log_command("milestone_archive", entity_type="milestone", track_duration=True)
 def archive_milestone(
@@ -296,13 +298,6 @@ def archive_milestone(
         roadmap milestone archive --list
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.",
-            style="bold red",
-        )
-        ctx.exit(1)
 
     if list_archived:
         _show_archived_milestones()

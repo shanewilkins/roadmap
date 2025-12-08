@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,
@@ -16,16 +17,11 @@ console = get_console()
 @click.argument("milestone_name")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
+@require_initialized
 @log_command("milestone_delete", entity_type="milestone", track_duration=True)
 def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
     """Delete a milestone."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         if not force:

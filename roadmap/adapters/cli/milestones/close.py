@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,
@@ -108,6 +109,7 @@ def _display_close_success(milestone_name: str, total_issues: int) -> None:
 @click.argument("milestone_name")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
+@require_initialized
 @log_command("milestone_close", entity_type="milestone", track_duration=True)
 def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
     """Close a milestone.
@@ -116,12 +118,6 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
     If there are open issues, provides guidance on migration options.
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         # Check if milestone exists

@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,
@@ -21,6 +22,7 @@ console = get_console()
 @click.option("--due-date", help="Due date for milestone (YYYY-MM-DD format)")
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@require_initialized
 @verbose_output
 @log_command("milestone_create", entity_type="milestone", track_duration=True)
 def create_milestone(
@@ -28,12 +30,6 @@ def create_milestone(
 ):
     """Create a new milestone."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     # Parse due date if provided
     parsed_due_date = None

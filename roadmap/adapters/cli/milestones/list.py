@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.presentation.milestone_list_presenter import (
     MilestoneListPresenter,
 )
@@ -21,16 +22,11 @@ def _get_console():
 @click.option("--overdue", is_flag=True, help="Show only overdue milestones")
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@require_initialized
 @verbose_output
 def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
     """List all milestones."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        _get_console().print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         # Use service to get milestone list data
