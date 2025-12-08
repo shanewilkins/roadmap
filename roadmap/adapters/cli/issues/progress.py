@@ -7,6 +7,7 @@ import click
 
 from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
     log_command,
@@ -45,27 +46,37 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
             updated = core.issues.update(issue_id, progress_percentage=percentage)
 
         if updated:
-            console.print(f"📊 Updated progress: {issue.title}", style="bold green")
-            console.print(f"   Progress: {percentage:.0f}%", style="cyan")
+            # Build extra details for display
+            extra_details = {"Progress": f"{percentage:.0f}%"}
 
             # Auto-update status based on progress
             if percentage == 0:
-                status_msg = "Todo"
+                extra_details["Note"] = "Resetting to todo"
             elif percentage == 100:
-                status_msg = "Consider marking as closed"
-                console.print(
-                    f"   💡 {status_msg}: roadmap issue close {issue_id}",
-                    style="dim",
-                )
+                extra_details["Tip"] = "roadmap issue close to mark complete"
             else:
-                status_msg = "In Progress"
                 if issue.status == Status.TODO:
                     core.issues.update(issue_id, status=Status.IN_PROGRESS)
-                    console.print(
-                        "   Status: Auto-updated to In Progress", style="yellow"
-                    )
+                    extra_details["Status"] = "Auto-updated to In Progress"
+
+            # Display success with formatter
+            lines = format_operation_success(
+                emoji="📊",
+                action="Updated progress",
+                entity_title=issue.title,
+                entity_id=issue_id,
+                extra_details=extra_details,
+            )
+            for line in lines:
+                console.print(line, style="bold green" if "Updated" in line else "cyan")
         else:
-            console.print(f"❌ Failed to update progress: {issue_id}", style="bold red")
+            lines = format_operation_failure(
+                action="update progress",
+                entity_id=issue_id,
+                error="No changes made",
+            )
+            for line in lines:
+                console.print(line, style="bold red")
 
     except Exception as e:
         log_error_with_context(
@@ -75,4 +86,10 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
             entity_id=issue_id,
             additional_context={"percentage": percentage},
         )
-        console.print(f"❌ Failed to update progress: {e}", style="bold red")
+        lines = format_operation_failure(
+            action="update progress",
+            entity_id=issue_id,
+            error=str(e),
+        )
+        for line in lines:
+            console.print(line, style="bold red")

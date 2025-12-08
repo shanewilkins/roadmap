@@ -7,6 +7,10 @@ from rich.console import Console
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
+from roadmap.common.formatters import (
+    format_operation_failure,
+    format_operation_success,
+)
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -168,7 +172,7 @@ def _archive_multiple_issues(
             archived_count += 1
 
     console.print(
-        f"\n✅ Archived {archived_count} issue(s) to .roadmap/archive/issues/",
+        f"✅ Archived {archived_count} issue(s) to .roadmap/archive/issues/",
         style="bold green",
     )
     return True
@@ -210,14 +214,25 @@ def _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force):
 
     issue_file = _find_issue_file(roadmap_dir, issue_id)
     if not issue_file:
-        console.print(f"❌ Issue file not found for: {issue_id}", style="bold red")
+        lines = format_operation_failure(
+            action="archive",
+            entity_id=issue_id,
+            error="Issue file not found",
+        )
+        for line in lines:
+            console.print(line, style="bold red")
         return False
 
     _archive_issue_file(core, archive_dir, issue_file, roadmap_dir, issue.id)
-    console.print(
-        f"\n✅ Archived issue '{issue_id}' to .roadmap/archive/issues/",
-        style="bold green",
+
+    lines = format_operation_success(
+        emoji="📦",
+        action="Archived",
+        entity_title=issue.title,
+        entity_id=issue_id,
     )
+    for line in lines:
+        console.print(line, style="bold green" if "Archived" in line else "cyan")
     return True
 
 

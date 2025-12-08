@@ -8,6 +8,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.core.services import StartIssueService
 from roadmap.infrastructure.logging import (
     log_command,
@@ -78,7 +79,22 @@ def start_issue(
             success = service.start_work(issue_id, start_date)
 
         if success:
-            service.display_started(issue, start_date)
+            # Build extra details
+            extra_details = {
+                "Status": "🚀 In Progress",
+                "Started": start_date.strftime("%Y-%m-%d %H:%M"),
+            }
+
+            # Display success with formatter
+            lines = format_operation_success(
+                emoji="🚀",
+                action="Started",
+                entity_title=issue.title,
+                entity_id=issue_id,
+                extra_details=extra_details,
+            )
+            for line in lines:
+                console.print(line, style="bold green" if "Started" in line else "cyan")
 
             # Handle git branch creation
             if service.should_create_branch(git_branch):
@@ -86,7 +102,13 @@ def start_issue(
                     core, service, issue, branch_name, checkout, force
                 )
         else:
-            console.print(f"❌ Failed to start issue: {issue_id}", style="bold red")
+            lines = format_operation_failure(
+                action="start",
+                entity_id=issue_id,
+                error="Failed to update status",
+            )
+            for line in lines:
+                console.print(line, style="bold red")
 
     except Exception as e:
         log_error_with_context(
@@ -95,7 +117,13 @@ def start_issue(
             entity_type="issue",
             entity_id=issue_id,
         )
-        console.print(f"❌ Failed to start issue: {e}", style="bold red")
+        lines = format_operation_failure(
+            action="start",
+            entity_id=issue_id,
+            error=str(e),
+        )
+        for line in lines:
+            console.print(line, style="bold red")
 
 
 def _handle_git_branch_creation(core, service, issue, branch_name, checkout, force):

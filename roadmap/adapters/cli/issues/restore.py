@@ -7,6 +7,9 @@ from rich.console import Console  # type: ignore[import-untyped]
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
+from roadmap.common.formatters import (
+    format_operation_success,
+)
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -155,7 +158,7 @@ def _restore_multiple_issues(
             restored_count += 1
 
     console.print(
-        f"\n✅ Restored {restored_count} issue(s) to .roadmap/issues/",
+        f"✅ Restored {restored_count} issue(s) to .roadmap/issues/",
         style="bold green",
     )
     if status:
@@ -215,12 +218,19 @@ def _restore_single_issue(
     active_dir.mkdir(parents=True, exist_ok=True)
     _restore_issue_file(core, archive_file, active_dir, issue.id, status)
 
-    console.print(
-        f"\n✅ Restored issue '{issue.id[:8]}' to .roadmap/issues/",
-        style="bold green",
-    )
+    extra_details = {}
     if status:
-        console.print(f"   Status set to: {status}", style="green")
+        extra_details["Status"] = status
+
+    lines = format_operation_success(
+        emoji="✅",
+        action="Restored",
+        entity_title=issue.title,
+        entity_id=issue.id,
+        extra_details=extra_details if extra_details else None,
+    )
+    for line in lines:
+        console.print(line, style="bold green" if "Restored" in line else "cyan")
 
     return True
 

@@ -9,6 +9,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
     log_command,
@@ -38,51 +39,6 @@ def _parse_completion_date(date_str: str) -> datetime | None:
             return datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
             return None
-
-
-def _display_close_details(
-    updated_issue,
-    end_date: datetime | None,
-    estimated_hours: float | None,
-) -> None:
-    """Display extra completion details (duration, estimate comparison).
-
-    Args:
-        updated_issue: Closed issue object
-        end_date: Completion date if recorded
-        estimated_hours: Estimated hours for comparison
-    """
-    if not end_date:
-        return
-
-    console.print(
-        f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}",
-        style="cyan",
-    )
-
-    # Show duration if we have start date
-    start_date = updated_issue.actual_start_date
-    if start_date:
-        duration = end_date - start_date
-        hours = duration.total_seconds() / 3600
-        console.print(f"   Duration: {hours:.1f} hours", style="cyan")
-
-        # Compare with estimate
-        if estimated_hours:
-            diff = hours - estimated_hours
-            if abs(diff) > 0.5:
-                if diff > 0:
-                    console.print(
-                        f"   Over estimate by: {diff:.1f} hours",
-                        style="yellow",
-                    )
-                else:
-                    console.print(
-                        f"   Under estimate by: {abs(diff):.1f} hours",
-                        style="green",
-                    )
-            else:
-                console.print("   ✅ Right on estimate!", style="green")
 
 
 @click.command("close")
@@ -150,19 +106,55 @@ def close_issue(
             updated_issue = core.issues.update(issue_id, **update_kwargs)
 
         if updated_issue:
-            # Status line
-            console.print(f"✅ Closed: {updated_issue.title}", style="bold green")
-            console.print("   Status: Closed", style="green")
+            # Build extra details
+            extra_details = {
+                "Status": "Closed",
+                "Progress": "100%",
+            }
 
             if reason:
-                console.print(f"   Reason: {reason}", style="cyan")
+                extra_details["Reason"] = reason
 
-            # Extra details (duration, estimate comparison, etc.)
-            _display_close_details(
-                updated_issue, end_date, updated_issue.estimated_hours
+            # Add duration info if we have dates
+            if end_date:
+                extra_details["Completed"] = end_date.strftime("%Y-%m-%d %H:%M")
+                start_date = updated_issue.actual_start_date
+                if start_date:
+                    duration = end_date - start_date
+                    hours = duration.total_seconds() / 3600
+                    extra_details["Duration"] = f"{hours:.1f} hours"
+
+                    # Compare with estimate
+                    if updated_issue.estimated_hours:
+                        diff = hours - updated_issue.estimated_hours
+                        if abs(diff) > 0.5:
+                            if diff > 0:
+                                extra_details["Variance"] = f"Over by {diff:.1f} hours"
+                            else:
+                                extra_details["Variance"] = (
+                                    f"Under by {abs(diff):.1f} hours"
+                                )
+                        else:
+                            extra_details["Variance"] = "On target"
+
+            # Use formatter
+            lines = format_operation_success(
+                emoji="✅",
+                action="Closed",
+                entity_title=updated_issue.title,
+                entity_id=issue_id,
+                extra_details=extra_details,
             )
+            for line in lines:
+                console.print(line, style="bold green" if "Closed" in line else "cyan")
         else:
-            console.print(f"❌ Failed to close issue: {issue_id}", style="bold red")
+            lines = format_operation_failure(
+                action="close",
+                entity_id=issue_id,
+                error="Failed to update status",
+            )
+            for line in lines:
+                console.print(line, style="bold red")
 
     except Exception as e:
         log_error_with_context(
@@ -172,4 +164,10 @@ def close_issue(
             entity_id=issue_id,
             additional_context={"reason": reason},
         )
-        console.print(f"❌ Error closing issue: {e}", style="bold red")
+        lines = format_operation_failure(
+            action="close",
+            entity_id=issue_id,
+            error=str(e),
+        )
+        for line in lines:
+            console.print(line, style="bold red")

@@ -9,6 +9,7 @@ from roadmap.adapters.cli.helpers import (
 )
 from roadmap.common.cli_errors import handle_cli_errors
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_success
 from roadmap.infrastructure.logging import log_command, track_database_operation
 
 console = get_console()
@@ -44,5 +45,11 @@ def delete_issue(
     with track_database_operation("delete", "issue", entity_id=issue_id):
         core.issues.delete(issue_id)
 
-    console.print(f"[green]✅ Permanently deleted issue: {issue.title}[/green]")
-    console.print(f"   ID: {issue_id}", style="dim")
+    lines = format_operation_success(
+        emoji="✅",
+        action="Permanently deleted",
+        entity_title=issue.title,
+        entity_id=issue_id,
+    )
+    for line in lines:
+        console.print(line, style="green" if "Permanently" in line else "dim")

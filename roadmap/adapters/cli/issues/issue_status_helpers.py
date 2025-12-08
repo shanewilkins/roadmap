@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 import click
 
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.core.domain import Status
 
 if TYPE_CHECKING:
@@ -81,19 +82,27 @@ def apply_status_change(
     updated = core.issues.update(issue_id, status=config.status)
 
     if updated:
-        # Success feedback
-        console.print(
-            f"{config.emoji} {config.title_verb} issue: {updated.title}",
-            style=config.title_style,
+        # Build extra details for display
+        extra_details = {"Status": config.status_display}
+
+        # Use formatter for consistent output
+        lines = format_operation_success(
+            emoji=config.emoji,
+            action=config.title_verb,
+            entity_title=updated.title,
+            entity_id=issue_id,
+            reason=reason,
+            extra_details=extra_details,
         )
-        console.print(f"   ID: {issue_id}", style="cyan")
-        console.print(f"   Status: {config.status_display}", style="cyan")
-        if reason:
-            console.print(f"   Reason: {reason}", style="dim")
+        for line in lines:
+            console.print(line, style=config.title_style)
     else:
         # Failure feedback
-        console.print(
-            f"❌ Failed to {config.title_verb.lower()} issue: {issue_id}",
-            style="bold red",
+        lines = format_operation_failure(
+            action=config.title_verb.lower(),
+            entity_id=issue_id,
+            error="Failed to update status",
         )
+        for line in lines:
+            console.print(line, style="bold red")
         raise click.Abort()
