@@ -106,6 +106,66 @@ class IssueService:
 
         return issue
 
+    def _check_milestone_filter(self, issue: Issue, milestone: str | None) -> bool:
+        """Check milestone filter.
+
+        Args:
+            issue: Issue to check
+            milestone: Required milestone or None
+
+        Returns:
+            True if milestone matches or no filter
+        """
+        return not milestone or issue.milestone == milestone
+
+    def _check_status_filter(self, issue: Issue, status: Status | None) -> bool:
+        """Check status filter.
+
+        Args:
+            issue: Issue to check
+            status: Required status or None
+
+        Returns:
+            True if status matches or no filter
+        """
+        return not status or issue.status == status
+
+    def _check_priority_filter(self, issue: Issue, priority: Priority | None) -> bool:
+        """Check priority filter.
+
+        Args:
+            issue: Issue to check
+            priority: Required priority or None
+
+        Returns:
+            True if priority matches or no filter
+        """
+        return not priority or issue.priority == priority
+
+    def _check_type_filter(self, issue: Issue, issue_type: IssueType | None) -> bool:
+        """Check issue type filter.
+
+        Args:
+            issue: Issue to check
+            issue_type: Required issue type or None
+
+        Returns:
+            True if type matches or no filter
+        """
+        return not issue_type or issue.issue_type == issue_type
+
+    def _check_assignee_filter(self, issue: Issue, assignee: str | None) -> bool:
+        """Check assignee filter.
+
+        Args:
+            issue: Issue to check
+            assignee: Required assignee or None
+
+        Returns:
+            True if assignee matches or no filter
+        """
+        return not assignee or issue.assignee == assignee
+
     def _matches_all_filters(
         self,
         issue: Issue,
@@ -116,17 +176,13 @@ class IssueService:
         assignee: str | None,
     ) -> bool:
         """Check if issue matches all provided filter criteria."""
-        if milestone and issue.milestone != milestone:
-            return False
-        if status and issue.status != status:
-            return False
-        if priority and issue.priority != priority:
-            return False
-        if issue_type and issue.issue_type != issue_type:
-            return False
-        if assignee and issue.assignee != assignee:
-            return False
-        return True
+        return (
+            self._check_milestone_filter(issue, milestone)
+            and self._check_status_filter(issue, status)
+            and self._check_priority_filter(issue, priority)
+            and self._check_type_filter(issue, issue_type)
+            and self._check_assignee_filter(issue, assignee)
+        )
 
     def _get_priority_order(self) -> dict:
         """Get priority ordering for sorting."""

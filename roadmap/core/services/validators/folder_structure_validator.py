@@ -48,6 +48,39 @@ class FolderStructureValidator(BaseValidator):
                 pass
 
     @staticmethod
+    def _process_milestone_file(
+        issue_file: Path, core, milestone_folder: Path, orphaned_list: list
+    ) -> None:
+        """Process single file in milestone folder for orphaned issues.
+
+        Args:
+            issue_file: File to process
+            core: RoadmapCore instance
+            milestone_folder: Milestone folder path
+            orphaned_list: List to append orphaned issues to
+        """
+        if ".backup" in issue_file.name:
+            return
+
+        try:
+            issue_id = extract_issue_id(issue_file.name)
+            if not issue_id:
+                return
+
+            issue = core.issue_service.get_issue(issue_id)
+            if issue and not issue.milestone:
+                orphaned_list.append(
+                    {
+                        "issue_id": issue.id,
+                        "title": issue.title,
+                        "location": str(issue_file),
+                        "folder": milestone_folder.name,
+                    }
+                )
+        except Exception:
+            pass
+
+    @staticmethod
     def _check_milestone_folders(issues_dir: Path, core, orphaned_list: list) -> None:
         """Check milestone folders for orphaned issues."""
         for milestone_folder in issues_dir.glob("*/"):
@@ -58,26 +91,9 @@ class FolderStructureValidator(BaseValidator):
                 continue
 
             for issue_file in milestone_folder.glob("*.md"):
-                if ".backup" in issue_file.name:
-                    continue
-
-                try:
-                    issue_id = extract_issue_id(issue_file.name)
-                    if not issue_id:
-                        continue
-
-                    issue = core.issue_service.get_issue(issue_id)
-                    if issue and not issue.milestone:
-                        orphaned_list.append(
-                            {
-                                "issue_id": issue.id,
-                                "title": issue.title,
-                                "location": str(issue_file),
-                                "folder": milestone_folder.name,
-                            }
-                        )
-                except Exception:
-                    pass
+                FolderStructureValidator._process_milestone_file(
+                    issue_file, core, milestone_folder, orphaned_list
+                )
 
     @staticmethod
     def scan_for_folder_structure_issues(

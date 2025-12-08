@@ -52,14 +52,28 @@ class GitBranchManager:
 
         return branches
 
-    def suggest_branch_name(self, issue) -> str:
-        """Suggest a branch name based on issue information."""
-        # Clean title for branch name
-        title_slug = re.sub(r"[^a-zA-Z0-9\s-]", "", issue.title.lower())
-        title_slug = re.sub(r"\s+", "-", title_slug)
-        title_slug = title_slug[:40]  # Limit length
+    def _generate_title_slug(self, title: str) -> str:
+        """Generate slug from issue title.
 
-        # Determine prefix based on issue type or priority
+        Args:
+            title: Issue title to slugify
+
+        Returns:
+            Slug suitable for branch name
+        """
+        title_slug = re.sub(r"[^a-zA-Z0-9\s-]", "", title.lower())
+        title_slug = re.sub(r"\s+", "-", title_slug)
+        return title_slug[:40]  # Limit length
+
+    def _determine_prefix(self, issue) -> str:
+        """Determine branch prefix based on issue type/priority.
+
+        Args:
+            issue: Issue to inspect
+
+        Returns:
+            Prefix for branch name
+        """
         prefix = "feature"
         if hasattr(issue, "issue_type"):
             if issue.issue_type == "bug":
@@ -68,26 +82,51 @@ class GitBranchManager:
                 prefix = "docs"
         elif issue.priority.value == "critical":
             prefix = "hotfix"
+        return prefix
 
-        # Use branch name template from config if provided
-        template = None
+    def _get_branch_template(self) -> str | None:
+        """Get branch name template from config.
+
+        Returns:
+            Template string or None
+        """
         try:
             if self.config:
                 defaults = getattr(self.config, "defaults", None)
                 if defaults and hasattr(defaults, "get"):
-                    template = defaults.get("branch_name_template")
+                    return defaults.get("branch_name_template")
         except Exception:
-            template = None
+            pass
+        return None
 
+    def _format_branch_name(
+        self, issue_id: int, slug: str, prefix: str, template: str | None
+    ) -> str:
+        """Format branch name using template or defaults.
+
+        Args:
+            issue_id: Issue ID
+            slug: Title slug
+            prefix: Branch prefix
+            template: Template string or None
+
+        Returns:
+            Formatted branch name
+        """
         if template:
-            # Allow template placeholders: {id}, {slug}, {prefix}
             try:
-                return template.format(id=issue.id, slug=title_slug, prefix=prefix)
+                return template.format(id=issue_id, slug=slug, prefix=prefix)
             except Exception:
-                # Fall back to default if template formatting fails
                 pass
 
-        return f"{prefix}/{issue.id}-{title_slug}"
+        return f"{prefix}/{issue_id}-{slug}"
+
+    def suggest_branch_name(self, issue) -> str:
+        """Suggest a branch name based on issue information."""
+        title_slug = self._generate_title_slug(issue.title)
+        prefix = self._determine_prefix(issue)
+        template = self._get_branch_template()
+        return self._format_branch_name(issue.id, title_slug, prefix, template)
 
     def _check_working_tree_clean(self, force: bool) -> bool:
         """Check if working tree has uncommitted changes.

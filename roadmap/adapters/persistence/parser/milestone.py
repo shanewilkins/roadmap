@@ -50,27 +50,19 @@ class MilestoneParser:
         FrontmatterParser.serialize_file(frontmatter, milestone.content, file_path)
 
     @classmethod
-    def parse_milestone_file_safe(
-        cls, file_path: Path
+    def _build_milestone_from_data(
+        cls, data: dict, file_path: Path
     ) -> tuple[bool, Milestone | None, str | None]:
-        """Safely parse a milestone file with enhanced validation and recovery.
+        """Build Milestone object from parsed data.
+
+        Args:
+            data: Parsed milestone data
+            file_path: Path to milestone file (for error reporting)
 
         Returns:
             (success, milestone, error_message)
         """
-        is_valid, result = enhanced_persistence.safe_load_with_validation(
-            file_path, "milestone"
-        )
-
-        if not is_valid:
-            # result is a string error message
-            return False, None, str(result)
-
         try:
-            # Convert the validated data to a Milestone
-            # At this point, result must be a dict since is_valid is True
-            data = result if isinstance(result, dict) else {}
-
             # Handle datetime fields - set defaults if None
             now = now_utc()
             created = cls._parse_datetime(data.get("created")) or now
@@ -101,6 +93,28 @@ class MilestoneParser:
             return False, None, f"Error creating Milestone object: {e}"
         except Exception as e:
             return False, None, f"Error creating Milestone object: {e}"
+
+    @classmethod
+    def parse_milestone_file_safe(
+        cls, file_path: Path
+    ) -> tuple[bool, Milestone | None, str | None]:
+        """Safely parse a milestone file with enhanced validation and recovery.
+
+        Returns:
+            (success, milestone, error_message)
+        """
+        is_valid, result = enhanced_persistence.safe_load_with_validation(
+            file_path, "milestone"
+        )
+
+        if not is_valid:
+            # result is a string error message
+            return False, None, str(result)
+
+        # Convert the validated data to a Milestone
+        # At this point, result must be a dict since is_valid is True
+        data = result if isinstance(result, dict) else {}
+        return cls._build_milestone_from_data(data, file_path)
 
     @classmethod
     def save_milestone_file_safe(

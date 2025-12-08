@@ -45,6 +45,45 @@ class UnifiedDateTimeParser:
     ]
 
     @classmethod
+    def _handle_datetime_object(
+        cls, value: datetime, assumed_timezone: str | None
+    ) -> datetime:
+        """Handle datetime object input.
+
+        Args:
+            value: Datetime object
+            assumed_timezone: Timezone to assume
+
+        Returns:
+            Timezone-aware datetime in UTC
+        """
+        return ensure_timezone_aware(value, assumed_timezone or "UTC")
+
+    @classmethod
+    def _route_to_parser(
+        cls, value: str, source_type: str, assumed_timezone: str | None
+    ) -> datetime | None:
+        """Route to appropriate parser based on source type and format.
+
+        Args:
+            value: String value to parse
+            source_type: Hint for parsing behavior
+            assumed_timezone: Timezone to assume
+
+        Returns:
+            Parsed datetime or None
+        """
+        if source_type == "github" or cls._is_github_format(value):
+            return cls.parse_github_timestamp(value)
+        elif source_type == "iso" or cls._is_iso_format(value):
+            return cls.parse_iso_datetime(value, assumed_timezone)
+        elif source_type == "file":
+            return cls.parse_file_datetime(value, assumed_timezone)
+        else:
+            # Default to user input parsing
+            return cls.parse_user_datetime(value, assumed_timezone)
+
+    @classmethod
     def parse_any_datetime(
         cls, value: Any, source_type: str = "user", assumed_timezone: str | None = None
     ) -> datetime | None:
