@@ -73,6 +73,78 @@ class DailySummaryService:
 
         return sorted_milestones[0] if sorted_milestones else None
 
+    def _get_in_progress_issues(self, issues: list) -> list:
+        """Get issues currently in progress.
+
+        Args:
+            issues: List of issues to filter
+
+        Returns:
+            List of in-progress issues
+        """
+        return [i for i in issues if i.status == Status.IN_PROGRESS]
+
+    def _get_overdue_issues(self, issues: list) -> list:
+        """Get overdue issues that haven't been closed.
+
+        Args:
+            issues: List of issues to filter
+
+        Returns:
+            List of overdue issues
+        """
+        return [
+            i
+            for i in issues
+            if i.due_date
+            and i.due_date.replace(tzinfo=None) < datetime.now()
+            and i.status != Status.CLOSED
+        ]
+
+    def _get_blocked_issues(self, issues: list) -> list:
+        """Get blocked issues.
+
+        Args:
+            issues: List of issues to filter
+
+        Returns:
+            List of blocked issues
+        """
+        return [i for i in issues if i.status == Status.BLOCKED]
+
+    def _get_high_priority_todos(self, issues: list) -> list:
+        """Get high-priority TODO issues (top 3).
+
+        Args:
+            issues: List of issues to filter
+
+        Returns:
+            List of up to 3 high-priority TODO issues
+        """
+        return [
+            i
+            for i in issues
+            if i.status == Status.TODO and i.priority.value in ["critical", "high"]
+        ][:3]
+
+    def _get_completed_today_issues(self, issues: list) -> list:
+        """Get issues closed today.
+
+        Args:
+            issues: List of issues to filter
+
+        Returns:
+            List of issues closed today
+        """
+        today = datetime.now().date()
+        return [
+            i
+            for i in issues
+            if i.status == Status.CLOSED
+            and i.actual_end_date
+            and i.actual_end_date.date() == today
+        ]
+
     def categorize_issues(self, issues: list, current_user: str) -> dict[str, list]:
         """Categorize issues by status and urgency.
 
@@ -83,38 +155,12 @@ class DailySummaryService:
         Returns:
             Dictionary with keys: in_progress, overdue, blocked, todo_high_priority, completed_today
         """
-        in_progress = [i for i in issues if i.status == Status.IN_PROGRESS]
-
-        overdue = [
-            i
-            for i in issues
-            if i.due_date
-            and i.due_date.replace(tzinfo=None) < datetime.now()
-            and i.status != Status.CLOSED
-        ]
-
-        blocked = [i for i in issues if i.status == Status.BLOCKED]
-
-        todo_high_priority = [
-            i
-            for i in issues
-            if i.status == Status.TODO and i.priority.value in ["critical", "high"]
-        ][:3]  # Top 3
-
-        completed_today = [
-            i
-            for i in issues
-            if i.status == Status.CLOSED
-            and i.actual_end_date
-            and i.actual_end_date.date() == datetime.now().date()
-        ]
-
         return {
-            "in_progress": in_progress,
-            "overdue": overdue,
-            "blocked": blocked,
-            "todo_high_priority": todo_high_priority,
-            "completed_today": completed_today,
+            "in_progress": self._get_in_progress_issues(issues),
+            "overdue": self._get_overdue_issues(issues),
+            "blocked": self._get_blocked_issues(issues),
+            "todo_high_priority": self._get_high_priority_todos(issues),
+            "completed_today": self._get_completed_today_issues(issues),
         }
 
     def get_daily_summary_data(self) -> dict[str, Any]:
