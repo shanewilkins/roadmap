@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.shared import KanbanLayout, KanbanOrganizer
 
@@ -13,17 +14,12 @@ console = get_console()
 @click.option("--compact", is_flag=True, help="Compact view with less spacing")
 @click.option("--no-color", is_flag=True, help="Disable color coding")
 @click.pass_context
+@require_initialized
 def milestone_kanban(
     ctx: click.Context, milestone_name: str, compact: bool, no_color: bool
 ):
     """Display milestone issues in a kanban board layout."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         # Get milestone

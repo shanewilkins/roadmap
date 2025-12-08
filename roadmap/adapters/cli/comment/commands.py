@@ -34,16 +34,9 @@ def create_comment(ctx: click.Context, target_id: str, message: str, type: str):
 @click.argument("target_id")
 @click.option("--type", default="issue", help="Type of target (issue, milestone)")
 @click.pass_context
+@require_initialized
 def list_comments(ctx: click.Context, target_id: str, type: str):
     """List comments for an issue or milestone."""
-    core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        raise click.Abort()
-
     try:
         console.print(f"💬 Comments for {type} {target_id}", style="bold blue")
         console.print("   No comments found.", style="dim")
@@ -56,16 +49,9 @@ def list_comments(ctx: click.Context, target_id: str, type: str):
 @click.argument("comment_id")
 @click.argument("new_message")
 @click.pass_context
+@require_initialized
 def edit_comment(ctx: click.Context, comment_id: str, new_message: str):
     """Edit an existing comment."""
-    core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        raise click.Abort()
-
     try:
         console.print(f"💬 Edited comment {comment_id}", style="bold green")
         console.print(f"   New message: {new_message}", style="dim")
@@ -77,16 +63,9 @@ def edit_comment(ctx: click.Context, comment_id: str, new_message: str):
 @comment.command("delete")
 @click.argument("comment_id")
 @click.pass_context
+@require_initialized
 def delete_comment(ctx: click.Context, comment_id: str):
     """Delete a comment."""
-    core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        raise click.Abort()
-
     try:
         console.print(f"💬 Deleted comment {comment_id}", style="bold green")
     except Exception as e:

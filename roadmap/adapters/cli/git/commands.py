@@ -195,15 +195,10 @@ def _update_issue_status_if_needed(core, issue: Issue, issue_id: str) -> None:
 @git.command("link")
 @click.argument("issue_id")
 @click.pass_context
+@require_initialized
 def git_link(ctx: click.Context, issue_id: str):
     """Link an issue to the current Git branch."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     if not core.git.is_git_repository():
         console.print("❌ Not in a Git repository", style="bold red")
