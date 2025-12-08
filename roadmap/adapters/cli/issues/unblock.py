@@ -9,7 +9,7 @@ from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.cli_errors import handle_cli_errors
 from roadmap.core.domain import Status
 
-from .status_wrapper import StatusChangeConfig, apply_status_change
+from .issue_status_helpers import StatusChangeConfig, apply_status_change
 
 
 @click.command("unblock")
