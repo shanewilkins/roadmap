@@ -4,6 +4,12 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.cli_validators import (
+    check_archive_exists,
+    parse_date,
+    validate_priority,
+    validate_project_status,
+)
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
@@ -52,16 +58,6 @@ def _validate_status(status):
     return status_map[status]
 
 
-def _parse_date(date_str, field_name):
-    """Parse date string in YYYY-MM-DD format."""
-    try:
-        return datetime.strptime(date_str, "%Y-%m-%d")
-    except ValueError:
-        console.print(
-            f"❌ Invalid {field_name} format. Use YYYY-MM-DD (e.g., 2025-12-31)",
-            style="bold red",
-        )
-        return None
 
 
 def _add_basic_updates(updates, name, description, owner, estimated_hours):
@@ -79,13 +75,13 @@ def _add_basic_updates(updates, name, description, owner, estimated_hours):
 def _add_priority_status_updates(updates, priority, status):
     """Add priority and status updates with validation."""
     if priority:
-        priority_enum = _validate_priority(priority)
+        priority_enum = validate_priority(priority)
         if priority_enum is None:
             return False
         updates["priority"] = priority_enum
 
     if status:
-        status_enum = _validate_status(status)
+        status_enum = validate_project_status(status)
         if status_enum is None:
             return False
         updates["status"] = status_enum
@@ -100,7 +96,7 @@ def _add_date_updates(
     if clear_start_date:
         updates["start_date"] = None
     elif start_date:
-        parsed_date = _parse_date(start_date, "start date")
+        parsed_date = parse_date(start_date, "start date")
         if parsed_date is None:
             return False
         updates["start_date"] = parsed_date
@@ -108,7 +104,7 @@ def _add_date_updates(
     if clear_target_date:
         updates["target_end_date"] = None
     elif target_end_date:
-        parsed_date = _parse_date(target_end_date, "target end date")
+        parsed_date = parse_date(target_end_date, "target end date")
         if parsed_date is None:
             return False
         updates["target_end_date"] = parsed_date

@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.cli_validators import parse_iso_date
 from roadmap.common.console import get_console
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.common.formatters import format_operation_failure, format_operation_success
@@ -18,19 +19,9 @@ from roadmap.infrastructure.logging import (
 console = get_console()
 
 
-def _parse_iso_date(date_string: str) -> str | None:
-    """Parse date string to ISO format or return None."""
-    if not date_string:
-        return None
-    try:
-        return datetime.strptime(date_string, "%Y-%m-%d").isoformat()
-    except ValueError:
-        return None
-
-
 def _validate_date_input(date_string: str, date_type: str) -> str | None:
     """Validate and parse date input, showing error on failure."""
-    parsed = _parse_iso_date(date_string)
+    parsed = parse_iso_date(date_string)
     if parsed is None:
         console.print(
             f"❌ Invalid {date_type} format. Use YYYY-MM-DD",
