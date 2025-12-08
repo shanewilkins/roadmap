@@ -3,6 +3,7 @@
 import click
 from rich.console import Console
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.core.domain import Issue, Status
 
 from .status_display import GitStatusDisplay
@@ -33,15 +34,10 @@ def sync_git(ctx: click.Context):
 
 @git.command("status")
 @click.pass_context
+@require_initialized
 def git_status(ctx: click.Context):
     """Show Git repository status and roadmap integration info."""
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     display = GitStatusDisplay(console)
 
