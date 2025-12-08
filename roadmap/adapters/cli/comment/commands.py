@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -18,16 +19,9 @@ def comment():
 @click.argument("message")
 @click.option("--type", default="issue", help="Type of target (issue, milestone)")
 @click.pass_context
+@require_initialized
 def create_comment(ctx: click.Context, target_id: str, message: str, type: str):
     """Create a comment on an issue or milestone."""
-    core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        raise click.Abort()
-
     try:
         console.print(f"💬 Created comment on {type} {target_id}", style="bold green")
         console.print(f"   Message: {message}", style="dim")

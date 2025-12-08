@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.presentation.daily_summary_presenter import (
     DailySummaryPresenter,
 )
@@ -15,6 +16,7 @@ console = get_console()
 @click.command("today")
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@require_initialized
 @verbose_output
 def today(ctx: click.Context, verbose: bool):
     """Show your daily workflow summary for the upcoming milestone.
@@ -31,12 +33,6 @@ def today(ctx: click.Context, verbose: bool):
         roadmap today
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         # Use service to get daily summary data

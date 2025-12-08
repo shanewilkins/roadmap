@@ -3,6 +3,7 @@
 import click
 from structlog import get_logger
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
 )
@@ -25,21 +26,13 @@ presenter = CoreInitializationPresenter()
 @click.command()
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@require_initialized
 def status(ctx: click.Context, verbose: bool) -> None:
     """Show the current status of the roadmap."""
     log = logger.bind(operation="status")
     log.info("starting_status")
 
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        log.warning("roadmap_not_initialized")
-        click.secho(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.",
-            fg="red",
-            bold=True,
-        )
-        return
 
     try:
         RoadmapStatusPresenter.show_status_header()
