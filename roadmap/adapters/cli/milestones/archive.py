@@ -113,7 +113,7 @@ def _check_milestone_closed_status(milestone_name, milestone, force):
         f"⚠️  Warning: Milestone '{milestone_name}' is not closed (status: {milestone.status.value})",
         style="bold yellow",
     )
-    return force or click.confirm("Archive anyway?", default=False)
+    return force or confirm_override_warning()
 
 
 def _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force):
@@ -123,7 +123,6 @@ def _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force)
         return False
 
     if not _check_milestone_closed_status(milestone_name, milestone, force):
-        console.print("❌ Cancelled.", style="yellow")
         return False
 
     if dry_run:
@@ -141,10 +140,9 @@ def _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force)
         )
         return True
 
-    if not force and not click.confirm(
+    if not force and not confirm_action(
         f"Archive milestone '{milestone_name}'?", default=False
     ):
-        console.print("❌ Cancelled.", style="yellow")
         return False
 
     archive_dir = roadmap_dir / "archive" / "milestones"
@@ -191,7 +189,7 @@ def _confirm_archive_all(milestones, force):
     )
     for m in milestones:
         console.print(f"  • {m.name}", style="cyan")
-    return click.confirm("\nProceed with archival?", default=False)
+    return confirm_action("\nProceed with archival?", default=False)
 
 
 def _archive_all_closed_milestones(core, roadmap_dir, dry_run, force):
@@ -212,7 +210,6 @@ def _archive_all_closed_milestones(core, roadmap_dir, dry_run, force):
         return True
 
     if not _confirm_archive_all(milestones, force):
-        console.print("❌ Cancelled.", style="yellow")
         return False
 
     archive_dir = roadmap_dir / "archive" / "milestones"

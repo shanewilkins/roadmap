@@ -71,7 +71,7 @@ def _confirm_archive(project_name: str, force: bool) -> bool:
     """Get user confirmation to archive project."""
     if force:
         return True
-    return click.confirm(f"Archive project '{project_name}'?", default=False)
+    return confirm_action(f"Archive project '{project_name}'?", default=False)
 
 
 def _perform_archive(
@@ -226,7 +226,6 @@ def archive_project(
 
         # Confirm
         if not _confirm_archive(project_name, force):
-            console.print("❌ Cancelled.", style="yellow")
             return
 
         # Perform archive

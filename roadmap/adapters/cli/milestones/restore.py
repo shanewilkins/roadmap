@@ -110,8 +110,7 @@ def _restore_multiple_milestones(
         for _, name in milestones_info:
             console.print(f"  • {name}", style="cyan")
 
-        if not click.confirm("\nProceed with restore?", default=False):
-            console.print("❌ Cancelled.", style="yellow")
+        if not confirm_action("\nProceed with restore?", default=False):
             return False
 
     ensure_directory_exists(active_dir)
@@ -172,10 +171,9 @@ def _restore_single_milestone(
         )
         return True
 
-    if not force and not click.confirm(
+    if not force and not confirm_action(
         f"Restore milestone '{milestone_name}'?", default=False
     ):
-        console.print("❌ Cancelled.", style="yellow")
         return False
 
     ensure_directory_exists(active_dir)
