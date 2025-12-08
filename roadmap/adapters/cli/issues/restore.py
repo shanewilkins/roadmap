@@ -3,10 +3,11 @@
 from pathlib import Path
 
 import click  # type: ignore[import-untyped]
-from rich.console import Console  # type: ignore[import-untyped]
 
+from roadmap.adapters.cli.cli_confirmations import confirm_action
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
+from roadmap.common.console import get_console
 from roadmap.common.formatters import (
     format_operation_success,
 )
@@ -16,7 +17,7 @@ from roadmap.infrastructure.logging import (
     verbose_output,
 )
 
-console = Console()
+console = get_console()
 
 
 def _validate_restore_arguments(issue_id, all):

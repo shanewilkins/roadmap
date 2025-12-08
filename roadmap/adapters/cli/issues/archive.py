@@ -3,10 +3,19 @@
 from pathlib import Path
 
 import click
-from rich.console import Console
 
+from roadmap.adapters.cli.cli_confirmations import (
+    check_entity_exists,
+    confirm_action,
+    confirm_override_warning,
+)
+from roadmap.adapters.cli.cli_error_handlers import (
+    display_not_found_error,
+    display_operation_error,
+)
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
+from roadmap.common.console import get_console
 from roadmap.common.formatters import (
     format_operation_failure,
     format_operation_success,
@@ -17,7 +26,7 @@ from roadmap.infrastructure.logging import (
     verbose_output,
 )
 
-console = Console()
+console = get_console()
 
 
 def _determine_archive_path(
@@ -157,8 +166,7 @@ def _archive_multiple_issues(
         for issue in issues_to_archive:
             console.print(f"  • {issue.id[:8]} - {issue.title}", style="cyan")
 
-        if not click.confirm("\nProceed with archival?", default=False):
-            console.print("❌ Cancelled.", style="yellow")
+        if not confirm_action("\nProceed with archival?", default=False):
             return False
 
     archive_dir = roadmap_dir / "archive" / "issues"
@@ -180,9 +188,8 @@ def _archive_multiple_issues(
 
 def _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force):
     """Archive a single issue."""
-    issue = core.issues.get(issue_id)
+    issue = check_entity_exists(core, "issue", issue_id, entity_lookup=core.issues.get(issue_id))
     if not issue:
-        console.print(f"❌ Issue '{issue_id}' not found.", style="bold red")
         return False
 
     if issue.status.value != "closed":
@@ -190,8 +197,7 @@ def _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force):
             f"⚠️  Warning: Issue '{issue_id}' is not closed (status: {issue.status.value})",
             style="bold yellow",
         )
-        if not force and not click.confirm("Archive anyway?", default=False):
-            console.print("❌ Cancelled.", style="yellow")
+        if not force and not confirm_override_warning():
             return False
 
     if dry_run:
