@@ -315,23 +315,28 @@ class TestCLIIssueUpdate:
 
     def test_update_issue_title(self, isolated_roadmap_with_issues):
         """Test updating issue title."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+        cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
 
-        # Update using a known issue number (they're created sequentially)
+        if not issue_ids:
+            pytest.skip("No issues created in fixture")
+
         result = cli_runner.invoke(
             main,
-            ["issue", "update", "1", "--title", "Updated Title"],
+            ["issue", "update", issue_ids[0], "--title", "Updated Title"],
         )
 
         assert result.exit_code == 0 or "updated" in result.output.lower()
 
     def test_update_issue_priority(self, isolated_roadmap_with_issues):
         """Test updating issue priority."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+        cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
+
+        if not issue_ids:
+            pytest.skip("No issues created in fixture")
 
         result = cli_runner.invoke(
             main,
-            ["issue", "update", "1", "--priority", "critical"],
+            ["issue", "update", issue_ids[0], "--priority", "critical"],
         )
 
         assert result.exit_code == 0

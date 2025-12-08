@@ -6,6 +6,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -177,6 +178,7 @@ def _extract_description_and_objectives(content):
 @click.command("view")
 @click.argument("project_id")
 @click.pass_context
+@require_initialized
 def view_project(ctx: click.Context, project_id: str):
     """Display detailed information about a specific project.
 
@@ -187,12 +189,6 @@ def view_project(ctx: click.Context, project_id: str):
         roadmap project view abc123def
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     project = core.projects.get(project_id)
     if not project:

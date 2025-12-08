@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import ProjectParser
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.infrastructure.logging import (
@@ -168,6 +169,7 @@ def _validate_project_file(roadmap_dir: Path, project_name: str):
     help="Show detailed debug information",
 )
 @click.pass_context
+@require_initialized
 @verbose_output
 @log_command("project_archive", entity_type="project", track_duration=True)
 def archive_project(
@@ -190,9 +192,6 @@ def archive_project(
         roadmap project archive "my-project" --dry-run
     """
     core = ctx.obj["core"]
-
-    if not _check_roadmap_initialized(core):
-        ctx.exit(1)
 
     # Handle --list option
     if list_archived:

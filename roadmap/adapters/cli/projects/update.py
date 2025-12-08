@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,
@@ -274,6 +275,7 @@ def _display_update_results(updated_project, updates):
 @click.option("--clear-start-date", is_flag=True, help="Clear the start date")
 @click.option("--clear-target-date", is_flag=True, help="Clear the target end date")
 @click.pass_context
+@require_initialized
 @log_command("project_update", entity_type="project", track_duration=True)
 def update_project(
     ctx: click.Context,
@@ -300,12 +302,6 @@ def update_project(
         roadmap project update abc123 --owner jane --estimated-hours 120
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         project = core.get_project(project_id)
