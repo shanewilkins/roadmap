@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
-import click
-from rich.console import Console
+import click  # type: ignore[import-not-found]
 
+from roadmap.adapters.cli.cli_confirmations import confirm_action, confirm_override_warning
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import ProjectParser
+from roadmap.common.console import get_console
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.infrastructure.logging import (
     log_command,
@@ -14,7 +15,7 @@ from roadmap.infrastructure.logging import (
     verbose_output,
 )
 
-console = Console()
+console = get_console()
 
 
 def _handle_list_archived_projects(archive_dir: Path):

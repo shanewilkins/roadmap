@@ -101,7 +101,7 @@ def _confirm_restore_all(issues_info, status, force):
     if status:
         console.print(f"\n  Status will be set to: {status}", style="yellow")
 
-    return click.confirm("\nProceed with restore?", default=False)
+    return confirm_action("\nProceed with restore?", default=False)
 
 
 def _restore_issue_file(core, archive_file, active_dir, issue_id, status):
@@ -139,7 +139,6 @@ def _restore_multiple_issues(
         return True
 
     if not _confirm_restore_all(issues_info, status, force):
-        console.print("❌ Cancelled.", style="yellow")
         return False
 
     active_dir.mkdir(parents=True, exist_ok=True)
@@ -212,8 +211,7 @@ def _restore_single_issue(
     if status:
         msg += f" (status will be set to '{status}')"
 
-    if not force and not click.confirm(msg, default=False):
-        console.print("❌ Cancelled.", style="yellow")
+    if not force and not confirm_action(msg, default=False):
         return False
 
     active_dir.mkdir(parents=True, exist_ok=True)
@@ -322,5 +320,11 @@ def restore_issue(
             entity_type="issue",
             entity_id=issue_id,
         )
-        console.print(f"❌ Failed to restore issue: {e}", style="bold red")
+        from roadmap.adapters.cli.cli_error_handlers import display_operation_error
+        display_operation_error(
+            operation="restore",
+            entity_type="issue",
+            entity_id=issue_id or "archive",
+            error=str(e),
+        )
         ctx.exit(1)
