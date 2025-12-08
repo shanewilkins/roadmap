@@ -6,6 +6,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -169,6 +170,7 @@ def _extract_description_and_criteria(content):
 @click.command("view")
 @click.argument("issue_id")
 @click.pass_context
+@require_initialized
 def view_issue(ctx: click.Context, issue_id: str):
     """Display detailed information about a specific issue.
 
@@ -180,20 +182,7 @@ def view_issue(ctx: click.Context, issue_id: str):
     """
     core = ctx.obj["core"]
 
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
-
-    issue = core.issues.get(issue_id)
-    if not issue:
-        console.print(f"❌ Issue '{issue_id}' not found.", style="bold red")
-        console.print(
-            "\n💡 Tip: Use 'roadmap issue list' to see all available issues.",
-            style="dim",
-        )
-        ctx.exit(1)
+    issue = ensure_entity_exists(core, "issue", issue_id)
 
     # Display header
     header = _build_issue_header(issue)

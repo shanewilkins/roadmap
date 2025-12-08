@@ -8,6 +8,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
@@ -138,6 +139,7 @@ def _display_close_success(
 )
 @click.pass_context
 @log_command("issue_close", entity_type="issue", track_duration=True)
+@require_initialized
 def close_issue(
     ctx: click.Context,
     issue_id: str,
@@ -153,18 +155,9 @@ def close_issue(
     """
     core = ctx.obj["core"]
 
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
-
     try:
         # Check if issue exists
-        issue = core.issues.get(issue_id)
-        if not issue:
-            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            return
+        ensure_entity_exists(core, "issue", issue_id)
 
         # Build update kwargs
         update_kwargs, end_date = _build_update_kwargs(record_time, date)

@@ -6,6 +6,7 @@ with optional Git branch creation.
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.services import StartIssueService
 from roadmap.infrastructure.logging import (
@@ -36,6 +37,7 @@ console = get_console()
 )
 @click.pass_context
 @log_command("issue_start", entity_type="issue", track_duration=True)
+@require_initialized
 def start_issue(
     ctx: click.Context,
     issue_id: str,
@@ -50,12 +52,6 @@ def start_issue(
     Syntactic sugar for: roadmap issue update <ID> --status in-progress
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     try:
         # Create start issue service

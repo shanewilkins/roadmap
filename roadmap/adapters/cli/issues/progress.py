@@ -5,6 +5,7 @@ This command is syntactic sugar for: roadmap issue update <ID> --progress <PERCE
 
 import click
 
+from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
@@ -21,18 +22,13 @@ console = get_console()
 @click.argument("percentage", type=float)
 @click.pass_context
 @log_command("issue_progress", entity_type="issue", track_duration=True)
+@require_initialized
 def update_progress(ctx: click.Context, issue_id: str, percentage: float):
     """Update the progress percentage for an issue (0-100).
 
     Syntactic sugar for: roadmap issue update <ID> --progress <PERCENT>
     """
     core = ctx.obj["core"]
-
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
 
     if not 0 <= percentage <= 100:
         console.print(
@@ -42,10 +38,7 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
 
     try:
         # Get the issue
-        issue = core.issues.get(issue_id)
-        if not issue:
-            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            return
+        issue = ensure_entity_exists(core, "issue", issue_id)
 
         # Update progress via core.update_issue
         with track_database_operation("update", "issue", entity_id=issue_id):

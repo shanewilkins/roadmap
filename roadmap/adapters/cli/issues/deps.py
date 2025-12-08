@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -17,30 +18,17 @@ def deps():
 @click.argument("issue_id")
 @click.argument("dependency_id")
 @click.pass_context
+@require_initialized
 def add_dependency(ctx: click.Context, issue_id: str, dependency_id: str):
     """Add a dependency to an issue."""
     core = ctx.obj["core"]
 
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
-
     try:
         # Get the issue
-        issue = core.issues.get(issue_id)
-        if not issue:
-            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-            return
+        issue = ensure_entity_exists(core, "issue", issue_id)
 
         # Check if dependency issue exists
-        dependency_issue = core.issues.get(dependency_id)
-        if not dependency_issue:
-            console.print(
-                f"❌ Dependency issue not found: {dependency_id}", style="bold red"
-            )
-            return
+        dependency_issue = ensure_entity_exists(core, "issue", dependency_id)
 
         # Add dependency
         current_deps = issue.depends_on or []
