@@ -4,6 +4,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -94,17 +95,6 @@ def _close_milestone_in_db(core, milestone_name: str) -> bool:
         return core.milestones.update(milestone_name, status=MilestoneStatus.CLOSED)
 
 
-def _display_close_success(milestone_name: str, total_issues: int) -> None:
-    """Display success message for closed milestone.
-
-    Args:
-        milestone_name: Name of closed milestone
-        total_issues: Total number of issues
-    """
-    console.print(f"✅ Closed milestone: {milestone_name}", style="bold green")
-    console.print(f"   {total_issues} completed issue(s)", style="green")
-
-
 @click.command("close")
 @click.argument("milestone_name")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
@@ -123,10 +113,11 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
         # Check if milestone exists
         milestone = core.milestones.get(milestone_name)
         if not milestone:
-            console.print(
-                f"❌ Failed to close milestone: {milestone_name} not found",
-                style="bold red",
+            lines = format_operation_failure(
+                "Close", milestone_name, "Milestone not found"
             )
+            for line in lines:
+                console.print(line, style="bold red")
             return
 
         # Get all issues in this milestone
@@ -149,12 +140,18 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
         success = _close_milestone_in_db(core, milestone_name)
 
         if success:
-            _display_close_success(milestone_name, len(all_issues))
-        else:
-            console.print(
-                f"❌ Failed to close milestone: {milestone_name}",
-                style="bold red",
+            extra_details = {"Completed issues": str(len(all_issues))}
+            lines = format_operation_success(
+                "✅", "Closed", milestone_name, "", None, extra_details
             )
+            for line in lines:
+                console.print(line, style="green")
+        else:
+            lines = format_operation_failure(
+                "Close", milestone_name, "Failed to update status"
+            )
+            for line in lines:
+                console.print(line, style="bold red")
 
     except Exception as e:
         log_error_with_context(
@@ -163,4 +160,6 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
             entity_type="milestone",
             additional_context={"milestone_name": milestone_name},
         )
-        console.print(f"❌ Failed to close milestone: {e}", style="bold red")
+        lines = format_operation_failure("Close", milestone_name, str(e))
+        for line in lines:
+            console.print(line, style="bold red")

@@ -4,6 +4,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -28,15 +29,18 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
             success = core.issues.assign_to_milestone(issue_id, milestone_name)
 
         if success:
-            console.print(
-                f"✅ Assigned issue {issue_id} to milestone '{milestone_name}'",
-                style="bold green",
+            extra_details = {"Milestone": milestone_name}
+            lines = format_operation_success(
+                "✅", "Assigned", "", issue_id, None, extra_details
             )
+            for line in lines:
+                console.print(line, style="green")
         else:
-            console.print(
-                f"❌ Failed to assign issue {issue_id} to milestone '{milestone_name}' - issue or milestone not found",
-                style="bold red",
+            lines = format_operation_failure(
+                "Assign", issue_id, "Issue or milestone not found"
             )
+            for line in lines:
+                console.print(line, style="bold red")
     except Exception as e:
         log_error_with_context(
             e,
@@ -44,4 +48,6 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
             entity_type="milestone",
             additional_context={"issue_id": issue_id, "milestone_name": milestone_name},
         )
-        console.print(f"❌ Failed to assign issue: {e}", style="bold red")
+        lines = format_operation_failure("Assign", issue_id, str(e))
+        for line in lines:
+            console.print(line, style="bold red")
