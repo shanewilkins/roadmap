@@ -243,7 +243,7 @@ class TestPermissionHandling:
 
     def test_secure_directory_creates_parent_ownership(self):
         """Verify secure directory creation doesn't expose sensitive paths."""
-        with patch("roadmap.common.security.ensure_directory_exists") as mock_ensure:
+        with patch("roadmap.common.file_utils.ensure_directory_exists") as mock_ensure:
             try:
                 create_secure_directory(Path("/test/.roadmap/secure"))
                 # Should not expose full path in logs

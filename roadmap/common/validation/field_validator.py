@@ -35,44 +35,58 @@ class FieldValidator:
         """Validate a field value."""
         result = ValidationResult(field=self.field_name)
 
-        # Check if value is None
+        # Check if value is None first
         if value is None:
             if self.required and not self.allow_none:
                 result.add_error(f"Field '{self.field_name}' is required")
             return result
 
-        # Check required field
+        # Apply all validation rules
+        self._validate_required(value, result)
+        self._validate_enum(value, result)
+        self._validate_pattern(value, result)
+        self._validate_length(value, result)
+        self._validate_custom(value, result)
+
+        return result
+
+    def _validate_required(self, value: Any, result: ValidationResult) -> None:
+        """Validate that required field is not empty."""
         if self.required and (value is None or value == ""):
             result.add_error(f"Field '{self.field_name}' is required")
 
-        # Check enum values
+    def _validate_enum(self, value: Any, result: ValidationResult) -> None:
+        """Validate that value is one of allowed enum values."""
         if self.enum_values is not None and value not in self.enum_values:
             result.add_error(
                 f"Field '{self.field_name}' must be one of: "
                 f"{', '.join(str(v) for v in self.enum_values)}"
             )
 
-        # Check pattern
+    def _validate_pattern(self, value: Any, result: ValidationResult) -> None:
+        """Validate that string value matches pattern."""
         if self.pattern is not None and isinstance(value, str):
             if not self.pattern.match(value):
                 result.add_error(f"Field '{self.field_name}' format is invalid")
 
-        # Check length
-        if isinstance(value, str):
-            if self.min_length is not None and len(value) < self.min_length:
-                result.add_error(
-                    f"Field '{self.field_name}' must be at least {self.min_length} characters"
-                )
+    def _validate_length(self, value: Any, result: ValidationResult) -> None:
+        """Validate string length constraints."""
+        if not isinstance(value, str):
+            return
 
-            if self.max_length is not None and len(value) > self.max_length:
-                result.add_error(
-                    f"Field '{self.field_name}' must be no more than {self.max_length} characters"
-                )
+        if self.min_length is not None and len(value) < self.min_length:
+            result.add_error(
+                f"Field '{self.field_name}' must be at least {self.min_length} characters"
+            )
 
-        # Custom validator
+        if self.max_length is not None and len(value) > self.max_length:
+            result.add_error(
+                f"Field '{self.field_name}' must be no more than {self.max_length} characters"
+            )
+
+    def _validate_custom(self, value: Any, result: ValidationResult) -> None:
+        """Validate using custom validator function."""
         if self.custom_validator is not None:
             is_valid, error_msg = self.custom_validator(value)
             if not is_valid:
                 result.add_error(f"Field '{self.field_name}' {error_msg}")
-
-        return result

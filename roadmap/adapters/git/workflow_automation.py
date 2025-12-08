@@ -167,7 +167,28 @@ class WorkflowAutomation:
         if not hasattr(issue, "git_commits"):
             issue.git_commits = []
 
-        # Track latest progress and completion status
+        # Process commits and extract progress information
+        highest_progress, is_completed = self._process_commits_for_issue(issue, commits)
+
+        # Update issue status and progress based on extracted data
+        updated = self._update_issue_status_and_progress(
+            issue, highest_progress, is_completed
+        )
+
+        if updated:
+            issue_path = self.core.issues_dir / issue.filename
+            IssueParser.save_issue_file(issue, issue_path)
+
+        return updated
+
+    def _process_commits_for_issue(
+        self, issue: Issue, commits: list[GitCommit]
+    ) -> tuple[float | None, bool]:
+        """Process commits for an issue and extract progress and completion status.
+
+        Returns:
+            Tuple of (highest_progress_percentage, is_completed_bool)
+        """
         highest_progress = None
         is_completed = False
 
@@ -176,34 +197,57 @@ class WorkflowAutomation:
             if any(ref.get("hash") == commit.hash for ref in issue.git_commits):
                 continue
 
-            # Extract progress
+            # Extract progress from commit
             progress = commit.extract_progress_info()
             if progress is not None:
                 if highest_progress is None or progress > highest_progress:
                     highest_progress = progress
 
-            # Check for completion keywords
-            if any(
-                keyword in commit.message.lower()
-                for keyword in ["closes roadmap:", "fixes roadmap:"]
-            ):
+            # Check for completion keywords in commit message
+            if self._is_completion_commit(commit):
                 is_completed = True
-                # Don't overwrite progress - completion means 100% but preserve highest explicit progress
 
-            # Add commit reference
-            commit_ref = {
-                "hash": commit.hash,
-                "message": commit.message,
-                "date": commit.date.isoformat(),
-                "progress": progress,
-                "completion": is_completed
-                and commit == commits[-1],  # Only mark last commit as completion
-            }
+            # Build and add commit reference
+            self._add_commit_reference_to_issue(
+                issue, commit, progress, is_completed, commits
+            )
 
-            issue.git_commits.append(commit_ref)
-            updated = True
+        return highest_progress, is_completed
 
-        # Update issue status and progress
+    def _is_completion_commit(self, commit: GitCommit) -> bool:
+        """Check if commit contains completion keywords."""
+        completion_keywords = ["closes roadmap:", "fixes roadmap:"]
+        return any(keyword in commit.message.lower() for keyword in completion_keywords)
+
+    def _add_commit_reference_to_issue(
+        self,
+        issue: Issue,
+        commit: GitCommit,
+        progress: int | None,
+        is_completed: bool,
+        commits: list[GitCommit],
+    ):
+        """Add a commit reference to the issue's git_commits list."""
+        commit_ref = {
+            "hash": commit.hash,
+            "message": commit.message,
+            "date": commit.date.isoformat(),
+            "progress": progress,
+            "completion": is_completed and commit == commits[-1],
+        }
+        issue.git_commits.append(commit_ref)
+
+    def _update_issue_status_and_progress(
+        self, issue: Issue, highest_progress: int | None, is_completed: bool
+    ) -> bool:
+        """Update issue status and progress based on extracted data.
+
+        Returns:
+            True if issue was updated, False otherwise.
+        """
+        updated = False
+
+        # Update progress percentage
         if highest_progress is not None:
             issue.progress_percentage = highest_progress
             updated = True
@@ -212,6 +256,7 @@ class WorkflowAutomation:
             issue.progress_percentage = 100.0
             updated = True
 
+        # Update status based on completion and progress
         if is_completed and issue.status != Status.CLOSED:
             issue.status = Status.CLOSED
             issue.completed_date = datetime.now().isoformat()
@@ -219,9 +264,5 @@ class WorkflowAutomation:
         elif highest_progress and highest_progress > 0 and issue.status == Status.TODO:
             issue.status = Status.IN_PROGRESS
             updated = True
-
-        if updated:
-            issue_path = self.core.issues_dir / issue.filename
-            IssueParser.save_issue_file(issue, issue_path)
 
         return updated

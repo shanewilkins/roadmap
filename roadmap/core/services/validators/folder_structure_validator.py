@@ -18,20 +18,46 @@ class FolderStructureValidator(BaseValidator):
         return "folder_structure"
 
     @staticmethod
-    def scan_for_folder_structure_issues(
-        issues_dir: Path, core
-    ) -> dict[str, list[dict]]:
-        """Verify issues are in correct milestone folders.
+    def _check_root_issues(issues_dir: Path, core, misplaced_list: list) -> None:
+        """Check root level issues for milestone placement issues."""
+        for issue_file in issues_dir.glob("*.md"):
+            if ".backup" in issue_file.name:
+                continue
 
-        Returns a dict of potential issues:
-        - 'misplaced': Issues in root when they belong in a milestone subfolder
-        - 'orphaned': Issues with milestone assignments but not in milestone folder
-        """
-        potential_issues = {"misplaced": [], "orphaned": []}
+            try:
+                issue_id = extract_issue_id(issue_file.name)
+                if not issue_id:
+                    continue
 
-        try:
-            # Check root level issues
-            for issue_file in issues_dir.glob("*.md"):
+                issue = core.issue_service.get_issue(issue_id)
+                if issue and issue.milestone:
+                    milestone_folder = issues_dir / issue.milestone
+                    if milestone_folder.exists():
+                        misplaced_list.append(
+                            {
+                                "issue_id": issue.id,
+                                "title": issue.title,
+                                "current_location": str(issue_file),
+                                "assigned_milestone": issue.milestone,
+                                "expected_location": str(
+                                    milestone_folder / issue_file.name
+                                ),
+                            }
+                        )
+            except Exception:
+                pass
+
+    @staticmethod
+    def _check_milestone_folders(issues_dir: Path, core, orphaned_list: list) -> None:
+        """Check milestone folders for orphaned issues."""
+        for milestone_folder in issues_dir.glob("*/"):
+            if not milestone_folder.is_dir() or milestone_folder.name.startswith("."):
+                continue
+
+            if milestone_folder.name == "backlog":
+                continue
+
+            for issue_file in milestone_folder.glob("*.md"):
                 if ".backup" in issue_file.name:
                     continue
 
@@ -41,62 +67,47 @@ class FolderStructureValidator(BaseValidator):
                         continue
 
                     issue = core.issue_service.get_issue(issue_id)
-                    if issue and issue.milestone:
-                        # Root issue has a milestone - should be in milestone folder
-                        milestone_folder = issues_dir / issue.milestone
-                        if milestone_folder.exists():
-                            potential_issues["misplaced"].append(
-                                {
-                                    "issue_id": issue.id,
-                                    "title": issue.title,
-                                    "current_location": str(issue_file),
-                                    "assigned_milestone": issue.milestone,
-                                    "expected_location": str(
-                                        milestone_folder / issue_file.name
-                                    ),
-                                }
-                            )
+                    if issue and not issue.milestone:
+                        orphaned_list.append(
+                            {
+                                "issue_id": issue.id,
+                                "title": issue.title,
+                                "location": str(issue_file),
+                                "folder": milestone_folder.name,
+                            }
+                        )
                 except Exception:
-                    # Skip files that can't be parsed
                     pass
 
-            # Check milestone folders for issues without milestone assignments or in wrong folders
-            for milestone_folder in issues_dir.glob("*/"):
-                if milestone_folder.is_dir() and not milestone_folder.name.startswith(
-                    "."
-                ):
-                    # Skip backlog folder - those issues are supposed to have no milestone
-                    if milestone_folder.name == "backlog":
-                        continue
+    @staticmethod
+    def scan_for_folder_structure_issues(
+        issues_dir: Path, core
+    ) -> dict[str, list[dict]]:
+        """Verify issues are in correct milestone folders.
 
-                    for issue_file in milestone_folder.glob("*.md"):
-                        if ".backup" in issue_file.name:
-                            continue
+        Returns a dict of potential issues:
+        - 'misplaced': Issues in root when they belong in a milestone subfolder
+        - 'orphaned': Issues with milestone assignments but not in milestone folder
+        """
+        misplaced = []
+        orphaned = []
 
-                        try:
-                            issue_id = extract_issue_id(issue_file.name)
-                            if not issue_id:
-                                continue
-
-                            issue = core.issue_service.get_issue(issue_id)
-                            if issue and not issue.milestone:
-                                # Issue in milestone folder but has no milestone assigned
-                                potential_issues["orphaned"].append(
-                                    {
-                                        "issue_id": issue.id,
-                                        "title": issue.title,
-                                        "location": str(issue_file),
-                                        "folder": milestone_folder.name,
-                                    }
-                                )
-                        except Exception:
-                            # Skip files that can't be parsed
-                            pass
-
+        try:
+            FolderStructureValidator._check_root_issues(issues_dir, core, misplaced)
+            FolderStructureValidator._check_milestone_folders(
+                issues_dir, core, orphaned
+            )
         except Exception as e:
             logger.error("folder_structure_check_failed", error=str(e))
 
-        return {k: v for k, v in potential_issues.items() if v}
+        return (
+            {
+                "misplaced": misplaced,
+                "orphaned": orphaned,
+            }
+            if (misplaced or orphaned)
+            else {}
+        )
 
     @staticmethod
     def perform_check() -> tuple[str, str]:

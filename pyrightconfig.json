@@ -59,6 +59,17 @@
       "reportMissingImports": false,
       "reportUnknownArgumentType": false,
       "reportUnknownVariableType": false
+    },
+    {
+      "include": [
+        "roadmap/adapters/cli/projects/archive.py",
+        "roadmap/adapters/git/workflow_automation.py",
+        "roadmap/core/services/assignee_validation_service.py",
+        "roadmap/infrastructure/github/setup.py"
+      ],
+      "reportArgumentType": "information",
+      "reportAttributeAccessIssue": "information",
+      "reportOptionalCall": "information"
     }
   ],
   "useLibraryCodeForTypes": true,

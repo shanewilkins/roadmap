@@ -180,6 +180,59 @@ class AssigneeValidationStrategy:
         self.identity_validator = IdentitySystemValidator(root_path)
         self.local_validator = LocalValidator()
 
+    def _validate_empty(self, assignee: str) -> tuple[bool, str, str] | None:
+        """Check if assignee is empty."""
+        if not assignee or not assignee.strip():
+            return False, "Assignee cannot be empty", ""
+        return None
+
+    def _try_identity_validation(self, assignee: str) -> tuple[bool, str, str] | None:
+        """Try validating with identity system."""
+        identity_result = self.identity_validator.validate(assignee)
+        if identity_result.is_valid:
+            return True, "", identity_result.canonical_id
+        return None
+
+    def _try_identity_unavailable_path(
+        self, assignee: str, identity_result
+    ) -> tuple[bool, str, str] | None:
+        """Handle case where identity system is unavailable."""
+        if identity_result.canonical_id != "identity-unavailable":
+            return None
+
+        if self.github_config:
+            token, owner, repo = self.github_config
+            if token and owner and repo:
+                github_result = self._validate_with_github(assignee)
+                if github_result.is_valid:
+                    return True, "", github_result.canonical_id
+                else:
+                    return False, github_result.message, ""
+
+        local_result = self.local_validator.validate(assignee)
+        if local_result.is_valid:
+            return True, "", local_result.canonical_id
+        else:
+            return False, local_result.message, ""
+
+    def _try_identity_failed_path(self, assignee: str, validation_mode: str):
+        """Try fallback validation when identity system failed."""
+        if self._should_use_github_validation(validation_mode):
+            github_result = self._validate_with_github(assignee)
+            if github_result.is_valid:
+                return True, "", github_result.canonical_id
+            elif validation_mode == "github-only":
+                return False, github_result.message, ""
+
+        if self._should_use_local_validation(validation_mode):
+            local_result = self.local_validator.validate(assignee)
+            if local_result.is_valid:
+                return True, "", local_result.canonical_id
+            else:
+                return False, local_result.message, ""
+
+        return None
+
     def validate(self, assignee: str) -> tuple[bool, str, str]:
         """Validate assignee using appropriate strategy.
 
@@ -189,59 +242,33 @@ class AssigneeValidationStrategy:
         Returns:
             Tuple of (is_valid, error_message, canonical_id)
         """
-        if not assignee or not assignee.strip():
-            return False, "Assignee cannot be empty", ""
+        # Check for empty assignee
+        empty_result = self._validate_empty(assignee)
+        if empty_result is not None:
+            return empty_result
 
         assignee = assignee.strip()
 
-        # Try identity management system first
+        # Try identity system first
         identity_result = self.identity_validator.validate(assignee)
+        identity_valid = self._try_identity_validation(assignee)
+        if identity_valid is not None:
+            return identity_valid
 
-        if identity_result.is_valid:
-            return True, "", identity_result.canonical_id
-
-        # Check if identity system is unavailable (not configured)
-        identity_unavailable = identity_result.canonical_id == "identity-unavailable"
-
-        if identity_unavailable:
-            # Identity system not available - try other validation methods
-            # First try GitHub if configured
-            if self.github_config:
-                token, owner, repo = self.github_config
-                if token and owner and repo:
-                    github_result = self._validate_with_github(assignee)
-                    if github_result.is_valid:
-                        return True, "", github_result.canonical_id
-                    else:
-                        # GitHub validation failed, return the error
-                        return False, github_result.message, ""
-
-            # No GitHub or GitHub failed - allow local validation
-            local_result = self.local_validator.validate(assignee)
-            if local_result.is_valid:
-                return True, "", local_result.canonical_id
-            else:
-                return False, local_result.message, ""
+        # Handle identity unavailable case
+        identity_unavailable_result = self._try_identity_unavailable_path(
+            assignee, identity_result
+        )
+        if identity_unavailable_result is not None:
+            return identity_unavailable_result
 
         # Identity system is available but validation failed
-        # The canonical_id field contains the validation mode
         validation_mode = identity_result.canonical_id or "local-only"
 
-        # Try GitHub validation if configured and mode allows it
-        if self._should_use_github_validation(validation_mode):
-            github_result = self._validate_with_github(assignee)
-            if github_result.is_valid:
-                return True, "", github_result.canonical_id
-            elif validation_mode == "github-only":
-                return False, github_result.message, ""
-
-        # Try local validation if mode allows it
-        if self._should_use_local_validation(validation_mode):
-            local_result = self.local_validator.validate(assignee)
-            if local_result.is_valid:
-                return True, "", local_result.canonical_id
-            else:
-                return False, local_result.message, ""
+        # Try fallback validation paths
+        fallback_result = self._try_identity_failed_path(assignee, validation_mode)
+        if fallback_result is not None:
+            return fallback_result
 
         # No fallback available, return identity system result
         return False, identity_result.message, ""

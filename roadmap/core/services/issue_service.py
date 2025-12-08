@@ -106,6 +106,43 @@ class IssueService:
 
         return issue
 
+    def _matches_all_filters(
+        self,
+        issue: Issue,
+        milestone: str | None,
+        status: Status | None,
+        priority: Priority | None,
+        issue_type: IssueType | None,
+        assignee: str | None,
+    ) -> bool:
+        """Check if issue matches all provided filter criteria."""
+        if milestone and issue.milestone != milestone:
+            return False
+        if status and issue.status != status:
+            return False
+        if priority and issue.priority != priority:
+            return False
+        if issue_type and issue.issue_type != issue_type:
+            return False
+        if assignee and issue.assignee != assignee:
+            return False
+        return True
+
+    def _get_priority_order(self) -> dict:
+        """Get priority ordering for sorting."""
+        return {
+            Priority.CRITICAL: 0,
+            Priority.HIGH: 1,
+            Priority.MEDIUM: 2,
+            Priority.LOW: 3,
+        }
+
+    def _sort_issues_by_priority_and_date(self, issues: list[Issue]) -> list[Issue]:
+        """Sort issues by priority then creation date."""
+        priority_order = self._get_priority_order()
+        issues.sort(key=lambda x: (priority_order.get(x.priority, 999), x.created))
+        return issues
+
     def list_issues(
         self,
         milestone: str | None = None,
@@ -134,32 +171,16 @@ class IssueService:
         )
 
         # Apply filters
-        filtered_issues = []
-        for issue in issues:
-            if milestone and issue.milestone != milestone:
-                continue
-            if status and issue.status != status:
-                continue
-            if priority and issue.priority != priority:
-                continue
-            if issue_type and issue.issue_type != issue_type:
-                continue
-            if assignee and issue.assignee != assignee:
-                continue
-            filtered_issues.append(issue)
+        filtered_issues = [
+            issue
+            for issue in issues
+            if self._matches_all_filters(
+                issue, milestone, status, priority, issue_type, assignee
+            )
+        ]
 
         # Sort by priority then by creation date
-        priority_order = {
-            Priority.CRITICAL: 0,
-            Priority.HIGH: 1,
-            Priority.MEDIUM: 2,
-            Priority.LOW: 3,
-        }
-        filtered_issues.sort(
-            key=lambda x: (priority_order.get(x.priority, 999), x.created)
-        )
-
-        return filtered_issues
+        return self._sort_issues_by_priority_and_date(filtered_issues)
 
     def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID.

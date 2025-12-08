@@ -9,6 +9,123 @@ from roadmap.infrastructure.logging import verbose_output
 console = get_console()
 
 
+def _parse_project_metadata(file_path):
+    """Parse project metadata from markdown file."""
+    try:
+        content = file_path.read_text()
+        if not content.startswith("---"):
+            return None
+
+        yaml_end = content.find("---", 3)
+        if yaml_end == -1:
+            return None
+
+        import yaml
+
+        yaml_content = content[3:yaml_end]
+        return yaml.safe_load(yaml_content)
+    except Exception:
+        return None
+
+
+def _apply_status_filter(metadata, status):
+    """Check if project matches status filter."""
+    if not status:
+        return True
+    return metadata.get("status") == status
+
+
+def _apply_owner_filter(metadata, owner):
+    """Check if project matches owner filter."""
+    if not owner:
+        return True
+    return metadata.get("owner") == owner
+
+
+def _apply_priority_filter(metadata, priority):
+    """Check if project matches priority filter."""
+    if not priority:
+        return True
+    return metadata.get("priority") == priority
+
+
+def _apply_overdue_filter(metadata):
+    """Check if project is overdue."""
+    from datetime import datetime
+
+    target_end = metadata.get("target_end_date")
+    if not target_end:
+        return False
+
+    try:
+        if isinstance(target_end, str):
+            end_date = datetime.fromisoformat(target_end.replace("Z", "+00:00"))
+        else:
+            end_date = target_end
+
+        end_date = end_date.replace(tzinfo=None) if end_date.tzinfo else end_date
+        now = datetime.now()
+
+        project_status = metadata.get("status", "")
+        if project_status in ["completed", "cancelled"]:
+            return False
+
+        return end_date < now
+    except (ValueError, AttributeError):
+        return False
+
+
+def _filter_projects(projects, status, owner, priority, overdue):
+    """Apply all filters to project list."""
+    filtered = []
+
+    for metadata in projects:
+        if not _apply_status_filter(metadata, status):
+            continue
+        if not _apply_owner_filter(metadata, owner):
+            continue
+        if not _apply_priority_filter(metadata, priority):
+            continue
+        if overdue and not _apply_overdue_filter(metadata):
+            continue
+
+        filtered.append(metadata)
+
+    return filtered
+
+
+def _extract_project_info(metadata):
+    """Extract displayable project info from metadata."""
+    return {
+        "id": metadata.get("id", "unknown"),
+        "name": metadata.get("name", "Unnamed"),
+        "status": metadata.get("status", "unknown"),
+        "priority": metadata.get("priority", "medium"),
+        "owner": metadata.get("owner", "Unassigned"),
+    }
+
+
+def _build_projects_table(projects):
+    """Build Rich table from project list."""
+    table = Table(title="Projects")
+    table.add_column("ID", style="cyan")
+    table.add_column("Name", style="bold")
+    table.add_column("Status", style="magenta")
+    table.add_column("Priority", style="yellow")
+    table.add_column("Owner", style="green")
+
+    for project in sorted(projects, key=lambda x: x["name"]):
+        table.add_row(
+            project["id"][:8],
+            project["name"],
+            project["status"],
+            project["priority"],
+            project["owner"],
+        )
+
+    return table
+
+
 @click.command("list")
 @click.option(
     "--status",
@@ -61,99 +178,25 @@ def list_projects(
             )
             return
 
-        # Parse and filter projects
-        projects = []
+        # Parse all projects
+        project_metadatas = []
         for file_path in project_files:
-            try:
-                content = file_path.read_text()
-                # Extract YAML frontmatter
-                if content.startswith("---"):
-                    yaml_end = content.find("---", 3)
-                    if yaml_end != -1:
-                        import yaml
+            metadata = _parse_project_metadata(file_path)
+            if metadata:
+                project_metadatas.append(metadata)
+            else:
+                console.print(f"⚠️  Error reading {file_path.name}", style="yellow")
 
-                        yaml_content = content[3:yaml_end]
-                        metadata = yaml.safe_load(yaml_content)
+        # Apply filters
+        filtered = _filter_projects(project_metadatas, status, owner, priority, overdue)
 
-                        # Apply filters
-                        if status and metadata.get("status") != status:
-                            continue
-                        if owner and metadata.get("owner") != owner:
-                            continue
-                        if priority and metadata.get("priority") != priority:
-                            continue
-
-                        # Apply overdue filter
-                        if overdue:
-                            from datetime import datetime
-
-                            target_end = metadata.get("target_end_date")
-                            if target_end:
-                                try:
-                                    # Parse the date (handle various formats)
-                                    if isinstance(target_end, str):
-                                        end_date = datetime.fromisoformat(
-                                            target_end.replace("Z", "+00:00")
-                                        )
-                                    else:
-                                        end_date = target_end
-
-                                    # Normalize timezone for comparison
-                                    end_date = (
-                                        end_date.replace(tzinfo=None)
-                                        if end_date.tzinfo
-                                        else end_date
-                                    )
-                                    now = datetime.now()
-
-                                    # Skip if not overdue or already completed
-                                    project_status = metadata.get("status", "")
-                                    if end_date >= now or project_status in [
-                                        "completed",
-                                        "cancelled",
-                                    ]:
-                                        continue
-                                except (ValueError, AttributeError):
-                                    # Skip projects with invalid dates
-                                    continue
-                            else:
-                                # Skip projects without target_end_date when filtering for overdue
-                                continue
-
-                        projects.append(
-                            {
-                                "id": metadata.get("id", "unknown"),
-                                "name": metadata.get("name", "Unnamed"),
-                                "status": metadata.get("status", "unknown"),
-                                "priority": metadata.get("priority", "medium"),
-                                "owner": metadata.get("owner", "Unassigned"),
-                                "file": file_path.name,
-                            }
-                        )
-            except Exception as e:
-                console.print(f"⚠️  Error reading {file_path.name}: {e}", style="yellow")
-                continue
-
-        if not projects:
+        if not filtered:
             console.print("No projects match the specified filters.", style="yellow")
             return
 
-        # Display projects in a table
-        table = Table(title="Projects")
-        table.add_column("ID", style="cyan")
-        table.add_column("Name", style="bold")
-        table.add_column("Status", style="magenta")
-        table.add_column("Priority", style="yellow")
-        table.add_column("Owner", style="green")
-
-        for project in sorted(projects, key=lambda x: x["name"]):
-            table.add_row(
-                project["id"][:8],
-                project["name"],
-                project["status"],
-                project["priority"],
-                project["owner"],
-            )
+        # Extract display info and build table
+        projects = [_extract_project_info(m) for m in filtered]
+        table = _build_projects_table(projects)
 
         console.print(table)
         console.print(f"\nFound {len(projects)} project(s)")

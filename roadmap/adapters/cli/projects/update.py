@@ -14,6 +14,221 @@ from roadmap.infrastructure.logging import (
 console = get_console()
 
 
+def _validate_priority(priority):
+    """Validate and convert priority string to enum."""
+    from roadmap.core.domain import Priority
+
+    try:
+        return Priority(priority.upper())
+    except ValueError:
+        console.print(
+            f"❌ Invalid priority: {priority}. Use: critical, high, medium, low",
+            style="bold red",
+        )
+        return None
+
+
+def _validate_status(status):
+    """Validate and convert status string to enum."""
+    from roadmap.core.domain.project import ProjectStatus
+
+    status_map = {
+        "planning": ProjectStatus.PLANNING,
+        "active": ProjectStatus.ACTIVE,
+        "on-hold": ProjectStatus.ON_HOLD,
+        "completed": ProjectStatus.COMPLETED,
+        "cancelled": ProjectStatus.CANCELLED,
+    }
+
+    if status not in status_map:
+        console.print(
+            f"❌ Invalid status: {status}",
+            style="bold red",
+        )
+        return None
+
+    return status_map[status]
+
+
+def _parse_date(date_str, field_name):
+    """Parse date string in YYYY-MM-DD format."""
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        console.print(
+            f"❌ Invalid {field_name} format. Use YYYY-MM-DD (e.g., 2025-12-31)",
+            style="bold red",
+        )
+        return None
+
+
+def _add_basic_updates(updates, name, description, owner, estimated_hours):
+    """Add basic field updates to updates dict."""
+    if name:
+        updates["name"] = name
+    if description:
+        updates["description"] = description
+    if owner:
+        updates["owner"] = owner
+    if estimated_hours is not None:
+        updates["estimated_hours"] = estimated_hours
+
+
+def _add_priority_status_updates(updates, priority, status):
+    """Add priority and status updates with validation."""
+    if priority:
+        priority_enum = _validate_priority(priority)
+        if priority_enum is None:
+            return False
+        updates["priority"] = priority_enum
+
+    if status:
+        status_enum = _validate_status(status)
+        if status_enum is None:
+            return False
+        updates["status"] = status_enum
+
+    return True
+
+
+def _add_date_updates(
+    updates, start_date, target_end_date, clear_start_date, clear_target_date
+):
+    """Add date updates with validation and clearing."""
+    if clear_start_date:
+        updates["start_date"] = None
+    elif start_date:
+        parsed_date = _parse_date(start_date, "start date")
+        if parsed_date is None:
+            return False
+        updates["start_date"] = parsed_date
+
+    if clear_target_date:
+        updates["target_end_date"] = None
+    elif target_end_date:
+        parsed_date = _parse_date(target_end_date, "target end date")
+        if parsed_date is None:
+            return False
+        updates["target_end_date"] = parsed_date
+
+    return True
+
+
+def _add_milestone_updates(updates, add_milestone, remove_milestone, project, core):
+    """Add milestone updates to project."""
+    if not (add_milestone or remove_milestone):
+        return
+
+    current_milestones = set(project.milestones)
+
+    for milestone_name in add_milestone:
+        if not core.get_milestone(milestone_name):
+            console.print(
+                f"⚠️  Warning: Milestone '{milestone_name}' not found, adding anyway",
+                style="yellow",
+            )
+        current_milestones.add(milestone_name)
+
+    for milestone_name in remove_milestone:
+        current_milestones.discard(milestone_name)
+
+    updates["milestones"] = list(current_milestones)
+
+
+def _build_updates_dict(
+    name,
+    description,
+    owner,
+    priority,
+    status,
+    start_date,
+    target_end_date,
+    estimated_hours,
+    clear_start_date,
+    clear_target_date,
+    project,
+    core,
+    add_milestone,
+    remove_milestone,
+):
+    """Build dictionary of updates from provided options."""
+    updates = {}
+
+    _add_basic_updates(updates, name, description, owner, estimated_hours)
+
+    if not _add_priority_status_updates(updates, priority, status):
+        return None
+
+    if not _add_date_updates(
+        updates, start_date, target_end_date, clear_start_date, clear_target_date
+    ):
+        return None
+
+    _add_milestone_updates(updates, add_milestone, remove_milestone, project, core)
+
+    return updates
+
+
+def _display_basic_updates(updated_project, updates):
+    """Display basic field updates."""
+    if "description" in updates:
+        console.print(
+            f"   Description: {updated_project.description[:60]}...", style="cyan"
+        )
+
+    if "owner" in updates:
+        console.print(f"   Owner: {updated_project.owner}", style="cyan")
+
+    if "priority" in updates:
+        console.print(f"   Priority: {updated_project.priority.value}", style="cyan")
+
+    if "status" in updates:
+        console.print(f"   Status: {updated_project.status.value}", style="cyan")
+
+    if "estimated_hours" in updates:
+        console.print(
+            f"   Estimated Hours: {updated_project.estimated_hours}", style="cyan"
+        )
+
+
+def _display_date_updates(updated_project, updates):
+    """Display date field updates."""
+    if "start_date" in updates:
+        if updated_project.start_date:
+            console.print(
+                f"   Start Date: {updated_project.start_date.strftime('%Y-%m-%d')}",
+                style="cyan",
+            )
+        else:
+            console.print("   Start Date: Cleared", style="dim")
+
+    if "target_end_date" in updates:
+        if updated_project.target_end_date:
+            console.print(
+                f"   Target End Date: {updated_project.target_end_date.strftime('%Y-%m-%d')}",
+                style="cyan",
+            )
+        else:
+            console.print("   Target End Date: Cleared", style="dim")
+
+
+def _display_milestone_updates(updated_project, updates):
+    """Display milestone updates."""
+    if "milestones" in updates:
+        console.print(
+            f"   Milestones ({len(updated_project.milestones)}): {', '.join(updated_project.milestones)}",
+            style="cyan",
+        )
+
+
+def _display_update_results(updated_project, updates):
+    """Display formatted results of project update."""
+    console.print(f"✅ Updated project: {updated_project.name}", style="bold green")
+    _display_basic_updates(updated_project, updates)
+    _display_date_updates(updated_project, updates)
+    _display_milestone_updates(updated_project, updates)
+
+
 @click.command("update")
 @click.argument("project_id")
 @click.option("--name", help="Update project name")
@@ -93,103 +308,30 @@ def update_project(
         return
 
     try:
-        # Check if project exists
         project = core.get_project(project_id)
         if not project:
             console.print(f"❌ Project not found: {project_id}", style="bold red")
             return
 
-        # Build update dict
-        updates = {}
+        updates = _build_updates_dict(
+            name,
+            description,
+            owner,
+            priority,
+            status,
+            start_date,
+            target_end_date,
+            estimated_hours,
+            clear_start_date,
+            clear_target_date,
+            project,
+            core,
+            add_milestone,
+            remove_milestone,
+        )
 
-        if name:
-            updates["name"] = name
-
-        if description:
-            updates["description"] = description
-
-        if owner:
-            updates["owner"] = owner
-
-        if priority:
-            from roadmap.core.domain import Priority
-
-            try:
-                updates["priority"] = Priority(priority.upper())
-            except ValueError:
-                console.print(
-                    f"❌ Invalid priority: {priority}. Use: critical, high, medium, low",
-                    style="bold red",
-                )
-                return
-
-        if status:
-            from roadmap.core.domain.project import ProjectStatus
-
-            try:
-                # Map status to enum
-                status_map = {
-                    "planning": ProjectStatus.PLANNING,
-                    "active": ProjectStatus.ACTIVE,
-                    "on-hold": ProjectStatus.ON_HOLD,
-                    "completed": ProjectStatus.COMPLETED,
-                    "cancelled": ProjectStatus.CANCELLED,
-                }
-                updates["status"] = status_map[status]
-            except KeyError:
-                console.print(
-                    f"❌ Invalid status: {status}",
-                    style="bold red",
-                )
-                return
-
-        if estimated_hours is not None:
-            updates["estimated_hours"] = estimated_hours
-
-        # Handle date updates
-        if clear_start_date:
-            updates["start_date"] = None
-        elif start_date:
-            try:
-                parsed_date = datetime.strptime(start_date, "%Y-%m-%d")
-                updates["start_date"] = parsed_date
-            except ValueError:
-                console.print(
-                    "❌ Invalid start date format. Use YYYY-MM-DD (e.g., 2025-12-31)",
-                    style="bold red",
-                )
-                return
-
-        if clear_target_date:
-            updates["target_end_date"] = None
-        elif target_end_date:
-            try:
-                parsed_date = datetime.strptime(target_end_date, "%Y-%m-%d")
-                updates["target_end_date"] = parsed_date
-            except ValueError:
-                console.print(
-                    "❌ Invalid target end date format. Use YYYY-MM-DD (e.g., 2025-12-31)",
-                    style="bold red",
-                )
-                return
-
-        # Handle milestone updates
-        if add_milestone or remove_milestone:
-            current_milestones = set(project.milestones)
-
-            for milestone_name in add_milestone:
-                # Verify milestone exists
-                if not core.get_milestone(milestone_name):
-                    console.print(
-                        f"⚠️  Warning: Milestone '{milestone_name}' not found, adding anyway",
-                        style="yellow",
-                    )
-                current_milestones.add(milestone_name)
-
-            for milestone_name in remove_milestone:
-                current_milestones.discard(milestone_name)
-
-            updates["milestones"] = list(current_milestones)
+        if updates is None:
+            return
 
         if not updates:
             console.print("❌ No updates specified", style="bold red")
@@ -199,7 +341,6 @@ def update_project(
             )
             return
 
-        # Update the project
         with track_database_operation(
             "update", "project", entity_id=project_id, warn_threshold_ms=2000
         ):
@@ -211,53 +352,7 @@ def update_project(
             )
             return
 
-        # Display success message with updated values
-        console.print(f"✅ Updated project: {updated_project.name}", style="bold green")
-
-        if "description" in updates:
-            console.print(
-                f"   Description: {updated_project.description[:60]}...", style="cyan"
-            )
-
-        if "owner" in updates:
-            console.print(f"   Owner: {updated_project.owner}", style="cyan")
-
-        if "priority" in updates:
-            console.print(
-                f"   Priority: {updated_project.priority.value}", style="cyan"
-            )
-
-        if "status" in updates:
-            console.print(f"   Status: {updated_project.status.value}", style="cyan")
-
-        if "estimated_hours" in updates:
-            console.print(
-                f"   Estimated Hours: {updated_project.estimated_hours}", style="cyan"
-            )
-
-        if "start_date" in updates:
-            if updated_project.start_date:
-                console.print(
-                    f"   Start Date: {updated_project.start_date.strftime('%Y-%m-%d')}",
-                    style="cyan",
-                )
-            else:
-                console.print("   Start Date: Cleared", style="dim")
-
-        if "target_end_date" in updates:
-            if updated_project.target_end_date:
-                console.print(
-                    f"   Target End Date: {updated_project.target_end_date.strftime('%Y-%m-%d')}",
-                    style="cyan",
-                )
-            else:
-                console.print("   Target End Date: Cleared", style="dim")
-
-        if add_milestone or remove_milestone:
-            console.print(
-                f"   Milestones ({len(updated_project.milestones)}): {', '.join(updated_project.milestones)}",
-                style="cyan",
-            )
+        _display_update_results(updated_project, updates)
 
     except Exception as e:
         log_error_with_context(

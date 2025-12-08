@@ -16,6 +16,182 @@ from roadmap.infrastructure.logging import (
 console = Console()
 
 
+def _validate_restore_arguments(project_name, all):
+    """Validate restore arguments."""
+    if not project_name and not all:
+        console.print(
+            "❌ Error: Specify a project name or use --all",
+            style="bold red",
+        )
+        return False
+
+    if project_name and all:
+        console.print(
+            "❌ Error: Cannot specify project name with --all",
+            style="bold red",
+        )
+        return False
+
+    return True
+
+
+def _check_archive_exists(archive_dir):
+    """Check if archive directory exists."""
+    if not archive_dir.exists():
+        console.print("📋 No archived projects found.", style="yellow")
+        return False
+    return True
+
+
+def _get_archived_projects(archive_dir):
+    """Get list of archived projects."""
+    archived_files = list(archive_dir.rglob("*.md"))
+    if not archived_files:
+        console.print("📋 No archived projects to restore.", style="yellow")
+        return None
+
+    projects_info = []
+    for file_path in archived_files:
+        try:
+            project = ProjectParser.parse_project_file(file_path)
+            projects_info.append((file_path, project.id, project.name))
+        except Exception:
+            continue
+
+    return projects_info if projects_info else None
+
+
+def _find_archived_project(archive_dir, project_name):
+    """Find archived project file by name."""
+    for file_path in archive_dir.glob("*.md"):
+        try:
+            project = ProjectParser.parse_project_file(file_path)
+            if project.name == project_name:
+                return file_path
+        except Exception:
+            continue
+    return None
+
+
+def _restore_project_file(core, archive_file, active_dir, project_id):
+    """Restore a single project file."""
+    dest_file = active_dir / archive_file.name
+    archive_file.rename(dest_file)
+
+    try:
+        core.db.mark_project_archived(project_id, archived=False)
+    except Exception as e:
+        console.print(
+            f"⚠️  Warning: Failed to mark project as restored: {e}",
+            style="yellow",
+        )
+
+
+def _restore_multiple_projects(
+    core, archive_dir, active_dir, projects_info, dry_run, force
+):
+    """Restore multiple archived projects."""
+    if dry_run:
+        console.print(
+            f"\n🔍 [DRY RUN] Would restore {len(projects_info)} project(s):\n",
+            style="bold blue",
+        )
+        for _, _, name in projects_info:
+            console.print(f"  • {name}", style="cyan")
+        return True
+
+    if not force:
+        console.print(
+            f"\n⚠️  About to restore {len(projects_info)} archived project(s):",
+            style="bold yellow",
+        )
+        for _, _, name in projects_info:
+            console.print(f"  • {name}", style="cyan")
+
+        if not click.confirm("\nProceed with restore?", default=False):
+            console.print("❌ Cancelled.", style="yellow")
+            return False
+
+    ensure_directory_exists(active_dir)
+    restored_count = 0
+
+    for file_path, project_id, name in projects_info:
+        if file_path.exists():
+            dest_file = active_dir / file_path.name
+            if dest_file.exists():
+                console.print(
+                    f"⚠️  Skipping {name} - already exists in active projects",
+                    style="yellow",
+                )
+                continue
+
+            _restore_project_file(core, file_path, active_dir, project_id)
+            restored_count += 1
+
+    console.print(
+        f"\n✅ Restored {restored_count} project(s) to .roadmap/projects/",
+        style="bold green",
+    )
+    return True
+
+
+def _restore_single_project(
+    core, archive_dir, active_dir, project_name, dry_run, force
+):
+    """Restore a single archived project."""
+    archived_file = _find_archived_project(archive_dir, project_name)
+    if not archived_file:
+        console.print(
+            f"❌ Archived project '{project_name}' not found.",
+            style="bold red",
+        )
+        return False
+
+    try:
+        project = ProjectParser.parse_project_file(archived_file)  # type: ignore[arg-type]
+    except Exception as e:
+        console.print(f"❌ Failed to parse archived project: {e}", style="bold red")
+        return False
+
+    dest_file = active_dir / archived_file.name
+    if dest_file.exists():
+        console.print(
+            f"❌ Project '{project_name}' already exists in active projects.",
+            style="bold red",
+        )
+        return False
+
+    if dry_run:
+        console.print(
+            f"\n🔍 [DRY RUN] Would restore project: {project_name}",
+            style="bold blue",
+        )
+        console.print(
+            f"  Source: .roadmap/archive/projects/{archived_file.name}",
+            style="cyan",
+        )
+        console.print(
+            f"  Destination: .roadmap/projects/{archived_file.name}",
+            style="cyan",
+        )
+        return True
+
+    if not force and not click.confirm(
+        f"Restore project '{project_name}'?", default=False
+    ):
+        console.print("❌ Cancelled.", style="yellow")
+        return False
+
+    ensure_directory_exists(active_dir)
+    _restore_project_file(core, archived_file, active_dir, project.id)
+
+    console.print(
+        f"\n✅ Restored project '{project_name}' to .roadmap/projects/",
+        style="bold green",
+    )
+    return True
+
+
 @click.command()
 @click.argument("project_name", required=False)
 @click.option(
@@ -69,18 +245,7 @@ def restore_project(
         )
         ctx.exit(1)
 
-    if not project_name and not all:
-        console.print(
-            "❌ Error: Specify a project name or use --all",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    if project_name and all:
-        console.print(
-            "❌ Error: Cannot specify project name with --all",
-            style="bold red",
-        )
+    if not _validate_restore_arguments(project_name, all):
         ctx.exit(1)
 
     try:
@@ -88,163 +253,20 @@ def restore_project(
         archive_dir = roadmap_dir / "archive" / "projects"
         active_dir = roadmap_dir / "projects"
 
-        if not archive_dir.exists():
-            console.print(
-                "📋 No archived projects found.",
-                style="yellow",
-            )
+        if not _check_archive_exists(archive_dir):
             return
 
         if all:
-            # Get all archived project files
-            archived_files = list(archive_dir.rglob("*.md"))
-
-            if not archived_files:
-                console.print("📋 No archived projects to restore.", style="yellow")
-                return
-
-            # Parse project names
-            projects_info = []
-            for file_path in archived_files:
-                try:
-                    project = ProjectParser.parse_project_file(file_path)
-                    projects_info.append((file_path, project.id, project.name))
-                except Exception:
-                    continue
-
+            projects_info = _get_archived_projects(archive_dir)
             if not projects_info:
-                console.print("📋 No valid archived projects found.", style="yellow")
                 return
 
-            if dry_run:
-                console.print(
-                    f"\n🔍 [DRY RUN] Would restore {len(projects_info)} project(s):\n",
-                    style="bold blue",
-                )
-                for _, _, name in projects_info:
-                    console.print(f"  • {name}", style="cyan")
-                return
-
-            # Confirm
-            if not force:
-                console.print(
-                    f"\n⚠️  About to restore {len(projects_info)} archived project(s):",
-                    style="bold yellow",
-                )
-                for _, _, name in projects_info:
-                    console.print(f"  • {name}", style="cyan")
-
-                if not click.confirm("\nProceed with restore?", default=False):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            # Restore each project
-            ensure_directory_exists(active_dir)
-            restored_count = 0
-
-            for file_path, project_id, name in projects_info:
-                if file_path.exists():
-                    dest_file = active_dir / file_path.name
-                    if dest_file.exists():
-                        console.print(
-                            f"⚠️  Skipping {name} - already exists in active projects",
-                            style="yellow",
-                        )
-                        continue
-                    file_path.rename(dest_file)
-
-                    # Mark as unarchived in database
-                    try:
-                        core.db.mark_project_archived(project_id, archived=False)
-                    except Exception as e:
-                        console.print(
-                            f"⚠️  Warning: Failed to mark project {name} as restored in database: {e}",
-                            style="yellow",
-                        )
-
-                    restored_count += 1
-
-            console.print(
-                f"\n✅ Restored {restored_count} project(s) to .roadmap/projects/",
-                style="bold green",
+            _restore_multiple_projects(
+                core, archive_dir, active_dir, projects_info, dry_run, force
             )
-
         else:
-            # Restore single project - find it in archive
-            archived_file = None
-            for file_path in archive_dir.glob("*.md"):
-                try:
-                    project = ProjectParser.parse_project_file(file_path)
-                    if project.name == project_name:
-                        archived_file = file_path
-                        break
-                except Exception:
-                    continue
-
-            if not archived_file or not archived_file.exists():
-                console.print(
-                    f"❌ Archived project '{project_name}' not found.",
-                    style="bold red",
-                )
-                ctx.exit(1)
-
-            # Parse to get full info
-            try:
-                project = ProjectParser.parse_project_file(archived_file)  # type: ignore[arg-type]
-            except Exception as e:
-                console.print(
-                    f"❌ Failed to parse archived project: {e}",
-                    style="bold red",
-                )
-                ctx.exit(1)
-
-            # Check if already exists in active
-            dest_file = active_dir / archived_file.name  # type: ignore[union-attr]
-            if dest_file.exists():
-                console.print(
-                    f"❌ Project '{project_name}' already exists in active projects.",
-                    style="bold red",
-                )
-                ctx.exit(1)
-
-            if dry_run:
-                console.print(
-                    f"\n🔍 [DRY RUN] Would restore project: {project_name}",
-                    style="bold blue",
-                )
-                console.print(
-                    f"  Source: .roadmap/archive/projects/{archived_file.name}",  # type: ignore[union-attr]
-                    style="cyan",
-                )
-                console.print(
-                    f"  Destination: .roadmap/projects/{archived_file.name}",  # type: ignore[union-attr]
-                    style="cyan",
-                )
-                return
-
-            # Confirm
-            if not force:
-                if not click.confirm(
-                    f"Restore project '{project_name}'?", default=False
-                ):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            # Perform restore
-            ensure_directory_exists(active_dir)
-            archived_file.rename(dest_file)  # type: ignore[union-attr]
-
-            # Mark as unarchived in database
-            try:
-                core.db.mark_project_archived(project.id, archived=False)
-            except Exception as e:
-                console.print(
-                    f"⚠️  Warning: Failed to mark in database: {e}", style="yellow"
-                )
-
-            console.print(
-                f"\n✅ Restored project '{project_name}' to .roadmap/projects/",
-                style="bold green",
+            _restore_single_project(
+                core, archive_dir, active_dir, project_name, dry_run, force
             )
 
     except Exception as e:

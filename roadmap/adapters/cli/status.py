@@ -83,6 +83,65 @@ def status(ctx: click.Context, verbose: bool) -> None:
         RoadmapStatusPresenter.show_error(str(e))
 
 
+def _extract_check_status(check_result) -> tuple:
+    """Extract status and message from check result in any format.
+
+    Returns:
+        Tuple of (status, message)
+    """
+    if isinstance(check_result, tuple):
+        return check_result
+    return check_result.get("status", HealthStatus.UNHEALTHY), check_result.get(
+        "message", ""
+    )
+
+
+def _get_status_display_info(status_str: str) -> tuple:
+    """Get icon and color for a status string.
+
+    Returns:
+        Tuple of (icon, color_name)
+    """
+    status_map = {
+        "HEALTHY": ("✅", "green"),
+        "DEGRADED": ("⚠️", "yellow"),
+        "UNHEALTHY": ("❌", "red"),
+    }
+    return status_map.get(status_str, ("?", "white"))
+
+
+def _display_check_result(check_name: str, status: str, message: str):
+    """Display a single health check result."""
+    display_name = check_name.replace("_", " ").title()
+    icon, color = _get_status_display_info(status)
+    click.secho(f"{icon} {display_name}: {status}", fg=color)
+    if message:
+        click.echo(f"  {message}")
+
+
+def _determine_overall_health(checks: dict) -> HealthStatus:
+    """Determine overall health status from individual checks.
+
+    Returns:
+        Overall HealthStatus
+    """
+    overall_status = HealthStatus.HEALTHY
+
+    for _check_name, check_result in checks.items():
+        status = (
+            check_result[0]
+            if isinstance(check_result, tuple)
+            else check_result.get("status")
+        )
+
+        if status == HealthStatus.UNHEALTHY:
+            return HealthStatus.UNHEALTHY
+        elif status == HealthStatus.DEGRADED and overall_status == HealthStatus.HEALTHY:
+            overall_status = HealthStatus.DEGRADED
+
+    return overall_status
+
+
 @click.command()
 @click.option(
     "--verbose",
@@ -114,48 +173,12 @@ def health(ctx: click.Context, verbose: bool) -> None:
         # Display results
         click.echo()
         for check_name, check_result in checks.items():
-            # Handle tuple format (status, message)
-            if isinstance(check_result, tuple):
-                status, message = check_result
-            else:
-                status = check_result.get("status", HealthStatus.UNHEALTHY)
-                message = check_result.get("message", "")
-
-            # Format check name and display
-            display_name = check_name.replace("_", " ").title()
-
-            # Map status to display values
+            status, message = _extract_check_status(check_result)
             status_str = status.name if hasattr(status, "name") else str(status)
-            status_map = {
-                "HEALTHY": ("✅", "green"),
-                "DEGRADED": ("⚠️", "yellow"),
-                "UNHEALTHY": ("❌", "red"),
-            }
+            _display_check_result(check_name, status_str, message)
 
-            icon, color = status_map.get(status_str, ("?", "white"))
-            click.secho(f"{icon} {display_name}: {status_str}", fg=color)
-            if message:
-                click.echo(f"  {message}")
-
-        # Determine overall status
-        overall_status = HealthStatus.HEALTHY
-        if checks:
-            for _check_name, check_result in checks.items():
-                status = (
-                    check_result[0]
-                    if isinstance(check_result, tuple)
-                    else check_result.get("status")
-                )
-                if status == HealthStatus.UNHEALTHY:
-                    overall_status = HealthStatus.UNHEALTHY
-                    break
-                elif (
-                    status == HealthStatus.DEGRADED
-                    and overall_status == HealthStatus.HEALTHY
-                ):
-                    overall_status = HealthStatus.DEGRADED
-
-        # Display overall status
+        # Determine and display overall status
+        overall_status = _determine_overall_health(checks)
         presenter.present_overall_health(overall_status)
         log.info("health_check_completed", status=overall_status)
 

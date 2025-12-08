@@ -17,6 +17,231 @@ from roadmap.infrastructure.logging import (
 console = Console()
 
 
+def _show_archived_milestones():
+    """Display list of archived milestones."""
+    roadmap_dir = Path.cwd() / ".roadmap"
+    archive_dir = roadmap_dir / "archive" / "milestones"
+
+    if not archive_dir.exists():
+        console.print("📋 No archived milestones.", style="yellow")
+        return
+
+    archived_files = list(archive_dir.glob("*.md"))
+    if not archived_files:
+        console.print("📋 No archived milestones.", style="yellow")
+        return
+
+    console.print("\n📦 Archived Milestones:\n", style="bold blue")
+    for file_path in archived_files:
+        try:
+            milestone = MilestoneParser.parse_milestone_file(file_path)
+            console.print(
+                f"  • {milestone.name} ({milestone.status.value})", style="cyan"
+            )
+        except Exception:
+            console.print(f"  • {file_path.stem} (parse error)", style="red")
+
+
+def _validate_archive_arguments(milestone_name, all_closed):
+    """Validate archive command arguments."""
+    if not milestone_name and not all_closed:
+        console.print(
+            "❌ Error: Specify a milestone name or use --all-closed",
+            style="bold red",
+        )
+        return False
+
+    if milestone_name and all_closed:
+        console.print(
+            "❌ Error: Cannot specify milestone name with --all-closed",
+            style="bold red",
+        )
+        return False
+
+    return True
+
+
+def _find_milestone_file(roadmap_dir, milestone_name):
+    """Find milestone file by parsing and matching name."""
+    for md_file in (roadmap_dir / "milestones").glob("*.md"):
+        try:
+            test_milestone = MilestoneParser.parse_milestone_file(md_file)
+            if test_milestone.name == milestone_name:
+                return md_file
+        except Exception:
+            continue
+    return None
+
+
+def _move_milestone_issues(roadmap_dir, milestone_name):
+    """Move associated issues folder to archive."""
+    issues_dir = roadmap_dir / "issues" / milestone_name
+    if not issues_dir.exists():
+        return
+
+    archive_issues_dir = roadmap_dir / "archive" / "issues"
+    ensure_directory_exists(archive_issues_dir)
+    dest_issues_dir = archive_issues_dir / milestone_name
+
+    if dest_issues_dir.exists():
+        shutil.rmtree(dest_issues_dir)
+
+    issues_dir.rename(dest_issues_dir)
+    console.print(
+        f"  Moved issues to .roadmap/archive/issues/{milestone_name}/",
+        style="dim",
+    )
+
+
+def _validate_single_milestone(core, milestone_name):
+    """Validate and get single milestone for archival."""
+    milestone = core.milestones.get(milestone_name)
+    if not milestone:
+        console.print(f"❌ Milestone '{milestone_name}' not found.", style="bold red")
+        return None
+    return milestone
+
+
+def _check_milestone_closed_status(milestone_name, milestone, force):
+    """Check if milestone is closed, prompt if not."""
+    if milestone.status.value == "closed":
+        return True
+
+    console.print(
+        f"⚠️  Warning: Milestone '{milestone_name}' is not closed (status: {milestone.status.value})",
+        style="bold yellow",
+    )
+    return force or click.confirm("Archive anyway?", default=False)
+
+
+def _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force):
+    """Archive a single milestone."""
+    milestone = _validate_single_milestone(core, milestone_name)
+    if not milestone:
+        return False
+
+    if not _check_milestone_closed_status(milestone_name, milestone, force):
+        console.print("❌ Cancelled.", style="yellow")
+        return False
+
+    if dry_run:
+        console.print(
+            f"\n🔍 [DRY RUN] Would archive milestone: {milestone_name}",
+            style="bold blue",
+        )
+        console.print(
+            f"  Source: .roadmap/milestones/{milestone_name}.md",
+            style="cyan",
+        )
+        console.print(
+            f"  Destination: .roadmap/archive/milestones/{milestone_name}.md",
+            style="cyan",
+        )
+        return True
+
+    if not force and not click.confirm(
+        f"Archive milestone '{milestone_name}'?", default=False
+    ):
+        console.print("❌ Cancelled.", style="yellow")
+        return False
+
+    archive_dir = roadmap_dir / "archive" / "milestones"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+
+    milestone_file = _find_milestone_file(roadmap_dir, milestone_name)
+    if not milestone_file or not milestone_file.exists():
+        console.print(
+            f"❌ Milestone file not found for: {milestone_name}",
+            style="bold red",
+        )
+        return False
+
+    archive_file = archive_dir / milestone_file.name
+    milestone_file.rename(archive_file)
+    _move_milestone_issues(roadmap_dir, milestone_name)
+
+    try:
+        core.db.mark_milestone_archived(milestone_name, archived=True)
+    except Exception as e:
+        console.print(f"⚠️  Warning: Failed to mark in database: {e}", style="yellow")
+
+    console.print(
+        f"\n✅ Archived milestone '{milestone_name}' to .roadmap/archive/milestones/",
+        style="bold green",
+    )
+    return True
+
+
+def _get_closed_milestones(core):
+    """Get list of closed milestones."""
+    all_milestones = core.milestones.list()
+    return [m for m in all_milestones if m.status.value == "closed"]
+
+
+def _confirm_archive_all(milestones, force):
+    """Confirm archival of multiple milestones."""
+    if force:
+        return True
+
+    console.print(
+        f"\n⚠️  About to archive {len(milestones)} closed milestone(s):",
+        style="bold yellow",
+    )
+    for m in milestones:
+        console.print(f"  • {m.name}", style="cyan")
+    return click.confirm("\nProceed with archival?", default=False)
+
+
+def _archive_all_closed_milestones(core, roadmap_dir, dry_run, force):
+    """Archive all closed milestones."""
+    milestones = _get_closed_milestones(core)
+
+    if not milestones:
+        console.print("📋 No closed milestones to archive.", style="yellow")
+        return True
+
+    if dry_run:
+        console.print(
+            f"\n🔍 [DRY RUN] Would archive {len(milestones)} milestone(s):\n",
+            style="bold blue",
+        )
+        for m in milestones:
+            console.print(f"  • {m.name}", style="cyan")
+        return True
+
+    if not _confirm_archive_all(milestones, force):
+        console.print("❌ Cancelled.", style="yellow")
+        return False
+
+    archive_dir = roadmap_dir / "archive" / "milestones"
+    ensure_directory_exists(archive_dir)
+    archived_count = 0
+
+    for milestone in milestones:
+        milestone_file = _find_milestone_file(roadmap_dir, milestone.name)
+
+        if milestone_file and milestone_file.exists():
+            archive_file = archive_dir / milestone_file.name
+            milestone_file.rename(archive_file)
+            _move_milestone_issues(roadmap_dir, milestone.name)
+
+            try:
+                core.db.mark_milestone_archived(milestone.name, archived=True)
+            except Exception as e:
+                console.print(
+                    f"⚠️  Warning: Failed to mark {milestone.name} as archived: {e}",
+                    style="yellow",
+                )
+
+            archived_count += 1
+
+    console.print(
+        f"\n✅ Archived {archived_count} milestone(s) to .roadmap/archive/milestones/",
+        style="bold green",
+    )
+    return True
+
+
 @click.command()
 @click.argument("milestone_name", required=False)
 @click.option(
@@ -79,222 +304,20 @@ def archive_milestone(
         )
         ctx.exit(1)
 
-    # Handle --list option
     if list_archived:
-        roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "milestones"
-
-        if not archive_dir.exists():
-            console.print("📋 No archived milestones.", style="yellow")
-            return
-
-        archived_files = list(archive_dir.glob("*.md"))
-        if not archived_files:
-            console.print("📋 No archived milestones.", style="yellow")
-            return
-
-        console.print("\n📦 Archived Milestones:\n", style="bold blue")
-        for file_path in archived_files:
-            try:
-                milestone = MilestoneParser.parse_milestone_file(file_path)
-                console.print(
-                    f"  • {milestone.name} ({milestone.status.value})", style="cyan"
-                )
-            except Exception:
-                console.print(f"  • {file_path.stem} (parse error)", style="red")
+        _show_archived_milestones()
         return
 
-    if not milestone_name and not all_closed:
-        console.print(
-            "❌ Error: Specify a milestone name or use --all-closed",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    if milestone_name and all_closed:
-        console.print(
-            "❌ Error: Cannot specify milestone name with --all-closed",
-            style="bold red",
-        )
+    if not _validate_archive_arguments(milestone_name, all_closed):
         ctx.exit(1)
 
     try:
         roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "milestones"
 
         if all_closed:
-            # Get all milestones and filter for closed ones
-            all_milestones = core.milestones.list()
-            milestones = [m for m in all_milestones if m.status.value == "closed"]
-
-            if not milestones:
-                console.print("📋 No closed milestones to archive.", style="yellow")
-                return
-
-            if dry_run:
-                console.print(
-                    f"\n🔍 [DRY RUN] Would archive {len(milestones)} milestone(s):\n",
-                    style="bold blue",
-                )
-                for m in milestones:
-                    console.print(f"  • {m.name}", style="cyan")
-                return
-
-            # Confirm
-            if not force:
-                console.print(
-                    f"\n⚠️  About to archive {len(milestones)} closed milestone(s):",
-                    style="bold yellow",
-                )
-                for m in milestones:
-                    console.print(f"  • {m.name}", style="cyan")
-
-                if not click.confirm("\nProceed with archival?", default=False):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            # Archive each milestone
-            ensure_directory_exists(archive_dir)
-            archive_issues_dir = roadmap_dir / "archive" / "issues"
-            archived_count = 0
-
-            for milestone in milestones:
-                # Find the milestone file by searching
-                milestone_file = None
-                for md_file in (roadmap_dir / "milestones").glob("*.md"):
-                    try:
-                        test_milestone = MilestoneParser.parse_milestone_file(md_file)
-                        if test_milestone.name == milestone.name:
-                            milestone_file = md_file
-                            break
-                    except Exception:
-                        continue
-
-                if milestone_file and milestone_file.exists():
-                    archive_file = archive_dir / milestone_file.name
-                    milestone_file.rename(archive_file)
-
-                    # Also move associated issues folder if it exists
-                    issues_dir = roadmap_dir / "issues" / milestone.name
-                    if issues_dir.exists():
-                        ensure_directory_exists(archive_issues_dir)
-                        dest_issues_dir = archive_issues_dir / milestone.name
-                        # Remove destination if it already exists
-                        if dest_issues_dir.exists():
-                            shutil.rmtree(dest_issues_dir)
-                        issues_dir.rename(dest_issues_dir)
-
-                    # Mark as archived in database
-                    try:
-                        core.db.mark_milestone_archived(milestone.name, archived=True)
-                    except Exception as e:
-                        console.print(
-                            f"⚠️  Warning: Failed to mark milestone {milestone.name} as archived in database: {e}",
-                            style="yellow",
-                        )
-
-                    archived_count += 1
-
-            console.print(
-                f"\n✅ Archived {archived_count} milestone(s) to .roadmap/archive/milestones/",
-                style="bold green",
-            )
-
+            _archive_all_closed_milestones(core, roadmap_dir, dry_run, force)
         else:
-            # Archive single milestone
-            milestone = core.milestones.get(milestone_name)
-            if not milestone:
-                console.print(
-                    f"❌ Milestone '{milestone_name}' not found.", style="bold red"
-                )
-                ctx.exit(1)
-
-            assert milestone_name is not None
-
-            if milestone.status.value != "closed":
-                console.print(
-                    f"⚠️  Warning: Milestone '{milestone_name}' is not closed (status: {milestone.status.value})",
-                    style="bold yellow",
-                )
-                if not force and not click.confirm("Archive anyway?", default=False):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            if dry_run:
-                console.print(
-                    f"\n🔍 [DRY RUN] Would archive milestone: {milestone_name}",
-                    style="bold blue",
-                )
-                console.print(
-                    f"  Source: .roadmap/milestones/{milestone_name}.md",
-                    style="cyan",
-                )
-                console.print(
-                    f"  Destination: .roadmap/archive/milestones/{milestone_name}.md",
-                    style="cyan",
-                )
-                return
-
-            # Confirm
-            if not force:
-                if not click.confirm(
-                    f"Archive milestone '{milestone_name}'?", default=False
-                ):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            # Perform archive
-            archive_dir.mkdir(parents=True, exist_ok=True)
-
-            # Find the milestone file by searching all .md files
-            milestone_file = None
-            for md_file in (roadmap_dir / "milestones").glob("*.md"):
-                # Read and check if this is the right milestone
-                try:
-                    test_milestone = MilestoneParser.parse_milestone_file(md_file)
-                    if test_milestone.name == milestone_name:
-                        milestone_file = md_file
-                        break
-                except Exception:
-                    continue
-
-            if not milestone_file or not milestone_file.exists():
-                console.print(
-                    f"❌ Milestone file not found for: {milestone_name}",
-                    style="bold red",
-                )
-                ctx.exit(1)
-
-            archive_file = archive_dir / milestone_file.name
-            milestone_file.rename(archive_file)
-
-            # Also move associated issues folder if it exists
-            issues_dir = roadmap_dir / "issues" / milestone_name
-            archive_issues_dir = roadmap_dir / "archive" / "issues"
-            if issues_dir.exists():
-                ensure_directory_exists(archive_issues_dir)
-                dest_issues_dir = archive_issues_dir / milestone_name
-                # Remove destination if it already exists
-                if dest_issues_dir.exists():
-                    shutil.rmtree(dest_issues_dir)
-                issues_dir.rename(dest_issues_dir)
-                console.print(
-                    f"  Moved issues to .roadmap/archive/issues/{milestone_name}/",
-                    style="dim",
-                )
-
-            # Mark as archived in database
-            try:
-                core.db.mark_milestone_archived(milestone_name, archived=True)
-            except Exception as e:
-                console.print(
-                    f"⚠️  Warning: Failed to mark in database: {e}", style="yellow"
-                )
-
-            console.print(
-                f"\n✅ Archived milestone '{milestone_name}' to .roadmap/archive/milestones/",
-                style="bold green",
-            )
+            _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force)
 
     except Exception as e:
         log_error_with_context(

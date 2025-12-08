@@ -46,6 +46,57 @@ class IssueQueryService:
     def __init__(self, core: RoadmapCore):
         self.core = core
 
+    def _get_issues_for_assignee_filters(
+        self, my_issues: bool, assignee: str | None
+    ) -> tuple[list[Issue], str] | None:
+        """Get issues for assignee-based filters. Returns None if no match."""
+        if my_issues:
+            return self.core.team.get_my_issues(), "my"
+        if assignee:
+            return self.core.team.get_assigned_issues(
+                assignee
+            ), f"assigned to {assignee}"
+        return None
+
+    def _get_issues_for_collection_filters(
+        self,
+        backlog: bool,
+        unassigned: bool,
+        next_milestone: bool,
+        milestone: str | None,
+    ) -> tuple[list[Issue], str] | None:
+        """Get issues for collection-based filters. Returns None if no match."""
+        if backlog or unassigned:
+            return self.core.issues.get_backlog(), "backlog"
+
+        if next_milestone:
+            next_ms = self.core.milestones.get_next()
+            if not next_ms:
+                return [], ""  # Handled by caller
+            return (
+                self.core.issues.get_by_milestone(next_ms.name),
+                f"next milestone ({next_ms.name})",
+            )
+
+        if milestone:
+            return (
+                self.core.issues.get_by_milestone(milestone),
+                f"milestone '{milestone}'",
+            )
+        return None
+
+    def _get_overdue_issues(self) -> tuple[list[Issue], str]:
+        """Get overdue issues."""
+        from datetime import datetime
+
+        all_issues = self.core.issues.list()
+        overdue_issues = [
+            issue
+            for issue in all_issues
+            if issue.due_date and issue.due_date.replace(tzinfo=None) < datetime.now()
+        ]
+        return overdue_issues, "overdue"
+
     def get_filtered_issues(
         self,
         milestone: str | None = None,
@@ -62,45 +113,21 @@ class IssueQueryService:
         Returns:
             Tuple of (issues, filter_description)
         """
-        # Handle special assignee filters first
-        if my_issues:
-            return self.core.team.get_my_issues(), "my"
+        # Try assignee filters first
+        result = self._get_issues_for_assignee_filters(my_issues, assignee)
+        if result is not None:
+            return result
 
-        if assignee:
-            return self.core.team.get_assigned_issues(
-                assignee
-            ), f"assigned to {assignee}"
-
-        # Get base set of issues
-        if backlog or unassigned:
-            return self.core.issues.get_backlog(), "backlog"
-
-        if next_milestone:
-            next_ms = self.core.milestones.get_next()
-            if not next_ms:
-                return [], ""  # Handled by caller
-            return (
-                self.core.issues.get_by_milestone(next_ms.name),
-                f"next milestone ({next_ms.name})",
-            )
-
-        if milestone:
-            return self.core.issues.get_by_milestone(
-                milestone
-            ), f"milestone '{milestone}'"
+        # Try collection filters
+        result = self._get_issues_for_collection_filters(
+            backlog, unassigned, next_milestone, milestone
+        )
+        if result is not None:
+            return result
 
         # Handle overdue filter
         if overdue:
-            from datetime import datetime
-
-            all_issues = self.core.issues.list()
-            overdue_issues = [
-                issue
-                for issue in all_issues
-                if issue.due_date
-                and issue.due_date.replace(tzinfo=None) < datetime.now()
-            ]
-            return overdue_issues, "overdue"
+            return self._get_overdue_issues()
 
         # Show all issues
         return self.core.issues.list(), "all"
@@ -125,39 +152,84 @@ class IssueQueryService:
         result = issues
         description = filter_description
 
+        # Apply each filter in sequence
         if open_only:
-            result = [i for i in result if i.status != Status.CLOSED]
-            description += " open"
+            result, description = self._filter_by_open_status(result, description)
 
         if blocked_only:
-            result = [i for i in result if i.status == Status.BLOCKED]
-            description += " blocked"
+            result, description = self._filter_by_blocked_status(result, description)
 
         if status:
-            result = [i for i in result if i.status == Status(status)]
-            description += f" {status}"
+            result, description = self._filter_by_status(result, description, status)
 
         if priority:
-            result = [i for i in result if i.priority == Priority(priority)]
-            description += f" {priority} priority"
+            result, description = self._filter_by_priority(
+                result, description, priority
+            )
 
         if issue_type:
-            from roadmap.core.domain import IssueType
-
-            result = [i for i in result if i.issue_type == IssueType(issue_type)]
-            description += f" {issue_type}"
+            result, description = self._filter_by_type(result, description, issue_type)
 
         if overdue:
-            from datetime import datetime
-
-            result = [
-                i
-                for i in result
-                if i.due_date and i.due_date.replace(tzinfo=None) < datetime.now()
-            ]
-            description += " overdue"
+            result, description = self._filter_by_overdue(result, description)
 
         return result, description
+
+    @staticmethod
+    def _filter_by_open_status(
+        issues: list[Issue], description: str
+    ) -> tuple[list[Issue], str]:
+        """Filter to only open issues (not closed)."""
+        filtered = [i for i in issues if i.status != Status.CLOSED]
+        return filtered, description + " open"
+
+    @staticmethod
+    def _filter_by_blocked_status(
+        issues: list[Issue], description: str
+    ) -> tuple[list[Issue], str]:
+        """Filter to only blocked issues."""
+        filtered = [i for i in issues if i.status == Status.BLOCKED]
+        return filtered, description + " blocked"
+
+    @staticmethod
+    def _filter_by_status(
+        issues: list[Issue], description: str, status: str
+    ) -> tuple[list[Issue], str]:
+        """Filter by specific status."""
+        filtered = [i for i in issues if i.status == Status(status)]
+        return filtered, description + f" {status}"
+
+    @staticmethod
+    def _filter_by_priority(
+        issues: list[Issue], description: str, priority: str
+    ) -> tuple[list[Issue], str]:
+        """Filter by priority level."""
+        filtered = [i for i in issues if i.priority == Priority(priority)]
+        return filtered, description + f" {priority} priority"
+
+    @staticmethod
+    def _filter_by_type(
+        issues: list[Issue], description: str, issue_type: str
+    ) -> tuple[list[Issue], str]:
+        """Filter by issue type."""
+        from roadmap.core.domain import IssueType
+
+        filtered = [i for i in issues if i.issue_type == IssueType(issue_type)]
+        return filtered, description + f" {issue_type}"
+
+    @staticmethod
+    def _filter_by_overdue(
+        issues: list[Issue], description: str
+    ) -> tuple[list[Issue], str]:
+        """Filter to only overdue issues."""
+        from datetime import datetime
+
+        filtered = [
+            i
+            for i in issues
+            if i.due_date and i.due_date.replace(tzinfo=None) < datetime.now()
+        ]
+        return filtered, description + " overdue"
 
 
 class WorkloadCalculator:

@@ -260,6 +260,72 @@ class GitHubInitializationService:
             repo_name, interactive, yes, token=github_token
         )
 
+    def _validate_setup_conditions(self, github_repo, interactive, yes, token):
+        """Validate prerequisites for GitHub integration setup."""
+        if GitHubClient is None or CredentialManager is None:
+            raise ImportError("GitHub integration dependencies not available")
+
+        if interactive and not yes:
+            if not show_github_setup_instructions(github_repo, yes):
+                return None
+
+        return token
+
+    def _resolve_and_test_token(self, token, interactive, yes):
+        """Resolve token and test GitHub connection."""
+        cred_manager = CredentialManager()
+        token_resolver = GitHubTokenResolver(cred_manager)
+
+        existing_token = token_resolver.get_existing_token()
+        use_token, should_continue = token_resolver.resolve_token(
+            token, interactive, yes, existing_token
+        )
+
+        if not should_continue or not use_token:
+            return None
+
+        if self.presenter:
+            self.presenter.present_github_testing()
+        else:
+            console.print("🧪 Testing GitHub connection...", style="cyan")
+
+        return use_token
+
+    def _validate_github_access(self, use_token, github_repo, interactive, yes):
+        """Validate authentication and repository access."""
+        github_client = GitHubClient(use_token)
+        validator = GitHubSetupValidator(github_client)
+
+        auth_success, username = validator.validate_authentication()
+        if not auth_success:
+            if interactive and not yes:
+                if not click.confirm(
+                    "Continue without GitHub integration? (recommended to skip until token is fixed)"
+                ):
+                    return False
+            return False
+
+        repo_success, _ = validator.validate_repository_access(github_repo)
+        if not repo_success:
+            if interactive and not yes:
+                if not click.confirm("Continue with GitHub integration anyway?"):
+                    return False
+
+        return True
+
+    def _store_credentials_and_config(self, use_token, existing_token, github_repo):
+        """Store credentials and save configuration."""
+        if use_token != existing_token:
+            cred_manager = CredentialManager()
+            cred_manager.store_token(use_token)
+            if self.presenter:
+                self.presenter.present_github_credentials_stored()
+            else:
+                console.print("✅ GitHub credentials stored", style="green")
+
+        config_manager = GitHubConfigManager(self.core)
+        config_manager.save_github_config(github_repo)
+
     def _configure_integration(
         self,
         github_repo: str,
@@ -269,66 +335,28 @@ class GitHubInitializationService:
     ) -> bool:
         """Set up GitHub integration with credential flow."""
         try:
-            # Import GitHub client and credential manager
-            if GitHubClient is None or CredentialManager is None:
-                raise ImportError("GitHub integration dependencies not available")
-
-            # Show setup instructions and get confirmation
-            if interactive and not yes:
-                if not show_github_setup_instructions(github_repo, yes):
-                    return False
-
-            # Initialize managers
-            cred_manager = CredentialManager()
-            token_resolver = GitHubTokenResolver(cred_manager)
-
-            # Get existing token
-            existing_token = token_resolver.get_existing_token()
-
-            # Resolve which token to use
-            use_token, should_continue = token_resolver.resolve_token(
-                token, interactive, yes, existing_token
+            # Validate setup conditions
+            token = self._validate_setup_conditions(
+                github_repo, interactive, yes, token
             )
-            if not should_continue or not use_token:
+            if token is None and (interactive and not yes):
                 return False
 
-            # Test the connection
-            if self.presenter:
-                self.presenter.present_github_testing()
-            else:
-                console.print("🧪 Testing GitHub connection...", style="cyan")
-
-            github_client = GitHubClient(use_token)
-            validator = GitHubSetupValidator(github_client)
-
-            # Validate authentication
-            auth_success, username = validator.validate_authentication()
-            if not auth_success:
-                if interactive and not yes:
-                    if not click.confirm(
-                        "Continue without GitHub integration? (recommended to skip until token is fixed)"
-                    ):
-                        return False
+            # Resolve and test token
+            use_token = self._resolve_and_test_token(token, interactive, yes)
+            if use_token is None:
                 return False
 
-            # Validate repository access
-            repo_success, _ = validator.validate_repository_access(github_repo)
-            if not repo_success:
-                if interactive and not yes:
-                    if not click.confirm("Continue with GitHub integration anyway?"):
-                        return False
+            # Validate GitHub access
+            if not self._validate_github_access(
+                use_token, github_repo, interactive, yes
+            ):
+                return False
 
-            # Store credentials if new/different
-            if use_token != existing_token:
-                cred_manager.store_token(use_token)
-                if self.presenter:
-                    self.presenter.present_github_credentials_stored()
-                else:
-                    console.print("✅ GitHub credentials stored", style="green")
-
-            # Save configuration
-            config_manager = GitHubConfigManager(self.core)
-            config_manager.save_github_config(github_repo)
+            # Store credentials and config
+            cred_manager = CredentialManager()
+            existing_token = GitHubTokenResolver(cred_manager).get_existing_token()
+            self._store_credentials_and_config(use_token, existing_token, github_repo)
 
             return True
 

@@ -49,6 +49,177 @@ def _determine_archive_path(
     return dest_dir / issue_file.name
 
 
+def _show_archived_issues():
+    """Display list of archived issues."""
+    roadmap_dir = Path.cwd() / ".roadmap"
+    archive_dir = roadmap_dir / "archive" / "issues"
+
+    if not archive_dir.exists():
+        console.print("📋 No archived issues.", style="yellow")
+        return
+
+    archived_files = list(archive_dir.rglob("*.md"))
+    if not archived_files:
+        console.print("📋 No archived issues.", style="yellow")
+        return
+
+    console.print("\n📦 Archived Issues:\n", style="bold blue")
+    for file_path in sorted(archived_files):
+        try:
+            issue = IssueParser.parse_issue_file(file_path)
+            milestone = issue.milestone or "No milestone"
+            console.print(
+                f"  • {issue.id[:8]} - {issue.title} [{milestone}] ({issue.status.value})",
+                style="cyan",
+            )
+        except Exception:
+            console.print(f"  • {file_path.stem} (parse error)", style="red")
+
+
+def _validate_archive_arguments(issue_id, all_closed, orphaned):
+    """Validate archive arguments."""
+    if not issue_id and not all_closed and not orphaned:
+        console.print(
+            "❌ Error: Specify an issue ID, --all-closed, or --orphaned",
+            style="bold red",
+        )
+        return False
+
+    if sum([bool(issue_id), all_closed, orphaned]) > 1:
+        console.print(
+            "❌ Error: Specify only one of: issue ID, --all-closed, or --orphaned",
+            style="bold red",
+        )
+        return False
+
+    return True
+
+
+def _get_issues_to_archive(core, all_closed, orphaned):
+    """Get list of issues to archive and description."""
+    all_issues = core.issues.list()
+
+    if all_closed:
+        return [i for i in all_issues if i.status.value == "closed"], "closed"
+    else:  # orphaned
+        return [i for i in all_issues if not i.milestone], "orphaned (no milestone)"
+
+
+def _find_issue_file(roadmap_dir, issue_id):
+    """Find issue file by ID."""
+    issue_files = list((roadmap_dir / "issues").rglob(f"{issue_id[:8]}*.md"))
+    return issue_files[0] if issue_files else None
+
+
+def _archive_issue_file(core, archive_dir, issue_file, roadmap_dir, issue_id):
+    """Archive a single issue file."""
+    archive_file = _determine_archive_path(
+        archive_dir, issue_file, roadmap_dir / "issues"
+    )
+    issue_file.rename(archive_file)
+
+    try:
+        core.db.mark_issue_archived(issue_id, archived=True)
+    except Exception as e:
+        console.print(
+            f"⚠️  Warning: Failed to mark issue {issue_id} as archived: {e}",
+            style="yellow",
+        )
+
+
+def _archive_multiple_issues(
+    core, roadmap_dir, issues_to_archive, description, dry_run, force
+):
+    """Archive multiple issues by criteria."""
+    if not issues_to_archive:
+        console.print(f"📋 No {description} issues to archive.", style="yellow")
+        return True
+
+    if dry_run:
+        console.print(
+            f"\n🔍 [DRY RUN] Would archive {len(issues_to_archive)} {description} issue(s):\n",
+            style="bold blue",
+        )
+        for issue in issues_to_archive:
+            console.print(f"  • {issue.id[:8]} - {issue.title}", style="cyan")
+        return True
+
+    if not force:
+        console.print(
+            f"\n⚠️  About to archive {len(issues_to_archive)} {description} issue(s):",
+            style="bold yellow",
+        )
+        for issue in issues_to_archive:
+            console.print(f"  • {issue.id[:8]} - {issue.title}", style="cyan")
+
+        if not click.confirm("\nProceed with archival?", default=False):
+            console.print("❌ Cancelled.", style="yellow")
+            return False
+
+    archive_dir = roadmap_dir / "archive" / "issues"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archived_count = 0
+
+    for issue in issues_to_archive:
+        issue_file = _find_issue_file(roadmap_dir, issue.id)
+        if issue_file:
+            _archive_issue_file(core, archive_dir, issue_file, roadmap_dir, issue.id)
+            archived_count += 1
+
+    console.print(
+        f"\n✅ Archived {archived_count} issue(s) to .roadmap/archive/issues/",
+        style="bold green",
+    )
+    return True
+
+
+def _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force):
+    """Archive a single issue."""
+    issue = core.issues.get(issue_id)
+    if not issue:
+        console.print(f"❌ Issue '{issue_id}' not found.", style="bold red")
+        return False
+
+    if issue.status.value != "closed":
+        console.print(
+            f"⚠️  Warning: Issue '{issue_id}' is not closed (status: {issue.status.value})",
+            style="bold yellow",
+        )
+        if not force and not click.confirm("Archive anyway?", default=False):
+            console.print("❌ Cancelled.", style="yellow")
+            return False
+
+    if dry_run:
+        console.print(
+            f"\n🔍 [DRY RUN] Would archive issue: {issue_id}",
+            style="bold blue",
+        )
+        console.print(f"  Title: {issue.title}", style="cyan")
+        console.print(f"  Status: {issue.status.value}", style="cyan")
+        return True
+
+    if not force and not click.confirm(
+        f"Archive issue '{issue_id}' ({issue.title})?", default=False
+    ):
+        console.print("❌ Cancelled.", style="yellow")
+        return False
+
+    archive_dir = roadmap_dir / "archive" / "issues"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+
+    issue_file = _find_issue_file(roadmap_dir, issue_id)
+    if not issue_file:
+        console.print(f"❌ Issue file not found for: {issue_id}", style="bold red")
+        return False
+
+    _archive_issue_file(core, archive_dir, issue_file, roadmap_dir, issue.id)
+    console.print(
+        f"\n✅ Archived issue '{issue_id}' to .roadmap/archive/issues/",
+        style="bold green",
+    )
+    return True
+
+
 @click.command()
 @click.argument("issue_id", required=False)
 @click.option(
@@ -117,191 +288,25 @@ def archive_issue(
         )
         ctx.exit(1)
 
-    # Handle --list option
     if list_archived:
-        roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "issues"
-
-        if not archive_dir.exists():
-            console.print("📋 No archived issues.", style="yellow")
-            return
-
-        archived_files = list(archive_dir.rglob("*.md"))
-        if not archived_files:
-            console.print("📋 No archived issues.", style="yellow")
-            return
-
-        console.print("\n📦 Archived Issues:\n", style="bold blue")
-        for file_path in sorted(archived_files):
-            try:
-                issue = IssueParser.parse_issue_file(file_path)
-                milestone = issue.milestone or "No milestone"
-                console.print(
-                    f"  • {issue.id[:8]} - {issue.title} [{milestone}] ({issue.status.value})",
-                    style="cyan",
-                )
-            except Exception:
-                console.print(f"  • {file_path.stem} (parse error)", style="red")
+        _show_archived_issues()
         return
 
-    if not issue_id and not all_closed and not orphaned:
-        console.print(
-            "❌ Error: Specify an issue ID, --all-closed, or --orphaned",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    if sum([bool(issue_id), all_closed, orphaned]) > 1:
-        console.print(
-            "❌ Error: Specify only one of: issue ID, --all-closed, or --orphaned",
-            style="bold red",
-        )
+    if not _validate_archive_arguments(issue_id, all_closed, orphaned):
         ctx.exit(1)
 
     try:
         roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "issues"
 
         if all_closed or orphaned:
-            # Get all issues
-            all_issues = core.issues.list()
-
-            if all_closed:
-                issues_to_archive = [
-                    i for i in all_issues if i.status.value == "closed"
-                ]
-                description = "closed"
-            else:  # orphaned
-                issues_to_archive = [i for i in all_issues if not i.milestone]
-                description = "orphaned (no milestone)"
-
-            if not issues_to_archive:
-                console.print(f"📋 No {description} issues to archive.", style="yellow")
-                return
-
-            if dry_run:
-                console.print(
-                    f"\n🔍 [DRY RUN] Would archive {len(issues_to_archive)} {description} issue(s):\n",
-                    style="bold blue",
-                )
-                for issue in issues_to_archive:
-                    console.print(f"  • {issue.id[:8]} - {issue.title}", style="cyan")
-                return
-
-            # Confirm
-            if not force:
-                console.print(
-                    f"\n⚠️  About to archive {len(issues_to_archive)} {description} issue(s):",
-                    style="bold yellow",
-                )
-                for issue in issues_to_archive:
-                    console.print(f"  • {issue.id[:8]} - {issue.title}", style="cyan")
-
-                if not click.confirm("\nProceed with archival?", default=False):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            # Archive each issue
-            archive_dir.mkdir(parents=True, exist_ok=True)
-            archived_count = 0
-
-            for issue in issues_to_archive:
-                # Find the issue file recursively (in milestone folders)
-                issue_files = list(
-                    (roadmap_dir / "issues").rglob(f"{issue.id[:8]}*.md")
-                )
-                if issue_files:
-                    issue_file = issue_files[0]
-
-                    # Determine the archive path - preserve folder structure
-                    archive_file = _determine_archive_path(
-                        archive_dir, issue_file, roadmap_dir / "issues"
-                    )
-
-                    issue_file.rename(archive_file)
-
-                    # Mark as archived in database
-                    try:
-                        core.db.mark_issue_archived(issue.id, archived=True)
-                    except Exception as e:
-                        console.print(
-                            f"⚠️  Warning: Failed to mark issue {issue.id} as archived in database: {e}",
-                            style="yellow",
-                        )
-
-                    archived_count += 1
-
-            console.print(
-                f"\n✅ Archived {archived_count} issue(s) to .roadmap/archive/issues/",
-                style="bold green",
+            issues_to_archive, description = _get_issues_to_archive(
+                core, all_closed, orphaned
             )
-
+            _archive_multiple_issues(
+                core, roadmap_dir, issues_to_archive, description, dry_run, force
+            )
         else:
-            # Archive single issue
-            issue = core.issues.get(issue_id)
-            if not issue:
-                console.print(f"❌ Issue '{issue_id}' not found.", style="bold red")
-                ctx.exit(1)
-
-            if issue.status.value != "closed":
-                console.print(
-                    f"⚠️  Warning: Issue '{issue_id}' is not closed (status: {issue.status.value})",
-                    style="bold yellow",
-                )
-                if not force and not click.confirm("Archive anyway?", default=False):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            if dry_run:
-                console.print(
-                    f"\n🔍 [DRY RUN] Would archive issue: {issue_id}",
-                    style="bold blue",
-                )
-                console.print(f"  Title: {issue.title}", style="cyan")
-                console.print(f"  Status: {issue.status.value}", style="cyan")
-                return
-
-            # Confirm
-            if not force:
-                if not click.confirm(
-                    f"Archive issue '{issue_id}' ({issue.title})?", default=False
-                ):
-                    console.print("❌ Cancelled.", style="yellow")
-                    return
-
-            # Perform archive
-            archive_dir.mkdir(parents=True, exist_ok=True)
-
-            # Find the issue file recursively (in milestone folders)
-            assert issue_id is not None  # Should never reach here with None issue_id
-            issue_files = list((roadmap_dir / "issues").rglob(f"{issue_id[:8]}*.md"))
-            if issue_files:
-                issue_file = issue_files[0]
-
-                # Determine the archive path - preserve folder structure
-                archive_file = _determine_archive_path(
-                    archive_dir, issue_file, roadmap_dir / "issues"
-                )
-
-                issue_file.rename(archive_file)
-
-                # Mark as archived in database
-                try:
-                    core.db.mark_issue_archived(issue.id, archived=True)
-                except Exception as e:
-                    console.print(
-                        f"⚠️  Warning: Failed to mark in database: {e}", style="yellow"
-                    )
-
-                console.print(
-                    f"\n✅ Archived issue '{issue_id}' to .roadmap/archive/issues/",
-                    style="bold green",
-                )
-            else:
-                console.print(
-                    f"❌ Issue file not found for: {issue_id}", style="bold red"
-                )
-                ctx.exit(1)
+            _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force)
 
     except Exception as e:
         log_error_with_context(

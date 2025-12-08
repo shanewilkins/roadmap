@@ -17,6 +17,172 @@ from roadmap.infrastructure.logging import (
 console = get_console()
 
 
+def _parse_iso_date(date_string: str) -> str | None:
+    """Parse date string to ISO format or return None."""
+    if not date_string:
+        return None
+    try:
+        return datetime.strptime(date_string, "%Y-%m-%d").isoformat()
+    except ValueError:
+        return None
+
+
+def _validate_date_input(date_string: str, date_type: str) -> str | None:
+    """Validate and parse date input, showing error on failure."""
+    parsed = _parse_iso_date(date_string)
+    if parsed is None:
+        console.print(
+            f"❌ Invalid {date_type} format. Use YYYY-MM-DD",
+            style="bold red",
+        )
+    return parsed
+
+
+def _prepare_project_dates(
+    start_date: str, target_end_date: str
+) -> tuple[str | None, str | None] | None:
+    """Parse and validate project dates. Returns tuple or None on error."""
+    parsed_start_date = None
+    parsed_target_end_date = None
+
+    if start_date:
+        parsed_start_date = _validate_date_input(start_date, "start date")
+        if start_date and parsed_start_date is None:
+            return None
+
+    if target_end_date:
+        parsed_target_end_date = _validate_date_input(
+            target_end_date, "target end date"
+        )
+        if target_end_date and parsed_target_end_date is None:
+            return None
+
+    return (parsed_start_date, parsed_target_end_date)
+
+
+def _build_template_replacements(
+    project_id: str,
+    name: str,
+    description: str,
+    owner: str,
+    start_date: str | None,
+    target_end_date: str | None,
+    estimated_hours: float,
+    milestones: list,
+    current_time: str,
+) -> dict:
+    """Build dictionary of template variable replacements."""
+    return {
+        "{{ project_id }}": project_id,
+        "{{ project_name }}": name,
+        "{{ project_description }}": description,
+        "{{ project_owner }}": owner or "",
+        "{{ start_date }}": start_date or "",
+        "{{ target_end_date }}": target_end_date or "",
+        "{{ created_date }}": current_time,
+        "{{ updated_date }}": current_time,
+        "{{ estimated_hours }}": str(estimated_hours) if estimated_hours else "0",
+        "{{ milestone_1 }}": milestones[0] if len(milestones) > 0 else "",
+        "{{ milestone_2 }}": milestones[1] if len(milestones) > 1 else "",
+    }
+
+
+def _apply_template_replacements(content: str, replacements: dict) -> str:
+    """Apply all template variable replacements to content."""
+    result = content
+    for placeholder, value in replacements.items():
+        result = result.replace(placeholder, value)
+    return result
+
+
+def _apply_priority_and_status(content: str, priority: str) -> str:
+    """Apply priority and status replacements to content."""
+    content = content.replace('priority: "medium"', f'priority: "{priority}"')
+    content = content.replace("**Status:** {{ status }}", "**Status:** planning")
+    return content
+
+
+def _apply_project_content_updates(content: str, name: str, description: str) -> str:
+    """Apply project name and description content updates."""
+    content = content.replace("# roadmap_project", f"# {name}")
+    content = content.replace("Project description", description)
+    return content
+
+
+def _apply_milestone_updates(content: str, milestones: list) -> str:
+    """Apply milestone list updates to content."""
+    if milestones:
+        milestone_yaml = "\n".join([f'  - "{milestone}"' for milestone in milestones])
+        content = content.replace(
+            'milestones:\n  - "{{ milestone_1}}"\n  - "{{ milestone_2}}"',
+            f"milestones:\n{milestone_yaml}",
+        )
+    return content
+
+
+def _generate_project_content(
+    template_content: str,
+    project_id: str,
+    name: str,
+    description: str,
+    owner: str,
+    start_date: str | None,
+    target_end_date: str | None,
+    priority: str,
+    estimated_hours: float,
+    milestones: tuple,
+) -> str:
+    """Generate complete project content from template."""
+    current_time = datetime.now().isoformat()
+    milestone_list = list(milestones) if milestones else ["milestone_1", "milestone_2"]
+
+    # Build and apply template replacements
+    replacements = _build_template_replacements(
+        project_id,
+        name,
+        description,
+        owner,
+        start_date,
+        target_end_date,
+        estimated_hours,
+        milestone_list,
+        current_time,
+    )
+    content = _apply_template_replacements(template_content, replacements)
+
+    # Apply priority and status
+    content = _apply_priority_and_status(content, priority)
+
+    # Apply project content updates
+    content = _apply_project_content_updates(content, name, description)
+
+    # Apply milestone updates
+    content = _apply_milestone_updates(content, milestone_list)
+
+    return content
+
+
+def _print_project_created_success(
+    project_id: str,
+    name: str,
+    priority: str,
+    owner: str,
+    estimated_hours: float,
+    project_path,
+    core,
+):
+    """Print project created success message."""
+    console.print("✅ Created project:", style="bold green")
+    console.print(f"   ID: {project_id}")
+    console.print(f"   Name: {name}")
+    console.print(f"   Priority: {priority}")
+    if owner:
+        console.print(f"   Owner: {owner}")
+    if estimated_hours:
+        console.print(f"   Estimated: {estimated_hours}h")
+    console.print(f"   File: {project_path.relative_to(core.root_path)}")
+
+
 @click.command("create")
 @click.argument("name")
 @click.option(
@@ -84,32 +250,11 @@ def create_project(
         # Generate project ID
         project_id = str(uuid.uuid4())[:8]
 
-        # Parse dates
-        parsed_start_date = None
-        parsed_target_end_date = None
-
-        if start_date:
-            try:
-                parsed_start_date = datetime.strptime(
-                    start_date, "%Y-%m-%d"
-                ).isoformat()
-            except ValueError:
-                console.print(
-                    "❌ Invalid start date format. Use YYYY-MM-DD", style="bold red"
-                )
-                return
-
-        if target_end_date:
-            try:
-                parsed_target_end_date = datetime.strptime(
-                    target_end_date, "%Y-%m-%d"
-                ).isoformat()
-            except ValueError:
-                console.print(
-                    "❌ Invalid target end date format. Use YYYY-MM-DD",
-                    style="bold red",
-                )
-                return
+        # Parse and validate dates
+        date_result = _prepare_project_dates(start_date, target_end_date)
+        if date_result is None:
+            return
+        parsed_start_date, parsed_target_end_date = date_result
 
         # Create projects directory if it doesn't exist
         projects_dir = core.roadmap_dir / "projects"
@@ -126,55 +271,19 @@ def create_project(
 
         template_content = template_path.read_text()
 
-        # Replace template variables
-        current_time = datetime.now().isoformat()
-
-        # Convert milestones tuple to list for template
-        milestone_list = (
-            list(milestones) if milestones else ["milestone_1", "milestone_2"]
+        # Generate project content from template
+        project_content = _generate_project_content(
+            template_content,
+            project_id,
+            name,
+            description,
+            owner,
+            parsed_start_date,
+            parsed_target_end_date,
+            priority,
+            estimated_hours,
+            milestones,
         )
-
-        replacements = {
-            "{{ project_id }}": project_id,
-            "{{ project_name }}": name,
-            "{{ project_description }}": description,
-            "{{ project_owner }}": owner or "",
-            "{{ start_date }}": parsed_start_date or "",
-            "{{ target_end_date }}": parsed_target_end_date or "",
-            "{{ created_date }}": current_time,
-            "{{ updated_date }}": current_time,
-            "{{ estimated_hours }}": str(estimated_hours) if estimated_hours else "0",
-            "{{ milestone_1 }}": milestone_list[0] if len(milestone_list) > 0 else "",
-            "{{ milestone_2 }}": milestone_list[1] if len(milestone_list) > 1 else "",
-        }
-
-        project_content = template_content
-        for placeholder, value in replacements.items():
-            project_content = project_content.replace(placeholder, value)
-
-        # Handle priority replacement
-        project_content = project_content.replace(
-            'priority: "medium"', f'priority: "{priority}"'
-        )
-
-        # Handle status replacement
-        project_content = project_content.replace(
-            "**Status:** {{ status }}", "**Status:** planning"
-        )
-
-        # Update content to use "project" terminology
-        project_content = project_content.replace("# roadmap_project", f"# {name}")
-        project_content = project_content.replace("Project description", description)
-
-        # Handle milestone list in YAML
-        if milestones:
-            milestone_yaml = "\n".join(
-                [f'  - "{milestone}"' for milestone in milestones]
-            )
-            project_content = project_content.replace(
-                'milestones:\n  - "{{ milestone_1}}"\n  - "{{ milestone_2}}"',
-                f"milestones:\n{milestone_yaml}",
-            )
 
         # Save project file
         project_filename = f"{project_id}-{name.lower().replace(' ', '-')}.md"
@@ -184,15 +293,10 @@ def create_project(
             with open(project_path, "w") as f:
                 f.write(project_content)
 
-        console.print("✅ Created project:", style="bold green")
-        console.print(f"   ID: {project_id}")
-        console.print(f"   Name: {name}")
-        console.print(f"   Priority: {priority}")
-        if owner:
-            console.print(f"   Owner: {owner}")
-        if estimated_hours:
-            console.print(f"   Estimated: {estimated_hours}h")
-        console.print(f"   File: {project_path.relative_to(core.root_path)}")
+        # Print success message
+        _print_project_created_success(
+            project_id, name, priority, owner, estimated_hours, project_path, core
+        )
 
     except Exception as e:
         log_error_with_context(

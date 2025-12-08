@@ -56,6 +56,86 @@ def show_dry_run_info(
             click.echo(f" - {action}")
 
 
+def _validate_initialization(custom_core, lock_path, force):
+    """Validate initialization prerequisites."""
+    is_valid, error_msg = InitializationValidator.validate_lockfile(lock_path)
+    if not is_valid:
+        presenter.present_error(error_msg or "Unknown error")
+        presenter.present_initialization_tip()
+        return False
+
+    is_valid, error_msg = InitializationValidator.check_existing_roadmap(
+        custom_core, force
+    )
+    if not is_valid:
+        presenter.present_error(error_msg or "Unknown error")
+        presenter.present_initialization_tip()
+        return False
+
+    return True
+
+
+def _setup_project(
+    custom_core,
+    skip_project,
+    detected_info,
+    project_name,
+    description,
+    template,
+    template_path,
+    interactive,
+):
+    """Setup project if not skipped."""
+    if skip_project:
+        return None
+
+    existing_projects = ProjectDetectionService.detect_existing_projects(
+        custom_core.projects_dir
+    )
+
+    if existing_projects:
+        if len(existing_projects) > 1 and interactive:
+            presenter.present_existing_projects_found(len(existing_projects))
+        return {
+            "name": existing_projects[0]["name"],
+            "id": existing_projects[0]["id"],
+            "action": "joined",
+        }
+
+    project_info = ProjectCreationService.create_project(
+        custom_core,
+        project_name or detected_info.get("project_name", Path.cwd().name),
+        description or "A project managed with Roadmap CLI",
+        detected_info,
+        template or "basic",
+        template_path,
+    )
+    if project_info:
+        project_info["action"] = "created"
+
+    return project_info
+
+
+def _create_roadmap_structure(workflow, manifest, name):
+    """Create roadmap directory structure."""
+    presenter.present_creating_structure(name)
+    if not workflow.create_structure_preserve_data():
+        return False
+    workflow.generate_config_file()
+    workflow.record_created_paths(manifest)
+    workflow.ensure_gitignore_entry()
+    return True
+
+
+def _handle_force_reinitialization(custom_core, workflow, name):
+    """Handle force re-initialization of existing roadmap."""
+    if custom_core.is_initialized():
+        presenter.present_force_reinitialize_warning(name)
+        if not workflow.cleanup_existing():
+            return False
+    return True
+
+
 @click.command()
 @click.option(
     "--name",
@@ -169,18 +249,7 @@ def init(
 
     # Validate prerequisites
     lock_path = Path.cwd() / ".roadmap_init.lock"
-    is_valid, error_msg = InitializationValidator.validate_lockfile(lock_path)
-    if not is_valid:
-        presenter.present_error(error_msg or "Unknown error")
-        presenter.present_initialization_tip()
-        return
-
-    is_valid, error_msg = InitializationValidator.check_existing_roadmap(
-        custom_core, force
-    )
-    if not is_valid:
-        presenter.present_error(error_msg or "Unknown error")
-        presenter.present_initialization_tip()
+    if not _validate_initialization(custom_core, lock_path, force):
         return
 
     # Acquire lock
@@ -196,10 +265,8 @@ def init(
 
     try:
         # Handle force re-initialization
-        if custom_core.is_initialized() and force:
-            presenter.present_force_reinitialize_warning(name)
-            if not workflow.cleanup_existing():
-                return
+        if force and not _handle_force_reinitialization(custom_core, workflow, name):
+            return
         elif custom_core.is_initialized():
             presenter.present_already_initialized_info(name)
 
@@ -207,41 +274,22 @@ def init(
         detected_info = ProjectContextDetectionService.detect_project_context()
 
         # Create structure
-        presenter.present_creating_structure(name)
-        if not workflow.create_structure_preserve_data():
+        if not _create_roadmap_structure(workflow, manifest, name):
             return
-        workflow.generate_config_file()
-        workflow.record_created_paths(manifest)
-        workflow.ensure_gitignore_entry()
 
         ctx.obj["core"] = custom_core
 
-        # Detect or create project
-        project_info = None
-        if not skip_project:
-            existing_projects = ProjectDetectionService.detect_existing_projects(
-                custom_core.projects_dir
-            )
-
-            if existing_projects:
-                project_info = {
-                    "name": existing_projects[0]["name"],
-                    "id": existing_projects[0]["id"],
-                    "action": "joined",
-                }
-                if len(existing_projects) > 1 and interactive:
-                    presenter.present_existing_projects_found(len(existing_projects))
-            else:
-                project_info = ProjectCreationService.create_project(
-                    custom_core,
-                    project_name or detected_info.get("project_name", Path.cwd().name),
-                    description or "A project managed with Roadmap CLI",
-                    detected_info,
-                    template or "basic",
-                    template_path,
-                )
-                if project_info:
-                    project_info["action"] = "created"
+        # Setup project
+        project_info = _setup_project(
+            custom_core,
+            skip_project,
+            detected_info,
+            project_name,
+            description,
+            template,
+            template_path,
+            interactive,
+        )
 
         # Configure GitHub
         github_service = GitHubInitializationService(custom_core)
