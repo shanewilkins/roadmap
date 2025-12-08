@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.cli_validators import parse_date, validate_milestone_status
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
@@ -17,27 +18,10 @@ console = get_console()
 
 
 def _parse_due_date(due_date_str):
-    """Parse due date string in YYYY-MM-DD format."""
+    """Parse due date string in YYYY-MM-DD format or 'clear' to remove."""
     if due_date_str.lower() == "clear":
         return None
-    try:
-        return datetime.strptime(due_date_str, "%Y-%m-%d")
-    except ValueError:
-        console.print(
-            "❌ Invalid due date format. Use YYYY-MM-DD (e.g., 2024-12-31)",
-            style="bold red",
-        )
-        return "invalid"
-
-
-def _convert_status_to_enum(status_str):
-    """Convert CLI status string to MilestoneStatus enum."""
-    try:
-        from roadmap.core.domain import MilestoneStatus
-
-        return MilestoneStatus(status_str)
-    except Exception:
-        return status_str
+    return parse_date(due_date_str, "due date")
 
 
 def _build_updates_dict(name, description, due_date, status, clear_due_date):
@@ -58,7 +42,10 @@ def _build_updates_dict(name, description, due_date, status, clear_due_date):
         updates["due_date"] = parsed_date
 
     if status:
-        updates["status"] = _convert_status_to_enum(status)
+        status_enum = validate_milestone_status(status)
+        if status_enum is None:
+            return False
+        updates["status"] = status_enum
 
     return updates if updates else None
 
