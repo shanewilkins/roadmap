@@ -79,6 +79,83 @@ class IssueParser:
         FrontmatterParser.serialize_file(frontmatter, issue.content, file_path)
 
     @classmethod
+    def _validate_enum_field(
+        cls, field_name: str, value: str | None, enum_class
+    ) -> tuple[bool, Any, str | None]:
+        """Validate and convert enum field. Returns (success, value, error_message)."""
+        if not value:
+            return True, None, None
+
+        try:
+            return True, enum_class(value), None
+        except ValueError:
+            valid_values = [e.value for e in enum_class]
+            error_msg = (
+                f"Invalid {field_name}: {value}. Valid: {', '.join(valid_values)}"
+            )
+            return False, None, error_msg
+
+    @classmethod
+    def _extract_issue_dates(
+        cls, data: dict
+    ) -> tuple[datetime, datetime, datetime | None]:
+        """Extract and parse date fields from data."""
+        now = now_utc()
+        created = cls._parse_datetime(data.get("created")) or now
+        updated = cls._parse_datetime(data.get("updated")) or now
+        due_date = cls._parse_datetime(data.get("due_date"))
+        return created, updated, due_date
+
+    @classmethod
+    def _build_issue_from_data(
+        cls, data: dict, file_path: Path
+    ) -> tuple[bool, Issue | None, str | None]:
+        """Build Issue object from validated data. Returns (success, issue, error_message)."""
+        # Validate priority
+        success, priority, error = cls._validate_enum_field(
+            "priority", data.get("priority"), Priority
+        )
+        if not success:
+            return False, None, f"{error} in {file_path}"
+        priority = priority or Priority.MEDIUM
+
+        # Validate status
+        success, status, error = cls._validate_enum_field(
+            "status", data.get("status"), Status
+        )
+        if not success:
+            return False, None, f"{error} in {file_path}"
+        status = status or Status.TODO
+
+        # Validate issue_type
+        success, _, error = cls._validate_enum_field(
+            "issue_type", data.get("issue_type"), IssueType
+        )
+        if not success:
+            return False, None, f"{error} in {file_path}"
+
+        # Extract dates
+        created, updated, due_date = cls._extract_issue_dates(data)
+
+        try:
+            issue = Issue(
+                id=data.get("id") or str(uuid.uuid4())[:8],
+                title=data.get("title") or "Untitled Issue",
+                priority=priority,
+                status=status,
+                assignee=data.get("assignee"),
+                milestone=data.get("milestone"),
+                labels=data.get("labels", []),
+                created=created,
+                updated=updated,
+                due_date=due_date,
+                content=data.get("content", ""),
+            )
+            return True, issue, None
+        except Exception as e:
+            return False, None, f"Error creating Issue: {e}"
+
+    @classmethod
     def parse_issue_file_safe(
         cls, file_path: Path
     ) -> tuple[bool, Issue | None, str | None]:
@@ -99,58 +176,9 @@ class IssueParser:
             # Convert the validated data to an Issue
             # At this point, result must be a dict since is_valid is True
             data = result if isinstance(result, dict) else {}
-
-            # Handle datetime fields - set defaults if None
-            now = now_utc()
-            created = cls._parse_datetime(data.get("created")) or now
-            updated = cls._parse_datetime(data.get("updated")) or now
-            due_date = cls._parse_datetime(data.get("due_date"))
-
-            issue = Issue(
-                id=data.get("id") or str(uuid.uuid4())[:8],
-                title=data.get("title") or "Untitled Issue",
-                priority=Priority(data.get("priority"))
-                if data.get("priority")
-                else Priority.MEDIUM,
-                status=Status(data.get("status"))
-                if data.get("status")
-                else Status.TODO,
-                assignee=data.get("assignee"),
-                milestone=data.get("milestone"),
-                labels=data.get("labels", []),
-                created=created,
-                updated=updated,
-                due_date=due_date,
-                content=data.get("content", ""),
-            )
-            return True, issue, None
-        except ValueError as e:
-            # Check if it's an enum validation error
-            error_str = str(e)
-            if "status" in error_str:
-                valid_statuses = [s.value for s in Status]
-                return (
-                    False,
-                    None,
-                    f"Invalid status in {file_path}: {e}. Valid values: {', '.join(valid_statuses)}",
-                )
-            elif "priority" in error_str:
-                valid_priorities = [p.value for p in Priority]
-                return (
-                    False,
-                    None,
-                    f"Invalid priority in {file_path}: {e}. Valid values: {', '.join(valid_priorities)}",
-                )
-            elif "issue_type" in error_str:
-                valid_types = [t.value for t in IssueType]
-                return (
-                    False,
-                    None,
-                    f"Invalid issue_type in {file_path}: {e}. Valid values: {', '.join(valid_types)}",
-                )
-            return False, None, f"Error creating Issue object: {e}"
+            return cls._build_issue_from_data(data, file_path)
         except Exception as e:
-            return False, None, f"Error creating Issue object: {e}"
+            return False, None, f"Error processing issue file: {e}"
 
     @classmethod
     def save_issue_file_safe(cls, issue: Issue, file_path: Path) -> tuple[bool, str]:
