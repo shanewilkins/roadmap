@@ -6,6 +6,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -62,21 +63,6 @@ def _build_updates_dict(name, description, due_date, status, clear_due_date):
     return updates if updates else None
 
 
-def _display_update_results(updated_milestone, updates, clear_due_date):
-    """Display formatted results of milestone update."""
-    console.print(f"✅ Updated milestone: {updated_milestone.name}", style="bold green")
-    if "description" in updates:
-        console.print(f"   Description: {updated_milestone.description}", style="cyan")
-    if "due_date" in updates:
-        if updated_milestone.due_date:
-            console.print(
-                f"   Due Date: {updated_milestone.due_date.strftime('%Y-%m-%d')}",
-                style="yellow",
-            )
-        elif clear_due_date:
-            console.print("   Due Date: Cleared", style="dim")
-
-
 @click.command("update")
 @click.argument("milestone_name")
 @click.option("--name", help="Update milestone name")
@@ -106,7 +92,13 @@ def update_milestone(
     try:
         milestone = core.milestones.get(milestone_name)
         if not milestone:
-            console.print(f"❌ Milestone not found: {milestone_name}", style="bold red")
+            lines = format_operation_failure(
+                action="update",
+                entity_id=milestone_name,
+                error="Milestone not found",
+            )
+            for line in lines:
+                console.print(line, style="bold red")
             return
 
         updates = _build_updates_dict(
@@ -123,13 +115,38 @@ def update_milestone(
             success = core.milestones.update(milestone_name, **updates)
 
         if not success:
-            console.print(
-                f"❌ Failed to update milestone: {milestone_name}", style="bold red"
+            lines = format_operation_failure(
+                action="update",
+                entity_id=milestone_name,
+                error="Failed to update milestone",
             )
+            for line in lines:
+                console.print(line, style="bold red")
             return
 
         updated_milestone = core.milestones.get(updates.get("name", milestone_name))
-        _display_update_results(updated_milestone, updates, clear_due_date)
+
+        # Build extra details for display
+        extra_details = {}
+        if "description" in updates:
+            extra_details["Description"] = updated_milestone.description
+        if "due_date" in updates:
+            if updated_milestone.due_date:
+                extra_details["Due Date"] = updated_milestone.due_date.strftime(
+                    "%Y-%m-%d"
+                )
+            elif clear_due_date:
+                extra_details["Due Date"] = "Cleared"
+
+        lines = format_operation_success(
+            emoji="✅",
+            action="Updated",
+            entity_title=updated_milestone.name,
+            entity_id=updated_milestone.id,
+            extra_details=extra_details if extra_details else None,
+        )
+        for line in lines:
+            console.print(line, style="bold green" if "Updated" in line else "cyan")
 
     except Exception as e:
         log_error_with_context(
@@ -138,4 +155,10 @@ def update_milestone(
             entity_type="milestone",
             additional_context={"milestone_name": milestone_name},
         )
-        console.print(f"❌ Failed to update milestone: {e}", style="bold red")
+        lines = format_operation_failure(
+            action="update",
+            entity_id=milestone_name,
+            error=str(e),
+        )
+        for line in lines:
+            console.print(line, style="bold red")

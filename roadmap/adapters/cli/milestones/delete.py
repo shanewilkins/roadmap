@@ -4,6 +4,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -34,9 +35,21 @@ def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
         with track_database_operation("delete", "milestone"):
             success = core.milestones.delete(milestone_name)
         if success:
-            console.print(f"✅ Deleted milestone: {milestone_name}", style="bold green")
+            lines = format_operation_success(
+                emoji="✅",
+                action="Deleted",
+                entity_title=milestone_name,
+            )
+            for line in lines:
+                console.print(line, style="bold green" if "Deleted" in line else "cyan")
         else:
-            console.print(f"❌ Milestone not found: {milestone_name}", style="bold red")
+            lines = format_operation_failure(
+                action="delete",
+                entity_id=milestone_name,
+                error="Milestone not found",
+            )
+            for line in lines:
+                console.print(line, style="bold red")
     except Exception as e:
         log_error_with_context(
             e,
@@ -44,4 +57,10 @@ def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
             entity_type="milestone",
             additional_context={"milestone_name": milestone_name},
         )
-        console.print(f"❌ Failed to delete milestone: {e}", style="bold red")
+        lines = format_operation_failure(
+            action="delete",
+            entity_id=milestone_name,
+            error=str(e),
+        )
+        for line in lines:
+            console.print(line, style="bold red")

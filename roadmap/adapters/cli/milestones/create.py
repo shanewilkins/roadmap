@@ -6,6 +6,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -48,14 +49,20 @@ def create_milestone(
             milestone = core.milestones.create(
                 name=name, description=description, due_date=parsed_due_date
             )
-        console.print(f"✅ Created milestone: {milestone.name}", style="bold green")
-        console.print(f"   Description: {milestone.description}", style="cyan")
+        extra_details = {"Description": milestone.description}
         if milestone.due_date:
-            console.print(
-                f"   Due Date: {milestone.due_date.strftime('%Y-%m-%d')}",
-                style="yellow",
-            )
-        console.print(f"   File: .roadmap/milestones/{milestone.filename}", style="dim")
+            extra_details["Due Date"] = milestone.due_date.strftime("%Y-%m-%d")
+        extra_details["File"] = f".roadmap/milestones/{milestone.filename}"
+
+        lines = format_operation_success(
+            emoji="✅",
+            action="Created",
+            entity_title=milestone.name,
+            entity_id=milestone.id,
+            extra_details=extra_details,
+        )
+        for line in lines:
+            console.print(line, style="bold green" if "Created" in line else "cyan")
     except Exception as e:
         log_error_with_context(
             e,
@@ -63,4 +70,10 @@ def create_milestone(
             entity_type="milestone",
             additional_context={"name": name},
         )
-        console.print(f"❌ Failed to create milestone: {e}", style="bold red")
+        lines = format_operation_failure(
+            action="create",
+            entity_id=name,
+            error=str(e),
+        )
+        for line in lines:
+            console.print(line, style="bold red")
