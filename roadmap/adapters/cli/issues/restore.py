@@ -5,6 +5,7 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 
 from roadmap.adapters.cli.cli_confirmations import confirm_action
+from roadmap.adapters.cli.cli_error_handlers import display_operation_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.common.console import get_console
@@ -13,7 +14,6 @@ from roadmap.common.formatters import (
 )
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     verbose_output,
 )
 
@@ -314,17 +314,11 @@ def restore_issue(
             )
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="issue_restore",
-            entity_type="issue",
-            entity_id=issue_id,
-        )
-        from roadmap.adapters.cli.cli_error_handlers import display_operation_error
         display_operation_error(
             operation="restore",
             entity_type="issue",
             entity_id=issue_id or "archive",
             error=str(e),
+            log_context={"issue_id": issue_id},
         )
         ctx.exit(1)

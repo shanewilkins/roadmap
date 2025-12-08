@@ -5,13 +5,13 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 
 from roadmap.adapters.cli.cli_confirmations import confirm_action
+from roadmap.adapters.cli.cli_error_handlers import display_operation_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.console import get_console
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     verbose_output,
 )
 
@@ -258,11 +258,11 @@ def restore_milestone(
             )
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="milestone_restore",
+        display_operation_error(
+            operation="restore",
             entity_type="milestone",
-            additional_context={"milestone_name": milestone_name},
+            entity_id=milestone_name or "unknown",
+            error=str(e),
+            log_context={"milestone_name": milestone_name},
         )
-        console.print(f"❌ Failed to restore milestone: {e}", style="bold red")
         ctx.exit(1)

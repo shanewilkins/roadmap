@@ -10,7 +10,6 @@ from roadmap.adapters.cli.cli_confirmations import (
     confirm_override_warning,
 )
 from roadmap.adapters.cli.cli_error_handlers import (
-    display_not_found_error,
     display_operation_error,
 )
 from roadmap.adapters.cli.helpers import require_initialized
@@ -22,7 +21,6 @@ from roadmap.common.formatters import (
 )
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     verbose_output,
 )
 
@@ -188,7 +186,9 @@ def _archive_multiple_issues(
 
 def _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force):
     """Archive a single issue."""
-    issue = check_entity_exists(core, "issue", issue_id, entity_lookup=core.issues.get(issue_id))
+    issue = check_entity_exists(
+        core, "issue", issue_id, entity_lookup=core.issues.get(issue_id)
+    )
     if not issue:
         return False
 
@@ -325,11 +325,11 @@ def archive_issue(
             _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force)
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="issue_archive",
+        display_operation_error(
+            operation="archive",
             entity_type="issue",
-            entity_id=issue_id,
+            entity_id=issue_id or "unknown",
+            error=str(e),
+            log_context={"issue_id": issue_id},
         )
-        console.print(f"❌ Failed to archive issue: {e}", style="bold red")
         ctx.exit(1)

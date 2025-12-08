@@ -3,10 +3,12 @@
 import click
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.table import Table
 from rich.text import Text
 
 from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
+from roadmap.adapters.cli.presentation.table_builders import (
+    create_metadata_table,
+)
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -47,9 +49,7 @@ def _build_issue_header(issue):
 
 def _build_metadata_table(issue):
     """Build metadata table for issue."""
-    metadata = Table(show_header=False, box=None, padding=(0, 2))
-    metadata.add_column("Key", style="dim")
-    metadata.add_column("Value")
+    metadata = create_metadata_table()
 
     metadata.add_row("Assignee", issue.assignee or "Unassigned")
     metadata.add_row("Milestone", issue.milestone_name)
@@ -67,9 +67,7 @@ def _build_metadata_table(issue):
 
 def _build_timeline_table(issue):
     """Build timeline table for issue."""
-    timeline = Table(show_header=False, box=None, padding=(0, 2))
-    timeline.add_column("Key", style="dim")
-    timeline.add_column("Value")
+    timeline = create_metadata_table()
 
     timeline.add_row("Estimated", issue.estimated_time_display)
     timeline.add_row("Progress", issue.progress_display)
@@ -93,9 +91,7 @@ def _build_dependencies_table(issue):
     if not (issue.depends_on or issue.blocks):
         return None
 
-    deps = Table(show_header=False, box=None, padding=(0, 2))
-    deps.add_column("Key", style="dim")
-    deps.add_column("Value")
+    deps = create_metadata_table()
 
     if issue.depends_on:
         deps.add_row("Depends on", ", ".join(issue.depends_on))
@@ -110,9 +106,7 @@ def _build_git_table(issue):
     if not (issue.git_branches or issue.git_commits):
         return None
 
-    git = Table(show_header=False, box=None, padding=(0, 2))
-    git.add_column("Key", style="dim")
-    git.add_column("Value")
+    git = create_metadata_table()
 
     if issue.git_branches:
         git.add_row("Branches", ", ".join(issue.git_branches))
@@ -129,9 +123,7 @@ def _build_handoff_table(issue):
     if not issue.has_been_handed_off:
         return None
 
-    handoff = Table(show_header=False, box=None, padding=(0, 2))
-    handoff.add_column("Key", style="dim")
-    handoff.add_column("Value")
+    handoff = create_metadata_table()
 
     handoff.add_row("Previous Assignee", issue.previous_assignee or "N/A")
     if issue.handoff_date:

@@ -3,10 +3,13 @@
 import click
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.table import Table
 from rich.text import Text
 
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.presentation.table_builders import (
+    create_list_table,
+    create_metadata_table,
+)
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -45,9 +48,7 @@ def _build_project_header(project):
 
 def _build_metadata_table(project):
     """Build metadata table with project dates."""
-    metadata = Table(show_header=False, box=None, padding=(0, 2))
-    metadata.add_column("Key", style="dim")
-    metadata.add_column("Value")
+    metadata = create_metadata_table()
 
     metadata.add_row("Owner", project.owner or "Unassigned")
 
@@ -71,9 +72,7 @@ def _build_effort_table(project):
     if not (project.estimated_hours or project.actual_hours):
         return None
 
-    effort = Table(show_header=False, box=None, padding=(0, 2))
-    effort.add_column("Key", style="dim")
-    effort.add_column("Value")
+    effort = create_metadata_table()
 
     if project.estimated_hours:
         if project.estimated_hours < 8:
@@ -101,11 +100,13 @@ def _build_milestones_table(core, project):
 
     all_milestones = core.milestones.list()
 
-    milestones_table = Table(show_header=True, header_style="bold magenta")
-    milestones_table.add_column("Milestone", style="cyan")
-    milestones_table.add_column("Status", width=10)
-    milestones_table.add_column("Progress", width=12)
-    milestones_table.add_column("Due Date", width=12)
+    columns = [
+        ("Milestone", "cyan", None),
+        ("Status", None, 10),
+        ("Progress", None, 12),
+        ("Due Date", None, 12),
+    ]
+    milestones_table = create_list_table(columns)
 
     for milestone_name in project.milestones:
         milestone = next((m for m in all_milestones if m.name == milestone_name), None)

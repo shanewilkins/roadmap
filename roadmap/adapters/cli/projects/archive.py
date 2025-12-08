@@ -4,14 +4,16 @@ from pathlib import Path
 
 import click  # type: ignore[import-not-found]
 
-from roadmap.adapters.cli.cli_confirmations import confirm_action, confirm_override_warning
+from roadmap.adapters.cli.cli_confirmations import (
+    confirm_action,
+)
+from roadmap.adapters.cli.cli_error_handlers import display_operation_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import ProjectParser
 from roadmap.common.console import get_console
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     verbose_output,
 )
 
@@ -247,11 +249,11 @@ def archive_project(
         )
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="project_archive",
+        display_operation_error(
+            operation="archive",
             entity_type="project",
-            additional_context={"project_name": project_name},
+            entity_id=project_name or "unknown",
+            error=str(e),
+            log_context={"project_name": project_name},
         )
-        console.print(f"❌ Failed to archive project: {e}", style="bold red")
         ctx.exit(1)

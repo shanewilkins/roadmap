@@ -5,10 +5,13 @@ from datetime import datetime
 import click
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.table import Table
 from rich.text import Text
 
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.presentation.table_builders import (
+    create_list_table,
+    create_metadata_table,
+)
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -80,9 +83,7 @@ def _display_progress_panel(progress_data):
     total = progress_data.get("total", 0)
     percentage = (completed / total * 100) if total > 0 else 0
 
-    progress_table = Table(show_header=False, box=None, padding=(0, 2))
-    progress_table.add_column("Key", style="dim")
-    progress_table.add_column("Value")
+    progress_table = create_metadata_table()
     progress_table.add_row("Issues Complete", f"{completed}/{total}")
     progress_table.add_row("Percentage", f"{percentage:.1f}%")
 
@@ -117,9 +118,7 @@ def _build_status_breakdown(milestone_issues):
 
 def _build_statistics_table(milestone_issues, milestone):
     """Build statistics table for milestone."""
-    stats = Table(show_header=False, box=None, padding=(0, 2))
-    stats.add_column("Key", style="dim")
-    stats.add_column("Value")
+    stats = create_metadata_table()
 
     total_estimated = sum(i.estimated_hours or 0 for i in milestone_issues)
     if total_estimated > 0:
@@ -137,14 +136,16 @@ def _build_statistics_table(milestone_issues, milestone):
 
 def _build_issues_table(milestone_issues):
     """Build table showing milestone issues."""
-    issues_table = Table(show_header=True, header_style="bold magenta")
-    issues_table.add_column("ID", style="cyan", width=9)
-    issues_table.add_column("Title", style="white", width=20)
-    issues_table.add_column("Status", width=11)
-    issues_table.add_column("Priority", width=9)
-    issues_table.add_column("Assignee", width=12)
-    issues_table.add_column("Progress", width=10)
-    issues_table.add_column("Estimate", width=10)
+    columns = [
+        ("ID", "cyan", 9),
+        ("Title", "white", 20),
+        ("Status", None, 11),
+        ("Priority", None, 9),
+        ("Assignee", None, 12),
+        ("Progress", None, 10),
+        ("Estimate", None, 10),
+    ]
+    issues_table = create_list_table(columns)
 
     status_colors = {
         "todo": "blue",
