@@ -1,14 +1,13 @@
 """Close issue command - thin wrapper around update.
 
 This command is syntactic sugar for: roadmap issue update <ID> --status closed
-Delegates to update command for consistent business logic.
 """
 
 from datetime import datetime
 
 import click
 
-from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
@@ -41,87 +40,49 @@ def _parse_completion_date(date_str: str) -> datetime | None:
             return None
 
 
-def _build_update_kwargs(
-    record_time: bool, date: str
-) -> tuple[dict | None, datetime | None]:
-    """Build update kwargs for closing issue.
-
-    Args:
-        record_time: Whether to record completion time
-        date: Optional completion date string
-
-    Returns:
-        Tuple of (update_kwargs dict or None, end_date or None)
-    """
-    update_kwargs = {
-        "status": Status.CLOSED,
-        "progress_percentage": 100.0,
-    }
-
-    end_date = None
-    if record_time:
-        if date:
-            end_date = _parse_completion_date(date)
-            if end_date is None:
-                return None, None
-        else:
-            end_date = datetime.now()
-
-        update_kwargs["actual_end_date"] = end_date
-
-    return update_kwargs, end_date
-
-
-def _display_close_success(
+def _display_close_details(
     updated_issue,
-    reason: str,
     end_date: datetime | None,
-    start_date: datetime | None,
     estimated_hours: float | None,
 ) -> None:
-    """Display success message with completion details.
+    """Display extra completion details (duration, estimate comparison).
 
     Args:
         updated_issue: Closed issue object
-        reason: Optional reason for closing
         end_date: Completion date if recorded
-        start_date: Issue start date for duration calculation
         estimated_hours: Estimated hours for comparison
     """
-    console.print(f"✅ Closed: {updated_issue.title}", style="bold green")
-    console.print("   Status: Closed", style="green")
+    if not end_date:
+        return
 
-    if reason:
-        console.print(f"   Reason: {reason}", style="cyan")
+    console.print(
+        f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}",
+        style="cyan",
+    )
 
-    if end_date:
-        console.print(
-            f"   Completed: {end_date.strftime('%Y-%m-%d %H:%M')}",
-            style="cyan",
-        )
+    # Show duration if we have start date
+    start_date = updated_issue.actual_start_date
+    if start_date:
+        duration = end_date - start_date
+        hours = duration.total_seconds() / 3600
+        console.print(f"   Duration: {hours:.1f} hours", style="cyan")
 
-        # Show duration if we have start date
-        if start_date:
-            duration = end_date - start_date
-            hours = duration.total_seconds() / 3600
-            console.print(f"   Duration: {hours:.1f} hours", style="cyan")
-
-            # Compare with estimate
-            if estimated_hours:
-                diff = hours - estimated_hours
-                if abs(diff) > 0.5:
-                    if diff > 0:
-                        console.print(
-                            f"   Over estimate by: {diff:.1f} hours",
-                            style="yellow",
-                        )
-                    else:
-                        console.print(
-                            f"   Under estimate by: {abs(diff):.1f} hours",
-                            style="green",
-                        )
+        # Compare with estimate
+        if estimated_hours:
+            diff = hours - estimated_hours
+            if abs(diff) > 0.5:
+                if diff > 0:
+                    console.print(
+                        f"   Over estimate by: {diff:.1f} hours",
+                        style="yellow",
+                    )
                 else:
-                    console.print("   ✅ Right on estimate!", style="green")
+                    console.print(
+                        f"   Under estimate by: {abs(diff):.1f} hours",
+                        style="green",
+                    )
+            else:
+                console.print("   ✅ Right on estimate!", style="green")
 
 
 @click.command("close")
@@ -150,38 +111,55 @@ def close_issue(
     """Close an issue (sets status to closed and progress to 100%).
 
     Syntactic sugar for: roadmap issue update <ID> --status closed
-
-    Options like --reason and --record-time add metadata to the update.
     """
     core = ctx.obj["core"]
 
     try:
-        # Check if issue exists
+        # Validate date if provided
+        end_date = None
+        if record_time:
+            if date:
+                end_date = _parse_completion_date(date)
+                if end_date is None:
+                    console.print(
+                        "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
+                        style="bold red",
+                    )
+                    return
+            else:
+                end_date = datetime.now()
+
+        # Build update kwargs with status and progress
+        update_kwargs = {
+            "status": Status.CLOSED,
+            "progress_percentage": 100.0,
+        }
+        if end_date:
+            update_kwargs["actual_end_date"] = end_date
+
+        # Use wrapper for status change display
+        from roadmap.adapters.cli.helpers import ensure_entity_exists
+
+        # Verify issue exists before updating
         ensure_entity_exists(core, "issue", issue_id)
 
-        # Build update kwargs
-        update_kwargs, end_date = _build_update_kwargs(record_time, date)
-
-        if update_kwargs is None:
-            console.print(
-                "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
-                style="bold red",
-            )
-            return
-
-        # Update the issue (this delegates to core.update_issue)
+        # Update the issue
         with track_database_operation(
             "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
         ):
             updated_issue = core.issues.update(issue_id, **update_kwargs)
 
         if updated_issue:
-            _display_close_success(
-                updated_issue,
-                reason,
-                end_date,
-                updated_issue.actual_start_date,
-                updated_issue.estimated_hours,
+            # Status line
+            console.print(f"✅ Closed: {updated_issue.title}", style="bold green")
+            console.print("   Status: Closed", style="green")
+
+            if reason:
+                console.print(f"   Reason: {reason}", style="cyan")
+
+            # Extra details (duration, estimate comparison, etc.)
+            _display_close_details(
+                updated_issue, end_date, updated_issue.estimated_hours
             )
         else:
             console.print(f"❌ Failed to close issue: {issue_id}", style="bold red")

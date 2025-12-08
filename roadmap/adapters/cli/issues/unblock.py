@@ -5,12 +5,11 @@ This command is syntactic sugar for: roadmap issue update <ID> --status in-progr
 
 import click
 
-from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.cli_errors import handle_cli_errors
-from roadmap.common.console import get_console
 from roadmap.core.domain import Status
 
-console = get_console()
+from .status_wrapper import StatusChangeConfig, apply_status_change
 
 
 @click.command("unblock")
@@ -26,24 +25,19 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
     """
     core = ctx.obj["core"]
 
-    issue = ensure_entity_exists(core, "issue", issue_id)
+    def check_is_blocked(issue):
+        """Verify issue is currently blocked before unblocking."""
+        status_val = getattr(issue.status, "value", str(issue.status))
+        if status_val != "blocked":
+            return False, f"Issue is not blocked (current: {status_val})"
+        return True, None
 
-    if issue.status and getattr(issue.status, "value", str(issue.status)) != "blocked":
-        console.print(
-            f"[yellow]⚠️  Issue is not blocked (current status: {issue.status.value if hasattr(issue.status, 'value') else issue.status})[/yellow]"
-        )
-        return
-
-    # Update status to in-progress via core.update_issue
-    updated = core.issues.update(issue_id, status=Status.IN_PROGRESS)
-
-    if updated:
-        console.print(f"✅ Unblocked issue: {updated.title}", style="bold green")
-        console.print(f"   ID: {issue_id}", style="cyan")
-        console.print("   Status: 🔄 In Progress", style="yellow")
-        if reason:
-            console.print(f"   Reason: {reason}", style="cyan")
-
-    else:
-        console.print(f"❌ Failed to unblock issue: {issue_id}", style="bold red")
-        raise click.Abort()
+    config = StatusChangeConfig(
+        status=Status.IN_PROGRESS,
+        emoji="✅",
+        title_verb="Unblocked",
+        title_style="bold green",
+        status_display="🔄 In Progress",
+        pre_check=check_is_blocked,
+    )
+    apply_status_change(core, issue_id, config, reason)
