@@ -16,6 +16,7 @@ from rich.table import Table
 from rich.text import Text
 
 from roadmap.common.console import get_console
+from roadmap.common.output_models import ColumnDef, ColumnType, TableData
 from roadmap.core.domain import Issue, Priority, Status
 
 console = get_console()
@@ -104,6 +105,121 @@ class IssueTableFormatter:
         console.print(table)
 
     @staticmethod
+    def issues_to_table_data(
+        issues: list[Issue], title: str = "Issues", description: str = ""
+    ) -> TableData:
+        """Convert Issue list to TableData for structured output.
+
+        Args:
+            issues: List of Issue objects.
+            title: Optional table title.
+            description: Optional filter description.
+
+        Returns:
+            TableData object ready for rendering in any format.
+        """
+        columns = [
+            ColumnDef(
+                name="id",
+                display_name="ID",
+                type=ColumnType.STRING,
+                width=8,
+                display_style="cyan",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="title",
+                display_name="Title",
+                type=ColumnType.STRING,
+                width=25,
+                display_style="white",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="priority",
+                display_name="Priority",
+                type=ColumnType.ENUM,
+                width=10,
+                display_style="yellow",
+                enum_values=["critical", "high", "medium", "low"],
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="status",
+                display_name="Status",
+                type=ColumnType.ENUM,
+                width=12,
+                display_style="green",
+                enum_values=["todo", "in-progress", "blocked", "review", "closed"],
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="progress",
+                display_name="Progress",
+                type=ColumnType.STRING,
+                width=10,
+                display_style="blue",
+                sortable=False,
+                filterable=False,
+            ),
+            ColumnDef(
+                name="assignee",
+                display_name="Assignee",
+                type=ColumnType.STRING,
+                width=12,
+                display_style="magenta",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="estimate",
+                display_name="Estimate",
+                type=ColumnType.STRING,
+                width=10,
+                display_style="green",
+                sortable=True,
+                filterable=False,
+            ),
+            ColumnDef(
+                name="milestone",
+                display_name="Milestone",
+                type=ColumnType.STRING,
+                width=15,
+                display_style="blue",
+                sortable=True,
+                filterable=True,
+            ),
+        ]
+
+        rows = []
+        for issue in issues:
+            rows.append(
+                [
+                    issue.id,
+                    issue.title,
+                    issue.priority.value,
+                    issue.status.value,
+                    issue.progress_display,
+                    issue.assignee or "Unassigned",
+                    issue.estimated_time_display,
+                    issue.milestone_name,
+                ]
+            )
+
+        return TableData(
+            columns=columns,
+            rows=rows,
+            title=title,
+            description=description,
+            total_count=len(issues),
+            returned_count=len(issues),
+        )
+
+    @staticmethod
     def display_workload_summary(
         assignee_name: str, total_hours: float, status_breakdown: dict
     ) -> None:
@@ -141,6 +257,225 @@ class IssueTableFormatter:
                     )
                 else:
                     console.print(f"  {status}: {data['count']} issues")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Milestone Table Display & Conversion
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class MilestoneTableFormatter:
+    """Formats milestones for display and structured output."""
+
+    @staticmethod
+    def milestones_to_table_data(
+        milestones: list, title: str = "Milestones", description: str = ""
+    ) -> TableData:
+        """Convert Milestone list to TableData for structured output.
+
+        Args:
+            milestones: List of Milestone objects.
+            title: Optional table title.
+            description: Optional filter description.
+
+        Returns:
+            TableData object ready for rendering in any format.
+        """
+        columns = [
+            ColumnDef(
+                name="name",
+                display_name="Milestone",
+                type=ColumnType.STRING,
+                width=20,
+                display_style="cyan",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="description",
+                display_name="Description",
+                type=ColumnType.STRING,
+                width=30,
+                display_style="white",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="status",
+                display_name="Status",
+                type=ColumnType.ENUM,
+                width=10,
+                display_style="green",
+                enum_values=["open", "closed"],
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="due_date",
+                display_name="Due Date",
+                type=ColumnType.DATE,
+                width=12,
+                display_style="yellow",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="progress",
+                display_name="Progress",
+                type=ColumnType.STRING,
+                width=12,
+                display_style="blue",
+                sortable=False,
+                filterable=False,
+            ),
+        ]
+
+        rows = []
+        for milestone in milestones:
+            progress = ""
+            if (
+                hasattr(milestone, "calculated_progress")
+                and milestone.calculated_progress
+            ):
+                progress = f"{milestone.calculated_progress:.0f}%"
+
+            due_date_str = ""
+            if hasattr(milestone, "due_date") and milestone.due_date:
+                due_date_str = milestone.due_date.strftime("%Y-%m-%d")
+
+            rows.append(
+                [
+                    milestone.name,
+                    milestone.description or "",
+                    milestone.status.value
+                    if hasattr(milestone.status, "value")
+                    else str(milestone.status),
+                    due_date_str,
+                    progress,
+                ]
+            )
+
+        return TableData(
+            columns=columns,
+            rows=rows,
+            title=title,
+            description=description,
+            total_count=len(milestones),
+            returned_count=len(milestones),
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Project Table Display & Conversion
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class ProjectTableFormatter:
+    """Formats projects for display and structured output."""
+
+    @staticmethod
+    def projects_to_table_data(
+        projects: list, title: str = "Projects", description: str = ""
+    ) -> TableData:
+        """Convert Project list to TableData for structured output.
+
+        Args:
+            projects: List of project metadata dictionaries or Project objects.
+            title: Optional table title.
+            description: Optional filter description.
+
+        Returns:
+            TableData object ready for rendering in any format.
+        """
+        columns = [
+            ColumnDef(
+                name="id",
+                display_name="ID",
+                type=ColumnType.STRING,
+                width=10,
+                display_style="cyan",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="name",
+                display_name="Name",
+                type=ColumnType.STRING,
+                width=25,
+                display_style="white",
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="status",
+                display_name="Status",
+                type=ColumnType.ENUM,
+                width=12,
+                display_style="magenta",
+                enum_values=["planning", "active", "on-hold", "completed", "cancelled"],
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="priority",
+                display_name="Priority",
+                type=ColumnType.ENUM,
+                width=10,
+                display_style="yellow",
+                enum_values=["critical", "high", "medium", "low"],
+                sortable=True,
+                filterable=True,
+            ),
+            ColumnDef(
+                name="owner",
+                display_name="Owner",
+                type=ColumnType.STRING,
+                width=15,
+                display_style="green",
+                sortable=True,
+                filterable=True,
+            ),
+        ]
+
+        rows = []
+        for project in projects:
+            # Handle both dict and object formats
+            if isinstance(project, dict):
+                project_id = project.get("id", "unknown")[:8]
+                project_name = project.get("name", "Unnamed")
+                project_status = project.get("status", "unknown")
+                project_priority = project.get("priority", "medium")
+                project_owner = project.get("owner", "Unassigned")
+            else:
+                # Handle Project object
+                project_id = getattr(project, "id", "unknown")[:8]
+                project_name = getattr(project, "name", "Unnamed")
+                project_status = getattr(project, "status", "unknown")
+                if hasattr(project_status, "value"):
+                    project_status = project_status.value
+                project_priority = getattr(project, "priority", "medium")
+                if hasattr(project_priority, "value"):
+                    project_priority = project_priority.value
+                project_owner = getattr(project, "owner", "Unassigned")
+
+            rows.append(
+                [
+                    project_id,
+                    project_name,
+                    project_status,
+                    project_priority,
+                    project_owner,
+                ]
+            )
+
+        return TableData(
+            columns=columns,
+            rows=rows,
+            title=title,
+            description=description,
+            total_count=len(projects),
+            returned_count=len(projects),
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

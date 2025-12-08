@@ -1,10 +1,12 @@
 """List projects command."""
 
 import click
-from rich.table import Table
 
+from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.common.console import get_console
+from roadmap.common.output_models import ColumnType
 from roadmap.infrastructure.logging import verbose_output
+from roadmap.shared import ProjectTableFormatter
 
 console = get_console()
 
@@ -94,38 +96,6 @@ def _filter_projects(projects, status, owner, priority, overdue):
     return filtered
 
 
-def _extract_project_info(metadata):
-    """Extract displayable project info from metadata."""
-    return {
-        "id": metadata.get("id", "unknown"),
-        "name": metadata.get("name", "Unnamed"),
-        "status": metadata.get("status", "unknown"),
-        "priority": metadata.get("priority", "medium"),
-        "owner": metadata.get("owner", "Unassigned"),
-    }
-
-
-def _build_projects_table(projects):
-    """Build Rich table from project list."""
-    table = Table(title="Projects")
-    table.add_column("ID", style="cyan")
-    table.add_column("Name", style="bold")
-    table.add_column("Status", style="magenta")
-    table.add_column("Priority", style="yellow")
-    table.add_column("Owner", style="green")
-
-    for project in sorted(projects, key=lambda x: x["name"]):
-        table.add_row(
-            project["id"][:8],
-            project["name"],
-            project["status"],
-            project["priority"],
-            project["owner"],
-        )
-
-    return table
-
-
 @click.command("list")
 @click.option(
     "--status",
@@ -146,6 +116,16 @@ def _build_projects_table(projects):
 )
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@with_output_support(
+    available_columns=["id", "name", "status", "priority", "owner"],
+    column_types={
+        "id": ColumnType.STRING,
+        "name": ColumnType.STRING,
+        "status": ColumnType.ENUM,
+        "priority": ColumnType.ENUM,
+        "owner": ColumnType.STRING,
+    },
+)
 @verbose_output
 def list_projects(
     ctx: click.Context,
@@ -155,7 +135,10 @@ def list_projects(
     overdue: bool,
     verbose: bool,
 ):
-    """List all projects with optional filtering."""
+    """List all projects with optional filtering.
+
+    Supports output formatting with --format, --columns, --sort-by, --filter flags.
+    """
     core = ctx.obj["core"]
 
     try:
@@ -194,12 +177,15 @@ def list_projects(
             console.print("No projects match the specified filters.", style="yellow")
             return
 
-        # Extract display info and build table
-        projects = [_extract_project_info(m) for m in filtered]
-        table = _build_projects_table(projects)
+        # Convert to TableData for structured output
+        description = "filtered" if any([status, owner, priority, overdue]) else "all"
+        table_data = ProjectTableFormatter.projects_to_table_data(
+            filtered,
+            title="Projects",
+            description=description,
+        )
 
-        console.print(table)
-        console.print(f"\nFound {len(projects)} project(s)")
+        return table_data
 
     except Exception as e:
         console.print(f"❌ Failed to list projects: {e}", style="bold red")

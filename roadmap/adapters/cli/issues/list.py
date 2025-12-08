@@ -2,9 +2,11 @@
 
 import click
 
+from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
+from roadmap.common.output_models import ColumnType
 from roadmap.core.services.issue_helpers import (
     IssueFilterValidator,
     IssueQueryService,
@@ -76,7 +78,7 @@ def _handle_no_upcoming_milestones() -> None:
     )
 
 
-def _display_issues_with_filters(
+def _apply_additional_filters(
     core,
     issues: list,
     filter_description: str | None,
@@ -85,22 +87,21 @@ def _display_issues_with_filters(
     status: str,
     priority: str,
     issue_type: str,
-    assignee: str,
-    my_issues: bool,
-) -> None:
-    """Display filtered issues and workload summary.
+) -> tuple[list, str]:
+    """Apply additional filters to issues.
 
     Args:
         core: RoadmapCore instance
-        issues: List of issues to display
-        filter_description: Description of applied filters
+        issues: List of issues to filter
+        filter_description: Current filter description
         open_flag: Show only open issues
         blocked: Show only blocked issues
         status: Filter by status
         priority: Filter by priority
         issue_type: Filter by issue type
-        assignee: Filter by assignee
-        my_issues: Show current user's issues
+
+    Returns:
+        Tuple of (filtered issues, updated filter description)
     """
     query_service = IssueQueryService(core)
     issues, filter_description = query_service.apply_additional_filters(
@@ -112,17 +113,7 @@ def _display_issues_with_filters(
         priority=priority,
         issue_type=issue_type,
     )
-
-    IssueTableFormatter.display_issues(issues, filter_description)
-
-    if (assignee or my_issues) and issues:
-        assignee_name = assignee if assignee else "you"
-        workload = WorkloadCalculator.calculate_workload(issues)
-        IssueTableFormatter.display_workload_summary(
-            assignee_name,
-            workload["total_hours"],
-            workload["status_breakdown"],
-        )
+    return issues, filter_description
 
 
 @click.command("list")
@@ -169,6 +160,28 @@ def _display_issues_with_filters(
 )
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
+@with_output_support(
+    available_columns=[
+        "id",
+        "title",
+        "priority",
+        "status",
+        "progress",
+        "assignee",
+        "estimate",
+        "milestone",
+    ],
+    column_types={
+        "id": ColumnType.STRING,
+        "title": ColumnType.STRING,
+        "priority": ColumnType.ENUM,
+        "status": ColumnType.ENUM,
+        "progress": ColumnType.STRING,
+        "assignee": ColumnType.STRING,
+        "estimate": ColumnType.STRING,
+        "milestone": ColumnType.STRING,
+    },
+)
 @verbose_output
 @require_initialized
 def list_issues(
@@ -192,6 +205,8 @@ def list_issues(
 
     Optional positional argument 'backlog' shows only backlog issues (no milestone).
     Equivalent to: roadmap issue list --backlog
+
+    Supports output formatting with --format, --columns, --sort-by, --filter flags.
     """
     core = ctx.obj["core"]
 
@@ -220,8 +235,8 @@ def list_issues(
             _handle_no_upcoming_milestones()
             return
 
-        # Display issues with filters
-        _display_issues_with_filters(
+        # Apply additional filters
+        issues, filter_description = _apply_additional_filters(
             core,
             issues,
             filter_description,
@@ -230,9 +245,37 @@ def list_issues(
             status,
             priority,
             issue_type,
-            assignee,
-            my_issues,
         )
+
+        # Handle no issues found
+        if not issues:
+            _get_console().print(
+                f"📋 No {filter_description} issues found.", style="yellow"
+            )
+            _get_console().print(
+                "Create one with: roadmap issue create 'Issue title'", style="dim"
+            )
+            return
+
+        # Convert issues to TableData for structured output
+        table_data = IssueTableFormatter.issues_to_table_data(
+            issues,
+            title="Issues",
+            description=filter_description,
+        )
+
+        # Display workload summary if applicable
+        if (assignee or my_issues) and issues:
+            assignee_name = assignee if assignee else "you"
+            workload = WorkloadCalculator.calculate_workload(issues)
+            IssueTableFormatter.display_workload_summary(
+                assignee_name,
+                workload["total_hours"],
+                workload["status_breakdown"],
+            )
+
+        # Return TableData for decorator to handle formatting
+        return table_data
 
     except Exception as e:
         error_handler = ErrorHandler()

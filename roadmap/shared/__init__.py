@@ -13,6 +13,8 @@ from .formatters import (
     IssueTableFormatter,
     KanbanLayout,
     KanbanOrganizer,
+    MilestoneTableFormatter,
+    ProjectTableFormatter,
 )
 
 __all__ = [
@@ -20,4 +22,6 @@ __all__ = [
     "IssueExporter",
     "KanbanOrganizer",
     "KanbanLayout",
+    "MilestoneTableFormatter",
+    "ProjectTableFormatter",
 ]
