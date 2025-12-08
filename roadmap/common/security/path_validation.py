@@ -6,6 +6,75 @@ from .exceptions import PathValidationError
 from .logging import log_security_event
 
 
+def _check_traversal_patterns(path_str: str, allow_absolute: bool) -> None:
+    """Check for directory traversal patterns."""
+    if ".." in path_str and not allow_absolute:
+        raise PathValidationError(
+            f"Path contains potential directory traversal: {path_str}"
+        )
+
+
+def _resolve_path_safely(path: Path) -> Path:
+    """Resolve path safely, handling missing directories."""
+    try:
+        return path.resolve()
+    except (FileNotFoundError, OSError):
+        # If resolve() fails due to missing current directory, handle gracefully
+        if path.is_absolute():
+            return path
+        else:
+            # For relative paths when cwd is missing, return as-is (caller context should handle)
+            return path
+
+
+def _resolve_relative_to_base(path: Path, base_dir: Path) -> Path:
+    """Resolve path relative to base directory."""
+    try:
+        return path.resolve()
+    except (FileNotFoundError, OSError):
+        # If resolve fails, work with absolute version or relative to base
+        if path.is_absolute():
+            return path
+        else:
+            return base_dir / path
+
+
+def _resolve_base_safely(base_dir: Path) -> Path:
+    """Resolve base directory safely."""
+    try:
+        return base_dir.resolve()
+    except (FileNotFoundError, OSError):
+        return base_dir
+
+
+def _check_absolute_allowed(path: Path, allow_absolute: bool) -> None:
+    """Check if absolute path is allowed."""
+    if not allow_absolute and path.is_absolute():
+        raise PathValidationError(f"Absolute paths not allowed: {path}")
+
+
+def _check_within_base(
+    resolved_path: Path, resolved_base: Path, original_path: Path
+) -> None:
+    """Check if path is within base directory."""
+    try:
+        resolved_path.relative_to(resolved_base)
+    except ValueError as e:
+        raise PathValidationError(
+            f"Path outside allowed directory: {original_path}"
+        ) from e
+
+
+def _check_dangerous_components(resolved_path: Path) -> None:
+    """Check for dangerous path components."""
+    path_parts = resolved_path.parts
+    dangerous_parts = {"..", ".", "~"}
+    if any(part in dangerous_parts for part in path_parts):
+        raise PathValidationError(
+            f"Path contains dangerous components: {resolved_path}"
+        )
+
+
 def validate_path(
     path: str | Path,
     base_dir: str | Path | None = None,
@@ -33,55 +102,21 @@ def validate_path(
         if base_dir is None:
             # Still check for directory traversal patterns
             path_str = str(path)
-            if ".." in path_str and not allow_absolute:
-                raise PathValidationError(
-                    f"Path contains potential directory traversal: {path}"
-                )
-
-            try:
-                return path.resolve()
-            except (FileNotFoundError, OSError):
-                # If resolve() fails due to missing current directory, handle gracefully
-                if path.is_absolute():
-                    return path
-                else:
-                    # For relative paths when cwd is missing, return as-is (caller context should handle)
-                    return path
+            _check_traversal_patterns(path_str, allow_absolute)
+            return _resolve_path_safely(path)
 
         # Convert base_dir to Path if needed
         if isinstance(base_dir, str):
             base_dir = Path(base_dir)
 
-            # Resolve the path to handle symlinks and .. references
-        try:
-            resolved_path = path.resolve()
-        except (FileNotFoundError, OSError):
-            # If resolve fails, work with absolute version or relative to base
-            if path.is_absolute():
-                resolved_path = path
-            else:
-                resolved_path = base_dir / path
+        # Resolve paths
+        resolved_path = _resolve_relative_to_base(path, base_dir)
+        resolved_base = _resolve_base_safely(base_dir)
 
-        try:
-            resolved_base = base_dir.resolve()
-        except (FileNotFoundError, OSError):
-            resolved_base = base_dir
-
-        # Check if absolute paths are allowed
-        if not allow_absolute and path.is_absolute():
-            raise PathValidationError(f"Absolute paths not allowed: {path}")
-
-        # Ensure the resolved path is within the base directory
-        try:
-            resolved_path.relative_to(resolved_base)
-        except ValueError as e:
-            raise PathValidationError(f"Path outside allowed directory: {path}") from e
-
-        # Check for dangerous path components
-        path_parts = resolved_path.parts
-        dangerous_parts = {"..", ".", "~"}
-        if any(part in dangerous_parts for part in path_parts):
-            raise PathValidationError(f"Path contains dangerous components: {path}")
+        # Validate
+        _check_absolute_allowed(path, allow_absolute)
+        _check_within_base(resolved_path, resolved_base, path)
+        _check_dangerous_components(resolved_path)
 
         log_security_event(
             "path_validated",
