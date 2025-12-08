@@ -11,6 +11,8 @@ New structure:
 - roadmap.common.validation.validators - utility functions and enums
 """
 
+import warnings
+
 from roadmap.common.validation import (
     FieldValidator,
     RoadmapValidator,
@@ -20,6 +22,15 @@ from roadmap.common.validation import (
     default_validator,
     validate_and_raise,
     validate_frontmatter_structure,
+)
+
+# Emit deprecation warning when this module is imported
+warnings.warn(
+    "The 'roadmap.common.validation' module is deprecated. "
+    "Use 'roadmap.common.validation' package directly instead. "
+    "This module will be removed in v1.0.0.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
 __all__ = [

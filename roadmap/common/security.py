@@ -13,6 +13,8 @@ New code should import directly from:
 - roadmap.common.security.export_cleanup
 """
 
+import warnings
+
 # Re-export all public classes and functions for backward compatibility
 from roadmap.common.security import (
     PathValidationError,
@@ -27,6 +29,15 @@ from roadmap.common.security import (
     secure_file_permissions,
     validate_export_size,
     validate_path,
+)
+
+# Emit deprecation warning when this module is imported
+warnings.warn(
+    "The 'roadmap.common.security' module is deprecated. "
+    "Use 'roadmap.common.security' package directly instead. "
+    "This module will be removed in v1.0.0.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
 __all__ = [
