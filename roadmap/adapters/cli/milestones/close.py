@@ -12,6 +12,98 @@ from roadmap.infrastructure.logging import (
 console = get_console()
 
 
+def _display_open_issues(milestone_name: str, open_issues: list) -> None:
+    """Display open issues in milestone and provide guidance.
+
+    Args:
+        milestone_name: Name of milestone
+        open_issues: List of open issues
+    """
+    console.print(
+        f"\n⚠️  Cannot close milestone: {len(open_issues)} open issue(s) remain",
+        style="bold yellow",
+    )
+    console.print(f"\n📋 Open issues in '{milestone_name}':", style="cyan")
+
+    for issue in open_issues[:10]:  # Show first 10
+        console.print(
+            f"   • {issue.id[:8]} - {issue.title} [{issue.status.value}]",
+            style="dim",
+        )
+
+    if len(open_issues) > 10:
+        console.print(f"   ... and {len(open_issues) - 10} more", style="dim")
+
+    console.print(
+        "\n💡 Options to proceed:",
+        style="cyan",
+    )
+    console.print(
+        "   1. Close the open issues: roadmap issue close <issue_id>",
+        style="dim",
+    )
+    console.print(
+        "   2. Migrate to backlog: roadmap issue update <issue_id> --milestone ''",
+        style="dim",
+    )
+    console.print(
+        "   3. Move to a different milestone: roadmap issue update <issue_id> --milestone 'New Milestone'",
+        style="dim",
+    )
+    console.print(
+        f"   4. Use --force to close anyway (not recommended): roadmap milestone close '{milestone_name}' --force",
+        style="dim",
+    )
+
+
+def _confirm_milestone_close(
+    milestone_name: str, total_issues: int, force: bool
+) -> bool:
+    """Confirm milestone closure with user.
+
+    Args:
+        milestone_name: Name of milestone
+        total_issues: Total number of issues
+        force: Skip confirmation if True
+
+    Returns:
+        True if user confirmed or force is True
+    """
+    if force:
+        return True
+
+    return click.confirm(
+        f"Close milestone '{milestone_name}'? All {total_issues} issue(s) are completed."
+    )
+
+
+def _close_milestone_in_db(core, milestone_name: str) -> bool:
+    """Close milestone in database.
+
+    Args:
+        core: RoadmapCore instance
+        milestone_name: Name of milestone
+
+    Returns:
+        True if successful
+    """
+    from roadmap.core.domain import MilestoneStatus
+
+    with track_database_operation("update", "milestone"):
+        return core.milestones.update(milestone_name, status=MilestoneStatus.CLOSED)
+
+
+def _display_close_success(milestone_name: str, total_issues: int) -> None:
+    """Display success message for closed milestone.
+
+    Args:
+        milestone_name: Name of closed milestone
+        total_issues: Total number of issues
+    """
+    console.print(f"✅ Closed milestone: {milestone_name}", style="bold green")
+    console.print(f"   {total_issues} completed issue(s)", style="green")
+
+
 @click.command("close")
 @click.argument("milestone_name")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
@@ -47,63 +139,21 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
         # Filter for open issues (not closed)
         open_issues = [issue for issue in all_issues if issue.status.value != "closed"]
 
-        # If there are open issues, provide guidance
+        # If there are open issues, provide guidance and return
         if open_issues:
-            console.print(
-                f"\n⚠️  Cannot close milestone: {len(open_issues)} open issue(s) remain",
-                style="bold yellow",
-            )
-            console.print(f"\n📋 Open issues in '{milestone_name}':", style="cyan")
-
-            for issue in open_issues[:10]:  # Show first 10
-                console.print(
-                    f"   • {issue.id[:8]} - {issue.title} [{issue.status.value}]",
-                    style="dim",
-                )
-
-            if len(open_issues) > 10:
-                console.print(f"   ... and {len(open_issues) - 10} more", style="dim")
-
-            console.print(
-                "\n💡 Options to proceed:",
-                style="cyan",
-            )
-            console.print(
-                "   1. Close the open issues: roadmap issue close <issue_id>",
-                style="dim",
-            )
-            console.print(
-                "   2. Migrate to backlog: roadmap issue update <issue_id> --milestone ''",
-                style="dim",
-            )
-            console.print(
-                "   3. Move to a different milestone: roadmap issue update <issue_id> --milestone 'New Milestone'",
-                style="dim",
-            )
-            console.print(
-                f"   4. Use --force to close anyway (not recommended): roadmap milestone close '{milestone_name}' --force",
-                style="dim",
-            )
+            _display_open_issues(milestone_name, open_issues)
             return
 
-        # All issues are closed, proceed with closing milestone
-        if not force:
-            if not click.confirm(
-                f"Close milestone '{milestone_name}'? All {len(all_issues)} issue(s) are completed."
-            ):
-                console.print("❌ Milestone close cancelled.", style="yellow")
-                return
+        # All issues are closed, confirm and proceed
+        if not _confirm_milestone_close(milestone_name, len(all_issues), force):
+            console.print("❌ Milestone close cancelled.", style="yellow")
+            return
 
-        from roadmap.core.domain import MilestoneStatus
-
-        with track_database_operation("update", "milestone"):
-            success = core.milestones.update(
-                milestone_name, status=MilestoneStatus.CLOSED
-            )
+        # Close milestone in database
+        success = _close_milestone_in_db(core, milestone_name)
 
         if success:
-            console.print(f"✅ Closed milestone: {milestone_name}", style="bold green")
-            console.print(f"   {len(all_issues)} completed issue(s)", style="green")
+            _display_close_success(milestone_name, len(all_issues))
         else:
             console.print(
                 f"❌ Failed to close milestone: {milestone_name}",

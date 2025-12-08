@@ -89,6 +89,87 @@ class GitBranchManager:
 
         return f"{prefix}/{issue.id}-{title_slug}"
 
+    def _check_working_tree_clean(self, force: bool) -> bool:
+        """Check if working tree has uncommitted changes.
+
+        Args:
+            force: Skip dirty working tree check
+
+        Returns:
+            True if working tree is clean or force is True
+        """
+        if force:
+            return True
+
+        status_output = self.executor.run(["status", "--porcelain"]) or ""
+        status_lines = [line for line in status_output.splitlines() if line.strip()]
+        has_substantive_changes = any(
+            not line.startswith("??") for line in status_lines
+        )
+        return not has_substantive_changes
+
+    def _branch_already_exists(self, branch_name: str) -> bool:
+        """Check if branch already exists.
+
+        Args:
+            branch_name: Name of branch to check
+
+        Returns:
+            True if branch exists
+        """
+        existing = self.executor.run(["rev-parse", "--verify", branch_name])
+        if not existing:
+            existing = self.executor.run(
+                ["rev-parse", "--verify", f"refs/heads/{branch_name}"]
+            )
+        return existing is not None
+
+    def _handle_existing_branch(self, branch_name: str, checkout: bool) -> bool:
+        """Handle existing branch (checkout or skip).
+
+        Args:
+            branch_name: Name of existing branch
+            checkout: Whether to checkout the branch
+
+        Returns:
+            True if operation succeeded
+        """
+        if checkout:
+            co = self.executor.run(["checkout", branch_name])
+            return co is not None
+        else:
+            return True
+
+    def _get_current_branch(self) -> str | None:
+        """Get current branch name.
+
+        Returns:
+            Current branch name or None
+        """
+        return self.executor.run(["rev-parse", "--abbrev-ref", "HEAD"]) or None
+
+    def _create_and_checkout_branch(self, branch_name: str, checkout: bool) -> bool:
+        """Create new branch and optionally return to previous branch.
+
+        Args:
+            branch_name: Name of new branch
+            checkout: Whether to stay on new branch
+
+        Returns:
+            True if successful
+        """
+        current_branch = self._get_current_branch()
+
+        result = self.executor.run(["checkout", "-b", branch_name])
+        if result is None:
+            return False
+
+        if not checkout:
+            if current_branch:
+                self.executor.run(["checkout", current_branch])
+
+        return True
+
     def create_branch_for_issue(
         self, issue, checkout: bool = True, force: bool = False
     ) -> bool:
@@ -107,48 +188,13 @@ class GitBranchManager:
 
         branch_name = self.suggest_branch_name(issue)
 
-        # Check for uncommitted changes
-        status_output = self.executor.run(["status", "--porcelain"]) or ""
-        # Consider only substantive changes as dirty: ignore purely untracked files (??)
-        status_lines = [line for line in status_output.splitlines() if line.strip()]
-        has_substantive_changes = any(
-            not line.startswith("??") for line in status_lines
-        )
-        if has_substantive_changes and not force:
-            # Working tree has tracked modifications; do not create branch by default
+        if not self._check_working_tree_clean(force):
             return False
 
-        # Check if branch already exists
-        existing = self.executor.run(["rev-parse", "--verify", branch_name])
-        if not existing:
-            existing = self.executor.run(
-                ["rev-parse", "--verify", f"refs/heads/{branch_name}"]
-            )
-        # If branch exists, optionally checkout it
-        if existing:
-            if checkout:
-                co = self.executor.run(["checkout", branch_name])
-                return co is not None
-            else:
-                # Branch exists but we are not checking out; success
-                return True
+        if self._branch_already_exists(branch_name):
+            return self._handle_existing_branch(branch_name, checkout)
 
-        # Remember current branch
-        current_branch = (
-            self.executor.run(["rev-parse", "--abbrev-ref", "HEAD"]) or None
-        )
-
-        # Create the branch
-        result = self.executor.run(["checkout", "-b", branch_name])
-        if result is None:
-            return False
-
-        if not checkout:
-            # Switch back to previous branch if we created branch but shouldn't stay on it
-            if current_branch:
-                self.executor.run(["checkout", current_branch])
-
-        return True
+        return self._create_and_checkout_branch(branch_name, checkout)
 
     def auto_create_issue_from_branch(
         self, roadmap_core, branch_name: str | None = None

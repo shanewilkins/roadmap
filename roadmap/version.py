@@ -239,15 +239,15 @@ class VersionManager:
                 "is_clean": True,
             }
 
-    def generate_changelog_entry(
-        self, version: SemanticVersion, issues: list[Issue], milestones: list[Milestone]
-    ) -> str:
-        """Generate changelog entry for a version."""
-        date_str = datetime.now().strftime("%Y-%m-%d")
+    def _group_issues_by_type(self, issues: list[Issue]) -> tuple[list, list, list]:
+        """Group issues by type (feature, bug, other).
 
-        entry = f"\n## [{version}] - {date_str}\n\n"
+        Args:
+            issues: List of issues to group
 
-        # Group issues by type
+        Returns:
+            Tuple of (features, bugfixes, other) lists
+        """
         features = []
         bugfixes = []
         other = []
@@ -260,32 +260,59 @@ class VersionManager:
             else:
                 other.append(issue)
 
-        # Add sections
-        if features:
-            entry += "### Added\n"
-            for issue in features:
-                entry += f"- {issue.title} (#{issue.id[:8]})\n"
-            entry += "\n"
+        return features, bugfixes, other
 
-        if bugfixes:
-            entry += "### Fixed\n"
-            for issue in bugfixes:
-                entry += f"- {issue.title} (#{issue.id[:8]})\n"
-            entry += "\n"
+    def _format_issue_list(self, section_name: str, issues: list[Issue]) -> str:
+        """Format a list of issues as changelog section.
 
-        if other:
-            entry += "### Changed\n"
-            for issue in other:
-                entry += f"- {issue.title} (#{issue.id[:8]})\n"
-            entry += "\n"
+        Args:
+            section_name: Name of section (Added, Fixed, Changed)
+            issues: List of issues to format
 
-        # Add completed milestones
+        Returns:
+            Formatted changelog section
+        """
+        if not issues:
+            return ""
+
+        section = f"### {section_name}\n"
+        for issue in issues:
+            section += f"- {issue.title} (#{issue.id[:8]})\n"
+        section += "\n"
+        return section
+
+    def _format_milestone_list(self, milestones: list[Milestone]) -> str:
+        """Format completed milestones as changelog section.
+
+        Args:
+            milestones: List of milestones to check
+
+        Returns:
+            Formatted changelog section or empty string
+        """
         completed_milestones = [m for m in milestones if m.status.value == "completed"]
-        if completed_milestones:
-            entry += "### Milestones\n"
-            for milestone in completed_milestones:
-                entry += f"- {milestone.name}: {milestone.description}\n"
-            entry += "\n"
+        if not completed_milestones:
+            return ""
+
+        section = "### Milestones\n"
+        for milestone in completed_milestones:
+            section += f"- {milestone.name}: {milestone.description}\n"
+        section += "\n"
+        return section
+
+    def generate_changelog_entry(
+        self, version: SemanticVersion, issues: list[Issue], milestones: list[Milestone]
+    ) -> str:
+        """Generate changelog entry for a version."""
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        entry = f"\n## [{version}] - {date_str}\n\n"
+
+        features, bugfixes, other = self._group_issues_by_type(issues)
+
+        entry += self._format_issue_list("Added", features)
+        entry += self._format_issue_list("Fixed", bugfixes)
+        entry += self._format_issue_list("Changed", other)
+        entry += self._format_milestone_list(milestones)
 
         return entry
 

@@ -18,6 +18,112 @@ def _get_console():
     return get_console()
 
 
+def _validate_and_get_issues(
+    core,
+    backlog: bool,
+    assignee: str,
+    my_issues: bool,
+    unassigned: bool,
+    next_milestone: bool,
+    milestone: str,
+    overdue: bool,
+) -> tuple[list | None, str | None]:
+    """Validate filter combinations and get filtered issues.
+
+    Args:
+        core: RoadmapCore instance
+        backlog: Show backlog issues
+        assignee: Filter by assignee
+        my_issues: Show current user's issues
+        unassigned: Show unassigned issues
+        next_milestone: Show next milestone issues
+        milestone: Filter by milestone name
+        overdue: Show overdue issues
+
+    Returns:
+        Tuple of (issues list or None, filter description or None)
+    """
+    is_valid, error_msg = IssueFilterValidator.validate_filters(
+        assignee, my_issues, backlog, unassigned, next_milestone, milestone
+    )
+    if not is_valid:
+        _get_console().print(f"❌ {error_msg}", style="bold red")
+        return None, None
+
+    query_service = IssueQueryService(core)
+    issues, filter_description = query_service.get_filtered_issues(
+        milestone=milestone,
+        backlog=backlog,
+        overdue=overdue,
+        unassigned=unassigned,
+        next_milestone=next_milestone,
+        assignee=assignee,
+        my_issues=my_issues,
+    )
+
+    return issues, filter_description
+
+
+def _handle_no_upcoming_milestones() -> None:
+    """Handle case where no upcoming milestones are found."""
+    _get_console().print(
+        "📋 No upcoming milestones with due dates found.", style="yellow"
+    )
+    _get_console().print(
+        "Create one with: roadmap milestone create 'Milestone name' --due-date YYYY-MM-DD",
+        style="dim",
+    )
+
+
+def _display_issues_with_filters(
+    core,
+    issues: list,
+    filter_description: str | None,
+    open_flag: bool,
+    blocked: bool,
+    status: str,
+    priority: str,
+    issue_type: str,
+    assignee: str,
+    my_issues: bool,
+) -> None:
+    """Display filtered issues and workload summary.
+
+    Args:
+        core: RoadmapCore instance
+        issues: List of issues to display
+        filter_description: Description of applied filters
+        open_flag: Show only open issues
+        blocked: Show only blocked issues
+        status: Filter by status
+        priority: Filter by priority
+        issue_type: Filter by issue type
+        assignee: Filter by assignee
+        my_issues: Show current user's issues
+    """
+    query_service = IssueQueryService(core)
+    issues, filter_description = query_service.apply_additional_filters(
+        issues,
+        filter_description or "",
+        open_only=open_flag,
+        blocked_only=blocked,
+        status=status,
+        priority=priority,
+        issue_type=issue_type,
+    )
+
+    IssueTableFormatter.display_issues(issues, filter_description)
+
+    if (assignee or my_issues) and issues:
+        assignee_name = assignee if assignee else "you"
+        workload = WorkloadCalculator.calculate_workload(issues)
+        IssueTableFormatter.display_workload_summary(
+            assignee_name,
+            workload["total_hours"],
+            workload["status_breakdown"],
+        )
+
+
 @click.command("list")
 @click.argument(
     "filter_type",
@@ -98,60 +204,39 @@ def list_issues(
         backlog = True
 
     try:
-        # Validate filter combinations
-        is_valid, error_msg = IssueFilterValidator.validate_filters(
-            assignee, my_issues, backlog, unassigned, next_milestone, milestone
+        # Validate and get issues
+        issues, filter_description = _validate_and_get_issues(
+            core,
+            backlog,
+            assignee,
+            my_issues,
+            unassigned,
+            next_milestone,
+            milestone,
+            overdue,
         )
-        if not is_valid:
-            _get_console().print(f"❌ {error_msg}", style="bold red")
-            return
 
-        # Get filtered issues using query service
-        query_service = IssueQueryService(core)
-        issues, filter_description = query_service.get_filtered_issues(
-            milestone=milestone,
-            backlog=backlog,
-            overdue=overdue,
-            unassigned=unassigned,
-            next_milestone=next_milestone,
-            assignee=assignee,
-            my_issues=my_issues,
-        )
+        if issues is None:
+            return
 
         # Handle next milestone not found
         if next_milestone and not issues and not filter_description:
-            _get_console().print(
-                "📋 No upcoming milestones with due dates found.", style="yellow"
-            )
-            _get_console().print(
-                "Create one with: roadmap milestone create 'Milestone name' --due-date YYYY-MM-DD",
-                style="dim",
-            )
+            _handle_no_upcoming_milestones()
             return
 
-        # Apply additional filters
-        issues, filter_description = query_service.apply_additional_filters(
+        # Display issues with filters
+        _display_issues_with_filters(
+            core,
             issues,
             filter_description,
-            open_only=open,
-            blocked_only=blocked,
-            status=status,
-            priority=priority,
-            issue_type=issue_type,
+            open,
+            blocked,
+            status,
+            priority,
+            issue_type,
+            assignee,
+            my_issues,
         )
-
-        # Display issues using table formatter
-        IssueTableFormatter.display_issues(issues, filter_description)
-
-        # Show workload summary for assignee filters
-        if (assignee or my_issues) and issues:
-            assignee_name = assignee if assignee else "you"
-            workload = WorkloadCalculator.calculate_workload(issues)
-            IssueTableFormatter.display_workload_summary(
-                assignee_name,
-                workload["total_hours"],
-                workload["status_breakdown"],
-            )
 
     except Exception as e:
         error_handler = ErrorHandler()
