@@ -6,6 +6,7 @@ import click
 
 from roadmap.common.console import get_console
 from roadmap.common.file_utils import ensure_directory_exists
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -162,25 +163,6 @@ def _generate_project_content(
     return content
 
 
-def _print_project_created_success(
-    project_id: str,
-    name: str,
-    priority: str,
-    owner: str,
-    estimated_hours: float,
-    project_path,
-    core,
-):
-    """Print project created success message."""
-    console.print("✅ Created project:", style="bold green")
-    console.print(f"   ID: {project_id}")
-    console.print(f"   Name: {name}")
-    console.print(f"   Priority: {priority}")
-    if owner:
-        console.print(f"   Owner: {owner}")
-    if estimated_hours:
-        console.print(f"   Estimated: {estimated_hours}h")
-    console.print(f"   File: {project_path.relative_to(core.root_path)}")
 
 
 @click.command("create")
@@ -293,10 +275,17 @@ def create_project(
             with open(project_path, "w") as f:
                 f.write(project_content)
 
-        # Print success message
-        _print_project_created_success(
-            project_id, name, priority, owner, estimated_hours, project_path, core
-        )
+        # Format and display success message
+        extra_details = {
+            "Priority": priority,
+            "Estimated hours": str(estimated_hours) if estimated_hours else "N/A",
+            "File": str(project_path.relative_to(core.root_path)),
+        }
+        if owner:
+            extra_details["Owner"] = owner
+        lines = format_operation_success("✅", "Created", name, project_id, None, extra_details)
+        for line in lines:
+            console.print(line, style="green")
 
     except Exception as e:
         log_error_with_context(
@@ -305,4 +294,6 @@ def create_project(
             entity_type="project",
             additional_context={"name": name},
         )
-        console.print(f"❌ Failed to create project: {e}", style="bold red")
+        lines = format_operation_failure("Create", name, str(e))
+        for line in lines:
+            console.print(line, style="bold red")

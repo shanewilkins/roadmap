@@ -6,6 +6,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
     log_error_with_context,
@@ -222,12 +223,6 @@ def _display_milestone_updates(updated_project, updates):
         )
 
 
-def _display_update_results(updated_project, updates):
-    """Display formatted results of project update."""
-    console.print(f"✅ Updated project: {updated_project.name}", style="bold green")
-    _display_basic_updates(updated_project, updates)
-    _display_date_updates(updated_project, updates)
-    _display_milestone_updates(updated_project, updates)
 
 
 @click.command("update")
@@ -306,7 +301,9 @@ def update_project(
     try:
         project = core.get_project(project_id)
         if not project:
-            console.print(f"❌ Project not found: {project_id}", style="bold red")
+            lines = format_operation_failure("Update", project_id, "Project not found")
+            for line in lines:
+                console.print(line, style="bold red")
             return
 
         updates = _build_updates_dict(
@@ -343,12 +340,21 @@ def update_project(
             updated_project = core.update_project(project_id, **updates)
 
         if not updated_project:
-            console.print(
-                f"❌ Failed to update project: {project_id}", style="bold red"
-            )
+            lines = format_operation_failure("Update", project_id, "Failed to update in database")
+            for line in lines:
+                console.print(line, style="bold red")
             return
 
-        _display_update_results(updated_project, updates)
+        # Build extra details from updates
+        extra_details = {}
+        _display_basic_updates(updated_project, updates)
+        _display_date_updates(updated_project, updates)
+        _display_milestone_updates(updated_project, updates)
+        
+        # Show success with formatter
+        lines = format_operation_success("✅", "Updated", updated_project.name, project_id, None, extra_details)
+        for line in lines:
+            console.print(line, style="green")
 
     except Exception as e:
         log_error_with_context(
@@ -357,7 +363,6 @@ def update_project(
             entity_type="project",
             entity_id=project_id,
         )
-        console.print(f"❌ Failed to update project: {e}", style="bold red")
-        import traceback
-
-        console.print(traceback.format_exc(), style="dim")
+        lines = format_operation_failure("Update", project_id, str(e))
+        for line in lines:
+            console.print(line, style="bold red")
