@@ -272,6 +272,88 @@ def _run_backup_cleanup(
     presenter.present_backup_cleanup_result(result)
 
 
+def _build_move_list(issues_dir: Path, issues: dict) -> list:
+    """Build list of moves to make from issue structure issues.
+
+    Args:
+        issues_dir: Path to issues directory
+        issues: Dictionary of misplaced and orphaned issues
+
+    Returns:
+        List of move operations
+    """
+    moves_to_make = []
+
+    if issues.get("misplaced"):
+        for item in issues["misplaced"]:
+            moves_to_make.append(
+                {
+                    "from": Path(item["current_location"]),
+                    "to": Path(item["expected_location"]),
+                    "issue_id": item["issue_id"],
+                }
+            )
+
+    if issues.get("orphaned"):
+        for item in issues["orphaned"]:
+            backlog_dest = issues_dir / "backlog" / Path(item["location"]).name
+            moves_to_make.append(
+                {
+                    "from": Path(item["location"]),
+                    "to": backlog_dest,
+                    "issue_id": item["issue_id"],
+                }
+            )
+
+    return moves_to_make
+
+
+def _confirm_folder_moves(force: bool) -> bool:
+    """Confirm folder moves with user.
+
+    Args:
+        force: Skip confirmation if True
+
+    Returns:
+        True if user confirmed or force is True
+    """
+    if force:
+        return True
+
+    console.print(
+        "\n⚠️  About to move files:",
+        style="bold yellow",
+    )
+    return click.confirm("\nProceed with moves?", default=False)
+
+
+def _perform_folder_moves(moves_to_make: list) -> tuple[int, int]:
+    """Perform folder move operations.
+
+    Args:
+        moves_to_make: List of move operations to perform
+
+    Returns:
+        Tuple of (moved_count, failed_count)
+    """
+    moved_count = 0
+    failed_count = 0
+
+    for move in moves_to_make:
+        try:
+            move["to"].parent.mkdir(parents=True, exist_ok=True)
+            move["from"].rename(move["to"])
+            moved_count += 1
+        except Exception as e:
+            console.print(
+                f"⚠️  Failed to move {move['from'].name}: {e}",
+                style="yellow",
+            )
+            failed_count += 1
+
+    return moved_count, failed_count
+
+
 def _resolve_folder_issues(
     issues_dir: Path,
     roadmap_dir: Path,
@@ -295,28 +377,7 @@ def _resolve_folder_issues(
     if total == 0:
         return
 
-    moves_to_make = []
-
-    if misplaced_count:
-        for item in issues["misplaced"]:
-            moves_to_make.append(
-                {
-                    "from": Path(item["current_location"]),
-                    "to": Path(item["expected_location"]),
-                    "issue_id": item["issue_id"],
-                }
-            )
-
-    if orphaned_count:
-        for item in issues["orphaned"]:
-            backlog_dest = issues_dir / "backlog" / Path(item["location"]).name
-            moves_to_make.append(
-                {
-                    "from": Path(item["location"]),
-                    "to": backlog_dest,
-                    "issue_id": item["issue_id"],
-                }
-            )
+    moves_to_make = _build_move_list(issues_dir, issues)
 
     if not moves_to_make:
         return
@@ -324,32 +385,12 @@ def _resolve_folder_issues(
     presenter.present_folder_moves(moves_to_make)
 
     # Confirm moves
-    if not force:
-        console.print(
-            f"\n⚠️  About to move {len(moves_to_make)} file(s):",
-            style="bold yellow",
-        )
-
-        if not click.confirm("\nProceed with moves?", default=False):
-            console.print("❌ Cancelled.", style="yellow")
-            return
+    if not _confirm_folder_moves(force):
+        console.print("❌ Cancelled.", style="yellow")
+        return
 
     # Perform moves
-    moved_count = 0
-    failed_count = 0
-
-    for move in moves_to_make:
-        try:
-            move["to"].parent.mkdir(parents=True, exist_ok=True)
-            move["from"].rename(move["to"])
-            moved_count += 1
-        except Exception as e:
-            console.print(
-                f"⚠️  Failed to move {move['from'].name}: {e}",
-                style="yellow",
-            )
-            failed_count += 1
-
+    moved_count, failed_count = _perform_folder_moves(moves_to_make)
     presenter.present_folder_moves_result(moved_count, failed_count)
 
 

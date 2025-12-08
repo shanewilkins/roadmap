@@ -149,6 +149,91 @@ class RoadmapCore:
         """Initialize a new roadmap in the current directory."""
         self._init_manager.initialize()
 
+    def _sync_with_progress(self, message: str) -> dict | None:
+        """Run database sync with progress display.
+
+        Args:
+            message: Progress message to display
+
+        Returns:
+            Sync result dictionary or None
+        """
+        from rich.progress import Progress, SpinnerColumn, TextColumn
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn(f"[bold blue]{message}..."),
+            transient=True,
+        ) as progress:
+            progress.add_task("sync", total=None)
+            return self.db.smart_sync()
+
+    def _sync_without_progress(self) -> dict | None:
+        """Run database sync without progress display.
+
+        Returns:
+            Sync result dictionary or None
+        """
+        return self.db.smart_sync()
+
+    def _display_sync_result(self, console, message: str, files_synced: int) -> None:
+        """Display sync result message.
+
+        Args:
+            console: Rich console instance
+            message: Message to display
+            files_synced: Number of files synced
+        """
+        console.print(f"✅ {message}: {files_synced} files synced")
+
+    def _handle_first_time_setup(
+        self, console, show_progress: bool, force_rebuild: bool
+    ) -> None:
+        """Handle first-time database initialization.
+
+        Args:
+            console: Rich console instance
+            show_progress: Whether to show progress
+            force_rebuild: Whether full rebuild was requested
+        """
+        if show_progress:
+            sync_result = self._sync_with_progress(
+                "Initializing database from .roadmap/ files"
+            )
+        else:
+            sync_result = self._sync_without_progress()
+
+        if show_progress and sync_result:
+            files_synced = sync_result.get("files_synced", 0)
+            total_files = sync_result.get("total_files", 0)
+            console.print(
+                f"✅ Database initialized: {files_synced}/{total_files} files synced"
+            )
+
+        if not force_rebuild and self._git.is_git_repository():
+            self._ensure_git_hooks_installed(console, show_progress)
+
+    def _handle_incremental_sync(self, console, show_progress: bool) -> None:
+        """Handle incremental database sync.
+
+        Args:
+            console: Rich console instance
+            show_progress: Whether to show progress
+        """
+        if not self.db.has_file_changes():
+            return
+
+        if show_progress:
+            sync_result = self._sync_with_progress(
+                "Updating database with recent changes"
+            )
+        else:
+            sync_result = self._sync_without_progress()
+
+        if show_progress and sync_result:
+            files_synced = sync_result.get("files_synced", 0)
+            self._display_sync_result(console, "Database updated", files_synced)
+
     def ensure_database_synced(
         self, force_rebuild: bool = False, show_progress: bool = True
     ) -> None:
@@ -161,7 +246,6 @@ class RoadmapCore:
             show_progress: Show progress indicators during sync
         """
         from rich.console import Console
-        from rich.progress import Progress, SpinnerColumn, TextColumn
 
         console = Console()
 
@@ -171,47 +255,9 @@ class RoadmapCore:
         first_time_setup = not self.db.database_exists()
 
         if first_time_setup or force_rebuild:
-            if show_progress:
-                with Progress(
-                    SpinnerColumn(),
-                    TextColumn(
-                        "[bold blue]Initializing database from .roadmap/ files..."
-                    ),
-                    transient=True,
-                ) as progress:
-                    progress.add_task("sync", total=None)
-                    sync_result = self.db.smart_sync()
-            else:
-                sync_result = self.db.smart_sync()
-
-            if show_progress and sync_result:
-                files_synced = sync_result.get("files_synced", 0)
-                total_files = sync_result.get("total_files", 0)
-                console.print(
-                    f"✅ Database initialized: {files_synced}/{total_files} files synced"
-                )
-
-            if first_time_setup and self._git.is_git_repository():
-                self._ensure_git_hooks_installed(console, show_progress)
-
+            self._handle_first_time_setup(console, show_progress, first_time_setup)
         else:
-            if self.db.has_file_changes():
-                if show_progress:
-                    with Progress(
-                        SpinnerColumn(),
-                        TextColumn(
-                            "[bold green]Updating database with recent changes..."
-                        ),
-                        transient=True,
-                    ) as progress:
-                        progress.add_task("sync", total=None)
-                        sync_result = self.db.smart_sync()
-                else:
-                    sync_result = self.db.smart_sync()
-
-                if show_progress and sync_result:
-                    files_synced = sync_result.get("files_synced", 0)
-                    console.print(f"✅ Database updated: {files_synced} files synced")
+            self._handle_incremental_sync(console, show_progress)
 
     def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
         """Ensure git hooks are installed for automatic sync."""

@@ -17,6 +17,91 @@ class GitCommitAnalyzer:
         self.executor = GitCommandExecutor(repo_path)
         self.repo_path = repo_path or Path.cwd()
 
+    def _parse_commit_line(self, line: str) -> tuple | None:
+        """Parse single commit log line.
+
+        Args:
+            line: Commit log line in format: hash|author|date|message
+
+        Returns:
+            Tuple of (hash, author, date, message) or None if parsing fails
+        """
+        if not line.strip():
+            return None
+
+        try:
+            hash_val, author, date_str, message = line.split("|", 3)
+            date = parse_datetime(date_str.replace(" ", "T"), "iso")
+            return (hash_val, author, date, message)
+        except Exception:
+            return None
+
+    def _extract_file_stats(self, stat_output: str | None) -> tuple[list, int, int]:
+        """Extract file changes and insertion/deletion counts from stat output.
+
+        Args:
+            stat_output: Git show --stat output
+
+        Returns:
+            Tuple of (files_changed list, insertions count, deletions count)
+        """
+        files_changed = []
+        insertions = deletions = 0
+
+        if not stat_output:
+            return files_changed, insertions, deletions
+
+        for stat_line in stat_output.split("\n"):
+            if " | " in stat_line:
+                file_path = stat_line.split(" | ")[0].strip()
+                files_changed.append(file_path)
+            elif "insertion" in stat_line or "deletion" in stat_line:
+                numbers = re.findall(r"(\d+) insertion", stat_line)
+                if numbers:
+                    insertions = int(numbers[0])
+                numbers = re.findall(r"(\d+) deletion", stat_line)
+                if numbers:
+                    deletions = int(numbers[0])
+
+        return files_changed, insertions, deletions
+
+    def _build_commit_object(
+        self,
+        hash_val: str,
+        author: str,
+        date,
+        message: str,
+        files_changed: list,
+        insertions: int,
+        deletions: int,
+    ) -> GitCommit | None:
+        """Build GitCommit object from parsed data.
+
+        Args:
+            hash_val: Commit hash
+            author: Author name
+            date: Commit date
+            message: Commit message
+            files_changed: List of changed files
+            insertions: Number of insertions
+            deletions: Number of deletions
+
+        Returns:
+            GitCommit object or None if date is invalid
+        """
+        if date is None:
+            return None
+
+        return GitCommit(
+            hash=hash_val,
+            author=author,
+            date=date,
+            message=message,
+            files_changed=files_changed,
+            insertions=insertions,
+            deletions=deletions,
+        )
+
     def get_recent_commits(
         self, count: int = 10, since: str | None = None
     ) -> list[GitCommit]:
@@ -39,49 +124,23 @@ class GitCommitAnalyzer:
 
         commits = []
         for line in output.split("\n"):
-            if not line.strip():
+            # Parse commit line
+            parsed = self._parse_commit_line(line)
+            if not parsed:
                 continue
 
-            try:
-                hash_val, author, date_str, message = line.split("|", 3)
-                date = parse_datetime(date_str.replace(" ", "T"), "iso")
+            hash_val, author, date, message = parsed
 
-                # Get file statistics for this commit
-                stat_output = self.executor.run(
-                    ["show", "--stat", "--format=", hash_val]
-                )
-                files_changed = []
-                insertions = deletions = 0
+            # Get file statistics
+            stat_output = self.executor.run(["show", "--stat", "--format=", hash_val])
+            files_changed, insertions, deletions = self._extract_file_stats(stat_output)
 
-                if stat_output:
-                    for stat_line in stat_output.split("\n"):
-                        if " | " in stat_line:
-                            file_path = stat_line.split(" | ")[0].strip()
-                            files_changed.append(file_path)
-                        elif "insertion" in stat_line or "deletion" in stat_line:
-                            # Parse lines like: "2 files changed, 15 insertions(+), 3 deletions(-)"
-                            numbers = re.findall(r"(\d+) insertion", stat_line)
-                            if numbers:
-                                insertions = int(numbers[0])
-                            numbers = re.findall(r"(\d+) deletion", stat_line)
-                            if numbers:
-                                deletions = int(numbers[0])
-
-                # Only create commit if we have a valid date
-                if date is not None:
-                    commits.append(
-                        GitCommit(
-                            hash=hash_val,
-                            author=author,
-                            date=date,
-                            message=message,
-                            files_changed=files_changed,
-                            insertions=insertions,
-                            deletions=deletions,
-                        )
-                    )
-            except (ValueError, IndexError):
-                continue
+            # Build and add commit object
+            commit = self._build_commit_object(
+                hash_val, author, date, message, files_changed, insertions, deletions
+            )
+            if commit:
+                commits.append(commit)
 
         return commits
 
