@@ -5,6 +5,7 @@ This command is syntactic sugar for: roadmap issue update <ID> --status in-progr
 
 import click
 
+from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.cli_errors import handle_cli_errors
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
@@ -17,6 +18,7 @@ console = get_console()
 @click.option("--reason", "-r", help="Reason for unblocking")
 @click.pass_context
 @handle_cli_errors(command_name="issue unblock")
+@require_initialized
 def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
     """Unblock an issue by setting status to in-progress.
 
@@ -24,16 +26,7 @@ def unblock_issue(ctx: click.Context, issue_id: str, reason: str):
     """
     core = ctx.obj["core"]
 
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        raise click.Abort()
-
-    issue = core.issues.get(issue_id)
-    if not issue:
-        console.print(f"❌ Issue not found: {issue_id}", style="bold red")
-        raise click.Abort()
+    issue = ensure_entity_exists(core, "issue", issue_id)
 
     if issue.status and getattr(issue.status, "value", str(issue.status)) != "blocked":
         console.print(
