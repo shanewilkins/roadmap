@@ -91,6 +91,61 @@ class FileRepairService:
         return result
 
     @staticmethod
+    @staticmethod
+    def _fix_git_commits(frontmatter: dict[str, Any]) -> None:
+        """Fix git_commits list format.
+
+        Converts list of strings to list of dicts with 'hash' key.
+
+        Args:
+            frontmatter: Frontmatter dict to fix
+        """
+        if "git_commits" not in frontmatter or not isinstance(
+            frontmatter["git_commits"], list
+        ):
+            return
+
+        fixed_commits = []
+        for commit in frontmatter["git_commits"]:
+            if isinstance(commit, str):
+                # Convert string commit hash to dict
+                fixed_commits.append({"hash": commit})
+            else:
+                fixed_commits.append(commit)
+        frontmatter["git_commits"] = fixed_commits
+
+    @staticmethod
+    def _fix_git_branches(frontmatter: dict[str, Any]) -> None:
+        """Fix git_branches list format.
+
+        Converts list of dicts to list of strings.
+
+        Args:
+            frontmatter: Frontmatter dict to fix
+        """
+        if "git_branches" not in frontmatter or not isinstance(
+            frontmatter["git_branches"], list
+        ):
+            return
+
+        fixed_branches = []
+        for branch in frontmatter["git_branches"]:
+            if isinstance(branch, dict):
+                # Convert dict to string - prefer 'name' field
+                if "name" in branch:
+                    fixed_branches.append(branch["name"])
+                elif isinstance(branch, str):
+                    fixed_branches.append(branch)
+                else:
+                    fixed_branches.append(str(branch))
+            elif isinstance(branch, str):
+                fixed_branches.append(branch)
+            else:
+                # Convert any other type to string
+                fixed_branches.append(str(branch))
+        frontmatter["git_branches"] = fixed_branches
+
+    @staticmethod
     def _normalize_git_data(frontmatter: dict[str, Any]) -> None:
         """Normalize git_commits and git_branches in frontmatter.
 
@@ -98,36 +153,5 @@ class FileRepairService:
         - git_commits: list of strings → list of dicts with 'hash' key
         - git_branches: list of dicts → list of strings
         """
-        # Fix git_commits if it's a list of strings instead of dicts
-        if "git_commits" in frontmatter and isinstance(
-            frontmatter["git_commits"], list
-        ):
-            fixed_commits = []
-            for commit in frontmatter["git_commits"]:
-                if isinstance(commit, str):
-                    # Convert string commit hash to dict
-                    fixed_commits.append({"hash": commit})
-                else:
-                    fixed_commits.append(commit)
-            frontmatter["git_commits"] = fixed_commits
-
-        # Fix git_branches if it's a list of dicts instead of strings
-        if "git_branches" in frontmatter and isinstance(
-            frontmatter["git_branches"], list
-        ):
-            fixed_branches = []
-            for branch in frontmatter["git_branches"]:
-                if isinstance(branch, dict):
-                    # Convert dict to string - prefer 'name' field
-                    if "name" in branch:
-                        fixed_branches.append(branch["name"])
-                    elif isinstance(branch, str):
-                        fixed_branches.append(branch)
-                    else:
-                        fixed_branches.append(str(branch))
-                elif isinstance(branch, str):
-                    fixed_branches.append(branch)
-                else:
-                    # Convert any other type to string
-                    fixed_branches.append(str(branch))
-            frontmatter["git_branches"] = fixed_branches
+        FileRepairService._fix_git_commits(frontmatter)
+        FileRepairService._fix_git_branches(frontmatter)

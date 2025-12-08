@@ -3,7 +3,7 @@
 import click
 from rich.console import Console
 
-from roadmap.core.domain import Status
+from roadmap.core.domain import Issue, Status
 
 from .status_display import GitStatusDisplay
 
@@ -76,20 +76,12 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
     """Create a Git branch for an issue."""
     core = ctx.obj["core"]
 
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
-        )
-        return
-
-    if not core.git.is_git_repository():
-        console.print("❌ Not in a Git repository", style="bold red")
+    if not _validate_branch_environment(core):
         return
 
     try:
-        issue = core.issues.get(issue_id)
+        issue = _get_and_validate_issue(core, issue_id)
         if not issue:
-            console.print(f"❌ Issue not found: {issue_id}", style="bold red")
             return
 
         branch_name = core.git.suggest_branch_name(issue_id)
@@ -100,47 +92,108 @@ def git_branch(ctx: click.Context, issue_id: str, checkout: bool):
             return
 
         # Create the branch (use a compatibility wrapper)
-        def _safe_create_branch(git, issue, checkout=True):
-            try:
-                return git.create_branch_for_issue(issue, checkout=checkout)
-            except TypeError:
-                try:
-                    return git.create_branch_for_issue(issue)
-                except Exception:
-                    return False
-
         success = _safe_create_branch(core.git, issue, checkout=checkout)
 
         if success:
-            console.print(f"🌿 Created branch: {branch_name}", style="bold green")
-            if checkout:
-                console.print(f"✅ Checked out branch: {branch_name}", style="green")
-            console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
-
-            # Update issue status to in-progress if it's todo
-            if issue.status == Status.TODO:
-                core.issues.update(issue_id, status=Status.IN_PROGRESS)
-                console.print("📊 Updated issue status to: in-progress", style="yellow")
+            _display_branch_success(branch_name, issue, checkout)
+            _update_issue_status_if_needed(core, issue, issue_id)
         else:
             # Try a direct git fallback (useful if create_branch_for_issue is not available or failed)
             fallback = core.git._run_git_command(["checkout", "-b", branch_name])
             if fallback is not None:
-                console.print(f"🌿 Created branch: {branch_name}", style="bold green")
-                if checkout:
-                    console.print(
-                        f"✅ Checked out branch: {branch_name}", style="green"
-                    )
-                console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
-                if issue.status == Status.TODO:
-                    core.issues.update(issue_id, status=Status.IN_PROGRESS)
-                    console.print(
-                        "📊 Updated issue status to: in-progress", style="yellow"
-                    )
+                _display_branch_success(branch_name, issue, checkout)
+                _update_issue_status_if_needed(core, issue, issue_id)
             else:
                 console.print("❌ Failed to create branch", style="bold red")
 
     except Exception as e:
         console.print(f"❌ Failed to create Git branch: {e}", style="bold red")
+
+
+def _validate_branch_environment(core) -> bool:
+    """Validate roadmap and git environment for branch creation.
+
+    Args:
+        core: RoadmapCore instance
+
+    Returns:
+        True if environment is valid
+    """
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.", style="bold red"
+        )
+        return False
+
+    if not core.git.is_git_repository():
+        console.print("❌ Not in a Git repository", style="bold red")
+        return False
+
+    return True
+
+
+def _get_and_validate_issue(core, issue_id: str):
+    """Get and validate issue exists.
+
+    Args:
+        core: RoadmapCore instance
+        issue_id: Issue ID to retrieve
+
+    Returns:
+        Issue object or None if not found
+    """
+    issue = core.issues.get(issue_id)
+    if not issue:
+        console.print(f"❌ Issue not found: {issue_id}", style="bold red")
+        return None
+    return issue
+
+
+def _safe_create_branch(git, issue, checkout=True) -> bool:
+    """Safely create branch with fallback attempts.
+
+    Args:
+        git: Git executor
+        issue: Issue object
+        checkout: Whether to checkout the new branch
+
+    Returns:
+        True if branch was created
+    """
+    try:
+        return git.create_branch_for_issue(issue, checkout=checkout)
+    except TypeError:
+        try:
+            return git.create_branch_for_issue(issue)
+        except Exception:
+            return False
+
+
+def _display_branch_success(branch_name: str, issue, checkout: bool) -> None:
+    """Display success messages for branch creation.
+
+    Args:
+        branch_name: Name of created branch
+        issue: Issue object
+        checkout: Whether branch was checked out
+    """
+    console.print(f"🌿 Created branch: {branch_name}", style="bold green")
+    if checkout:
+        console.print(f"✅ Checked out branch: {branch_name}", style="green")
+    console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
+
+
+def _update_issue_status_if_needed(core, issue: Issue, issue_id: str) -> None:
+    """Update issue status to in-progress if it's todo.
+
+    Args:
+        core: RoadmapCore instance
+        issue: Issue object
+        issue_id: Issue ID
+    """
+    if issue.status == Status.TODO:
+        core.issues.update(issue_id, status=Status.IN_PROGRESS)
+        console.print("📊 Updated issue status to: in-progress", style="yellow")
 
 
 @git.command("link")
