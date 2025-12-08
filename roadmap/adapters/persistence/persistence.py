@@ -140,59 +140,102 @@ class YAMLRecoveryManager:
         except Exception as e:
             return False, f"Recovery failed: {e}"
 
+    def _is_already_quoted(self, value: str) -> bool:
+        """Check if value is already properly quoted.
+
+        Args:
+            value: Value to check
+
+        Returns:
+            True if value is already quoted
+        """
+        return (value.startswith('"') and value.endswith('"')) or (
+            value.startswith("'") and value.endswith("'")
+        )
+
+    def _is_yaml_literal(self, value: str) -> bool:
+        """Check if value is a YAML literal (bool, null, number, collection).
+
+        Args:
+            value: Value to check
+
+        Returns:
+            True if value is a YAML literal
+        """
+        return (
+            value in ["true", "false", "null"]
+            or value.isdigit()
+            or value.startswith("[")
+            or value.startswith("{")
+        )
+
+    def _needs_quoting(self, value: str) -> bool:
+        """Check if value contains special YAML characters requiring quoting.
+
+        Args:
+            value: Value to check
+
+        Returns:
+            True if value needs quoting
+        """
+        special_chars = [
+            ":",
+            "#",
+            "@",
+            "`",
+            "|",
+            ">",
+            "*",
+            "&",
+            "!",
+            "%",
+            "{",
+            "}",
+            "[",
+            "]",
+        ]
+        return any(char in value for char in special_chars)
+
+    def _quote_if_needed(self, value: str) -> str:
+        """Quote value if it needs quoting and isn't already quoted.
+
+        Args:
+            value: Value to potentially quote
+
+        Returns:
+            Quoted value if needed, otherwise original value
+        """
+        if value and not (
+            self._is_already_quoted(value) or self._is_yaml_literal(value)
+        ):
+            if self._needs_quoting(value):
+                return f'"{value}"'
+        return value
+
+    def _fix_yaml_line(self, line: str) -> str:
+        """Fix a single YAML line.
+
+        Args:
+            line: Single line of YAML to fix
+
+        Returns:
+            Fixed line
+        """
+        if not line.strip() or line.strip().startswith("#"):
+            return line
+
+        if ":" in line:
+            key, _, value = line.partition(":")
+            value = value.strip()
+            fixed_value = self._quote_if_needed(value)
+            return f"{key}: {fixed_value}"
+
+        return line
+
     def _fix_common_yaml_issues(self, yaml_content: str) -> str:
         """Fix common YAML formatting issues."""
         lines = yaml_content.split("\n")
-        fixed_lines = []
-
-        for line in lines:
-            # Skip empty lines
-            if not line.strip():
-                fixed_lines.append(line)
-                continue
-
-            # Fix unquoted strings that contain special characters
-            if ":" in line and not line.strip().startswith("#"):
-                key, _, value = line.partition(":")
-                value = value.strip()
-
-                # Quote strings that might need quoting
-                if value and not (
-                    value.startswith('"')
-                    and value.endswith('"')
-                    or value.startswith("'")
-                    and value.endswith("'")
-                    or value in ["true", "false", "null"]
-                    or value.isdigit()
-                    or value.startswith("[")
-                    or value.startswith("{")
-                ):
-                    # Check if it needs quoting
-                    if any(
-                        char in value
-                        for char in [
-                            ":",
-                            "#",
-                            "@",
-                            "`",
-                            "|",
-                            ">",
-                            "*",
-                            "&",
-                            "!",
-                            "%",
-                            "{",
-                            "}",
-                            "[",
-                            "]",
-                        ]
-                    ):
-                        value = f'"{value}"'
-
-                fixed_lines.append(f"{key}: {value}")
-            else:
-                fixed_lines.append(line)
-
+        fixed_lines = [self._fix_yaml_line(line) for line in lines]
         return "\n".join(fixed_lines)
 
 
