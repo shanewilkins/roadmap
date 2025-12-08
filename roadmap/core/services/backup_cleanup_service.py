@@ -105,6 +105,63 @@ class BackupCleanupService:
         return result
 
     @staticmethod
+    @staticmethod
+    def _group_backups_by_issue(
+        backup_files: list[Path],
+    ) -> dict[str, list[BackupInfo]]:
+        """Group backup files by issue ID.
+
+        Args:
+            backup_files: List of backup file paths
+
+        Returns:
+            Dict of issue_key -> list of BackupInfo
+        """
+        backups_by_issue: dict[str, list[BackupInfo]] = {}
+        for backup_file in backup_files:
+            parts = backup_file.stem.split("_")
+            issue_key = "_".join(parts[:-1])
+
+            if issue_key not in backups_by_issue:
+                backups_by_issue[issue_key] = []
+
+            stat = backup_file.stat()
+            backups_by_issue[issue_key].append(
+                {
+                    "path": backup_file,
+                    "mtime": datetime.fromtimestamp(stat.st_mtime),
+                    "size": stat.st_size,
+                }
+            )
+
+        return backups_by_issue
+
+    @staticmethod
+    def _should_delete_backup(
+        idx: int, backup: BackupInfo, keep: int, cutoff_date: datetime | None
+    ) -> bool:
+        """Determine if backup should be deleted.
+
+        Args:
+            idx: Index in sorted backup list
+            backup: Backup info dict
+            keep: Keep this many most recent backups
+            cutoff_date: Delete backups older than this date
+
+        Returns:
+            True if backup should be deleted
+        """
+        # Delete if beyond keep count
+        if idx >= keep:
+            return True
+
+        # Delete if older than cutoff
+        if cutoff_date and backup["mtime"] < cutoff_date:
+            return True
+
+        return False
+
+    @staticmethod
     def _select_backups_for_deletion(
         backups_dir: Path, keep: int, days: int | None
     ) -> list[BackupInfo]:
@@ -123,22 +180,7 @@ class BackupCleanupService:
             return []
 
         # Group backups by issue ID
-        backups_by_issue: dict[str, list[BackupInfo]] = {}
-        for backup_file in backup_files:
-            parts = backup_file.stem.split("_")
-            issue_key = "_".join(parts[:-1])
-
-            if issue_key not in backups_by_issue:
-                backups_by_issue[issue_key] = []
-
-            stat = backup_file.stat()
-            backups_by_issue[issue_key].append(
-                {
-                    "path": backup_file,
-                    "mtime": datetime.fromtimestamp(stat.st_mtime),
-                    "size": stat.st_size,
-                }
-            )
+        backups_by_issue = BackupCleanupService._group_backups_by_issue(backup_files)
 
         # Determine files to delete
         files_to_delete: list[BackupInfo] = []
@@ -148,17 +190,9 @@ class BackupCleanupService:
             backups.sort(key=lambda x: x["mtime"], reverse=True)
 
             for idx, backup in enumerate(backups):
-                should_delete = False
-
-                # Delete if beyond keep count
-                if idx >= keep:
-                    should_delete = True
-
-                # Delete if older than cutoff
-                if cutoff_date and backup["mtime"] < cutoff_date:
-                    should_delete = True
-
-                if should_delete:
+                if BackupCleanupService._should_delete_backup(
+                    idx, backup, keep, cutoff_date
+                ):
                     files_to_delete.append(backup)
 
         return files_to_delete

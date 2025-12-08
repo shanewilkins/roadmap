@@ -68,44 +68,77 @@ class TimezoneManager:
         self.user_timezone = user_timezone or self._detect_system_timezone()
         self._validate_timezone(self.user_timezone)
 
+    def _get_tz_from_env(self) -> str | None:
+        """Get timezone from TZ environment variable.
+
+        Returns:
+            Timezone name or None
+        """
+        try:
+            tz_env = os.environ.get("TZ")
+            if tz_env:
+                ZoneInfo(tz_env)  # Validate it
+                return tz_env
+        except Exception:
+            pass
+        return None
+
+    def _get_tz_from_etc_timezone(self) -> str | None:
+        """Get timezone from /etc/timezone file.
+
+        Returns:
+            Timezone name or None
+        """
+        try:
+            timezone_file = Path("/etc/timezone")
+            if timezone_file.exists():
+                tz_name = timezone_file.read_text().strip()
+                ZoneInfo(tz_name)  # Validate it
+                return tz_name
+        except (OSError, FileNotFoundError, Exception):
+            pass
+        return None
+
+    def _get_tz_from_localtime_symlink(self) -> str | None:
+        """Get timezone from /etc/localtime symlink.
+
+        Returns:
+            Timezone name or None
+        """
+        try:
+            localtime_path = Path("/etc/localtime")
+            if localtime_path.is_symlink():
+                target = localtime_path.readlink()
+                # Extract timezone from path like /usr/share/zoneinfo/America/New_York
+                if "zoneinfo" in str(target):
+                    tz_parts = str(target).split("zoneinfo/")
+                    if len(tz_parts) > 1:
+                        tz_name = tz_parts[1]
+                        ZoneInfo(tz_name)  # Validate it
+                        return tz_name
+        except (OSError, Exception):
+            pass
+        return None
+
     def _detect_system_timezone(self) -> str:
         """Detect the system's timezone."""
         if ZONEINFO_AVAILABLE:
-            try:
-                # Try to get timezone from TZ environment variable
-                tz_env = os.environ.get("TZ")
-                if tz_env:
-                    ZoneInfo(tz_env)  # Validate it
-                    return tz_env
+            # Try TZ environment variable
+            tz = self._get_tz_from_env()
+            if tz:
+                return tz
 
-                # Try to detect from system files (Unix-like systems)
-                if sys.platform != "win32":
-                    try:
-                        # Check /etc/timezone (Debian/Ubuntu)
-                        timezone_file = Path("/etc/timezone")
-                        if timezone_file.exists():
-                            tz_name = timezone_file.read_text().strip()
-                            ZoneInfo(tz_name)  # Validate it
-                            return tz_name
-                    except (OSError, FileNotFoundError, Exception):
-                        pass
+            # Only Unix-like systems
+            if sys.platform != "win32":
+                # Check /etc/timezone
+                tz = self._get_tz_from_etc_timezone()
+                if tz:
+                    return tz
 
-                    try:
-                        # Check /etc/localtime symlink (many Unix systems)
-                        localtime_path = Path("/etc/localtime")
-                        if localtime_path.is_symlink():
-                            target = localtime_path.readlink()
-                            # Extract timezone from path like /usr/share/zoneinfo/America/New_York
-                            if "zoneinfo" in str(target):
-                                tz_parts = str(target).split("zoneinfo/")
-                                if len(tz_parts) > 1:
-                                    tz_name = tz_parts[1]
-                                    ZoneInfo(tz_name)  # Validate it
-                                    return tz_name
-                    except (OSError, Exception):
-                        pass
-            except Exception:
-                pass
+                # Check /etc/localtime symlink
+                tz = self._get_tz_from_localtime_symlink()
+                if tz:
+                    return tz
 
         # Fallback to UTC if detection fails
         return self.DEFAULT_TIMEZONE
@@ -211,6 +244,36 @@ class TimezoneManager:
 
         return local_dt.strftime(format_str)
 
+    def _format_relative_seconds(
+        self, total_seconds: float, diff_seconds: float
+    ) -> str:
+        """Format relative time in seconds.
+
+        Args:
+            total_seconds: Absolute seconds difference
+            diff_seconds: Signed seconds difference
+
+        Returns:
+            Formatted string
+        """
+        if total_seconds < 60:
+            return "just now"
+        elif total_seconds < 3600:  # Less than 1 hour
+            minutes = int(total_seconds // 60)
+            unit = "minute" if minutes == 1 else "minutes"
+            direction = "ago" if diff_seconds < 0 else "from now"
+            return f"{minutes} {unit} {direction}"
+        elif total_seconds < 86400:  # Less than 1 day
+            hours = int(total_seconds // 3600)
+            unit = "hour" if hours == 1 else "hours"
+            direction = "ago" if diff_seconds < 0 else "from now"
+            return f"{hours} {unit} {direction}"
+        else:  # Days
+            days = int(total_seconds // 86400)
+            unit = "day" if days == 1 else "days"
+            direction = "ago" if diff_seconds < 0 else "from now"
+            return f"{days} {unit} {direction}"
+
     def format_relative(self, dt: datetime) -> str:
         """Format datetime as relative time (e.g., '2 hours ago', 'in 3 days').
 
@@ -228,24 +291,7 @@ class TimezoneManager:
 
         # Calculate time difference
         total_seconds = abs(diff.total_seconds())
-
-        if total_seconds < 60:
-            return "just now"
-        elif total_seconds < 3600:  # Less than 1 hour
-            minutes = int(total_seconds // 60)
-            unit = "minute" if minutes == 1 else "minutes"
-            direction = "ago" if diff.total_seconds() < 0 else "from now"
-            return f"{minutes} {unit} {direction}"
-        elif total_seconds < 86400:  # Less than 1 day
-            hours = int(total_seconds // 3600)
-            unit = "hour" if hours == 1 else "hours"
-            direction = "ago" if diff.total_seconds() < 0 else "from now"
-            return f"{hours} {unit} {direction}"
-        else:  # Days
-            days = int(total_seconds // 86400)
-            unit = "day" if days == 1 else "days"
-            direction = "ago" if diff.total_seconds() < 0 else "from now"
-            return f"{days} {unit} {direction}"
+        return self._format_relative_seconds(total_seconds, diff.total_seconds())
 
     def is_timezone_aware(self, dt: datetime) -> bool:
         """Check if datetime is timezone-aware."""
