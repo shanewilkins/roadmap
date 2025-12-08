@@ -348,50 +348,91 @@ except Exception as e:
         except Exception:
             pass
 
+    def _is_milestone_active(self, milestone) -> bool:
+        """Check if milestone is active.
+
+        Args:
+            milestone: Milestone object to check
+
+        Returns:
+            True if milestone status is active
+        """
+        milestone_status = str(milestone.status).lower() if milestone.status else ""
+        return milestone_status == "active"
+
+    def _get_milestone_issues(self, milestone) -> list:
+        """Get all issues in a milestone.
+
+        Args:
+            milestone: Milestone object
+
+        Returns:
+            List of issues in the milestone
+        """
+        return [
+            issue
+            for issue in self.core.issues.list()
+            if issue.milestone == milestone.name
+        ]
+
+    def _calculate_milestone_progress(self, milestone_issues: list) -> float:
+        """Calculate progress percentage for milestone.
+
+        Args:
+            milestone_issues: List of issues in the milestone
+
+        Returns:
+            Progress percentage (0-100)
+        """
+        if not milestone_issues:
+            return 0.0
+
+        total_issues = len(milestone_issues)
+        completed_issues = len(
+            [i for i in milestone_issues if i.status == Status.CLOSED]
+        )
+        return (completed_issues / total_issues) * 100
+
+    def _update_milestone_attributes(self, milestone, progress: float) -> None:
+        """Update milestone attributes based on progress.
+
+        Args:
+            milestone: Milestone object to update
+            progress: Progress percentage
+        """
+        # Update calculated progress
+        if hasattr(milestone, "calculated_progress"):
+            milestone.calculated_progress = progress
+
+        # Auto-complete if 100% done
+        if progress >= 100 and milestone.status != MilestoneStatus.CLOSED:
+            milestone.status = MilestoneStatus.CLOSED
+            if hasattr(milestone, "actual_end_date"):
+                milestone.actual_end_date = datetime.now()
+
+    def _save_milestone(self, milestone) -> None:
+        """Save updated milestone to storage.
+
+        Args:
+            milestone: Milestone object to save
+        """
+        save_method = getattr(self.core, "save_milestone", None)
+        if save_method and callable(save_method):
+            save_method(milestone)
+
     def _update_milestone_progress(self):
         """Update milestone progress based on completed issues."""
         try:
             milestones = self.core.milestones.list()
 
             for milestone in milestones:
-                # Use string comparison for enum values to avoid typing issues
-                milestone_status = (
-                    str(milestone.status).lower() if milestone.status else ""
-                )
-                if milestone_status == "active":
-                    # Get issues in this milestone
-                    milestone_issues = [
-                        issue
-                        for issue in self.core.issues.list()
-                        if issue.milestone == milestone.name
-                    ]
+                if self._is_milestone_active(milestone):
+                    milestone_issues = self._get_milestone_issues(milestone)
 
                     if milestone_issues:
-                        # Calculate progress
-                        total_issues = len(milestone_issues)
-                        completed_issues = len(
-                            [i for i in milestone_issues if i.status == Status.CLOSED]
-                        )
-                        progress = (completed_issues / total_issues) * 100
-
-                        # Update milestone progress (use setattr for type safety)
-                        if hasattr(milestone, "calculated_progress"):
-                            milestone.calculated_progress = progress
-
-                        # Auto-complete milestone if all issues are done
-                        if (
-                            progress >= 100
-                            and milestone.status != MilestoneStatus.CLOSED
-                        ):
-                            # Use MilestoneStatus enum for type safety
-                            milestone.status = MilestoneStatus.CLOSED
-                            if hasattr(milestone, "actual_end_date"):
-                                milestone.actual_end_date = datetime.now()
-
-                        # Use getattr to safely call save_milestone method
-                        save_method = getattr(self.core, "save_milestone", None)
-                        if save_method and callable(save_method):
-                            save_method(milestone)
+                        progress = self._calculate_milestone_progress(milestone_issues)
+                        self._update_milestone_attributes(milestone, progress)
+                        self._save_milestone(milestone)
 
         except Exception:
             pass
