@@ -5,7 +5,9 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 
 from roadmap.adapters.cli.cli_confirmations import confirm_action
-from roadmap.adapters.cli.cli_error_handlers import display_operation_error
+from roadmap.adapters.cli.cli_error_handlers import (
+    handle_cli_error,
+)
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.common.console import get_console
@@ -59,7 +61,15 @@ def _get_archived_issues(archive_dir):
         try:
             issue = IssueParser.parse_issue_file(file_path)
             issues_info.append((file_path, issue.id, issue.title))
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="parse_archived_issue",
+                entity_type="issue",
+                entity_id=file_path.stem,
+                context={"archive_dir": str(archive_dir)},
+                fatal=False,
+            )
             continue
 
     return issues_info if issues_info else None
@@ -77,6 +87,14 @@ def _parse_and_validate_issue(archive_file):
     try:
         return IssueParser.parse_issue_file(archive_file)  # type: ignore[arg-type]
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="parse_archived_issue",
+            entity_type="issue",
+            entity_id=archive_file.stem,
+            context={},
+            fatal=False,
+        )
         console.print(f"❌ Failed to parse archived issue: {e}", style="bold red")
         return None
 
@@ -117,6 +135,14 @@ def _restore_issue_file(core, archive_file, active_dir, issue_id, status):
     try:
         core.db.mark_issue_archived(issue_id, archived=False)
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="mark_issue_restored",
+            entity_type="issue",
+            entity_id=issue_id,
+            context={"dest_file": str(dest_file)},
+            fatal=False,
+        )
         console.print(
             f"⚠️  Warning: Failed to mark issue {issue_id} as restored: {e}",
             style="yellow",
@@ -314,11 +340,17 @@ def restore_issue(
             )
 
     except Exception as e:
-        display_operation_error(
-            operation="restore",
+        handle_cli_error(
+            error=e,
+            operation="restore_issue",
             entity_type="issue",
             entity_id=issue_id or "archive",
-            error=str(e),
-            log_context={"issue_id": issue_id},
+            context={
+                "all": all,
+                "status": status,
+                "dry_run": dry_run,
+                "force": force,
+            },
+            fatal=True,
         )
         ctx.exit(1)

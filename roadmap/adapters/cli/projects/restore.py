@@ -5,7 +5,9 @@ from pathlib import Path
 import click  # type: ignore[import-untyped]
 
 from roadmap.adapters.cli.cli_confirmations import confirm_action
-from roadmap.adapters.cli.cli_error_handlers import display_operation_error
+from roadmap.adapters.cli.cli_error_handlers import (
+    handle_cli_error,
+)
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import ProjectParser
 from roadmap.common.console import get_console
@@ -57,7 +59,15 @@ def _get_archived_projects(archive_dir):
         try:
             project = ProjectParser.parse_project_file(file_path)
             projects_info.append((file_path, project.id, project.name))
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="parse_archived_project",
+                entity_type="project",
+                entity_id=file_path.stem,
+                context={"archive_dir": str(archive_dir)},
+                fatal=False,
+            )
             continue
 
     return projects_info if projects_info else None
@@ -70,7 +80,14 @@ def _find_archived_project(archive_dir, project_name):
             project = ProjectParser.parse_project_file(file_path)
             if project.name == project_name:
                 return file_path
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="find_archived_project",
+                entity_id=file_path.stem,
+                context={"archive_dir": str(archive_dir), "target": project_name},
+                fatal=False,
+            )
             continue
     return None
 
@@ -83,6 +100,14 @@ def _restore_project_file(core, archive_file, active_dir, project_id):
     try:
         core.db.mark_project_archived(project_id, archived=False)
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="mark_project_restored",
+            entity_type="project",
+            entity_id=project_id,
+            context={"dest_file": str(dest_file)},
+            fatal=False,
+        )
         console.print(
             f"⚠️  Warning: Failed to mark project as restored: {e}",
             style="yellow",
@@ -264,11 +289,17 @@ def restore_project(
             )
 
     except Exception as e:
-        display_operation_error(
-            operation="restore",
+        handle_cli_error(
+            error=e,
+            operation="restore_project",
             entity_type="project",
             entity_id=project_name or "unknown",
-            error=str(e),
-            log_context={"project_name": project_name},
+            context={
+                "all": all,
+                "force": force,
+                "dry_run": dry_run,
+                "stage": "restore_execution",
+            },
+            fatal=True,
         )
         ctx.exit(1)

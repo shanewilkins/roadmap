@@ -9,7 +9,9 @@ from roadmap.adapters.cli.cli_confirmations import (
     confirm_action,
     confirm_override_warning,
 )
-from roadmap.adapters.cli.cli_error_handlers import display_operation_error
+from roadmap.adapters.cli.cli_error_handlers import (
+    handle_cli_error,
+)
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.console import get_console
@@ -43,7 +45,15 @@ def _show_archived_milestones():
             console.print(
                 f"  • {milestone.name} ({milestone.status.value})", style="cyan"
             )
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="parse_archived_milestone",
+                entity_type="milestone",
+                entity_id=file_path.stem,
+                context={"archive_dir": str(archive_dir)},
+                fatal=False,
+            )
             console.print(f"  • {file_path.stem} (parse error)", style="red")
 
 
@@ -73,7 +83,15 @@ def _find_milestone_file(roadmap_dir, milestone_name):
             test_milestone = MilestoneParser.parse_milestone_file(md_file)
             if test_milestone.name == milestone_name:
                 return md_file
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="find_milestone_file",
+                entity_type="milestone",
+                entity_id=md_file.stem,
+                context={"milestone_name": milestone_name},
+                fatal=False,
+            )
             continue
     return None
 
@@ -166,6 +184,14 @@ def _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force)
     try:
         core.db.mark_milestone_archived(milestone_name, archived=True)
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="mark_milestone_archived",
+            entity_type="milestone",
+            entity_id=milestone_name,
+            context={"archive_dir": str(archive_dir)},
+            fatal=False,
+        )
         console.print(f"⚠️  Warning: Failed to mark in database: {e}", style="yellow")
 
     console.print(
@@ -230,6 +256,14 @@ def _archive_all_closed_milestones(core, roadmap_dir, dry_run, force):
             try:
                 core.db.mark_milestone_archived(milestone.name, archived=True)
             except Exception as e:
+                handle_cli_error(
+                    error=e,
+                    operation="mark_milestone_archived",
+                    entity_type="milestone",
+                    entity_id=milestone.name,
+                    context={"archived_count": archived_count},
+                    fatal=False,
+                )
                 console.print(
                     f"⚠️  Warning: Failed to mark {milestone.name} as archived: {e}",
                     style="yellow",
@@ -316,11 +350,16 @@ def archive_milestone(
             _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force)
 
     except Exception as e:
-        display_operation_error(
-            operation="archive",
+        handle_cli_error(
+            error=e,
+            operation="archive_milestone",
             entity_type="milestone",
             entity_id=milestone_name or "unknown",
-            error=str(e),
-            log_context={"milestone_name": milestone_name},
+            context={
+                "all_closed": all_closed,
+                "dry_run": dry_run,
+                "force": force,
+            },
+            fatal=True,
         )
         ctx.exit(1)

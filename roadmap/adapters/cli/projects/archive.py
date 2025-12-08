@@ -7,7 +7,9 @@ import click  # type: ignore[import-not-found]
 from roadmap.adapters.cli.cli_confirmations import (
     confirm_action,
 )
-from roadmap.adapters.cli.cli_error_handlers import display_operation_error
+from roadmap.adapters.cli.cli_error_handlers import (
+    handle_cli_error,
+)
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import ProjectParser
 from roadmap.common.console import get_console
@@ -36,7 +38,15 @@ def _handle_list_archived_projects(archive_dir: Path):
         try:
             project = ProjectParser.parse_project_file(file_path)
             console.print(f"  • {project.name} ({project.status})", style="cyan")
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="parse_archived_project",
+                entity_type="project",
+                entity_id=file_path.stem,
+                context={"archive_dir": str(archive_dir), "stage": "listing"},
+                fatal=False,
+            )
             console.print(f"  • {file_path.stem} (parse error)", style="red")
     return True
 
@@ -48,7 +58,17 @@ def _find_project_file(roadmap_dir: Path, project_name: str) -> Path | None:
             project = ProjectParser.parse_project_file(md_file)
             if project.name == project_name:
                 return md_file
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="find_project_file",
+                entity_id=md_file.stem,
+                context={
+                    "roadmap_dir": str(roadmap_dir),
+                    "target_project": project_name,
+                },
+                fatal=False,
+            )
             continue
     return None
 
@@ -87,6 +107,14 @@ def _perform_archive(
     try:
         core.db.mark_project_archived(project_id, archived=True)
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="mark_project_archived",
+            entity_type="project",
+            entity_id=project_id,
+            context={"archive_file": str(archive_file)},
+            fatal=False,
+        )
         console.print(f"⚠️  Warning: Failed to mark in database: {e}", style="yellow")
 
     return True
@@ -249,11 +277,16 @@ def archive_project(
         )
 
     except Exception as e:
-        display_operation_error(
-            operation="archive",
+        handle_cli_error(
+            error=e,
+            operation="archive_project",
             entity_type="project",
             entity_id=project_name or "unknown",
-            error=str(e),
-            log_context={"project_name": project_name},
+            context={
+                "force": force,
+                "dry_run": dry_run,
+                "stage": "archive_execution",
+            },
+            fatal=True,
         )
         ctx.exit(1)

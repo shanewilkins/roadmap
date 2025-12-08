@@ -10,7 +10,7 @@ from roadmap.adapters.cli.cli_confirmations import (
     confirm_override_warning,
 )
 from roadmap.adapters.cli.cli_error_handlers import (
-    display_operation_error,
+    handle_cli_error,
 )
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
@@ -46,7 +46,18 @@ def _determine_archive_path(
     # Get relative path from issues_dir to issue_file
     try:
         rel_path = issue_file.relative_to(issues_dir)
-    except ValueError:
+    except ValueError as e:
+        handle_cli_error(
+            error=e,
+            operation="determine_archive_path",
+            entity_type="issue",
+            entity_id=issue_file.stem,
+            context={
+                "issue_file": str(issue_file),
+                "issues_dir": str(issues_dir),
+            },
+            fatal=False,
+        )
         # File is not under issues_dir, put in root
         return archive_dir / issue_file.name
 
@@ -84,7 +95,15 @@ def _show_archived_issues():
                 f"  • {issue.id[:8]} - {issue.title} [{milestone}] ({issue.status.value})",
                 style="cyan",
             )
-        except Exception:
+        except Exception as e:
+            handle_cli_error(
+                error=e,
+                operation="parse_archived_issue",
+                entity_type="issue",
+                entity_id=file_path.stem,
+                context={"archive_dir": str(archive_dir)},
+                fatal=False,
+            )
             console.print(f"  • {file_path.stem} (parse error)", style="red")
 
 
@@ -133,6 +152,14 @@ def _archive_issue_file(core, archive_dir, issue_file, roadmap_dir, issue_id):
     try:
         core.db.mark_issue_archived(issue_id, archived=True)
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="mark_issue_archived",
+            entity_type="issue",
+            entity_id=issue_id,
+            context={"archive_dir": str(archive_dir)},
+            fatal=False,
+        )
         console.print(
             f"⚠️  Warning: Failed to mark issue {issue_id} as archived: {e}",
             style="yellow",
@@ -325,11 +352,17 @@ def archive_issue(
             _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force)
 
     except Exception as e:
-        display_operation_error(
-            operation="archive",
+        handle_cli_error(
+            error=e,
+            operation="archive_issue",
             entity_type="issue",
             entity_id=issue_id or "unknown",
-            error=str(e),
-            log_context={"issue_id": issue_id},
+            context={
+                "all_closed": all_closed,
+                "orphaned": orphaned,
+                "dry_run": dry_run,
+                "force": force,
+            },
+            fatal=True,
         )
         ctx.exit(1)
