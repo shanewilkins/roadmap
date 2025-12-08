@@ -48,11 +48,11 @@ class UnifiedDateTimeParser:
     def _handle_datetime_object(
         cls, value: datetime, assumed_timezone: str | None
     ) -> datetime:
-        """Handle datetime object input.
+        """Handle datetime object input (ensure timezone awareness).
 
         Args:
             value: Datetime object
-            assumed_timezone: Timezone to assume
+            assumed_timezone: Timezone to assume for naive datetimes
 
         Returns:
             Timezone-aware datetime in UTC
@@ -60,15 +60,30 @@ class UnifiedDateTimeParser:
         return ensure_timezone_aware(value, assumed_timezone or "UTC")
 
     @classmethod
-    def _route_to_parser(
+    def _normalize_string_value(cls, value: str) -> str | None:
+        """Normalize string input for parsing.
+
+        Args:
+            value: String value to normalize
+
+        Returns:
+            Normalized string or None if empty
+        """
+        if not isinstance(value, str):
+            value = str(value)
+        value = value.strip()
+        return value if value else None
+
+    @classmethod
+    def _route_to_specialized_parser(
         cls, value: str, source_type: str, assumed_timezone: str | None
     ) -> datetime | None:
-        """Route to appropriate parser based on source type and format.
+        """Route value to appropriate specialized parser based on type and format.
 
         Args:
             value: String value to parse
             source_type: Hint for parsing behavior
-            assumed_timezone: Timezone to assume
+            assumed_timezone: Timezone to assume for naive datetimes
 
         Returns:
             Parsed datetime or None
@@ -80,7 +95,6 @@ class UnifiedDateTimeParser:
         elif source_type == "file":
             return cls.parse_file_datetime(value, assumed_timezone)
         else:
-            # Default to user input parsing
             return cls.parse_user_datetime(value, assumed_timezone)
 
     @classmethod
@@ -109,27 +123,17 @@ class UnifiedDateTimeParser:
             return None
 
         if isinstance(value, datetime):
-            # Already a datetime object - ensure it's timezone-aware
-            return ensure_timezone_aware(value, assumed_timezone or "UTC")
+            return cls._handle_datetime_object(value, assumed_timezone)
 
-        if not isinstance(value, str):
-            # Convert to string if it's not already
-            value = str(value)
-
-        value = value.strip()
-        if not value:
+        # Normalize string value
+        normalized = cls._normalize_string_value(value)
+        if not normalized:
             return None
 
-        # Route to specialized parsers based on source type and format
-        if source_type == "github" or cls._is_github_format(value):
-            return cls.parse_github_timestamp(value)
-        elif source_type == "iso" or cls._is_iso_format(value):
-            return cls.parse_iso_datetime(value, assumed_timezone)
-        elif source_type == "file":
-            return cls.parse_file_datetime(value, assumed_timezone)
-        else:
-            # Default to user input parsing
-            return cls.parse_user_datetime(value, assumed_timezone)
+        # Route to specialized parser
+        return cls._route_to_specialized_parser(
+            normalized, source_type, assumed_timezone
+        )
 
     @classmethod
     def parse_github_timestamp(cls, github_timestamp: str) -> datetime:

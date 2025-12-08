@@ -88,6 +88,61 @@ def _perform_archive(
     return True
 
 
+def _check_roadmap_initialized(core) -> bool:
+    """Check if roadmap is initialized.
+
+    Args:
+        core: RoadmapCore instance
+
+    Returns:
+        True if initialized
+    """
+    if not core.is_initialized():
+        console.print(
+            "❌ Roadmap not initialized. Run 'roadmap init' first.",
+            style="bold red",
+        )
+        return False
+    return True
+
+
+def _validate_and_get_project(core, project_name: str):
+    """Validate and retrieve project.
+
+    Args:
+        core: RoadmapCore instance
+        project_name: Project name
+
+    Returns:
+        Project object or None
+    """
+    project = core.projects.get(project_name)
+    if not project:
+        console.print(f"❌ Project '{project_name}' not found.", style="bold red")
+        return None
+    return project
+
+
+def _validate_project_file(roadmap_dir: Path, project_name: str):
+    """Validate project file exists.
+
+    Args:
+        roadmap_dir: Roadmap directory
+        project_name: Project name
+
+    Returns:
+        Project file path or None
+    """
+    project_file = _find_project_file(roadmap_dir, project_name)
+    if not project_file or not project_file.exists():
+        console.print(
+            f"❌ Project file not found for: {project_name}",
+            style="bold red",
+        )
+        return None
+    return project_file
+
+
 @click.command()
 @click.argument("project_name", required=False)
 @click.option(
@@ -136,11 +191,7 @@ def archive_project(
     """
     core = ctx.obj["core"]
 
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.",
-            style="bold red",
-        )
+    if not _check_roadmap_initialized(core):
         ctx.exit(1)
 
     # Handle --list option
@@ -164,10 +215,9 @@ def archive_project(
         roadmap_dir = Path.cwd() / ".roadmap"
         archive_dir = roadmap_dir / "archive" / "projects"
 
-        # Archive single project
-        project = core.projects.get(project_name)
+        # Validate project exists
+        project = _validate_and_get_project(core, project_name)
         if not project:
-            console.print(f"❌ Project '{project_name}' not found.", style="bold red")
             ctx.exit(1)
 
         if dry_run:
@@ -182,15 +232,13 @@ def archive_project(
         # Perform archive
         ensure_directory_exists(archive_dir)
 
-        # Find the project file
-        project_file = _find_project_file(roadmap_dir, project_name)
-
-        if not project_file or not project_file.exists():
-            console.print(
-                f"❌ Project file not found for: {project_name}",
-                style="bold red",
-            )
+        # Validate project file exists
+        project_file = _validate_project_file(roadmap_dir, project_name)
+        if not project_file:
             ctx.exit(1)
+
+        # Type guard: ensure project_file is not None after check above
+        assert project_file is not None
 
         _perform_archive(project_file, archive_dir, project.id, core)
 

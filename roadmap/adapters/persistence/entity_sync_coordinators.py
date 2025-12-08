@@ -86,6 +86,69 @@ class EntitySyncCoordinator:
 class IssueSyncCoordinator(EntitySyncCoordinator):
     """Handles syncing issue files to database."""
 
+    def _extract_issue_id(self, issue_data: dict, file_path: Path) -> str:
+        """Extract issue ID from data or filename.
+
+        Args:
+            issue_data: Parsed issue data
+            file_path: Path to issue file
+
+        Returns:
+            Extracted or derived issue ID
+        """
+        issue_id = issue_data.get("id")
+        if not issue_id:
+            stem = file_path.stem
+            if stem.startswith("issue-"):
+                issue_id = stem[6:]
+            else:
+                issue_id = stem
+            issue_data["id"] = issue_id
+        return issue_id
+
+    def _handle_project_id(self, issue_data: dict, issue_id: str) -> str | None:
+        """Get project ID for issue, using default if needed.
+
+        Args:
+            issue_data: Issue data dict
+            issue_id: Issue ID
+
+        Returns:
+            Project ID or None if unavailable
+        """
+        project_id = issue_data.get("project_id")
+        if not project_id:
+            project_id = self._get_default_project_id()
+            if not project_id:
+                logger.warning(f"No projects found for issue {issue_id}, skipping")
+                return None
+        issue_data["project_id"] = project_id
+        return project_id
+
+    def _handle_milestone_field(self, issue_data: dict) -> None:
+        """Resolve milestone field (could be name or ID).
+
+        Args:
+            issue_data: Issue data dict to update
+        """
+        milestone_id = issue_data.get("milestone_id")
+        if not milestone_id and "milestone" in issue_data:
+            milestone_name = issue_data["milestone"]
+            milestone_id = self._get_milestone_id_by_name(milestone_name)
+            issue_data["milestone_id"] = milestone_id
+
+    def _normalize_issue_fields(self, issue_data: dict) -> None:
+        """Set defaults and normalize issue fields.
+
+        Args:
+            issue_data: Issue data dict to normalize
+        """
+        issue_data.setdefault("title", "Untitled")
+        issue_data.setdefault("status", "open")
+        issue_data.setdefault("priority", "medium")
+        issue_data.setdefault("issue_type", issue_data.pop("type", "task"))
+        issue_data["due_date"] = self._normalize_date(issue_data.get("due_date"))
+
     def sync_issue_file(self, file_path: Path) -> bool:
         """Sync a single issue file to database."""
         try:
@@ -99,38 +162,19 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
                 logger.warning(f"No YAML data found in {file_path}")
                 return False
 
-            # Extract issue ID from filename or YAML
-            issue_id = issue_data.get("id")
-            if not issue_id:
-                stem = file_path.stem
-                if stem.startswith("issue-"):
-                    issue_id = stem[6:]
-                else:
-                    issue_id = stem
-                issue_data["id"] = issue_id
+            # Extract issue ID
+            issue_id = self._extract_issue_id(issue_data, file_path)
 
-            # Handle missing project_id
-            project_id = issue_data.get("project_id")
+            # Handle project ID
+            project_id = self._handle_project_id(issue_data, issue_id)
             if not project_id:
-                project_id = self._get_default_project_id()
-                if not project_id:
-                    logger.warning(f"No projects found for issue {issue_id}, skipping")
-                    return False
+                return False
 
-            # Handle milestone field (could be name or ID)
-            milestone_id = issue_data.get("milestone_id")
-            if not milestone_id and "milestone" in issue_data:
-                milestone_name = issue_data["milestone"]
-                milestone_id = self._get_milestone_id_by_name(milestone_name)
-                issue_data["milestone_id"] = milestone_id
+            # Handle milestone field
+            self._handle_milestone_field(issue_data)
 
-            # Set defaults and normalize
-            issue_data.setdefault("title", "Untitled")
-            issue_data.setdefault("status", "open")
-            issue_data.setdefault("priority", "medium")
-            issue_data.setdefault("issue_type", issue_data.pop("type", "task"))
-            issue_data["project_id"] = project_id
-            issue_data["due_date"] = self._normalize_date(issue_data.get("due_date"))
+            # Normalize fields
+            self._normalize_issue_fields(issue_data)
 
             # Extract metadata
             exclude_fields = [

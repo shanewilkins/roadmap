@@ -235,6 +235,58 @@ class GitBranchManager:
 
         return self._create_and_checkout_branch(branch_name, checkout)
 
+    def _check_existing_issue_for_branch(
+        self, branch_name: str, roadmap_core
+    ) -> str | None:
+        """Check if branch already has associated issue.
+
+        Args:
+            branch_name: Branch name
+            roadmap_core: RoadmapCore instance
+
+        Returns:
+            None if no existing issue
+        """
+        branch = GitBranch(branch_name)
+        existing_issue_id = branch.extract_issue_id()
+        if existing_issue_id and roadmap_core.issues.get(existing_issue_id):
+            return existing_issue_id
+        return None
+
+    def _build_auto_created_issue_data(
+        self, branch_name: str, roadmap_core
+    ) -> dict | None:
+        """Build issue data from branch name.
+
+        Args:
+            branch_name: Branch name
+            roadmap_core: RoadmapCore instance
+
+        Returns:
+            Issue data dict or None if can't extract
+        """
+        branch = GitBranch(branch_name)
+        issue_type = branch.suggests_issue_type() or "feature"
+        title = self._extract_title_from_branch_name(branch_name)
+        if not title:
+            return None
+
+        assignee = self._get_current_user(roadmap_core) or "Unknown"
+        content = f"Auto-created from branch: `{branch_name}`\n\nThis issue was automatically created when switching to the branch `{branch_name}`."
+
+        issue_data = {
+            "title": title,
+            "content": content,
+            "assignee": assignee,
+            "priority": "medium",
+            "status": "in_progress",
+        }
+
+        if hasattr(roadmap_core.issues, "create_with_type"):
+            issue_data["issue_type"] = issue_type
+
+        return issue_data
+
     def auto_create_issue_from_branch(
         self, roadmap_core, branch_name: str | None = None
     ) -> str | None:
@@ -257,44 +309,19 @@ class GitBranchManager:
         if branch_name in ["main", "master", "develop", "dev"]:
             return None
 
-        branch = GitBranch(branch_name)
+        # Check if issue already exists
+        if self._check_existing_issue_for_branch(branch_name, roadmap_core):
+            return None
 
-        # Check if branch already has an associated issue
-        existing_issue_id = branch.extract_issue_id()
-        if existing_issue_id:
-            # Check if the issue actually exists
-            if roadmap_core.issues.get(existing_issue_id):
-                return None  # Issue already exists
-
-        # Generate issue details from branch name
-        issue_type = branch.suggests_issue_type() or "feature"
-
-        # Extract title from branch name
-        title = self._extract_title_from_branch_name(branch_name)
-        if not title:
+        # Build issue data
+        issue_data = self._build_auto_created_issue_data(branch_name, roadmap_core)
+        if not issue_data:
             return None
 
         # Create the issue
         try:
-            assignee = self._get_current_user(roadmap_core) or "Unknown"
-
-            content = f"Auto-created from branch: `{branch_name}`\n\nThis issue was automatically created when switching to the branch `{branch_name}`."
-
-            issue_data = {
-                "title": title,
-                "content": content,
-                "assignee": assignee,
-                "priority": "medium",  # Default priority
-                "status": "in_progress",  # Since they're working on it
-            }
-
-            # Add issue type if the models support it
-            if hasattr(roadmap_core.issues, "create_with_type"):
-                issue_data["issue_type"] = issue_type
-
             issue = roadmap_core.issues.create(**issue_data)
             return issue.id
-
         except Exception:
             return None
 

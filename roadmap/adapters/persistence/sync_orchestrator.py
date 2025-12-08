@@ -57,6 +57,31 @@ class SyncOrchestrator:
             logger.error(f"Failed to check file changes for {file_path}", error=str(e))
             return True
 
+    def _sync_file_by_type(self, file_path: Path, stats: dict) -> bool:
+        """Sync file based on its type.
+
+        Args:
+            file_path: Path to file to sync
+            stats: Stats dict to update
+
+        Returns:
+            True if sync was successful
+        """
+        if "issues/" in str(file_path):
+            success = self._issue_sync.sync_issue_file(file_path)
+        elif "milestones/" in str(file_path):
+            success = self._milestone_sync.sync_milestone_file(file_path)
+        elif "projects/" in str(file_path):
+            success = self._project_sync.sync_project_file(file_path)
+        else:
+            return False
+
+        if success:
+            stats["files_synced"] += 1
+        else:
+            stats["files_failed"] += 1
+        return success
+
     def sync_directory_incremental(self, roadmap_dir: Path) -> dict[str, Any]:
         """Incrementally sync .roadmap directory to database."""
         stats = {
@@ -78,22 +103,7 @@ class SyncOrchestrator:
                     stats["files_checked"] += 1
                     if self._has_file_changed(file_path):
                         stats["files_changed"] += 1
-
-                        if "issues/" in str(file_path):
-                            success = self._issue_sync.sync_issue_file(file_path)
-                        elif "milestones/" in str(file_path):
-                            success = self._milestone_sync.sync_milestone_file(
-                                file_path
-                            )
-                        elif "projects/" in str(file_path):
-                            success = self._project_sync.sync_project_file(file_path)
-                        else:
-                            continue
-
-                        if success:
-                            stats["files_synced"] += 1
-                        else:
-                            stats["files_failed"] += 1
+                        self._sync_file_by_type(file_path, stats)
 
             # Update checkpoint
             self._state_tracker.update_last_incremental_sync(str(stats["sync_time"]))
@@ -108,6 +118,47 @@ class SyncOrchestrator:
             logger.error("Incremental sync failed", error=str(e))
             stats["files_failed"] += 1
             return stats
+
+    def _clear_database_for_rebuild(self) -> None:
+        """Clear database state for full rebuild."""
+        with self._transaction() as conn:
+            conn.execute("DELETE FROM file_sync_state")
+            conn.execute("DELETE FROM issues")
+
+    def _sync_file_in_rebuild(self, file_path: Path, stats: dict) -> None:
+        """Sync a single file during rebuild and update stats.
+
+        Args:
+            file_path: Path to file to sync
+            stats: Statistics dict to update
+        """
+        stats["files_processed"] += 1
+        stats["files_changed"] += 1
+
+        if "issues/" in str(file_path):
+            success = self._issue_sync.sync_issue_file(file_path)
+        elif "milestones/" in str(file_path):
+            success = self._milestone_sync.sync_milestone_file(file_path)
+        elif "projects/" in str(file_path):
+            success = self._project_sync.sync_project_file(file_path)
+        else:
+            return
+
+        if success:
+            stats["files_synced"] += 1
+        else:
+            stats["files_failed"] += 1
+
+    def _rebuild_from_file_patterns(self, roadmap_dir: Path, stats: dict) -> None:
+        """Rebuild database by processing files in dependency order.
+
+        Args:
+            roadmap_dir: Root roadmap directory
+            stats: Statistics dict to update
+        """
+        for pattern in ["projects/**/*.md", "milestones/**/*.md", "issues/**/*.md"]:
+            for file_path in roadmap_dir.glob(pattern):
+                self._sync_file_in_rebuild(file_path, stats)
 
     def full_rebuild_from_git(self, roadmap_dir: Path) -> dict[str, Any]:
         """Full rebuild of database from git files."""
@@ -125,33 +176,12 @@ class SyncOrchestrator:
                 return stats
 
             # Clear existing data
-            with self._transaction() as conn:
-                conn.execute("DELETE FROM file_sync_state")
-                conn.execute("DELETE FROM issues")
-                conn.execute("DELETE FROM milestones")
-                conn.execute("DELETE FROM projects")
+            self._clear_database_for_rebuild()
 
             logger.info("Starting full rebuild from git files")
 
             # Rebuild from all files in dependency order
-            for pattern in ["projects/**/*.md", "milestones/**/*.md", "issues/**/*.md"]:
-                for file_path in roadmap_dir.glob(pattern):
-                    stats["files_processed"] += 1
-                    stats["files_changed"] += 1
-
-                    if "issues/" in str(file_path):
-                        success = self._issue_sync.sync_issue_file(file_path)
-                    elif "milestones/" in str(file_path):
-                        success = self._milestone_sync.sync_milestone_file(file_path)
-                    elif "projects/" in str(file_path):
-                        success = self._project_sync.sync_project_file(file_path)
-                    else:
-                        continue
-
-                    if success:
-                        stats["files_synced"] += 1
-                    else:
-                        stats["files_failed"] += 1
+            self._rebuild_from_file_patterns(roadmap_dir, stats)
 
             # Update checkpoints
             self._state_tracker.update_last_full_rebuild(str(stats["rebuild_time"]))

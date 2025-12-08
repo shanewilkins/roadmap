@@ -209,6 +209,149 @@ def _handle_force_reinitialization(custom_core, workflow, name):
     help="Path to custom template file",
 )
 @click.pass_context
+def _handle_init_dry_run(
+    name: str, force: bool, skip_project: bool, skip_github: bool, log
+) -> bool:
+    """Handle dry-run mode for init.
+
+    Args:
+        name: Roadmap name
+        force: Force flag
+        skip_project: Skip project setup
+        skip_github: Skip GitHub setup
+        log: Logger instance
+
+    Returns:
+        True if should continue (not dry-run), False if dry-run was handled
+    """
+    roadmap_dir = Path.cwd() / name
+    config_file = roadmap_dir / "config.yaml"
+    is_initialized = roadmap_dir.exists() and config_file.exists()
+    log.info("dry_run_mode", is_initialized=is_initialized)
+    show_dry_run_info(name, is_initialized, force, skip_project, skip_github)
+    return False
+
+
+def _setup_init_environment(custom_core, name: str, force: bool, log):
+    """Setup lock and manifest for initialization.
+
+    Args:
+        custom_core: RoadmapCore instance
+        name: Roadmap name
+        force: Force flag
+        log: Logger instance
+
+    Returns:
+        Tuple of (lock, manifest, workflow) or (None, None, None) on error
+    """
+    lock_path = Path.cwd() / ".roadmap_init.lock"
+    if not _validate_initialization(custom_core, lock_path, force):
+        return None, None, None
+
+    lock = InitializationLock(lock_path)
+    if not lock.acquire():
+        presenter.present_already_in_progress_error()
+        return None, None, None
+
+    manifest = InitializationManifest(custom_core.roadmap_dir / ".init_manifest.json")
+    workflow = InitializationWorkflow(custom_core)
+
+    return lock, manifest, workflow
+
+
+def _handle_already_initialized(custom_core, force: bool, workflow, name: str) -> bool:
+    """Handle case where roadmap is already initialized.
+
+    Args:
+        custom_core: RoadmapCore instance
+        force: Force re-initialization flag
+        workflow: InitializationWorkflow instance
+        name: Roadmap name
+
+    Returns:
+        True if should continue, False if already initialized
+    """
+    if force:
+        return _handle_force_reinitialization(custom_core, workflow, name)
+    elif custom_core.is_initialized():
+        presenter.present_already_initialized_info(name)
+        return False
+    return True
+
+
+@click.command()
+@click.option(
+    "--name",
+    "-n",
+    default=".roadmap",
+    help="Name of the roadmap directory (default: .roadmap)",
+)
+@click.option(
+    "--project-name",
+    "-p",
+    default=None,
+    help="Name for the initial project",
+)
+@click.option(
+    "--description",
+    "-d",
+    default=None,
+    help="Description for the initial project",
+)
+@click.option(
+    "--skip-project",
+    is_flag=True,
+    help="Skip project creation",
+)
+@click.option(
+    "--skip-github",
+    is_flag=True,
+    help="Skip GitHub integration setup",
+)
+@click.option(
+    "--github-repo",
+    default=None,
+    help="GitHub repository (owner/repo)",
+)
+@click.option(
+    "--github-token",
+    default=None,
+    help="GitHub personal access token",
+)
+@click.option(
+    "--interactive/--non-interactive",
+    default=True,
+    help="Run in interactive mode with prompts (default: interactive)",
+)
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Answer yes to all prompts",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be initialized without making changes",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Force reinitialize existing roadmap",
+)
+@click.option(
+    "--template",
+    "-t",
+    default=None,
+    help="Template to use for project initialization",
+)
+@click.option(
+    "--template-path",
+    default=None,
+    help="Path to custom template file",
+)
+@click.pass_context
 def init(
     ctx: click.Context,
     name: str,
@@ -240,35 +383,20 @@ def init(
 
     # Handle dry-run mode
     if dry_run:
-        roadmap_dir = Path.cwd() / name
-        config_file = roadmap_dir / "config.yaml"
-        is_initialized = roadmap_dir.exists() and config_file.exists()
-        log.info("dry_run_mode", is_initialized=is_initialized)
-        show_dry_run_info(name, is_initialized, force, skip_project, skip_github)
+        _handle_init_dry_run(name, force, skip_project, skip_github, log)
         return
 
-    # Validate prerequisites
-    lock_path = Path.cwd() / ".roadmap_init.lock"
-    if not _validate_initialization(custom_core, lock_path, force):
+    # Setup environment
+    lock, manifest, workflow = _setup_init_environment(custom_core, name, force, log)
+    if not lock:
         return
-
-    # Acquire lock
-    lock = InitializationLock(lock_path)
-    if not lock.acquire():
-        presenter.present_already_in_progress_error()
-        return
-
-    manifest = InitializationManifest(custom_core.roadmap_dir / ".init_manifest.json")
-    workflow = InitializationWorkflow(custom_core)
 
     presenter.present_initialization_header()
 
     try:
-        # Handle force re-initialization
-        if force and not _handle_force_reinitialization(custom_core, workflow, name):
+        # Handle already initialized or force re-init
+        if not _handle_already_initialized(custom_core, force, workflow, name):
             return
-        elif custom_core.is_initialized():
-            presenter.present_already_initialized_info(name)
 
         # Detect context
         detected_info = ProjectContextDetectionService.detect_project_context()
