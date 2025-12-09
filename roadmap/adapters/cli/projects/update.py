@@ -1,11 +1,9 @@
 """Update project command."""
 
-from datetime import datetime
-
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.cli_validators import (
-    check_archive_exists,
     parse_date,
     validate_priority,
     validate_project_status,
@@ -15,7 +13,6 @@ from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
 )
 
@@ -56,8 +53,6 @@ def _validate_status(status):
         return None
 
     return status_map[status]
-
-
 
 
 def _add_basic_updates(updates, name, description, owner, estimated_hours):
@@ -219,8 +214,6 @@ def _display_milestone_updates(updated_project, updates):
         )
 
 
-
-
 @click.command("update")
 @click.argument("project_id")
 @click.option("--name", help="Update project name")
@@ -336,7 +329,9 @@ def update_project(
             updated_project = core.update_project(project_id, **updates)
 
         if not updated_project:
-            lines = format_operation_failure("Update", project_id, "Failed to update in database")
+            lines = format_operation_failure(
+                "Update", project_id, "Failed to update in database"
+            )
             for line in lines:
                 console.print(line, style="bold red")
             return
@@ -346,18 +341,22 @@ def update_project(
         _display_basic_updates(updated_project, updates)
         _display_date_updates(updated_project, updates)
         _display_milestone_updates(updated_project, updates)
-        
+
         # Show success with formatter
-        lines = format_operation_success("✅", "Updated", updated_project.name, project_id, None, extra_details)
+        lines = format_operation_success(
+            "✅", "Updated", updated_project.name, project_id, None, extra_details
+        )
         for line in lines:
             console.print(line, style="green")
 
     except Exception as e:
-        log_error_with_context(
-            e,
+        handle_cli_error(
+            error=e,
             operation="project_update",
             entity_type="project",
             entity_id=project_id,
+            context={},
+            fatal=True,
         )
         lines = format_operation_failure("Update", project_id, str(e))
         for line in lines:

@@ -2,12 +2,12 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
 )
 
@@ -51,11 +51,13 @@ def delete_milestone(ctx: click.Context, milestone_name: str, force: bool):
             for line in lines:
                 console.print(line, style="bold red")
     except Exception as e:
-        log_error_with_context(
-            e,
+        handle_cli_error(
+            error=e,
             operation="milestone_delete",
             entity_type="milestone",
-            additional_context={"milestone_name": milestone_name},
+            entity_id=milestone_name,
+            context={"milestone_name": milestone_name, "force": force},
+            fatal=True,
         )
         lines = format_operation_failure(
             action="delete",

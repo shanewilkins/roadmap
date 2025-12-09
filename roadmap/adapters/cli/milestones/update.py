@@ -1,16 +1,14 @@
 """Update milestone command."""
 
-from datetime import datetime
-
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.cli_validators import parse_date, validate_milestone_status
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
 )
 
@@ -136,11 +134,13 @@ def update_milestone(
             console.print(line, style="bold green" if "Updated" in line else "cyan")
 
     except Exception as e:
-        log_error_with_context(
-            e,
+        handle_cli_error(
+            error=e,
             operation="milestone_update",
             entity_type="milestone",
-            additional_context={"milestone_name": milestone_name},
+            entity_id=milestone_name,
+            context={"milestone_name": milestone_name, "updates": updates},
+            fatal=True,
         )
         lines = format_operation_failure(
             action="update",
