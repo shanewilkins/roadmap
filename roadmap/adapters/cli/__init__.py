@@ -15,6 +15,9 @@ from roadmap.common.console import get_console
 # Import core classes for backward compatibility with tests
 from roadmap.infrastructure.core import RoadmapCore
 
+# Initialize OpenTelemetry tracing
+from roadmap.shared.otel_init import initialize_tracing
+
 console = get_console()
 
 # Flag to track if commands have been registered to avoid duplicate registration
@@ -52,6 +55,9 @@ def _get_current_user():
 @click.pass_context
 def main(ctx: click.Context):
     """Roadmap CLI - A command line tool for creating and managing roadmaps."""
+    # Initialize OpenTelemetry tracing
+    initialize_tracing()
+
     # Ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below)
     ctx.ensure_object(dict)

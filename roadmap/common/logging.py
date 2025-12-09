@@ -13,6 +13,9 @@ from typing import Any
 
 import structlog
 
+# Import span context processor for tracing
+from roadmap.shared.instrumentation import span_context_processor
+
 # Context variable for correlation ID tracking across async operations
 correlation_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "correlation_id", default=None
@@ -176,6 +179,8 @@ def setup_logging(
         processors=[
             # Add correlation ID first (before any filtering)
             add_correlation_id,
+            # Add span context for tracing
+            span_context_processor,
             # Scrub sensitive data early in pipeline
             scrub_sensitive_data,
             # Add standard metadata
