@@ -2,11 +2,11 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_file_operation,
 )
 
@@ -62,16 +62,20 @@ def delete_project(ctx: click.Context, project_id: str, confirm: bool):
         # Delete file
         with track_file_operation("delete", str(project_file)):
             project_file.unlink()
-        lines = format_operation_success("✅", "Deleted", project_name, project_id, None, None)
+        lines = format_operation_success(
+            "✅", "Deleted", project_name, project_id, None, None
+        )
         for line in lines:
             console.print(line, style="green")
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="project_delete",
+        handle_cli_error(
+            error=e,
+            operation="delete_project",
             entity_type="project",
             entity_id=project_id,
+            context={"confirm": confirm},
+            fatal=True,
         )
         lines = format_operation_failure("Delete", project_id, str(e))
         for line in lines:

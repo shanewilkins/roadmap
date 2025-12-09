@@ -2,13 +2,13 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.core.services import IssueUpdateService
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
 )
 
@@ -91,12 +91,13 @@ def update_issue(
     except click.Abort:
         raise
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="issue_update",
+        handle_cli_error(
+            error=e,
+            operation="update_issue",
             entity_type="issue",
             entity_id=issue_id,
-            additional_context={"title": title},
+            context={"title": title},
+            fatal=True,
         )
         error_handler = ErrorHandler()
         error_handler.handle_error(

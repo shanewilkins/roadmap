@@ -5,13 +5,13 @@ This command is syntactic sugar for: roadmap issue update <ID> --progress <PERCE
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
 )
 
@@ -79,12 +79,13 @@ def update_progress(ctx: click.Context, issue_id: str, percentage: float):
                 console.print(line, style="bold red")
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="issue_progress",
+        handle_cli_error(
+            error=e,
+            operation="update_issue_progress",
             entity_type="issue",
             entity_id=issue_id,
-            additional_context={"percentage": percentage},
+            context={"percentage": percentage},
+            fatal=True,
         )
         lines = format_operation_failure(
             action="update progress",

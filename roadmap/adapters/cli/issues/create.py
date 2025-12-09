@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
@@ -9,7 +10,6 @@ from roadmap.core.domain import IssueType, Priority
 from roadmap.core.services import IssueCreationService
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
     verbose_output,
 )
@@ -108,11 +108,13 @@ def create_issue(
     except click.Abort:
         raise
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="issue_create",
+        handle_cli_error(
+            error=e,
+            operation="create_issue",
             entity_type="issue",
-            additional_context={"title": title, "priority": priority},
+            entity_id="new",
+            context={"title": title, "priority": priority, "milestone": milestone},
+            fatal=True,
         )
         error_handler = ErrorHandler()
         error_handler.handle_error(

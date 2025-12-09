@@ -4,12 +4,12 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_database_operation,
     verbose_output,
 )
@@ -64,11 +64,13 @@ def create_milestone(
         for line in lines:
             console.print(line, style="bold green" if "Created" in line else "cyan")
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="milestone_create",
+        handle_cli_error(
+            error=e,
+            operation="create_milestone",
             entity_type="milestone",
-            additional_context={"name": name},
+            entity_id="new",
+            context={"name": name, "due_date": due_date},
+            fatal=True,
         )
         lines = format_operation_failure(
             action="create",

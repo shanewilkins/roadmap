@@ -4,13 +4,13 @@ from datetime import datetime
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.cli_validators import parse_iso_date
 from roadmap.common.console import get_console
 from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.infrastructure.logging import (
     log_command,
-    log_error_with_context,
     track_file_operation,
     verbose_output,
 )
@@ -154,8 +154,6 @@ def _generate_project_content(
     return content
 
 
-
-
 @click.command("create")
 @click.argument("name")
 @click.option(
@@ -274,16 +272,20 @@ def create_project(
         }
         if owner:
             extra_details["Owner"] = owner
-        lines = format_operation_success("✅", "Created", name, project_id, None, extra_details)
+        lines = format_operation_success(
+            "✅", "Created", name, project_id, None, extra_details
+        )
         for line in lines:
             console.print(line, style="green")
 
     except Exception as e:
-        log_error_with_context(
-            e,
-            operation="project_create",
+        handle_cli_error(
+            error=e,
+            operation="create_project",
             entity_type="project",
-            additional_context={"name": name},
+            entity_id="new",
+            context={"name": name, "owner": owner, "target_end_date": target_end_date},
+            fatal=True,
         )
         lines = format_operation_failure("Create", name, str(e))
         for line in lines:
