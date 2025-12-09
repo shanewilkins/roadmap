@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
@@ -278,6 +279,19 @@ def list_issues(
         return table_data
 
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="list_issues",
+            entity_type="issue",
+            entity_id="all",
+            context={
+                "backlog": backlog,
+                "assignee": assignee,
+                "my_issues": my_issues,
+                "filter": status,
+            },
+            fatal=True,
+        )
         error_handler = ErrorHandler()
         error_handler.handle_error(
             ValidationError(

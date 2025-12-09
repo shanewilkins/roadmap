@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.common.console import get_console
 from roadmap.common.output_models import ColumnType
@@ -188,4 +189,17 @@ def list_projects(
         return table_data
 
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="list_projects",
+            entity_type="project",
+            entity_id="all",
+            context={
+                "status": status,
+                "owner": owner,
+                "priority": priority,
+                "overdue": overdue,
+            },
+            fatal=True,
+        )
         console.print(f"❌ Failed to list projects: {e}", style="bold red")

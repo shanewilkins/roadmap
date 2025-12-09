@@ -2,6 +2,7 @@
 
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
@@ -76,4 +77,12 @@ def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
         return table_data
 
     except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="list_milestones",
+            entity_type="milestone",
+            entity_id="all",
+            context={"overdue": overdue},
+            fatal=True,
+        )
         _get_console().print(f"❌ Error listing milestones: {str(e)}", style="bold red")
