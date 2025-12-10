@@ -65,6 +65,17 @@ repos:
     hooks:
       - id: pyright
 
+  # Documentation validation (warnings only, non-blocking)
+  - repo: local
+    hooks:
+      - id: pydocstyle
+        name: pydocstyle - docstring validation (warnings)
+        entry: bash -c 'poetry run pydocstyle --convention=google roadmap || true'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
   # Run cosmetic fixes last (don't block on whitespace)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
