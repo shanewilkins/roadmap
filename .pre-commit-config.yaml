@@ -48,7 +48,7 @@ repos:
     rev: v2.11
     hooks:
       - id: vulture
-        args: ['--min-confidence=80', '--exclude=tests']
+        args: ['--min-confidence=80', '--exclude=tests', '--ignore-names=exc_*,method_name,Core']
         pass_filenames: true
         types: [python]
 

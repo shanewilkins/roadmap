@@ -37,7 +37,6 @@ from roadmap.common.output_models import ColumnType, TableData
 def with_output_support(
     available_columns: list[str] | None = None,
     column_types: dict[str, ColumnType] | None = None,
-    default_columns: list[str] | None = None,
 ):
     """
     Decorator to add output formatting support to Click commands.
@@ -51,7 +50,6 @@ def with_output_support(
     Args:
         available_columns: List of valid column names for selection.
         column_types: Dict mapping column names to ColumnType for filter validation.
-        default_columns: Default columns to show (None = all).
 
     Example:
         @click.command()
