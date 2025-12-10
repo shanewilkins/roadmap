@@ -1,75 +1,93 @@
 """Issue table formatting and display."""
 
+from typing import TYPE_CHECKING, Any
+
 from rich.text import Text
 
 from roadmap.common.console import get_console
 from roadmap.common.output_models import ColumnDef, ColumnType, TableData
-from roadmap.core.domain import Issue, Priority, Status
+from roadmap.common.status_style_manager import StatusStyleManager
+from roadmap.core.domain import Issue, Priority
+from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
+
+if TYPE_CHECKING:
+    pass
 
 console = get_console()
 
 
-class IssueTableFormatter:
+class IssueTableFormatter(BaseTableFormatter[Issue]):
     """Formats issues for display in rich tables."""
 
-    @staticmethod
-    def create_issue_table():
+    def __init__(self):
+        """Initialize issue formatter with headers and columns."""
+        self.columns_config = [
+            {"name": "ID", "style": "cyan", "width": 8},
+            {"name": "Title", "style": "white", "width": 25, "no_wrap": True},
+            {"name": "Priority", "style": "yellow", "width": 10},
+            {"name": "Status", "style": "green", "width": 12},
+            {"name": "Progress", "style": "blue", "width": 10},
+            {"name": "Assignee", "style": "magenta", "width": 12},
+            {"name": "Estimate", "style": "green", "width": 10},
+            {"name": "Milestone", "style": "blue", "width": 15},
+        ]
+
+    def create_table(self) -> Any:
         """Create a rich table with issue columns."""
         from rich.table import Table
 
         table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("ID", style="cyan", width=8)
-        table.add_column("Title", style="white", width=25, no_wrap=False)
-        table.add_column("Priority", style="yellow", width=10)
-        table.add_column("Status", style="green", width=12)
-        table.add_column("Progress", style="blue", width=10)
-        table.add_column("Assignee", style="magenta", width=12)
-        table.add_column("Estimate", style="green", width=10)
-        table.add_column("Milestone", style="blue", width=15)
+        for col in self.columns_config:
+            table.add_column(
+                col["name"],
+                style=col["style"],
+                width=col["width"],
+                no_wrap=col.get("no_wrap", False),
+            )
         return table
 
-    @staticmethod
-    def add_issue_row(table, issue: Issue) -> None:
-        """Add a single issue row to the table."""
+    def add_row(self, table: Any, item: Issue) -> None:
+        """Add a single issue row to the table.
+
+        Args:
+            table: Rich Table object
+            item: Issue object to add
+        """
         priority_style = {
             Priority.CRITICAL: "bold red",
             Priority.HIGH: "red",
             Priority.MEDIUM: "yellow",
             Priority.LOW: "dim",
-        }.get(issue.priority, "white")
-
-        status_style = {
-            Status.TODO: "white",
-            Status.IN_PROGRESS: "yellow",
-            Status.BLOCKED: "red",
-            Status.REVIEW: "blue",
-            Status.CLOSED: "green",
-        }.get(issue.status, "white")
+        }.get(item.priority, "white")
 
         table.add_row(
-            issue.id,
-            issue.title,
-            Text(issue.priority.value, style=priority_style),
-            Text(issue.status.value, style=status_style),
+            item.id,
+            item.title,
+            Text(item.priority.value, style=priority_style),
+            Text(item.status.value, style=StatusStyleManager.get_style(item.status)),
             Text(
-                issue.progress_display,
-                style="blue" if issue.progress_percentage else "dim",
+                item.progress_display,
+                style="blue" if item.progress_percentage else "dim",
             ),
             Text(
-                issue.assignee or "Unassigned",
-                style="magenta" if issue.assignee else "dim",
+                item.assignee or "Unassigned",
+                style="magenta" if item.assignee else "dim",
             ),
             Text(
-                issue.estimated_time_display,
-                style="green" if issue.estimated_hours else "dim",
+                item.estimated_time_display,
+                style="green" if item.estimated_hours else "dim",
             ),
-            Text(issue.milestone_name, style="dim" if issue.is_backlog else "blue"),
+            Text(item.milestone_name, style="dim" if item.is_backlog else "blue"),
         )
 
-    @classmethod
-    def display_issues(cls, issues: list[Issue], filter_description: str) -> None:
-        """Display issues in a formatted table."""
-        if not issues:
+    def display_items(self, items: list[Issue], filter_description: str) -> None:
+        """Display issues in a formatted table.
+
+        Args:
+            items: List of Issue objects
+            filter_description: Description of filter applied
+        """
+        if not items:
             console.print(f"📋 No {filter_description} issues found.", style="yellow")
             console.print(
                 "Create one with: roadmap issue create 'Issue title'", style="dim"
@@ -77,25 +95,36 @@ class IssueTableFormatter:
             return
 
         # Display header with filter info
-        header_text = f"📋 {len(issues)} {filter_description} issue{'s' if len(issues) != 1 else ''}"
+        header_text = f"📋 {len(items)} {filter_description} issue{'s' if len(items) != 1 else ''}"
         console.print(header_text, style="bold cyan")
         console.print()
 
         # Rich table display
-        table = cls.create_issue_table()
-        for issue in issues:
-            cls.add_issue_row(table, issue)
+        table = self.create_table()
+        for item in items:
+            self.add_row(table, item)
 
         console.print(table)
 
-    @staticmethod
-    def issues_to_table_data(
-        issues: list[Issue], title: str = "Issues", description: str = ""
+    def get_filter_description(self, items: list[Issue]) -> str:
+        """Get human-readable description of filtered issues.
+
+        Args:
+            items: List of issues being displayed
+
+        Returns:
+            Description string (e.g., "5 open issues")
+        """
+        count = len(items)
+        return f"📋 {count} issue{'s' if count != 1 else ''}"
+
+    def items_to_table_data(
+        self, items: list[Issue], title: str = "Issues", description: str = ""
     ) -> TableData:
         """Convert Issue list to TableData for structured output.
 
         Args:
-            issues: List of Issue objects.
+            items: List of Issue objects.
             title: Optional table title.
             description: Optional filter description.
 
@@ -180,17 +209,17 @@ class IssueTableFormatter:
         ]
 
         rows = []
-        for issue in issues:
+        for item in items:
             rows.append(
                 [
-                    issue.id,
-                    issue.title,
-                    issue.priority.value,
-                    issue.status.value,
-                    issue.progress_display,
-                    issue.assignee or "Unassigned",
-                    issue.estimated_time_display,
-                    issue.milestone_name,
+                    item.id,
+                    item.title,
+                    item.priority.value,
+                    item.status.value,
+                    item.progress_display,
+                    item.assignee or "Unassigned",
+                    item.estimated_time_display,
+                    item.milestone_name,
                 ]
             )
 
@@ -199,9 +228,32 @@ class IssueTableFormatter:
             rows=rows,
             title=title,
             description=description,
-            total_count=len(issues),
-            returned_count=len(issues),
+            total_count=len(items),
+            returned_count=len(items),
         )
+
+    # Backward compatibility methods (for existing code that uses static methods)
+    @classmethod
+    def create_issue_table(cls):
+        """Create a rich table with issue columns (backward compatible)."""
+        return cls().create_table()
+
+    @classmethod
+    def add_issue_row(cls, table, issue: Issue) -> None:
+        """Add a single issue row to the table (backward compatible)."""
+        cls().add_row(table, issue)
+
+    @classmethod
+    def display_issues(cls, issues: list[Issue], filter_description: str) -> None:
+        """Display issues in a formatted table (backward compatible)."""
+        cls().display_items(issues, filter_description)
+
+    @staticmethod
+    def issues_to_table_data(
+        issues: list[Issue], title: str = "Issues", description: str = ""
+    ) -> TableData:
+        """Convert Issue list to TableData for structured output (backward compatible)."""
+        return IssueTableFormatter().items_to_table_data(issues, title, description)
 
     @staticmethod
     def display_workload_summary(
