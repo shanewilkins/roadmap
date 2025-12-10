@@ -46,12 +46,36 @@ except ImportError:
                     self._tz = _timezone.utc
 
             def utcoffset(self, dt: datetime | None) -> Any:
+                """Get the UTC offset for this timezone.
+
+                Args:
+                    dt: The datetime to get the offset for.
+
+                Returns:
+                    The UTC offset as a timedelta.
+                """
                 return self._tz.utcoffset(dt)
 
             def tzname(self, dt: datetime | None) -> str | None:
+                """Get the timezone name.
+
+                Args:
+                    dt: The datetime to get the timezone name for.
+
+                Returns:
+                    The timezone name as a string.
+                """
                 return self._tz.tzname(dt)
 
             def dst(self, dt: datetime | None) -> Any:
+                """Get the daylight saving time offset.
+
+                Args:
+                    dt: The datetime to get the DST offset for.
+
+                Returns:
+                    The DST offset as a timedelta, or None if not applicable.
+                """
                 return self._tz.dst(dt)
 
             def __repr__(self):

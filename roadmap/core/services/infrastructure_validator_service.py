@@ -25,6 +25,11 @@ class RoadmapDirectoryValidator(BaseValidator):
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the roadmap_directory check.
+        """
         return "roadmap_directory"
 
     @staticmethod
@@ -63,6 +68,11 @@ class StateFileValidator(BaseValidator):
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the state_file check.
+        """
         return "state_file"
 
     @staticmethod
@@ -101,6 +111,11 @@ class IssuesDirectoryValidator(BaseValidator):
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the issues_directory check.
+        """
         return "issues_directory"
 
     @staticmethod
@@ -135,6 +150,11 @@ class MilestonesDirectoryValidator(BaseValidator):
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the milestones_directory check.
+        """
         return "milestones_directory"
 
     @staticmethod
@@ -168,10 +188,15 @@ class MilestonesDirectoryValidator(BaseValidator):
 
 
 class GitRepositoryValidator(BaseValidator):
-    """Validator for Git repository."""
+    """Validator for git repository."""
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the git_repository check.
+        """
         return "git_repository"
 
     @staticmethod
@@ -203,6 +228,11 @@ class DatabaseIntegrityValidator(BaseValidator):
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the database_integrity check.
+        """
         return "database_integrity"
 
     @staticmethod

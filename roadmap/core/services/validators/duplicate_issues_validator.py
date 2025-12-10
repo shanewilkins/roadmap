@@ -13,6 +13,11 @@ class DuplicateIssuesValidator(BaseValidator):
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the duplicate_issues check.
+        """
         return "duplicate_issues"
 
     @staticmethod

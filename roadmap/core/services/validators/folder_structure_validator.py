@@ -15,6 +15,11 @@ class FolderStructureValidator(BaseValidator):
 
     @staticmethod
     def get_check_name() -> str:
+        """Get the name of this check.
+
+        Returns:
+            String identifier for the folder_structure check.
+        """
         return "folder_structure"
 
     @staticmethod

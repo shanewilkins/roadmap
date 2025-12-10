@@ -12,7 +12,12 @@ try:
     from roadmap.common.timezone_utils import now_utc
 except ImportError:
     # Fallback during module loading
-    def now_utc():
+    def now_utc() -> datetime:
+        """Get current UTC datetime.
+
+        Returns:
+            Current datetime in UTC timezone.
+        """
         return datetime.now()
 
 
