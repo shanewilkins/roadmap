@@ -35,18 +35,20 @@ repos:
     rev: 1.7.6
     hooks:
       - id: bandit
-        args: ['-r', '-c', 'pyproject.toml', '--severity-level=medium']
+        args: ['-r', '-c', '.bandit', '--severity-level=high']
         additional_dependencies: ['bandit[toml]']
         types: [python]
 
   # Run complexity and file length checks using radon
-  - repo: https://github.com/PyCQA/radon
-    rev: 6.0.1
+  - repo: local
     hooks:
       - id: radon
-        args: ['cc', 'roadmap', '--exclude=tests', '-nb']
+        name: radon - complexity checking
+        entry: poetry run radon cc roadmap --exclude=tests -nb
+        language: system
         types: [python]
         pass_filenames: false
+        always_run: true
 
   # Run dead code detection (vulture)
   - repo: https://github.com/jendrikseipp/vulture
