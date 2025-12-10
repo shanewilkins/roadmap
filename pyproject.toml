@@ -110,6 +110,9 @@ pytest-aiohttp = "^1.0.0"
 ruff = "^0.6.0"
 pre-commit = "^4.3.0"
 vulture = "^2.11"
+bandit = {version = "^1.7.6", extras = ["toml"]}
+pydocstyle = "^6.3.0"
+radon = "^6.0.0"
 pytest-xdist = "^3.5.0"
 pytest-benchmark = "^4.0.0"
 pyright = "^1.1.350"
@@ -121,7 +124,6 @@ mkdocs = "^1.6.0"
 mkdocs-material = "^9.5.0"
 mkdocs-click = "^0.8.0"
 myst-parser = "^4.0.0"
-radon = "^6.0.1"
 
 [tool.poetry.scripts]
 roadmap = "roadmap.adapters.cli:main"
@@ -158,6 +160,13 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+# Security configuration for Bandit
+[tool.bandit]
+exclude_dirs = ["tests"]
+# Skip assert_used: we use asserts in tests (B101)
+# Skip try_except_pass: intentional in cleanup/cleanup handlers (B110)
+skips = ["B101", "B110"]
 
 # Type checking is now handled by Pyright
 # Configuration is in pyrightconfig.json

@@ -30,18 +30,23 @@ repos:
       - id: ruff
         args: [--fix]
 
+  # Security scanning (detect SQL injection, hardcoded secrets, dangerous patterns)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        args: ['-r', '-c', 'pyproject.toml', '--severity-level=medium']
+        additional_dependencies: ['bandit[toml]']
+        types: [python]
+
   # Run complexity and file length checks using radon
-  # Note: Disabled due to bash path resolution issues in pre-commit hook environment
-  # - repo: local
-  #   hooks:
-  #     - id: radon-metrics
-  #       name: radon - complexity & file length
-  #       entry: bash scripts/check-radon.sh
-  #       language: script
-  #       types: [python]
-  #       pass_filenames: true
-  #       stages: [commit]
-  #       # Checks: CC warn at B (5-7) / fail at C+ (8+), file length warn at 300 LOC / fail at 400 LOC
+  - repo: https://github.com/PyCQA/radon
+    rev: 6.0.1
+    hooks:
+      - id: radon
+        args: ['cc', 'roadmap', '--exclude=tests', '-nb']
+        types: [python]
+        pass_filenames: false
 
   # Run dead code detection (vulture)
   - repo: https://github.com/jendrikseipp/vulture
