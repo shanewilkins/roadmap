@@ -1,0 +1,50 @@
+# Vulture ignore list for false positives and intentional patterns
+
+# CLI decorators and entry points
+click_group
+main
+cli
+
+# Test fixtures and setup functions
+setup
+teardown
+conftest
+
+# Common click patterns
+ctx
+pass_context
+callback
+is_flag
+help
+
+# Common test patterns
+test_
+Test
+
+# API responses and handlers
+handle_*
+route
+endpoint
+
+# Service/Repository patterns
+Service
+Repository
+Manager
+Provider
+
+# Mock/Test objects
+Mock
+MagicMock
+patch
+
+# Dataclass fields and properties
+__dataclass_fields__
+
+# Async patterns
+async_*
+await
+
+# Domain models with @property decorators
+@property
+getter
+setter

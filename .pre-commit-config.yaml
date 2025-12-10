@@ -43,6 +43,15 @@ repos:
   #       stages: [commit]
   #       # Checks: CC warn at B (5-7) / fail at C+ (8+), file length warn at 300 LOC / fail at 400 LOC
 
+  # Run dead code detection (vulture)
+  - repo: https://github.com/jendrikseipp/vulture
+    rev: v2.11
+    hooks:
+      - id: vulture
+        args: ['--min-confidence=80', '--exclude=tests']
+        pass_filenames: true
+        types: [python]
+
   # Run type checking (before cosmetic fixes)
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.350
