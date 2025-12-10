@@ -59,6 +59,17 @@ repos:
         pass_filenames: true
         types: [python]
 
+  # Run DRY violation detection (duplicate code - warnings only, non-blocking)
+  - repo: local
+    hooks:
+      - id: pylint-duplicate-code
+        name: pylint - duplicate code detection (warnings)
+        entry: bash -c 'poetry run pylint --rcfile=.pylintrc roadmap || true'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
   # Run type checking (before cosmetic fixes)
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.350
