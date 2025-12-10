@@ -5,6 +5,7 @@ import click
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.services.milestone_list_service import MilestoneListService
 from roadmap.common.console import get_console
 from roadmap.common.output_models import ColumnType
 from roadmap.infrastructure.logging import verbose_output
@@ -40,22 +41,9 @@ def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
     core = ctx.obj["core"]
 
     try:
-        # Get all milestones
-        milestones = core.milestones.list()
-
-        # Filter by overdue if requested
-        if overdue:
-            from datetime import datetime
-
-            now = datetime.now()
-            milestones = [
-                m
-                for m in milestones
-                if hasattr(m, "due_date")
-                and m.due_date
-                and m.due_date < now
-                and (not hasattr(m, "status") or m.status.value != "closed")
-            ]
+        # Use MilestoneListService to get and filter milestones
+        service = MilestoneListService(core)
+        milestones = service.get_milestones_list_data(overdue_only=overdue)
 
         # Handle empty result
         if not milestones:
