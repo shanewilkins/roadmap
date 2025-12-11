@@ -6,11 +6,7 @@ from datetime import datetime
 from unittest.mock import Mock
 
 from roadmap.core.domain import Status
-from roadmap.core.services.issue_helpers import (
-    StartDateParser,
-    StartIssueDisplay,
-    StartIssueWorkflow,
-)
+from roadmap.core.services import StartIssueService
 
 
 class TestStartDateParser:
@@ -18,7 +14,8 @@ class TestStartDateParser:
 
     def test_parse_none_returns_now(self):
         """Parse None should return current datetime."""
-        result = StartDateParser.parse_start_date(None)
+        service = StartIssueService(None)
+        result = service.parse_start_date(None)
         assert result is not None
         assert isinstance(result, datetime)
         # Check it's recent (within last 5 seconds)
@@ -26,30 +23,41 @@ class TestStartDateParser:
 
     def test_parse_empty_string_returns_now(self):
         """Parse empty string should return current datetime."""
-        result = StartDateParser.parse_start_date("")
+        service = StartIssueService(None)
+        result = service.parse_start_date("")
         assert result is not None
         assert isinstance(result, datetime)
         assert (datetime.now() - result).total_seconds() < 5
 
     def test_parse_date_only_format(self):
         """Parse YYYY-MM-DD format successfully."""
-        result = StartDateParser.parse_start_date("2024-01-15")
+        service = StartIssueService(None)
+        result = service.parse_start_date("2024-01-15")
         assert result == datetime(2024, 1, 15)
 
     def test_parse_datetime_format(self):
         """Parse YYYY-MM-DD HH:MM format successfully."""
-        result = StartDateParser.parse_start_date("2024-01-15 14:30")
+        service = StartIssueService(None)
+        result = service.parse_start_date("2024-01-15 14:30")
         assert result == datetime(2024, 1, 15, 14, 30)
 
-    def test_parse_invalid_format_returns_none(self):
-        """Parse invalid date format should return None."""
-        result = StartDateParser.parse_start_date("not-a-date")
-        assert result is None
+    def test_parse_invalid_format_raises_error(self):
+        """Parse invalid date format should raise ValueError."""
+        service = StartIssueService(None)
+        try:
+            service.parse_start_date("not-a-date")
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert "Invalid date format" in str(e)
 
-    def test_parse_partial_date_returns_none(self):
-        """Parse partial date should return None."""
-        result = StartDateParser.parse_start_date("2024-01")
-        assert result is None
+    def test_parse_partial_date_raises_error(self):
+        """Parse partial date should raise ValueError."""
+        service = StartIssueService(None)
+        try:
+            service.parse_start_date("2024-01")
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert "Invalid date format" in str(e)
 
 
 class TestStartIssueWorkflow:
@@ -61,11 +69,12 @@ class TestStartIssueWorkflow:
         mock_core.issues = Mock()
         mock_issue = Mock()
         mock_core.issues.update.return_value = mock_issue
+        service = StartIssueService(mock_core)
 
         issue_id = "ISS-123"
         start_date = datetime(2024, 1, 15, 10, 30)
 
-        result = StartIssueWorkflow.start_work(mock_core, issue_id, start_date)
+        result = service.start_work(issue_id, start_date)
 
         mock_core.issues.update.assert_called_once_with(
             issue_id,
@@ -80,15 +89,16 @@ class TestStartIssueWorkflow:
         mock_core = Mock()
         mock_core.issues = Mock()
         mock_core.issues.update.return_value = None
+        service = StartIssueService(mock_core)
 
-        result = StartIssueWorkflow.start_work(mock_core, "ISS-123", datetime.now())
+        result = service.start_work("ISS-123", datetime.now())
 
         assert result is None
 
     def test_should_create_branch_true_when_flag_set(self):
         """should_create_branch returns True when git_branch_flag is True."""
         mock_core = Mock()
-        result = StartIssueWorkflow.should_create_branch(True, mock_core)
+        result = StartIssueService(mock_core).should_create_branch(True)
         assert result is True
 
     def test_should_create_branch_false_when_flag_false(self):
@@ -98,7 +108,7 @@ class TestStartIssueWorkflow:
         so it always falls through to the except block returning False.
         """
         mock_core = Mock()
-        result = StartIssueWorkflow.should_create_branch(False, mock_core)
+        result = StartIssueService(mock_core).should_create_branch(False)
         assert result is False
 
 
@@ -107,12 +117,15 @@ class TestStartIssueDisplay:
 
     def test_show_started_displays_issue_info(self):
         """show_started should display issue title and start date."""
+        mock_core = Mock()
         mock_console = Mock()
+        service = StartIssueService(mock_core)
+        service._console = mock_console
         mock_issue = Mock()
         mock_issue.title = "Test Issue"
         start_date = datetime(2024, 1, 15, 14, 30)
 
-        StartIssueDisplay.show_started(mock_issue, start_date, mock_console)
+        service.display_started(mock_issue, start_date)
 
         assert mock_console.print.call_count == 3
         calls = mock_console.print.call_args_list
@@ -129,10 +142,13 @@ class TestStartIssueDisplay:
 
     def test_show_branch_created_without_checkout(self):
         """show_branch_created should display branch name without checkout message."""
+        mock_core = Mock()
         mock_console = Mock()
+        service = StartIssueService(mock_core)
+        service._console = mock_console
         branch_name = "feature/ISS-123"
 
-        StartIssueDisplay.show_branch_created(branch_name, False, mock_console)
+        service.display_branch_created(branch_name, False)
 
         assert mock_console.print.call_count == 1
         call_text = mock_console.print.call_args[0][0]
@@ -141,10 +157,13 @@ class TestStartIssueDisplay:
 
     def test_show_branch_created_with_checkout(self):
         """show_branch_created should display branch name and checkout message."""
+        mock_core = Mock()
         mock_console = Mock()
+        service = StartIssueService(mock_core)
+        service._console = mock_console
         branch_name = "feature/ISS-123"
 
-        StartIssueDisplay.show_branch_created(branch_name, True, mock_console)
+        service.display_branch_created(branch_name, True)
 
         assert mock_console.print.call_count == 2
         calls = mock_console.print.call_args_list
@@ -159,11 +178,13 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_with_uncommitted_changes(self):
         """show_branch_warning should display uncommitted changes warning."""
-        mock_console = Mock()
         mock_core = Mock()
         mock_core.git._run_git_command.return_value = "M  some_file.py\n"
+        mock_console = Mock()
+        service = StartIssueService(mock_core)
+        service._console = mock_console
 
-        StartIssueDisplay.show_branch_warning(mock_core, mock_console)
+        service.display_branch_warning()
 
         mock_console.print.assert_called_once()
         warning_text = mock_console.print.call_args[0][0]
@@ -172,11 +193,13 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_with_clean_tree(self):
         """show_branch_warning should display generic warning for clean tree."""
-        mock_console = Mock()
         mock_core = Mock()
         mock_core.git._run_git_command.return_value = ""
+        mock_console = Mock()
+        service = StartIssueService(mock_core)
+        service._console = mock_console
 
-        StartIssueDisplay.show_branch_warning(mock_core, mock_console)
+        service.display_branch_warning()
 
         mock_console.print.assert_called_once()
         warning_text = mock_console.print.call_args[0][0]
@@ -185,11 +208,13 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_with_none_status(self):
         """show_branch_warning should handle None status output."""
-        mock_console = Mock()
         mock_core = Mock()
         mock_core.git._run_git_command.return_value = None
+        mock_console = Mock()
+        service = StartIssueService(mock_core)
+        service._console = mock_console
 
-        StartIssueDisplay.show_branch_warning(mock_core, mock_console)
+        service.display_branch_warning()
 
         mock_console.print.assert_called_once()
         warning_text = mock_console.print.call_args[0][0]
@@ -197,11 +222,13 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_on_git_exception(self):
         """show_branch_warning should handle git command exceptions."""
-        mock_console = Mock()
         mock_core = Mock()
         mock_core.git._run_git_command.side_effect = Exception("Git error")
+        mock_console = Mock()
+        service = StartIssueService(mock_core)
+        service._console = mock_console
 
-        StartIssueDisplay.show_branch_warning(mock_core, mock_console)
+        service.display_branch_warning()
 
         mock_console.print.assert_called_once()
         warning_text = mock_console.print.call_args[0][0]

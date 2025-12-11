@@ -2,20 +2,58 @@
 
 import click
 
-from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
+from roadmap.adapters.cli.crud import BaseUpdate, EntityType
+from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
 from roadmap.adapters.cli.helpers import require_initialized
-from roadmap.common.console import get_console
-from roadmap.common.errors import ErrorHandler, ValidationError
-from roadmap.core.services import IssueUpdateService
 from roadmap.infrastructure.logging import (
     log_command,
-    track_database_operation,
 )
 
 
-def _get_console():
-    """Get console instance at runtime to respect Click's test environment."""
-    return get_console()
+class IssueUpdate(BaseUpdate):
+    """Update issue command implementation."""
+
+    entity_type = EntityType.ISSUE
+
+    def build_update_dict(self, entity_id: str, **kwargs) -> dict:
+        """Build update dictionary for issue."""
+        return IssueBuilder.build_update_dict(
+            title=kwargs.get("title"),
+            priority=kwargs.get("priority"),
+            status=kwargs.get("status"),
+            assignee=kwargs.get("assignee"),
+            milestone=kwargs.get("milestone"),
+            description=kwargs.get("description"),
+            estimate=kwargs.get("estimate"),
+        )
+
+    def _display_success(self, entity) -> None:
+        """Display detailed success message for issue update."""
+        # Display in a similar format to creation but with "Updated"
+        try:
+            title = self._get_title(entity)
+            entity_id = self._get_id(entity)
+
+            self.console.print(f"✅ Updated issue: {title}", style="bold green")
+            self.console.print(f"   ID: {entity_id}", style="cyan")
+            if hasattr(entity, "issue_type"):
+                self.console.print(f"   type: {entity.issue_type.value}", style="blue")
+            if hasattr(entity, "priority"):
+                self.console.print(
+                    f"   priority: {entity.priority.value}", style="yellow"
+                )
+            if hasattr(entity, "estimated_hours") and entity.estimated_hours:
+                self.console.print(
+                    f"   estimate: {entity.estimated_time_display}", style="green"
+                )
+        except (AttributeError, TypeError):
+            # Fallback for mocks or incomplete entities
+            title = self._get_title(entity)
+            entity_id = self._get_id(entity)
+            self.console.print(
+                f"✅ Updated issue: {title} [{entity_id}]",
+                style="green",
+            )
 
 
 @click.command("update")
@@ -55,56 +93,16 @@ def update_issue(
 ):
     """Update an existing issue."""
     core = ctx.obj["core"]
+    updater = IssueUpdate(core)
 
-    try:
-        # Create issue update service
-        service = IssueUpdateService(core)
-
-        # Build update dictionary
-        updates = service.build_update_dict(
-            title,
-            priority,
-            status,
-            assignee,
-            milestone,
-            description,
-            estimate,
-        )
-
-        # Check for assignee validation failure
-        if assignee is not None and "assignee" not in updates:
-            raise click.Abort()
-
-        if not updates:
-            _get_console().print("❌ No updates specified", style="bold red")
-            raise click.Abort()
-
-        # Update the issue
-        with track_database_operation(
-            "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
-        ):
-            updated_issue = core.issues.update(issue_id, **updates)
-
-        # Display results
-        service.display_update_result(updated_issue, updates, reason)
-
-    except click.Abort:
-        raise
-    except Exception as e:
-        handle_cli_error(
-            error=e,
-            operation="update_issue",
-            entity_type="issue",
-            entity_id=issue_id,
-            context={"title": title},
-            fatal=True,
-        )
-        error_handler = ErrorHandler()
-        error_handler.handle_error(
-            ValidationError(
-                "Failed to update issue",
-                context={"command": "update", "issue_id": issue_id},
-                cause=e,
-            ),
-            exit_on_critical=False,
-        )
+    updater.execute(
+        entity_id=issue_id,
+        title=title,
+        priority=priority,
+        status=status,
+        assignee=assignee,
+        milestone=milestone,
+        description=description,
+        estimate=estimate,
+        reason=reason,
+    )

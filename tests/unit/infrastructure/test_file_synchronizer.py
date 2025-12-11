@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.adapters.persistence.database_manager import DatabaseManager
+from roadmap.adapters.persistence.file_parser import FileParser
 from roadmap.adapters.persistence.file_synchronizer import FileSynchronizer
 
 
@@ -59,7 +60,8 @@ class TestFileSynchronizer:
         content = "Test content for hashing"
         test_file.write_text(content)
 
-        hash_value = file_synchronizer._calculate_file_hash(test_file)
+        parser = FileParser()
+        hash_value = parser.calculate_file_hash(test_file)
         expected = hashlib.sha256(content.encode()).hexdigest()
         assert hash_value == expected
 
@@ -73,8 +75,9 @@ class TestFileSynchronizer:
         file1.write_text("Content 1")
         file2.write_text("Content 2")
 
-        hash1 = file_synchronizer._calculate_file_hash(file1)
-        hash2 = file_synchronizer._calculate_file_hash(file2)
+        parser = FileParser()
+        hash1 = parser.calculate_file_hash(file1)
+        hash2 = parser.calculate_file_hash(file2)
 
         assert hash1 != hash2
 
@@ -89,8 +92,9 @@ class TestFileSynchronizer:
         file1.write_text(content)
         file2.write_text(content)
 
-        hash1 = file_synchronizer._calculate_file_hash(file1)
-        hash2 = file_synchronizer._calculate_file_hash(file2)
+        parser = FileParser()
+        hash1 = parser.calculate_file_hash(file1)
+        hash2 = parser.calculate_file_hash(file2)
 
         assert hash1 == hash2
 
@@ -108,7 +112,8 @@ priority: high
 """
         test_file.write_text(content)
 
-        frontmatter = file_synchronizer._parse_yaml_frontmatter(test_file)
+        parser = FileParser()
+        frontmatter = parser.parse_yaml_frontmatter(test_file)
         assert frontmatter["title"] == "Test Issue"
         assert frontmatter["status"] == "open"
         assert frontmatter["priority"] == "high"
@@ -121,7 +126,8 @@ priority: high
         content = "# Content without frontmatter"
         test_file.write_text(content)
 
-        frontmatter = file_synchronizer._parse_yaml_frontmatter(test_file)
+        parser = FileParser()
+        frontmatter = parser.parse_yaml_frontmatter(test_file)
         assert frontmatter == {}
 
     def test_parse_yaml_frontmatter_invalid_yaml(
@@ -136,7 +142,8 @@ invalid: yaml: content: here
         test_file.write_text(content)
 
         # Should not raise exception
-        frontmatter = file_synchronizer._parse_yaml_frontmatter(test_file)
+        parser = FileParser()
+        frontmatter = parser.parse_yaml_frontmatter(test_file)
         assert isinstance(frontmatter, dict)
 
     def test_get_file_sync_status_no_previous_sync(self, file_synchronizer, db_manager):
@@ -151,7 +158,8 @@ invalid: yaml: content: here
         """update_file_sync_status should insert new sync record."""
         test_file = temp_data_dir / "test.md"
         test_file.write_text("content")
-        file_hash = file_synchronizer._calculate_file_hash(test_file)
+        parser = FileParser()
+        file_hash = parser.calculate_file_hash(test_file)
         file_size = test_file.stat().st_size
         last_modified = datetime.now()
 
@@ -170,7 +178,8 @@ invalid: yaml: content: here
         """update_file_sync_status should update existing sync record."""
         test_file = temp_data_dir / "test.md"
         test_file.write_text("content")
-        file_hash1 = file_synchronizer._calculate_file_hash(test_file)
+        parser = FileParser()
+        file_hash1 = parser.calculate_file_hash(test_file)
         file_size1 = test_file.stat().st_size
         last_modified1 = datetime.now()
 
@@ -180,7 +189,7 @@ invalid: yaml: content: here
 
         # Update with new hash
         test_file.write_text("updated content")
-        file_hash2 = file_synchronizer._calculate_file_hash(test_file)
+        file_hash2 = parser.calculate_file_hash(test_file)
         file_size2 = test_file.stat().st_size
         last_modified2 = datetime.now()
 
@@ -198,7 +207,8 @@ invalid: yaml: content: here
         """has_file_changed should detect file modifications."""
         test_file = temp_data_dir / "test.md"
         test_file.write_text("original content")
-        file_hash1 = file_synchronizer._calculate_file_hash(test_file)
+        parser = FileParser()
+        file_hash1 = parser.calculate_file_hash(test_file)
         file_size1 = test_file.stat().st_size
         last_modified1 = datetime.now()
 
@@ -217,7 +227,8 @@ invalid: yaml: content: here
         """has_file_changed should return False when file unchanged."""
         test_file = temp_data_dir / "test.md"
         test_file.write_text("content")
-        file_hash = file_synchronizer._calculate_file_hash(test_file)
+        parser = FileParser()
+        file_hash = parser.calculate_file_hash(test_file)
         file_size = test_file.stat().st_size
         last_modified = datetime.now()
 
@@ -238,78 +249,6 @@ invalid: yaml: content: here
         assert hasattr(file_synchronizer, "should_do_full_rebuild")
         assert callable(file_synchronizer.should_do_full_rebuild)
 
-    def test_sync_issue_file_success(
-        self, file_synchronizer, db_manager, temp_data_dir
-    ):
-        """sync_issue_file should sync issue file to database."""
-        # Create test project first
-        conn = db_manager._get_connection()
-        conn.execute(
-            "INSERT INTO projects (id, name) VALUES (?, ?)",
-            ("PROJ-001", "Test Project"),
-        )
-
-        test_file = temp_data_dir / "test_issue.md"
-        content = """---
-title: Test Issue
-status: open
-priority: high
-assignee: john@example.com
----
-# Test Issue
-
-This is a test issue.
-"""
-        test_file.write_text(content)
-
-        result = file_synchronizer.sync_issue_file(test_file)
-        assert isinstance(result, bool)
-
-    def test_sync_milestone_file_success(
-        self, file_synchronizer, db_manager, temp_data_dir
-    ):
-        """sync_milestone_file should sync milestone file to database."""
-        conn = db_manager._get_connection()
-        conn.execute(
-            "INSERT INTO projects (id, name) VALUES (?, ?)",
-            ("PROJ-001", "Test Project"),
-        )
-
-        test_file = temp_data_dir / "test_milestone.md"
-        content = """---
-title: v1.0.0
-status: planning
-start_date: 2024-01-01
-target_date: 2024-06-01
----
-# v1.0.0 Release
-
-Release milestone goals.
-"""
-        test_file.write_text(content)
-
-        result = file_synchronizer.sync_milestone_file(test_file)
-        assert isinstance(result, bool)
-
-    def test_sync_project_file_success(
-        self, file_synchronizer, db_manager, temp_data_dir
-    ):
-        """sync_project_file should sync project file to database."""
-        test_file = temp_data_dir / "test_project.md"
-        content = """---
-name: Test Project
-description: A test project
-status: active
----
-# Test Project
-
-Project description here.
-"""
-        test_file.write_text(content)
-
-        result = file_synchronizer.sync_project_file(test_file)
-        assert isinstance(result, bool)
-
     def test_sync_directory_incremental_returns_dict_or_bool(
         self, file_synchronizer, temp_data_dir
     ):
@@ -323,43 +262,3 @@ Project description here.
         """full_rebuild_from_git should return result."""
         result = file_synchronizer.full_rebuild_from_git(temp_data_dir)
         assert result is not None
-
-    def test_get_default_project_id_returns_string_or_none(
-        self, file_synchronizer, db_manager
-    ):
-        """_get_default_project_id should return project ID or None."""
-        conn = db_manager._get_connection()
-        conn.execute(
-            "INSERT INTO projects (id, name) VALUES (?, ?)",
-            ("PROJ-001", "Test Project"),
-        )
-
-        project_id = file_synchronizer._get_default_project_id()
-        assert project_id is None or isinstance(project_id, str)
-
-    def test_get_milestone_id_by_name_callable(self, file_synchronizer, db_manager):
-        """_get_milestone_id_by_name should be callable."""
-        conn = db_manager._get_connection()
-        conn.execute(
-            "INSERT INTO projects (id, name) VALUES (?, ?)",
-            ("PROJ-001", "Test Project"),
-        )
-        conn.execute(
-            "INSERT INTO milestones (id, project_id, title) VALUES (?, ?, ?)",
-            ("MS-001", "PROJ-001", "v1.0.0"),
-        )
-
-        # Test that the method is callable - implementation may vary
-        # This test validates the public API exists
-        assert callable(file_synchronizer._get_milestone_id_by_name)
-
-    def test_get_milestone_id_callable(self, file_synchronizer, db_manager):
-        """_get_milestone_id_by_name should be callable as a method."""
-        conn = db_manager._get_connection()
-        conn.execute(
-            "INSERT INTO projects (id, name) VALUES (?, ?)",
-            ("PROJ-001", "Test Project"),
-        )
-
-        # Verify the method exists and is callable
-        assert callable(file_synchronizer._get_milestone_id_by_name)

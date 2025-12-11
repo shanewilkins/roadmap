@@ -34,15 +34,6 @@ class FileSynchronizer:
         self._get_connection = get_connection
         self._transaction = transaction_context
 
-    # Backward compatibility shims for existing tests
-    def _calculate_file_hash(self, file_path: Path) -> str:
-        """DEPRECATED: Use FileParser.calculate_file_hash instead."""
-        return self._parser.calculate_file_hash(file_path)
-
-    def _parse_yaml_frontmatter(self, file_path: Path) -> dict[str, Any]:
-        """DEPRECATED: Use FileParser.parse_yaml_frontmatter instead."""
-        return self._parser.parse_yaml_frontmatter(file_path)
-
     def get_file_sync_status(self, file_path: str) -> dict[str, Any] | None:
         """Get sync status for a file."""
         conn = self._get_connection()
@@ -86,40 +77,6 @@ class FileSynchronizer:
         except Exception as e:
             logger.error(f"Failed to check file changes for {file_path}", error=str(e))
             return True
-
-    def _get_default_project_id(self) -> str | None:
-        """DEPRECATED: Use entity coordinators instead."""
-        try:
-            with self._transaction() as conn:
-                result = conn.execute("SELECT id FROM projects LIMIT 1").fetchone()
-                return result[0] if result else None
-        except Exception as e:
-            logger.error("Failed to get default project ID", error=str(e))
-            return None
-
-    def _get_milestone_id_by_name(self, milestone_name: str) -> str | None:
-        """DEPRECATED: Use entity coordinators instead."""
-        try:
-            with self._transaction() as conn:
-                result = conn.execute(
-                    "SELECT id FROM milestones WHERE title = ?", (milestone_name,)
-                ).fetchone()
-                return result[0] if result else None
-        except Exception as e:
-            logger.warning(f"Failed to find milestone '{milestone_name}'", error=str(e))
-            return None
-
-    def sync_issue_file(self, file_path: Path) -> bool:
-        """DEPRECATED: Use entity coordinators instead."""
-        return self._orchestrator._issue_sync.sync_issue_file(file_path)
-
-    def sync_milestone_file(self, file_path: Path) -> bool:
-        """DEPRECATED: Use entity coordinators instead."""
-        return self._orchestrator._milestone_sync.sync_milestone_file(file_path)
-
-    def sync_project_file(self, file_path: Path) -> bool:
-        """DEPRECATED: Use entity coordinators instead."""
-        return self._orchestrator._project_sync.sync_project_file(file_path)
 
     def sync_directory_incremental(self, roadmap_dir: Path) -> dict[str, Any]:
         """Incrementally sync .roadmap directory to database.

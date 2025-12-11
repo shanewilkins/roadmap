@@ -1,0 +1,159 @@
+"""Base class for delete operations across all entity types."""
+
+from abc import ABC
+from typing import Any
+
+import click
+
+from roadmap.adapters.cli.crud.crud_helpers import EntityType
+from roadmap.common.console import get_console
+
+
+class BaseDelete(ABC):
+    """Abstract base class for entity delete commands.
+
+    Subclasses implement:
+    - entity_type: The EntityType this deletes
+
+    Uses Template Method pattern for extensibility.
+    """
+
+    entity_type: EntityType
+
+    def __init__(self, core: Any, console: Any = None) -> None:
+        """Initialize delete command.
+
+        Args:
+            core: The core application context
+            console: Optional console for output (uses default if not provided)
+        """
+        self.core = core
+        self.console = console or get_console()
+
+    def post_delete_hook(self, entity_id: str, **kwargs) -> None:
+        """Optional hook after entity deletion.
+
+        Override to handle cleanup, notifications, etc.
+
+        Args:
+            entity_id: ID of deleted entity
+            **kwargs: Original CLI arguments
+        """
+        # Default: no-op. Subclasses override as needed.
+
+    def execute(self, entity_id: str, force: bool = False, **kwargs) -> bool:
+        """Execute the delete operation.
+
+        Args:
+            entity_id: ID of entity to delete
+            force: Whether to force deletion without confirmation
+            **kwargs: All other CLI arguments
+
+        Returns:
+            True if deletion succeeded, False otherwise
+        """
+        try:
+            # Verify entity exists
+            entity = self._get_entity(entity_id)
+            if entity is None:
+                self.console.print(
+                    f"❌ {self.entity_type.value.title()} '{entity_id}' not found",
+                    style="red",
+                )
+                return False
+
+            # Request confirmation if not forced
+            if not force:
+                title = self._get_title(entity)
+                if not click.confirm(
+                    f"Delete {self.entity_type.value} '{title}'? This cannot be undone."
+                ):
+                    self.console.print("⚠️  Delete cancelled", style="yellow")
+                    return False
+
+            # Delete via appropriate service
+            if not self._delete_entity(entity_id):
+                return False
+
+            # Run post-delete hooks
+            self.post_delete_hook(entity_id, **kwargs)
+
+            # Display success
+            self._display_success(entity_id, entity)
+
+            return True
+
+        except Exception as e:
+            self.console.print(
+                f"❌ Failed to delete {self.entity_type.value}: {str(e)}",
+                style="red",
+            )
+            raise click.ClickException(str(e)) from e
+
+    def _get_entity(self, entity_id: str) -> Any | None:
+        """Get entity by ID.
+
+        Args:
+            entity_id: Entity ID to retrieve
+
+        Returns:
+            Entity object or None if not found
+        """
+        if self.entity_type == EntityType.ISSUE:
+            return self.core.issues.get(entity_id)
+        elif self.entity_type == EntityType.MILESTONE:
+            return self.core.milestones.get(entity_id)
+        elif self.entity_type == EntityType.PROJECT:
+            return self.core.projects.get(entity_id)
+        return None
+
+    def _delete_entity(self, entity_id: str) -> bool:
+        """Delete entity via appropriate service.
+
+        Args:
+            entity_id: Entity ID to delete
+
+        Returns:
+            True if deletion succeeded
+        """
+        try:
+            if self.entity_type == EntityType.ISSUE:
+                self.core.issues.delete(entity_id)
+            elif self.entity_type == EntityType.MILESTONE:
+                self.core.milestones.delete(entity_id)
+            elif self.entity_type == EntityType.PROJECT:
+                self.core.projects.delete(entity_id)
+            else:
+                return False
+            return True
+        except Exception:
+            return False
+
+    def _display_success(self, entity_id: str, entity: Any) -> None:
+        """Display success message.
+
+        Args:
+            entity_id: ID of deleted entity
+            entity: The deleted entity
+        """
+        title = self._get_title(entity)
+
+        self.console.print(
+            f"✅ Deleted {self.entity_type.value}: {title} [{entity_id}]",
+            style="green",
+        )
+
+    def _get_title(self, entity: Any) -> str:
+        """Get entity title/name.
+
+        Args:
+            entity: The entity object
+
+        Returns:
+            Title or name string
+        """
+        if hasattr(entity, "title"):
+            return entity.title
+        elif hasattr(entity, "name"):
+            return entity.name
+        return str(entity)

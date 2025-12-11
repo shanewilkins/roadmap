@@ -180,14 +180,6 @@ class StateManager:
         self._sync_state_repo.set(key, value)
 
     # File sync delegation - delegate to _file_synchronizer
-    def _calculate_file_hash(self, file_path: Path) -> str:
-        """Calculate SHA-256 hash of file content."""
-        return self._file_synchronizer._calculate_file_hash(file_path)
-
-    def _parse_yaml_frontmatter(self, file_path: Path) -> dict[str, Any]:
-        """Parse YAML frontmatter from markdown file."""
-        return self._file_synchronizer._parse_yaml_frontmatter(file_path)
-
     def get_file_sync_status(self, file_path: str) -> dict[str, Any] | None:
         """Get sync status for a file."""
         return self._file_synchronizer.get_file_sync_status(file_path)
@@ -203,26 +195,6 @@ class StateManager:
     def has_file_changed(self, file_path: Path) -> bool:
         """Check if file has changed since last sync."""
         return self._file_synchronizer.has_file_changed(file_path)
-
-    def sync_issue_file(self, file_path: Path) -> bool:
-        """Sync a single issue file to database."""
-        return self._file_synchronizer.sync_issue_file(file_path)
-
-    def _get_default_project_id(self) -> str | None:
-        """Get the first available project ID for orphaned milestones/issues."""
-        return self._file_synchronizer._get_default_project_id()
-
-    def _get_milestone_id_by_name(self, milestone_name: str) -> str | None:
-        """Get milestone ID by name."""
-        return self._file_synchronizer._get_milestone_id_by_name(milestone_name)
-
-    def sync_milestone_file(self, file_path: Path) -> bool:
-        """Sync a single milestone file to database."""
-        return self._file_synchronizer.sync_milestone_file(file_path)
-
-    def sync_project_file(self, file_path: Path) -> bool:
-        """Sync a single project file to database."""
-        return self._file_synchronizer.sync_project_file(file_path)
 
     def sync_directory_incremental(self, roadmap_dir: Path) -> dict[str, Any]:
         """Incrementally sync .roadmap directory to database."""
