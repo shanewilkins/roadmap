@@ -7,12 +7,12 @@ project detection, creation, GitHub setup, and validation.
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.persistence.parser import ProjectParser
 from roadmap.common.logging import get_logger
 from roadmap.core.services.initialization import (
     InitializationValidator,
     InitializationWorkflow,
 )
+from roadmap.core.services.project_init.detection import ProjectDetectionService
 from roadmap.infrastructure.core import RoadmapCore
 
 logger = get_logger(__name__)
@@ -67,29 +67,8 @@ class ProjectInitializationService:
         Returns:
             List of project info dictionaries
         """
-        existing_projects = []
         projects_dir = self.core.roadmap_dir / "projects"
-
-        if not projects_dir.exists():
-            return existing_projects
-
-        for project_file in projects_dir.glob("*.md"):
-            try:
-                project = ProjectParser.parse_project_file(project_file)
-                existing_projects.append(
-                    {
-                        "name": project.name,
-                        "id": project.id,
-                        "file": project_file.name,
-                    }
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Failed to parse project file {project_file}", error=str(e)
-                )
-                continue
-
-        return existing_projects
+        return ProjectDetectionService.detect_existing_projects(projects_dir)
 
     def validate_finalization(self, project_info: dict[str, Any] | None = None) -> bool:
         """Validate the initialized roadmap and finalize.
