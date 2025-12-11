@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ...domain import Issue, IssueType, Priority, Status
+from ...infrastructure.issue_operations import IssueOperations
 
 if TYPE_CHECKING:
     from ...application.services import IssueService
@@ -17,13 +18,21 @@ if TYPE_CHECKING:
 class IssueOrchestrator:
     """Orchestrates issue management operations."""
 
-    def __init__(self, issue_service: IssueService):
+    def __init__(self, issue_service: IssueService, issues_dir=None):
         """Initialize with issue service.
 
         Args:
             issue_service: IssueService instance
+            issues_dir: Path to issues directory (optional, for compatibility)
         """
+        from pathlib import Path
+
         self.issue_service = issue_service
+        # Create IssueOperations instance to delegate to
+        if issues_dir is None:
+            # Fallback to current working directory if not provided
+            issues_dir = Path.cwd() / "issues"
+        self._ops = IssueOperations(issue_service, issues_dir)
 
     def create(
         self,
@@ -53,7 +62,7 @@ class IssueOrchestrator:
         Returns:
             Created Issue object
         """
-        return self.issue_service.create_issue(
+        return self._ops.create_issue(
             title=title,
             priority=priority,
             issue_type=issue_type,
@@ -87,7 +96,7 @@ class IssueOrchestrator:
         Returns:
             List of matching Issue objects
         """
-        return self.issue_service.list_issues(
+        return self._ops.list_issues(
             milestone=milestone,
             status=status,
             priority=priority,
@@ -104,7 +113,7 @@ class IssueOrchestrator:
         Returns:
             Issue object if found, None otherwise
         """
-        return self.issue_service.get_issue(issue_id)
+        return self._ops.get_issue(issue_id)
 
     def update(self, issue_id: str, **updates) -> Issue | None:
         """Update an existing issue.
@@ -116,7 +125,7 @@ class IssueOrchestrator:
         Returns:
             Updated Issue object if found, None otherwise
         """
-        return self.issue_service.update_issue(issue_id, **updates)
+        return self._ops.update_issue(issue_id, **updates)
 
     def delete(self, issue_id: str) -> bool:
         """Delete an issue.
@@ -127,7 +136,7 @@ class IssueOrchestrator:
         Returns:
             True if deleted, False if not found
         """
-        return self.issue_service.delete_issue(issue_id)
+        return self._ops.delete_issue(issue_id)
 
     def assign_to_milestone(self, issue_id: str, milestone_name: str | None) -> bool:
         """Assign an issue to a milestone.
@@ -139,13 +148,7 @@ class IssueOrchestrator:
         Returns:
             True if assignment succeeded, False otherwise
         """
-        issue = self.get(issue_id)
-        if not issue:
-            return False
-
-        if milestone_name is None:
-            return self.update(issue_id, milestone=None) is not None
-        return self.update(issue_id, milestone=milestone_name) is not None
+        return self._ops.assign_issue_to_milestone(issue_id, milestone_name)
 
     def remove_from_milestone(self, issue_id: str) -> bool:
         """Remove an issue from its milestone.
@@ -156,7 +159,7 @@ class IssueOrchestrator:
         Returns:
             True if removal succeeded, False otherwise
         """
-        return self.assign_to_milestone(issue_id, None)
+        return self._ops.remove_issue_from_milestone(issue_id)
 
     def get_backlog(self) -> list[Issue]:
         """Get all issues not assigned to any milestone.
@@ -164,8 +167,7 @@ class IssueOrchestrator:
         Returns:
             List of backlog issues
         """
-        all_issues = self.list()
-        return [issue for issue in all_issues if issue.is_backlog]
+        return self._ops.get_backlog()
 
     def get_by_milestone(self, milestone_name: str) -> list[Issue]:
         """Get all issues assigned to a specific milestone.
@@ -176,5 +178,4 @@ class IssueOrchestrator:
         Returns:
             List of issues in milestone
         """
-        all_issues = self.list()
-        return [issue for issue in all_issues if issue.milestone == milestone_name]
+        return self._ops.get_by_milestone(milestone_name)
