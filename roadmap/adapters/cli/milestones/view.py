@@ -12,6 +12,7 @@ from roadmap.adapters.cli.presentation.table_builders import (
     create_list_table,
     create_metadata_table,
 )
+from roadmap.adapters.cli.styling import PRIORITY_COLORS, STATUS_COLORS
 from roadmap.common.console import get_console
 
 console = get_console()
@@ -147,23 +148,9 @@ def _build_issues_table(milestone_issues):
     ]
     issues_table = create_list_table(columns)
 
-    status_colors = {
-        "todo": "blue",
-        "in-progress": "yellow",
-        "blocked": "red",
-        "review": "magenta",
-        "closed": "green",
-    }
-    priority_colors = {
-        "critical": "bold red",
-        "high": "red",
-        "medium": "yellow",
-        "low": "green",
-    }
-
     for issue in milestone_issues[:10]:
-        status_color = status_colors.get(issue.status.value, "white")
-        priority_color = priority_colors.get(issue.priority.value, "white")
+        status_color = STATUS_COLORS.get(issue.status.value, "white")
+        priority_color = PRIORITY_COLORS.get(issue.priority.value, "white")
         assignee_display = issue.assignee if issue.assignee else "[dim]Unassigned[/dim]"
 
         issues_table.add_row(
