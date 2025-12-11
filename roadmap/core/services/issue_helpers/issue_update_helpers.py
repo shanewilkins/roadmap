@@ -53,7 +53,7 @@ class IssueUpdateBuilder:
         """DEPRECATED: Use IssueUpdateService.resolve_assignee_for_update instead."""
         # Import here to avoid circular dependency
         from roadmap.core.services.issue_update_service import IssueUpdateService
-        service = IssueUpdateService(core, console)
+        service = IssueUpdateService(core)
         return service.resolve_assignee_for_update(assignee)
 
 
