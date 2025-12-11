@@ -21,17 +21,10 @@ from roadmap.core.services.validators import (
 
 logger = get_logger(__name__)
 
-# Re-export validators for backward compatibility
-__all__ = [
-    "DataIntegrityValidatorService",
-    "DuplicateIssuesValidator",
-    "FolderStructureValidator",
-    "BackupValidator",
-    "ArchivableIssuesValidator",
-    "ArchivableMilestonesValidator",
-    "DataIntegrityValidator",
-    "OrphanedIssuesValidator",
-]
+# Re-export validators for backward compatibility - use same list as validators module
+from roadmap.core.services.validators import __all__ as _validators_all
+
+__all__ = ["DataIntegrityValidatorService"] + _validators_all
 
 
 class DataIntegrityValidatorService:
