@@ -51,22 +51,10 @@ class IssueUpdateBuilder:
     @staticmethod
     def _resolve_assignee(assignee, core, console):
         """DEPRECATED: Use IssueUpdateService.resolve_assignee_for_update instead."""
-        if assignee == "":
-            return None
-        is_valid, result = core.validate_assignee(assignee)
-        if not is_valid:
-            console.print(f"❌ Invalid assignee: {result}", style="bold red")
-            return False
-        elif result and "Warning:" in result:
-            console.print(f"⚠️  {result}", style="bold yellow")
-            return assignee
-        else:
-            canonical_assignee = core.team.get_canonical_assignee(assignee)
-            if canonical_assignee != assignee:
-                console.print(
-                    f"🔄 Resolved '{assignee}' to '{canonical_assignee}'", style="dim"
-                )
-            return canonical_assignee
+        # Import here to avoid circular dependency
+        from roadmap.core.services.issue_update_service import IssueUpdateService
+        service = IssueUpdateService(core, console)
+        return service.resolve_assignee_for_update(assignee)
 
 
 class IssueUpdateDisplay:
