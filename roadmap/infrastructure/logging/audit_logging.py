@@ -7,38 +7,9 @@ user identification, and change tracking for compliance and debugging.
 from datetime import datetime
 
 from roadmap.common.logging import get_logger
+from roadmap.infrastructure.logging.decorators import get_current_user
 
 logger = get_logger(__name__)
-
-
-def get_current_user() -> str:
-    """Get current user from environment or git config."""
-    import os
-
-    try:
-        import git
-    except ImportError:
-        git = None
-
-    # Try environment first
-    user = os.environ.get("USER") or os.environ.get("USERNAME")
-    if user:
-        return user
-
-    # Try git config as fallback
-    if git:
-        try:
-            repo = git.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
-            try:
-                name = repo.config_reader().get_value("user", "name")
-                if isinstance(name, str):
-                    return name
-            except Exception:
-                pass
-        except Exception:
-            pass
-
-    return "unknown"
 
 
 def log_entity_created(
