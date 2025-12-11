@@ -35,24 +35,7 @@ def _validate_priority(priority):
 
 def _validate_status(status):
     """Validate and convert status string to enum."""
-    from roadmap.core.domain.project import ProjectStatus
-
-    status_map = {
-        "planning": ProjectStatus.PLANNING,
-        "active": ProjectStatus.ACTIVE,
-        "on-hold": ProjectStatus.ON_HOLD,
-        "completed": ProjectStatus.COMPLETED,
-        "cancelled": ProjectStatus.CANCELLED,
-    }
-
-    if status not in status_map:
-        console.print(
-            f"❌ Invalid status: {status}",
-            style="bold red",
-        )
-        return None
-
-    return status_map[status]
+    return validate_project_status(status)
 
 
 def _add_basic_updates(updates, name, description, owner, estimated_hours):
