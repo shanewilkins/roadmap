@@ -7,7 +7,7 @@ from rich.text import Text
 from roadmap.common.console import get_console
 from roadmap.common.output_models import ColumnDef, ColumnType, TableData
 from roadmap.common.status_style_manager import StatusStyleManager
-from roadmap.core.domain import Issue, Priority
+from roadmap.core.domain import Issue, Priority, Status
 from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 
 if TYPE_CHECKING:
@@ -156,7 +156,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
                 type=ColumnType.ENUM,
                 width=10,
                 display_style="yellow",
-                enum_values=["critical", "high", "medium", "low"],
+                enum_values=[p.value for p in Priority],
                 sortable=True,
                 filterable=True,
             ),
@@ -166,7 +166,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
                 type=ColumnType.ENUM,
                 width=12,
                 display_style="green",
-                enum_values=["todo", "in-progress", "blocked", "review", "closed"],
+                enum_values=[s.value for s in Status],
                 sortable=True,
                 filterable=True,
             ),

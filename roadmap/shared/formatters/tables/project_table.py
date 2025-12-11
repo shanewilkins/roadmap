@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from roadmap.common.console import get_console
 from roadmap.common.output_models import ColumnDef, ColumnType, TableData
+from roadmap.core.domain import Priority, ProjectStatus
 from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 
 if TYPE_CHECKING:
@@ -153,7 +154,7 @@ class ProjectTableFormatter(BaseTableFormatter):
                 type=ColumnType.ENUM,
                 width=12,
                 display_style="magenta",
-                enum_values=["planning", "active", "on-hold", "completed", "cancelled"],
+                enum_values=[s.value for s in ProjectStatus],
                 sortable=True,
                 filterable=True,
             ),
@@ -163,7 +164,7 @@ class ProjectTableFormatter(BaseTableFormatter):
                 type=ColumnType.ENUM,
                 width=10,
                 display_style="yellow",
-                enum_values=["critical", "high", "medium", "low"],
+                enum_values=[p.value for p in Priority],
                 sortable=True,
                 filterable=True,
             ),

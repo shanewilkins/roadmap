@@ -1,6 +1,6 @@
 """Output formatter module public API."""
 
-from .formatter import (
+from roadmap.common.output_formatter import (
     CSVOutputFormatter,
     JSONOutputFormatter,
     OutputFormatter,
