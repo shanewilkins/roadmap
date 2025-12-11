@@ -6,6 +6,9 @@ for running health checks across the system.
 
 from roadmap.common.logging import get_logger
 from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validators.health_status_utils import (
+    get_overall_status,
+)
 from roadmap.core.services.validators import (
     ArchivableIssuesValidator,
     ArchivableMilestonesValidator,
@@ -83,14 +86,4 @@ class DataIntegrityValidatorService:
         Returns:
             Overall status: 'healthy', 'degraded', or 'unhealthy'
         """
-        if not checks:
-            return HealthStatus.UNHEALTHY
-
-        statuses = [status for status, _ in checks.values()]
-
-        if HealthStatus.UNHEALTHY in statuses:
-            return HealthStatus.UNHEALTHY
-        elif HealthStatus.DEGRADED in statuses:
-            return HealthStatus.DEGRADED
-        else:
-            return HealthStatus.HEALTHY
+        return get_overall_status(checks)

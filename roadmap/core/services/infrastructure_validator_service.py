@@ -16,6 +16,9 @@ from pathlib import Path
 
 from roadmap.common.logging import get_logger
 from roadmap.core.services.base_validator import BaseValidator, HealthStatus
+from roadmap.core.services.validators.health_status_utils import (
+    get_overall_status,
+)
 
 logger = get_logger(__name__)
 
@@ -305,14 +308,4 @@ class InfrastructureValidator:
         Returns:
             Overall status: 'healthy', 'degraded', or 'unhealthy'
         """
-        if not checks:
-            return HealthStatus.UNHEALTHY
-
-        statuses = [status for status, _ in checks.values()]
-
-        if HealthStatus.UNHEALTHY in statuses:
-            return HealthStatus.UNHEALTHY
-        elif HealthStatus.DEGRADED in statuses:
-            return HealthStatus.DEGRADED
-        else:
-            return HealthStatus.HEALTHY
+        return get_overall_status(checks)
