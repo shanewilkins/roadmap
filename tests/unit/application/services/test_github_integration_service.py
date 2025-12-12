@@ -241,29 +241,6 @@ class TestGitHubIntegrationService:
             assert is_valid is True
             assert service._last_canonical_assignee == "canonical-id"
 
-    @pytest.mark.skip(reason="IdentityManager is a future feature not yet available")
-    def test_get_canonical_assignee_from_identity_manager(self, service):
-        """Test get_canonical_assignee retrieves from identity manager."""
-        with patch("roadmap.future.identity.IdentityManager") as mock_manager:
-            mock_profile = Mock(canonical_id="canonical-id")
-            mock_manager.return_value.resolve_assignee.return_value = (
-                True,
-                "result",
-                mock_profile,
-            )
-            result = service.get_canonical_assignee("user")
-            assert result == "canonical-id"
-
-    @pytest.mark.skip(reason="IdentityManager is a future feature not yet available")
-    def test_get_canonical_assignee_fallback(self, service):
-        """Test get_canonical_assignee falls back to original."""
-        with patch("roadmap.future.identity.IdentityManager") as mock_manager:
-            mock_manager.return_value.resolve_assignee.side_effect = Exception(
-                "Not available"
-            )
-            result = service.get_canonical_assignee("user")
-            assert result == "user"
-
     def test_get_last_canonical_assignee(self, service):
         """Test get_last_canonical_assignee returns stored value."""
         service._last_canonical_assignee = "test-canonical"

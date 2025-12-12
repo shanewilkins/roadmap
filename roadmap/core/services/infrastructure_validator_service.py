@@ -266,12 +266,9 @@ class InfrastructureValidator:
 
     def __init__(self):
         """Initialize infrastructure validator."""
-        self.roadmap_dir_validator = RoadmapDirectoryValidator()
-        self.state_file_validator = StateFileValidator()
-        self.issues_dir_validator = IssuesDirectoryValidator()
-        self.milestones_dir_validator = MilestonesDirectoryValidator()
-        self.git_repo_validator = GitRepositoryValidator()
-        self.db_integrity_validator = DatabaseIntegrityValidator()
+        # Note: This service uses static methods from validators.
+        # Instance creation is kept for potential future stateful functionality.
+        pass
 
     def run_all_infrastructure_checks(self) -> dict[str, tuple[str, str]]:
         """Run all infrastructure validators.

@@ -563,9 +563,6 @@ class TestCleanupCommand:
 class TestProjectCommands:
     """Test project management commands."""
 
-    @pytest.mark.xfail(
-        reason="Project create output messaging changed during coordinator refactoring"
-    )
     def test_project_create(self, isolated_roadmap):
         """Test creating a project."""
         cli_runner, temp_dir = isolated_roadmap
@@ -578,9 +575,6 @@ class TestProjectCommands:
         assert result.exit_code == 0
         assert "created" in result.output.lower() or "My Project" in result.output
 
-    @pytest.mark.xfail(
-        reason="Project list output messaging changed during coordinator refactoring"
-    )
     def test_project_list(self, isolated_roadmap):
         """Test listing projects."""
         cli_runner, temp_dir = isolated_roadmap

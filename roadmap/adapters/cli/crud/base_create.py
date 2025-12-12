@@ -8,6 +8,7 @@ import click
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
 from roadmap.common.console import get_console
 from roadmap.common.errors import ValidationError
+from roadmap.infrastructure.logging import log_audit_event, log_validation_error
 
 
 class BaseCreate(ABC):
@@ -84,12 +85,28 @@ class BaseCreate(ABC):
             # Run post-creation hooks
             self.post_create_hook(entity, **kwargs)
 
+            # Log audit event for successful creation
+            entity_id = self._get_id(entity)
+            log_audit_event(
+                action="create",
+                entity_type=self.entity_type.value,
+                entity_id=entity_id,
+                after=entity_dict,
+            )
+
             # Display success
             self._display_success(entity)
 
             return entity
 
         except ValidationError as e:
+            # Log validation error with context
+            log_validation_error(
+                error=e,
+                entity_type=self.entity_type.value,
+                field_name=getattr(e, "field", None),
+                proposed_value=getattr(e, "value", None),
+            )
             self.console.print(f"❌ Validation error: {str(e)}", style="red")
             raise click.ClickException(str(e)) from e
         except Exception as e:

@@ -41,6 +41,28 @@ class ProjectOperations:
         """
         return self.project_service.get_project(project_id)
 
+    def create_project(
+        self,
+        name: str,
+        description: str = "",
+        milestones: list[str] | None = None,
+    ) -> Project:
+        """Create a new project.
+
+        Args:
+            name: Project name
+            description: Project description
+            milestones: List of milestone names (optional)
+
+        Returns:
+            Created Project object
+        """
+        return self.project_service.create_project(
+            name=name,
+            description=description,
+            milestones=milestones or [],
+        )
+
     def save_project(self, project: Project) -> bool:
         """Save an updated project to disk.
 
@@ -63,3 +85,25 @@ class ProjectOperations:
             Updated Project object if successful, None if not found
         """
         return self.project_service.update_project(project_id, **updates)
+
+    def delete_project(self, project_id: str) -> bool:
+        """Delete a project.
+
+        Args:
+            project_id: Project identifier
+
+        Returns:
+            True if deletion successful, False otherwise
+        """
+        return self.project_service.delete_project(project_id)
+
+    def complete_project(self, project_id: str) -> Project | None:
+        """Mark a project as completed.
+
+        Args:
+            project_id: Project identifier
+
+        Returns:
+            Updated Project object if successful, None if not found
+        """
+        return self.project_service.complete_project(project_id)

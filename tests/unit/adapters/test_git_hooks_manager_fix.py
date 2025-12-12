@@ -121,8 +121,8 @@ class TestGitHooksManagerFix:
 
         content = manager._get_hook_content("post-commit")
 
-        # Verify exception handling exists
-        assert "except Exception:" in content
+        # Verify exception handling exists (accepts both "except Exception:" and "except Exception as e:")
+        assert "except Exception" in content
         assert "pass" in content  # Silent fail
 
     def test_handler_methods_dont_raise(self):

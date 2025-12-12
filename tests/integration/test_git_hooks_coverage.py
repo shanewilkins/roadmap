@@ -186,28 +186,6 @@ class TestGitHooksSpecificCoverage:
         # Should handle gracefully
         hook_manager.handle_post_merge()  # Should not raise exception
 
-    @patch("subprocess.run")
-    @pytest.mark.skip(reason="Archived feature: ci_tracking module moved to future/")
-    def test_handle_post_commit_ci_tracking_error(
-        self, mock_subprocess, minimal_git_repo
-    ):
-        """Test post-commit handler when CI tracking fails."""
-        core, repo_path = minimal_git_repo
-
-        # Mock successful git command
-        mock_subprocess.return_value = Mock(
-            stdout="abc123def456\\n", stderr="", returncode=0, check=True
-        )
-
-        hook_manager = GitHookManager(core)
-
-        # Should handle CI tracking errors gracefully
-        with patch("roadmap.ci_tracking.CITracker") as mock_ci_tracker:
-            mock_ci_tracker.side_effect = Exception("CI tracking failed")
-
-            # Should not raise exception even if CI tracking fails
-            hook_manager.handle_post_commit()
-
     def test_hook_script_content_generation(self, minimal_git_repo):
         """Test that hook scripts are generated correctly."""
         core, repo_path = minimal_git_repo
@@ -224,7 +202,8 @@ class TestGitHooksSpecificCoverage:
         assert "#!/bin/bash" in content
         assert "roadmap-hook" in content
         assert "GitHookManager" in content
-        assert "handle_post_commit" in content
+        assert "post_commit" in content  # Method name used with getattr
+        assert "getattr(hook_manager" in content  # Dynamic method calling
         assert "sys.path.insert(0" in content
 
     def test_hook_file_permissions(self, minimal_git_repo):

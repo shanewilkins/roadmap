@@ -278,31 +278,6 @@ class GitHubIntegrationService:
         Returns:
             Canonical assignee name (may be same as input if no mapping exists)
         """
-        # Try to get from identity management system
-        try:
-            from roadmap.future.identity import IdentityManager
-
-            identity_manager = IdentityManager(self.root_path)
-            is_valid, result, profile = identity_manager.resolve_assignee(assignee)
-
-            if is_valid and profile:
-                canonical = profile.canonical_id
-                logger.debug(
-                    "canonical_assignee_from_identity",
-                    assignee=assignee,
-                    canonical=canonical,
-                )
-                return canonical
-            elif is_valid:
-                logger.debug(
-                    "canonical_assignee_from_result",
-                    assignee=assignee,
-                    canonical=result,
-                )
-                return result
-        except Exception as e:
-            logger.debug("identity_manager_canonical_failed", error=str(e))
-
         # Fallback to original assignee
         logger.debug("using_original_assignee", assignee=assignee)
         return assignee

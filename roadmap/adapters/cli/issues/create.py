@@ -20,11 +20,10 @@ class IssueCreate(BaseCreate):
         """Build entity dictionary for issue creation."""
         from roadmap.core.services import IssueCreationService
 
-        # Resolve and validate assignee if provided
+        # Resolve and validate assignee (with auto-detection from Git)
         assignee = kwargs.get("assignee")
-        if assignee:
-            service = IssueCreationService(self.core)
-            assignee = service.resolve_and_validate_assignee(assignee)
+        service = IssueCreationService(self.core)
+        assignee = service.resolve_and_validate_assignee(assignee, auto_detect=True)
 
         return IssueBuilder.build_create_dict(
             title=title,

@@ -143,6 +143,7 @@ class GitHookManager:
     def _get_hook_content(self, hook_name: str) -> str:
         """Get the content for a specific hook."""
         python_exec = shutil.which("python") or shutil.which("python3")
+        handler_name = hook_name.replace("-", "_")
 
         base_script = f"""#!/bin/bash
 # roadmap-hook: {hook_name}
@@ -156,7 +157,7 @@ REPO_ROOT="$(cd "$HOOK_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
 # Execute roadmap hook handler
-{python_exec} -c "
+{python_exec} << 'PYTHON_HOOK_EOF'
 import sys
 sys.path.insert(0, '.')
 try:
@@ -164,11 +165,11 @@ try:
     from roadmap.infrastructure.core import RoadmapCore
     core = RoadmapCore()
     hook_manager = GitHookManager(core)
-    hook_manager.handle_{hook_name.replace('-', '_')}()
+    getattr(hook_manager, "{handler_name}")()
 except Exception as e:
     # Silent fail to avoid breaking Git operations
     pass
-"
+PYTHON_HOOK_EOF
 """
         return base_script
 

@@ -8,6 +8,7 @@ import click
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
 from roadmap.common.console import get_console
 from roadmap.common.errors import ValidationError
+from roadmap.infrastructure.logging import log_audit_event, log_validation_error
 
 
 class BaseUpdate(ABC):
@@ -97,12 +98,29 @@ class BaseUpdate(ABC):
             # Run post-update hooks
             self.post_update_hook(updated_entity, update_dict, **kwargs)
 
+            # Log audit event for successful update
+            entity_id = self._get_id(updated_entity)
+            log_audit_event(
+                action="update",
+                entity_type=self.entity_type.value,
+                entity_id=entity_id,
+                before={"entity_id": entity_id},  # Original only tracked by entity_id
+                after=update_dict,
+            )
+
             # Display success
             self._display_success(updated_entity)
 
             return updated_entity
 
         except ValidationError as e:
+            # Log validation error with context
+            log_validation_error(
+                error=e,
+                entity_type=self.entity_type.value,
+                field_name=getattr(e, "field", None),
+                proposed_value=getattr(e, "value", None),
+            )
             self.console.print(f"❌ Validation error: {str(e)}", style="red")
             raise click.ClickException(str(e)) from e
         except Exception as e:

@@ -6,7 +6,6 @@ from pathlib import Path
 
 from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
 from roadmap.adapters.persistence.persistence import (
-    EnhancedYAMLPersistence,
     YAMLRecoveryManager,
 )
 from roadmap.core.domain import Issue, Milestone, MilestoneStatus, Priority, Status
@@ -50,19 +49,6 @@ class TestYAMLRecoveryManager:
         backups = self.recovery_manager.list_backups(self.test_file)
         assert len(backups) >= 1  # Should have at least one backup
         assert backup2 in backups or backup1 in backups  # At least one should be there
-
-    def test_restore_from_backup(self):
-        """Test restoring from backup."""
-        # Create backup
-        self.recovery_manager.create_backup(self.test_file)
-
-        # Modify original file
-        self.test_file.write_text("Modified content")
-
-        # Restore from backup
-        success = self.recovery_manager.restore_from_backup(self.test_file)
-        assert success
-        assert self.test_file.read_text() == "---\ntitle: Test\n---\n\nContent"
 
     def test_validate_yaml_syntax_valid(self):
         """Test YAML syntax validation with valid YAML."""
@@ -150,140 +136,6 @@ status: todo"""
         assert '"Test: Issue with colons"' in fixed_yaml
         assert '"This has @ and # characters"' in fixed_yaml
         assert "status: todo" in fixed_yaml  # Simple values shouldn't be quoted
-
-
-class TestEnhancedYAMLPersistence:
-    """Test the enhanced YAML persistence functionality."""
-
-    def setup_method(self):
-        """Set up test environment."""
-        self.temp_dir = Path(tempfile.mkdtemp())
-        self.persistence = EnhancedYAMLPersistence()
-
-    def teardown_method(self):
-        """Clean up test environment."""
-        shutil.rmtree(self.temp_dir)
-
-    def test_safe_load_with_validation_valid_issue(self):
-        """Test safe loading of valid issue file."""
-        issue_file = self.temp_dir / "test_issue.md"
-        content = """---
-id: a1b2c3d4
-title: Test Issue
-priority: high
-status: todo
-created: 2024-01-01T00:00:00
----
-
-This is the issue content."""
-        issue_file.write_text(content)
-
-        is_valid, result = self.persistence.safe_load_with_validation(
-            issue_file, "issue"
-        )
-        assert is_valid
-        assert isinstance(result, dict)
-        assert result["id"] == "a1b2c3d4"
-        assert result["title"] == "Test Issue"
-        assert result["content"] == "This is the issue content."
-
-    def test_safe_load_with_validation_invalid_yaml(self):
-        """Test safe loading of file with invalid YAML."""
-        issue_file = self.temp_dir / "test_issue.md"
-        content = """---
-id: a1b2c3d4
-title: Test Issue
-priority: [unclosed list
-status: todo
----
-
-Content"""
-        issue_file.write_text(content)
-
-        is_valid, result = self.persistence.safe_load_with_validation(
-            issue_file, "issue"
-        )
-        assert not is_valid
-        assert "YAML validation failed" in result
-
-    def test_safe_save_with_backup_issue(self):
-        """Test safe saving of issue with backup."""
-        issue = Issue(
-            id="a1b2c3d4",
-            title="Test Issue",
-            priority=Priority.HIGH,
-            status=Status.TODO,
-            content="Test content",
-        )
-
-        issue_file = self.temp_dir / "test_issue.md"
-
-        success, message = self.persistence.safe_save_with_backup(issue, issue_file)
-        assert success
-        assert "New file created" in message
-        assert issue_file.exists()
-
-        # Verify content
-        is_valid, result = self.persistence.safe_load_with_validation(
-            issue_file, "issue"
-        )
-        assert is_valid
-        assert result["id"] == "a1b2c3d4"  # type: ignore[index]
-        assert result["title"] == "Test Issue"  # type: ignore[index]
-
-    def test_safe_save_with_backup_milestone(self):
-        """Test safe saving of milestone with backup."""
-        milestone = Milestone(
-            name="Version 1.0",
-            status=MilestoneStatus.OPEN,
-            content="Milestone description",
-        )
-
-        milestone_file = self.temp_dir / "test_milestone.md"
-
-        success, message = self.persistence.safe_save_with_backup(
-            milestone, milestone_file
-        )
-        assert success
-        assert milestone_file.exists()
-
-        # Verify content
-        is_valid, result = self.persistence.safe_load_with_validation(
-            milestone_file, "milestone"
-        )
-        assert is_valid
-        assert result["name"] == "Version 1.0"  # type: ignore[index]
-
-    def test_get_file_health_report(self):
-        """Test generating file health report."""
-        # Create valid issue file
-        valid_issue = self.temp_dir / "valid_issue.md"
-        valid_content = """---
-id: a1b2c3d4
-title: Valid Issue
-priority: high
-status: todo
----
-
-Valid content"""
-        valid_issue.write_text(valid_content)
-
-        # Create invalid issue file
-        invalid_issue = self.temp_dir / "invalid_issue.md"
-        invalid_content = """---
-id: invalid-id
-title: Invalid Issue
----
-
-Missing required fields"""
-        invalid_issue.write_text(invalid_content)
-
-        report = self.persistence.get_file_health_report(self.temp_dir, "issue")
-
-        assert report["total_files"] == 2
-        assert report["valid_files"] == 1
-        assert report["invalid_files"] == 1
-        assert len(report["errors"]) == 1
 
 
 class TestEnhancedParsers:

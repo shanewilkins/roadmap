@@ -7,7 +7,6 @@ import click  # type: ignore[import-not-found]
 
 from roadmap.adapters.cli.cli_confirmations import (
     confirm_action,
-    confirm_override_warning,
 )
 from roadmap.adapters.cli.cli_error_handlers import (
     handle_cli_error,
@@ -134,7 +133,7 @@ def _check_milestone_closed_status(milestone_name, milestone, force):
         f"⚠️  Warning: Milestone '{milestone_name}' is not closed (status: {milestone.status.value})",
         style="bold yellow",
     )
-    return force or confirm_override_warning()
+    return force or click.confirm("Archive anyway?", default=False)
 
 
 def _archive_single_milestone(core, roadmap_dir, milestone_name, dry_run, force):

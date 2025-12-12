@@ -20,13 +20,13 @@ class EntityType(str, Enum):
 
 
 class CRUDOperation(str, Enum):
-    """CRUD operation types."""
+    """CRUD operation types.
 
-    CREATE = "create"
-    UPDATE = "update"
-    DELETE = "delete"
-    ARCHIVE = "archive"
-    RESTORE = "restore"
+    Note: Individual operation values are not currently used.
+    This enum exists for potential future feature development.
+    """
+
+    pass
 
 
 def format_entity_title(entity_type: EntityType, entity: Any) -> str:

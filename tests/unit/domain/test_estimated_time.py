@@ -185,9 +185,6 @@ class TestEstimatedTimeCLI:
         assert "Updated issue: Test Issue" in clean_output
         assert "estimate: 6.0h" in clean_output
 
-    @pytest.mark.xfail(
-        reason="Test fixture isolation issue - output not captured in result.output"
-    )
     def test_issue_list_shows_estimates(self, initialized_roadmap):
         """Test that issue list shows estimated times."""
         runner = initialized_roadmap

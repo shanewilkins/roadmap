@@ -5,6 +5,7 @@ from rich.console import Console
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.git.git_hooks_manager import GitHookManager
 from roadmap.core.domain import Issue, Status
 
 from .status_display import GitStatusDisplay
@@ -24,6 +25,86 @@ def git():
 def setup_git(ctx: click.Context):
     """Setup Git integration."""
     console.print("⚙️ Git setup functionality will be implemented", style="green")
+
+
+@git.command("hooks-install")
+@click.pass_context
+@require_initialized
+def install_hooks(ctx: click.Context):
+    """Install Git hooks for roadmap integration.
+
+    Installs hooks that automatically track commits, branch changes, and integrate
+    with your roadmap workflow.
+    """
+    core = ctx.obj["core"]
+
+    try:
+        manager = GitHookManager(core)
+        if manager.install_hooks():
+            console.print("✅ Git hooks installed successfully", style="bold green")
+            console.print(
+                "Hooks will now automatically track commits and branch changes",
+                style="green",
+            )
+        else:
+            console.print(
+                "❌ Failed to install hooks. Not a git repository?", style="bold red"
+            )
+            ctx.exit(1)
+    except Exception as e:
+        console.print(f"❌ Error installing hooks: {e}", style="bold red")
+        ctx.exit(1)
+
+
+@git.command("hooks-uninstall")
+@click.pass_context
+@require_initialized
+def uninstall_hooks(ctx: click.Context):
+    """Remove Git hooks for roadmap integration."""
+    core = ctx.obj["core"]
+
+    try:
+        manager = GitHookManager(core)
+        if manager.uninstall_hooks():
+            console.print("✅ Git hooks removed successfully", style="bold green")
+        else:
+            console.print("❌ Failed to remove hooks", style="bold red")
+            ctx.exit(1)
+    except Exception as e:
+        console.print(f"❌ Error removing hooks: {e}", style="bold red")
+        ctx.exit(1)
+
+
+@git.command("hooks-status")
+@click.pass_context
+@require_initialized
+def hooks_status(ctx: click.Context):
+    """Show status of installed Git hooks."""
+    core = ctx.obj["core"]
+
+    try:
+        manager = GitHookManager(core)
+        status = manager.get_hooks_status()
+
+        if not status:
+            console.print("No hooks installed", style="yellow")
+            return
+
+        console.print("Git Hooks Status:", style="bold")
+        console.print()
+
+        for hook_name, hook_info in status.items():
+            installed = "✅" if hook_info.get("is_roadmap_hook") else "❌"
+            executable = "✓" if hook_info.get("executable") else "✗"
+            console.print(f"{installed} {hook_name:20} [executable: {executable}]")
+
+        console.print()
+        console.print(
+            "Run 'roadmap git hooks-install' to install all hooks", style="dim"
+        )
+    except Exception as e:
+        console.print(f"❌ Error checking hooks: {e}", style="bold red")
+        ctx.exit(1)
 
 
 @git.command("sync")

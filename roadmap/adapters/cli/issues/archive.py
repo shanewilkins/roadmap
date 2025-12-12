@@ -7,7 +7,6 @@ import click
 from roadmap.adapters.cli.cli_confirmations import (
     check_entity_exists,
     confirm_action,
-    confirm_override_warning,
 )
 from roadmap.adapters.cli.cli_error_handlers import (
     handle_cli_error,
@@ -224,7 +223,8 @@ def _archive_single_issue(core, roadmap_dir, issue_id, dry_run, force):
             f"⚠️  Warning: Issue '{issue_id}' is not closed (status: {issue.status.value})",
             style="bold yellow",
         )
-        if not force and not confirm_override_warning():
+        if not force and not click.confirm("Archive anyway?", default=False):
+            console.print("❌ Cancelled.", style="yellow")
             return False
 
     if dry_run:

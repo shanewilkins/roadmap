@@ -113,7 +113,8 @@ class TestGitHookManager:
 
         assert "#!/bin/bash" in content
         assert "roadmap-hook: post-commit" in content
-        assert "handle_post_commit" in content
+        assert "post_commit" in content  # Check for method name used with getattr
+        assert "getattr(hook_manager" in content  # Check for dynamic method calling
         assert "GitHookManager" in content
         assert "RoadmapCore" in content
 

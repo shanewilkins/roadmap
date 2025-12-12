@@ -33,8 +33,43 @@ class ProjectCoordinator:
         return self._ops.list_projects()
 
     def get(self, project_id: str) -> Project | None:
-        """Get a specific project by ID."""
-        return self._ops.get_project(project_id)
+        """Get a specific project by ID or name.
+
+        Tries to find project by ID first, then by name as fallback.
+        """
+        # Try direct ID lookup first
+        project = self._ops.get_project(project_id)
+        if project:
+            return project
+
+        # Fallback: try to find by name
+        for project in self._ops.list_projects():
+            if project.name.lower() == project_id.lower():
+                return project
+
+        return None
+
+    def create(
+        self,
+        name: str,
+        description: str = "",
+        milestones: list[str] | None = None,
+    ) -> Project:
+        """Create a new project.
+
+        Args:
+            name: Project name
+            description: Project description
+            milestones: List of milestone names (optional)
+
+        Returns:
+            Created Project object
+        """
+        return self._ops.create_project(
+            name=name,
+            description=description,
+            milestones=milestones or [],
+        )
 
     def save(self, project: Project) -> bool:
         """Save an updated project to disk."""
@@ -51,3 +86,25 @@ class ProjectCoordinator:
             Updated Project object if successful, None if not found
         """
         return self._ops.update_project(project_id, **updates)
+
+    def delete(self, project_id: str) -> bool:
+        """Delete a project.
+
+        Args:
+            project_id: Project identifier
+
+        Returns:
+            True if deletion successful, False otherwise
+        """
+        return self._ops.delete_project(project_id)
+
+    def complete(self, project_id: str) -> Project | None:
+        """Mark a project as completed.
+
+        Args:
+            project_id: Project identifier
+
+        Returns:
+            Updated Project object if successful, None if not found
+        """
+        return self._ops.complete_project(project_id)

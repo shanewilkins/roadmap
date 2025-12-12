@@ -6,9 +6,6 @@ for running health checks across the system.
 
 from roadmap.common.logging import get_logger
 from roadmap.core.services.base_validator import HealthStatus
-from roadmap.core.services.validators.health_status_utils import (
-    get_overall_status,
-)
 from roadmap.core.services.validators import (
     ArchivableIssuesValidator,
     ArchivableMilestonesValidator,
@@ -17,6 +14,9 @@ from roadmap.core.services.validators import (
     DuplicateIssuesValidator,
     FolderStructureValidator,
     OrphanedIssuesValidator,
+)
+from roadmap.core.services.validators.health_status_utils import (
+    get_overall_status,
 )
 
 logger = get_logger(__name__)
@@ -32,13 +32,9 @@ class DataIntegrityValidatorService:
 
     def __init__(self):
         """Initialize data integrity validator service."""
-        self.duplicate_validator = DuplicateIssuesValidator()
-        self.folder_structure_validator = FolderStructureValidator()
-        self.backup_validator = BackupValidator()
-        self.archivable_issues_validator = ArchivableIssuesValidator()
-        self.archivable_milestones_validator = ArchivableMilestonesValidator()
-        self.data_integrity_validator = DataIntegrityValidator()
-        self.orphaned_issues_validator = OrphanedIssuesValidator()
+        # Note: This service uses static methods from validators.
+        # Instance creation is kept for potential future stateful functionality.
+        pass
 
     def run_all_data_integrity_checks(self, core) -> dict[str, tuple[str, str]]:
         """Run all data integrity checks.

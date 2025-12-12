@@ -4,6 +4,8 @@ from typing import Any
 
 import requests
 
+from roadmap.infrastructure.logging import log_external_service_error
+
 
 class GitHubAPIError(Exception):
     """Exception raised for GitHub API errors."""
@@ -66,6 +68,13 @@ class BaseGitHubHandler:
             response.raise_for_status()
             return response
         except requests.exceptions.HTTPError as e:
+            # Log external service error
+            log_external_service_error(
+                error=e,
+                service_name="GitHub API",
+                operation=f"{method} {endpoint}",
+                retry_count=getattr(self.session, "retry_count", 0),
+            )
             if response.status_code == 401:
                 raise GitHubAPIError(
                     "Authentication failed. Check your GitHub token."
@@ -85,6 +94,13 @@ class BaseGitHubHandler:
                     f"GitHub API error ({response.status_code}): {e}"
                 ) from e
         except requests.exceptions.RequestException as e:
+            # Log external service error for request failures
+            log_external_service_error(
+                error=e,
+                service_name="GitHub API",
+                operation=f"{method} {endpoint}",
+                retry_count=0,
+            )
             raise GitHubAPIError(f"Request failed: {e}") from e
 
     def test_authentication(self) -> dict[str, Any]:

@@ -39,29 +39,10 @@ class IdentitySystemValidator:
         Returns:
             Validation result with canonical ID if successful
         """
-        try:
-            from roadmap.future.identity import IdentityManager
-
-            identity_manager = IdentityManager(self.root_path)
-            is_valid, result, profile = identity_manager.resolve_assignee(assignee)
-
-            if is_valid:
-                canonical_id = profile.canonical_id if profile else result
-                return AssigneeValidationResult(
-                    is_valid=True, canonical_id=canonical_id
-                )
-            else:
-                # Return the validation mode so caller knows what fallbacks are appropriate
-                mode = identity_manager.config.validation_mode
-                return AssigneeValidationResult(
-                    is_valid=False, message=result, canonical_id=mode
-                )
-
-        except Exception:
-            # Identity system not available - return special marker
-            return AssigneeValidationResult(
-                is_valid=False, message="", canonical_id="identity-unavailable"
-            )
+        # Identity system not available - return special marker
+        return AssigneeValidationResult(
+            is_valid=False, message="", canonical_id="identity-unavailable"
+        )
 
     def get_validation_mode(self) -> str:
         """Get the configured validation mode.
@@ -69,13 +50,7 @@ class IdentitySystemValidator:
         Returns:
             Validation mode string (e.g., 'hybrid', 'local-only', 'github-only')
         """
-        try:
-            from roadmap.future.identity import IdentityManager
-
-            identity_manager = IdentityManager(self.root_path)
-            return identity_manager.config.validation_mode
-        except Exception:
-            return "local-only"
+        return "local-only"
 
 
 class GitHubValidator:
