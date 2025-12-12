@@ -9,7 +9,6 @@ This module provides reusable confirmation and entity-validation patterns for co
 Consolidates duplicated confirmation and validation logic across issue, milestone, and project commands.
 """
 
-
 import click  # type: ignore[import-not-found]
 
 from roadmap.common.console import get_console

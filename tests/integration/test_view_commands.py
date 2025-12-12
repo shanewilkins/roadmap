@@ -74,8 +74,8 @@ def roadmap_with_data(cli_runner):
         )
         assert result.exit_code == 0, f"Issue creation failed: {result.output}"
 
-        # Extract issue ID from output
-        match = re.search(r"ID:\s+([a-f0-9-]+)", result.output)
+        # Extract issue ID from create output
+        match = re.search(r"ID:\s+(\w+)", result.output)
         assert match, f"Could not find issue ID in output: {result.output}"
         issue_id = match.group(1)
 
@@ -92,8 +92,9 @@ def roadmap_with_data(cli_runner):
         )
         assert result.exit_code == 0, f"Project creation failed: {result.output}"
 
-        # Extract project ID from output
-        match = re.search(r"ID:\s+([a-f0-9-]+)", result.output)
+        # Extract project ID from list output since create doesn't output it
+        result = cli_runner.invoke(main, ["project", "list"])
+        match = re.search(r"(\w+)\s+test-project", result.output)
         assert match, f"Could not find project ID in output: {result.output}"
         project_id = match.group(1)
 
