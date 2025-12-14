@@ -250,11 +250,16 @@ def cli_with_main(isolated_cli_runner):
 
 @pytest.fixture
 def run_command(isolated_cli_runner, click_test_result_wrapper):
-    """Provide a convenient command runner function.
+    """Provide a convenient command runner function with isolated filesystem.
 
     Usage:
         result = run_command(["issue", "create", "My Issue"])
         result.assert_success().assert_contains("Created issue")
+
+    Note:
+        Commands are executed in an isolated temporary filesystem.
+        Use this for tests that need filesystem isolation.
+        For tests that don't need isolation, use isolated_cli_runner.invoke() directly.
 
     Returns:
         Function that runs a command and returns wrapped result
@@ -266,14 +271,15 @@ def run_command(isolated_cli_runner, click_test_result_wrapper):
         input: str | None = None,
         env: dict[str, str] | None = None,
     ) -> ClickTestResult:
-        """Run a command and return wrapped result."""
-        result = isolated_cli_runner.invoke(
-            main,
-            args,
-            catch_exceptions=catch_exceptions,
-            input=input,
-            env=env,
-        )
+        """Run a command in an isolated filesystem and return wrapped result."""
+        with isolated_cli_runner.isolated_filesystem():
+            result = isolated_cli_runner.invoke(
+                main,
+                args,
+                catch_exceptions=catch_exceptions,
+                input=input,
+                env=env,
+            )
         return click_test_result_wrapper(result)
 
     return _run_command

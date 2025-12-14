@@ -51,7 +51,10 @@ def assert_output():
 def isolate_roadmap_workspace(request, tmp_path):
     """Isolate each test in a temporary directory unless it's marked as unit test
 
-    PERFORMANCE OPTIMIZATION: Skip isolation for unit tests that don't need filesystem operations.
+    PERFORMANCE OPTIMIZATION:
+    - Skip isolation for unit tests (marked with @pytest.mark.unit) - major performance win
+    - For integration tests, change to a temp directory to isolate .roadmap artifacts
+    - This prevents parallel test workers from polluting each other's data
     """
     # Skip isolation for unit tests - major performance win
     if hasattr(request.node, "get_closest_marker"):
@@ -59,26 +62,22 @@ def isolate_roadmap_workspace(request, tmp_path):
             yield
             return
 
-    # Store original state - ensure we have a valid working directory first
+    # Store original state
     try:
         original_cwd = os.getcwd()
     except (FileNotFoundError, OSError):
-        # If current directory doesn't exist, use tmp_path as fallback
-        original_cwd = str(tmp_path)
+        # If current directory doesn't exist, use root as fallback
+        original_cwd = "/tmp"
         os.chdir(original_cwd)
 
     original_env = os.environ.copy()
 
     try:
-        # Clean up any existing .roadmap artifacts in current directory
-        current_roadmap = Path.cwd() / ".roadmap"
-        if current_roadmap.exists() and current_roadmap.is_dir():
-            # Only clean if it looks like a test artifact (not a real project)
-            config_file = current_roadmap / "config.yaml"
-            if config_file.exists() and "Test Project" in config_file.read_text():
-                import shutil
-
-                shutil.rmtree(current_roadmap, ignore_errors=True)
+        # For integration tests, change to temp directory to isolate .roadmap
+        # This prevents parallel workers from sharing .roadmap artifacts
+        test_temp_dir = tmp_path / f"test_{request.node.name}"
+        test_temp_dir.mkdir(parents=True, exist_ok=True)
+        os.chdir(str(test_temp_dir))
 
         # Yield control to the test
         yield
