@@ -19,21 +19,28 @@ def _get_console():
 
 @click.command("list")
 @click.option("--overdue", is_flag=True, help="Show only overdue milestones")
-@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
 @with_output_support(
-    available_columns=["name", "description", "status", "due_date", "progress"],
+    available_columns=[
+        "name",
+        "description",
+        "status",
+        "due_date",
+        "progress",
+        "estimate",
+    ],
     column_types={
         "name": ColumnType.STRING,
         "description": ColumnType.STRING,
         "status": ColumnType.ENUM,
         "due_date": ColumnType.DATE,
         "progress": ColumnType.STRING,
+        "estimate": ColumnType.STRING,
     },
 )
 @require_initialized
 @verbose_output
-def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
+def list_milestones(ctx: click.Context, overdue: bool):
     """List all milestones.
 
     Supports output formatting with --format, --columns, --sort-by, --filter flags.
@@ -43,10 +50,13 @@ def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
     try:
         # Use MilestoneListService to get and filter milestones
         service = MilestoneListService(core)
-        milestones = service.get_milestones_list_data(overdue_only=overdue)
+        milestones_data = service.get_milestones_list_data(overdue_only=overdue)
+
+        # Extract milestone list from service response
+        milestone_list = milestones_data.get("milestones", [])
 
         # Handle empty result
-        if not milestones:
+        if not milestone_list:
             _get_console().print("📋 No milestones found.", style="yellow")
             _get_console().print(
                 "Create one with: roadmap milestone create 'Milestone name' --due-date YYYY-MM-DD",
@@ -57,9 +67,10 @@ def list_milestones(ctx: click.Context, overdue: bool, verbose: bool):
         # Convert to TableData for structured output
         description = "overdue" if overdue else "all"
         table_data = MilestoneTableFormatter.milestones_to_table_data(
-            milestones,
+            milestone_list,
             title="Milestones",
             description=description,
+            estimates=milestones_data.get("estimates", {}),
         )
 
         return table_data

@@ -46,9 +46,6 @@ def mock_github_client():
 class TestEndToEndWorkflows:
     """Test complete end-to-end workflows."""
 
-    @pytest.mark.xfail(
-        reason="End-to-end workflow output formatting changed during coordinator refactoring"
-    )
     def test_complete_roadmap_lifecycle(self, tmp_path, strip_ansi_fixture):
         """Test a complete roadmap lifecycle from init to issue management."""
         # CRITICAL: This test must use tmp_path (clean) instead of temp_workspace (pre-initialized)
@@ -339,9 +336,6 @@ class TestEndToEndWorkflows:
         completion_percentage = milestone.get_completion_percentage(all_issues)
         assert completion_percentage == 50.0  # 1 of 2 issues completed
 
-    @pytest.mark.xfail(
-        reason="End-to-end workflow output formatting changed during coordinator refactoring"
-    )
     def test_error_recovery_workflow(self, tmp_path):
         """Test error handling and recovery in workflows."""
         # CRITICAL: This test must use tmp_path (clean) instead of temp_workspace (pre-initialized)
@@ -474,9 +468,6 @@ class TestCrossModuleIntegration:
 class TestPerformanceAndStress:
     """Test performance with larger datasets and stress scenarios."""
 
-    @pytest.mark.xfail(
-        reason="Performance test output assertions changed during coordinator refactoring"
-    )
     def test_large_dataset_handling(self, temp_workspace):
         """Test handling of larger datasets."""
         runner = CliRunner()
@@ -558,9 +549,6 @@ class TestPerformanceAndStress:
         # Verify all issues are assigned to milestones
         assert all(issue.milestone in milestone_names for issue in issues)
 
-    @pytest.mark.xfail(
-        reason="Concurrent access test output assertions changed during coordinator refactoring"
-    )
     def test_concurrent_access_simulation(self, temp_workspace):
         """Test behavior under simulated concurrent access."""
         runner = CliRunner()

@@ -218,9 +218,6 @@ class TestOverdueMilestoneFiltering:
 class TestOverdueProjectFiltering:
     """Test the --overdue flag for project list command."""
 
-    @pytest.mark.xfail(
-        reason="List output formatting changed during coordinator refactoring"
-    )
     def test_project_list_overdue_flag_works(self, cli_runner):
         """Test that --overdue flag is accepted and executes."""
         with cli_runner.isolated_filesystem():
@@ -262,9 +259,6 @@ class TestOverdueProjectFiltering:
             assert result.exit_code == 0
             assert "overdue-proj" in result.output
 
-    @pytest.mark.xfail(
-        reason="List output formatting changed during coordinator refactoring"
-    )
     def test_project_list_without_overdue_shows_all(self, cli_runner):
         """Test that without --overdue flag, all projects are shown."""
         with cli_runner.isolated_filesystem():

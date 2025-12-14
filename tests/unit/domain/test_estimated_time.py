@@ -210,9 +210,6 @@ class TestEstimatedTimeCLI:
             or "estimat" in clean_output
         )
 
-    @pytest.mark.xfail(
-        reason="Test fixture isolation issue - output not captured in result.output"
-    )
     def test_milestone_list_shows_estimates(self, initialized_roadmap):
         """Test that milestone list shows total estimated times."""
         runner = initialized_roadmap

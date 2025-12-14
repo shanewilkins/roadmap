@@ -29,6 +29,7 @@ class MilestoneTableFormatter(BaseTableFormatter):
             {"name": "Status", "style": "green", "width": 10},
             {"name": "Due Date", "style": "yellow", "width": 12},
             {"name": "Progress", "style": "blue", "width": 12},
+            {"name": "Estimate", "style": "green", "width": 12},
         ]
 
     def create_table(self) -> Any:
@@ -40,12 +41,13 @@ class MilestoneTableFormatter(BaseTableFormatter):
             table.add_column(col["name"], style=col["style"], width=col["width"])
         return table
 
-    def add_row(self, table: Any, item) -> None:
+    def add_row(self, table: Any, item, estimate: str = "") -> None:
         """Add a single milestone row to the table.
 
         Args:
             table: Rich Table object
             item: Milestone object to add
+            estimate: Estimated time string for this milestone
         """
         progress = ""
         if hasattr(item, "calculated_progress") and item.calculated_progress:
@@ -65,6 +67,7 @@ class MilestoneTableFormatter(BaseTableFormatter):
             Text(status_value, style="green"),
             Text(due_date_str, style="yellow"),
             Text(progress, style="blue"),
+            Text(estimate or "", style="green"),
         )
 
     def get_filter_description(self, items: list) -> str:
@@ -109,7 +112,11 @@ class MilestoneTableFormatter(BaseTableFormatter):
         _get_console().print(table)
 
     def items_to_table_data(
-        self, items: list, title: str = "Milestones", description: str = ""
+        self,
+        items: list,
+        title: str = "Milestones",
+        description: str = "",
+        estimates: dict | None = None,
     ) -> TableData:
         """Convert Milestone list to TableData for structured output.
 
@@ -117,10 +124,14 @@ class MilestoneTableFormatter(BaseTableFormatter):
             items: List of Milestone objects.
             title: Optional table title.
             description: Optional filter description.
+            estimates: Optional dict mapping milestone names to estimate strings.
 
         Returns:
             TableData object ready for rendering in any format.
         """
+        if estimates is None:
+            estimates = {}
+
         columns = [
             ColumnDef(
                 name="name",
@@ -168,6 +179,15 @@ class MilestoneTableFormatter(BaseTableFormatter):
                 sortable=False,
                 filterable=False,
             ),
+            ColumnDef(
+                name="estimate",
+                display_name="Estimate",
+                type=ColumnType.STRING,
+                width=12,
+                display_style="green",
+                sortable=False,
+                filterable=False,
+            ),
         ]
 
         rows = []
@@ -183,15 +203,22 @@ class MilestoneTableFormatter(BaseTableFormatter):
             if hasattr(milestone, "due_date") and milestone.due_date:
                 due_date_str = milestone.due_date.strftime("%Y-%m-%d")
 
+            # Handle status - could be string or enum
+            status_value = milestone.status
+            if hasattr(milestone.status, "value"):
+                status_value = milestone.status.value
+
+            # Get estimate for this milestone
+            estimate_str = estimates.get(milestone.name, "-")
+
             rows.append(
                 [
                     milestone.name,
                     milestone.description or "",
-                    milestone.status.value
-                    if hasattr(milestone.status, "value")
-                    else str(milestone.status),
+                    status_value,
                     due_date_str,
                     progress,
+                    estimate_str,
                 ]
             )
 
@@ -207,9 +234,12 @@ class MilestoneTableFormatter(BaseTableFormatter):
     # Backward compatibility methods (for existing code that uses static methods)
     @staticmethod
     def milestones_to_table_data(
-        milestones: list, title: str = "Milestones", description: str = ""
+        milestones: list,
+        title: str = "Milestones",
+        description: str = "",
+        estimates: dict | None = None,
     ) -> TableData:
         """Convert Milestone list to TableData for structured output (backward compatible)."""
         return MilestoneTableFormatter().items_to_table_data(
-            milestones, title, description
+            milestones, title, description, estimates
         )

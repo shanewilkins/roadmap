@@ -136,79 +136,6 @@ def _handle_force_reinitialization(custom_core, workflow, name):
     return True
 
 
-@click.command()
-@click.option(
-    "--name",
-    "-n",
-    default=".roadmap",
-    help="Name of the roadmap directory (default: .roadmap)",
-)
-@click.option(
-    "--project-name",
-    "-p",
-    default=None,
-    help="Name for the initial project",
-)
-@click.option(
-    "--description",
-    "-d",
-    default=None,
-    help="Description for the initial project",
-)
-@click.option(
-    "--skip-project",
-    is_flag=True,
-    help="Skip project creation",
-)
-@click.option(
-    "--skip-github",
-    is_flag=True,
-    help="Skip GitHub integration setup",
-)
-@click.option(
-    "--github-repo",
-    default=None,
-    help="GitHub repository (owner/repo)",
-)
-@click.option(
-    "--github-token",
-    default=None,
-    help="GitHub personal access token",
-)
-@click.option(
-    "--interactive/--non-interactive",
-    default=True,
-    help="Run in interactive mode with prompts (default: interactive)",
-)
-@click.option(
-    "--yes",
-    "-y",
-    is_flag=True,
-    help="Answer yes to all prompts",
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Show what would be initialized without making changes",
-)
-@click.option(
-    "--force",
-    "-f",
-    is_flag=True,
-    help="Force reinitialize existing roadmap",
-)
-@click.option(
-    "--template",
-    "-t",
-    default=None,
-    help="Template to use for project initialization",
-)
-@click.option(
-    "--template-path",
-    default=None,
-    help="Path to custom template file",
-)
-@click.pass_context
 def _handle_init_dry_run(
     name: str, force: bool, skip_project: bool, skip_github: bool, log
 ) -> bool:
@@ -259,7 +186,9 @@ def _setup_init_environment(custom_core, name: str, force: bool, log):
     return lock, manifest, workflow
 
 
-def _handle_already_initialized(custom_core, force: bool, workflow, name: str) -> bool:
+def _handle_already_initialized(
+    custom_core, force: bool, workflow, name: str
+) -> tuple[bool, bool]:
     """Handle case where roadmap is already initialized.
 
     Args:
@@ -269,14 +198,21 @@ def _handle_already_initialized(custom_core, force: bool, workflow, name: str) -
         name: Roadmap name
 
     Returns:
-        True if should continue, False if already initialized
+        Tuple of (should_continue, should_create_structure)
+        - should_continue: Whether to proceed with initialization
+        - should_create_structure: Whether to call _create_roadmap_structure
     """
     if force:
-        return _handle_force_reinitialization(custom_core, workflow, name)
+        success = _handle_force_reinitialization(custom_core, workflow, name)
+        # If force succeeded, we need to create structure (roadmap was cleaned)
+        return success, success
     elif custom_core.is_initialized():
+        # Show info message but continue - allow team members to join existing projects
+        # Do NOT create structure since roadmap already exists
         presenter.present_already_initialized_info(name)
-        return False
-    return True
+        return True, False
+    # Roadmap doesn't exist, so we need to create structure
+    return True, True
 
 
 @click.command()
@@ -395,15 +331,23 @@ def init(
 
     try:
         # Handle already initialized or force re-init
-        if not _handle_already_initialized(custom_core, force, workflow, name):
+        should_continue, should_create_structure = _handle_already_initialized(
+            custom_core, force, workflow, name
+        )
+        if not should_continue:
             return
 
-        # Detect context
+        # Detect context (needed for project setup regardless)
         detected_info = ProjectContextDetectionService.detect_project_context()
 
-        # Create structure
-        if not _create_roadmap_structure(workflow, manifest, name):
-            return
+        # Create structure only if needed (not already initialized or was force-cleaned)
+        if should_create_structure:
+            if not _create_roadmap_structure(workflow, manifest, name):
+                return
+
+        # Initialize ctx.obj if not already done (can happen in tests)
+        if ctx.obj is None:
+            ctx.obj = {}
 
         ctx.obj["core"] = custom_core
 
@@ -418,6 +362,21 @@ def init(
             template_path,
             interactive,
         )
+
+        # Show project summary
+        if project_info:
+            if project_info.get("action") == "created":
+                presenter.present_project_created(
+                    project_info.get("name", "Main Project")
+                )
+            elif project_info.get("action") == "joined":
+                count = project_info.get("count", 1)
+                if count > 1:
+                    presenter.present_projects_joined(
+                        project_info.get("name", ""), count
+                    )
+                else:
+                    presenter.present_project_joined(project_info.get("name", ""))
 
         # Configure GitHub
         github_service = GitHubInitializationService(custom_core)

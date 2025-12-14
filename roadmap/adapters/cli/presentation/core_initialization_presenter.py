@@ -67,7 +67,21 @@ class CoreInitializationPresenter:
         """Show info about existing projects found."""
         click.secho(
             f"\n  💡 {count} projects found. All will be available.",
-            fg="dim",
+            fg="white",
+        )
+
+    def present_project_created(self, project_name: str) -> None:
+        """Show that a project was created."""
+        click.secho(f"✅ Created project: {project_name}", fg="green")
+
+    def present_project_joined(self, project_name: str) -> None:
+        """Show that team member joined existing project."""
+        click.secho(f"✅ Joined existing project: {project_name}", fg="green")
+
+    def present_projects_joined(self, main_project: str, count: int) -> None:
+        """Show that team member joined with multiple projects available."""
+        click.secho(
+            f"✅ Joined {main_project} ({count} projects available)", fg="green"
         )
 
     def present_initialization_warning(self, message: str) -> None:
@@ -91,7 +105,7 @@ class CoreInitializationPresenter:
     def present_status_section(self, title: str) -> None:
         """Show status section header."""
         click.secho(f"\n{title}", fg="cyan", bold=True)
-        click.secho("─" * (len(title)), fg="dim")
+        click.secho("─" * (len(title)), fg="white")
 
     def present_status_item(self, label: str, value: str, ok: bool = True) -> None:
         """Show a status item."""
@@ -114,7 +128,7 @@ class CoreInitializationPresenter:
     def present_health_section(self, title: str) -> None:
         """Show health section header."""
         click.secho(f"\n{title}", fg="cyan", bold=True)
-        click.secho("─" * (len(title)), fg="dim")
+        click.secho("─" * (len(title)), fg="white")
 
     def present_health_check(
         self, check_name: str, status: Union[str, "HealthStatus"], message: str = ""
