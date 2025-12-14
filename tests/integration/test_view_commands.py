@@ -112,9 +112,6 @@ def roadmap_with_data(cli_runner):
 class TestIssueViewCommand:
     """Test the 'roadmap issue view' command."""
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_issue_view_displays_basic_info(self, roadmap_with_data):
         """Test that issue view displays basic issue information."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -128,9 +125,6 @@ class TestIssueViewCommand:
         assert data["issue_id"] in result.output
         assert "high" in result.output.lower() or "HIGH" in result.output
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_issue_view_displays_milestone(self, roadmap_with_data):
         """Test that issue view displays associated milestone."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -142,9 +136,6 @@ class TestIssueViewCommand:
         assert result.exit_code == 0
         assert "v1.0.0" in result.output
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_issue_view_displays_type(self, roadmap_with_data):
         """Test that issue view displays the type."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -156,9 +147,6 @@ class TestIssueViewCommand:
         assert result.exit_code == 0
         assert "feature" in result.output.lower() or "FEATURE" in result.output
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_issue_view_nonexistent_issue(self, roadmap_with_data):
         """Test viewing a non-existent issue."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -177,9 +165,6 @@ class TestIssueViewCommand:
 class TestMilestoneViewCommand:
     """Test the 'roadmap milestone view' command."""
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_milestone_view_displays_basic_info(self, roadmap_with_data):
         """Test that milestone view displays basic milestone information."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -192,9 +177,6 @@ class TestMilestoneViewCommand:
         assert "v1.0.0" in result.output
         assert "First release" in result.output
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_milestone_view_displays_progress(self, roadmap_with_data):
         """Test that milestone view displays progress information."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -207,9 +189,6 @@ class TestMilestoneViewCommand:
         # Should show progress (0/1 or similar since we created 1 issue)
         assert re.search(r"\d+/\d+", result.output), "Progress count not found"
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_milestone_view_displays_issues(self, roadmap_with_data):
         """Test that milestone view displays associated issues."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -221,9 +200,6 @@ class TestMilestoneViewCommand:
         assert result.exit_code == 0
         assert "Test issue" in result.output  # Title may be split across lines in table
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_milestone_view_nonexistent_milestone(self, roadmap_with_data):
         """Test viewing a non-existent milestone."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -240,9 +216,6 @@ class TestMilestoneViewCommand:
 class TestProjectViewCommand:
     """Test the 'roadmap project view' command."""
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_project_view_displays_basic_info(self, roadmap_with_data):
         """Test that project view displays basic project information."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -257,9 +230,6 @@ class TestProjectViewCommand:
         # Check for the project ID
         assert data["project_id"] in result.output
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_project_view_displays_description(self, roadmap_with_data):
         """Test that project view displays the description."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -271,9 +241,6 @@ class TestProjectViewCommand:
         assert result.exit_code == 0
         assert "A test project" in result.output
 
-    @pytest.mark.xfail(
-        reason="Fixture broken: Command output format changed during coordinator refactoring"
-    )
     def test_project_view_nonexistent_project(self, roadmap_with_data):
         """Test viewing a non-existent project."""
         cli_runner, temp_dir, data = roadmap_with_data

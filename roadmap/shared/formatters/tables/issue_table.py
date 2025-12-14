@@ -13,7 +13,10 @@ from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 if TYPE_CHECKING:
     pass
 
-console = get_console()
+
+def _get_console():
+    """Get a fresh console instance for test compatibility."""
+    return get_console()
 
 
 class IssueTableFormatter(BaseTableFormatter[Issue]):
@@ -88,23 +91,25 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
             filter_description: Description of filter applied
         """
         if not items:
-            console.print(f"📋 No {filter_description} issues found.", style="yellow")
-            console.print(
+            _get_console().print(
+                f"📋 No {filter_description} issues found.", style="yellow"
+            )
+            _get_console().print(
                 "Create one with: roadmap issue create 'Issue title'", style="dim"
             )
             return
 
         # Display header with filter info
         header_text = f"📋 {len(items)} {filter_description} issue{'s' if len(items) != 1 else ''}"
-        console.print(header_text, style="bold cyan")
-        console.print()
+        _get_console().print(header_text, style="bold cyan")
+        _get_console().print()
 
         # Rich table display
         table = self.create_table()
         for item in items:
             self.add_row(table, item)
 
-        console.print(table)
+        _get_console().print(table)
 
     def get_filter_description(self, items: list[Issue]) -> str:
         """Get human-readable description of filtered issues.
@@ -271,14 +276,14 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
         else:
             total_display = f"{total_hours / 8:.1f}d"
 
-        console.print()
-        console.print(
+        _get_console().print()
+        _get_console().print(
             f"Total estimated time for {assignee_name}: {total_display}",
             style="bold blue",
         )
 
         # Show status breakdown
-        console.print("Workload breakdown:", style="bold")
+        _get_console().print("Workload breakdown:", style="bold")
         for status, data in status_breakdown.items():
             if data["count"] > 0:
                 if data["hours"] > 0:
@@ -288,8 +293,8 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
                         time_display = f"{data['hours']:.1f}h"
                     else:
                         time_display = f"{data['hours'] / 8:.1f}d"
-                    console.print(
+                    _get_console().print(
                         f"  {status}: {data['count']} issues ({time_display})"
                     )
                 else:
-                    console.print(f"  {status}: {data['count']} issues")
+                    _get_console().print(f"  {status}: {data['count']} issues")

@@ -12,7 +12,10 @@ from roadmap.adapters.cli.presentation.table_builders import (
 )
 from roadmap.common.console import get_console
 
-console = get_console()
+
+def _get_console():
+    """Get a fresh console instance for test compatibility."""
+    return get_console()
 
 
 def _build_project_header(project):
@@ -193,8 +196,8 @@ def view_project(ctx: click.Context, project_id: str):
 
     project = core.projects.get(project_id)
     if not project:
-        console.print(f"❌ Project '{project_id}' not found.", style="bold red")
-        console.print(
+        _get_console().print(f"❌ Project '{project_id}' not found.", style="bold red")
+        _get_console().print(
             "\n💡 Tip: Use 'roadmap project list' to see all available projects.",
             style="dim",
         )
@@ -202,25 +205,25 @@ def view_project(ctx: click.Context, project_id: str):
 
     # Display header
     header = _build_project_header(project)
-    console.print(Panel(header, border_style="cyan"))
+    _get_console().print(Panel(header, border_style="cyan"))
 
     # Display metadata
     metadata = _build_metadata_table(project)
-    console.print(Panel(metadata, title="📋 Metadata", border_style="blue"))
+    _get_console().print(Panel(metadata, title="📋 Metadata", border_style="blue"))
 
     # Display effort if available
     effort = _build_effort_table(project)
     if effort:
-        console.print(Panel(effort, title="⏱️  Effort", border_style="yellow"))
+        _get_console().print(Panel(effort, title="⏱️  Effort", border_style="yellow"))
 
     # Display milestones
     milestones_table = _build_milestones_table(core, project)
     if milestones_table:
-        console.print(
+        _get_console().print(
             Panel(milestones_table, title="🎯 Milestones", border_style="magenta")
         )
     else:
-        console.print(
+        _get_console().print(
             Panel(
                 "[dim]No milestones assigned to this project[/dim]",
                 title="🎯 Milestones",
@@ -234,9 +237,9 @@ def view_project(ctx: click.Context, project_id: str):
 
     if description:
         md = Markdown(description)
-        console.print(Panel(md, title="📝 Description", border_style="white"))
+        _get_console().print(Panel(md, title="📝 Description", border_style="white"))
     else:
-        console.print(
+        _get_console().print(
             Panel(
                 "[dim]No description available[/dim]",
                 title="📝 Description",
@@ -246,9 +249,9 @@ def view_project(ctx: click.Context, project_id: str):
 
     if objectives:
         md = Markdown(objectives)
-        console.print(Panel(md, title="✅ Objectives", border_style="green"))
+        _get_console().print(Panel(md, title="✅ Objectives", border_style="green"))
 
     # Footer with file location
-    console.print(
+    _get_console().print(
         f"\n[dim]File: .roadmap/projects/{project.id}-{project.name.lower().replace(' ', '-')}.md[/dim]"
     )

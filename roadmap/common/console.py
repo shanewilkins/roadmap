@@ -66,31 +66,24 @@ def get_console() -> Console:
 
     Returns a console with colors disabled during testing or when
     output is not going to a terminal.
+
+    Special handling for Click's CliRunner: detects when running under
+    CliRunner and uses sys.stdout which Click will redirect to capture output.
     """
     import sys
 
-    # Check if we're in a test that's using Click's test runner
-    try:
-        import click
-
-        ctx = click.get_current_context(silent=True)
-        if ctx and hasattr(ctx, "obj"):
-            # We're in a Click context, use it if it has a file
-            if hasattr(ctx.obj, "write"):
-                return Console(
-                    file=ctx.obj, force_terminal=False, no_color=True, width=80
-                )
-    except Exception:
-        pass
-
-    if any(
+    # Check if we're in pytest/testing mode
+    in_pytest = any(
         [
             "PYTEST_CURRENT_TEST" in os.environ,
             "pytest" in sys.modules,
             "_pytest" in [m.split(".")[0] for m in sys.modules.keys()],
         ]
-    ):
-        # In testing, explicitly use stdout so Click's test runner can capture it
+    )
+
+    if in_pytest:
+        # In testing, use sys.stdout directly so Click's test runner can capture it
+        # Use sys.stdout directly (not a bound reference) so it gets the current value
         return Console(file=sys.stdout, force_terminal=False, no_color=True, width=80)
     else:
         return Console()

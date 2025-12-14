@@ -12,6 +12,12 @@ from roadmap.adapters.cli.presentation.table_builders import (
 from roadmap.adapters.cli.styling import PRIORITY_COLORS, STATUS_COLORS
 from roadmap.common.console import get_console
 
+
+def _get_console():
+    """Get a fresh console instance for test compatibility."""
+    return get_console()
+
+
 console = get_console()
 
 
@@ -165,30 +171,34 @@ def view_issue(ctx: click.Context, issue_id: str):
 
     # Display header
     header = _build_issue_header(issue)
-    console.print(Panel(header, border_style="cyan"))
+    _get_console().print(Panel(header, border_style="cyan"))
 
     # Display metadata
     metadata = _build_metadata_table(issue)
-    console.print(Panel(metadata, title="📋 Metadata", border_style="blue"))
+    _get_console().print(Panel(metadata, title="📋 Metadata", border_style="blue"))
 
     # Display timeline
     timeline = _build_timeline_table(issue)
-    console.print(Panel(timeline, title="⏱️  Timeline", border_style="yellow"))
+    _get_console().print(Panel(timeline, title="⏱️  Timeline", border_style="yellow"))
 
     # Display dependencies if any
     deps = _build_dependencies_table(issue)
     if deps:
-        console.print(Panel(deps, title="🔗 Dependencies", border_style="magenta"))
+        _get_console().print(
+            Panel(deps, title="🔗 Dependencies", border_style="magenta")
+        )
 
     # Display git if any
     git = _build_git_table(issue)
     if git:
-        console.print(Panel(git, title="🔀 Git Integration", border_style="green"))
+        _get_console().print(
+            Panel(git, title="🔀 Git Integration", border_style="green")
+        )
 
     # Display handoff if applicable
     handoff = _build_handoff_table(issue)
     if handoff:
-        console.print(Panel(handoff, title="👥 Handoff", border_style="yellow"))
+        _get_console().print(Panel(handoff, title="👥 Handoff", border_style="yellow"))
 
     # Display description and acceptance criteria
     if issue.content:
@@ -196,15 +206,17 @@ def view_issue(ctx: click.Context, issue_id: str):
 
         if description:
             md = Markdown(description)
-            console.print(Panel(md, title="📝 Description", border_style="white"))
+            _get_console().print(
+                Panel(md, title="📝 Description", border_style="white")
+            )
 
         if acceptance:
             md = Markdown(acceptance)
-            console.print(
+            _get_console().print(
                 Panel(md, title="✅ Acceptance Criteria", border_style="green")
             )
     else:
-        console.print(
+        _get_console().print(
             Panel(
                 "[dim]No description available[/dim]",
                 title="📝 Description",

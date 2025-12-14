@@ -19,7 +19,12 @@ class BaseTableFormatter(ABC, Generic[T]):
 
     def __init__(self):
         """Initialize base formatter."""
-        self.console = get_console()
+        pass
+
+    @property
+    def console(self):
+        """Get console instance dynamically for test compatibility."""
+        return get_console()
 
     @abstractmethod
     def create_table(self) -> Any:

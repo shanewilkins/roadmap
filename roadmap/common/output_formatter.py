@@ -240,6 +240,99 @@ class OutputFormatter:
 
         return "\n".join(lines)
 
+    def to_html(self) -> str:
+        """
+        Format as HTML table with styling.
+
+        Returns:
+            HTML table suitable for email, web, or documentation.
+            Includes basic CSS styling for readability.
+
+        Note:
+            Generates self-contained HTML with embedded CSS.
+            Suitable for email clients and web browsers.
+        """
+        if not self.table.active_columns or not self.table.active_rows:
+            return ""
+
+        columns = self.table.active_columns
+
+        # Build HTML with embedded CSS
+        html_lines = [
+            "<!DOCTYPE html>",
+            "<html>",
+            "<head>",
+            "<meta charset='utf-8'>",
+            "<meta name='viewport' content='width=device-width, initial-scale=1'>",
+            "<style>",
+            "  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }",
+            "  .container { max-width: 100%; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }",
+            "  h1 { color: #333; margin-bottom: 20px; font-size: 24px; }",
+            "  table { width: 100%; border-collapse: collapse; margin-top: 10px; }",
+            "  thead { background-color: #2c3e50; color: white; }",
+            "  th { padding: 12px; text-align: left; font-weight: 600; border: 1px solid #ddd; }",
+            "  td { padding: 10px 12px; border: 1px solid #ddd; }",
+            "  tbody tr:nth-child(odd) { background-color: #f9f9f9; }",
+            "  tbody tr:hover { background-color: #f0f0f0; }",
+            "  .footer { margin-top: 20px; font-size: 12px; color: #666; text-align: right; }",
+            "</style>",
+            "</head>",
+            "<body>",
+            "<div class='container'>",
+        ]
+
+        # Add title
+        if self.table.title:
+            html_lines.append(f"<h1>{self._escape_html(self.table.title)}</h1>")
+
+        # Start table
+        html_lines.append("<table>")
+
+        # Header row
+        html_lines.append("<thead>")
+        html_lines.append("<tr>")
+        for col in columns:
+            html_lines.append(f"<th>{self._escape_html(col.display_name)}</th>")
+        html_lines.append("</tr>")
+        html_lines.append("</thead>")
+
+        # Data rows
+        html_lines.append("<tbody>")
+        for row in self.table.active_rows:
+            html_lines.append("<tr>")
+            for cell in row:
+                cell_value = self._escape_html(str(cell) if cell is not None else "")
+                html_lines.append(f"<td>{cell_value}</td>")
+            html_lines.append("</tr>")
+        html_lines.append("</tbody>")
+
+        # Close table
+        html_lines.append("</table>")
+
+        # Footer with timestamp
+        from datetime import datetime
+
+        now = datetime.now().isoformat()
+        html_lines.append(f"<p class='footer'>Generated {now}</p>")
+
+        # Close HTML
+        html_lines.append("</div>")
+        html_lines.append("</body>")
+        html_lines.append("</html>")
+
+        return "\n".join(html_lines)
+
+    @staticmethod
+    def _escape_html(text: str) -> str:
+        """Escape HTML special characters."""
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;")
+        )
+
 
 class PlainTextOutputFormatter:
     """
@@ -290,3 +383,20 @@ class CSVOutputFormatter:
     def format(self) -> str:
         """Format output as CSV."""
         return self.formatter.to_csv()
+
+
+class HTMLOutputFormatter:
+    """
+    Specialized formatter for HTML output (web/email).
+
+    Used by CLI when --html flag is set or ROADMAP_OUTPUT_FORMAT=html.
+    Generates self-contained HTML with embedded CSS for email clients and browsers.
+    """
+
+    def __init__(self, table_data: TableData):
+        """Initialize with table data."""
+        self.formatter = OutputFormatter(table_data)
+
+    def format(self) -> str:
+        """Format output as HTML."""
+        return self.formatter.to_html()

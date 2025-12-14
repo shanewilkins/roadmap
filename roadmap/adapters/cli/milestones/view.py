@@ -15,6 +15,12 @@ from roadmap.adapters.cli.presentation.table_builders import (
 from roadmap.adapters.cli.styling import PRIORITY_COLORS, STATUS_COLORS
 from roadmap.common.console import get_console
 
+
+def _get_console():
+    """Get a fresh console instance for test compatibility."""
+    return get_console()
+
+
 console = get_console()
 
 
@@ -88,7 +94,7 @@ def _display_progress_panel(progress_data):
     progress_table.add_row("Issues Complete", f"{completed}/{total}")
     progress_table.add_row("Percentage", f"{percentage:.1f}%")
 
-    console.print(
+    _get_console().print(
         Panel(
             progress_table,
             title="📊 Progress",
@@ -235,8 +241,10 @@ def view_milestone(
 
     milestone = core.milestones.get(milestone_name)
     if not milestone:
-        console.print(f"❌ Milestone '{milestone_name}' not found.", style="bold red")
-        console.print(
+        _get_console().print(
+            f"❌ Milestone '{milestone_name}' not found.", style="bold red"
+        )
+        _get_console().print(
             "\n💡 Tip: Use 'roadmap milestone list' to see all available milestones.",
             style="dim",
         )
@@ -253,14 +261,14 @@ def view_milestone(
     # Display milestone header
     header = _build_milestone_header(milestone)
     header = _add_due_date_to_header(header, milestone)
-    console.print(Panel(header, border_style="cyan"))
+    _get_console().print(Panel(header, border_style="cyan"))
 
     # Display progress
     _display_progress_panel(progress_data)
 
     # Display statistics
     stats = _build_statistics_table(milestone_issues, milestone)
-    console.print(Panel(stats, title="📈 Statistics", border_style="blue"))
+    _get_console().print(Panel(stats, title="📈 Statistics", border_style="blue"))
 
     # Display issues
     if milestone_issues:
@@ -270,9 +278,9 @@ def view_milestone(
             if len(milestone_issues) > 10
             else "📋 Issues"
         )
-        console.print(Panel(issues_table, title=title, border_style="magenta"))
+        _get_console().print(Panel(issues_table, title=title, border_style="magenta"))
     else:
-        console.print(
+        _get_console().print(
             Panel(
                 "[dim]No issues assigned to this milestone[/dim]",
                 title="📋 Issues",
@@ -287,13 +295,15 @@ def view_milestone(
 
         if description:
             md = Markdown(description)
-            console.print(Panel(md, title="📝 Description", border_style="white"))
+            _get_console().print(
+                Panel(md, title="📝 Description", border_style="white")
+            )
 
         if goals:
             md = Markdown(goals)
-            console.print(Panel(md, title="🎯 Goals", border_style="green"))
+            _get_console().print(Panel(md, title="🎯 Goals", border_style="green"))
     else:
-        console.print(
+        _get_console().print(
             Panel(
                 "[dim]No description available[/dim]",
                 title="📝 Description",
@@ -303,5 +313,5 @@ def view_milestone(
 
     # Metadata footer
     metadata = f"Created: {milestone.created.strftime('%Y-%m-%d')} • Updated: {milestone.updated.strftime('%Y-%m-%d')}"
-    console.print(f"\n[dim]{metadata}[/dim]")
-    console.print(f"[dim]File: .roadmap/milestones/{milestone.name}.md[/dim]")
+    _get_console().print(f"\n[dim]{metadata}[/dim]")
+    _get_console().print(f"[dim]File: .roadmap/milestones/{milestone.name}.md[/dim]")

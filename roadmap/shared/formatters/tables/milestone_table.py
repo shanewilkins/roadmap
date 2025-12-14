@@ -11,7 +11,10 @@ from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 if TYPE_CHECKING:
     pass
 
-console = get_console()
+
+def _get_console():
+    """Get a fresh console instance for test compatibility."""
+    return get_console()
 
 
 class MilestoneTableFormatter(BaseTableFormatter):
@@ -84,10 +87,10 @@ class MilestoneTableFormatter(BaseTableFormatter):
             filter_description: Description of filter applied
         """
         if not items:
-            console.print(
+            _get_console().print(
                 f"🏁 No {filter_description} milestones found.", style="yellow"
             )
-            console.print(
+            _get_console().print(
                 "Create one with: roadmap milestone create 'Milestone name'",
                 style="dim",
             )
@@ -95,15 +98,15 @@ class MilestoneTableFormatter(BaseTableFormatter):
 
         # Display header with filter info
         header_text = f"🏁 {len(items)} {filter_description} milestone{'s' if len(items) != 1 else ''}"
-        console.print(header_text, style="bold cyan")
-        console.print()
+        _get_console().print(header_text, style="bold cyan")
+        _get_console().print()
 
         # Rich table display
         table = self.create_table()
         for item in items:
             self.add_row(table, item)
 
-        console.print(table)
+        _get_console().print(table)
 
     def items_to_table_data(
         self, items: list, title: str = "Milestones", description: str = ""
