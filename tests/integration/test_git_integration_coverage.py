@@ -116,7 +116,7 @@ class TestGitIntegrationAdditionalCoverage:
 
 
 @pytest.mark.skip(
-    reason="Requires deep mocking of refactored GitBranchManager - needs refactoring after git.py split"
+    reason="Requires GitBranchManager refactoring and proper branch context handling"
 )
 class TestGitIntegrationIssueCreation:
     """Test automatic issue creation from branches."""

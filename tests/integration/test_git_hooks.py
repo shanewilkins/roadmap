@@ -188,45 +188,6 @@ class TestGitHookManager:
         assert updated_issue.status == Status.TODO  # Should remain unchanged
         assert updated_issue.progress_percentage is None  # Should remain unchanged
 
-    @pytest.mark.skip(
-        reason="Tests archived CI tracking functionality (post-1.0 feature moved to future/)"
-    )
-    def test_handle_post_checkout(self, temp_git_repo):
-        """Test post-checkout hook handler."""
-        _, core = temp_git_repo
-
-        # Create test issue and branch
-        issue = core.issues.create("Feature branch issue", Priority.HIGH)
-
-        with patch("roadmap.git_hooks.GitIntegration") as mock_git_integration:
-            mock_git = Mock()
-            mock_branch = Mock()
-            mock_branch.name = f"feature/{issue.id}-test-feature"
-
-            mock_git.get_current_branch.return_value = mock_branch
-            mock_git.get_branch_linked_issues.return_value = [issue.id]
-            mock_git_integration.return_value = mock_git
-
-            hook_manager = GitHookManager(core)
-            hook_manager.git_integration = mock_git
-
-            # Handle post-checkout
-            with patch("subprocess.run") as mock_subprocess:
-                mock_subprocess.return_value.stdout = f"feature/{issue.id}-test-feature"
-                mock_subprocess.return_value.returncode = 0
-
-                with patch("roadmap.ci_tracking.CITracker") as mock_tracker_class:
-                    mock_tracker = Mock()
-                    mock_tracker.track_branch.return_value = {issue.id: ["tracked"]}
-                    mock_tracker_class.return_value = mock_tracker
-
-                    hook_manager.handle_post_checkout()
-
-                    # Verify CI tracker was called with the branch
-                    mock_tracker.track_branch.assert_called_once_with(
-                        f"feature/{issue.id}-test-feature"
-                    )
-
     def test_non_git_repo_handling(self):
         """Test graceful handling when not in a Git repository."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -641,81 +602,6 @@ class TestGitHooksIntegration:
         assert results["git-hooks"] is True
         assert results["status-automation"] is True
         assert results["progress-tracking"] is True
-
-    @pytest.mark.skip(
-        reason="Tests archived CI tracking functionality (post-1.0 feature moved to future/)"
-    )
-    def test_hook_execution_simulation(self, git_repo_with_roadmap):
-        """Test simulated hook execution."""
-        _, core = git_repo_with_roadmap
-
-        # Install hooks
-        hook_manager = GitHookManager(core)
-        success = hook_manager.install_hooks(["post-commit"])
-        assert success
-
-        # Create test issue
-        issue = core.issues.create("Hook test issue", Priority.MEDIUM)
-
-        # Create commit
-        test_file = Path("hook_test.py")
-        test_file.write_text('print("Hook test")')
-        subprocess.run(["git", "add", "hook_test.py"], check=True)
-        subprocess.run(
-            ["git", "commit", "-m", f"Test commit [roadmap:{issue.id}] [progress:50%]"],
-            check=True,
-        )
-
-        # Manually trigger hook handler (simulating hook execution)
-        hook_manager.handle_post_commit()
-
-        # Verify issue was updated
-        updated_issue = core.issues.get(issue.id)
-        assert updated_issue.progress_percentage == 50.0
-        assert updated_issue.status == Status.IN_PROGRESS
-        assert len(updated_issue.git_commits) >= 1
-
-    @pytest.mark.skip(
-        reason="Tests archived CI tracking functionality (post-1.0 feature moved to future/)"
-    )
-    def test_branch_context_management(self, git_repo_with_roadmap):
-        """Test branch context file management."""
-        _, core = git_repo_with_roadmap
-
-        issue = core.issues.create("Context test", Priority.LOW)
-        branch_name = f"feature/{issue.id}-context-test"
-
-        # Create and checkout branch
-        subprocess.run(["git", "checkout", "-b", branch_name], check=True)
-
-        hook_manager = GitHookManager(core)
-
-        # Simulate post-checkout hook
-        with patch.object(
-            hook_manager.git_integration, "get_current_branch"
-        ) as mock_branch:
-            mock_current_branch = Mock()
-            mock_current_branch.name = branch_name
-            mock_branch.return_value = mock_current_branch
-
-            with patch.object(
-                hook_manager.git_integration, "get_branch_linked_issues"
-            ) as mock_linked:
-                mock_linked.return_value = [issue.id]
-
-                with patch("subprocess.run") as mock_subprocess:
-                    mock_subprocess.return_value.stdout = branch_name
-                    mock_subprocess.return_value.returncode = 0
-
-                    with patch("roadmap.ci_tracking.CITracker") as mock_tracker_class:
-                        mock_tracker = Mock()
-                        mock_tracker.track_branch.return_value = {issue.id: ["tracked"]}
-                        mock_tracker_class.return_value = mock_tracker
-
-                        hook_manager.handle_post_checkout()
-
-                        # Verify CI tracker was called with the branch
-                        mock_tracker.track_branch.assert_called_once_with(branch_name)
 
 
 if __name__ == "__main__":

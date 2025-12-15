@@ -389,7 +389,7 @@ class TestProjectCreationService:
         assert "Develop core functionality" in content
 
     @pytest.mark.skip(
-        reason="Tests for planned but never-implemented RoadmapCore methods (_generate_id, _normalize_filename). Core project creation is tested elsewhere."
+        reason="Requires _generate_id and _normalize_filename methods not implemented"
     )
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_creates_directory(self, mock_core_class, tmp_path):
@@ -417,7 +417,7 @@ class TestProjectCreationService:
         assert (mock_core.roadmap_dir / "projects").exists()
 
     @pytest.mark.skip(
-        reason="Tests for planned but never-implemented RoadmapCore methods (_generate_id, _normalize_filename). Error handling is tested elsewhere."
+        reason="Requires _generate_id and _normalize_filename methods not implemented"
     )
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_handles_file_write_error(self, mock_core_class, tmp_path):
