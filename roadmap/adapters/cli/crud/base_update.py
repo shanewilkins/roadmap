@@ -7,7 +7,7 @@ import click
 
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
 from roadmap.common.console import get_console
-from roadmap.common.errors import ValidationError
+from roadmap.common.errors.exceptions import ValidationError
 from roadmap.infrastructure.logging import log_audit_event, log_validation_error
 
 
@@ -48,9 +48,9 @@ class BaseUpdate(ABC):
         Raises:
             ValidationError: If arguments are invalid
         """
-        pass
+        ...
 
-    def post_update_hook(
+    def post_update_hook(  # noqa: B027
         self, entity: Any, update_dict: dict[str, Any], **kwargs
     ) -> None:
         """Optional hook after entity update.
@@ -65,7 +65,7 @@ class BaseUpdate(ABC):
             update_dict: The update dict that was applied
             **kwargs: Original CLI arguments
         """
-        # Default: no-op. Subclasses override as needed.
+        ...
 
     def execute(self, entity_id: str, **kwargs) -> Any | None:
         """Execute the update operation.
@@ -118,11 +118,11 @@ class BaseUpdate(ABC):
             log_validation_error(
                 error=e,
                 entity_type=self.entity_type.value,
-                field_name=getattr(e, "field", None),
-                proposed_value=getattr(e, "value", None),
+                field_name=None,
+                proposed_value=None,
             )
-            self.console.print(f"❌ Validation error: {str(e)}", style="red")
-            raise click.ClickException(str(e)) from e
+            self.console.print(f"❌ {e.user_message}", style="red")
+            raise click.ClickException(e.user_message) from e
         except Exception as e:
             self.console.print(
                 f"❌ Failed to update {self.entity_type.value}: {str(e)}",

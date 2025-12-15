@@ -7,7 +7,7 @@ import click
 
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
 from roadmap.common.console import get_console
-from roadmap.common.errors import ValidationError
+from roadmap.common.errors.exceptions import ValidationError
 from roadmap.infrastructure.logging import log_audit_event, log_validation_error
 
 
@@ -47,9 +47,9 @@ class BaseCreate(ABC):
         Raises:
             ValidationError: If arguments are invalid
         """
-        pass
+        ...
 
-    def post_create_hook(self, entity: Any, **kwargs) -> None:
+    def post_create_hook(self, entity: Any, **kwargs) -> None:  # noqa: B027
         """Optional hook after entity creation.
 
         Override to handle:
@@ -61,7 +61,7 @@ class BaseCreate(ABC):
             entity: The created entity
             **kwargs: Original CLI arguments
         """
-        # Default: no-op. Subclasses override as needed.
+        ...
 
     def execute(self, title: str, **kwargs) -> Any | None:
         """Execute the create operation.
@@ -104,11 +104,11 @@ class BaseCreate(ABC):
             log_validation_error(
                 error=e,
                 entity_type=self.entity_type.value,
-                field_name=getattr(e, "field", None),
-                proposed_value=getattr(e, "value", None),
+                field_name=None,
+                proposed_value=None,
             )
-            self.console.print(f"❌ Validation error: {str(e)}", style="red")
-            raise click.ClickException(str(e)) from e
+            self.console.print(f"❌ {e.user_message}", style="red")
+            raise click.ClickException(e.user_message) from e
         except Exception as e:
             self.console.print(
                 f"❌ Failed to create {self.entity_type.value}: {str(e)}",

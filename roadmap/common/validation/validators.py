@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Any
 
-from roadmap.common.errors import ErrorSeverity, ValidationError
+from roadmap.common.errors.exceptions import ValidationError
 
 from .result import ValidationResult
 
@@ -27,9 +27,7 @@ def validate_and_raise(validation_result: ValidationResult, context: str | None 
         if context:
             error_message = f"{context}: {error_message}"
 
-        raise ValidationError(
-            error_message, field=validation_result.field, severity=ErrorSeverity.MEDIUM
-        )
+        raise ValidationError(domain_message=error_message, user_message=error_message)
 
 
 def validate_frontmatter_structure(

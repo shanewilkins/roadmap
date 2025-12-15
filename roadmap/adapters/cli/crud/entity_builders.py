@@ -7,7 +7,7 @@ that handle validation and dict building for create/update operations.
 from datetime import datetime
 from typing import Any
 
-from roadmap.common.errors import ValidationError
+from roadmap.common.errors.exceptions import ValidationError
 from roadmap.core.domain import IssueType, Priority
 
 
@@ -50,8 +50,8 @@ class IssueBuilder:
             return priority_map[priority.lower()]
         except KeyError as e:
             raise ValidationError(
-                f"Invalid priority: {priority}",
-                context={"valid_values": ["critical", "high", "medium", "low"]},
+                domain_message=f"Invalid priority: {priority}",
+                user_message=f"Invalid priority: {priority}. Valid values: critical, high, medium, low",
             ) from e
 
     @staticmethod
@@ -76,8 +76,8 @@ class IssueBuilder:
             return type_map[issue_type.lower()]
         except KeyError as e:
             raise ValidationError(
-                f"Invalid issue type: {issue_type}",
-                context={"valid_values": ["feature", "bug", "other"]},
+                domain_message=f"Invalid issue type: {issue_type}",
+                user_message=f"Invalid issue type: {issue_type}. Valid values: feature, bug, other",
             ) from e
 
     @staticmethod
@@ -222,12 +222,8 @@ class MilestoneBuilder:
             return datetime.strptime(due_date, "%Y-%m-%d")
         except ValueError as e:
             raise ValidationError(
-                "Invalid due date format",
-                context={
-                    "provided": due_date,
-                    "expected_format": "YYYY-MM-DD",
-                    "example": "2024-12-31",
-                },
+                domain_message="Invalid due date format: expected YYYY-MM-DD",
+                user_message=f"Invalid due date format: {due_date}. Expected format: YYYY-MM-DD (example: 2024-12-31)",
             ) from e
 
     @staticmethod

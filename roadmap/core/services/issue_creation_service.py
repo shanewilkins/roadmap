@@ -8,9 +8,8 @@ Git branch creation, and formatted display of created issues.
 import os
 import subprocess
 
-import click
-
 from roadmap.common.console import get_console
+from roadmap.common.errors.exceptions import ValidationError
 
 
 class IssueCreationService:
@@ -63,8 +62,10 @@ class IssueCreationService:
         # Validate assignee
         is_valid, result = self.core.team.validate_assignee(assignee)
         if not is_valid:
-            self._console.print(f"❌ Invalid assignee: {result}", style="bold red")
-            raise click.Abort()
+            raise ValidationError(
+                domain_message=f"Assignee validation failed: {result}",
+                user_message=f"Invalid assignee: {result}",
+            )
 
         if result and "Warning:" in result:
             self._console.print(f"⚠️  {result}", style="bold yellow")

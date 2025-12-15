@@ -6,6 +6,7 @@ dictionaries from CLI parameters, resolving assignees, and displaying results.
 """
 
 from roadmap.common.console import get_console
+from roadmap.common.errors.exceptions import ValidationError
 from roadmap.core.domain import Priority, Status
 
 
@@ -63,8 +64,7 @@ class IssueUpdateService:
             updates["status"] = Status(status)
         if assignee is not None:
             assignee_value = self.resolve_assignee_for_update(assignee)
-            if assignee_value is not False:  # False means validation failed
-                updates["assignee"] = assignee_value
+            updates["assignee"] = assignee_value
         if milestone:
             updates["milestone"] = milestone
         if description:
@@ -97,8 +97,10 @@ class IssueUpdateService:
         # Validate assignee
         is_valid, result = self.core.validate_assignee(assignee)
         if not is_valid:
-            self._console.print(f"❌ Invalid assignee: {result}", style="bold red")
-            return False
+            raise ValidationError(
+                domain_message=f"Assignee validation failed: {result}",
+                user_message=f"Invalid assignee: {result}",
+            )
         elif result and "Warning:" in result:
             self._console.print(f"⚠️  {result}", style="bold yellow")
             return assignee

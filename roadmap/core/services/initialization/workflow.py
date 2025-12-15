@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 
 from roadmap.common.console import get_console
+from roadmap.common.errors.exceptions import OperationError
 from roadmap.common.security import create_secure_directory
 from roadmap.infrastructure.core import RoadmapCore
 
@@ -27,16 +28,18 @@ class InitializationWorkflow:
 
         Returns:
             True if successful, False otherwise
+
+        Raises:
+            OperationError: If removal fails
         """
         try:
             if self.core.roadmap_dir.exists():
                 shutil.rmtree(self.core.roadmap_dir)
             return True
         except Exception as e:
-            console.print(
-                f"❌ Failed to remove existing roadmap: {e}", style="bold red"
-            )
-            return False
+            raise OperationError(
+                operation="remove existing roadmap", reason=str(e)
+            ) from e
 
     def create_structure(self) -> None:
         """Create the basic roadmap structure."""
@@ -46,7 +49,10 @@ class InitializationWorkflow:
         """Create roadmap structure while preserving existing data.
 
         If roadmap already exists, creates only missing directories and templates.
-        Returns True if successful, False otherwise.
+        Returns True if successful, raises OperationError otherwise.
+
+        Raises:
+            OperationError: If creation fails
         """
         try:
             roadmap_dir = self.core.roadmap_dir
@@ -75,8 +81,9 @@ class InitializationWorkflow:
 
             return True
         except Exception as e:
-            console.print(f"❌ Failed to create structure: {e}", style="bold red")
-            return False
+            raise OperationError(
+                operation="create roadmap structure", reason=str(e)
+            ) from e
 
     def _create_missing_templates(self) -> None:
         """Create template files only if they don't exist."""

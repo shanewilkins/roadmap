@@ -4,6 +4,9 @@ Tests for issue update helpers.
 
 from unittest.mock import Mock
 
+import pytest
+
+from roadmap.common.errors.exceptions import ValidationError
 from roadmap.core.domain import Priority
 from roadmap.core.services import IssueUpdateService
 
@@ -129,22 +132,22 @@ class TestIssueUpdateBuilder:
         assert result == {"assignee": None}
 
     def test_build_updates_with_invalid_assignee(self):
-        """build_updates should exclude assignee when validation fails."""
+        """build_updates should raise ValidationError when assignee validation fails."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (False, "User not found")
         service = IssueUpdateService(mock_core)
 
-        result = service.build_update_dict(
-            title=None,
-            priority=None,
-            status=None,
-            assignee="invaliduser",
-            milestone=None,
-            description=None,
-            estimate=None,
-        )
+        with pytest.raises(ValidationError, match="Invalid assignee"):
+            service.build_update_dict(
+                title=None,
+                priority=None,
+                status=None,
+                assignee="invaliduser",
+                milestone=None,
+                description=None,
+                estimate=None,
+            )
 
-        assert "assignee" not in result
         mock_core.validate_assignee.assert_called_once_with("invaliduser")
 
     def test_build_updates_with_milestone(self):
@@ -282,18 +285,13 @@ class TestIssueUpdateBuilder:
         mock_core.team.get_canonical_assignee.assert_called_once_with("testuser")
 
     def test_resolve_assignee_invalid(self):
-        """_resolve_assignee should return False for invalid user."""
+        """_resolve_assignee should raise ValidationError for invalid user."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (False, "User not found")
-        mock_console = Mock()
         service = IssueUpdateService(mock_core)
-        service._console = mock_console
 
-        result = service.resolve_assignee_for_update("baduser")
-
-        assert result is False
-        mock_console.print.assert_called_once()
-        assert "Invalid assignee" in mock_console.print.call_args[0][0]
+        with pytest.raises(ValidationError, match="Invalid assignee"):
+            service.resolve_assignee_for_update("baduser")
 
     def test_resolve_assignee_with_warning(self):
         """_resolve_assignee should display warning but accept assignee."""
