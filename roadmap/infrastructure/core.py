@@ -293,6 +293,14 @@ class RoadmapCore:
         """Get all issues grouped by milestone (backward compatibility wrapper)."""
         return self.issues.get_grouped_by_milestone()
 
+    def get_next_milestone(self):
+        """Get the next upcoming milestone by due date (backward compatibility wrapper)."""
+        return self.milestones._ops.get_next_milestone()
+
+    def move_issue_to_milestone(self, issue_id: str, milestone_name: str):
+        """Move an issue to a specific milestone (backward compatibility wrapper)."""
+        return self.issues.move_to_milestone(issue_id, milestone_name)
+
     def load_config(self):
         """Load roadmap configuration."""
         if not self.is_initialized():

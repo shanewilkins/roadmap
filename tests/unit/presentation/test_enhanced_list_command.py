@@ -11,10 +11,6 @@ from roadmap.adapters.cli import main
 from roadmap.core.domain import Milestone, MilestoneStatus, Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
 
-pytestmark = pytest.mark.skip(
-    reason="CLI command integration tests - complex Click mocking"
-)
-
 
 @pytest.fixture
 def temp_roadmap():
@@ -69,7 +65,6 @@ def temp_roadmap():
             os.chdir(old_cwd)
 
 
-@pytest.mark.skip(reason="Enhanced list command feature not fully implemented")
 def test_list_all_issues(temp_roadmap):
     """Test listing all issues with all priority levels and types."""
     runner = CliRunner()

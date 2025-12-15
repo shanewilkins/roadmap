@@ -210,6 +210,7 @@ def list_issues(
     Supports output formatting with --format, --columns, --sort-by, --filter flags.
     """
     core = ctx.obj["core"]
+    _ = verbose  # noqa: F841 - verbose flag available for future use via CLI decorator
 
     # Handle positional filter_type argument
     if filter_type and filter_type.lower() == "backlog":
@@ -257,6 +258,11 @@ def list_issues(
                 "Create one with: roadmap issue create 'Issue title'", style="dim"
             )
             return
+
+        # Display header with count
+        issue_count = len(issues)
+        header_text = f"📋 {issue_count} {filter_description} issue{'s' if issue_count != 1 else ''}"
+        _get_console().print(header_text, style="bold cyan")
 
         # Convert issues to TableData for structured output
         table_data = IssueTableFormatter.issues_to_table_data(
