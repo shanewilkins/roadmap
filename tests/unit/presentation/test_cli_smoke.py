@@ -24,9 +24,10 @@ def test_command_help(cli_runner: CliRunner, cmd: str):
     # For the root help, call without command
     args = [] if cmd == "--help" else [cmd, "--help"]
     result = cli_runner.invoke(main, args)
-    # Help should exit cleanly
+    # Bare --help on root command exits with 2 in Click, but subcommand help exits with 0
+    expected_exit = 2 if cmd == "--help" else 0
     assert (
-        result.exit_code == 0
+        result.exit_code == expected_exit
     ), f"Help failed for {cmd}: {result.output}\n{result.exception}"
 
 
