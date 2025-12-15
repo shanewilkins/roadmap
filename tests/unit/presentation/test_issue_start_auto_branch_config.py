@@ -1,14 +1,9 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
 import yaml
 
 from roadmap.adapters.cli import main
-
-pytestmark = pytest.mark.skip(
-    reason="Requires mocking updates for refactored git integration module structure"
-)
 
 
 def test_start_issue_respects_config_auto_branch(cli_runner):

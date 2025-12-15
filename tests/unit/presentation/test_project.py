@@ -1,13 +1,8 @@
 """Tests for project-related CLI commands."""
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
-
-pytestmark = pytest.mark.skip(
-    reason="Project creation not fully functional with current fixture setup"
-)
 
 
 def test_project_help(cli_runner):

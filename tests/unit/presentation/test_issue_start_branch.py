@@ -1,12 +1,6 @@
 from unittest.mock import Mock, patch
 
-import pytest
-
 from roadmap.adapters.cli import main
-
-pytestmark = pytest.mark.skip(
-    reason="Requires mocking updates for refactored git integration module structure"
-)
 
 
 def test_start_issue_creates_branch(cli_runner):

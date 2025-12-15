@@ -1,12 +1,6 @@
 from unittest.mock import patch
 
-import pytest
-
 from roadmap.adapters.cli import main
-
-pytestmark = pytest.mark.skip(
-    reason="Requires mocking updates for refactored module structure"
-)
 
 
 def test_init_uses_cli_token_and_stores_it(cli_runner):

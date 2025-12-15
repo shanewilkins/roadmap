@@ -3,10 +3,6 @@ from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
 
-pytestmark = pytest.mark.skip(
-    reason="CLI help test incompatibility with Click.testing - exit codes need review"
-)
-
 
 @pytest.mark.parametrize(
     "cmd",

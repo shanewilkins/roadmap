@@ -1,13 +1,8 @@
 """Tests for issue-related CLI commands."""
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
-
-pytestmark = pytest.mark.skip(
-    reason="Requires mocking updates for refactored module structure and initialization setup"
-)
 
 
 def test_issue_help(cli_runner):
