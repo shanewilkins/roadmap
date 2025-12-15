@@ -115,9 +115,6 @@ class TestGitIntegrationAdditionalCoverage:
         assert branch.remote is None
 
 
-@pytest.mark.skip(
-    reason="Requires GitBranchManager refactoring and proper branch context handling"
-)
 class TestGitIntegrationIssueCreation:
     """Test automatic issue creation from branches."""
 
@@ -145,10 +142,10 @@ class TestGitIntegrationIssueCreation:
         """Test that no issue is created if one already exists."""
         git, mock_run = mock_git_integration
 
-        # Mock existing issue - the code actually calls load_issue (which doesn't exist)
-        # So we need to add that method to the mock
+        # Mock existing issue
         existing_issue = Mock()
-        mock_roadmap_core.load_issue = Mock(return_value=existing_issue)
+        existing_issue.id = "existing-123"
+        mock_roadmap_core.issues.get.return_value = existing_issue
 
         with patch.object(GitBranch, "extract_issue_id", return_value="existing-123"):
             result = git.auto_create_issue_from_branch(
@@ -170,8 +167,13 @@ class TestGitIntegrationIssueCreation:
         created_issue.id = "new-issue-123"
         mock_roadmap_core.issues.create.return_value = created_issue
 
-        # Mock current user
-        git.get_current_user = Mock(return_value="testuser")
+        # Mock current user via git command executor
+        def git_run_side_effect(cmd):
+            if cmd == ["config", "user.name"]:
+                return "testuser"
+            return None
+
+        mock_run.side_effect = git_run_side_effect
 
         with (
             patch.object(GitBranch, "extract_issue_id", return_value=None),
@@ -216,7 +218,14 @@ class TestGitIntegrationIssueCreation:
 
         # Mock exception during issue creation
         mock_roadmap_core.issues.create.side_effect = Exception("Creation failed")
-        git.get_current_user = Mock(return_value="testuser")
+
+        # Mock current user
+        def git_run_side_effect(cmd):
+            if cmd == ["config", "user.name"]:
+                return "testuser"
+            return None
+
+        mock_run.side_effect = git_run_side_effect
 
         with patch.object(
             git.branch_manager, "_extract_title_from_branch_name", return_value="Test"
@@ -235,13 +244,20 @@ class TestGitIntegrationIssueCreation:
         # Mock current branch
         current_branch = Mock()
         current_branch.name = "feature/current-branch"
-        git.get_current_branch = Mock(return_value=current_branch)
+        git.branch_manager.get_current_branch = Mock(return_value=current_branch)
 
         # Mock successful creation
         created_issue = Mock()
         created_issue.id = "current-123"
         mock_roadmap_core.issues.create.return_value = created_issue
-        git.get_current_user = Mock(return_value="testuser")
+
+        # Mock current user
+        def git_run_side_effect(cmd):
+            if cmd == ["config", "user.name"]:
+                return "testuser"
+            return None
+
+        mock_run.side_effect = git_run_side_effect
 
         with patch.object(
             git.branch_manager,
@@ -256,7 +272,7 @@ class TestGitIntegrationIssueCreation:
     ):
         """Test creating issue when no current branch available."""
         git, mock_run = mock_git_integration
-        git.get_current_branch = Mock(return_value=None)
+        git.branch_manager.get_current_branch = Mock(return_value=None)
 
         result = git.auto_create_issue_from_branch(mock_roadmap_core, None)
         assert result is None
