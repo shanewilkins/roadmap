@@ -4,9 +4,7 @@ import pytest
 
 from roadmap.adapters.cli import main
 
-pytestmark = pytest.mark.skip(
-    reason="CLI command integration tests - complex Click mocking"
-)
+pytestmark = pytest.mark.skip(reason="Requires unimplemented milestone/config features")
 
 
 def test_init_with_custom_template(cli_runner):

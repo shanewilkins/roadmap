@@ -4,13 +4,8 @@ from click.testing import CliRunner
 from roadmap.adapters.cli import main
 
 pytestmark = pytest.mark.skip(
-    reason="CLI command integration tests - complex Click mocking"
+    reason="CLI help test incompatibility with Click.testing - exit codes need review"
 )
-
-
-@pytest.fixture
-def cli_runner():
-    return CliRunner()
 
 
 @pytest.mark.parametrize(

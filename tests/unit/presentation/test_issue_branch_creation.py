@@ -1,15 +1,15 @@
-import pytest
-
 from roadmap.adapters.cli import main
-
-pytestmark = pytest.mark.skip(
-    reason="CLI command integration tests - complex Click mocking"
-)
 
 
 def test_create_issue_with_git_branch_flag(cli_runner):
     runner = cli_runner
     with runner.isolated_filesystem():
+        # Initialize roadmap first
+        init_result = runner.invoke(
+            main, ["init", "-y", "--skip-github", "--skip-project"]
+        )
+        assert init_result.exit_code == 0
+
         # TODO: implement test scaffolding for branch creation; this will be fleshed out
         # once the git integration helpers are finalized. For now, just ensure CLI runs.
         result = runner.invoke(

@@ -7,7 +7,7 @@ import yaml
 from roadmap.adapters.cli import main
 
 pytestmark = pytest.mark.skip(
-    reason="CLI command integration tests - complex Click mocking"
+    reason="Requires mocking updates for refactored git integration module structure"
 )
 
 

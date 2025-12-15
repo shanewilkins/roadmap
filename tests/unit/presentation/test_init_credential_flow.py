@@ -5,7 +5,7 @@ import pytest
 from roadmap.adapters.cli import main
 
 pytestmark = pytest.mark.skip(
-    reason="CLI command integration tests - complex Click mocking"
+    reason="Requires mocking updates for refactored module structure - patches reference old paths (roadmap.cli.core)"
 )
 
 
