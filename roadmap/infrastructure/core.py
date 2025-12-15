@@ -149,6 +149,10 @@ class RoadmapCore:
         """Initialize a new roadmap in the current directory."""
         self._init_manager.initialize()
 
+    def _update_gitignore(self) -> None:
+        """Update .gitignore to exclude roadmap local data from version control."""
+        self._init_manager._update_gitignore()
+
     def _sync_with_progress(self, message: str) -> dict | None:
         """Run database sync with progress display.
 
@@ -298,6 +302,27 @@ class RoadmapCore:
 
         with open(self.config_file) as f:
             config_data = yaml.safe_load(f) or {}
+
+        # Ensure all expected config sections exist
+        if "milestones" not in config_data:
+            config_data["milestones"] = {
+                "auto_sequence": True,
+                "version_format": "v{major}.{minor}.{patch}",
+            }
+
+        if "sync" not in config_data:
+            config_data["sync"] = {
+                "github_enabled": False,
+                "auto_sync": False,
+                "sync_interval_seconds": 300,
+            }
+
+        if "display" not in config_data:
+            config_data["display"] = {
+                "theme": "default",
+                "show_progress": True,
+                "compact_output": False,
+            }
 
         class ConfigObject:
             def __init__(self, data):

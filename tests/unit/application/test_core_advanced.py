@@ -341,9 +341,6 @@ class TestRoadmapCoreGitHubIntegration:
         assert isinstance(team_members, list)
 
 
-@pytest.mark.skip(
-    reason="Config attributes (milestones, sync, display) not yet implemented"
-)
 class TestRoadmapCoreTemplatesAndConfig:
     """Test template creation and configuration management."""
 

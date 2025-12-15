@@ -380,9 +380,6 @@ class TestRoadmapCoreGitHubIntegration:
             assert "bob@example.com" in team_members
 
 
-@pytest.mark.skip(
-    reason="Config attributes (milestones, sync, display) not yet implemented"
-)
 class TestRoadmapCoreTemplatesAndConfig:
     """Test template creation and configuration management."""
 
