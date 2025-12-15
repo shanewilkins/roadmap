@@ -11,6 +11,7 @@ from roadmap.adapters.github.handlers.base import (
     BaseGitHubHandler,
     GitHubAPIError,
 )
+from roadmap.adapters.github.handlers.labels import LabelHandler
 from roadmap.infrastructure.security.credentials import get_credential_manager
 
 
@@ -71,6 +72,9 @@ class GitHubClient(BaseGitHubHandler):
             }
         )
 
+        # Initialize label handler
+        self._label_handler = LabelHandler(self.session, owner, repo)
+
     def _get_token_secure(self) -> str | None:
         """Get token from secure sources (environment variable or credential manager)."""
         # First try environment variable
@@ -101,3 +105,75 @@ class GitHubClient(BaseGitHubHandler):
         self._check_repository()
         response = self._make_request("GET", f"/repos/{self.owner}/{self.repo}")
         return response.json()
+
+    def status_to_labels(self, status: str) -> list[str]:
+        """Convert issue status to GitHub labels.
+
+        Args:
+            status: The issue status (e.g., 'todo', 'in-progress', 'blocked', 'review', 'closed')
+
+        Returns:
+            List of GitHub labels corresponding to the status
+        """
+        status_label_map = {
+            "todo": ["status:todo"],
+            "in-progress": ["status:in-progress"],
+            "blocked": ["status:blocked"],
+            "review": ["status:review"],
+            "closed": ["status:closed"],
+        }
+        return status_label_map.get(status, [])
+
+    def labels_to_status(self, labels: list[str]) -> str | None:
+        """Convert GitHub labels to issue status.
+
+        Args:
+            labels: List of GitHub labels
+
+        Returns:
+            The corresponding issue status, or None if no status label found
+        """
+        label_status_map = {
+            "status:todo": "todo",
+            "status:in-progress": "in-progress",
+            "status:blocked": "blocked",
+            "status:review": "review",
+            "status:closed": "closed",
+        }
+        for label in labels:
+            if label in label_status_map:
+                return label_status_map[label]
+        return None
+
+    def get_labels(self) -> list[dict[str, Any]]:
+        """Get repository labels.
+
+        Returns:
+            List of label dictionaries
+        """
+        self._label_handler.owner = self.owner
+        self._label_handler.repo = self.repo
+        return self._label_handler.get_labels()
+
+    def create_label(
+        self, name: str, color: str, description: str | None = None
+    ) -> dict[str, Any]:
+        """Create a new label.
+
+        Args:
+            name: Label name
+            color: Label color (hex code)
+            description: Label description
+
+        Returns:
+            Created label dictionary
+        """
+        self._label_handler.owner = self.owner
+        self._label_handler.repo = self.repo
+        return self._label_handler.create_label(name, color, description)
+
+    def setup_default_labels(self) -> None:
+        """Setup default labels for priority and status."""
+        self._label_handler.owner = self.owner
+        self._label_handler.repo = self.repo
+        self._label_handler.setup_default_labels()
