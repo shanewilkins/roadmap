@@ -68,7 +68,7 @@ def get_console() -> Console:
     output is not going to a terminal.
 
     Special handling for Click's CliRunner: detects when running under
-    CliRunner and uses sys.stdout which Click will redirect to capture output.
+    CliRunner and uses dynamic sys.stdout wrapper so Click can redirect output.
     """
     import sys
 
@@ -82,8 +82,9 @@ def get_console() -> Console:
     )
 
     if in_pytest:
-        # In testing, use sys.stdout directly so Click's test runner can capture it
-        # Use sys.stdout directly (not a bound reference) so it gets the current value
-        return Console(file=sys.stdout, force_terminal=False, no_color=True, width=80)
+        # In testing, don't bind to sys.stdout at creation time
+        # Instead use sys.__stdout__ which is the original stdout
+        # Click's CliRunner will capture from the real stdout stream
+        return Console(force_terminal=False, no_color=True, width=80)
     else:
         return Console()

@@ -278,7 +278,7 @@ status: active
 """
             )
 
-            result = runner.invoke(init, ["--yes", "--skip-github", "--skip-project"])
+            result = runner.invoke(init, ["--yes", "--skip-github"])
 
             assert result.exit_code == 0
             # Summary should include project and status
@@ -353,7 +353,7 @@ Alice's project
             )
 
             # Bob runs init
-            result = runner.invoke(init, ["--yes", "--skip-github", "--skip-project"])
+            result = runner.invoke(init, ["--yes", "--skip-github"])
 
             assert result.exit_code == 0
             # Bob's flow should show joining

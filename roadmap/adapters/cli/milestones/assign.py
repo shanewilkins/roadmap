@@ -41,6 +41,7 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
             )
             for line in lines:
                 console.print(line, style="bold red")
+            raise click.Abort()
     except Exception as e:
         handle_cli_error(
             error=e,

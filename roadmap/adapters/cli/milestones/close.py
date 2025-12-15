@@ -118,7 +118,7 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
             )
             for line in lines:
                 console.print(line, style="bold red")
-            return
+            raise click.Abort()
 
         # Get all issues in this milestone
         all_issues = core.issues.list(milestone=milestone_name)

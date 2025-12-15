@@ -346,11 +346,11 @@ class TestEndToEndWorkflows:
 
         # Test operations without initialization
         result = runner.invoke(main, ["issue", "create", "Test"])
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         assert "Roadmap not initialized" in result.output
 
         result = runner.invoke(main, ["status"])
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         assert "Roadmap not initialized" in result.output
 
         # Initialize and test invalid operations
