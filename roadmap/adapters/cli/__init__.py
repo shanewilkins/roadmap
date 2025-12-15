@@ -9,8 +9,11 @@ import os
 
 import click
 
+from roadmap.adapters.cli.exception_handler import handle_cli_exception
+
 # Initialize console for rich output
 from roadmap.common.console import get_console
+from roadmap.common.errors.exceptions import RoadmapException
 
 # Import core classes for backward compatibility with tests
 from roadmap.infrastructure.core import RoadmapCore
@@ -22,6 +25,35 @@ console = get_console()
 
 # Flag to track if commands have been registered to avoid duplicate registration
 _commands_registered = False
+
+
+class RoadmapClickGroup(click.Group):
+    """Custom Click Group that handles RoadmapException instances."""
+
+    def invoke(self, ctx: click.Context) -> click.Context | None:
+        """Invoke the group with centralized exception handling."""
+        try:
+            # Allow Click to handle help and version flags normally
+            result = super().invoke(ctx)
+            return result
+        except RoadmapException as exc:
+            # Handle roadmap exceptions with our formatter
+            handle_cli_exception(ctx, exc, show_traceback=False)
+        except click.exceptions.Exit:
+            # Let Click Exit exceptions propagate (--help, --version)
+            raise
+        except click.ClickException:
+            # Let Click exceptions propagate
+            raise
+        except click.Abort:
+            # Let Click Abort propagate
+            raise
+        except SystemExit:
+            # Let SystemExit propagate (used by Click for --help, --version, etc.)
+            raise
+        except Exception as exc:
+            # Handle unexpected exceptions
+            handle_cli_exception(ctx, exc, show_traceback=False)
 
 
 # Import utility functions that tests need
@@ -37,7 +69,7 @@ def _get_current_user():
         return os.environ.get("USER") or os.environ.get("USERNAME")
 
     try:
-        repo = gitpython.Repo(search_parent_directories=True)
+        repo = gitpython.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
         try:
             name = repo.config_reader().get_value("user", "name")
             return name
@@ -50,7 +82,7 @@ def _get_current_user():
     return os.environ.get("USER") or os.environ.get("USERNAME")
 
 
-@click.group()
+@click.group(cls=RoadmapClickGroup)
 @click.version_option()
 @click.pass_context
 def main(ctx: click.Context):
@@ -64,7 +96,11 @@ def main(ctx: click.Context):
 
     # Initialize core with default roadmap directory (skip for init command)
     if ctx.invoked_subcommand != "init":
-        ctx.obj["core"] = RoadmapCore()
+        try:
+            ctx.obj["core"] = RoadmapCore()
+        except Exception as exc:
+            # Handle exceptions during core initialization
+            handle_cli_exception(ctx, exc, show_traceback=False)
 
     # If no subcommand was provided, show help
     if ctx.invoked_subcommand is None:

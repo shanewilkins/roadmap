@@ -8,7 +8,7 @@ import click
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import ValidationError
-from roadmap.infrastructure.logging import log_audit_event, log_validation_error
+from roadmap.infrastructure.logging import log_audit_event
 
 
 class BaseUpdate(ABC):
@@ -113,22 +113,13 @@ class BaseUpdate(ABC):
 
             return updated_entity
 
-        except ValidationError as e:
-            # Log validation error with context
-            log_validation_error(
-                error=e,
-                entity_type=self.entity_type.value,
-                field_name=None,
-                proposed_value=None,
-            )
-            self.console.print(f"❌ {e.user_message}", style="red")
-            raise click.ClickException(e.user_message) from e
-        except Exception as e:
-            self.console.print(
-                f"❌ Failed to update {self.entity_type.value}: {str(e)}",
-                style="red",
-            )
-            raise click.ClickException(str(e)) from e
+        except ValidationError:
+            # ValidationError will be handled by centralized CLI exception handler
+            # which formats it and directs to stderr
+            raise
+        except Exception:
+            # Other exceptions will also be handled by centralized handler
+            raise
 
     def _get_entity(self, entity_id: str) -> Any | None:
         """Get entity by ID.
