@@ -43,53 +43,69 @@ def isolated_roadmap(cli_runner):
 
 
 @pytest.fixture
-def roadmap_with_issues_and_milestones(isolated_roadmap):
+def roadmap_with_issues_and_milestones(cli_runner):
     """Create roadmap with sample issues and milestones."""
-    cli_runner, temp_dir = isolated_roadmap
+    with cli_runner.isolated_filesystem():
+        temp_dir = Path.cwd()
 
-    # Create a milestone
-    result = cli_runner.invoke(
-        main,
-        ["milestone", "create", "v1.0", "--description", "First release"],
-    )
-    assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
-
-    # Create issues
-    issues = []
-    for i, (title, status) in enumerate(
-        [
-            ("Fix bug in parser", "todo"),
-            ("Add new feature", "in-progress"),
-            ("Update docs", "closed"),
-        ]
-    ):
+        # Initialize a roadmap
         result = cli_runner.invoke(
             main,
             [
-                "issue",
-                "create",
-                title,
-                "--priority",
-                "high" if i == 0 else "medium",
-                "--type",
-                "bug" if i == 0 else "feature",
+                "init",
+                "--project-name",
+                "Test Project",
+                "--non-interactive",
+                "--skip-github",
             ],
         )
-        assert result.exit_code == 0, f"Issue creation failed: {result.output}"
-        match = re.search(r"ID:\s+([^\s]+)", result.output)
-        assert match is not None, f"Could not find issue ID in output: {result.output}"
-        issue_id = match.group(1)
-        issues.append({"id": issue_id, "title": title, "status": status})
+        assert result.exit_code == 0, f"Init failed: {result.output}"
 
-        # Update status for done issue
-        if status == "closed":
+        # Create a milestone
+        result = cli_runner.invoke(
+            main,
+            ["milestone", "create", "v1.0", "--description", "First release"],
+        )
+        assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
+
+        # Create issues
+        issues = []
+        for i, (title, status) in enumerate(
+            [
+                ("Fix bug in parser", "todo"),
+                ("Add new feature", "in-progress"),
+                ("Update docs", "closed"),
+            ]
+        ):
             result = cli_runner.invoke(
                 main,
-                ["issue", "update", issue_id, "--status", "closed"],
+                [
+                    "issue",
+                    "create",
+                    title,
+                    "--priority",
+                    "high" if i == 0 else "medium",
+                    "--type",
+                    "bug" if i == 0 else "feature",
+                ],
             )
-            assert result.exit_code == 0
+            assert result.exit_code == 0, f"Issue creation failed: {result.output}"
+            match = re.search(r"ID:\s+([^\s]+)", result.output)
+            assert (
+                match is not None
+            ), f"Could not find issue ID in output: {result.output}"
+            issue_id = match.group(1)
+            issues.append({"id": issue_id, "title": title, "status": status})
 
-    yield cli_runner, temp_dir, issues
+            # Update status for done issue
+            if status == "closed":
+                result = cli_runner.invoke(
+                    main,
+                    ["issue", "update", issue_id, "--status", "closed"],
+                )
+                assert result.exit_code == 0
+
+        yield cli_runner, temp_dir, issues
 
 
 class TestIssueArchiveRestore:

@@ -44,47 +44,63 @@ def isolated_roadmap(cli_runner):
         assert result.exit_code == 0, f"Init failed: {result.output}"
 
         yield cli_runner, temp_dir
+        # Cleanup happens here when context exits
 
 
 @pytest.fixture
-def isolated_roadmap_with_issues(isolated_roadmap):
+def isolated_roadmap_with_issues(cli_runner):
     """Create an isolated roadmap with sample issues.
 
     Yields:
         tuple: (cli_runner, temp_dir_path, created_issue_ids)
     """
-    cli_runner, temp_dir = isolated_roadmap
+    with cli_runner.isolated_filesystem():
+        temp_dir = Path.cwd()
 
-    # Create a few test issues
-    issues = [
-        {"title": "Fix bug in parser", "type": "bug", "priority": "high"},
-        {"title": "Add new feature", "type": "feature", "priority": "medium"},
-        {"title": "Update documentation", "type": "other", "priority": "low"},
-    ]
-
-    created_ids = []
-    for issue in issues:
+        # Initialize a roadmap in this directory
         result = cli_runner.invoke(
             main,
             [
-                "issue",
-                "create",
-                issue["title"],  # TITLE is positional argument
-                "--type",
-                issue["type"],
-                "--priority",
-                issue["priority"],
+                "init",
+                "--project-name",
+                "Test Project",
+                "--non-interactive",
+                "--skip-github",
             ],
         )
-        assert result.exit_code == 0, f"Issue creation failed: {result.output}"
-        # Parse the issue ID from the output (format: "ID: <id>")
-        import re
+        assert result.exit_code == 0, f"Init failed: {result.output}"
 
-        match = re.search(r"ID:\s+([^\s]+)", result.output)
-        if match:
-            created_ids.append(match.group(1))
+        # Create a few test issues
+        issues = [
+            {"title": "Fix bug in parser", "type": "bug", "priority": "high"},
+            {"title": "Add new feature", "type": "feature", "priority": "medium"},
+            {"title": "Update documentation", "type": "other", "priority": "low"},
+        ]
 
-    yield cli_runner, temp_dir, created_ids
+        created_ids = []
+        for issue in issues:
+            result = cli_runner.invoke(
+                main,
+                [
+                    "issue",
+                    "create",
+                    issue["title"],  # TITLE is positional argument
+                    "--type",
+                    issue["type"],
+                    "--priority",
+                    issue["priority"],
+                ],
+            )
+            if result.exit_code == 0:
+                # Parse the issue ID from the output (format: "ID: <id>")
+                import re
+
+                match = re.search(r"ID:\s+([^\s]+)", result.output)
+                if match:
+                    created_ids.append(match.group(1))
+
+        yield cli_runner, temp_dir, created_ids
+        # Cleanup happens here when context exits
 
 
 class TestCLIInit:
