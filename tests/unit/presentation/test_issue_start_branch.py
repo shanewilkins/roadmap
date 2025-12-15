@@ -18,9 +18,9 @@ def test_start_issue_creates_branch(cli_runner):
             def is_git_repository(self):
                 return True
 
-            def create_branch_for_issue(self, issue, checkout=True):
+            def create_branch_for_issue(self, issue, checkout=True, force=False):
                 assert issue == fake_issue
-                return True
+                return (True, "feature/abc12345-test-issue")
 
             def suggest_branch_name(self, issue):
                 return "feature/abc12345-test-issue"
@@ -32,7 +32,7 @@ def test_start_issue_creates_branch(cli_runner):
         with patch("roadmap.cli.RoadmapCore") as MockCoreMain:
             core_inst = MockCoreMain.return_value
             core_inst.is_initialized.return_value = True
-            core_inst.get_issue.return_value = fake_issue
+            core_inst.issues.get.return_value = fake_issue
             core_inst.update_issue.return_value = True
             core_inst.git = dummy_git
 
