@@ -1,5 +1,3 @@
-import pytest
-
 from roadmap.adapters.cli import main
 
 

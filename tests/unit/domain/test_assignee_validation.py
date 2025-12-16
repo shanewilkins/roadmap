@@ -79,7 +79,9 @@ class TestAssigneeValidation:
         core = RoadmapCore(Path(initialized_roadmap))
 
         # Mock no GitHub configuration (local-only usage)
-        with patch.object(core.validation, "get_github_config", return_value=(None, None, None)):
+        with patch.object(
+            core.validation, "get_github_config", return_value=(None, None, None)
+        ):
             # Should accept any assignee without validation
             is_valid, error = core.team.validate_assignee("localuser")
             assert is_valid

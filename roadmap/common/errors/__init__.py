@@ -9,6 +9,7 @@ This package provides organized error classes, categorized by concern:
 - error_git: Git operation errors and configuration errors
 - error_security: Security and parsing errors
 - error_handler: Error handling utilities
+- error_standards: Standardized error handling decorators and context managers (NEW)
 """
 
 # Legacy error hierarchy (backwards compatibility)
@@ -38,6 +39,16 @@ from roadmap.common.errors.error_security import (
     ParseError,
     PathValidationError,
     SecurityError,
+)
+
+# Standardized error handling decorators and utilities
+from roadmap.common.errors.error_standards import (
+    ErrorContext,
+    OperationType,
+    RecoveryAction,
+    log_operation,
+    safe_operation,
+    with_error_handling,
 )
 from roadmap.common.errors.error_validation import (
     IssueNotFoundError,
@@ -122,4 +133,11 @@ __all__ = [
     "GitHubError",
     "GitConfigError",
     "NoGitRepositoryError",
+    # Standardized error handling decorators and utilities
+    "safe_operation",
+    "log_operation",
+    "with_error_handling",
+    "ErrorContext",
+    "OperationType",
+    "RecoveryAction",
 ]

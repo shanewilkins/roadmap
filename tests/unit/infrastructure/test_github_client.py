@@ -1,13 +1,11 @@
 """Tests for GitHub API client."""
 
-from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest
 import requests
 
 from roadmap.adapters.github.github import GitHubAPIError, GitHubClient
-from roadmap.core.domain import Priority, Status
 
 pytestmark = pytest.mark.unit
 
@@ -248,7 +246,6 @@ class TestGitHubClientErrorHandling:
         with pytest.raises(GitHubAPIError, match="Repository not set"):
             client._check_repository()
 
-
     # Handler error tests moved to handler-specific test files
-    # (create_issue_with_api_error, update_issue_with_api_error, 
+    # (create_issue_with_api_error, update_issue_with_api_error,
     #  delete_label_not_found, update_label_not_found)

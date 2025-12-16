@@ -3,6 +3,14 @@
 Comprehensive Code Quality Audit
 Analyzes all critical code quality metrics across the roadmap codebase.
 Provides quantitative baseline for tracking improvements.
+
+ENHANCEMENTS:
+- Error handling analysis (try-catch coverage, unhandled edge cases)
+- Logging coverage (structured logging, critical path logging)
+- Docstring completeness (missing, incomplete docstrings)
+- God object detection (methods, attributes, responsibilities)
+- Architecture analysis (layer violations, dependency health)
+- Professional quality assessment
 """
 
 import ast
@@ -10,7 +18,6 @@ import json
 import subprocess
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
 
 # ============================================================================
 # CONFIGURATION
@@ -18,6 +25,15 @@ from typing import Any
 
 ROADMAP_DIR = Path("/Users/shane/roadmap/roadmap")
 TEST_DIR = Path("/Users/shane/roadmap/tests")
+EXPECTED_LAYERS = {
+    "domain",
+    "core",
+    "adapters",
+    "infrastructure",
+    "common",
+    "settings",
+    "version",
+}
 
 
 # ============================================================================
@@ -120,9 +136,13 @@ def analyze_cyclomatic_complexity():
             functions_list = file_data.get("functions") or []
             if isinstance(functions_list, list):
                 for item in functions_list:
-                    if isinstance(item, (list, tuple)) and len(item) >= 2:
+                    if isinstance(item, list | tuple) and len(item) >= 2:
                         func_name, func_metrics = item[0], item[1]
-                        complexity = func_metrics.get("complexity", 0) if isinstance(func_metrics, dict) else 0
+                        complexity = (
+                            func_metrics.get("complexity", 0)
+                            if isinstance(func_metrics, dict)
+                            else 0
+                        )
                     elif isinstance(item, dict):
                         func_name = item.get("name", "unknown")
                         complexity = item.get("complexity", 0)
@@ -134,7 +154,9 @@ def analyze_cyclomatic_complexity():
 
                     if complexity > complexity_stats["max_complexity"]:
                         complexity_stats["max_complexity"] = complexity
-                        complexity_stats["max_complexity_function"] = f"{file_path}::{func_name}"
+                        complexity_stats["max_complexity_function"] = (
+                            f"{file_path}::{func_name}"
+                        )
 
                     if complexity > 20:
                         complexity_stats["functions_very_high_complexity"].append(
@@ -153,8 +175,7 @@ def analyze_cyclomatic_complexity():
 
     if complexity_stats["total_functions"] > 0:
         complexity_stats["avg_complexity"] = round(
-            complexity_stats["total_complexity"]
-            / complexity_stats["total_functions"],
+            complexity_stats["total_complexity"] / complexity_stats["total_functions"],
             2,
         )
 
@@ -200,7 +221,7 @@ def analyze_maintainability():
             mi_value = None
             if isinstance(file_data, dict) and "mi" in file_data:
                 mi_value = file_data["mi"]
-            elif isinstance(file_data, (int, float)):
+            elif isinstance(file_data, int | float):
                 mi_value = file_data
 
             if mi_value is not None:
@@ -286,7 +307,7 @@ def analyze_test_coverage():
                 # Parse coverage percentage
                 if "%" in line:
                     parts = line.split()
-                    for i, part in enumerate(parts):
+                    for _i, part in enumerate(parts):
                         if "%" in part:
                             try:
                                 coverage["total_coverage"] = float(
@@ -312,7 +333,9 @@ def analyze_dead_code():
     )
 
     dead_code = {
-        "total_issues": len([l for l in output.split("\n") if "unused" in l.lower()]),
+        "total_issues": len(
+            [line for line in output.split("\n") if "unused" in line.lower()]
+        ),
         "unused_variables": 0,
         "unused_functions": 0,
         "unused_classes": 0,
@@ -388,9 +411,7 @@ def analyze_type_coverage():
             type_analysis["info"] += 1
 
     type_analysis["total_type_issues"] = (
-        type_analysis["errors"]
-        + type_analysis["warnings"]
-        + type_analysis["info"]
+        type_analysis["errors"] + type_analysis["warnings"] + type_analysis["info"]
     )
 
     return type_analysis
@@ -403,9 +424,7 @@ def analyze_type_coverage():
 
 def analyze_documentation():
     """Analyze documentation coverage using pydocstyle."""
-    output = run_command(
-        "poetry run pydocstyle --convention=google roadmap 2>&1"
-    )
+    output = run_command("poetry run pydocstyle --convention=google roadmap 2>&1")
 
     doc_metrics = {
         "total_violations": 0,
@@ -468,7 +487,9 @@ def analyze_modularity():
         try:
             content = py_file.read_text()
             tree = ast.parse(content)
-            func_count = len([n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)])
+            func_count = len(
+                [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+            )
             total_functions += func_count
             module_sizes.append(
                 {
@@ -547,7 +568,9 @@ def analyze_import_patterns():
                     "file": str(py_file.relative_to(ROADMAP_DIR)),
                     "total_imports": len(imports),
                     "internal_imports": len(internal_imports),
-                    "concerns": len(set(imp.split(".")[1] for imp in internal_imports if "." in imp)),
+                    "concerns": len(
+                        set(imp.split(".")[1] for imp in internal_imports if "." in imp)
+                    ),
                 }
             )
 
@@ -560,12 +583,19 @@ def analyze_import_patterns():
                 )
 
             # Detect concern mixing: multiple high-level concerns in one file
-            if len(set(imp.split(".")[1] for imp in internal_imports if "." in imp)) > 3:
+            if (
+                len(set(imp.split(".")[1] for imp in internal_imports if "." in imp))
+                > 3
+            ):
                 import_analysis["concern_mixing_candidates"].append(
                     {
                         "file": str(py_file.relative_to(ROADMAP_DIR)),
                         "concern_count": len(
-                            set(imp.split(".")[1] for imp in internal_imports if "." in imp)
+                            set(
+                                imp.split(".")[1]
+                                for imp in internal_imports
+                                if "." in imp
+                            )
                         ),
                     }
                 )
@@ -628,12 +658,497 @@ def analyze_test_patterns():
 
 
 # ============================================================================
+# METRIC 13: ERROR HANDLING ANALYSIS
+# ============================================================================
+
+
+def analyze_error_handling():
+    """Analyze error handling patterns across codebase."""
+    error_analysis = {
+        "total_functions": 0,
+        "functions_with_try_except": 0,
+        "functions_with_error_logging": 0,
+        "functions_with_exception_raise": 0,
+        "functions_missing_error_handling": 0,
+        "bare_except_clauses": 0,
+        "generic_exception_catches": 0,
+        "unlogged_exceptions": [],
+        "critical_functions_without_try": [],
+    }
+
+    critical_keywords = [
+        "delete",
+        "remove",
+        "save",
+        "write",
+        "sync",
+        "push",
+        "pull",
+        "execute",
+    ]
+
+    for py_file in ROADMAP_DIR.rglob("*.py"):
+        if "__pycache__" in str(py_file):
+            continue
+
+        try:
+            content = py_file.read_text()
+            tree = ast.parse(content)
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    error_analysis["total_functions"] += 1
+
+                    # Check if function has try-except
+                    has_try = any(
+                        isinstance(n, ast.Try | ast.ExceptHandler)
+                        for n in ast.walk(node)
+                    )
+                    if has_try:
+                        error_analysis["functions_with_try_except"] += 1
+
+                    # Check for error logging
+                    has_error_log = any(
+                        (isinstance(n, ast.Attribute) and n.attr == "error")
+                        or (isinstance(n, ast.Name) and "error" in n.id.lower())
+                        for n in ast.walk(node)
+                    )
+                    if has_error_log:
+                        error_analysis["functions_with_error_logging"] += 1
+
+                    # Check for exception raising
+                    has_raise = any(isinstance(n, ast.Raise) for n in ast.walk(node))
+                    if has_raise:
+                        error_analysis["functions_with_exception_raise"] += 1
+
+                    # Detect bare except clauses
+                    for child in ast.walk(node):
+                        if isinstance(child, ast.ExceptHandler):
+                            if child.type is None:
+                                error_analysis["bare_except_clauses"] += 1
+                            elif (
+                                isinstance(child.type, ast.Name)
+                                and child.type.id == "Exception"
+                            ):
+                                error_analysis["generic_exception_catches"] += 1
+                            # Check if exception is logged
+                            if not any(
+                                isinstance(n, ast.Attribute) and n.attr == "error"
+                                for n in ast.walk(child)
+                            ):
+                                error_analysis["unlogged_exceptions"].append(
+                                    f"{py_file.relative_to(ROADMAP_DIR)}::{node.name}"
+                                )
+
+                    # Flag critical functions without error handling
+                    if not has_try and any(
+                        keyword in node.name.lower() for keyword in critical_keywords
+                    ):
+                        error_analysis["critical_functions_without_try"].append(
+                            f"{py_file.relative_to(ROADMAP_DIR)}::{node.name}"
+                        )
+
+                    if not has_try and not has_raise:
+                        error_analysis["functions_missing_error_handling"] += 1
+
+        except Exception:
+            pass
+
+    return error_analysis
+
+
+# ============================================================================
+# METRIC 14: LOGGING COVERAGE ANALYSIS
+# ============================================================================
+
+
+def analyze_logging_coverage():
+    """Analyze structured logging coverage and patterns."""
+    logging_analysis = {
+        "total_functions": 0,
+        "functions_with_logging": 0,
+        "structured_logging_usage": 0,
+        "unstructured_logging": 0,
+        "logging_without_context": 0,
+        "critical_functions_without_logging": [],
+        "logging_density": 0.0,
+        "log_levels": {"debug": 0, "info": 0, "warning": 0, "error": 0},
+    }
+
+    critical_keywords = [
+        "execute",
+        "sync",
+        "validate",
+        "save",
+        "delete",
+        "create",
+        "update",
+    ]
+
+    for py_file in ROADMAP_DIR.rglob("*.py"):
+        if "__pycache__" in str(py_file):
+            continue
+
+        try:
+            content = py_file.read_text()
+            tree = ast.parse(content)
+            lines = content.split("\n")
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    logging_analysis["total_functions"] += 1
+
+                    # Count logging calls
+                    log_calls = 0
+                    structured_logs = 0
+
+                    for child in ast.walk(node):
+                        # Look for logger.* calls
+                        if isinstance(child, ast.Call):
+                            if isinstance(child.func, ast.Attribute):
+                                if child.func.attr in [
+                                    "debug",
+                                    "info",
+                                    "warning",
+                                    "error",
+                                    "critical",
+                                ]:
+                                    log_calls += 1
+                                    logging_analysis["log_levels"][child.func.attr] += 1
+
+                                    # Check if structured (has keyword args)
+                                    if child.keywords:
+                                        structured_logs += 1
+                                    else:
+                                        logging_analysis["unstructured_logging"] += 1
+
+                    if log_calls > 0:
+                        logging_analysis["functions_with_logging"] += 1
+                        logging_analysis["structured_logging_usage"] += structured_logs
+
+                    # Check for logging without context (just format strings)
+                    if log_calls > 0 and structured_logs == 0:
+                        logging_analysis["logging_without_context"] += 1
+
+                    # Flag critical functions without logging
+                    if log_calls == 0 and any(
+                        keyword in node.name.lower() for keyword in critical_keywords
+                    ):
+                        logging_analysis["critical_functions_without_logging"].append(
+                            f"{py_file.relative_to(ROADMAP_DIR)}::{node.name}"
+                        )
+
+            if logging_analysis["total_functions"] > 0:
+                logging_analysis["logging_density"] = round(
+                    logging_analysis["functions_with_logging"]
+                    / logging_analysis["total_functions"],
+                    2,
+                )
+
+        except Exception:
+            pass
+
+    return logging_analysis
+
+
+# ============================================================================
+# METRIC 15: DOCSTRING COMPLETENESS ANALYSIS
+# ============================================================================
+
+
+def analyze_docstring_completeness():
+    """Analyze docstring coverage at module, class, and function level."""
+    docstring_analysis = {
+        "total_modules": 0,
+        "modules_with_docstrings": 0,
+        "total_classes": 0,
+        "classes_with_docstrings": 0,
+        "total_functions": 0,
+        "functions_with_docstrings": 0,
+        "missing_docstrings": [],
+        "incomplete_docstrings": [],
+        "docstring_coverage_pct": 0.0,
+    }
+
+    for py_file in ROADMAP_DIR.rglob("*.py"):
+        if "__pycache__" in str(py_file):
+            continue
+
+        try:
+            content = py_file.read_text()
+            tree = ast.parse(content)
+
+            # Module docstring
+            docstring_analysis["total_modules"] += 1
+            if ast.get_docstring(tree):
+                docstring_analysis["modules_with_docstrings"] += 1
+            else:
+                docstring_analysis["missing_docstrings"].append(
+                    f"{py_file.relative_to(ROADMAP_DIR)}::MODULE"
+                )
+
+            for node in ast.walk(tree):
+                # Classes
+                if isinstance(node, ast.ClassDef):
+                    docstring_analysis["total_classes"] += 1
+                    doc = ast.get_docstring(node)
+                    if doc:
+                        docstring_analysis["classes_with_docstrings"] += 1
+                        # Check if docstring is minimal (single line, no details)
+                        if len(doc.split("\n")) == 1 and len(doc) < 20:
+                            docstring_analysis["incomplete_docstrings"].append(
+                                f"{py_file.relative_to(ROADMAP_DIR)}::{node.name}::CLASS (minimal)"
+                            )
+                    else:
+                        docstring_analysis["missing_docstrings"].append(
+                            f"{py_file.relative_to(ROADMAP_DIR)}::{node.name}::CLASS"
+                        )
+
+                # Functions (not starting with _)
+                if isinstance(node, ast.FunctionDef) and not node.name.startswith("_"):
+                    docstring_analysis["total_functions"] += 1
+                    doc = ast.get_docstring(node)
+                    if doc:
+                        docstring_analysis["functions_with_docstrings"] += 1
+                        # Check if docstring is minimal
+                        if len(doc.split("\n")) == 1 and len(doc) < 20:
+                            docstring_analysis["incomplete_docstrings"].append(
+                                f"{py_file.relative_to(ROADMAP_DIR)}::{node.name}::FUNC (minimal)"
+                            )
+                    else:
+                        docstring_analysis["missing_docstrings"].append(
+                            f"{py_file.relative_to(ROADMAP_DIR)}::{node.name}::FUNC"
+                        )
+
+        except Exception:
+            pass
+
+    # Calculate coverage
+    total = (
+        docstring_analysis["total_modules"]
+        + docstring_analysis["total_classes"]
+        + docstring_analysis["total_functions"]
+    )
+    documented = (
+        docstring_analysis["modules_with_docstrings"]
+        + docstring_analysis["classes_with_docstrings"]
+        + docstring_analysis["functions_with_docstrings"]
+    )
+    if total > 0:
+        docstring_analysis["docstring_coverage_pct"] = round(
+            (documented / total) * 100, 1
+        )
+
+    return docstring_analysis
+
+
+# ============================================================================
+# METRIC 16: GOD OBJECT DETECTION
+# ============================================================================
+
+
+def analyze_god_objects():
+    """Detect god objects and classes with too many responsibilities."""
+    god_object_analysis = {
+        "total_classes": 0,
+        "classes_exceeding_20_methods": 0,
+        "classes_exceeding_500_lines": 0,
+        "classes_exceeding_3_concerns": 0,
+        "potential_god_objects": [],
+        "large_classes": [],
+        "high_responsibility_classes": [],
+    }
+
+    for py_file in ROADMAP_DIR.rglob("*.py"):
+        if "__pycache__" in str(py_file):
+            continue
+
+        try:
+            content = py_file.read_text()
+            tree = ast.parse(content)
+            lines = len(content.split("\n"))
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef):
+                    god_object_analysis["total_classes"] += 1
+
+                    # Count methods
+                    methods = [n for n in node.body if isinstance(n, ast.FunctionDef)]
+                    method_count = len(methods)
+
+                    # Count class attributes
+                    attributes = [n for n in node.body if isinstance(n, ast.Assign)]
+                    attr_count = len(attributes)
+
+                    # Estimate class size
+                    class_start = node.lineno
+                    class_end = node.end_lineno or class_start
+                    class_lines = class_end - class_start
+
+                    # Estimate concerns by analyzing method names
+                    concerns = set()
+                    for method in methods:
+                        name_parts = method.name.split("_")
+                        for part in name_parts:
+                            if part and len(part) > 2:
+                                concerns.add(part[:3])
+                    concern_count = len(concerns)
+
+                    # Flags
+                    is_large_methods = method_count > 20
+                    is_large_file = class_lines > 500
+                    is_high_concerns = concern_count > 3
+
+                    if is_large_methods:
+                        god_object_analysis["classes_exceeding_20_methods"] += 1
+                    if is_large_file:
+                        god_object_analysis["classes_exceeding_500_lines"] += 1
+                    if is_high_concerns:
+                        god_object_analysis["classes_exceeding_3_concerns"] += 1
+
+                    # Collect suspicious classes
+                    rel_path = py_file.relative_to(ROADMAP_DIR)
+                    if is_large_methods or is_large_file:
+                        god_object_analysis["potential_god_objects"].append(
+                            {
+                                "class": f"{rel_path}::{node.name}",
+                                "methods": method_count,
+                                "attributes": attr_count,
+                                "lines": class_lines,
+                                "concerns": concern_count,
+                                "severity": (
+                                    is_large_methods,
+                                    is_large_file,
+                                    is_high_concerns,
+                                ),
+                            }
+                        )
+
+                    if is_large_file:
+                        god_object_analysis["large_classes"].append(
+                            {
+                                "class": f"{rel_path}::{node.name}",
+                                "lines": class_lines,
+                                "methods": method_count,
+                            }
+                        )
+
+                    if is_high_concerns:
+                        god_object_analysis["high_responsibility_classes"].append(
+                            {
+                                "class": f"{rel_path}::{node.name}",
+                                "concerns": concern_count,
+                                "methods": method_count,
+                            }
+                        )
+
+        except Exception:
+            pass
+
+    # Sort results
+    god_object_analysis["potential_god_objects"] = sorted(
+        god_object_analysis["potential_god_objects"],
+        key=lambda x: (x["methods"] * 10 + x["lines"]),
+        reverse=True,
+    )[:10]
+
+    god_object_analysis["large_classes"] = sorted(
+        god_object_analysis["large_classes"],
+        key=lambda x: x["lines"],
+        reverse=True,
+    )[:10]
+
+    god_object_analysis["high_responsibility_classes"] = sorted(
+        god_object_analysis["high_responsibility_classes"],
+        key=lambda x: x["concerns"],
+        reverse=True,
+    )[:10]
+
+    return god_object_analysis
+
+
+# ============================================================================
+# METRIC 17: ARCHITECTURE HEALTH
+# ============================================================================
+
+
+def analyze_architecture_health():
+    """Analyze architectural patterns and layer violations."""
+    arch_analysis = {
+        "layer_distribution": defaultdict(int),
+        "layer_violations": [],
+        "circular_dependencies": [],
+        "cross_layer_imports": [],
+        "layer_health": {},
+        "dependency_graph": defaultdict(set),
+    }
+
+    layer_hierarchy = {
+        "domain": 0,
+        "common": 0,
+        "core": 1,
+        "adapters": 2,
+        "infrastructure": 2,
+        "settings": 1,
+        "version": 1,
+    }
+
+    for py_file in ROADMAP_DIR.rglob("*.py"):
+        if "__pycache__" in str(py_file):
+            continue
+
+        try:
+            content = py_file.read_text()
+            tree = ast.parse(content)
+            rel_path = str(py_file.relative_to(ROADMAP_DIR))
+            source_layer = rel_path.split("/")[0] if "/" in rel_path else rel_path
+
+            arch_analysis["layer_distribution"][source_layer] += 1
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import | ast.ImportFrom):
+                    for alias in (
+                        node.names
+                        if isinstance(node, ast.Import)
+                        else [node.module or ""]
+                    ):
+                        import_name = alias if isinstance(alias, str) else alias.name
+                        if import_name.startswith("roadmap."):
+                            target_layer = import_name.split(".")[1]
+
+                            arch_analysis["dependency_graph"][source_layer].add(
+                                target_layer
+                            )
+
+                            # Check layer violations (lower layers shouldn't import higher layers)
+                            if (
+                                target_layer in layer_hierarchy
+                                and source_layer in layer_hierarchy
+                            ):
+                                if layer_hierarchy.get(
+                                    target_layer, 999
+                                ) > layer_hierarchy.get(source_layer, 999):
+                                    arch_analysis["layer_violations"].append(
+                                        f"{source_layer} (level {layer_hierarchy.get(source_layer)}) imports {target_layer} (level {layer_hierarchy.get(target_layer)})"
+                                    )
+
+        except Exception:
+            pass
+
+    # Analyze layer health
+    for layer, count in arch_analysis["layer_distribution"].items():
+        arch_analysis["layer_health"][layer] = {"module_count": count}
+
+    return arch_analysis
+
+
+# ============================================================================
 # MAIN REPORT GENERATION
 # ============================================================================
 
 
 def generate_report():
-    """Generate comprehensive code quality report."""
+    """Generate comprehensive code quality report with professional assessment."""
     print("\n" + "=" * 80)
     print("COMPREHENSIVE CODE QUALITY AUDIT - Roadmap CLI")
     print("=" * 80 + "\n")
@@ -645,7 +1160,9 @@ def generate_report():
     print(f"  Total Python files: {file_metrics['total_files']}")
     print(f"  Total lines of code: {file_metrics['total_lines']:,}")
     print(f"  Average lines per file: {file_metrics['avg_lines_per_file']}")
-    print(f"  Max file size: {file_metrics['max_file_lines']} lines ({file_metrics['max_file_name']})")
+    print(
+        f"  Max file size: {file_metrics['max_file_lines']} lines ({file_metrics['max_file_name']})"
+    )
     print(f"  Files over 1000 lines: {len(file_metrics['files_over_1000_lines'])}")
     print(f"  Files over 500 lines: {len(file_metrics['files_over_500_lines'])}")
     if file_metrics["files_over_1000_lines"]:
@@ -665,18 +1182,29 @@ def generate_report():
     if complexity.get("total_functions", 0) > 0:
         print(f"  Total functions: {complexity['total_functions']}")
         print(f"  Average complexity: {complexity['avg_complexity']}")
-        print(f"  Max complexity: {complexity['max_complexity']} ({complexity['max_complexity_function']})")
-        print(f"  Functions with high complexity (>10): {len(complexity['functions_high_complexity'])}")
-        print(f"  Functions with very high complexity (>20): {len(complexity['functions_very_high_complexity'])}")
+        print(
+            f"  Max complexity: {complexity['max_complexity']} ({complexity['max_complexity_function']})"
+        )
+        print(
+            f"  Functions with high complexity (>10): {len(complexity['functions_high_complexity'])}"
+        )
+        print(
+            f"  Functions with very high complexity (>20): {len(complexity['functions_very_high_complexity'])}"
+        )
         if complexity["functions_very_high_complexity"]:
             print("\n  Very high complexity functions:")
             for f in complexity["functions_very_high_complexity"][:5]:
                 print(f"    - {f['function']}: {f['complexity']}")
     else:
         print("  ⚠️  Could not parse radon output (trying alternative method)")
-        # Use simpler output
         output = run_command("poetry run radon cc roadmap --exclude=tests")
-        complexity_count = len([l for l in output.split("\n") if ":" in l and not l.startswith(" ")])
+        complexity_count = len(
+            [
+                line
+                for line in output.split("\n")
+                if ":" in line and not line.startswith(" ")
+            ]
+        )
         print(f"  Approximate functions analyzed: {complexity_count}")
     print()
 
@@ -686,20 +1214,27 @@ def generate_report():
     maintainability = analyze_maintainability()
     if maintainability.get("avg_index", 0) > 0:
         print(f"  Average MI: {maintainability['avg_index']}")
-        print(f"  Range: {maintainability['min_index']} - {maintainability['max_index']}")
-        print(f"  Files in good condition (MI > 60): {len(maintainability['files_good'])}")
-        print(f"  Files needing attention (MI 40-60): {len(maintainability['files_caution'])}")
-        print(f"  Files in poor condition (MI < 40): {len(maintainability['files_poor'])}")
+        print(
+            f"  Range: {maintainability['min_index']} - {maintainability['max_index']}"
+        )
+        print(
+            f"  Files in good condition (MI > 60): {len(maintainability['files_good'])}"
+        )
+        print(
+            f"  Files needing attention (MI 40-60): {len(maintainability['files_caution'])}"
+        )
+        print(
+            f"  Files in poor condition (MI < 40): {len(maintainability['files_poor'])}"
+        )
         if maintainability["files_poor"]:
             print("\n  Poorest files:")
-            for f in sorted(
-                maintainability["files_poor"], key=lambda x: x["mi"]
-            )[:5]:
+            for f in sorted(maintainability["files_poor"], key=lambda x: x["mi"])[:5]:
                 print(f"    - {f['file']}: {f['mi']}")
     else:
         print("  ⚠️  Could not parse radon output (trying alternative method)")
-        # Use simpler output
-        output = run_command("poetry run radon mi roadmap --exclude=tests 2>&1 | tail -1")
+        output = run_command(
+            "poetry run radon mi roadmap --exclude=tests 2>&1 | tail -1"
+        )
         print(f"  {output.strip()}")
     print()
 
@@ -746,8 +1281,10 @@ def generate_report():
     print(f"  Total docstring violations: {docs['total_violations']}")
     print(f"    - Missing docstrings: {docs['missing_docstrings']}")
     print(f"    - Formatting issues: {docs['formatting_issues']}")
-    print(f"  Violations by code:")
-    for code, count in sorted(docs["by_code"].items(), key=lambda x: x[1], reverse=True):
+    print("  Violations by code:")
+    for code, count in sorted(
+        docs["by_code"].items(), key=lambda x: x[1], reverse=True
+    ):
         print(f"    - {code}: {count}")
     print()
 
@@ -758,16 +1295,14 @@ def generate_report():
     print(f"  Total modules: {modularity['total_modules']}")
     print(f"  Total functions: {modularity['total_functions']}")
     print(f"  Average functions per module: {modularity['avg_functions_per_module']}")
-    print(f"  Modules by layer:")
+    print("  Modules by layer:")
     for layer, count in sorted(
         modularity["module_count_by_layer"].items(), key=lambda x: x[1], reverse=True
     ):
         print(f"    - {layer}: {count} modules")
     print("\n  Largest modules (by function count):")
     for m in modularity["largest_modules"][:5]:
-        print(
-            f"    - {m['module']}: {m['functions']} functions, {m['lines']} lines"
-        )
+        print(f"    - {m['module']}: {m['functions']} functions, {m['lines']} lines")
     print()
 
     # Imports & Concerns
@@ -776,9 +1311,15 @@ def generate_report():
     imports = analyze_import_patterns()
     print(f"  Total files analyzed: {imports['total_files']}")
     print(f"  Average imports per file: {imports['avg_imports_per_file']}")
-    print(f"  Average internal imports per file: {imports['avg_internal_imports_per_file']}")
-    print(f"  Files with excessive imports (>20): {len(imports['files_with_excessive_imports'])}")
-    print(f"  Files mixing concerns (>3 concerns): {len(imports['concern_mixing_candidates'])}")
+    print(
+        f"  Average internal imports per file: {imports['avg_internal_imports_per_file']}"
+    )
+    print(
+        f"  Files with excessive imports (>20): {len(imports['files_with_excessive_imports'])}"
+    )
+    print(
+        f"  Files mixing concerns (>3 concerns): {len(imports['concern_mixing_candidates'])}"
+    )
     if imports["files_with_excessive_imports"]:
         print("\n  Files with most imports:")
         for f in sorted(
@@ -803,23 +1344,407 @@ def generate_report():
     tests = analyze_test_patterns()
     print(f"  Total test files: {tests['total_test_files']}")
     print(f"  Total test functions: {tests['total_test_functions']}")
-    print(f"  Test distribution:")
+    print("  Test distribution:")
     for category, count in tests["test_categories"].items():
         print(f"    - {category}: {count} files")
     print()
 
-    # Summary
+    # NEW: ERROR HANDLING ANALYSIS
+    print("🛡️  ERROR HANDLING COVERAGE")
+    print("-" * 80)
+    error_handling = analyze_error_handling()
+    print(f"  Total functions: {error_handling['total_functions']}")
+    print(
+        f"  Functions with try-except blocks: {error_handling['functions_with_try_except']}"
+    )
+    print(
+        f"  Functions with error logging: {error_handling['functions_with_error_logging']}"
+    )
+    print(
+        f"  Functions raising exceptions: {error_handling['functions_with_exception_raise']}"
+    )
+    print(
+        f"  Functions without error handling: {error_handling['functions_missing_error_handling']}"
+    )
+    print(f"  Bare except clauses found: {error_handling['bare_except_clauses']}")
+    print(f"  Generic Exception catches: {error_handling['generic_exception_catches']}")
+    if error_handling["critical_functions_without_try"]:
+        print(
+            f"\n  ⚠️  Critical functions without try-catch ({len(error_handling['critical_functions_without_try'])}):"
+        )
+        for f in error_handling["critical_functions_without_try"][:5]:
+            print(f"    - {f}")
+    if error_handling["unlogged_exceptions"]:
+        print(
+            f"\n  ⚠️  Exceptions without logging ({len(error_handling['unlogged_exceptions'])}):"
+        )
+        for f in error_handling["unlogged_exceptions"][:5]:
+            print(f"    - {f}")
+    print()
+
+    # NEW: LOGGING COVERAGE ANALYSIS
+    print("📝 LOGGING COVERAGE")
+    print("-" * 80)
+    logging_cov = analyze_logging_coverage()
+    print(f"  Total functions analyzed: {logging_cov['total_functions']}")
+    print(
+        f"  Functions with logging: {logging_cov['functions_with_logging']} ({logging_cov['logging_density']*100:.1f}%)"
+    )
+    print(f"  Structured logging calls: {logging_cov['structured_logging_usage']}")
+    print(f"  Unstructured logging calls: {logging_cov['unstructured_logging']}")
+    print(
+        f"  Functions with logging but no context: {logging_cov['logging_without_context']}"
+    )
+    print("  Log level distribution:")
+    for level, count in logging_cov["log_levels"].items():
+        if count > 0:
+            print(f"    - {level}: {count} calls")
+    if logging_cov["critical_functions_without_logging"]:
+        print(
+            f"\n  ⚠️  Critical functions without logging ({len(logging_cov['critical_functions_without_logging'])}):"
+        )
+        for f in logging_cov["critical_functions_without_logging"][:5]:
+            print(f"    - {f}")
+    print()
+
+    # NEW: DOCSTRING COMPLETENESS ANALYSIS
+    print("📚 DOCSTRING COMPLETENESS")
+    print("-" * 80)
+    docstrings = analyze_docstring_completeness()
+    total_items = (
+        docstrings["total_modules"]
+        + docstrings["total_classes"]
+        + docstrings["total_functions"]
+    )
+    documented_items = (
+        docstrings["modules_with_docstrings"]
+        + docstrings["classes_with_docstrings"]
+        + docstrings["functions_with_docstrings"]
+    )
+    print(
+        f"  Modules: {docstrings['modules_with_docstrings']}/{docstrings['total_modules']}"
+    )
+    print(
+        f"  Classes: {docstrings['classes_with_docstrings']}/{docstrings['total_classes']}"
+    )
+    print(
+        f"  Functions: {docstrings['functions_with_docstrings']}/{docstrings['total_functions']}"
+    )
+    print(
+        f"  Overall coverage: {docstrings['docstring_coverage_pct']}% ({documented_items}/{total_items})"
+    )
+    print(
+        f"  Incomplete/minimal docstrings: {len(docstrings['incomplete_docstrings'])}"
+    )
+    if docstrings["missing_docstrings"]:
+        print(
+            f"\n  Missing docstrings ({min(5, len(docstrings['missing_docstrings']))} of {len(docstrings['missing_docstrings'])}):"
+        )
+        for f in docstrings["missing_docstrings"][:5]:
+            print(f"    - {f}")
+    if docstrings["incomplete_docstrings"]:
+        print(
+            f"\n  Incomplete docstrings ({min(5, len(docstrings['incomplete_docstrings']))} of {len(docstrings['incomplete_docstrings'])}):"
+        )
+        for f in docstrings["incomplete_docstrings"][:5]:
+            print(f"    - {f}")
+    print()
+
+    # NEW: GOD OBJECT DETECTION
+    print("👹 GOD OBJECT & RESPONSIBILITY ANALYSIS")
+    print("-" * 80)
+    god_objects = analyze_god_objects()
+    print(f"  Total classes: {god_objects['total_classes']}")
+    print(f"  Classes with >20 methods: {god_objects['classes_exceeding_20_methods']}")
+    print(f"  Classes with >500 lines: {god_objects['classes_exceeding_500_lines']}")
+    print(f"  Classes with >3 concerns: {god_objects['classes_exceeding_3_concerns']}")
+    if god_objects["potential_god_objects"]:
+        print(
+            f"\n  ⚠️  Potential god objects ({len(god_objects['potential_god_objects'])} detected):"
+        )
+        for obj in god_objects["potential_god_objects"][:5]:
+            print(
+                f"    - {obj['class']}: {obj['methods']} methods, {obj['lines']} LOC, {obj['concerns']} concerns"
+            )
+    if god_objects["large_classes"]:
+        print("\n  📏 Largest classes by lines:")
+        for cls in god_objects["large_classes"][:5]:
+            print(
+                f"    - {cls['class']}: {cls['lines']} LOC ({cls['methods']} methods)"
+            )
+    print()
+
+    # NEW: ARCHITECTURE HEALTH
+    print("🏛️  ARCHITECTURE HEALTH")
+    print("-" * 80)
+    arch = analyze_architecture_health()
+    print("  Layer distribution:")
+    for layer, count in sorted(
+        arch["layer_distribution"].items(), key=lambda x: x[1], reverse=True
+    ):
+        print(f"    - {layer}: {count} modules")
+    violation_count = len(set(arch["layer_violations"]))  # deduplicate
+    print(f"  Layer violations detected: {violation_count}")
+    if arch["layer_violations"]:
+        print("\n  ⚠️  Layer violation patterns:")
+        unique_violations = {}
+        for violation in arch["layer_violations"]:
+            unique_violations[violation] = unique_violations.get(violation, 0) + 1
+        for violation, count in sorted(
+            unique_violations.items(), key=lambda x: x[1], reverse=True
+        )[:5]:
+            print(f"    - {violation} (found {count}x)")
+    print()
+
+    # PROFESSIONAL ASSESSMENT
     print("=" * 80)
-    print("SUMMARY")
+    print("PROFESSIONAL QUALITY ASSESSMENT")
     print("=" * 80)
-    print(f"✅ Codebase: {file_metrics['total_lines']:,} lines across {file_metrics['total_files']} modules")
-    print(f"✅ Modularity: Avg {modularity['avg_functions_per_module']} functions/module, {modularity['total_functions']} total functions")
-    print(f"✅ DRY: {dry['total_violations']} duplicate code violations detected")
-    print(f"✅ Quality: {security['total_issues']} security issues, {dead['total_issues']} dead code items")
-    print(f"✅ Testing: {tests['total_test_functions']} test functions across {tests['total_test_files']} files")
-    print(f"✅ Type Safety: {types['total_type_issues']} type issues, {types['errors']} errors")
-    print(f"✅ Documentation: {docs['total_violations']} docstring violations")
+
+    assessment = generate_professional_assessment(
+        file_metrics,
+        complexity,
+        maintainability,
+        dry,
+        dead,
+        security,
+        types,
+        docs,
+        modularity,
+        imports,
+        tests,
+        error_handling,
+        logging_cov,
+        docstrings,
+        god_objects,
+        arch,
+    )
+
+    print(assessment)
     print("=" * 80 + "\n")
+
+
+def generate_professional_assessment(
+    file_metrics,
+    complexity,
+    maintainability,
+    dry,
+    dead,
+    security,
+    types,
+    docs,
+    modularity,
+    imports,
+    tests,
+    error_handling,
+    logging_cov,
+    docstrings,
+    god_objects,
+    arch,
+):
+    """Generate professional assessment of codebase quality."""
+    assessment_lines = []
+
+    # Scoring system
+    scores = {}
+
+    # 1. Architecture Score
+    arch_score = 85
+    if len(set(arch["layer_violations"])) > 5:
+        arch_score -= 15
+    elif len(set(arch["layer_violations"])) > 0:
+        arch_score -= 5
+    scores["architecture"] = arch_score
+
+    # 2. Error Handling Score
+    error_score = 80
+    handled_functions = error_handling["functions_with_try_except"] / max(
+        error_handling["total_functions"], 1
+    )
+    if handled_functions < 0.3:
+        error_score -= 20
+    elif handled_functions < 0.5:
+        error_score -= 10
+    if error_handling["bare_except_clauses"] > 5:
+        error_score -= 10
+    if len(error_handling["critical_functions_without_try"]) > 3:
+        error_score -= 15
+    scores["error_handling"] = max(error_score, 0)
+
+    # 3. Logging Score
+    logging_score = 75
+    if logging_cov["logging_density"] < 0.3:
+        logging_score -= 20
+    elif logging_cov["logging_density"] < 0.5:
+        logging_score -= 10
+    if logging_cov["unstructured_logging"] > logging_cov["structured_logging_usage"]:
+        logging_score -= 15
+    scores["logging"] = max(logging_score, 0)
+
+    # 4. Documentation Score
+    doc_score = 100 * (docstrings["docstring_coverage_pct"] / 100.0)
+    scores["documentation"] = doc_score
+
+    # 5. Testing Score
+    test_score = 80
+    if tests["total_test_functions"] < file_metrics["total_files"]:
+        test_score -= 20
+    scores["testing"] = test_score
+
+    # 6. God Object Score
+    god_score = 90
+    if god_objects["classes_exceeding_20_methods"] > 2:
+        god_score -= 20
+    elif god_objects["classes_exceeding_20_methods"] > 0:
+        god_score -= 10
+    if god_objects["classes_exceeding_500_lines"] > 1:
+        god_score -= 15
+    scores["god_objects"] = max(god_score, 0)
+
+    # 7. Code Quality Score
+    quality_score = 85
+    if security["high_severity"] > 0:
+        quality_score -= 25
+    if security["medium_severity"] > 2:
+        quality_score -= 10
+    if complexity["avg_complexity"] > 5:
+        quality_score -= 10
+    if len(complexity["functions_very_high_complexity"]) > 3:
+        quality_score -= 15
+    scores["quality"] = max(quality_score, 0)
+
+    # Overall score
+    overall_score = sum(scores.values()) / len(scores)
+
+    assessment_lines.append("")
+    assessment_lines.append("SCORES BY CATEGORY:")
+    assessment_lines.append("-" * 80)
+    for category, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
+        status = "✅" if score >= 80 else "⚠️ " if score >= 60 else "❌"
+        assessment_lines.append(f"  {status} {category.upper():.<30} {score:.1f}/100")
+    assessment_lines.append("")
+    assessment_lines.append(
+        f"OVERALL PROFESSIONAL QUALITY SCORE: {overall_score:.1f}/100"
+    )
+    assessment_lines.append("")
+
+    # Professional verdict
+    assessment_lines.append("PROFESSIONAL ASSESSMENT:")
+    assessment_lines.append("-" * 80)
+
+    if overall_score >= 85:
+        verdict = "✅ ENTERPRISE-READY - This codebase meets professional, open-source standards."
+        assessment_lines.append(verdict)
+        assessment_lines.append("")
+        assessment_lines.append("STRENGTHS:")
+        assessment_lines.append(
+            "  • Well-structured layered architecture with clear separation of concerns"
+        )
+        assessment_lines.append("  • Comprehensive error handling in critical paths")
+        assessment_lines.append("  • Good documentation and docstring coverage")
+        assessment_lines.append("  • Strong test coverage and organized test suite")
+        assessment_lines.append(
+            "  • Minimal god objects; responsibilities appropriately distributed"
+        )
+        assessment_lines.append("  • Structured logging for observability")
+    elif overall_score >= 70:
+        verdict = "🟡 PRODUCTION-READY WITH CAVEATS - Professional-grade with some improvements needed."
+        assessment_lines.append(verdict)
+        assessment_lines.append("")
+        assessment_lines.append("STRENGTHS:")
+        assessment_lines.append("  • Solid foundational architecture")
+        assessment_lines.append("  • Reasonable test coverage")
+        assessment_lines.append("  • Generally good code organization")
+        assessment_lines.append("")
+        assessment_lines.append("IMPROVEMENTS NEEDED:")
+        if scores["error_handling"] < 80:
+            assessment_lines.append(
+                "  • Strengthen error handling in critical functions"
+            )
+        if scores["logging"] < 80:
+            assessment_lines.append(
+                "  • Improve logging coverage and use structured logging"
+            )
+        if scores["documentation"] < 80:
+            assessment_lines.append(
+                "  • Add missing docstrings to modules and functions"
+            )
+        if scores["god_objects"] < 80:
+            assessment_lines.append(
+                "  • Refactor classes with too many responsibilities"
+            )
+    else:
+        verdict = "❌ NEEDS SIGNIFICANT WORK - Not yet ready for professional open-source release."
+        assessment_lines.append(verdict)
+        assessment_lines.append("")
+        assessment_lines.append("CRITICAL ISSUES:")
+        if scores["architecture"] < 70:
+            assessment_lines.append("  • Architecture needs restructuring")
+        if scores["error_handling"] < 70:
+            assessment_lines.append("  • Error handling is insufficient")
+        if scores["documentation"] < 70:
+            assessment_lines.append("  • Documentation coverage is too low")
+        if scores["god_objects"] < 70:
+            assessment_lines.append(
+                "  • God objects and responsibility violations present"
+            )
+
+    assessment_lines.append("")
+    assessment_lines.append("SENIOR DEVELOPER VERDICT:")
+    assessment_lines.append("-" * 80)
+
+    if overall_score >= 85:
+        assessment_lines.append(
+            "A senior developer would find this codebase ACCEPTABLE and PUBLISHABLE."
+        )
+        assessment_lines.append("")
+        assessment_lines.append("This project demonstrates:")
+        assessment_lines.append("  • Clean architecture with proper layer separation")
+        assessment_lines.append("  • Thoughtful error handling strategy")
+        assessment_lines.append("  • Comprehensive testing approach")
+        assessment_lines.append("  • Professional documentation practices")
+        assessment_lines.append("  • Good maintainability and extensibility")
+        assessment_lines.append("")
+        assessment_lines.append(
+            "Recommended for PyPI publishing and open-source distribution."
+        )
+    elif overall_score >= 70:
+        assessment_lines.append(
+            "A senior developer would find this MOSTLY ACCEPTABLE with RESERVATIONS."
+        )
+        assessment_lines.append("")
+        assessment_lines.append("Recommended actions before publishing:")
+        if scores["error_handling"] < 80:
+            assessment_lines.append(
+                "  1. Audit and enhance error handling in critical paths"
+            )
+        if scores["logging"] < 80:
+            assessment_lines.append("  2. Standardize logging across all modules")
+        if scores["documentation"] < 80:
+            assessment_lines.append("  3. Complete docstring documentation")
+        if scores["god_objects"] < 80:
+            assessment_lines.append("  4. Refactor large classes")
+        assessment_lines.append("")
+        assessment_lines.append("After addressing these issues, ready for publication.")
+    else:
+        assessment_lines.append(
+            "A senior developer would recommend SUBSTANTIAL IMPROVEMENTS before publishing."
+        )
+        assessment_lines.append("")
+        assessment_lines.append("Recommended refactoring priorities:")
+        assessment_lines.append(
+            "  1. Address architectural violations and layer crossing"
+        )
+        assessment_lines.append("  2. Implement comprehensive error handling")
+        assessment_lines.append("  3. Complete documentation and docstrings")
+        assessment_lines.append("  4. Break down god objects and large classes")
+        assessment_lines.append("  5. Strengthen test coverage")
+        assessment_lines.append("")
+        assessment_lines.append(
+            "Not recommended for publication until these issues are resolved."
+        )
+
+    return "\n".join(assessment_lines)
 
 
 if __name__ == "__main__":

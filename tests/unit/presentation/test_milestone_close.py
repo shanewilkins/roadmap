@@ -1,7 +1,5 @@
 """CLI tests for milestone close convenience command."""
 
-import pytest
-
 from roadmap.adapters.cli import main
 
 

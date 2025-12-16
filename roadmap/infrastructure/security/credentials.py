@@ -4,6 +4,11 @@ import os
 import platform
 import subprocess
 
+from roadmap.common.errors import OperationType, safe_operation
+from roadmap.common.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 class CredentialManagerError(Exception):
     """Exception raised for credential manager errors."""
@@ -21,6 +26,7 @@ class CredentialManager:
         """Initialize credential manager."""
         self.system = platform.system().lower()
 
+    @safe_operation(OperationType.SAVE, "Token", include_traceback=True)
     def store_token(self, token: str, repo_info: dict[str, str] | None = None) -> bool:
         """Store GitHub token securely.
 
@@ -30,18 +36,26 @@ class CredentialManager:
 
         Returns:
             True if stored successfully, False otherwise
+
+        Raises:
+            CredentialManagerError: If token storage fails
         """
+        logger.info("storing_github_token")
         try:
             if self.system == "darwin":
-                return self._store_token_keychain(token, repo_info)
+                result = self._store_token_keychain(token, repo_info)
             elif self.system == "windows":
-                return self._store_token_wincred(token, repo_info)
+                result = self._store_token_wincred(token, repo_info)
             elif self.system == "linux":
-                return self._store_token_secretservice(token, repo_info)
+                result = self._store_token_secretservice(token, repo_info)
             else:
                 # Fallback for unsupported systems
-                return self._store_token_fallback(token, repo_info)
+                result = self._store_token_fallback(token, repo_info)
+
+            logger.info("github_token_stored", system=self.system)
+            return result
         except Exception as e:
+            logger.error("github_token_store_failed", error=str(e), system=self.system)
             raise CredentialManagerError(f"Failed to store token: {e}") from e
 
     def get_token(self) -> str | None:
@@ -54,38 +68,60 @@ class CredentialManager:
             # Always check environment variable first
             env_token = os.getenv("GITHUB_TOKEN")
             if env_token:
+                logger.debug("github_token_retrieved_from_env")
                 return env_token
 
             if self.system == "darwin":
-                return self._get_token_keychain()
+                token = self._get_token_keychain()
             elif self.system == "windows":
-                return self._get_token_wincred()
+                token = self._get_token_wincred()
             elif self.system == "linux":
-                return self._get_token_secretservice()
+                token = self._get_token_secretservice()
             else:
                 # Fallback for unsupported systems
-                return self._get_token_fallback()
-        except Exception:
+                token = self._get_token_fallback()
+
+            if token:
+                logger.debug("github_token_retrieved", system=self.system)
+            else:
+                logger.debug("github_token_not_found", system=self.system)
+
+            return token
+        except Exception as e:
             # Silently fail and return None - credential retrieval should be non-blocking
+            logger.warning(
+                "github_token_retrieval_failed", error=str(e), system=self.system
+            )
             return None
 
+    @safe_operation(OperationType.DELETE, "Token")
     def delete_token(self) -> bool:
         """Delete stored GitHub token.
 
         Returns:
             True if deleted successfully, False otherwise
+
+        Raises:
+            CredentialManagerError: If token deletion fails
         """
+        logger.info("deleting_github_token")
         try:
             if self.system == "darwin":
-                return self._delete_token_keychain()
+                result = self._delete_token_keychain()
             elif self.system == "windows":
-                return self._delete_token_wincred()
+                result = self._delete_token_wincred()
             elif self.system == "linux":
-                return self._delete_token_secretservice()
+                result = self._delete_token_secretservice()
             else:
                 # Fallback for unsupported systems
-                return self._delete_token_fallback()
+                result = self._delete_token_fallback()
+
+            logger.info("github_token_deleted", system=self.system, success=result)
+            return result
         except Exception as e:
+            logger.error(
+                "github_token_deletion_failed", error=str(e), system=self.system
+            )
             raise CredentialManagerError(f"Failed to delete token: {e}") from e
 
     def is_available(self) -> bool:

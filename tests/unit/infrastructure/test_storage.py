@@ -457,6 +457,8 @@ class TestStateManagerErrors:
 
     def test_create_project_with_duplicate_id(self):
         """Creating project with duplicate ID should raise error."""
+        from roadmap.common.errors import CreateError
+
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
 
@@ -468,8 +470,8 @@ class TestStateManagerErrors:
                 {"id": "dup-1", "name": "Project 1", "status": "active"}
             )
 
-            # Try to create duplicate
-            with pytest.raises(sqlite3.IntegrityError):
+            # Try to create duplicate - should raise CreateError (wrapped from IntegrityError)
+            with pytest.raises(CreateError):
                 manager.create_project(
                     {"id": "dup-1", "name": "Project 2", "status": "active"}
                 )

@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 
 logger = get_logger(__name__)
@@ -20,6 +21,8 @@ class IssueRepository:
         self._get_connection = get_connection
         self._transaction = transaction
 
+    @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
+    @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
     def create(self, issue_data: dict[str, Any]) -> str:
         """Create a new issue.
 
@@ -68,6 +71,8 @@ class IssueRepository:
 
         return dict(row) if row else None
 
+    @safe_operation(OperationType.UPDATE, "Issue")
+    @safe_operation(OperationType.UPDATE, "Issue")
     def update(self, issue_id: str, updates: dict[str, Any]) -> bool:
         """Update issue.
 
@@ -100,6 +105,8 @@ class IssueRepository:
 
         return updated
 
+    @safe_operation(OperationType.DELETE, "Issue", include_traceback=True)
+    @safe_operation(OperationType.DELETE, "Issue", include_traceback=True)
     def delete(self, issue_id: str) -> bool:
         """Delete issue.
 
@@ -118,6 +125,8 @@ class IssueRepository:
 
         return deleted
 
+    @safe_operation(OperationType.UPDATE, "Issue")
+    @safe_operation(OperationType.UPDATE, "Issue")
     def mark_archived(self, issue_id: str, archived: bool = True) -> bool:
         """Mark an issue as archived or unarchived.
 

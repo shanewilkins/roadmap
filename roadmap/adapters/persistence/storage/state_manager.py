@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 
 from ..conflict_resolver import ConflictResolver
@@ -108,6 +109,7 @@ class StateManager:
         return self._db_manager.database_exists()
 
     # Project operations
+    @safe_operation(OperationType.CREATE, "Project", include_traceback=True)
     def create_project(self, project_data: dict[str, Any]) -> str:
         """Create a new project."""
         return self._project_repo.create(project_data)
@@ -120,19 +122,23 @@ class StateManager:
         """List all projects."""
         return self._project_repo.list_all()
 
+    @safe_operation(OperationType.UPDATE, "Project", include_traceback=True)
     def update_project(self, project_id: str, updates: dict[str, Any]) -> bool:
         """Update project."""
         return self._project_repo.update(project_id, updates)
 
+    @safe_operation(OperationType.DELETE, "Project", include_traceback=True)
     def delete_project(self, project_id: str) -> bool:
         """Delete project and all related data."""
         return self._project_repo.delete(project_id)
 
+    @safe_operation(OperationType.UPDATE, "Project")
     def mark_project_archived(self, project_id: str, archived: bool = True) -> bool:
         """Mark a project as archived or unarchived."""
         return self._project_repo.mark_archived(project_id, archived)
 
     # Milestone operations
+    @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
     def create_milestone(self, milestone_data: dict[str, Any]) -> str:
         """Create a new milestone."""
         return self._milestone_repo.create(milestone_data)
@@ -141,15 +147,18 @@ class StateManager:
         """Get milestone by ID."""
         return self._milestone_repo.get(milestone_id)
 
+    @safe_operation(OperationType.UPDATE, "Milestone", include_traceback=True)
     def update_milestone(self, milestone_id: str, updates: dict[str, Any]) -> bool:
         """Update milestone."""
         return self._milestone_repo.update(milestone_id, updates)
 
+    @safe_operation(OperationType.UPDATE, "Milestone")
     def mark_milestone_archived(self, milestone_id: str, archived: bool = True) -> bool:
         """Mark a milestone as archived or unarchived."""
         return self._milestone_repo.mark_archived(milestone_id, archived)
 
     # Issue operations
+    @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
     def create_issue(self, issue_data: dict[str, Any]) -> str:
         """Create a new issue."""
         return self._issue_repo.create(issue_data)
@@ -158,14 +167,17 @@ class StateManager:
         """Get issue by ID."""
         return self._issue_repo.get(issue_id)
 
+    @safe_operation(OperationType.UPDATE, "Issue", include_traceback=True)
     def update_issue(self, issue_id: str, updates: dict[str, Any]) -> bool:
         """Update issue."""
         return self._issue_repo.update(issue_id, updates)
 
+    @safe_operation(OperationType.DELETE, "Issue", include_traceback=True)
     def delete_issue(self, issue_id: str) -> bool:
         """Delete issue."""
         return self._issue_repo.delete(issue_id)
 
+    @safe_operation(OperationType.UPDATE, "Issue")
     def mark_issue_archived(self, issue_id: str, archived: bool = True) -> bool:
         """Mark an issue as archived or unarchived."""
         return self._issue_repo.mark_archived(issue_id, archived)
@@ -173,54 +185,100 @@ class StateManager:
     # Sync state operations
     def get_sync_state(self, key: str) -> str | None:
         """Get sync state value."""
+        logger.debug("getting_sync_state", key=key)
         return self._sync_state_repo.get(key)
 
     def set_sync_state(self, key: str, value: str):
         """Set sync state value."""
+        logger.debug("setting_sync_state", key=key, value_length=len(value))
         self._sync_state_repo.set(key, value)
 
     # File sync delegation - delegate to _file_synchronizer
     def get_file_sync_status(self, file_path: str) -> dict[str, Any] | None:
         """Get sync status for a file."""
+        logger.debug("getting_file_sync_status", file_path=file_path)
         return self._file_synchronizer.get_file_sync_status(file_path)
 
+    @safe_operation(OperationType.UPDATE, "FileSync")
     def update_file_sync_status(
         self, file_path: str, content_hash: str, file_size: int, last_modified: Any
     ):
         """Update sync status for a file."""
+        logger.debug(
+            "updating_file_sync_status", file_path=file_path, file_size=file_size
+        )
         self._file_synchronizer.update_file_sync_status(
             file_path, content_hash, file_size, last_modified
         )
 
     def has_file_changed(self, file_path: Path) -> bool:
         """Check if file has changed since last sync."""
-        return self._file_synchronizer.has_file_changed(file_path)
+        result = self._file_synchronizer.has_file_changed(file_path)
+        logger.debug("has_file_changed", file_path=str(file_path), changed=result)
+        return result
 
+    @safe_operation(OperationType.SYNC, "Directory", retryable=True, max_retries=2)
     def sync_directory_incremental(self, roadmap_dir: Path) -> dict[str, Any]:
         """Incrementally sync .roadmap directory to database."""
-        return self._file_synchronizer.sync_directory_incremental(roadmap_dir)
+        logger.info("sync_directory_incremental_started", roadmap_dir=str(roadmap_dir))
+        result = self._file_synchronizer.sync_directory_incremental(roadmap_dir)
+        logger.info(
+            "sync_directory_incremental_completed",
+            roadmap_dir=str(roadmap_dir),
+            files_synced=result.get("files_synced", 0),
+        )
+        return result
 
+    @safe_operation(OperationType.SYNC, "Directory", retryable=True, max_retries=2)
     def full_rebuild_from_git(self, roadmap_dir: Path) -> dict[str, Any]:
         """Full rebuild of database from git files."""
-        return self._file_synchronizer.full_rebuild_from_git(roadmap_dir)
+        logger.info("full_rebuild_from_git_started", roadmap_dir=str(roadmap_dir))
+        result = self._file_synchronizer.full_rebuild_from_git(roadmap_dir)
+        logger.info(
+            "full_rebuild_from_git_completed",
+            roadmap_dir=str(roadmap_dir),
+            files_processed=result.get("files_processed", 0),
+        )
+        return result
 
     def should_do_full_rebuild(self, roadmap_dir: Path, threshold: int = 50) -> bool:
         """Determine if full rebuild is needed vs incremental sync."""
-        return self._file_synchronizer.should_do_full_rebuild(roadmap_dir, threshold)
+        result = self._file_synchronizer.should_do_full_rebuild(roadmap_dir, threshold)
+        logger.debug(
+            "should_do_full_rebuild_check", roadmap_dir=str(roadmap_dir), result=result
+        )
+        return result
 
+    @safe_operation(OperationType.SYNC, "Directory")
     def smart_sync(self, roadmap_dir: Path | None = None) -> dict[str, Any]:
         """Smart sync that chooses between incremental and full rebuild."""
         if roadmap_dir is None:
             roadmap_dir = Path.cwd() / ".roadmap"
 
+        logger.info("smart_sync_started", roadmap_dir=str(roadmap_dir))
+
         try:
             if self.should_do_full_rebuild(roadmap_dir):
-                return self.full_rebuild_from_git(roadmap_dir)
+                logger.info("choosing_full_rebuild", roadmap_dir=str(roadmap_dir))
+                result = self.full_rebuild_from_git(roadmap_dir)
             else:
-                return self.sync_directory_incremental(roadmap_dir)
+                logger.info("choosing_incremental_sync", roadmap_dir=str(roadmap_dir))
+                result = self.sync_directory_incremental(roadmap_dir)
+
+            logger.info(
+                "smart_sync_completed",
+                roadmap_dir=str(roadmap_dir),
+                result_keys=list(result.keys()),
+            )
+            return result
 
         except Exception as e:
-            logger.error("Smart sync failed", error=str(e))
+            logger.error(
+                "smart_sync_failed",
+                roadmap_dir=str(roadmap_dir),
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             return {"error": str(e), "files_failed": 1}
 
     # Query operations - these delegate complex queries to query service
@@ -228,13 +286,19 @@ class StateManager:
         """Check if .roadmap/ files have changes since last sync."""
         from .queries import QueryService
 
-        return QueryService(self).has_file_changes()
+        logger.debug("checking_file_changes")
+        result = QueryService(self).has_file_changes()
+        logger.debug("file_changes_status", has_changes=result)
+        return result
 
     def get_all_issues(self) -> list[dict[str, Any]]:
         """Get all issues from database."""
         from .queries import QueryService
 
-        return QueryService(self).get_all_issues()
+        logger.debug("getting_all_issues")
+        issues = QueryService(self).get_all_issues()
+        logger.debug("get_all_issues_completed", issue_count=len(issues))
+        return issues
 
     def get_all_milestones(self) -> list[dict[str, Any]]:
         """Get all milestones from database."""

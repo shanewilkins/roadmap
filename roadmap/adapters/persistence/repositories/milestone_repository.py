@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 
 logger = get_logger(__name__)
@@ -20,6 +21,8 @@ class MilestoneRepository:
         self._get_connection = get_connection
         self._transaction = transaction
 
+    @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
+    @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
     def create(self, milestone_data: dict[str, Any]) -> str:
         """Create a new milestone.
 
@@ -65,6 +68,8 @@ class MilestoneRepository:
 
         return dict(row) if row else None
 
+    @safe_operation(OperationType.UPDATE, "Milestone")
+    @safe_operation(OperationType.UPDATE, "Milestone")
     def update(self, milestone_id: str, updates: dict[str, Any]) -> bool:
         """Update milestone.
 
@@ -99,6 +104,8 @@ class MilestoneRepository:
 
         return updated
 
+    @safe_operation(OperationType.UPDATE, "Milestone")
+    @safe_operation(OperationType.UPDATE, "Milestone")
     def mark_archived(self, milestone_id: str, archived: bool = True) -> bool:
         """Mark a milestone as archived or unarchived.
 

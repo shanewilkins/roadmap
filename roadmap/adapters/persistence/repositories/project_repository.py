@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 
 logger = get_logger(__name__)
@@ -20,6 +21,8 @@ class ProjectRepository:
         self._get_connection = get_connection
         self._transaction = transaction
 
+    @safe_operation(OperationType.CREATE, "Project", include_traceback=True)
+    @safe_operation(OperationType.CREATE, "Project", include_traceback=True)
     def create(self, project_data: dict[str, Any]) -> str:
         """Create a new project.
 
@@ -75,6 +78,8 @@ class ProjectRepository:
         ).fetchall()
         return [dict(row) for row in rows]
 
+    @safe_operation(OperationType.UPDATE, "Project")
+    @safe_operation(OperationType.UPDATE, "Project")
     def update(self, project_id: str, updates: dict[str, Any]) -> bool:
         """Update project.
 
@@ -107,6 +112,8 @@ class ProjectRepository:
 
         return updated
 
+    @safe_operation(OperationType.DELETE, "Project", include_traceback=True)
+    @safe_operation(OperationType.DELETE, "Project", include_traceback=True)
     def delete(self, project_id: str) -> bool:
         """Delete project and all related data.
 
@@ -125,6 +132,8 @@ class ProjectRepository:
 
         return deleted
 
+    @safe_operation(OperationType.UPDATE, "Project")
+    @safe_operation(OperationType.UPDATE, "Project")
     def mark_archived(self, project_id: str, archived: bool = True) -> bool:
         """Mark a project as archived or unarchived.
 

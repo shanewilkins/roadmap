@@ -22,14 +22,12 @@ from roadmap.shared.formatters.tables import (
     ProjectTableFormatter,
 )
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Kanban Board Organization
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Re-export kanban classes from their canonical locations to avoid duplication
 # and maintain backward compatibility
-from roadmap.shared.formatters.kanban import KanbanLayout, KanbanOrganizer
 
 
 __all__ = [

@@ -1,7 +1,5 @@
 """Tests for milestone CLI commands."""
 
-import pytest
-
 from roadmap.adapters.cli import main
 from tests.unit.shared.test_utils import strip_ansi
 
@@ -215,7 +213,9 @@ def test_milestone_delete_command_nonexistent(cli_runner):
         )
         assert init_result.exit_code == 0
 
-        result = cli_runner.invoke(main, ["milestone", "delete", "nonexistent"], input="y\n")
+        result = cli_runner.invoke(
+            main, ["milestone", "delete", "nonexistent"], input="y\n"
+        )
         # Should handle gracefully
         assert result.exit_code == 0 or "nonexistent" in result.output
 

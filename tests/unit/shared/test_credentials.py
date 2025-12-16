@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from roadmap.common.errors.exceptions import DeleteError, RoadmapException
 from roadmap.infrastructure.security.credentials import (
     CredentialManager,
-    CredentialManagerError,
     get_credential_manager,
     mask_token,
 )
@@ -351,9 +351,7 @@ class TestIntegrationScenarios:
             side_effect=Exception("Storage error"),
         ):
             with patch.object(credential_manager, "system", "darwin"):
-                with pytest.raises(
-                    CredentialManagerError, match="Failed to store token"
-                ):
+                with pytest.raises(RoadmapException, match="Failed to save"):
                     credential_manager.store_token("test_token")
 
     def test_error_handling_in_delete_token(self, credential_manager):
@@ -364,7 +362,5 @@ class TestIntegrationScenarios:
             side_effect=Exception("Delete error"),
         ):
             with patch.object(credential_manager, "system", "darwin"):
-                with pytest.raises(
-                    CredentialManagerError, match="Failed to delete token"
-                ):
+                with pytest.raises(DeleteError, match="Failed to delete"):
                     credential_manager.delete_token()

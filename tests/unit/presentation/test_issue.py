@@ -1,7 +1,5 @@
 """Tests for issue-related CLI commands."""
 
-from click.testing import CliRunner
-
 from roadmap.adapters.cli import main
 
 
@@ -39,9 +37,11 @@ def test_issue_list_command(cli_runner):
     """Test listing issues."""
     with cli_runner.isolated_filesystem():
         # Initialize first
-        init_result = cli_runner.invoke(main, ["init", "-y", "--skip-github", "--skip-project"])
+        init_result = cli_runner.invoke(
+            main, ["init", "-y", "--skip-github", "--skip-project"]
+        )
         assert init_result.exit_code == 0
-        
+
         result = cli_runner.invoke(main, ["issue", "list"])
         assert result.exit_code == 0
 

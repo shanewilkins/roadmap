@@ -1,4 +1,3 @@
-
 from roadmap.adapters.cli import main
 
 
