@@ -9,6 +9,7 @@ The ProjectService manages:
 Extracted from core.py to separate business logic.
 """
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,11 @@ from roadmap.adapters.persistence.parser import MilestoneParser, ProjectParser
 from roadmap.adapters.persistence.storage import StateManager
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
+from roadmap.common.logging_utils import (
+    log_collection_operation,
+    log_event,
+    log_metric,
+)
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.milestone import MilestoneStatus
 from roadmap.core.domain.project import Project
@@ -45,12 +51,25 @@ class ProjectService:
         Returns:
             List of Project objects sorted by creation date
         """
+        start_time = time.time()
+        logger.debug("listing_projects_start")
+
         projects = FileEnumerationService.enumerate_and_parse(
             self.projects_dir,
             ProjectParser.parse_project_file,
         )
 
         projects.sort(key=lambda x: x.created)
+        elapsed = time.time() - start_time
+
+        log_collection_operation("projects", len(projects), "retrieved", level="debug")
+        log_metric("list_projects_duration", elapsed, unit="seconds", level="debug")
+        logger.debug(
+            "listing_projects_complete",
+            count=len(projects),
+            elapsed_seconds=round(elapsed, 3),
+        )
+
         return projects
 
     def get_project(self, project_id: str) -> Project | None:
@@ -62,6 +81,8 @@ class ProjectService:
         Returns:
             Project object if found, None otherwise
         """
+        start_time = time.time()
+        logger.debug("get_project_start", project_id=project_id)
 
         def id_matcher(project: Project) -> bool:
             return project.id.startswith(project_id)
@@ -72,7 +93,24 @@ class ProjectService:
             id_matcher,
         )
 
-        return projects[0] if projects else None
+        result = projects[0] if projects else None
+        elapsed = time.time() - start_time
+
+        if result:
+            logger.debug(
+                "get_project_found",
+                project_id=project_id,
+                project_name=result.name,
+                elapsed_seconds=round(elapsed, 3),
+            )
+        else:
+            logger.debug(
+                "get_project_not_found",
+                project_id=project_id,
+                elapsed_seconds=round(elapsed, 3),
+            )
+
+        return result
 
     @safe_operation(OperationType.UPDATE, "Project")
     def save_project(self, project: Project) -> bool:
@@ -84,7 +122,11 @@ class ProjectService:
         Returns:
             True if saved, False on error
         """
-        logger.debug("saving_project", project_id=project.id)
+        start_time = time.time()
+        logger.debug(
+            "saving_project_start", project_id=project.id, project_name=project.name
+        )
+
         # Find and update the existing project file
         for project_file in self.projects_dir.rglob("*.md"):
             try:
@@ -92,6 +134,13 @@ class ProjectService:
                 if test_project.id == project.id:
                     project.updated = now_utc()
                     ProjectParser.save_project_file(project, project_file)
+                    elapsed = time.time() - start_time
+                    log_event("project_saved", project_id=project.id, updated=True)
+                    logger.info(
+                        "saving_project_updated_existing",
+                        project_id=project.id,
+                        elapsed_seconds=round(elapsed, 3),
+                    )
                     return True
             except Exception:
                 continue
@@ -100,6 +149,14 @@ class ProjectService:
         project.updated = now_utc()
         project_path = self.projects_dir / project.filename
         ProjectParser.save_project_file(project, project_path)
+        elapsed = time.time() - start_time
+        log_event("project_saved", project_id=project.id, updated=False)
+        logger.info(
+            "saving_project_created_new",
+            project_id=project.id,
+            file_path=str(project_path),
+            elapsed_seconds=round(elapsed, 3),
+        )
         return True
 
     @safe_operation(OperationType.CREATE, "Project", include_traceback=True)
@@ -119,7 +176,13 @@ class ProjectService:
         Returns:
             Newly created Project object
         """
-        logger.info("creating_project", project_name=name)
+        start_time = time.time()
+        logger.info(
+            "creating_project_start",
+            project_name=name,
+            milestones_count=len(milestones or []),
+        )
+
         project = Project(
             name=name,
             description=description,
@@ -128,6 +191,16 @@ class ProjectService:
         )
 
         self.save_project(project)
+        elapsed = time.time() - start_time
+
+        log_event("project_created", project_id=project.id, project_name=name)
+        logger.info(
+            "creating_project_complete",
+            project_id=project.id,
+            project_name=name,
+            elapsed_seconds=round(elapsed, 3),
+        )
+
         return project
 
     @safe_operation(OperationType.UPDATE, "Project")
@@ -141,10 +214,21 @@ class ProjectService:
         Returns:
             Updated Project object if found, None otherwise
         """
-        logger.info("updating_project", project_id=project_id, field_count=len(updates))
+        start_time = time.time()
+        logger.info(
+            "updating_project_start",
+            project_id=project_id,
+            field_count=len(updates),
+            fields=list(updates.keys()),
+        )
+
         project = self.get_project(project_id)
         if not project:
+            logger.warning("updating_project_not_found", project_id=project_id)
             return None
+
+        # Capture old state for change logging
+        old_state = {k: getattr(project, k, None) for k in updates.keys()}
 
         # Update fields
         for field, value in updates.items():
@@ -152,6 +236,25 @@ class ProjectService:
                 setattr(project, field, value)
 
         self.save_project(project)
+        elapsed = time.time() - start_time
+
+        # Log state changes
+        new_state = {k: getattr(project, k, None) for k in updates.keys()}
+        changed_fields = [
+            k for k in updates.keys() if old_state.get(k) != new_state.get(k)
+        ]
+
+        log_event(
+            "project_updated", project_id=project_id, updated_fields=changed_fields
+        )
+        logger.info(
+            "updating_project_complete",
+            project_id=project_id,
+            field_count=len(updates),
+            changed_count=len(changed_fields),
+            elapsed_seconds=round(elapsed, 3),
+        )
+
         return project
 
     @safe_operation(OperationType.DELETE, "Project", include_traceback=True)
@@ -164,15 +267,38 @@ class ProjectService:
         Returns:
             True if deleted, False if not found
         """
-        logger.info("deleting_project", project_id=project_id)
+        start_time = time.time()
+        logger.info("deleting_project_start", project_id=project_id)
+
         for project_file in self.projects_dir.rglob("*.md"):
             try:
                 project = ProjectParser.parse_project_file(project_file)
                 if project.id.startswith(project_id):
+                    project_name = project.name
                     project_file.unlink()
+                    elapsed = time.time() - start_time
+
+                    log_event(
+                        "project_deleted",
+                        project_id=project_id,
+                        project_name=project_name,
+                    )
+                    logger.info(
+                        "deleting_project_complete",
+                        project_id=project_id,
+                        project_name=project_name,
+                        elapsed_seconds=round(elapsed, 3),
+                    )
                     return True
             except Exception:
                 continue
+
+        elapsed = time.time() - start_time
+        logger.warning(
+            "deleting_project_not_found",
+            project_id=project_id,
+            elapsed_seconds=round(elapsed, 3),
+        )
         return False
 
     def calculate_progress(self, project_id: str) -> dict[str, Any]:
@@ -190,8 +316,14 @@ class ProjectService:
         Returns:
             Dict with progress metrics
         """
+        start_time = time.time()
+        logger.debug("calculate_progress_start", project_id=project_id)
+
         project = self.get_project(project_id)
         if not project:
+            logger.warning(
+                "calculate_progress_project_not_found", project_id=project_id
+            )
             return {
                 "total_milestones": 0,
                 "completed_milestones": 0,
@@ -219,13 +351,32 @@ class ProjectService:
 
         total = len(project.milestones)
         progress = (completed_count / total * 100) if total > 0 else 0.0
+        elapsed = time.time() - start_time
 
-        return {
+        result = {
             "total_milestones": total,
             "completed_milestones": completed_count,
             "progress": progress,
             "milestone_status": milestone_statuses,
         }
+
+        log_metric(
+            "project_progress",
+            progress,
+            unit="percent",
+            project_id=project_id,
+            level="debug",
+        )
+        logger.debug(
+            "calculate_progress_complete",
+            project_id=project_id,
+            total_milestones=total,
+            completed_milestones=completed_count,
+            progress_percent=round(progress, 1),
+            elapsed_seconds=round(elapsed, 3),
+        )
+
+        return result
 
     def complete_project(self, project_id: str) -> Project | None:
         """Mark a project as completed.
@@ -238,4 +389,15 @@ class ProjectService:
         """
         from roadmap.core.domain.project import ProjectStatus
 
-        return self.update_project(project_id, status=ProjectStatus.COMPLETED)
+        logger.info("completing_project_start", project_id=project_id)
+        result = self.update_project(project_id, status=ProjectStatus.COMPLETED)
+
+        if result:
+            log_event(
+                "project_completed", project_id=project_id, project_name=result.name
+            )
+            logger.info("completing_project_complete", project_id=project_id)
+        else:
+            logger.warning("completing_project_not_found", project_id=project_id)
+
+        return result
