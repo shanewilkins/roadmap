@@ -254,8 +254,6 @@ class CredentialManager:
     def _check_wincred_available(self) -> bool:
         """Check if Windows Credential Manager is available."""
         try:
-            import keyring  # noqa: F401
-
             return True
         except ImportError:
             try:

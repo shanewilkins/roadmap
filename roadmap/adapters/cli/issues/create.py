@@ -5,6 +5,7 @@ import click
 from roadmap.adapters.cli.crud import BaseCreate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.common.cli_models import IssueCreateParams, IssueGitParams
 from roadmap.infrastructure.logging import (
     log_command,
     verbose_output,
@@ -129,7 +130,8 @@ def create_issue(
     core = ctx.obj["core"]
     creator = IssueCreate(core)
 
-    creator.execute(
+    # Create structured parameter objects
+    issue_params = IssueCreateParams(
         title=title,
         priority=priority,
         issue_type=issue_type,
@@ -139,8 +141,26 @@ def create_issue(
         estimate=estimate,
         depends_on=depends_on,
         blocks=blocks,
+    )
+    git_params = IssueGitParams(
         git_branch=git_branch,
         checkout=checkout,
         branch_name=branch_name,
         force=force,
+    )
+
+    creator.execute(
+        title=issue_params.title,
+        priority=issue_params.priority,
+        issue_type=issue_params.issue_type,
+        milestone=issue_params.milestone,
+        assignee=issue_params.assignee,
+        labels=issue_params.labels,
+        estimate=issue_params.estimate,
+        depends_on=issue_params.depends_on,
+        blocks=issue_params.blocks,
+        git_branch=git_params.git_branch,
+        checkout=git_params.checkout,
+        branch_name=git_params.branch_name,
+        force=git_params.force,
     )

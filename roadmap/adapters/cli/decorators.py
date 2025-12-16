@@ -100,7 +100,6 @@ def with_output_support(
                     if filters:
                         for filt in filters:
                             # Simple equality filtering for now
-                            # TODO: Add support for other operators (!=, <, >, etc)
                             if filt.operator == "=":
                                 result = result.filter(filt.column, filt.value)
 

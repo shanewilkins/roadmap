@@ -14,6 +14,7 @@ Responsibilities:
 from pathlib import Path
 
 from roadmap.adapters.persistence.parser import IssueParser
+from roadmap.common.cache import SessionCache
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain import (
     Issue,
@@ -26,6 +27,10 @@ from roadmap.core.services import IssueService
 
 class IssueOperations:
     """Manager for issue-related operations."""
+
+    # Cache for get_issues_by_milestone results (TTL: 60 seconds)
+    _milestone_cache = SessionCache()
+    _cache_ttl = 60  # TTL in seconds
 
     def __init__(self, issue_service: IssueService, issues_dir: Path):
         """Initialize issue operations manager.
@@ -65,7 +70,7 @@ class IssueOperations:
         Returns:
             Created Issue object
         """
-        return self.issue_service.create_issue(
+        result = self.issue_service.create_issue(
             title=title,
             priority=priority,
             issue_type=issue_type,
@@ -76,6 +81,11 @@ class IssueOperations:
             depends_on=depends_on,
             blocks=blocks,
         )
+        
+        # Invalidate milestone cache after creation
+        self._milestone_cache.clear()
+        
+        return result
 
     def list_issues(
         self,
@@ -126,7 +136,13 @@ class IssueOperations:
         Returns:
             Updated Issue object if found, None otherwise
         """
-        return self.issue_service.update_issue(issue_id, **updates)
+        result = self.issue_service.update_issue(issue_id, **updates)
+        
+        # Invalidate milestone cache after update
+        if result is not None:
+            self._milestone_cache.clear()
+        
+        return result
 
     def delete_issue(self, issue_id: str) -> bool:
         """Delete an issue.
@@ -137,7 +153,13 @@ class IssueOperations:
         Returns:
             True if issue was deleted, False if not found
         """
-        return self.issue_service.delete_issue(issue_id)
+        result = self.issue_service.delete_issue(issue_id)
+        
+        # Invalidate milestone cache after deletion
+        if result:
+            self._milestone_cache.clear()
+        
+        return result
 
     def assign_issue_to_milestone(self, issue_id: str, milestone_name: str) -> bool:
         """Assign an issue to a milestone.
@@ -204,6 +226,11 @@ class IssueOperations:
             Dictionary mapping milestone names to lists of Issue objects,
             with a "Backlog" key for unassigned issues
         """
+        # Check cache first
+        cached = self._milestone_cache.get("all_milestones")
+        if cached is not None:
+            return cached
+        
         all_issues = self.list_issues()
         grouped: dict[str, list[Issue]] = {"Backlog": []}
 
@@ -221,6 +248,9 @@ class IssueOperations:
                         grouped[milestone_name] = []
                     grouped[milestone_name].append(issue)
 
+        # Cache the result with TTL
+        self._milestone_cache.set("all_milestones", grouped, ttl=self._cache_ttl)
+        
         return grouped
 
     def move_issue_to_milestone(
@@ -257,5 +287,73 @@ class IssueOperations:
         # Save updated issue
         issue_path = self.issues_dir / issue.filename
         IssueParser.save_issue_file(issue, issue_path)
+        
+        # Invalidate milestone cache after moving
+        self._milestone_cache.clear()
 
         return True
+
+    def batch_assign_to_milestone(
+        self, issue_ids: list[str], milestone_name: str, preloaded_issues: list[Issue] | None = None
+    ) -> tuple[int, int]:
+        """Batch assign multiple issues to a milestone in a single pass.
+
+        This method is more efficient than calling assign_issue_to_milestone
+        in a loop, as it validates the milestone once. If preloaded_issues
+        is provided, it uses those instead of scanning the filesystem.
+
+        Args:
+            issue_ids: List of issue IDs to assign
+            milestone_name: The milestone name to assign to
+            preloaded_issues: Optional pre-loaded list of issues (avoids filesystem scan)
+
+        Returns:
+            Tuple of (successful_count, failed_count)
+        """
+        # Validate milestone exists once upfront
+        safe_name = "".join(
+            c for c in milestone_name if c.isalnum() or c in (" ", "-", "_")
+        ).strip()
+        safe_name = safe_name.replace(" ", "-").lower()
+        milestone_file = self.issues_dir.parent / "milestones" / f"{safe_name}.md"
+        if not milestone_file.exists():
+            return 0, len(issue_ids)
+
+        # Load all issues once (or use preloaded)
+        if preloaded_issues is not None:
+            all_issues = preloaded_issues
+        else:
+            all_issues = self.list_issues()
+        
+        issue_by_id = {issue.id: issue for issue in all_issues}
+
+        successful = 0
+        failed = 0
+
+        # Update and save only the issues we need to modify
+        for issue_id in issue_ids:
+            if issue_id not in issue_by_id:
+                failed += 1
+                continue
+
+            issue = issue_by_id[issue_id]
+            issue.milestone = milestone_name
+            issue.updated = now_utc()
+
+            # Save the issue
+            if hasattr(issue, "file_path") and issue.file_path:
+                issue_path = Path(issue.file_path)
+            else:
+                issue_path = self.issues_dir / issue.filename
+
+            try:
+                IssueParser.save_issue_file(issue, issue_path)
+                successful += 1
+            except Exception:
+                failed += 1
+
+        # Invalidate caches after batch assignment
+        if successful > 0:
+            self._milestone_cache.clear()
+
+        return successful, failed

@@ -305,25 +305,48 @@ def init(
     template_path: str | None,
 ) -> None:
     """Initialize a new roadmap structure."""
-    log = logger.bind(
-        operation="init",
-        roadmap_name=name,
+    from roadmap.common.cli_models import InitParams
+
+    # Create structured parameter object
+    params = InitParams(
+        name=name,
+        project_name=project_name,
+        description=description,
+        skip_project=skip_project,
         skip_github=skip_github,
+        github_repo=github_repo,
+        github_token=github_token,
         interactive=interactive,
+        yes=yes,
         dry_run=dry_run,
         force=force,
+        template=template,
+        template_path=template_path,
+    )
+
+    log = logger.bind(
+        operation="init",
+        roadmap_name=params.name,
+        skip_github=params.skip_github,
+        interactive=params.interactive,
+        dry_run=params.dry_run,
+        force=params.force,
     )
     log.info("starting_init")
 
-    custom_core = RoadmapCore(roadmap_dir_name=name)
+    custom_core = RoadmapCore(roadmap_dir_name=params.name)
 
     # Handle dry-run mode
-    if dry_run:
-        _handle_init_dry_run(name, force, skip_project, skip_github, log)
+    if params.dry_run:
+        _handle_init_dry_run(
+            params.name, params.force, params.skip_project, params.skip_github, log
+        )
         return
 
     # Setup environment
-    lock, manifest, workflow = _setup_init_environment(custom_core, name, force, log)
+    lock, manifest, workflow = _setup_init_environment(
+        custom_core, params.name, params.force, log
+    )
     if not lock:
         return
 
@@ -332,7 +355,7 @@ def init(
     try:
         # Handle already initialized or force re-init
         should_continue, should_create_structure = _handle_already_initialized(
-            custom_core, force, workflow, name
+            custom_core, params.force, workflow, params.name
         )
         if not should_continue:
             return
@@ -342,7 +365,7 @@ def init(
 
         # Create structure only if needed (not already initialized or was force-cleaned)
         if should_create_structure:
-            if not _create_roadmap_structure(workflow, manifest, name):
+            if not _create_roadmap_structure(workflow, manifest, params.name):
                 return
 
         # Initialize ctx.obj if not already done (can happen in tests)
@@ -354,13 +377,13 @@ def init(
         # Setup project
         project_info = _setup_project(
             custom_core,
-            skip_project,
+            params.skip_project,
             detected_info,
-            project_name,
-            description,
-            template,
-            template_path,
-            interactive,
+            params.project_name,
+            params.description,
+            params.template,
+            params.template_path,
+            params.interactive,
         )
 
         # Show project summary
@@ -381,11 +404,11 @@ def init(
         # Configure GitHub
         github_service = GitHubInitializationService(custom_core)
         github_service.setup(
-            skip_github,
-            github_repo,
+            params.skip_github,
+            params.github_repo,
             detected_info,
-            interactive,
-            yes,
+            params.interactive,
+            params.yes,
             github_token,
             presenter,
         )

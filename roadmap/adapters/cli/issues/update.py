@@ -5,6 +5,7 @@ import click
 from roadmap.adapters.cli.crud import BaseUpdate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.common.cli_models import IssueUpdateParams
 from roadmap.infrastructure.logging import (
     log_command,
 )
@@ -95,8 +96,9 @@ def update_issue(
     core = ctx.obj["core"]
     updater = IssueUpdate(core)
 
-    updater.execute(
-        entity_id=issue_id,
+    # Create structured parameter object
+    params = IssueUpdateParams(
+        issue_id=issue_id,
         title=title,
         priority=priority,
         status=status,
@@ -105,4 +107,16 @@ def update_issue(
         description=description,
         estimate=estimate,
         reason=reason,
+    )
+
+    updater.execute(
+        entity_id=params.issue_id,
+        title=params.title,
+        priority=params.priority,
+        status=params.status,
+        assignee=params.assignee,
+        milestone=params.milestone,
+        description=params.description,
+        estimate=params.estimate,
+        reason=params.reason,
     )

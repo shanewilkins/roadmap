@@ -7,6 +7,7 @@ from typing import Any, TypeVar
 
 from .logging import get_logger
 from .metrics import OperationMetric, get_metrics_collector
+from .profiling import get_profiler
 
 logger = get_logger(__name__)
 
@@ -17,7 +18,8 @@ def timed_operation(operation_name: str | None = None, record_metric: bool = Tru
     """Decorator to time operations and optionally record metrics.
 
     This decorator measures the execution time of a function and logs it.
-    It can also record the timing as a metric in the global MetricsCollector.
+    It can also record the timing as a metric in the global MetricsCollector
+    and performance profiler.
 
     Args:
         operation_name: Name for the operation (defaults to function name)
@@ -37,6 +39,10 @@ def timed_operation(operation_name: str | None = None, record_metric: bool = Tru
             start_time = time.perf_counter()
             error: Exception | None = None
             result: Any = None
+            
+            # Record in profiler
+            profiler = get_profiler()
+            profiler.start_operation(op_name)
 
             try:
                 result = func(*args, **kwargs)
@@ -47,6 +53,9 @@ def timed_operation(operation_name: str | None = None, record_metric: bool = Tru
             finally:
                 # Calculate duration
                 duration_ms = (time.perf_counter() - start_time) * 1000
+                
+                # Record in profiler
+                profiler.end_operation(op_name, error=error is not None)
 
                 # Log the timing
                 if error:

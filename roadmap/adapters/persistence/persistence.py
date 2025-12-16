@@ -92,7 +92,7 @@ class YAMLRecoveryManager:
                     )
 
                     # Validate the fixed YAML
-                    is_valid, error = self.validate_yaml_syntax(fixed_frontmatter)
+                    is_valid, _ = self.validate_yaml_syntax(fixed_frontmatter)
                     if is_valid:
                         # Create backup before fixing
                         self.create_backup(file_path)

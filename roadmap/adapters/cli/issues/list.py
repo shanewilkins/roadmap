@@ -5,6 +5,7 @@ import click
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.common.cli_models import IssueListParams
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.common.output_models import ColumnType
@@ -25,11 +26,11 @@ def _get_console():
 def _validate_and_get_issues(
     core,
     backlog: bool,
-    assignee: str,
+    assignee: str | None,
     my_issues: bool,
     unassigned: bool,
     next_milestone: bool,
-    milestone: str,
+    milestone: str | None,
     overdue: bool,
 ) -> tuple[list | None, str | None]:
     """Validate filter combinations and get filtered issues.
@@ -85,9 +86,9 @@ def _apply_additional_filters(
     filter_description: str | None,
     open_flag: bool,
     blocked: bool,
-    status: str,
-    priority: str,
-    issue_type: str,
+    status: str | None,
+    priority: str | None,
+    issue_type: str | None,
 ) -> tuple[list, str]:
     """Apply additional filters to issues.
 
@@ -210,23 +211,39 @@ def list_issues(
     Supports output formatting with --format, --columns, --sort-by, --filter flags.
     """
     core = ctx.obj["core"]
-    _ = verbose  # noqa: F841 - verbose flag available for future use via CLI decorator
 
-    # Handle positional filter_type argument
-    if filter_type and filter_type.lower() == "backlog":
-        backlog = True
+    # Create structured parameter object
+    params = IssueListParams(
+        filter_type=filter_type,
+        milestone=milestone,
+        backlog=backlog,
+        unassigned=unassigned,
+        open=open,
+        blocked=blocked,
+        next_milestone=next_milestone,
+        assignee=assignee,
+        my_issues=my_issues,
+        status=status,
+        priority=priority,
+        issue_type=issue_type,
+        overdue=overdue,
+    )
 
     try:
+        # Handle positional filter_type argument
+        if params.filter_type and params.filter_type.lower() == "backlog":
+            params.backlog = True
+
         # Validate and get issues
         issues, filter_description = _validate_and_get_issues(
             core,
-            backlog,
-            assignee,
-            my_issues,
-            unassigned,
-            next_milestone,
-            milestone,
-            overdue,
+            params.backlog,
+            params.assignee,
+            params.my_issues,
+            params.unassigned,
+            params.next_milestone,
+            params.milestone,
+            params.overdue,
         )
 
         if issues is None:
@@ -242,11 +259,11 @@ def list_issues(
             core,
             issues,
             filter_description,
-            open,
-            blocked,
-            status,
-            priority,
-            issue_type,
+            params.open,
+            params.blocked,
+            params.status,
+            params.priority,
+            params.issue_type,
         )
 
         # Handle no issues found
@@ -272,8 +289,8 @@ def list_issues(
         )
 
         # Display workload summary if applicable
-        if (assignee or my_issues) and issues:
-            assignee_name = assignee if assignee else "you"
+        if (params.assignee or params.my_issues) and issues:
+            assignee_name = params.assignee if params.assignee else "you"
             workload = WorkloadCalculator.calculate_workload(issues)
             IssueTableFormatter.display_workload_summary(
                 assignee_name,
@@ -291,10 +308,10 @@ def list_issues(
             entity_type="issue",
             entity_id="all",
             context={
-                "backlog": backlog,
-                "assignee": assignee,
-                "my_issues": my_issues,
-                "filter": status,
+                "backlog": params.backlog,
+                "assignee": params.assignee,
+                "my_issues": params.my_issues,
+                "filter": params.status,
             },
             fatal=True,
         )

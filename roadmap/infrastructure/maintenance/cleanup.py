@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from roadmap.adapters.cli.presentation.cleanup_presenter import CleanupPresenter
+from roadmap.common.cli_models import CleanupParams
 from roadmap.common.console import get_console
 from roadmap.core.services.backup_cleanup_service import BackupCleanupService
 from roadmap.core.services.file_repair_service import FileRepairService
@@ -108,6 +109,19 @@ def cleanup(
     core = ctx.obj["core"]
     presenter = CleanupPresenter()
 
+    # Create structured parameter object
+    params = CleanupParams(
+        keep=keep,
+        days=days,
+        dry_run=dry_run,
+        force=force,
+        backups_only=backups_only,
+        check_folders=check_folders,
+        check_duplicates=check_duplicates,
+        check_malformed=check_malformed,
+        verbose=verbose,
+    )
+
     if not core.is_initialized():
         presenter.present_no_roadmap()
         ctx.exit(1)
@@ -116,26 +130,35 @@ def cleanup(
     issues_dir = roadmap_dir / "issues"
 
     # Handle specific flag modes
-    if check_folders:
+    if params.check_folders:
         _handle_check_folders(issues_dir, roadmap_dir, core, presenter)
         return
 
-    if check_duplicates:
+    if params.check_duplicates:
         _handle_check_duplicates(issues_dir, roadmap_dir, presenter)
         return
 
-    if check_malformed:
-        _handle_check_malformed(issues_dir, roadmap_dir, dry_run, force, presenter)
+    if params.check_malformed:
+        _handle_check_malformed(
+            issues_dir, roadmap_dir, params.dry_run, params.force, presenter
+        )
         return
 
     # Default or backups-only mode: run comprehensive cleanup
     try:
         # 1. Clean up backups
-        _run_backup_cleanup(roadmap_dir, keep, days, dry_run, force, presenter)
+        _run_backup_cleanup(
+            roadmap_dir,
+            params.keep,
+            params.days,
+            params.dry_run,
+            params.force,
+            presenter,
+        )
 
         # 2. Move misplaced issues and duplicates (skip if backups-only)
-        if not backups_only:
-            if not dry_run:
+        if not params.backups_only:
+            if not params.dry_run:
                 _resolve_folder_issues(issues_dir, roadmap_dir, core, force, presenter)
                 _resolve_duplicates(issues_dir, roadmap_dir, force, presenter)
 

@@ -296,7 +296,7 @@ class GitHubInitializationService:
         github_client = GitHubClient(use_token)
         validator = GitHubSetupValidator(github_client)
 
-        auth_success, username = validator.validate_authentication()
+        auth_success, _ = validator.validate_authentication()
         if not auth_success:
             if interactive and not yes:
                 if not click.confirm(

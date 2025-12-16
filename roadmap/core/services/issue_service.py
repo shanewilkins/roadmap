@@ -15,6 +15,7 @@ from pathlib import Path
 
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.adapters.persistence.storage import StateManager
+from roadmap.common.cache import SessionCache
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_metric
@@ -27,6 +28,10 @@ logger = get_logger(__name__)
 
 class IssueService:
     """Service for managing issues."""
+
+    # Cache for list_issues results (TTL: 60 seconds)
+    _list_issues_cache = SessionCache()
+    _cache_ttl = 60  # TTL in seconds
 
     def __init__(self, db: StateManager, issues_dir: Path):
         """Initialize issue service.
@@ -117,6 +122,9 @@ class IssueService:
         except Exception:
             # Silently continue if DB insert fails - file-based system is primary
             pass
+
+        # Invalidate cache after successful creation
+        self._list_issues_cache.clear()
 
         log_event("issue_created", issue_id=issue.id)
         log_exit("create_issue", issue_id=issue.id)
@@ -238,6 +246,19 @@ class IssueService:
             List of Issue objects matching all filters, sorted by priority then date
         """
         log_entry("list_issues", milestone=milestone, status=status)
+        
+        # Create cache key from filter parameters
+        cache_key = (milestone, status, priority, issue_type, assignee)
+        # Convert to string for cache key
+        cache_key_str = str(cache_key)
+        
+        # Check cache first
+        cached = self._list_issues_cache.get(cache_key_str)
+        if cached is not None:
+            log_metric("cache_hit", 1, operation="list_issues")
+            log_exit("list_issues", issue_count=len(cached), from_cache=True)
+            return cached
+        
         # Use FileEnumerationService to enumerate and parse all issue files
         issues = FileEnumerationService.enumerate_and_parse(
             self.issues_dir, IssueParser.parse_issue_file
@@ -256,6 +277,10 @@ class IssueService:
         # Sort by priority then by creation date
         sorted_issues = self._sort_issues_by_priority_and_date(filtered_issues)
         log_metric("issues_filtered", len(issues), filtered=len(sorted_issues))
+        
+        # Cache the result with TTL
+        self._list_issues_cache.set(cache_key_str, sorted_issues, ttl=self._cache_ttl)
+        
         log_exit("list_issues", issue_count=len(sorted_issues))
         return sorted_issues
 
@@ -329,6 +354,10 @@ class IssueService:
 
         IssueParser.save_issue_file(issue, issue_path)
         log_event("issue_saved", issue_id=issue_id)
+        
+        # Invalidate cache after successful update
+        self._list_issues_cache.clear()
+        
         log_exit("update_issue", issue_id=issue_id, success=True)
 
         return issue
@@ -350,6 +379,10 @@ class IssueService:
             try:
                 issue_file.unlink()
                 log_event("issue_deleted", issue_id=issue_id, file=str(issue_file))
+                
+                # Invalidate cache after successful deletion
+                self._list_issues_cache.clear()
+                
                 log_exit("delete_issue", success=True)
                 return True
             except Exception:

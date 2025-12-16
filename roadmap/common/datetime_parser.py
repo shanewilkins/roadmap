@@ -16,9 +16,7 @@ from .timezone_utils import (
     get_timezone_manager,
 )
 
-if ZONEINFO_AVAILABLE:
-    from zoneinfo import ZoneInfo
-else:
+if not ZONEINFO_AVAILABLE:
     try:
         from backports.zoneinfo import ZoneInfo
     except ImportError:
