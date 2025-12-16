@@ -164,7 +164,7 @@ class ProjectService:
         self,
         name: str,
         description: str = "",
-        milestones: list[str] | None = None,
+        milestones: list | None = None,
     ) -> Project:
         """Create a new project.
 

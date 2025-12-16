@@ -22,6 +22,7 @@ from roadmap.core.domain import (
     Priority,
     Status,
 )
+from roadmap.core.models import IssueCreateServiceParams, IssueUpdateServiceParams
 from roadmap.core.services import IssueService
 
 
@@ -70,21 +71,28 @@ class IssueOperations:
         Returns:
             Created Issue object
         """
-        result = self.issue_service.create_issue(
+        # Create service params dataclass from individual arguments
+        params = IssueCreateServiceParams(
             title=title,
-            priority=priority,
-            issue_type=issue_type,
+            priority=priority.value
+            if isinstance(priority, Priority)
+            else str(priority),
+            issue_type=issue_type.value
+            if isinstance(issue_type, IssueType)
+            else str(issue_type),
             milestone=milestone,
-            labels=labels,
+            labels=labels or [],
             assignee=assignee,
-            estimated_hours=estimated_hours,
-            depends_on=depends_on,
-            blocks=blocks,
+            estimate=estimated_hours,
+            depends_on=depends_on or [],
+            blocks=blocks or [],
         )
-        
+
+        result = self.issue_service.create_issue(params)
+
         # Invalidate milestone cache after creation
         self._milestone_cache.clear()
-        
+
         return result
 
     def list_issues(
@@ -136,12 +144,27 @@ class IssueOperations:
         Returns:
             Updated Issue object if found, None otherwise
         """
-        result = self.issue_service.update_issue(issue_id, **updates)
-        
+        params = IssueUpdateServiceParams(
+            issue_id=issue_id,
+            title=updates.get("title"),
+            priority=updates.get("priority").value
+            if isinstance(updates.get("priority"), Priority)
+            else updates.get("priority"),
+            status=updates.get("status").value
+            if isinstance(updates.get("status"), Status)
+            else updates.get("status"),
+            assignee=updates.get("assignee"),
+            milestone=updates.get("milestone"),
+            description=updates.get("description"),
+            estimate=updates.get("estimate"),
+            reason=updates.get("reason"),
+        )
+        result = self.issue_service.update_issue(params)
+
         # Invalidate milestone cache after update
         if result is not None:
             self._milestone_cache.clear()
-        
+
         return result
 
     def delete_issue(self, issue_id: str) -> bool:
@@ -154,11 +177,11 @@ class IssueOperations:
             True if issue was deleted, False if not found
         """
         result = self.issue_service.delete_issue(issue_id)
-        
+
         # Invalidate milestone cache after deletion
         if result:
             self._milestone_cache.clear()
-        
+
         return result
 
     def assign_issue_to_milestone(self, issue_id: str, milestone_name: str) -> bool:
@@ -230,7 +253,7 @@ class IssueOperations:
         cached = self._milestone_cache.get("all_milestones")
         if cached is not None:
             return cached
-        
+
         all_issues = self.list_issues()
         grouped: dict[str, list[Issue]] = {"Backlog": []}
 
@@ -250,7 +273,7 @@ class IssueOperations:
 
         # Cache the result with TTL
         self._milestone_cache.set("all_milestones", grouped, ttl=self._cache_ttl)
-        
+
         return grouped
 
     def move_issue_to_milestone(
@@ -287,14 +310,17 @@ class IssueOperations:
         # Save updated issue
         issue_path = self.issues_dir / issue.filename
         IssueParser.save_issue_file(issue, issue_path)
-        
+
         # Invalidate milestone cache after moving
         self._milestone_cache.clear()
 
         return True
 
     def batch_assign_to_milestone(
-        self, issue_ids: list[str], milestone_name: str, preloaded_issues: list[Issue] | None = None
+        self,
+        issue_ids: list[str],
+        milestone_name: str,
+        preloaded_issues: list[Issue] | None = None,
     ) -> tuple[int, int]:
         """Batch assign multiple issues to a milestone in a single pass.
 
@@ -324,7 +350,7 @@ class IssueOperations:
             all_issues = preloaded_issues
         else:
             all_issues = self.list_issues()
-        
+
         issue_by_id = {issue.id: issue for issue in all_issues}
 
         successful = 0

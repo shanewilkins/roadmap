@@ -21,6 +21,7 @@ from roadmap.common.logging import get_logger
 from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_metric
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue, IssueType, Priority, Status
+from roadmap.core.models import IssueCreateServiceParams, IssueUpdateServiceParams
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
@@ -44,55 +45,64 @@ class IssueService:
         self.issues_dir = issues_dir
 
     @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
-    def create_issue(
-        self,
-        title: str,
-        priority: Priority = Priority.MEDIUM,
-        issue_type: IssueType = IssueType.OTHER,
-        milestone: str | None = None,
-        labels: list[str] | None = None,
-        assignee: str | None = None,
-        estimated_hours: float | None = None,
-        depends_on: list[str] | None = None,
-        blocks: list[str] | None = None,
-    ) -> Issue:
+    def create_issue(self, params: IssueCreateServiceParams) -> Issue:
         """Create a new issue with provided metadata.
 
         Args:
-            title: Issue title/summary
-            priority: Priority level (CRITICAL, HIGH, MEDIUM, LOW)
-            issue_type: Type of issue (BUG, FEATURE, TASK, etc.)
-            milestone: Associated milestone name
-            labels: List of labels/tags
-            assignee: Assigned user or team member
-            estimated_hours: Estimated effort in hours
-            depends_on: List of issue IDs this depends on
-            blocks: List of issue IDs this blocks
+            params: IssueCreateServiceParams containing all creation parameters
+                - title: Issue title/summary
+                - priority: Priority level (CRITICAL, HIGH, MEDIUM, LOW)
+                - issue_type: Type of issue (BUG, FEATURE, TASK, etc.)
+                - milestone: Associated milestone name
+                - labels: List of labels/tags
+                - assignee: Assigned user or team member
+                - estimate: Estimated effort in hours
+                - depends_on: List of issue IDs this depends on
+                - blocks: List of issue IDs this blocks
 
         Returns:
             Newly created Issue object
         """
-        log_entry("create_issue", title=title, priority=priority.value)
+        log_entry("create_issue", title=params.title, priority=params.priority)
         logger.info(
             "creating_issue",
-            title=title,
-            priority=priority.value,
-            issue_type=issue_type.value,
+            title=params.title,
+            priority=params.priority,
+            issue_type=params.issue_type,
         )
-        log_event("issue_creation_started", issue_title=title)
+        log_event("issue_creation_started", issue_title=params.title)
         import json
 
+        # Convert string values to enums (if they're not already)
+        try:
+            priority = (
+                Priority[params.priority.upper()]
+                if isinstance(params.priority, str)
+                else params.priority
+            )
+        except (AttributeError, KeyError):
+            priority = Priority.MEDIUM
+
+        try:
+            issue_type = (
+                IssueType[params.issue_type.upper()]
+                if isinstance(params.issue_type, str)
+                else params.issue_type
+            )
+        except (AttributeError, KeyError):
+            issue_type = IssueType.OTHER
+
         issue = Issue(
-            title=title,
+            title=params.title,
             priority=priority,
             issue_type=issue_type,
-            milestone=milestone or "",
-            labels=labels or [],
-            assignee=assignee,
-            estimated_hours=estimated_hours,
-            depends_on=depends_on or [],
-            blocks=blocks or [],
-            content=f"# {title}\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+            milestone=params.milestone or "",
+            labels=params.labels or [],
+            assignee=params.assignee,
+            estimated_hours=params.estimate,
+            depends_on=params.depends_on or [],
+            blocks=params.blocks or [],
+            content=f"# {params.title}\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
         )
 
         issue_path = self.issues_dir / issue.filename
@@ -106,16 +116,16 @@ class IssueService:
                     "id": issue.id,
                     "project_id": None,  # Issues are not project-scoped in current design
                     "milestone_id": None,  # Not directly mapped in current design
-                    "title": title,
+                    "title": params.title,
                     "description": "",
-                    "status": "open",
+                    "status": params.status,
                     "priority": priority.value,
                     "issue_type": issue_type.value,
-                    "assignee": assignee,
-                    "estimate_hours": estimated_hours,
+                    "assignee": params.assignee,
+                    "estimate_hours": params.estimate,
                     "due_date": None,
                     "metadata": json.dumps(
-                        {"filename": issue.filename, "labels": labels or []}
+                        {"filename": issue.filename, "labels": params.labels or []}
                     ),
                 }
             )
@@ -246,19 +256,19 @@ class IssueService:
             List of Issue objects matching all filters, sorted by priority then date
         """
         log_entry("list_issues", milestone=milestone, status=status)
-        
+
         # Create cache key from filter parameters
         cache_key = (milestone, status, priority, issue_type, assignee)
         # Convert to string for cache key
         cache_key_str = str(cache_key)
-        
+
         # Check cache first
         cached = self._list_issues_cache.get(cache_key_str)
         if cached is not None:
             log_metric("cache_hit", 1, operation="list_issues")
             log_exit("list_issues", issue_count=len(cached), from_cache=True)
             return cached
-        
+
         # Use FileEnumerationService to enumerate and parse all issue files
         issues = FileEnumerationService.enumerate_and_parse(
             self.issues_dir, IssueParser.parse_issue_file
@@ -277,10 +287,10 @@ class IssueService:
         # Sort by priority then by creation date
         sorted_issues = self._sort_issues_by_priority_and_date(filtered_issues)
         log_metric("issues_filtered", len(issues), filtered=len(sorted_issues))
-        
+
         # Cache the result with TTL
         self._list_issues_cache.set(cache_key_str, sorted_issues, ttl=self._cache_ttl)
-        
+
         log_exit("list_issues", issue_count=len(sorted_issues))
         return sorted_issues
 
@@ -314,33 +324,81 @@ class IssueService:
         return issue
 
     @safe_operation(OperationType.UPDATE, "Issue")
-    def update_issue(self, issue_id: str, **updates) -> Issue | None:
+    def update_issue(self, params: IssueUpdateServiceParams) -> Issue | None:
         """Update an existing issue with new field values.
 
         Args:
-            issue_id: Issue identifier
-            **updates: Fields to update (title, status, priority, etc.)
+            params: IssueUpdateServiceParams with fields to update
 
         Returns:
             Updated Issue object if found, None otherwise
         """
-        log_entry("update_issue", issue_id=issue_id, fields=list(updates.keys()))
+        log_entry(
+            "update_issue",
+            issue_id=params.issue_id,
+            fields=[
+                "title",
+                "status",
+                "priority",
+                "assignee",
+                "milestone",
+                "description",
+                "estimate",
+                "reason",
+            ],
+        )
         logger.info(
-            "updating_issue", issue_id=issue_id, update_fields=list(updates.keys())
+            "updating_issue",
+            issue_id=params.issue_id,
+            update_fields=[
+                "title",
+                "status",
+                "priority",
+                "assignee",
+                "milestone",
+                "description",
+                "estimate",
+            ],
         )
         from pathlib import Path
 
-        issue = self.get_issue(issue_id)
+        issue = self.get_issue(params.issue_id)
         if not issue:
-            log_event("issue_not_found", issue_id=issue_id)
+            log_event("issue_not_found", issue_id=params.issue_id)
             log_exit("update_issue", success=False)
             return None
 
-        # Update fields
-        for field, value in updates.items():
-            if hasattr(issue, field):
-                setattr(issue, field, value)
-                log_event("issue_field_updated", issue_id=issue_id, field=field)
+        # Update fields if provided
+        if params.title is not None:
+            issue.title = params.title
+            log_event("issue_field_updated", issue_id=params.issue_id, field="title")
+        if params.status is not None:
+            issue.status = Status(params.status)
+            log_event("issue_field_updated", issue_id=params.issue_id, field="status")
+        if params.priority is not None:
+            priority = (
+                Priority[params.priority.upper()]
+                if isinstance(params.priority, str)
+                else params.priority
+            )
+            issue.priority = priority
+            log_event("issue_field_updated", issue_id=params.issue_id, field="priority")
+        if params.assignee is not None:
+            issue.assignee = params.assignee
+            log_event("issue_field_updated", issue_id=params.issue_id, field="assignee")
+        if params.milestone is not None:
+            issue.milestone = params.milestone
+            log_event(
+                "issue_field_updated", issue_id=params.issue_id, field="milestone"
+            )
+        if params.description is not None:
+            issue.description = params.description
+            log_event(
+                "issue_field_updated", issue_id=params.issue_id, field="description"
+            )
+        if params.estimate is not None:
+            issue.estimated_hours = params.estimate
+            log_event("issue_field_updated", issue_id=params.issue_id, field="estimate")
 
         # Update timestamp
         issue.updated = now_utc()
@@ -353,12 +411,12 @@ class IssueService:
             issue_path = self.issues_dir / issue.filename
 
         IssueParser.save_issue_file(issue, issue_path)
-        log_event("issue_saved", issue_id=issue_id)
-        
+        log_event("issue_saved", issue_id=params.issue_id)
+
         # Invalidate cache after successful update
         self._list_issues_cache.clear()
-        
-        log_exit("update_issue", issue_id=issue_id, success=True)
+
+        log_exit("update_issue", issue_id=params.issue_id, success=True)
 
         return issue
 
@@ -379,10 +437,10 @@ class IssueService:
             try:
                 issue_file.unlink()
                 log_event("issue_deleted", issue_id=issue_id, file=str(issue_file))
-                
+
                 # Invalidate cache after successful deletion
                 self._list_issues_cache.clear()
-                
+
                 log_exit("delete_issue", success=True)
                 return True
             except Exception:
