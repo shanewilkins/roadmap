@@ -161,6 +161,32 @@ class IssueOperations:
         )
         result = self.issue_service.update_issue(params)
 
+        # Apply any additional fields that weren't in the service params
+        # This allows flexibility for fields like progress_percentage, due_date, etc.
+        if result is not None:
+            # List of fields already handled by service layer
+            handled_fields = {
+                "issue_id",
+                "title",
+                "priority",
+                "status",
+                "assignee",
+                "milestone",
+                "description",
+                "estimate",
+                "reason",
+            }
+
+            # Apply any additional fields directly to the issue
+            for field, value in updates.items():
+                if field not in handled_fields and hasattr(result, field):
+                    setattr(result, field, value)
+
+            # Save the updated issue
+            if result.file_path:
+                issue_path = Path(result.file_path)
+                IssueParser.save_issue_file(result, issue_path)
+
         # Invalidate milestone cache after update
         if result is not None:
             self._milestone_cache.clear()

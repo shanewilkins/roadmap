@@ -16,6 +16,12 @@ class IssueUpdate(BaseUpdate):
 
     entity_type = EntityType.ISSUE
 
+    def __init__(self, core):
+        """Initialize IssueUpdate."""
+        super().__init__(core)
+        self._current_update_dict = {}
+        self._current_reason = None
+
     def build_update_dict(self, entity_id: str, **kwargs) -> dict:
         """Build update dictionary for issue."""
         return IssueBuilder.build_update_dict(
@@ -28,25 +34,58 @@ class IssueUpdate(BaseUpdate):
             estimate=kwargs.get("estimate"),
         )
 
+    def execute(self, entity_id: str, **kwargs):
+        """Execute update and display results using proper formatter.
+
+        Overrides parent to store update_dict and reason for display.
+        """
+        # Store for use in _display_success
+        self._current_update_dict = self.build_update_dict(
+            entity_id=entity_id, **kwargs
+        )
+        self._current_reason = kwargs.get("reason")
+
+        # Call parent execute which will call _display_success
+        return super().execute(entity_id=entity_id, **kwargs)
+
     def _display_success(self, entity) -> None:
         """Display detailed success message for issue update."""
-        # Display in a similar format to creation but with "Updated"
+        # Use the same display logic as IssueUpdateService.display_update_result
         try:
-            title = self._get_title(entity)
-            entity_id = self._get_id(entity)
+            self.console.print(f"✅ Updated issue: {entity.title}", style="bold green")
+            self.console.print(f"   ID: {entity.id}", style="cyan")
 
-            self.console.print(f"✅ Updated issue: {title}", style="bold green")
-            self.console.print(f"   ID: {entity_id}", style="cyan")
-            if hasattr(entity, "issue_type"):
-                self.console.print(f"   type: {entity.issue_type.value}", style="blue")
-            if hasattr(entity, "priority"):
-                self.console.print(
-                    f"   priority: {entity.priority.value}", style="yellow"
-                )
-            if hasattr(entity, "estimated_hours") and entity.estimated_hours:
-                self.console.print(
-                    f"   estimate: {entity.estimated_time_display}", style="green"
-                )
+            # Show what was updated
+            for field, value in self._current_update_dict.items():
+                if field == "estimated_hours":
+                    # Use the value directly from the update dict, not from entity
+                    # This avoids stale cache/file read issues
+                    hours = value
+                    if hours is None:
+                        display_value = "Not estimated"
+                    elif hours < 1:
+                        minutes = int(hours * 60)
+                        display_value = f"{minutes}m"
+                    elif hours < 8:
+                        display_value = f"{hours:.1f}h"
+                    else:
+                        days = hours / 8
+                        display_value = f"{days:.1f}d"
+                    self.console.print(f"   estimate: {display_value}", style="cyan")
+                elif field in [
+                    "title",
+                    "priority",
+                    "status",
+                    "assignee",
+                    "milestone",
+                    "description",
+                ]:
+                    # Format enum values to show just the string value
+                    display_value = value.value if hasattr(value, "value") else value
+                    self.console.print(f"   {field}: {display_value}", style="cyan")
+
+            if self._current_reason:
+                self.console.print(f"   reason: {self._current_reason}", style="dim")
         except (AttributeError, TypeError):
             # Fallback for mocks or incomplete entities
             title = self._get_title(entity)

@@ -376,11 +376,20 @@ class IssueService:
             issue.status = Status(params.status)
             log_event("issue_field_updated", issue_id=params.issue_id, field="status")
         if params.priority is not None:
-            priority = (
-                Priority[params.priority.upper()]
-                if isinstance(params.priority, str)
-                else params.priority
-            )
+            try:
+                priority = (
+                    Priority[params.priority.upper()]
+                    if isinstance(params.priority, str)
+                    else params.priority
+                )
+            except (AttributeError, KeyError):
+                # Invalid priority - keep current priority
+                logger.warning(
+                    "invalid_priority_in_update",
+                    issue_id=params.issue_id,
+                    priority=params.priority,
+                )
+                priority = issue.priority
             issue.priority = priority
             log_event("issue_field_updated", issue_id=params.issue_id, field="priority")
         if params.assignee is not None:
@@ -458,4 +467,5 @@ class IssueService:
         Returns:
             Closed Issue object if found, None otherwise
         """
-        return self.update_issue(issue_id, status=Status.CLOSED)
+        params = IssueUpdateServiceParams(issue_id=issue_id, status="closed")
+        return self.update_issue(params)
