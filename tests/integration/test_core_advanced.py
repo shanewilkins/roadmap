@@ -561,6 +561,9 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         """Test operations with file permission errors."""
         # Make issues directory read-only
         import stat
+        import time
+
+        from roadmap.common.errors.exceptions import CreateError
 
         try:
             core.issues_dir.chmod(stat.S_IRUSR | stat.S_IXUSR)
@@ -569,13 +572,22 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
             try:
                 core.issues.create("Test Issue", priority=Priority.HIGH)
                 # May succeed or fail depending on system
-            except (PermissionError, OSError):
-                # Expected on some systems
+            except (PermissionError, OSError, CreateError):
+                # Expected on some systems (CreateError wraps permission errors)
                 pass
 
         finally:
-            # Restore permissions
-            core.issues_dir.chmod(stat.S_IRWXU)
+            # Restore permissions - with retry logic for stubborn file handles
+            for attempt in range(3):
+                try:
+                    core.issues_dir.chmod(stat.S_IRWXU)
+                    break
+                except (PermissionError, OSError):
+                    if attempt < 2:
+                        time.sleep(0.1)  # Brief pause before retry
+                    else:
+                        # Last attempt - suppress error as cleanup will handle it
+                        pass
 
     def test_milestone_operations_edge_cases(self, core):
         """Test milestone operations with edge cases."""

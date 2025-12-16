@@ -229,6 +229,9 @@ This issue is missing the title field.
     def test_file_operations_with_permission_errors(self, initialized_core):
         """Test handling of file permission errors."""
         import stat
+        import time
+
+        from roadmap.common.errors.exceptions import UpdateError
 
         # Create an issue
         issue = initialized_core.issues.create("Test Issue")
@@ -243,16 +246,22 @@ This issue is missing the title field.
             try:
                 initialized_core.issues.update(issue.id, title="New Title")
                 # If it succeeds, that's fine too
-            except PermissionError:
-                # If it fails with permission error, that's expected
+            except (PermissionError, UpdateError):
+                # If it fails with permission error, that's expected (UpdateError wraps it)
                 pass
 
         finally:
-            # Restore permissions for cleanup
-            try:
-                os.chmod(
-                    issue_file,
-                    stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH,
-                )
-            except OSError:
-                pass
+            # Restore permissions for cleanup with retry logic
+            for attempt in range(3):
+                try:
+                    os.chmod(
+                        issue_file,
+                        stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH,
+                    )
+                    break
+                except OSError:
+                    if attempt < 2:
+                        time.sleep(0.05)  # Brief pause before retry
+                    else:
+                        # Last attempt - pytest cleanup will handle directory removal
+                        pass
