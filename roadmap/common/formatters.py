@@ -299,7 +299,9 @@ def format_json(data: Any, indent: int = 2) -> str:
 
 # Re-export operation formatters from their canonical location to avoid duplication
 # and maintain backward compatibility with existing imports
-from roadmap.shared.formatters.text.operations import (
+# NOTE: These imports are at the bottom to avoid circular import issues
+# pylint: disable=unused-import,wrong-import-position
+from roadmap.shared.formatters.text.operations import (  # noqa: F401,E402
     format_entity_details,
     format_list_items,
     format_operation_failure,

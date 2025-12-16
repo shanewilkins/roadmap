@@ -11,16 +11,9 @@ from typing import Any
 
 # Import timezone utilities
 from .timezone_utils import (
-    ZONEINFO_AVAILABLE,
     ensure_timezone_aware,
     get_timezone_manager,
 )
-
-if not ZONEINFO_AVAILABLE:
-    try:
-        from backports.zoneinfo import ZoneInfo
-    except ImportError:
-        ZoneInfo = None
 
 
 class UnifiedDateTimeParser:
