@@ -14,9 +14,13 @@ Responsibilities:
 from typing import TYPE_CHECKING, Any
 
 from roadmap.adapters.git.git import GitIntegration
+from roadmap.common.errors.error_standards import OperationType, safe_operation
+from roadmap.common.logging import get_logger
 
 if TYPE_CHECKING:
     from roadmap.infrastructure.core import RoadmapCore
+
+logger = get_logger(__name__)
 
 
 class GitIntegrationOps:
@@ -32,12 +36,14 @@ class GitIntegrationOps:
         self.git = git
         self.core = core
 
+    @safe_operation(OperationType.READ, "GitRepository")
     def get_git_context(self) -> dict[str, Any]:
         """Get Git repository context information.
 
         Returns:
             Dictionary with git repository info, current branch, and linked issue info
         """
+        logger.info("getting_git_context")
         if not self.git.is_git_repository():
             return {"is_git_repo": False}
 
@@ -63,14 +69,17 @@ class GitIntegrationOps:
 
         return context
 
+    @safe_operation(OperationType.READ, "GitUser")
     def get_current_user_from_git(self) -> str | None:
         """Get current user from Git configuration.
 
         Returns:
             Current user name from git config, or None if not set
         """
+        logger.info("getting_current_user_from_git")
         return self.git.get_current_user()
 
+    @safe_operation(OperationType.CREATE, "GitBranch", include_traceback=True)
     def create_issue_with_git_branch(self, title: str, **kwargs):
         """Create an issue and optionally create a Git branch for it.
 
@@ -83,6 +92,11 @@ class GitIntegrationOps:
         Returns:
             Created Issue object, or None if creation failed
         """
+        logger.info(
+            "creating_issue_with_git_branch",
+            title=title,
+            auto_create_branch=kwargs.get("auto_create_branch", False),
+        )
         # Extract git-specific arguments
         auto_create_branch = kwargs.pop("auto_create_branch", False)
         checkout_branch = kwargs.pop("checkout_branch", True)
@@ -98,6 +112,7 @@ class GitIntegrationOps:
 
         return issue
 
+    @safe_operation(OperationType.UPDATE, "GitBranch")
     def link_issue_to_current_branch(self, issue_id: str) -> bool:
         """Link an issue to the current Git branch.
 
@@ -107,6 +122,7 @@ class GitIntegrationOps:
         Returns:
             True if linking successful, False otherwise
         """
+        logger.info("linking_issue_to_current_branch", issue_id=issue_id)
         if not self.git.is_git_repository():
             return False
 
@@ -131,6 +147,7 @@ class GitIntegrationOps:
             is not None
         )
 
+    @safe_operation(OperationType.READ, "GitCommit")
     def get_commits_for_issue(self, issue_id: str, since: str | None = None) -> list:
         """Get Git commits that reference this issue.
 
@@ -141,11 +158,17 @@ class GitIntegrationOps:
         Returns:
             List of commits referencing the issue
         """
+        logger.info(
+            "getting_commits_for_issue",
+            issue_id=issue_id,
+            has_since_filter=since is not None,
+        )
         if not self.git.is_git_repository():
             return []
 
         return self.git.get_commits_for_issue(issue_id, since)
 
+    @safe_operation(OperationType.UPDATE, "Issue")
     def update_issue_from_git_activity(self, issue_id: str) -> bool:
         """Update issue progress and status based on Git commit activity.
 
@@ -155,6 +178,7 @@ class GitIntegrationOps:
         Returns:
             True if issue was updated, False otherwise
         """
+        logger.info("updating_issue_from_git_activity", issue_id=issue_id)
         if not self.git.is_git_repository():
             return False
 
