@@ -106,7 +106,10 @@ class IssueCoordinator:
         return self._ops.assign_issue_to_milestone(issue_id, milestone_name)
 
     def batch_assign_to_milestone(
-        self, issue_ids: list[str], milestone_name: str, preloaded_issues: list | None = None
+        self,
+        issue_ids: list[str],
+        milestone_name: str,
+        preloaded_issues: list | None = None,
     ) -> tuple[int, int]:
         """Batch assign multiple issues to a milestone in a single pass.
 
@@ -118,4 +121,6 @@ class IssueCoordinator:
         Returns:
             Tuple of (successful_count, failed_count)
         """
-        return self._ops.batch_assign_to_milestone(issue_ids, milestone_name, preloaded_issues)
+        return self._ops.batch_assign_to_milestone(
+            issue_ids, milestone_name, preloaded_issues
+        )
