@@ -13,8 +13,12 @@ Responsibilities:
 from datetime import datetime
 from typing import Any
 
+from roadmap.common.errors.error_standards import OperationType, safe_operation
+from roadmap.common.logging import get_logger
 from roadmap.core.domain import Milestone, MilestoneStatus
 from roadmap.core.services import MilestoneService
+
+logger = get_logger(__name__)
 
 
 class MilestoneOperations:
@@ -28,6 +32,7 @@ class MilestoneOperations:
         """
         self.milestone_service = milestone_service
 
+    @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
     def create_milestone(
         self, name: str, description: str = "", due_date: datetime | None = None
     ) -> Milestone:
@@ -41,18 +46,27 @@ class MilestoneOperations:
         Returns:
             Created Milestone object
         """
+        logger.info(
+            "creating_milestone",
+            milestone_name=name,
+            has_description=description is not None,
+            has_due_date=due_date is not None,
+        )
         return self.milestone_service.create_milestone(
             name=name, description=description, due_date=due_date
         )
 
+    @safe_operation(OperationType.READ, "Milestone")
     def list_milestones(self) -> list[Milestone]:
         """List all milestones.
 
         Returns:
             List of Milestone objects
         """
+        logger.info("listing_milestones")
         return self.milestone_service.list_milestones()
 
+    @safe_operation(OperationType.READ, "Milestone")
     def get_milestone(self, name: str) -> Milestone | None:
         """Get a specific milestone by name.
 
@@ -62,8 +76,10 @@ class MilestoneOperations:
         Returns:
             Milestone object if found, None otherwise
         """
+        logger.info("getting_milestone", milestone_name=name)
         return self.milestone_service.get_milestone(name)
 
+    @safe_operation(OperationType.DELETE, "Milestone", include_traceback=True)
     def delete_milestone(self, name: str) -> bool:
         """Delete a milestone and unassign all issues from it.
 
@@ -73,8 +89,10 @@ class MilestoneOperations:
         Returns:
             True if milestone was deleted, False if not found
         """
+        logger.info("deleting_milestone", milestone_name=name)
         return self.milestone_service.delete_milestone(name)
 
+    @safe_operation(OperationType.UPDATE, "Milestone")
     def update_milestone(
         self,
         name: str,
@@ -95,6 +113,14 @@ class MilestoneOperations:
         Returns:
             True if milestone was updated, False if not found
         """
+        logger.info(
+            "updating_milestone",
+            milestone_name=name,
+            has_description=description is not None,
+            has_due_date=due_date is not None,
+            clear_due_date=clear_due_date,
+            has_status=status is not None,
+        )
         return (
             self.milestone_service.update_milestone(
                 name=name,
@@ -106,6 +132,7 @@ class MilestoneOperations:
             is not None
         )
 
+    @safe_operation(OperationType.READ, "Milestone")
     def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
         """Get progress statistics for a milestone.
 
@@ -115,6 +142,7 @@ class MilestoneOperations:
         Returns:
             Dictionary containing progress metrics (completed, total, percentage, etc.)
         """
+        logger.info("getting_milestone_progress", milestone_name=milestone_name)
         return self.milestone_service.get_milestone_progress(milestone_name)
 
     def get_next_milestone(self) -> Milestone | None:

@@ -36,6 +36,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from roadmap.common.errors.error_standards import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 
 logger = get_logger(__name__)
@@ -52,6 +53,7 @@ class FileEnumerationService:
     """
 
     @staticmethod
+    @safe_operation(OperationType.READ, "File")
     def enumerate_and_parse(
         directory: Path,
         parser_func: Callable[[Path], Any],
@@ -67,6 +69,7 @@ class FileEnumerationService:
         Returns:
             List of parsed objects (failed items skipped with logging)
         """
+        logger.info("enumerate_and_parse_start", directory=str(directory))
         if not directory.exists():
             logger.debug(
                 "enumerate_and_parse_skip",
@@ -109,6 +112,7 @@ class FileEnumerationService:
         return results
 
     @staticmethod
+    @safe_operation(OperationType.READ, "File")
     def enumerate_with_filter(
         directory: Path,
         parser_func: Callable[[Path], Any],
@@ -124,6 +128,10 @@ class FileEnumerationService:
         Returns:
             List of parsed and filtered objects
         """
+        logger.info(
+            "enumerate_with_filter_start",
+            directory=str(directory),
+        )
         items = FileEnumerationService.enumerate_and_parse(directory, parser_func)
         filtered = [item for item in items if filter_func(item)]
 
@@ -136,6 +144,7 @@ class FileEnumerationService:
         return filtered
 
     @staticmethod
+    @safe_operation(OperationType.READ, "File")
     def find_by_id(
         directory: Path,
         id_value: str,
@@ -154,6 +163,7 @@ class FileEnumerationService:
         Returns:
             First matching object or None
         """
+        logger.info("find_by_id_start", id=id_value, directory=str(directory))
         if not directory.exists():
             logger.debug(
                 "find_by_id_skip",
