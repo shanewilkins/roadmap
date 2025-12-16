@@ -18,10 +18,14 @@ from typing import Any
 
 from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
 from roadmap.adapters.persistence.storage import StateManager
+from roadmap.common.errors import OperationType, safe_operation
+from roadmap.common.logging import get_logger
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Status
 from roadmap.core.domain.milestone import Milestone, MilestoneStatus
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
+
+logger = get_logger(__name__)
 
 
 class MilestoneService:
@@ -39,6 +43,7 @@ class MilestoneService:
         self.milestones_dir = milestones_dir
         self.issues_dir = issues_dir
 
+    @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
     def create_milestone(
         self,
         name: str,
@@ -55,6 +60,7 @@ class MilestoneService:
         Returns:
             Newly created Milestone object
         """
+        logger.info("creating_milestone", milestone_name=name, has_due_date=due_date is not None)
         import json
         import uuid
 

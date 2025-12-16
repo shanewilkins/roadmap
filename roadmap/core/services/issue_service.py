@@ -15,9 +15,13 @@ from pathlib import Path
 
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.adapters.persistence.storage import StateManager
+from roadmap.common.errors import OperationType, safe_operation
+from roadmap.common.logging import get_logger
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue, IssueType, Priority, Status
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
+
+logger = get_logger(__name__)
 
 
 class IssueService:
@@ -33,6 +37,7 @@ class IssueService:
         self.db = db
         self.issues_dir = issues_dir
 
+    @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
     def create_issue(
         self,
         title: str,
@@ -61,6 +66,7 @@ class IssueService:
         Returns:
             Newly created Issue object
         """
+        logger.info("creating_issue", title=title, priority=priority.value, issue_type=issue_type.value)
         import json
 
         issue = Issue(

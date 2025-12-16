@@ -14,10 +14,14 @@ from typing import Any
 
 from roadmap.adapters.persistence.parser import MilestoneParser, ProjectParser
 from roadmap.adapters.persistence.storage import StateManager
+from roadmap.common.errors import OperationType, safe_operation
+from roadmap.common.logging import get_logger
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.milestone import MilestoneStatus
 from roadmap.core.domain.project import Project
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
+
+logger = get_logger(__name__)
 
 
 class ProjectService:
@@ -70,6 +74,7 @@ class ProjectService:
 
         return projects[0] if projects else None
 
+    @safe_operation(OperationType.UPDATE, "Project")
     def save_project(self, project: Project) -> bool:
         """Save an updated project to disk.
 
@@ -79,6 +84,7 @@ class ProjectService:
         Returns:
             True if saved, False on error
         """
+        logger.debug("saving_project", project_id=project.id)
         # Find and update the existing project file
         for project_file in self.projects_dir.rglob("*.md"):
             try:
@@ -96,6 +102,7 @@ class ProjectService:
         ProjectParser.save_project_file(project, project_path)
         return True
 
+    @safe_operation(OperationType.CREATE, "Project", include_traceback=True)
     def create_project(
         self,
         name: str,
@@ -112,6 +119,7 @@ class ProjectService:
         Returns:
             Newly created Project object
         """
+        logger.info("creating_project", project_name=name)
         project = Project(
             name=name,
             description=description,
@@ -122,6 +130,7 @@ class ProjectService:
         self.save_project(project)
         return project
 
+    @safe_operation(OperationType.UPDATE, "Project")
     def update_project(self, project_id: str, **updates) -> Project | None:
         """Update a project.
 
@@ -132,6 +141,7 @@ class ProjectService:
         Returns:
             Updated Project object if found, None otherwise
         """
+        logger.info("updating_project", project_id=project_id, field_count=len(updates))
         project = self.get_project(project_id)
         if not project:
             return None
@@ -144,6 +154,7 @@ class ProjectService:
         self.save_project(project)
         return project
 
+    @safe_operation(OperationType.DELETE, "Project", include_traceback=True)
     def delete_project(self, project_id: str) -> bool:
         """Delete a project.
 
@@ -153,6 +164,7 @@ class ProjectService:
         Returns:
             True if deleted, False if not found
         """
+        logger.info("deleting_project", project_id=project_id)
         for project_file in self.projects_dir.rglob("*.md"):
             try:
                 project = ProjectParser.parse_project_file(project_file)
