@@ -15,6 +15,7 @@ from roadmap.common.errors import (
     ErrorSeverity,
     ValidationError,
 )
+from roadmap.common.errors.error_standards import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.infrastructure.security.credentials import get_credential_manager
 
@@ -37,12 +38,14 @@ class GitHubIntegrationService:
         self._cache_timestamp: datetime | None = None
         self._last_canonical_assignee: str | None = None
 
+    @safe_operation(OperationType.READ, "GitHubAPI", retryable=True)
     def get_github_config(self) -> tuple[str | None, str | None, str | None]:
         """Get GitHub configuration from config file and credentials.
 
         Returns:
             Tuple of (token, owner, repo) or (None, None, None) if not configured
         """
+        logger.info("getting_github_config")
         try:
             config_manager = ConfigManager(self.config_file)
             config = config_manager.load()
@@ -72,12 +75,14 @@ class GitHubIntegrationService:
             logger.debug("github_config_retrieval_failed", error=str(e))
             return None, None, None
 
+    @safe_operation(OperationType.READ, "GitHubAPI", retryable=True)
     def get_team_members(self) -> list[str]:
         """Get team members from GitHub repository.
 
         Returns:
             List of usernames if GitHub is configured, empty list otherwise
         """
+        logger.info("getting_team_members_from_github")
         try:
             token, owner, repo = self.get_github_config()
             if not token or not owner or not repo:
@@ -94,6 +99,7 @@ class GitHubIntegrationService:
             # Return empty list if GitHub is not configured or accessible
             return []
 
+    @safe_operation(OperationType.READ, "GitHubUser", retryable=True)
     def get_current_user(self, config_file: Path | None = None) -> str | None:
         """Get the current user from config.
 
@@ -103,6 +109,7 @@ class GitHubIntegrationService:
         Returns:
             Current user's name from config if set, None otherwise
         """
+        logger.info("getting_current_user")
         try:
             config_path = config_file or self.config_file
             config_manager = ConfigManager(config_path)
@@ -118,12 +125,14 @@ class GitHubIntegrationService:
 
         return None
 
+    @safe_operation(OperationType.READ, "GitHubAPI", retryable=True)
     def get_cached_team_members(self) -> list[str]:
         """Get team members with caching (5 minute cache).
 
         Returns:
             List of cached team member usernames
         """
+        logger.info("getting_cached_team_members")
         # Check if cache is valid (5 minutes)
         if (
             self._team_members_cache is not None
@@ -141,6 +150,7 @@ class GitHubIntegrationService:
 
         return team_members
 
+    @safe_operation(OperationType.READ, "Assignee", retryable=True)
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:
         """Validate an assignee using the identity management system.
 
@@ -155,6 +165,7 @@ class GitHubIntegrationService:
             - (True, "") if valid (backward compatible)
             - (False, error_message) if invalid
         """
+        logger.info("validating_assignee", assignee=assignee)
         try:
             from roadmap.core.services.assignee_validation_service import (
                 AssigneeValidationStrategy,

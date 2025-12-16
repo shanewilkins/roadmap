@@ -8,10 +8,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from roadmap.common.errors.error_standards import OperationType, safe_operation
+from roadmap.common.logging import get_logger
 from roadmap.core.services import GitHubIntegrationService
 
 if TYPE_CHECKING:
     from roadmap.infrastructure.core import RoadmapCore
+
+logger = get_logger(__name__)
 
 
 class ValidationCoordinator:
@@ -29,10 +33,12 @@ class ValidationCoordinator:
         self._github_service = github_service
         self._core = core
 
+    @safe_operation(OperationType.READ, "Configuration")
     def get_github_config(self) -> tuple[str | None, str | None, str | None]:
         """Get GitHub configuration from config file and credentials.
 
         Returns:
             Tuple of (token, owner, repo) or (None, None, None) if not configured
         """
+        logger.info("getting_github_config")
         return self._github_service.get_github_config()
