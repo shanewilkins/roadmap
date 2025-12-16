@@ -253,14 +253,13 @@ class TestRoadmapCoreUncoveredLines:
         assert isinstance(is_valid, bool)
         assert isinstance(error, str)
 
-    @pytest.mark.skip(reason="Requires proper uninitialized roadmap state handling")
     def test_issue_operations_not_initialized(self, temp_dir):
         """Test issue operations when roadmap is not initialized."""
         # Verify that operations work on uninitialized roadmap (facade handles gracefully)
         core = RoadmapCore(root_path=temp_dir)
         # Should not raise error, operations should fail gracefully
-        with pytest.raises(ValueError):
-            core.issues.list()
+        result = core.issues.list()
+        assert result == []
 
     def test_create_issue_failed_return(self, core):
         """Test create_issue_with_git_branch when issue creation fails."""

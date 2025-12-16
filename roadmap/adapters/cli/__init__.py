@@ -82,6 +82,26 @@ def _get_current_user():
     return os.environ.get("USER") or os.environ.get("USERNAME")
 
 
+def _detect_project_context():
+    """Detect project context from current directory."""
+    import pathlib
+
+    context = {
+        "project_name": pathlib.Path.cwd().name,
+        "has_git": False,
+    }
+
+    # Check if we're in a git repository
+    if gitpython is not None:
+        try:
+            gitpython.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
+            context["has_git"] = True
+        except Exception:
+            pass
+
+    return context
+
+
 @click.group(cls=RoadmapClickGroup)
 @click.version_option()
 @click.pass_context

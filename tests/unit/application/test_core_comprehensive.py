@@ -150,7 +150,6 @@ class TestRoadmapCoreMilestoneOperations:
         )
         assert result is False
 
-    @pytest.mark.skip(reason="Removed initialization checks from facade")
     def test_update_milestone_not_initialized(self, temp_dir):
         """Test updating milestone on uninitialized roadmap."""
         pass

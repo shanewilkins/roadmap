@@ -12,10 +12,6 @@ from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
 
-pytestmark = [
-    pytest.mark.skip(reason="CLI command integration tests - complex Click mocking")
-]
-
 
 @pytest.fixture
 def cli_runner():
@@ -95,7 +91,7 @@ class TestCLIHelperFunctions:
 
     def test_get_current_user_with_mock(self, cli_runner):
         """Test _get_current_user function with mocked environment."""
-        from roadmap.presentation.cli import _get_current_user
+        from roadmap.adapters.cli import _get_current_user
 
         with (
             patch("os.getenv") as mock_getenv,
@@ -112,7 +108,7 @@ class TestCLIHelperFunctions:
 
     def test_detect_project_context_basic(self, cli_runner):
         """Test _detect_project_context function."""
-        from roadmap.presentation.cli import _detect_project_context
+        from roadmap.adapters.cli import _detect_project_context
 
         with cli_runner.isolated_filesystem():
             context = _detect_project_context()  # type: ignore[call-arg]

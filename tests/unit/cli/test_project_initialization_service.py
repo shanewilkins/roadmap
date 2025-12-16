@@ -12,8 +12,6 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectContextDetectionService,
     ProjectCreationService,
@@ -388,16 +386,11 @@ class TestProjectCreationService:
         # Should have software template content since custom template doesn't exist
         assert "Develop core functionality" in content
 
-    @pytest.mark.skip(
-        reason="Requires _generate_id and _normalize_filename methods not implemented"
-    )
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_creates_directory(self, mock_core_class, tmp_path):
         """Test that project creation creates projects directory if missing."""
-        mock_core = MagicMock(spec=RoadmapCore)
+        mock_core = MagicMock()
         mock_core.roadmap_dir = tmp_path / ".roadmap"
-        mock_core._generate_id.return_value = "jkl012defg"
-        mock_core._normalize_filename.return_value = "dir-test"
 
         # Don't create projects directory
         assert not (mock_core.roadmap_dir / "projects").exists()
@@ -416,16 +409,11 @@ class TestProjectCreationService:
         # Directory should be created
         assert (mock_core.roadmap_dir / "projects").exists()
 
-    @pytest.mark.skip(
-        reason="Requires _generate_id and _normalize_filename methods not implemented"
-    )
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_handles_file_write_error(self, mock_core_class, tmp_path):
         """Test graceful handling of file write errors."""
-        mock_core = MagicMock(spec=RoadmapCore)
+        mock_core = MagicMock()
         mock_core.roadmap_dir = tmp_path / ".roadmap"
-        mock_core._generate_id.return_value = "mno345ghij"
-        mock_core._normalize_filename.return_value = "error-proj"
 
         # Setup directory but make it read-only to trigger error
         projects_dir = mock_core.roadmap_dir / "projects"
