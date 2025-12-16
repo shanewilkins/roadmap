@@ -66,7 +66,12 @@ class IssueService:
         Returns:
             Newly created Issue object
         """
-        logger.info("creating_issue", title=title, priority=priority.value, issue_type=issue_type.value)
+        logger.info(
+            "creating_issue",
+            title=title,
+            priority=priority.value,
+            issue_type=issue_type.value,
+        )
         import json
 
         issue = Issue(
@@ -268,6 +273,7 @@ class IssueService:
 
         return issue
 
+    @safe_operation(OperationType.UPDATE, "Issue")
     def update_issue(self, issue_id: str, **updates) -> Issue | None:
         """Update an existing issue with new field values.
 
@@ -278,6 +284,9 @@ class IssueService:
         Returns:
             Updated Issue object if found, None otherwise
         """
+        logger.info(
+            "updating_issue", issue_id=issue_id, update_fields=list(updates.keys())
+        )
         from pathlib import Path
 
         issue = self.get_issue(issue_id)
@@ -303,6 +312,7 @@ class IssueService:
 
         return issue
 
+    @safe_operation(OperationType.DELETE, "Issue", include_traceback=True)
     def delete_issue(self, issue_id: str) -> bool:
         """Delete an issue.
 
@@ -312,6 +322,7 @@ class IssueService:
         Returns:
             True if deleted successfully, False if not found
         """
+        logger.info("deleting_issue", issue_id=issue_id)
         # Find and delete the issue file by ID pattern
         for issue_file in self.issues_dir.rglob(f"{issue_id}-*.md"):
             try:

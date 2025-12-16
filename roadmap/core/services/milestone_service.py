@@ -60,7 +60,9 @@ class MilestoneService:
         Returns:
             Newly created Milestone object
         """
-        logger.info("creating_milestone", milestone_name=name, has_due_date=due_date is not None)
+        logger.info(
+            "creating_milestone", milestone_name=name, has_due_date=due_date is not None
+        )
         import json
         import uuid
 
@@ -145,6 +147,7 @@ class MilestoneService:
 
         return milestones[0] if milestones else None
 
+    @safe_operation(OperationType.UPDATE, "Milestone")
     def update_milestone(
         self,
         name: str,
@@ -165,6 +168,11 @@ class MilestoneService:
         Returns:
             Updated Milestone object if found, None otherwise
         """
+        logger.info(
+            "updating_milestone",
+            milestone_name=name,
+            has_description=description is not None,
+        )
         milestone = self.get_milestone(name)
         if not milestone:
             return None
@@ -194,6 +202,7 @@ class MilestoneService:
                 continue
         return None
 
+    @safe_operation(OperationType.DELETE, "Milestone", include_traceback=True)
     def delete_milestone(self, name: str) -> bool:
         """Delete a milestone and unassign all issues from it.
 
@@ -203,6 +212,7 @@ class MilestoneService:
         Returns:
             True if deleted, False if not found
         """
+        logger.info("deleting_milestone", milestone_name=name)
         # Check if milestone exists
         milestone = self.get_milestone(name)
         if not milestone:
@@ -276,6 +286,7 @@ class MilestoneService:
             "by_status": by_status,
         }
 
+    @safe_operation(OperationType.UPDATE, "Milestone")
     def close_milestone(self, name: str) -> Milestone | None:
         """Close/mark milestone as closed.
 
@@ -285,4 +296,5 @@ class MilestoneService:
         Returns:
             Closed Milestone object if found, None otherwise
         """
+        logger.info("closing_milestone", milestone_name=name)
         return self.update_milestone(name, status=MilestoneStatus.CLOSED.value)
