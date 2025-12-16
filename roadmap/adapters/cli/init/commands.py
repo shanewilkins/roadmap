@@ -423,7 +423,9 @@ def init(
     except Exception as e:
         log.error("init_failed", error=str(e))
         presenter.present_initialization_failed(str(e))
-        manifest.rollback()
-        workflow.rollback_on_error()
+        if manifest:
+            manifest.rollback()
+        if workflow:
+            workflow.rollback_on_error()
     finally:
         lock.release()

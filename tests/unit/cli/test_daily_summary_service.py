@@ -85,6 +85,7 @@ class TestDailySummaryServiceMilestoneSelection:
         service = DailySummaryService(core)
         milestone = service.get_upcoming_milestone()
 
+        assert milestone is not None
         assert milestone.name == "v1.0"
 
     def test_get_upcoming_milestone_raises_when_no_open_milestones(self):
@@ -121,6 +122,7 @@ class TestDailySummaryServiceMilestoneSelection:
         service = DailySummaryService(core)
         milestone = service.get_upcoming_milestone()
 
+        assert milestone is not None
         assert milestone.name == "with-date"
 
 

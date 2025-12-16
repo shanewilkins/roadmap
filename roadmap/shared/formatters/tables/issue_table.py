@@ -1,5 +1,6 @@
 """Issue table formatting and display."""
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from rich.text import Text
@@ -255,10 +256,12 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
 
     @staticmethod
     def issues_to_table_data(
-        issues: list[Issue], title: str = "Issues", description: str = ""
+        issues: Sequence[Issue], title: str = "Issues", description: str = ""
     ) -> TableData:
         """Convert Issue list to TableData for structured output (backward compatible)."""
-        return IssueTableFormatter().items_to_table_data(issues, title, description)
+        return IssueTableFormatter().items_to_table_data(
+            list(issues), title, description
+        )
 
     @staticmethod
     def display_workload_summary(

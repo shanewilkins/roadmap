@@ -92,10 +92,13 @@ class TestGitHooksManagerFix:
         """Test that installing hooks creates the hook files with correct permissions."""
         mock_exists.return_value = True
 
+        # Create a mock RoadmapCore for the constructor
+        mock_core = MagicMock(spec=RoadmapCore)
+
         with patch.object(GitHookManager, "__init__", lambda x, y: None):
-            manager = GitHookManager(None)
+            manager = GitHookManager(mock_core)
             manager.hooks_dir = Path(".git/hooks")
-            manager.core = MagicMock(spec=RoadmapCore)
+            manager.core = mock_core
 
             # Mock the parent class initialization
             manager.git_integration = MagicMock()

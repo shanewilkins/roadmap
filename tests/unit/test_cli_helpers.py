@@ -215,6 +215,7 @@ class TestFilterSpecParser:
         """Test equality filter on string."""
         column_types = {"status": ColumnType.STRING}
         result = FilterSpecParser.parse("status=open", column_types)
+        assert result is not None
         assert len(result) == 1
         assert result[0].column == "status"
         assert result[0].operator == "="
@@ -224,6 +225,7 @@ class TestFilterSpecParser:
         """Test inequality filter."""
         column_types = {"status": ColumnType.STRING}
         result = FilterSpecParser.parse("status!=closed", column_types)
+        assert result is not None
         assert len(result) == 1
         assert result[0].operator == "!="
 
@@ -231,6 +233,7 @@ class TestFilterSpecParser:
         """Test comparison filters with integer."""
         column_types = {"count": ColumnType.INTEGER}
         result = FilterSpecParser.parse("count>=5", column_types)
+        assert result is not None
         assert result[0].operator == ">="
         assert result[0].value == 5
         assert isinstance(result[0].value, int)
@@ -239,6 +242,7 @@ class TestFilterSpecParser:
         """Test comparison filters with float."""
         column_types = {"rating": ColumnType.FLOAT}
         result = FilterSpecParser.parse("rating>3.5", column_types)
+        assert result is not None
         assert result[0].value == 3.5
         assert isinstance(result[0].value, float)
 
@@ -246,6 +250,7 @@ class TestFilterSpecParser:
         """Test regex filter."""
         column_types = {"title": ColumnType.STRING}
         result = FilterSpecParser.parse("title~bug", column_types)
+        assert result is not None
         assert result[0].operator == "~"
         assert result[0].value == "bug"
 
@@ -253,6 +258,7 @@ class TestFilterSpecParser:
         """Test multiple filters."""
         column_types = {"status": ColumnType.STRING, "count": ColumnType.INTEGER}
         result = FilterSpecParser.parse("status=open,count>=5", column_types)
+        assert result is not None
         assert len(result) == 2
 
     def test_parse_boolean_true(self):
@@ -260,6 +266,7 @@ class TestFilterSpecParser:
         column_types = {"active": ColumnType.BOOLEAN}
         for val in ["true", "True", "TRUE", "yes", "1", "on"]:
             result = FilterSpecParser.parse(f"active={val}", column_types)
+            assert result is not None
             assert result[0].value is True
 
     def test_parse_boolean_false(self):
@@ -267,12 +274,14 @@ class TestFilterSpecParser:
         column_types = {"active": ColumnType.BOOLEAN}
         for val in ["false", "False", "FALSE", "no", "0", "off"]:
             result = FilterSpecParser.parse(f"active={val}", column_types)
+            assert result is not None
             assert result[0].value is False
 
     def test_parse_case_insensitive_column(self):
         """Test case-insensitive column names."""
         column_types = {"status": ColumnType.STRING}
         result = FilterSpecParser.parse("STATUS=open", column_types)
+        assert result is not None
         assert result[0].column == "status"
 
     def test_parse_unknown_column(self):
@@ -315,6 +324,7 @@ class TestFilterSpecParser:
         """Test parsing with spaces."""
         column_types = {"status": ColumnType.STRING}
         result = FilterSpecParser.parse(" status = open ", column_types)
+        assert result is not None
         assert result[0].value == "open"
 
     def test_get_help_text(self):

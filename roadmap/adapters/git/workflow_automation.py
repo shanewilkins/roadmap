@@ -189,7 +189,7 @@ class WorkflowAutomation:
         Returns:
             Tuple of (highest_progress_percentage, is_completed_bool)
         """
-        highest_progress = None
+        highest_progress: float | None = None
         is_completed = False
 
         for commit in commits:
@@ -223,7 +223,7 @@ class WorkflowAutomation:
         self,
         issue: Issue,
         commit: GitCommit,
-        progress: int | None,
+        progress: float | None,
         is_completed: bool,
         commits: list[GitCommit],
     ):
@@ -238,7 +238,7 @@ class WorkflowAutomation:
         issue.git_commits.append(commit_ref)
 
     def _update_issue_status_and_progress(
-        self, issue: Issue, highest_progress: int | None, is_completed: bool
+        self, issue: Issue, highest_progress: float | None, is_completed: bool
     ) -> bool:
         """Update issue status and progress based on extracted data.
 
