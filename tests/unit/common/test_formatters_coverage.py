@@ -15,6 +15,7 @@ from roadmap.common.formatters import (
     format_success,
     format_table,
     format_warning,
+    truncate_text,
 )
 
 
@@ -559,3 +560,279 @@ class TestFormatterIntegration:
         for operation in operations:
             result = operation()
             assert result is not None
+
+
+class TestFormatterTruncation:
+    """Test truncate_text function."""
+
+    def test_truncate_text_under_limit(self):
+        """Test truncate_text when text is under limit."""
+        text = "Short"
+        result = truncate_text(text, max_length=50)
+        assert result == "Short"
+
+    def test_truncate_text_at_limit(self):
+        """Test truncate_text when text is exactly at limit."""
+        text = "Exactly"
+        result = truncate_text(text, max_length=7)
+        assert result == "Exactly"
+
+    def test_truncate_text_over_limit(self):
+        """Test truncate_text when text exceeds limit."""
+        text = "This is a long text that needs truncation"
+        result = truncate_text(text, max_length=20)
+        assert len(result) <= 20
+        assert result.endswith("...")
+
+    def test_truncate_text_custom_suffix(self):
+        """Test truncate_text with custom suffix."""
+        text = "This is a long text"
+        result = truncate_text(text, max_length=15, suffix=">>")
+        assert result.endswith(">>")
+
+    def test_truncate_text_empty_string(self):
+        """Test truncate_text with empty string."""
+        result = truncate_text("", max_length=50)
+        assert result == ""
+
+
+class TestFormatterJSON:
+    """Test format_json function."""
+
+    def test_format_json_basic_dict(self):
+        """Test format_json with dictionary."""
+        data = {"key": "value", "number": 42}
+        result = format_json(data)
+        assert '"key": "value"' in result
+        assert '"number": 42' in result
+
+    def test_format_json_list(self):
+        """Test format_json with list."""
+        data = ["item1", "item2", "item3"]
+        result = format_json(data)
+        assert "item1" in result
+        assert "item2" in result
+
+    def test_format_json_nested(self):
+        """Test format_json with nested structures."""
+        data = {"outer": {"inner": "value"}}
+        result = format_json(data)
+        assert "outer" in result
+        assert "inner" in result
+
+    def test_format_json_with_custom_indent(self):
+        """Test format_json with custom indentation."""
+        data = {"key": "value"}
+        result_2 = format_json(data, indent=2)
+        result_4 = format_json(data, indent=4)
+        # More spaces with larger indent
+        assert len(result_4) > len(result_2)
+
+    def test_format_json_with_non_serializable(self):
+        """Test format_json with objects that have custom string repr."""
+
+        class CustomObj:
+            def __str__(self):
+                return "custom_string"
+
+        data = {"obj": CustomObj()}
+        result = format_json(data)
+        assert "custom_string" in result
+
+
+class TestFormatterKeyValuePairs:
+    """Test format_key_value_pairs function."""
+
+    def test_format_key_value_pairs_empty(self):
+        """Test format_key_value_pairs with empty dict."""
+        result = format_key_value_pairs({})
+        assert result == ""
+
+    def test_format_key_value_pairs_single_pair(self):
+        """Test format_key_value_pairs with one pair."""
+        result = format_key_value_pairs({"key": "value"})
+        assert "key" in result
+        assert "value" in result
+
+    def test_format_key_value_pairs_multiple(self):
+        """Test format_key_value_pairs with multiple pairs."""
+        data = {"short": "val", "much_longer_key": "value"}
+        result = format_key_value_pairs(data)
+        assert "short" in result
+        assert "much_longer_key" in result
+        assert "val" in result
+
+    def test_format_key_value_pairs_with_title(self):
+        """Test format_key_value_pairs with title."""
+        data = {"key": "value"}
+        result = format_key_value_pairs(data, title="Settings")
+        assert "Settings" in result
+        assert "key" in result
+
+    def test_format_key_value_pairs_alignment(self):
+        """Test that values are aligned in format_key_value_pairs."""
+        data = {"a": "1", "bb": "2", "ccc": "3"}
+        result = format_key_value_pairs(data)
+        lines = result.split("\n")
+        # All values should be aligned at same column
+        assert len(lines) == 3
+
+
+class TestFormatterCount:
+    """Test format_count function."""
+
+    def test_format_count_singular(self):
+        """Test format_count with count of 1."""
+        result = format_count(1, "item")
+        assert "1 item" in result
+
+    def test_format_count_plural_default(self):
+        """Test format_count with plural using default."""
+        result = format_count(5, "item")
+        assert "5 items" in result
+
+    def test_format_count_plural_custom(self):
+        """Test format_count with custom plural."""
+        result = format_count(2, "child", "children")
+        assert "2 children" in result
+
+    def test_format_count_zero(self):
+        """Test format_count with zero."""
+        result = format_count(0, "file")
+        assert "0 files" in result
+
+    def test_format_count_large_number(self):
+        """Test format_count with large number."""
+        result = format_count(1000000, "record")
+        assert "1000000" in result
+
+
+class TestFormatterDuration:
+    """Test format_duration function."""
+
+    def test_format_duration_seconds(self):
+        """Test format_duration with seconds."""
+        result = format_duration(30)
+        assert "30s" in result
+
+    def test_format_duration_minutes(self):
+        """Test format_duration with minutes."""
+        result = format_duration(120)
+        assert "m" in result
+
+    def test_format_duration_hours(self):
+        """Test format_duration with hours."""
+        result = format_duration(3600)
+        assert "h" in result
+
+    def test_format_duration_fractional(self):
+        """Test format_duration with fractional seconds."""
+        result = format_duration(45.5)
+        assert "45s" == result
+
+    def test_format_duration_zero(self):
+        """Test format_duration with zero."""
+        result = format_duration(0)
+        assert "0s" in result
+
+
+class TestFormatterPercentage:
+    """Test format_percentage function."""
+
+    def test_format_percentage_decimal(self):
+        """Test format_percentage with decimal."""
+        result = format_percentage(0.75)
+        assert "75" in result
+
+    def test_format_percentage_already_percent(self):
+        """Test format_percentage with already percent value."""
+        result = format_percentage(75)
+        assert "75" in result
+
+    def test_format_percentage_zero(self):
+        """Test format_percentage with zero."""
+        result = format_percentage(0)
+        assert "0" in result
+
+    def test_format_percentage_hundred(self):
+        """Test format_percentage with 100%."""
+        result = format_percentage(1.0)
+        assert "100" in result
+
+    def test_format_percentage_decimals(self):
+        """Test format_percentage with custom decimal places."""
+        result = format_percentage(0.333, decimals=3)
+        assert "33" in result
+        # Should have 3 decimal places shown
+
+
+class TestStatusBadgeFormatting:
+    """Test format_status_badge function."""
+
+    def test_format_status_badge_open(self):
+        """Test format_status_badge with 'open' status."""
+        badge = format_status_badge("open")
+        assert badge is not None
+        assert "open" in str(badge).lower()
+
+    def test_format_status_badge_closed(self):
+        """Test format_status_badge with 'closed' status."""
+        badge = format_status_badge("closed")
+        assert badge is not None
+
+    def test_format_status_badge_in_progress(self):
+        """Test format_status_badge with 'in_progress'."""
+        badge = format_status_badge("in_progress")
+        assert badge is not None
+
+    def test_format_status_badge_blocked(self):
+        """Test format_status_badge with 'blocked'."""
+        badge = format_status_badge("blocked")
+        assert badge is not None
+
+    def test_format_status_badge_unknown(self):
+        """Test format_status_badge with unknown status."""
+        badge = format_status_badge("unknown_status")
+        assert badge is not None
+
+    def test_format_status_badge_case_insensitive(self):
+        """Test format_status_badge is case insensitive."""
+        badge1 = format_status_badge("OPEN")
+        badge2 = format_status_badge("open")
+        assert badge1 is not None
+        assert badge2 is not None
+
+
+class TestFormatterList:
+    """Test format_list function."""
+
+    def test_format_list_empty(self):
+        """Test format_list with empty list."""
+        result = format_list([])
+        assert result == ""
+
+    def test_format_list_single_item(self):
+        """Test format_list with one item."""
+        result = format_list(["item1"])
+        assert "item1" in result
+        assert "•" in result
+
+    def test_format_list_multiple_items(self):
+        """Test format_list with multiple items."""
+        items = ["first", "second", "third"]
+        result = format_list(items)
+        for item in items:
+            assert item in result
+
+    def test_format_list_with_title(self):
+        """Test format_list with title."""
+        result = format_list(["item1"], title="My List")
+        assert "My List" in result
+        assert "item1" in result
+
+    def test_format_list_special_characters(self):
+        """Test format_list with special characters."""
+        items = ["item-1", "item_2", "item.3"]
+        result = format_list(items)
+        for item in items:
+            assert item in result

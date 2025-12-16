@@ -17,6 +17,7 @@ from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.adapters.persistence.storage import StateManager
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
+from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_metric
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue, IssueType, Priority, Status
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
@@ -66,12 +67,14 @@ class IssueService:
         Returns:
             Newly created Issue object
         """
+        log_entry("create_issue", title=title, priority=priority.value)
         logger.info(
             "creating_issue",
             title=title,
             priority=priority.value,
             issue_type=issue_type.value,
         )
+        log_event("issue_creation_started", issue_title=title)
         import json
 
         issue = Issue(
@@ -115,6 +118,8 @@ class IssueService:
             # Silently continue if DB insert fails - file-based system is primary
             pass
 
+        log_event("issue_created", issue_id=issue.id)
+        log_exit("create_issue", issue_id=issue.id)
         return issue
 
     def _check_milestone_filter(self, issue: Issue, milestone: str | None) -> bool:
@@ -232,10 +237,12 @@ class IssueService:
         Returns:
             List of Issue objects matching all filters, sorted by priority then date
         """
+        log_entry("list_issues", milestone=milestone, status=status)
         # Use FileEnumerationService to enumerate and parse all issue files
         issues = FileEnumerationService.enumerate_and_parse(
             self.issues_dir, IssueParser.parse_issue_file
         )
+        log_metric("issues_enumerated", len(issues))
 
         # Apply filters
         filtered_issues = [
@@ -247,7 +254,10 @@ class IssueService:
         ]
 
         # Sort by priority then by creation date
-        return self._sort_issues_by_priority_and_date(filtered_issues)
+        sorted_issues = self._sort_issues_by_priority_and_date(filtered_issues)
+        log_metric("issues_filtered", len(issues), filtered=len(sorted_issues))
+        log_exit("list_issues", issue_count=len(sorted_issues))
+        return sorted_issues
 
     def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID.
@@ -262,6 +272,7 @@ class IssueService:
             If multiple copies exist (due to migration), prefers milestone-specific
             subdirectories (v.X.X.X) over root directory.
         """
+        log_entry("get_issue", issue_id=issue_id)
         # Use FileEnumerationService to find the issue by ID
         issue = FileEnumerationService.find_by_id(
             self.issues_dir, issue_id, IssueParser.parse_issue_file
@@ -270,7 +281,11 @@ class IssueService:
         if issue and hasattr(issue, "file_path"):
             # Store the original file path so updates preserve the location
             issue.file_path = str(issue.file_path)
+            log_event("issue_found", issue_id=issue_id, title=issue.title)
+        else:
+            log_event("issue_not_found", issue_id=issue_id)
 
+        log_exit("get_issue", found=issue is not None)
         return issue
 
     @safe_operation(OperationType.UPDATE, "Issue")
@@ -284,6 +299,7 @@ class IssueService:
         Returns:
             Updated Issue object if found, None otherwise
         """
+        log_entry("update_issue", issue_id=issue_id, fields=list(updates.keys()))
         logger.info(
             "updating_issue", issue_id=issue_id, update_fields=list(updates.keys())
         )
@@ -291,12 +307,15 @@ class IssueService:
 
         issue = self.get_issue(issue_id)
         if not issue:
+            log_event("issue_not_found", issue_id=issue_id)
+            log_exit("update_issue", success=False)
             return None
 
         # Update fields
         for field, value in updates.items():
             if hasattr(issue, field):
                 setattr(issue, field, value)
+                log_event("issue_field_updated", issue_id=issue_id, field=field)
 
         # Update timestamp
         issue.updated = now_utc()
@@ -309,6 +328,8 @@ class IssueService:
             issue_path = self.issues_dir / issue.filename
 
         IssueParser.save_issue_file(issue, issue_path)
+        log_event("issue_saved", issue_id=issue_id)
+        log_exit("update_issue", issue_id=issue_id, success=True)
 
         return issue
 
@@ -322,14 +343,19 @@ class IssueService:
         Returns:
             True if deleted successfully, False if not found
         """
+        log_entry("delete_issue", issue_id=issue_id)
         logger.info("deleting_issue", issue_id=issue_id)
         # Find and delete the issue file by ID pattern
         for issue_file in self.issues_dir.rglob(f"{issue_id}-*.md"):
             try:
                 issue_file.unlink()
+                log_event("issue_deleted", issue_id=issue_id, file=str(issue_file))
+                log_exit("delete_issue", success=True)
                 return True
             except Exception:
                 continue
+        log_event("issue_not_found", issue_id=issue_id)
+        log_exit("delete_issue", success=False)
         return False
 
     def close_issue(self, issue_id: str) -> Issue | None:

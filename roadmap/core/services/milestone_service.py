@@ -20,6 +20,7 @@ from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
 from roadmap.adapters.persistence.storage import StateManager
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
+from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_metric
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Status
 from roadmap.core.domain.milestone import Milestone, MilestoneStatus
@@ -60,9 +61,11 @@ class MilestoneService:
         Returns:
             Newly created Milestone object
         """
+        log_entry("create_milestone", name=name, has_due_date=due_date is not None)
         logger.info(
             "creating_milestone", milestone_name=name, has_due_date=due_date is not None
         )
+        log_event("milestone_creation_started", milestone_name=name)
         import json
         import uuid
 
@@ -94,6 +97,8 @@ class MilestoneService:
             # Silently continue if DB insert fails - file-based system is primary
             pass
 
+        log_event("milestone_created", milestone_name=milestone.name)
+        log_exit("create_milestone", milestone_name=milestone.name)
         return milestone
 
     def list_milestones(self, status: MilestoneStatus | None = None) -> list[Milestone]:
@@ -105,14 +110,21 @@ class MilestoneService:
         Returns:
             List of Milestone objects sorted by due date then name
         """
+        log_entry("list_milestones", status_filter=status)
         milestones = FileEnumerationService.enumerate_and_parse(
             self.milestones_dir,
             MilestoneParser.parse_milestone_file,
         )
+        log_metric("milestones_enumerated", len(milestones))
 
         # Filter by status if provided
         if status is not None:
             milestones = [m for m in milestones if m.status == status]
+            log_metric(
+                "milestones_filtered_by_status",
+                len(milestones),
+                milestone_status=status.value,
+            )
 
         # Sort by due date (earliest first), then by name
         def get_sortable_date(milestone):
@@ -124,6 +136,7 @@ class MilestoneService:
             return milestone.due_date
 
         milestones.sort(key=lambda x: (get_sortable_date(x), x.name))
+        log_exit("list_milestones", milestone_count=len(milestones))
         return milestones
 
     def get_milestone(self, name: str) -> Milestone | None:
@@ -135,6 +148,7 @@ class MilestoneService:
         Returns:
             Milestone object if found, None otherwise
         """
+        log_entry("get_milestone", milestone_name=name)
 
         def name_matcher(milestone: Milestone) -> bool:
             return milestone.name == name
@@ -145,7 +159,13 @@ class MilestoneService:
             name_matcher,
         )
 
-        return milestones[0] if milestones else None
+        result = milestones[0] if milestones else None
+        if result:
+            log_event("milestone_found", milestone_name=name)
+        else:
+            log_event("milestone_not_found", milestone_name=name)
+        log_exit("get_milestone", found=result is not None)
+        return result
 
     @safe_operation(OperationType.UPDATE, "Milestone")
     def update_milestone(
@@ -168,6 +188,11 @@ class MilestoneService:
         Returns:
             Updated Milestone object if found, None otherwise
         """
+        log_entry(
+            "update_milestone",
+            milestone_name=name,
+            fields=["description", "due_date", "status"],
+        )
         logger.info(
             "updating_milestone",
             milestone_name=name,
@@ -175,19 +200,37 @@ class MilestoneService:
         )
         milestone = self.get_milestone(name)
         if not milestone:
+            log_event("milestone_not_found", milestone_name=name)
+            log_exit("update_milestone", success=False)
             return None
 
         # Update fields if provided
         if description is not None:
             milestone.description = description
+            log_event(
+                "milestone_field_updated", milestone_name=name, field="description"
+            )
 
         if clear_due_date:
             milestone.due_date = None
+            log_event(
+                "milestone_field_updated",
+                milestone_name=name,
+                field="due_date",
+                action="cleared",
+            )
         elif due_date is not None:
             milestone.due_date = due_date
+            log_event("milestone_field_updated", milestone_name=name, field="due_date")
 
         if status is not None:
             milestone.status = MilestoneStatus(status)
+            log_event(
+                "milestone_field_updated",
+                milestone_name=name,
+                field="status",
+                value=status,
+            )
 
         milestone.updated = now_utc()
 
@@ -197,9 +240,12 @@ class MilestoneService:
                 test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 if test_milestone.name == name:
                     MilestoneParser.save_milestone_file(milestone, milestone_file)
+                    log_event("milestone_saved", milestone_name=name)
+                    log_exit("update_milestone", milestone_name=name, success=True)
                     return milestone
             except Exception:
                 continue
+        log_exit("update_milestone", success=False)
         return None
 
     @safe_operation(OperationType.DELETE, "Milestone", include_traceback=True)
@@ -212,10 +258,13 @@ class MilestoneService:
         Returns:
             True if deleted, False if not found
         """
+        log_entry("delete_milestone", milestone_name=name)
         logger.info("deleting_milestone", milestone_name=name)
         # Check if milestone exists
         milestone = self.get_milestone(name)
         if not milestone:
+            log_event("milestone_not_found", milestone_name=name)
+            log_exit("delete_milestone", success=False)
             return False
 
         # Unassign all issues from this milestone
@@ -223,7 +272,9 @@ class MilestoneService:
             self.issues_dir,
             IssueParser.parse_issue_file,
         )
+        log_metric("issues_enumerated_for_unassignment", len(issues))
 
+        unassigned_count = 0
         for issue in issues:
             if issue.milestone == name:
                 issue.milestone = None
@@ -234,19 +285,28 @@ class MilestoneService:
                         test_issue = IssueParser.parse_issue_file(issue_file)
                         if test_issue.id == issue.id:
                             IssueParser.save_issue_file(issue, issue_file)
+                            unassigned_count += 1
                             break
                     except Exception:
                         continue
 
+        log_metric("issues_unassigned", unassigned_count)
         # Delete the milestone file
         for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
                 test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
                 if test_milestone.name == name:
                     milestone_file.unlink()
+                    log_event(
+                        "milestone_deleted",
+                        milestone_name=name,
+                        issues_unassigned=unassigned_count,
+                    )
+                    log_exit("delete_milestone", success=True)
                     return True
             except Exception:
                 continue
+        log_exit("delete_milestone", success=False)
         return False
 
     def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
@@ -258,6 +318,7 @@ class MilestoneService:
         Returns:
             Dict with total, completed, progress percentage, and status breakdown
         """
+        log_entry("get_milestone_progress", milestone_name=milestone_name)
         issues = FileEnumerationService.enumerate_and_parse(
             self.issues_dir,
             IssueParser.parse_issue_file,
@@ -267,6 +328,8 @@ class MilestoneService:
         milestone_issues = [i for i in issues if i.milestone == milestone_name]
 
         if not milestone_issues:
+            log_metric("milestone_progress", 0, milestone=milestone_name)
+            log_exit("get_milestone_progress", total=0)
             return {"total": 0, "completed": 0, "progress": 0.0, "by_status": {}}
 
         total = len(milestone_issues)
@@ -279,6 +342,14 @@ class MilestoneService:
                 [i for i in milestone_issues if i.status == status]
             )
 
+        log_metric(
+            "milestone_progress",
+            progress,
+            milestone=milestone_name,
+            total=total,
+            completed=completed,
+        )
+        log_exit("get_milestone_progress", total=total, completed=completed)
         return {
             "total": total,
             "completed": completed,
@@ -296,5 +367,10 @@ class MilestoneService:
         Returns:
             Closed Milestone object if found, None otherwise
         """
+        log_entry("close_milestone", milestone_name=name)
         logger.info("closing_milestone", milestone_name=name)
-        return self.update_milestone(name, status=MilestoneStatus.CLOSED.value)
+        result = self.update_milestone(name, status=MilestoneStatus.CLOSED.value)
+        if result:
+            log_event("milestone_closed", milestone_name=name)
+        log_exit("close_milestone", success=result is not None)
+        return result
