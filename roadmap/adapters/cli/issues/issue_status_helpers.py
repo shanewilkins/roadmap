@@ -12,8 +12,11 @@ from typing import TYPE_CHECKING, Any
 import click
 
 from roadmap.common.console import get_console
-from roadmap.common.formatters import format_operation_failure, format_operation_success
 from roadmap.core.domain import Status
+from roadmap.shared.formatters.text.operations import (
+    format_operation_failure,
+    format_operation_success,
+)
 
 if TYPE_CHECKING:
     from roadmap.core.application import Core

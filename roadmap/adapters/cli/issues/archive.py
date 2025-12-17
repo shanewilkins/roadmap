@@ -15,13 +15,13 @@ from roadmap.adapters.cli.cli_error_handlers import (
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.common.console import get_console
-from roadmap.common.formatters import (
-    format_operation_failure,
-    format_operation_success,
-)
 from roadmap.infrastructure.logging import (
     log_command,
     verbose_output,
+)
+from roadmap.shared.formatters.text.operations import (
+    format_operation_failure,
+    format_operation_success,
 )
 
 console = get_console()

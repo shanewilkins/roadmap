@@ -10,7 +10,6 @@ Modules:
 - validation.py: Data validation rules and validators
 - logging.py: Structured logging configuration
 - progress.py: Progress calculation engine
-- formatters.py: Output formatting utilities
 - errors.py: Exception definitions
 - constants.py: Application constants and enums
 - file_utils.py: Secure file I/O operations
@@ -24,7 +23,6 @@ Guidelines:
 - Focused on one concern per module
 """
 
-from . import formatters
 from .constants import (
     ANALYSIS_MAX_HISTORICAL_DAYS,
     ANALYSIS_MIN_SAMPLE_SIZE,
@@ -285,6 +283,36 @@ __all__ = [
     "VALIDATION_TITLE_MAX_LENGTH",
     "VALIDATION_DESCRIPTION_MAX_LENGTH",
     "VALIDATION_NAME_PATTERN",
-    # Formatters module
-    "formatters",
+    # Error types
+    "AuthenticationError",
+    "DirectoryCreationError",
+    "ExportError",
+    "FileLockError",
+    "FileReadError",
+    "FileWriteError",
+    "GitHubAPIError",
+    "IssueNotFoundError",
+    "MilestoneNotFoundError",
+    "ParseError",
+    "PathValidationError",
+    "PersistenceError",
+    "SecurityError",
+    "StateError",
+    # Logging operations
+    "log_operation",
+    # Metrics
+    "MetricsCollector",
+    "OperationMetric",
+    "get_metrics_collector",
+    # Performance
+    "OperationTimer",
+    "async_timed_operation",
+    "timed_operation",
+    # Retry
+    "API_RETRY",
+    "DATABASE_RETRY",
+    "NETWORK_RETRY",
+    "RetryConfig",
+    "async_retry",
+    "retry",
 ]
