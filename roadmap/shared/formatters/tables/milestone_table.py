@@ -132,6 +132,8 @@ class MilestoneTableFormatter(BaseTableFormatter):
         if estimates is None:
             estimates = {}
 
+        # Create base milestone columns (ID, Name, Status, Progress, Owner)
+        # then customize for this table's specific needs
         columns = [
             ColumnDef(
                 name="name",

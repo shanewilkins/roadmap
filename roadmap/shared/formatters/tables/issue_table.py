@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Any
 from rich.text import Text
 
 from roadmap.common.console import get_console
-from roadmap.common.output_models import ColumnDef, ColumnType, TableData
+from roadmap.common.output_models import TableData
 from roadmap.common.status_style_manager import StatusStyleManager
-from roadmap.core.domain import Issue, Priority, Status
+from roadmap.core.domain import Issue, Priority
 from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
+from roadmap.shared.formatters.tables.column_factory import create_issue_columns
 
 if TYPE_CHECKING:
     pass
@@ -137,82 +138,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
         Returns:
             TableData object ready for rendering in any format.
         """
-        columns = [
-            ColumnDef(
-                name="id",
-                display_name="ID",
-                type=ColumnType.STRING,
-                width=8,
-                display_style="cyan",
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="title",
-                display_name="Title",
-                type=ColumnType.STRING,
-                width=25,
-                display_style="white",
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="priority",
-                display_name="Priority",
-                type=ColumnType.ENUM,
-                width=10,
-                display_style="yellow",
-                enum_values=[p.value for p in Priority],
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="status",
-                display_name="Status",
-                type=ColumnType.ENUM,
-                width=12,
-                display_style="green",
-                enum_values=[s.value for s in Status],
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="progress",
-                display_name="Progress",
-                type=ColumnType.STRING,
-                width=10,
-                display_style="blue",
-                sortable=False,
-                filterable=False,
-            ),
-            ColumnDef(
-                name="assignee",
-                display_name="Assignee",
-                type=ColumnType.STRING,
-                width=12,
-                display_style="magenta",
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="estimate",
-                display_name="Estimate",
-                type=ColumnType.STRING,
-                width=10,
-                display_style="green",
-                sortable=True,
-                filterable=False,
-            ),
-            ColumnDef(
-                name="milestone",
-                display_name="Milestone",
-                type=ColumnType.STRING,
-                width=15,
-                display_style="blue",
-                sortable=True,
-                filterable=True,
-            ),
-        ]
+        columns = create_issue_columns()
 
         rows = []
         for item in items:

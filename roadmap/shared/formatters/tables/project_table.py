@@ -3,9 +3,9 @@
 from typing import TYPE_CHECKING, Any, cast
 
 from roadmap.common.console import get_console
-from roadmap.common.output_models import ColumnDef, ColumnType, TableData
-from roadmap.core.domain import Priority, ProjectStatus
+from roadmap.common.output_models import TableData
 from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
+from roadmap.shared.formatters.tables.column_factory import create_project_columns
 
 if TYPE_CHECKING:
     pass
@@ -134,55 +134,7 @@ class ProjectTableFormatter(BaseTableFormatter):
         Returns:
             TableData object ready for rendering in any format.
         """
-        columns = [
-            ColumnDef(
-                name="id",
-                display_name="ID",
-                type=ColumnType.STRING,
-                width=10,
-                display_style="cyan",
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="name",
-                display_name="Name",
-                type=ColumnType.STRING,
-                width=25,
-                display_style="white",
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="status",
-                display_name="Status",
-                type=ColumnType.ENUM,
-                width=12,
-                display_style="magenta",
-                enum_values=[s.value for s in ProjectStatus],
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="priority",
-                display_name="Priority",
-                type=ColumnType.ENUM,
-                width=10,
-                display_style="yellow",
-                enum_values=[p.value for p in Priority],
-                sortable=True,
-                filterable=True,
-            ),
-            ColumnDef(
-                name="owner",
-                display_name="Owner",
-                type=ColumnType.STRING,
-                width=15,
-                display_style="green",
-                sortable=True,
-                filterable=True,
-            ),
-        ]
+        columns = create_project_columns()
 
         rows = []
         for project in items:
