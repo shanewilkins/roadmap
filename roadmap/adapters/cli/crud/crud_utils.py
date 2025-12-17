@@ -134,3 +134,19 @@ def get_entity_id(entity: Any) -> str:
         Entity ID string
     """
     return getattr(entity, "id", str(entity))
+
+
+def format_entity_not_found_error(entity_type: EntityType, entity_id: str) -> str:
+    """Format error message for entity not found.
+
+    Consolidates the repeated entity-not-found error message pattern
+    from base_update and base_delete.
+
+    Args:
+        entity_type: The type of entity that was not found
+        entity_id: The entity ID that was not found
+
+    Returns:
+        Formatted error message string
+    """
+    return f"❌ {entity_type.value.title()} '{entity_id}' not found"

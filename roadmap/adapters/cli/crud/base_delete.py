@@ -8,6 +8,7 @@ import click
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
 from roadmap.adapters.cli.crud.crud_utils import (
     delete_entity_by_type,
+    format_entity_not_found_error,
     get_entity_by_type,
     get_entity_title,
 )
@@ -62,7 +63,7 @@ class BaseDelete(ABC):
             entity = self._get_entity(entity_id)
             if entity is None:
                 self.console.print(
-                    f"❌ {self.entity_type.value.title()} '{entity_id}' not found",
+                    format_entity_not_found_error(self.entity_type, entity_id),
                     style="red",
                 )
                 return False

@@ -23,6 +23,7 @@ from pathlib import Path
 
 from roadmap.adapters.git.git import GitIntegration
 from roadmap.adapters.persistence.storage import StateManager
+from roadmap.common.path_utils import build_roadmap_paths
 from roadmap.core.services import (
     ConfigurationService,
     GitHubIntegrationService,
@@ -72,14 +73,17 @@ class RoadmapCore:
         """
         self.root_path = root_path or Path.cwd()
         self.roadmap_dir_name = roadmap_dir_name
-        self.roadmap_dir = self.root_path / roadmap_dir_name
-        self.issues_dir = self.roadmap_dir / "issues"
-        self.milestones_dir = self.roadmap_dir / "milestones"
-        self.projects_dir = self.roadmap_dir / "projects"
-        self.templates_dir = self.roadmap_dir / "templates"
-        self.artifacts_dir = self.roadmap_dir / "artifacts"
-        self.config_file = self.roadmap_dir / "config.yaml"
-        self.db_dir = self.roadmap_dir / "db"
+
+        # Build all standard roadmap paths
+        paths = build_roadmap_paths(self.root_path, roadmap_dir_name)
+        self.roadmap_dir = paths["roadmap_dir"]
+        self.issues_dir = paths["issues_dir"]
+        self.milestones_dir = paths["milestones_dir"]
+        self.projects_dir = paths["projects_dir"]
+        self.templates_dir = paths["templates_dir"]
+        self.artifacts_dir = paths["artifacts_dir"]
+        self.config_file = paths["config_file"]
+        self.db_dir = paths["db_dir"]
 
         # Initialize core infrastructure
         self._git = GitIntegration(self.root_path)
