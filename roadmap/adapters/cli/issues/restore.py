@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click  # type: ignore[import-untyped]
 
+from roadmap.adapters.cli.archive_utils import handle_restore_parse_error
 from roadmap.adapters.cli.cli_confirmations import confirm_action
 from roadmap.adapters.cli.cli_error_handlers import (
     handle_cli_error,
@@ -62,13 +63,12 @@ def _get_archived_issues(archive_dir):
             issue = IssueParser.parse_issue_file(file_path)
             issues_info.append((file_path, issue.id, issue.title))
         except Exception as e:
-            handle_cli_error(
+            handle_restore_parse_error(
                 error=e,
-                operation="parse_archived_issue",
                 entity_type="issue",
                 entity_id=file_path.stem,
-                context={"archive_dir": str(archive_dir)},
-                fatal=False,
+                archive_dir=str(archive_dir),
+                console=console,
             )
             continue
 
@@ -299,7 +299,7 @@ def restore_issue(
     status: str | None,
     dry_run: bool,
     force: bool,
-    verbose: bool,
+    verbose: bool,  # noqa: F841
 ):
     """Restore an archived issue back to active issues.
 

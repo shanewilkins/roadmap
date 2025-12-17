@@ -199,11 +199,11 @@ def create_owner_column(width: int = 15) -> ColumnDef:
     )
 
 
-def create_description_column(width: int = 40) -> ColumnDef:
+def create_description_column(width: int = 30) -> ColumnDef:
     """Create a Description column definition.
 
     Args:
-        width: Column width (default: 40)
+        width: Column width (default: 30)
 
     Returns:
         ColumnDef object for Description column
@@ -214,7 +214,27 @@ def create_description_column(width: int = 40) -> ColumnDef:
         type=ColumnType.STRING,
         width=width,
         display_style="white",
-        sortable=False,
+        sortable=True,
+        filterable=True,
+    )
+
+
+def create_due_date_column(width: int = 12) -> ColumnDef:
+    """Create a Due Date column definition.
+
+    Args:
+        width: Column width (default: 12)
+
+    Returns:
+        ColumnDef object for Due Date column
+    """
+    return ColumnDef(
+        name="due_date",
+        display_name="Due Date",
+        type=ColumnType.DATE,
+        width=width,
+        display_style="yellow",
+        sortable=True,
         filterable=True,
     )
 
@@ -244,11 +264,12 @@ def create_milestone_columns() -> list[ColumnDef]:
         List of ColumnDef objects for milestone display
     """
     return [
-        create_id_column(),
-        create_title_column(),
-        create_status_column(),
-        create_progress_column(),
-        create_owner_column(),
+        create_title_column(name="name", width=20),
+        create_description_column(width=30),
+        create_status_column(width=10),
+        create_due_date_column(width=12),
+        create_progress_column(width=12),
+        create_estimate_column(width=12),
     ]
 
 

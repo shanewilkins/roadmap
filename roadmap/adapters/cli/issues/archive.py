@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from roadmap.adapters.cli.archive_utils import handle_archive_parse_error
 from roadmap.adapters.cli.cli_confirmations import (
     check_entity_exists,
     confirm_action,
@@ -95,15 +96,13 @@ def _show_archived_issues():
                 style="cyan",
             )
         except Exception as e:
-            handle_cli_error(
+            handle_archive_parse_error(
                 error=e,
-                operation="parse_archived_issue",
                 entity_type="issue",
                 entity_id=file_path.stem,
-                context={"archive_dir": str(archive_dir)},
-                fatal=False,
+                archive_dir=str(archive_dir),
+                console=console,
             )
-            console.print(f"  • {file_path.stem} (parse error)", style="red")
 
 
 def _validate_archive_arguments(issue_id, all_closed, orphaned):
@@ -315,7 +314,7 @@ def archive_issue(
     list_archived: bool,
     dry_run: bool,
     force: bool,
-    verbose: bool,
+    verbose: bool,  # noqa: F841
 ):
     """Archive an issue by moving it to .roadmap/archive/issues/.
 

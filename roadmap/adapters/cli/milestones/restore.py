@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click  # type: ignore[import-untyped]
 
+from roadmap.adapters.cli.archive_utils import handle_restore_parse_error
 from roadmap.adapters.cli.cli_confirmations import confirm_action
 from roadmap.adapters.cli.cli_error_handlers import (
     handle_cli_error,
@@ -60,13 +61,12 @@ def _get_archived_milestones(archive_dir):
             milestone = MilestoneParser.parse_milestone_file(file_path)
             milestones_info.append((file_path, milestone.name))
         except Exception as e:
-            handle_cli_error(
+            handle_restore_parse_error(
                 error=e,
-                operation="parse_archived_milestone",
                 entity_type="milestone",
                 entity_id=file_path.stem,
-                context={"archive_dir": str(archive_dir)},
-                fatal=False,
+                archive_dir=str(archive_dir),
+                console=console,
             )
             continue
 
@@ -245,7 +245,7 @@ def restore_milestone(
     all: bool,
     dry_run: bool,
     force: bool,
-    verbose: bool,
+    verbose: bool,  # noqa: F841
 ):
     """Restore an archived milestone back to active milestones.
 
