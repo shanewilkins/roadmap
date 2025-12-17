@@ -23,6 +23,7 @@ from pathlib import Path
 
 from roadmap.adapters.git.git import GitIntegration
 from roadmap.adapters.persistence.storage import StateManager
+from roadmap.adapters.persistence.yaml_repositories import YAMLIssueRepository
 from roadmap.common.path_utils import build_roadmap_paths
 from roadmap.core.services import (
     ConfigurationService,
@@ -93,8 +94,13 @@ class RoadmapCore:
         )
         self.config_service = ConfigurationService()
 
-        # Initialize services
-        self.issue_service = IssueService(self.db, self.issues_dir)
+        # Initialize repositories (abstraction layer)
+        issue_repository = YAMLIssueRepository(self.db, self.issues_dir)
+
+        # Initialize services with repository injection for issue service
+        # (decoupled from implementation)
+        self.issue_service = IssueService(issue_repository)
+        # Milestone and Project services still use old pattern (to be migrated in next phase)
         self.milestone_service = MilestoneService(
             self.db, self.milestones_dir, self.issues_dir
         )

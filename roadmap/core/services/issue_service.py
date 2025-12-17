@@ -11,10 +11,6 @@ The IssueService manages:
 Extracted from core.py to separate business logic.
 """
 
-from pathlib import Path
-
-from roadmap.adapters.persistence.parser import IssueParser
-from roadmap.adapters.persistence.storage import StateManager
 from roadmap.common.cache import SessionCache
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
@@ -22,7 +18,7 @@ from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_met
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue, IssueType, Priority, Status
 from roadmap.core.models import IssueCreateServiceParams, IssueUpdateServiceParams
-from roadmap.infrastructure.file_enumeration import FileEnumerationService
+from roadmap.core.repositories import IssueRepository
 
 logger = get_logger(__name__)
 
@@ -34,15 +30,13 @@ class IssueService:
     _list_issues_cache = SessionCache()
     _cache_ttl = 60  # TTL in seconds
 
-    def __init__(self, db: StateManager, issues_dir: Path):
+    def __init__(self, repository: IssueRepository):
         """Initialize issue service.
 
         Args:
-            db: State manager for database operations
-            issues_dir: Path to issues directory containing issue markdown files
+            repository: IssueRepository implementation for data persistence
         """
-        self.db = db
-        self.issues_dir = issues_dir
+        self.repository = repository
 
     @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
     def create_issue(self, params: IssueCreateServiceParams) -> Issue:
@@ -71,7 +65,6 @@ class IssueService:
             issue_type=params.issue_type,
         )
         log_event("issue_creation_started", issue_title=params.title)
-        import json
 
         # Convert string values to enums (if they're not already)
         try:
@@ -105,33 +98,8 @@ class IssueService:
             content=f"# {params.title}\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
         )
 
-        issue_path = self.issues_dir / issue.filename
-        issue.file_path = str(issue_path)  # Store the path for future updates
-        IssueParser.save_issue_file(issue, issue_path)
-
-        # Persist to database (non-blocking - file system is primary source of truth)
-        try:
-            self.db.create_issue(
-                {
-                    "id": issue.id,
-                    "project_id": None,  # Issues are not project-scoped in current design
-                    "milestone_id": None,  # Not directly mapped in current design
-                    "title": params.title,
-                    "description": "",
-                    "status": params.status,
-                    "priority": priority.value,
-                    "issue_type": issue_type.value,
-                    "assignee": params.assignee,
-                    "estimate_hours": params.estimate,
-                    "due_date": None,
-                    "metadata": json.dumps(
-                        {"filename": issue.filename, "labels": params.labels or []}
-                    ),
-                }
-            )
-        except Exception:
-            # Silently continue if DB insert fails - file-based system is primary
-            pass
+        # Persist using repository abstraction
+        self.repository.save(issue)
 
         # Invalidate cache after successful creation
         self._list_issues_cache.clear()
@@ -269,10 +237,8 @@ class IssueService:
             log_exit("list_issues", issue_count=len(cached), from_cache=True)
             return cached
 
-        # Use FileEnumerationService to enumerate and parse all issue files
-        issues = FileEnumerationService.enumerate_and_parse(
-            self.issues_dir, IssueParser.parse_issue_file
-        )
+        # Get issues from repository
+        issues = self.repository.list()
         log_metric("issues_enumerated", len(issues))
 
         # Apply filters
@@ -308,10 +274,8 @@ class IssueService:
             subdirectories (v.X.X.X) over root directory.
         """
         log_entry("get_issue", issue_id=issue_id)
-        # Use FileEnumerationService to find the issue by ID
-        issue = FileEnumerationService.find_by_id(
-            self.issues_dir, issue_id, IssueParser.parse_issue_file
-        )
+        # Get issue from repository
+        issue = self.repository.get(issue_id)
 
         if issue and hasattr(issue, "file_path"):
             # Store the original file path so updates preserve the location
@@ -360,7 +324,6 @@ class IssueService:
                 "estimate",
             ],
         )
-        from pathlib import Path
 
         issue = self.get_issue(params.issue_id)
         if not issue:
@@ -412,14 +375,8 @@ class IssueService:
         # Update timestamp
         issue.updated = now_utc()
 
-        # Save updated issue to its original location
-        if issue.file_path:
-            issue_path = Path(issue.file_path)
-        else:
-            # Fallback for issues without stored path (shouldn't happen after fix)
-            issue_path = self.issues_dir / issue.filename
-
-        IssueParser.save_issue_file(issue, issue_path)
+        # Save updated issue through repository
+        self.repository.save(issue)
         log_event("issue_saved", issue_id=params.issue_id)
 
         # Invalidate cache after successful update
@@ -441,22 +398,18 @@ class IssueService:
         """
         log_entry("delete_issue", issue_id=issue_id)
         logger.info("deleting_issue", issue_id=issue_id)
-        # Find and delete the issue file by ID pattern
-        for issue_file in self.issues_dir.rglob(f"{issue_id}-*.md"):
-            try:
-                issue_file.unlink()
-                log_event("issue_deleted", issue_id=issue_id, file=str(issue_file))
+        # Delete issue through repository
+        deleted = self.repository.delete(issue_id)
 
-                # Invalidate cache after successful deletion
-                self._list_issues_cache.clear()
-
-                log_exit("delete_issue", success=True)
-                return True
-            except Exception:
-                continue
-        log_event("issue_not_found", issue_id=issue_id)
-        log_exit("delete_issue", success=False)
-        return False
+        if deleted:
+            log_event("issue_deleted", issue_id=issue_id)
+            # Invalidate cache after successful deletion
+            self._list_issues_cache.clear()
+            log_exit("delete_issue", success=True)
+        else:
+            log_event("issue_not_found_delete", issue_id=issue_id)
+            log_exit("delete_issue", success=False)
+        return deleted
 
     def close_issue(self, issue_id: str) -> Issue | None:
         """Close/mark issue as complete.

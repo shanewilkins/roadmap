@@ -112,7 +112,7 @@ class IssueCreationService:
             return False, None
 
         # Determine branch name
-        resolved_name = branch_name or self.core.git.suggest_branch_name(issue)
+        resolved_name = branch_name or self.core.git.suggest_branch_name(issue.id)
 
         # Try primary method
         if self._try_safe_create_branch(issue, checkout, force):
