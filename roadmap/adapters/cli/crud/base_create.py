@@ -4,6 +4,11 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
+from roadmap.adapters.cli.crud.crud_utils import (
+    create_entity_by_type,
+    get_entity_id,
+    get_entity_title,
+)
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.infrastructure.logging import log_audit_event
@@ -114,13 +119,7 @@ class BaseCreate(ABC):
         Returns:
             Created entity or None if failed
         """
-        if self.entity_type == EntityType.ISSUE:
-            return self.core.issues.create(**entity_dict)
-        elif self.entity_type == EntityType.MILESTONE:
-            return self.core.milestones.create(**entity_dict)
-        elif self.entity_type == EntityType.PROJECT:
-            return self.core.projects.create(**entity_dict)
-        return None
+        return create_entity_by_type(self.core, self.entity_type, entity_dict)
 
     def _display_success(self, entity: Any) -> None:
         """Display success message.
@@ -145,11 +144,7 @@ class BaseCreate(ABC):
         Returns:
             Title or name string
         """
-        if hasattr(entity, "title"):
-            return entity.title
-        elif hasattr(entity, "name"):
-            return entity.name
-        return str(entity)
+        return get_entity_title(entity)
 
     def _get_id(self, entity: Any) -> str:
         """Get entity ID.
@@ -160,4 +155,4 @@ class BaseCreate(ABC):
         Returns:
             Entity ID string
         """
-        return getattr(entity, "id", str(entity))
+        return get_entity_id(entity)

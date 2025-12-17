@@ -6,6 +6,12 @@ from typing import Any
 import click
 
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
+from roadmap.adapters.cli.crud.crud_utils import (
+    get_entity_by_type,
+    get_entity_id,
+    get_entity_title,
+    update_entity_by_type,
+)
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.infrastructure.logging import log_audit_event
@@ -130,13 +136,7 @@ class BaseUpdate(ABC):
         Returns:
             Entity object or None if not found
         """
-        if self.entity_type == EntityType.ISSUE:
-            return self.core.issues.get(entity_id)
-        elif self.entity_type == EntityType.MILESTONE:
-            return self.core.milestones.get(entity_id)
-        elif self.entity_type == EntityType.PROJECT:
-            return self.core.projects.get(entity_id)
-        return None
+        return get_entity_by_type(self.core, self.entity_type, entity_id)
 
     def _update_entity(self, entity_id: str, update_dict: dict[str, Any]) -> Any | None:
         """Update entity via appropriate service.
@@ -148,13 +148,9 @@ class BaseUpdate(ABC):
         Returns:
             Updated entity or None if failed
         """
-        if self.entity_type == EntityType.ISSUE:
-            return self.core.issues.update(entity_id, **update_dict)
-        elif self.entity_type == EntityType.MILESTONE:
-            return self.core.milestones.update(entity_id, **update_dict)
-        elif self.entity_type == EntityType.PROJECT:
-            return self.core.projects.update(entity_id, **update_dict)
-        return None
+        return update_entity_by_type(
+            self.core, self.entity_type, entity_id, update_dict
+        )
 
     def _display_success(self, entity: Any) -> None:
         """Display success message.
@@ -162,8 +158,8 @@ class BaseUpdate(ABC):
         Args:
             entity: The updated entity
         """
-        title = self._get_title(entity)
-        entity_id = self._get_id(entity)
+        title = get_entity_title(entity)
+        entity_id = get_entity_id(entity)
 
         self.console.print(
             f"✅ Updated {self.entity_type.value}: {title} [{entity_id}]",
@@ -179,11 +175,7 @@ class BaseUpdate(ABC):
         Returns:
             Title or name string
         """
-        if hasattr(entity, "title"):
-            return entity.title
-        elif hasattr(entity, "name"):
-            return entity.name
-        return str(entity)
+        return get_entity_title(entity)
 
     def _get_id(self, entity: Any) -> str:
         """Get entity ID.
@@ -194,4 +186,4 @@ class BaseUpdate(ABC):
         Returns:
             Entity ID string
         """
-        return getattr(entity, "id", str(entity))
+        return get_entity_id(entity)

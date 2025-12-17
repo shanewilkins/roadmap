@@ -6,6 +6,11 @@ from typing import Any
 import click
 
 from roadmap.adapters.cli.crud.crud_helpers import EntityType
+from roadmap.adapters.cli.crud.crud_utils import (
+    delete_entity_by_type,
+    get_entity_by_type,
+    get_entity_title,
+)
 from roadmap.common.console import get_console
 
 
@@ -30,7 +35,7 @@ class BaseDelete(ABC):
         self.core = core
         self.console = console or get_console()
 
-    def post_delete_hook(self, entity_id: str, **kwargs) -> None:
+    def post_delete_hook(self, entity_id: str, **kwargs) -> None:  # noqa: B027
         """Optional hook after entity deletion.
 
         Override to handle cleanup, notifications, etc.
@@ -39,7 +44,7 @@ class BaseDelete(ABC):
             entity_id: ID of deleted entity
             **kwargs: Original CLI arguments
         """
-        # Default: no-op. Subclasses override as needed.
+        pass
 
     def execute(self, entity_id: str, force: bool = False, **kwargs) -> bool:
         """Execute the delete operation.
@@ -99,13 +104,7 @@ class BaseDelete(ABC):
         Returns:
             Entity object or None if not found
         """
-        if self.entity_type == EntityType.ISSUE:
-            return self.core.issues.get(entity_id)
-        elif self.entity_type == EntityType.MILESTONE:
-            return self.core.milestones.get(entity_id)
-        elif self.entity_type == EntityType.PROJECT:
-            return self.core.projects.get(entity_id)
-        return None
+        return get_entity_by_type(self.core, self.entity_type, entity_id)
 
     def _delete_entity(self, entity_id: str) -> bool:
         """Delete entity via appropriate service.
@@ -117,14 +116,7 @@ class BaseDelete(ABC):
             True if deletion succeeded
         """
         try:
-            if self.entity_type == EntityType.ISSUE:
-                self.core.issues.delete(entity_id)
-            elif self.entity_type == EntityType.MILESTONE:
-                self.core.milestones.delete(entity_id)
-            elif self.entity_type == EntityType.PROJECT:
-                self.core.projects.delete(entity_id)
-            else:
-                return False
+            delete_entity_by_type(self.core, self.entity_type, entity_id)
             return True
         except Exception:
             return False
@@ -152,8 +144,4 @@ class BaseDelete(ABC):
         Returns:
             Title or name string
         """
-        if hasattr(entity, "title"):
-            return entity.title
-        elif hasattr(entity, "name"):
-            return entity.name
-        return str(entity)
+        return get_entity_title(entity)
