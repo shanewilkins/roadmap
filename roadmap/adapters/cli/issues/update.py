@@ -6,6 +6,7 @@ from roadmap.adapters.cli.crud import BaseUpdate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.cli_models import IssueUpdateParams
+from roadmap.common.update_constants import DISPLAYABLE_UPDATE_FIELDS
 from roadmap.infrastructure.logging import (
     log_command,
 )
@@ -72,14 +73,7 @@ class IssueUpdate(BaseUpdate):
                         days = hours / 8
                         display_value = f"{days:.1f}d"
                     self.console.print(f"   estimate: {display_value}", style="cyan")
-                elif field in [
-                    "title",
-                    "priority",
-                    "status",
-                    "assignee",
-                    "milestone",
-                    "description",
-                ]:
+                elif field in DISPLAYABLE_UPDATE_FIELDS:
                     # Format enum values to show just the string value
                     display_value = value.value if hasattr(value, "value") else value
                     self.console.print(f"   {field}: {display_value}", style="cyan")

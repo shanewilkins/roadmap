@@ -2,22 +2,12 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from roadmap.common.constants import ProjectStatus
 from .issue import Priority
 from .milestone import MilestoneStatus, RiskLevel
-
-
-class ProjectStatus(str, Enum):
-    """Project status values."""
-
-    PLANNING = "planning"
-    ACTIVE = "active"
-    ON_HOLD = "on-hold"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
 
 
 class Project(BaseModel):

@@ -7,6 +7,7 @@ dictionaries from CLI parameters, resolving assignees, and displaying results.
 
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import ValidationError
+from roadmap.common.update_constants import DISPLAYABLE_UPDATE_FIELDS
 from roadmap.core.domain import Priority, Status
 
 
@@ -138,14 +139,7 @@ class IssueUpdateService:
             if field == "estimated_hours":
                 display_value = updated_issue.estimated_time_display
                 self._console.print(f"   estimate: {display_value}", style="cyan")
-            elif field in [
-                "title",
-                "priority",
-                "status",
-                "assignee",
-                "milestone",
-                "description",
-            ]:
+            elif field in DISPLAYABLE_UPDATE_FIELDS:
                 # Format enum values to show just the string value
                 display_value = value.value if hasattr(value, "value") else value
                 self._console.print(f"   {field}: {display_value}", style="cyan")
