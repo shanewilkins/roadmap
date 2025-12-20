@@ -14,6 +14,7 @@ Provides all issue management commands:
 - view: View detailed information about an issue
 - archive: Archive an issue to .roadmap/archive/issues/
 - comment: Manage comments and discussions on issues
+- link: Link internal issue to GitHub issue
 """
 
 import click
@@ -25,6 +26,7 @@ from roadmap.adapters.cli.issues.comment import comment_group
 from roadmap.adapters.cli.issues.create import create_issue
 from roadmap.adapters.cli.issues.delete import delete_issue
 from roadmap.adapters.cli.issues.deps import deps
+from roadmap.adapters.cli.issues.link import link_github_issue
 from roadmap.adapters.cli.issues.list import list_issues
 from roadmap.adapters.cli.issues.progress import update_progress
 from roadmap.adapters.cli.issues.restore import restore_issue
@@ -55,5 +57,6 @@ issue.add_command(view_issue, name="view")
 issue.add_command(archive_issue, name="archive")
 issue.add_command(restore_issue, name="restore")
 issue.add_command(comment_group, name="comment")
+issue.add_command(link_github_issue, name="link")
 
 __all__ = ["issue"]
