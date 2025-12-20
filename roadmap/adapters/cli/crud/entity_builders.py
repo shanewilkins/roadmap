@@ -91,6 +91,7 @@ class IssueBuilder:
         estimate: float | None = None,
         depends_on: list[str] | None = None,
         blocks: list[str] | None = None,
+        description: str | None = None,
     ) -> dict[str, Any]:
         """Build create dictionary for issue.
 
@@ -104,6 +105,7 @@ class IssueBuilder:
             estimate: Estimated hours
             depends_on: Issue IDs this depends on
             blocks: Issue IDs this blocks
+            description: Markdown description
 
         Returns:
             Dictionary ready for core.issues.create()
@@ -133,6 +135,9 @@ class IssueBuilder:
 
         if blocks:
             create_dict["blocks"] = blocks
+
+        if description:
+            create_dict["content"] = description
 
         return create_dict
 
@@ -178,7 +183,7 @@ class IssueBuilder:
             update_dict["milestone"] = milestone
 
         if description is not None:
-            update_dict["description"] = description
+            update_dict["content"] = description
 
         if estimate is not None:
             update_dict["estimated_hours"] = estimate

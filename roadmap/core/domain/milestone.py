@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 
 from roadmap.common.constants import MilestoneStatus, RiskLevel, Status
 
+from .comment import Comment
+
 # Import timezone utilities with circular import protection
 try:
     from roadmap.common.timezone_utils import now_utc
@@ -39,6 +41,9 @@ class Milestone(BaseModel):
     risk_level: RiskLevel = RiskLevel.LOW
     actual_start_date: datetime | None = None
     actual_end_date: datetime | None = None
+    comments: list[Comment] = Field(
+        default_factory=list
+    )  # Comments on this milestone for discussion
 
     file_path: str | None = Field(
         default=None, exclude=True

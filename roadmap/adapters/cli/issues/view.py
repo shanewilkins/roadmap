@@ -223,3 +223,34 @@ def view_issue(ctx: click.Context, issue_id: str):
                 border_style="white",
             )
         )
+    # Display comments if any
+    if issue.comments:
+        from roadmap.core.services.comment_service import CommentService
+
+        threads = CommentService.build_comment_threads(issue.comments)
+        comment_text = ""
+
+        # Show top-level comments and their replies
+        for top_level_id in sorted(k for k in threads.keys() if k is None):
+            for comment in threads.get(top_level_id, []):
+                comment_text += (
+                    CommentService.format_comment_for_display(comment, indent=0) + "\n"
+                )
+
+                # Show replies to this comment
+                if comment.id in threads:
+                    for reply in threads[comment.id]:
+                        comment_text += (
+                            CommentService.format_comment_for_display(reply, indent=1)
+                            + "\n"
+                        )
+
+                comment_text += "\n"
+
+        _get_console().print(
+            Panel(
+                comment_text.rstrip(),
+                title=f"💬 Comments ({len(issue.comments)})",
+                border_style="cyan",
+            )
+        )

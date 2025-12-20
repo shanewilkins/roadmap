@@ -251,7 +251,34 @@ def view_project(ctx: click.Context, project_id: str):
         md = Markdown(objectives)
         _get_console().print(Panel(md, title="✅ Objectives", border_style="green"))
 
-    # Footer with file location
-    _get_console().print(
-        f"\n[dim]File: .roadmap/projects/{project.id}-{project.name.lower().replace(' ', '-')}.md[/dim]"
-    )
+    # Display comments if any
+    if project.comments:
+        from roadmap.core.services.comment_service import CommentService
+
+        threads = CommentService.build_comment_threads(project.comments)
+        comment_text = ""
+
+        # Show top-level comments and their replies
+        for top_level_id in sorted(k for k in threads.keys() if k is None):
+            for comment in threads.get(top_level_id, []):
+                comment_text += (
+                    CommentService.format_comment_for_display(comment, indent=0) + "\n"
+                )
+
+                # Show replies to this comment
+                if comment.id in threads:
+                    for reply in threads[comment.id]:
+                        comment_text += (
+                            CommentService.format_comment_for_display(reply, indent=1)
+                            + "\n"
+                        )
+
+                comment_text += "\n"
+
+        _get_console().print(
+            Panel(
+                comment_text.rstrip(),
+                title=f"💬 Comments ({len(project.comments)})",
+                border_style="cyan",
+            )
+        )

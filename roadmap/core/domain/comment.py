@@ -15,6 +15,7 @@ class Comment:
     created_at: datetime
     updated_at: datetime
     github_url: str | None = None  # GitHub comment URL
+    in_reply_to: int | None = None  # Comment ID this is a reply to (for threading)
 
     def __str__(self) -> str:
         """String representation."""

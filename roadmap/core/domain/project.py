@@ -5,8 +5,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from roadmap.common.constants import ProjectStatus
-from .issue import Priority
+from roadmap.common.constants import Priority, ProjectStatus
+
+from .comment import Comment
 from .milestone import MilestoneStatus, RiskLevel
 
 
@@ -36,6 +37,9 @@ class Project(BaseModel):
     schedule_variance: int | None = None  # Days ahead/behind
     completion_velocity: float | None = None  # Milestones/week
     risk_level: RiskLevel = RiskLevel.LOW
+    comments: list[Comment] = Field(
+        default_factory=list
+    )  # Comments on this project for discussion
 
     file_path: str | None = Field(
         default=None, exclude=True

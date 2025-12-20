@@ -213,6 +213,82 @@ class HealthCheck:
         return HealthStatus(status_str), message
 
     @staticmethod
+    def check_comment_integrity(core) -> tuple[HealthStatus, str]:
+        """Check for malformed comments in issues, milestones, and projects.
+
+        Returns:
+            Tuple of (status, message) describing comment validation results
+        """
+        from roadmap.core.services.comment_service import CommentService
+
+        errors = []
+        total_comments = 0
+
+        # Check issue comments
+        try:
+            for issue in core.issues.list():
+                if hasattr(issue, "comments") and issue.comments:
+                    total_comments += len(issue.comments)
+                    issue_errors = CommentService.validate_comment_thread(
+                        issue.comments
+                    )
+                    if issue_errors:
+                        errors.extend(
+                            [f"Issue {issue.id}: {error}" for error in issue_errors]
+                        )
+        except Exception as e:
+            logger.warning("error_checking_issue_comments", error=str(e))
+
+        # Check milestone comments
+        try:
+            for milestone in core.milestones.list():
+                if hasattr(milestone, "comments") and milestone.comments:
+                    total_comments += len(milestone.comments)
+                    milestone_errors = CommentService.validate_comment_thread(
+                        milestone.comments
+                    )
+                    if milestone_errors:
+                        errors.extend(
+                            [
+                                f"Milestone {milestone.name}: {error}"
+                                for error in milestone_errors
+                            ]
+                        )
+        except Exception as e:
+            logger.warning("error_checking_milestone_comments", error=str(e))
+
+        # Check project comments
+        try:
+            for project in core.projects.list():
+                if hasattr(project, "comments") and project.comments:
+                    total_comments += len(project.comments)
+                    project_errors = CommentService.validate_comment_thread(
+                        project.comments
+                    )
+                    if project_errors:
+                        errors.extend(
+                            [
+                                f"Project {project.name}: {error}"
+                                for error in project_errors
+                            ]
+                        )
+        except Exception as e:
+            logger.warning("error_checking_project_comments", error=str(e))
+
+        if errors:
+            message = f"Found {len(errors)} comment validation error(s). Details: {'; '.join(errors[:3])}"
+            if len(errors) > 3:
+                message += f"... and {len(errors) - 3} more"
+            return HealthStatus.UNHEALTHY, message
+
+        return (
+            HealthStatus.HEALTHY,
+            f"All {total_comments} comment(s) are well-formed"
+            if total_comments > 0
+            else "No comments to validate",
+        )
+
+    @staticmethod
     def check_data_integrity() -> tuple[HealthStatus, str]:
         """Check for malformed or corrupted files in the roadmap.
 
@@ -270,6 +346,7 @@ class HealthCheck:
             "old_backups": cls.check_old_backups(),
             "archivable_issues": cls.check_archivable_issues(core),
             "archivable_milestones": cls.check_archivable_milestones(core),
+            "comment_integrity": cls.check_comment_integrity(core),
         }
 
         # Count statuses

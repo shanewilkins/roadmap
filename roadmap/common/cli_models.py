@@ -24,6 +24,7 @@ class IssueCreateParams:
     estimate: float | None = None
     depends_on: tuple = field(default_factory=tuple)
     blocks: tuple = field(default_factory=tuple)
+    description: str | None = None
 
 
 @dataclass

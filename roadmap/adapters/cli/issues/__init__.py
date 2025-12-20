@@ -13,6 +13,7 @@ Provides all issue management commands:
 - deps: Manage issue dependencies
 - view: View detailed information about an issue
 - archive: Archive an issue to .roadmap/archive/issues/
+- comment: Manage comments and discussions on issues
 """
 
 import click
@@ -20,6 +21,7 @@ import click
 from roadmap.adapters.cli.issues.archive import archive_issue
 from roadmap.adapters.cli.issues.block import block_issue
 from roadmap.adapters.cli.issues.close import close_issue
+from roadmap.adapters.cli.issues.comment import comment_group
 from roadmap.adapters.cli.issues.create import create_issue
 from roadmap.adapters.cli.issues.delete import delete_issue
 from roadmap.adapters.cli.issues.deps import deps
@@ -52,5 +54,6 @@ issue.add_command(deps, name="deps")
 issue.add_command(view_issue, name="view")
 issue.add_command(archive_issue, name="archive")
 issue.add_command(restore_issue, name="restore")
+issue.add_command(comment_group, name="comment")
 
 __all__ = ["issue"]

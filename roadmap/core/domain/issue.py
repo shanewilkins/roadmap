@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from roadmap.common.constants import IssueType, Priority, Status
+from roadmap.core.domain.comment import Comment
 
 
 def now_utc():
@@ -50,6 +51,9 @@ class Issue(BaseModel):
         default_factory=list
     )  # Git commits referencing this issue
     completed_date: str | None = None  # ISO string when issue was completed via Git
+    comments: list[Comment] = Field(
+        default_factory=list
+    )  # Comments on this issue for discussion
     file_path: str | None = Field(
         default=None, exclude=True
     )  # Internal: absolute path where issue file is stored
