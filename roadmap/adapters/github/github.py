@@ -177,3 +177,85 @@ class GitHubClient(BaseGitHubHandler):
         self._label_handler.owner = self.owner
         self._label_handler.repo = self.repo
         self._label_handler.setup_default_labels()
+
+    def fetch_issue(self, issue_number: int) -> dict[str, Any]:
+        """Fetch a GitHub issue by number.
+
+        Args:
+            issue_number: GitHub issue number (must be positive integer)
+
+        Returns:
+            Dictionary with issue details: number, title, body, state, labels, assignees
+
+        Raises:
+            GitHubAPIError: If issue not found or API error occurs
+            ValueError: If issue_number is invalid
+        """
+        if not isinstance(issue_number, int) or issue_number <= 0:
+            raise ValueError(
+                f"Issue number must be a positive integer, got {issue_number}"
+            )
+
+        self._check_repository()
+        try:
+            response = self._make_request(
+                "GET", f"/repos/{self.owner}/{self.repo}/issues/{issue_number}"
+            )
+            data = response.json()
+
+            # Extract relevant fields
+            return {
+                "number": data.get("number"),
+                "title": data.get("title"),
+                "body": data.get("body") or "",
+                "state": data.get("state"),  # 'open' or 'closed'
+                "labels": [label["name"] for label in data.get("labels", [])],
+                "assignees": [
+                    assignee["login"] for assignee in data.get("assignees", [])
+                ],
+                "milestone": data.get("milestone", {}).get("title")
+                if data.get("milestone")
+                else None,
+                "url": data.get("html_url"),
+                "created_at": data.get("created_at"),
+                "updated_at": data.get("updated_at"),
+            }
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                raise GitHubAPIError(
+                    f"GitHub issue #{issue_number} not found in {self.owner}/{self.repo}"
+                ) from e
+            elif e.response.status_code == 401:
+                raise GitHubAPIError(
+                    "GitHub authentication failed - invalid token"
+                ) from e
+            else:
+                raise GitHubAPIError(
+                    f"GitHub API error: {e.response.status_code} {e.response.reason}"
+                ) from e
+        except requests.exceptions.RequestException as e:
+            raise GitHubAPIError(f"GitHub API connection error: {str(e)}") from e
+
+    def validate_github_token(self) -> tuple[bool, str]:
+        """Validate GitHub token by making a test API call.
+
+        Returns:
+            Tuple of (is_valid, message)
+            - (True, "Token is valid") if successful
+            - (False, error_message) if invalid or error
+        """
+        try:
+            response = self._make_request("GET", "/user")
+            if response.status_code == 200:
+                user_data = response.json()
+                login = user_data.get("login", "unknown")
+                return True, f"Token is valid (authenticated as {login})"
+            else:
+                return False, f"Token validation failed: {response.status_code}"
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                return False, "GitHub token is invalid or expired"
+            else:
+                return False, f"GitHub API error: {e.response.status_code}"
+        except requests.exceptions.RequestException as e:
+            return False, f"GitHub API connection error: {str(e)}"
