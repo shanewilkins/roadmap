@@ -1,11 +1,12 @@
 #!/bin/bash
-# Documentation Development Server
+# Sphinx Documentation Development Server
 
 cd "$(dirname "$0")/.."
 
-echo "🌐 Starting MkDocs development server..."
+echo "🌐 Starting Sphinx documentation server..."
 echo "📍 Open http://localhost:8000 in your browser"
 echo "🔄 Docs will auto-reload on changes"
 echo ""
 
-poetry run mkdocs serve
+cd docs/sphinx/build/html
+python -m http.server 8000

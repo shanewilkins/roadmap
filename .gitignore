@@ -180,6 +180,7 @@ Thumbs.db
 .roadmap/config.yaml.local  # User settings override file (gitignored)
 .roadmap/*.tmp
 .roadmap/*.lock
+.roadmap_branch_context.json
 
 # Pytest benchmarks
 .benchmarks/
@@ -192,6 +193,24 @@ coverage.json
 *_analysis*.json
 pruning_*.json
 
-# copilot generated files
-
+# copilot generated files and session reports
 docs/copilot_reports/
+
+# Documentation build artifacts
+docs/sphinx/build/
+docs/sphinx/source/api/
+docs/_build/
+docs/build/
+site/
+
+# Performance baselines and profiling data (keep only committed baseline)
+# Individual performance runs are tracked separately
+*.profile.json
+
+# Generated reports (go to docs/developer_notes/ instead)
+*_IMPROVEMENT_STRATEGY.md
+*_ACTION_PLAN.md
+*_SESSION_SUMMARY.md
+*_PROGRESS.md
+*_ANALYSIS.md
+*_REPORT.md

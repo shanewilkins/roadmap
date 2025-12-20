@@ -1,6 +1,7 @@
 # Configuration file for the Sphinx documentation builder.
 
 import sys
+from pathlib import Path
 
 sys.path.insert(0, "/Users/shane/roadmap")
 
@@ -8,7 +9,22 @@ sys.path.insert(0, "/Users/shane/roadmap")
 project = "Roadmap CLI"
 copyright = "2025, Roadmap CLI Team"
 author = "Roadmap CLI Team"
-release = "0.1.0"
+
+
+# Get version from pyproject.toml
+def get_version():
+    """Extract version from pyproject.toml."""
+    pyproject = Path(__file__).parent.parent.parent.parent / "pyproject.toml"
+    if pyproject.exists():
+        with open(pyproject) as f:
+            for line in f:
+                if line.strip().startswith('version = "'):
+                    return line.split('"')[1]
+    return "0.6.0"
+
+
+release = get_version()
+version = release
 
 # -- General configuration ---------------------------------------------------
 extensions = [
