@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from roadmap.common.constants import IssueType, Priority, Status
 from roadmap.core.domain.comment import Comment
@@ -57,6 +57,40 @@ class Issue(BaseModel):
     file_path: str | None = Field(
         default=None, exclude=True
     )  # Internal: absolute path where issue file is stored
+
+    @field_validator("github_issue", mode="before")
+    @classmethod
+    def validate_github_issue(_cls: type["Issue"], v: Any) -> int | None:
+        """Validate GitHub issue number.
+
+        GitHub issue numbers must be positive integers.
+        None is allowed (no GitHub link).
+
+        Args:
+            _cls: The class being validated (required by Pydantic)
+            v: Value to validate
+
+        Returns:
+            Valid GitHub issue number or None
+
+        Raises:
+            ValueError: If github_issue is not a positive integer or None
+        """
+        if v is None:
+            return None
+
+        # Convert string to int if needed
+        if isinstance(v, str):
+            try:
+                v = int(v)
+            except ValueError as e:
+                raise ValueError(f"GitHub issue must be an integer, got '{v}'") from e
+
+        # Validate it's a positive integer
+        if not isinstance(v, int) or v <= 0:
+            raise ValueError(f"GitHub issue number must be a positive integer, got {v}")
+
+        return v
 
     @property
     def is_backlog(self) -> bool:
