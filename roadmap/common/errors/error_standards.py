@@ -191,13 +191,13 @@ def safe_operation(
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:  # type: ignore[return-value]
             context = ErrorContext(operation_type, entity_type)
 
             # Capture first string/int argument as entity_id if available
             if args and isinstance(args[0], str | int):
                 context.with_entity_id(args[0])
-            elif "id" in kwargs:
+            elif "id" in kwargs and isinstance(kwargs["id"], str | int):
                 context.with_entity_id(kwargs["id"])
 
             # Capture input parameters for debugging
@@ -223,6 +223,12 @@ def safe_operation(
                     raise
 
                 except Exception as e:
+                    # Lazy import to avoid infrastructure dependency in common layer
+                    from roadmap.infrastructure.logging.error_logging import (
+                        is_error_recoverable,
+                        log_error_with_context,
+                    )
+
                     last_error = e
                     is_recoverable = is_error_recoverable(e)
 
@@ -442,7 +448,7 @@ class RecoveryAction:
         max_attempts: int = 3,
         initial_delay: float = 0.5,
         backoff_factor: float = 2.0,
-    ) -> T:
+    ) -> T:  # type: ignore[return-value]
         """Retry a function with exponential backoff.
 
         Args:

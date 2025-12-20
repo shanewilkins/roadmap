@@ -8,14 +8,10 @@ the requirements from issue 515a927c.
 
 import logging
 from datetime import datetime, timedelta
+from typing import Any
 
-from roadmap.core.domain import (
-    Issue,
-    Milestone,
-    MilestoneStatus,
-    Project,
-    RiskLevel,
-)
+from roadmap.common.constants import MilestoneStatus, RiskLevel
+from roadmap.core.domain import Issue, Milestone, Project
 
 logger = logging.getLogger(__name__)
 
@@ -313,11 +309,11 @@ class ProgressEventSystem:
     def on_issue_updated(
         self,
         updated_issue: Issue,
-        changes: dict[str, any],
+        changes: dict[str, Any],
         all_issues: list[Issue],
         all_milestones: list[Milestone],
         all_projects: list[Project],
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Handle issue update events and trigger cascading updates.
 
         Args:

@@ -32,17 +32,10 @@ def mock_credential_manager():
 @pytest.fixture
 def config_service(mock_settings, mock_credential_manager):
     """Create a ConfigurationService with mocked dependencies."""
-    with patch(
-        "roadmap.core.services.configuration_service.CredentialManager",
-        return_value=mock_credential_manager,
-    ):
-        with patch(
-            "roadmap.core.services.configuration_service.settings", mock_settings
-        ):
-            service = ConfigurationService()
-            service._settings = mock_settings
-            service.credential_manager = mock_credential_manager
-            return service
+    service = ConfigurationService(credential_provider=mock_credential_manager)
+    service._settings = mock_settings
+    service.credential_provider = mock_credential_manager  # type: ignore[attr-defined]
+    return service
 
 
 class TestConfigurationServiceInit:
@@ -50,13 +43,10 @@ class TestConfigurationServiceInit:
 
     def test_init_creates_credential_manager(self):
         """Test initialization creates credential manager."""
-        with patch(
-            "roadmap.core.services.configuration_service.CredentialManager"
-        ) as mock_cm:
-            service = ConfigurationService()
+        mock_provider = Mock()
+        service = ConfigurationService(credential_provider=mock_provider)
 
-            mock_cm.assert_called_once()
-            assert service.credential_manager is not None
+        assert service.credential_manager is mock_provider
 
 
 class TestConfigurationServiceSettings:

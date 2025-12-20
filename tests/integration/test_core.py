@@ -151,14 +151,14 @@ class TestRoadmapCore:
         core.issues.create("Issue 1", Priority.HIGH, milestone="v1.0")
         core.issues.create("Issue 2", Priority.LOW, milestone="v2.0")
         issue3 = core.issues.create("Issue 3", Priority.HIGH, milestone="v1.0")
-        core.issues.update(issue3.id, status=Status.CLOSED)
+        core.issues.update(issue3.id, status=Status.DONE)
 
         # Filter by milestone
         v1_issues = core.issues.list(milestone="v1.0")
         assert len(v1_issues) == 2
 
         # Filter by status
-        done_issues = core.issues.list(status=Status.CLOSED)
+        done_issues = core.issues.list(status=Status.DONE)
         assert len(done_issues) == 1
 
         # Filter by priority
@@ -333,7 +333,7 @@ class TestRoadmapCore:
         core.issues.assign_to_milestone(issue3.id, "v1.0")
 
         # Complete one issue
-        core.issues.update(issue1.id, status=Status.CLOSED)
+        core.issues.update(issue1.id, status=Status.DONE)
 
         progress = core.milestones.get_progress("v1.0")
 

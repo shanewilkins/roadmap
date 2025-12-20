@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from roadmap.core.domain import IssueType, MilestoneStatus, Priority, Status
+from roadmap.common.constants import IssueType, MilestoneStatus, Priority, Status
 
 from .field_validator import FieldValidator
 from .result import ValidationResult

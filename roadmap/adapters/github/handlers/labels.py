@@ -79,7 +79,7 @@ class LabelHandler(BaseGitHubHandler):
             Status.IN_PROGRESS: ["status:in-progress"],
             Status.BLOCKED: ["status:blocked"],
             Status.REVIEW: ["status:review"],
-            Status.CLOSED: ["status:done"],
+            Status.DONE: ["status:done"],
         }
         return status_labels.get(status, [])
 
@@ -119,7 +119,7 @@ class LabelHandler(BaseGitHubHandler):
             elif label == "status:review":
                 return Status.REVIEW
             elif label == "status:done":
-                return Status.CLOSED
+                return Status.DONE
 
         return None
 

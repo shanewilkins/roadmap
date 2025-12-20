@@ -7,6 +7,7 @@ Supports Rich (interactive), plain-text (POSIX), JSON (machine-readable), and CS
 import csv
 import json
 from io import StringIO
+from typing import Any
 
 from rich.table import Table  # type: ignore[import-not-found]
 
@@ -81,7 +82,9 @@ class OutputFormatter:
 
         # Add columns
         for col in self.table.active_columns:
-            kwargs = {"style": col.display_style} if col.display_style else {}
+            kwargs: dict[str, Any] = (
+                {"style": col.display_style} if col.display_style else {}
+            )
             if col.width:
                 kwargs["width"] = col.width
             table.add_column(col.display_name, **kwargs)

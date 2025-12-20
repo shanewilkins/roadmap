@@ -45,7 +45,7 @@ def handle_archive_parse_error(
         context=context,
         fatal=False,
     )
-    console.print(f"  • {entity_id} (parse error)", style="red")
+    console.print(f"  • {entity_id} (parse error)", style="red")  # type: ignore[union-attr]
 
 
 def handle_restore_parse_error(
@@ -83,4 +83,4 @@ def handle_restore_parse_error(
         context=context,
         fatal=False,
     )
-    console.print(f"  • {entity_id} (restore error)", style="red")
+    console.print(f"  • {entity_id} (restore error)", style="red")  # type: ignore[union-attr]

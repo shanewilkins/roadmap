@@ -72,7 +72,7 @@ class TestMilestoneEstimatedTime:
                 title="Done Issue",
                 estimated_hours=4.0,
                 milestone="v1.0",
-                status=Status.CLOSED,
+                status=Status.DONE,
             ),
             Issue(
                 title="Todo Issue",

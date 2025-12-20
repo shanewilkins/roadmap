@@ -1,6 +1,6 @@
 """Assignee validation strategies for RoadmapCore."""
 
-from typing import Any
+from typing import Any, Protocol
 
 
 class AssigneeValidationResult:
@@ -17,6 +17,24 @@ class AssigneeValidationResult:
         self.is_valid = is_valid
         self.message = message
         self.canonical_id = canonical_id
+
+
+class GitHubBackend(Protocol):
+    """Protocol for GitHub-based validation backends.
+
+    Abstracts GitHub validation away from core logic.
+    """
+
+    def validate(self, assignee: str) -> tuple[bool, str, str]:
+        """Validate assignee against GitHub.
+
+        Args:
+            assignee: Username to validate
+
+        Returns:
+            Tuple of (is_valid, error_message, canonical_id)
+        """
+        ...
 
 
 class IdentitySystemValidator:
@@ -51,64 +69,6 @@ class IdentitySystemValidator:
             Validation mode string (e.g., 'hybrid', 'local-only', 'github-only')
         """
         return "local-only"
-
-
-class GitHubValidator:
-    """Validates assignees against GitHub repository access."""
-
-    def __init__(
-        self,
-        token: str,
-        owner: str,
-        repo: str,
-        cached_members: set[str] | list[str] | None = None,
-    ):
-        """Initialize with GitHub configuration.
-
-        Args:
-            token: GitHub API token
-            owner: Repository owner
-            repo: Repository name
-            cached_members: Optional cached team members for performance
-        """
-        self.token = token
-        self.owner = owner
-        self.repo = repo
-        self.cached_members = (
-            set(cached_members)
-            if isinstance(cached_members, list)
-            else (cached_members or set())
-        )
-
-    def validate(self, assignee: str) -> AssigneeValidationResult:
-        """Validate assignee against GitHub repository.
-
-        Args:
-            assignee: Username to validate
-
-        Returns:
-            Validation result
-        """
-        # Check cache first
-        if self.cached_members and assignee in self.cached_members:
-            return AssigneeValidationResult(is_valid=True, canonical_id=assignee)
-
-        # Do full validation via API
-        try:
-            from roadmap.adapters.github.github import GitHubClient
-
-            client = GitHubClient(token=self.token, owner=self.owner, repo=self.repo)
-            github_valid, github_error = client.validate_assignee(assignee)
-
-            if github_valid:
-                return AssigneeValidationResult(is_valid=True, canonical_id=assignee)
-            else:
-                return AssigneeValidationResult(is_valid=False, message=github_error)
-
-        except Exception as e:
-            return AssigneeValidationResult(
-                is_valid=False, message=f"GitHub validation failed: {e}"
-            )
 
 
 class LocalValidator:
@@ -300,5 +260,11 @@ class AssigneeValidationStrategy:
             )
 
         token, owner, repo = self.github_config
-        github_validator = GitHubValidator(token, owner, repo, self.cached_members)
-        return github_validator.validate(assignee)
+        # Import here to avoid hard dependency on infrastructure
+        from roadmap.infrastructure.github_validator import GitHubAssigneeValidator
+
+        github_validator = GitHubAssigneeValidator(
+            token, owner, repo, self.cached_members
+        )
+        result = github_validator.validate(assignee)
+        return result

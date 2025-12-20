@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.health import HealthStatus
+    from roadmap.core.domain.health import HealthStatus
 
 import click  # type: ignore[import]
 

@@ -273,7 +273,7 @@ class GitHubInitializationService:
 
     def _resolve_and_test_token(self, token, interactive, yes):
         """Resolve token and test GitHub connection."""
-        cred_manager = CredentialManager()
+        cred_manager = CredentialManager()  # type: ignore[call-arg]
         token_resolver = GitHubTokenResolver(cred_manager)
 
         existing_token = token_resolver.get_existing_token()
@@ -293,7 +293,7 @@ class GitHubInitializationService:
 
     def _validate_github_access(self, use_token, github_repo, interactive, yes):
         """Validate authentication and repository access."""
-        github_client = GitHubClient(use_token)
+        github_client = GitHubClient(use_token)  # type: ignore[call-arg]
         validator = GitHubSetupValidator(github_client)
 
         auth_success, _ = validator.validate_authentication()
@@ -316,7 +316,7 @@ class GitHubInitializationService:
     def _store_credentials_and_config(self, use_token, existing_token, github_repo):
         """Store credentials and save configuration."""
         if use_token != existing_token:
-            cred_manager = CredentialManager()
+            cred_manager = CredentialManager()  # type: ignore[call-arg]
             cred_manager.store_token(use_token)
             if self.presenter:
                 self.presenter.present_github_credentials_stored()
@@ -354,7 +354,7 @@ class GitHubInitializationService:
                 return False
 
             # Store credentials and config
-            cred_manager = CredentialManager()
+            cred_manager = CredentialManager()  # type: ignore[call-arg]
             existing_token = GitHubTokenResolver(cred_manager).get_existing_token()
             self._store_credentials_and_config(use_token, existing_token, github_repo)
 

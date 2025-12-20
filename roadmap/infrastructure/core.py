@@ -95,18 +95,25 @@ class RoadmapCore:
         self.config_service = ConfigurationService()
 
         # Initialize repositories (abstraction layer)
-        issue_repository = YAMLIssueRepository(self.db, self.issues_dir)
+        from roadmap.adapters.persistence.yaml_repositories import (
+            YAMLMilestoneRepository,
+            YAMLProjectRepository,
+        )
 
-        # Initialize services with repository injection for issue service
+        issue_repository = YAMLIssueRepository(self.db, self.issues_dir)
+        milestone_repository = YAMLMilestoneRepository(self.db, self.milestones_dir)
+        project_repository = YAMLProjectRepository(self.db, self.projects_dir)
+
+        # Initialize services with repository injection
         # (decoupled from implementation)
         self.issue_service = IssueService(issue_repository)
-        # Milestone and Project services still use old pattern (to be migrated in next phase)
         self.milestone_service = MilestoneService(
-            self.db, self.milestones_dir, self.issues_dir
+            milestone_repository,
+            issue_repository=issue_repository,
+            issues_dir=self.issues_dir,
+            milestones_dir=self.milestones_dir,
         )
-        self.project_service = ProjectService(
-            self.db, self.projects_dir, self.milestones_dir
-        )
+        self.project_service = ProjectService(project_repository, self.milestones_dir)
 
         # Keep reference to init manager for setup (needed before creating coordinators)
         self._init_manager = InitializationManager(

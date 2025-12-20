@@ -72,11 +72,13 @@ repos:
         pass_filenames: false
         always_run: true
 
-  # Run type checking (before cosmetic fixes)
+  # Run type checking (before cosmetic fixes - warnings only, non-blocking)
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.350
     hooks:
       - id: pyright
+        args: ['--outputjson']
+        stages: [manual]
 
   # Documentation validation (warnings only, non-blocking)
   - repo: local

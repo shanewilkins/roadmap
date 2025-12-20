@@ -1,11 +1,10 @@
 """Milestone domain model."""
 
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from .issue import Status
+from roadmap.common.constants import MilestoneStatus, RiskLevel, Status
 
 # Import timezone utilities with circular import protection
 try:
@@ -19,21 +18,6 @@ except ImportError:
             Current datetime in UTC timezone.
         """
         return datetime.now()
-
-
-class MilestoneStatus(str, Enum):
-    """Milestone status values."""
-
-    OPEN = "open"
-    CLOSED = "closed"
-
-
-class RiskLevel(str, Enum):
-    """Risk level values for projects and milestones."""
-
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
 
 
 class Milestone(BaseModel):
@@ -94,7 +78,7 @@ class Milestone(BaseModel):
         if method == "count_based":
             # Simple count-based calculation
             completed_issues = [
-                issue for issue in milestone_issues if issue.status == Status.CLOSED
+                issue for issue in milestone_issues if issue.status == Status.DONE
             ]
             return (len(completed_issues) / len(milestone_issues)) * 100.0
         else:
@@ -108,7 +92,7 @@ class Milestone(BaseModel):
                 )  # Default to 1 hour if not estimated
                 total_effort += effort
 
-                if issue.status == Status.CLOSED:
+                if issue.status == Status.DONE:
                     completed_effort += effort
                 elif issue.progress_percentage is not None:
                     # Partial completion based on progress percentage
@@ -132,7 +116,7 @@ class Milestone(BaseModel):
         milestone_issues = self.get_issues(all_issues)
         remaining_hours = 0.0
         for issue in milestone_issues:
-            if issue.status != Status.CLOSED and issue.estimated_hours is not None:
+            if issue.status != Status.DONE and issue.estimated_hours is not None:
                 remaining_hours += issue.estimated_hours
         return remaining_hours
 

@@ -111,8 +111,10 @@ class MilestoneOperations:
             status: New status (None to keep current)
 
         Returns:
-            True if milestone was updated, False if not found
+            True if milestone was updated, False if not found or error occurred
         """
+        from roadmap.common.errors.exceptions import UpdateError
+
         logger.info(
             "updating_milestone",
             milestone_name=name,
@@ -121,16 +123,19 @@ class MilestoneOperations:
             clear_due_date=clear_due_date,
             has_status=status is not None,
         )
-        return (
-            self.milestone_service.update_milestone(
-                name=name,
-                description=description,
-                due_date=due_date,
-                clear_due_date=clear_due_date,
-                status=status,
+        try:
+            return (
+                self.milestone_service.update_milestone(
+                    name=name,
+                    description=description,
+                    due_date=due_date,
+                    clear_due_date=clear_due_date,
+                    status=status,
+                )
+                is not None
             )
-            is not None
-        )
+        except UpdateError:
+            return False
 
     @safe_operation(OperationType.READ, "Milestone")
     def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:

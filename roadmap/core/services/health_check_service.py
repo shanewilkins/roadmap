@@ -7,8 +7,9 @@ component status information and overall system health assessment.
 from typing import Any
 
 from roadmap.common.logging import get_logger
+from roadmap.core.domain.health import HealthStatus
 from roadmap.infrastructure.core import RoadmapCore
-from roadmap.infrastructure.health import HealthCheck, HealthStatus
+from roadmap.infrastructure.health import HealthCheck
 
 logger = get_logger(__name__)
 

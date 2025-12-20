@@ -331,7 +331,7 @@ class TestEndToEndWorkflows:
         assert completion_percentage == 0.0  # No issues completed yet
 
         # Update one issue to done and check completion
-        core.issues.update(issue1_id, status=Status.CLOSED)
+        core.issues.update(issue1_id, status=Status.DONE)
         all_issues = core.issues.list()  # Refresh
         completion_percentage = milestone.get_completion_percentage(all_issues)
         assert completion_percentage == 50.0  # 1 of 2 issues completed

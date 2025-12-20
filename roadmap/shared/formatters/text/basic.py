@@ -8,6 +8,7 @@ from rich.text import Text
 logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
+    from rich.console import Console
     from rich.panel import Panel
 
 

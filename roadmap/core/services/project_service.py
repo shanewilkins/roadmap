@@ -13,8 +13,8 @@ import time
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.persistence.parser import MilestoneParser, ProjectParser
-from roadmap.adapters.persistence.storage import StateManager
+from roadmap.adapters.persistence.parser import MilestoneParser
+from roadmap.common.constants import MilestoneStatus
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.common.logging_utils import (
@@ -23,8 +23,8 @@ from roadmap.common.logging_utils import (
     log_metric,
 )
 from roadmap.common.timezone_utils import now_utc
-from roadmap.core.domain.milestone import MilestoneStatus
 from roadmap.core.domain.project import Project
+from roadmap.core.repositories import ProjectRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
@@ -33,16 +33,16 @@ logger = get_logger(__name__)
 class ProjectService:
     """Service for managing projects."""
 
-    def __init__(self, db: StateManager, projects_dir: Path, milestones_dir: Path):
+    def __init__(
+        self, repository: ProjectRepository, milestones_dir: Path | None = None
+    ):
         """Initialize project service.
 
         Args:
-            db: State manager for database operations
-            projects_dir: Path to projects directory
-            milestones_dir: Path to milestones directory (for progress calc)
+            repository: Repository for project persistence
+            milestones_dir: Path to milestones directory (for progress calc, optional)
         """
-        self.db = db
-        self.projects_dir = projects_dir
+        self.repository = repository
         self.milestones_dir = milestones_dir
 
     def list_projects(self) -> list[Project]:
@@ -54,12 +54,8 @@ class ProjectService:
         start_time = time.time()
         logger.debug("listing_projects_start")
 
-        projects = FileEnumerationService.enumerate_and_parse(
-            self.projects_dir,
-            ProjectParser.parse_project_file,
-        )
+        projects = self.repository.list()
 
-        projects.sort(key=lambda x: x.created)
         elapsed = time.time() - start_time
 
         log_collection_operation("projects", len(projects), "retrieved", level="debug")
@@ -84,16 +80,7 @@ class ProjectService:
         start_time = time.time()
         logger.debug("get_project_start", project_id=project_id)
 
-        def id_matcher(project: Project) -> bool:
-            return project.id.startswith(project_id)
-
-        projects = FileEnumerationService.enumerate_with_filter(
-            self.projects_dir,
-            ProjectParser.parse_project_file,
-            id_matcher,
-        )
-
-        result = projects[0] if projects else None
+        result = self.repository.get(project_id)
         elapsed = time.time() - start_time
 
         if result:
@@ -127,34 +114,13 @@ class ProjectService:
             "saving_project_start", project_id=project.id, project_name=project.name
         )
 
-        # Find and update the existing project file
-        for project_file in self.projects_dir.rglob("*.md"):
-            try:
-                test_project = ProjectParser.parse_project_file(project_file)
-                if test_project.id == project.id:
-                    project.updated = now_utc()
-                    ProjectParser.save_project_file(project, project_file)
-                    elapsed = time.time() - start_time
-                    log_event("project_saved", project_id=project.id, updated=True)
-                    logger.info(
-                        "saving_project_updated_existing",
-                        project_id=project.id,
-                        elapsed_seconds=round(elapsed, 3),
-                    )
-                    return True
-            except Exception:
-                continue
-
-        # If not found, create new file
         project.updated = now_utc()
-        project_path = self.projects_dir / project.filename
-        ProjectParser.save_project_file(project, project_path)
+        self.repository.save(project)
         elapsed = time.time() - start_time
-        log_event("project_saved", project_id=project.id, updated=False)
+        log_event("project_saved", project_id=project.id)
         logger.info(
-            "saving_project_created_new",
+            "saving_project_complete",
             project_id=project.id,
-            file_path=str(project_path),
             elapsed_seconds=round(elapsed, 3),
         )
         return True
@@ -270,36 +236,33 @@ class ProjectService:
         start_time = time.time()
         logger.info("deleting_project_start", project_id=project_id)
 
-        for project_file in self.projects_dir.rglob("*.md"):
-            try:
-                project = ProjectParser.parse_project_file(project_file)
-                if project.id.startswith(project_id):
-                    project_name = project.name
-                    project_file.unlink()
-                    elapsed = time.time() - start_time
+        project = self.get_project(project_id)
+        if not project:
+            elapsed = time.time() - start_time
+            logger.warning(
+                "deleting_project_not_found",
+                project_id=project_id,
+                elapsed_seconds=round(elapsed, 3),
+            )
+            return False
 
-                    log_event(
-                        "project_deleted",
-                        project_id=project_id,
-                        project_name=project_name,
-                    )
-                    logger.info(
-                        "deleting_project_complete",
-                        project_id=project_id,
-                        project_name=project_name,
-                        elapsed_seconds=round(elapsed, 3),
-                    )
-                    return True
-            except Exception:
-                continue
-
+        project_name = project.name
+        success = self.repository.delete(project_id)
         elapsed = time.time() - start_time
-        logger.warning(
-            "deleting_project_not_found",
-            project_id=project_id,
-            elapsed_seconds=round(elapsed, 3),
-        )
-        return False
+
+        if success:
+            log_event(
+                "project_deleted",
+                project_id=project_id,
+                project_name=project_name,
+            )
+            logger.info(
+                "deleting_project_complete",
+                project_id=project_id,
+                project_name=project_name,
+                elapsed_seconds=round(elapsed, 3),
+            )
+        return success
 
     def calculate_progress(self, project_id: str) -> dict[str, Any]:
         """Calculate project progress based on associated milestones.
@@ -332,6 +295,14 @@ class ProjectService:
             }
 
         # Get milestones for this project
+        if not self.milestones_dir:
+            return {
+                "total_milestones": len(project.milestones),
+                "completed_milestones": 0,
+                "progress": 0.0,
+                "milestone_status": {},
+            }
+
         milestones = FileEnumerationService.enumerate_and_parse(
             self.milestones_dir,
             MilestoneParser.parse_milestone_file,

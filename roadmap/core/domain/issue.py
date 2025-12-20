@@ -2,10 +2,11 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+from roadmap.common.constants import IssueType, Priority, Status
 
 
 def now_utc():
@@ -13,33 +14,6 @@ def now_utc():
     from roadmap.common.timezone_utils import now_utc as tz_now_utc
 
     return tz_now_utc()
-
-
-class Priority(str, Enum):
-    """Issue priority levels."""
-
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-
-
-class IssueType(str, Enum):
-    """Issue type categories."""
-
-    FEATURE = "feature"
-    BUG = "bug"
-    OTHER = "other"
-
-
-class Status(str, Enum):
-    """Issue status values."""
-
-    TODO = "todo"
-    IN_PROGRESS = "in-progress"
-    BLOCKED = "blocked"
-    REVIEW = "review"
-    CLOSED = "closed"
 
 
 class Issue(BaseModel):
@@ -129,7 +103,7 @@ class Issue(BaseModel):
             return f"{self.progress_percentage:.0f}%"
 
         # Infer progress from status when not explicitly set
-        if self.status == Status.CLOSED:
+        if self.status == Status.DONE:
             return "100%"
         elif self.status == Status.TODO:
             return ""  # Blank for todo - no progress tracking yet

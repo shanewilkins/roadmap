@@ -69,29 +69,37 @@ class StatusSummary:
         return dict(counter)
 
     @staticmethod
-    def summarize_checks(checks: dict[str, tuple[Enum, str]]) -> dict[str, int]:
-        """Get summary counts from health checks dict.
+    def summarize_checks(
+        checks: dict[str, tuple[Enum, str]], status_enum_class=None
+    ) -> dict[str, int]:
+        """Get summary counts from checks dict with generic status enum.
 
-        Aggregates check results into overall counts by status.
+        Aggregates check results into overall counts by status, without
+        hardcoding specific status values. The method is generic and works
+        with any status enum.
 
         Args:
             checks: Dict of {check_name: (status_enum, message)}
+            status_enum_class: Optional status enum class for type validation.
+                             If provided, all unique status values will be counted.
 
         Returns:
             Dict with counts: {
                 "total": count,
-                "healthy": count,
-                "degraded": count,
-                "unhealthy": count,
+                "status1": count,
+                "status2": count,
+                ...
             }
 
         Example:
+            from roadmap.core.domain.health import HealthStatus
+
             checks = {
                 "roadmap_dir": (HealthStatus.HEALTHY, "OK"),
                 "database": (HealthStatus.DEGRADED, "Lag"),
                 "git": (HealthStatus.UNHEALTHY, "Not a repo"),
             }
-            summary = StatusSummary.summarize_checks(checks)
+            summary = StatusSummary.summarize_checks(checks, HealthStatus)
             # Returns: {
             #     "total": 3,
             #     "healthy": 1,
@@ -101,17 +109,21 @@ class StatusSummary:
         """
         statuses = [status for _, (status, _) in checks.items()]
 
-        # Import here to avoid circular dependency
-        from roadmap.infrastructure.health import HealthStatus
-
         total = len(statuses)
-        healthy = sum(1 for s in statuses if s == HealthStatus.HEALTHY)
-        degraded = sum(1 for s in statuses if s == HealthStatus.DEGRADED)
-        unhealthy = sum(1 for s in statuses if s == HealthStatus.UNHEALTHY)
+        counts = {"total": total}
 
-        return {
-            "total": total,
-            "healthy": healthy,
-            "degraded": degraded,
-            "unhealthy": unhealthy,
-        }
+        # Count by status value
+        counter = Counter(s.value for s in statuses)
+        counts.update(dict(counter))
+
+        # If no explicit enum class, try to infer from first status
+        if not status_enum_class and statuses:
+            status_enum_class = type(statuses[0])
+
+        # Ensure all enum values are represented (with 0 count if missing)
+        if status_enum_class:
+            for member in status_enum_class:
+                if member.value not in counts:
+                    counts[member.value] = 0
+
+        return counts

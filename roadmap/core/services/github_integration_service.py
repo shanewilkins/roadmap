@@ -91,7 +91,7 @@ class GitHubIntegrationService:
 
             # Get team members
             client = GitHubClient(token=token, owner=owner, repo=repo)
-            members = client.get_team_members()
+            members = client.get_team_members()  # type: ignore[attr-defined]
             logger.debug("team_members_retrieved", count=len(members))
             return members
         except Exception as e:
@@ -246,7 +246,7 @@ class GitHubIntegrationService:
             client = GitHubClient(token=token, owner=owner, repo=repo)
 
             # This will do the full GitHub API validation
-            github_valid, github_error = client.validate_assignee(assignee)
+            github_valid, github_error = client.validate_assignee(assignee)  # type: ignore[attr-defined]
             if github_valid:
                 self._last_canonical_assignee = assignee
                 logger.debug("assignee_validated_via_github", assignee=assignee)

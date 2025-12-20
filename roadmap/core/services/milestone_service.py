@@ -17,13 +17,13 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
-from roadmap.adapters.persistence.storage import StateManager
+from roadmap.common.constants import MilestoneStatus, Status
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_metric
 from roadmap.common.timezone_utils import now_utc
-from roadmap.core.domain.issue import Status
-from roadmap.core.domain.milestone import Milestone, MilestoneStatus
+from roadmap.core.domain.milestone import Milestone
+from roadmap.core.repositories import IssueRepository, MilestoneRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
@@ -32,17 +32,25 @@ logger = get_logger(__name__)
 class MilestoneService:
     """Service for managing milestones."""
 
-    def __init__(self, db: StateManager, milestones_dir: Path, issues_dir: Path):
+    def __init__(
+        self,
+        repository: MilestoneRepository,
+        issue_repository: IssueRepository | None = None,
+        issues_dir: Path | None = None,
+        milestones_dir: Path | None = None,
+    ):
         """Initialize milestone service.
 
         Args:
-            db: State manager for database operations
-            milestones_dir: Path to milestones directory
-            issues_dir: Path to issues directory (for cleanup)
+            repository: Repository for milestone persistence
+            issue_repository: Optional repository for issue persistence (for progress calculation)
+            issues_dir: Optional path to issues directory (for deletion operations)
+            milestones_dir: Optional path to milestones directory (for deletion operations)
         """
-        self.db = db
-        self.milestones_dir = milestones_dir
+        self.repository = repository
+        self.issue_repository = issue_repository
         self.issues_dir = issues_dir
+        self.milestones_dir = milestones_dir
 
     @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
     def create_milestone(
@@ -66,8 +74,6 @@ class MilestoneService:
             "creating_milestone", milestone_name=name, has_due_date=due_date is not None
         )
         log_event("milestone_creation_started", milestone_name=name)
-        import json
-        import uuid
 
         milestone = Milestone(
             name=name,
@@ -76,26 +82,8 @@ class MilestoneService:
             content=f"# {name}\n\n## Description\n\n{description}\n\n## Goals\n\n- [ ] Goal 1\n- [ ] Goal 2\n- [ ] Goal 3",
         )
 
-        milestone_path = self.milestones_dir / milestone.filename
-        MilestoneParser.save_milestone_file(milestone, milestone_path)
-
-        # Persist to database (non-blocking - file system is primary source of truth)
-        try:
-            milestone_id = str(uuid.uuid4())[:8]
-            self.db.create_milestone(
-                {
-                    "id": milestone_id,
-                    "project_id": None,  # Milestones are not project-scoped in current design
-                    "title": name,
-                    "description": description,
-                    "status": "open",
-                    "due_date": due_date.isoformat() if due_date else None,
-                    "metadata": json.dumps({"filename": milestone.filename}),
-                }
-            )
-        except Exception:
-            # Silently continue if DB insert fails - file-based system is primary
-            pass
+        # Persist using repository abstraction
+        self.repository.save(milestone)
 
         log_event("milestone_created", milestone_name=milestone.name)
         log_exit("create_milestone", milestone_name=milestone.name)
@@ -111,20 +99,13 @@ class MilestoneService:
             List of Milestone objects sorted by due date then name
         """
         log_entry("list_milestones", status_filter=status)
-        milestones = FileEnumerationService.enumerate_and_parse(
-            self.milestones_dir,
-            MilestoneParser.parse_milestone_file,
-        )
-        log_metric("milestones_enumerated", len(milestones))
+        milestones = self.repository.list()
 
         # Filter by status if provided
-        if status is not None:
+        if status:
             milestones = [m for m in milestones if m.status == status]
-            log_metric(
-                "milestones_filtered_by_status",
-                len(milestones),
-                milestone_status=status.value,
-            )
+
+        log_metric("milestones_enumerated", len(milestones))
 
         # Sort by due date (earliest first), then by name
         def get_sortable_date(milestone):
@@ -150,22 +131,14 @@ class MilestoneService:
         """
         log_entry("get_milestone", milestone_name=name)
 
-        def name_matcher(milestone: Milestone) -> bool:
-            return milestone.name == name
+        milestone = self.repository.get(name)
 
-        milestones = FileEnumerationService.enumerate_with_filter(
-            self.milestones_dir,
-            MilestoneParser.parse_milestone_file,
-            name_matcher,
-        )
-
-        result = milestones[0] if milestones else None
-        if result:
+        if milestone:
             log_event("milestone_found", milestone_name=name)
         else:
             log_event("milestone_not_found", milestone_name=name)
-        log_exit("get_milestone", found=result is not None)
-        return result
+        log_exit("get_milestone", found=milestone is not None)
+        return milestone
 
     @safe_operation(OperationType.UPDATE, "Milestone")
     def update_milestone(
@@ -234,19 +207,11 @@ class MilestoneService:
 
         milestone.updated = now_utc()
 
-        # Find and save the milestone file
-        for milestone_file in self.milestones_dir.rglob("*.md"):
-            try:
-                test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                if test_milestone.name == name:
-                    MilestoneParser.save_milestone_file(milestone, milestone_file)
-                    log_event("milestone_saved", milestone_name=name)
-                    log_exit("update_milestone", milestone_name=name, success=True)
-                    return milestone
-            except Exception:
-                continue
-        log_exit("update_milestone", success=False)
-        return None
+        # Persist using repository
+        self.repository.save(milestone)
+        log_event("milestone_saved", milestone_name=name)
+        log_exit("update_milestone", milestone_name=name, success=True)
+        return milestone
 
     @safe_operation(OperationType.DELETE, "Milestone", include_traceback=True)
     def delete_milestone(self, name: str) -> bool:
@@ -268,44 +233,48 @@ class MilestoneService:
             return False
 
         # Unassign all issues from this milestone
-        issues = FileEnumerationService.enumerate_and_parse(
-            self.issues_dir,
-            IssueParser.parse_issue_file,
-        )
-        log_metric("issues_enumerated_for_unassignment", len(issues))
+        if self.issues_dir:
+            issues = FileEnumerationService.enumerate_and_parse(
+                self.issues_dir,
+                IssueParser.parse_issue_file,
+            )
+            log_metric("issues_enumerated_for_unassignment", len(issues))
 
-        unassigned_count = 0
-        for issue in issues:
-            if issue.milestone == name:
-                issue.milestone = None
-                issue.updated = now_utc()
-                # Find and save the issue file
-                for issue_file in self.issues_dir.rglob("*.md"):
-                    try:
-                        test_issue = IssueParser.parse_issue_file(issue_file)
-                        if test_issue.id == issue.id:
-                            IssueParser.save_issue_file(issue, issue_file)
-                            unassigned_count += 1
-                            break
-                    except Exception:
-                        continue
+            unassigned_count = 0
+            for issue in issues:
+                if issue.milestone == name:
+                    issue.milestone = None
+                    issue.updated = now_utc()
+                    # Find and save the issue file
+                    for issue_file in self.issues_dir.rglob("*.md"):
+                        try:
+                            test_issue = IssueParser.parse_issue_file(issue_file)
+                            if test_issue.id == issue.id:
+                                IssueParser.save_issue_file(issue, issue_file)
+                                unassigned_count += 1
+                                break
+                        except Exception:
+                            continue
 
         log_metric("issues_unassigned", unassigned_count)
         # Delete the milestone file
-        for milestone_file in self.milestones_dir.rglob("*.md"):
-            try:
-                test_milestone = MilestoneParser.parse_milestone_file(milestone_file)
-                if test_milestone.name == name:
-                    milestone_file.unlink()
-                    log_event(
-                        "milestone_deleted",
-                        milestone_name=name,
-                        issues_unassigned=unassigned_count,
+        if self.milestones_dir:
+            for milestone_file in self.milestones_dir.rglob("*.md"):
+                try:
+                    test_milestone = MilestoneParser.parse_milestone_file(
+                        milestone_file
                     )
-                    log_exit("delete_milestone", success=True)
-                    return True
-            except Exception:
-                continue
+                    if test_milestone.name == name:
+                        milestone_file.unlink()
+                        log_event(
+                            "milestone_deleted",
+                            milestone_name=name,
+                            issues_unassigned=unassigned_count,
+                        )
+                        log_exit("delete_milestone", success=True)
+                        return True
+                except Exception:
+                    continue
         log_exit("delete_milestone", success=False)
         return False
 
@@ -319,10 +288,13 @@ class MilestoneService:
             Dict with total, completed, progress percentage, and status breakdown
         """
         log_entry("get_milestone_progress", milestone_name=milestone_name)
-        issues = FileEnumerationService.enumerate_and_parse(
-            self.issues_dir,
-            IssueParser.parse_issue_file,
-        )
+
+        # If no issue repository available, return empty progress
+        if not self.issue_repository:
+            log_exit("get_milestone_progress", total=0)
+            return {"total": 0, "completed": 0, "progress": 0.0, "by_status": {}}
+
+        issues = self.issue_repository.list()
 
         # Filter issues for this milestone
         milestone_issues = [i for i in issues if i.milestone == milestone_name]
@@ -333,7 +305,7 @@ class MilestoneService:
             return {"total": 0, "completed": 0, "progress": 0.0, "by_status": {}}
 
         total = len(milestone_issues)
-        completed = len([i for i in milestone_issues if i.status == Status.CLOSED])
+        completed = len([i for i in milestone_issues if i.status == Status.DONE])
         progress = (completed / total) * 100 if total > 0 else 0.0
 
         by_status = {}

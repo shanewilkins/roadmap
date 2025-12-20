@@ -9,9 +9,8 @@ import os
 from datetime import datetime
 from typing import Any
 
+from roadmap.common.constants import MilestoneStatus, Status
 from roadmap.common.logging import get_logger
-from roadmap.core.domain.issue import Status
-from roadmap.core.domain.milestone import MilestoneStatus
 
 logger = get_logger(__name__)
 
@@ -98,7 +97,7 @@ class DailySummaryService:
             for i in issues
             if i.due_date
             and i.due_date.replace(tzinfo=None) < datetime.now()
-            and i.status != Status.CLOSED
+            and i.status != Status.DONE
         ]
 
     def _get_blocked_issues(self, issues: list) -> list:
@@ -140,7 +139,7 @@ class DailySummaryService:
         return [
             i
             for i in issues
-            if i.status == Status.CLOSED
+            if i.status == Status.DONE
             and i.actual_end_date
             and i.actual_end_date.date() == today
         ]

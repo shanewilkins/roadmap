@@ -12,8 +12,9 @@ from rich.console import Console
 from roadmap.adapters.cli.presentation.daily_summary_presenter import (
     DailySummaryPresenter,
 )
-from roadmap.core.domain.issue import Issue, Priority, Status
-from roadmap.core.domain.milestone import Milestone, MilestoneStatus
+from roadmap.common.constants import MilestoneStatus, Priority, Status
+from roadmap.core.domain.issue import Issue
+from roadmap.core.domain.milestone import Milestone
 
 
 @pytest.fixture
@@ -73,7 +74,7 @@ def sample_data():
     completed_issue = Issue(
         id="TASK-5",
         title="Completed task",
-        status=Status.CLOSED,
+        status=Status.DONE,
         assignee="alice",
         priority=Priority.MEDIUM,
         milestone="v1.0",
@@ -271,7 +272,7 @@ class TestDailySummaryPresenterSections:
         completed_issue = Issue(
             id="TASK-1",
             title="Completed task",
-            status=Status.CLOSED,
+            status=Status.DONE,
             assignee="alice",
             priority=Priority.MEDIUM,
             actual_end_date=datetime.now(),

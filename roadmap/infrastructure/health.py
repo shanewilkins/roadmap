@@ -7,9 +7,8 @@ This module orchestrates health checks from dedicated validator services:
 The HealthCheck class delegates to these services rather than implementing checks directly.
 """
 
-from enum import Enum
-
 from roadmap.common.logging import get_logger
+from roadmap.core.domain.health import HealthStatus
 from roadmap.core.services.data_integrity_validator_service import (
     DataIntegrityValidatorService,
 )
@@ -18,14 +17,6 @@ from roadmap.core.services.infrastructure_validator_service import (
 )
 
 logger = get_logger(__name__)
-
-
-class HealthStatus(Enum):
-    """Health status levels for system components."""
-
-    HEALTHY = "healthy"
-    DEGRADED = "degraded"
-    UNHEALTHY = "unhealthy"
 
 
 class HealthCheck:

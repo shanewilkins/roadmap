@@ -11,8 +11,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from roadmap.adapters.cli.services.daily_summary_service import DailySummaryService
-from roadmap.core.domain.issue import Issue, Priority, Status
-from roadmap.core.domain.milestone import Milestone, MilestoneStatus
+from roadmap.common.constants import MilestoneStatus, Priority, Status
+from roadmap.core.domain.issue import Issue
+from roadmap.core.domain.milestone import Milestone
 
 
 class TestDailySummaryServiceUserResolution:
@@ -224,7 +225,7 @@ class TestDailySummaryServiceIssueCategorization:
         completed_today = Issue(
             id="TASK-1",
             title="Completed today",
-            status=Status.CLOSED,
+            status=Status.DONE,
             assignee="alice",
             priority=Priority.MEDIUM,
             actual_end_date=today,
@@ -232,7 +233,7 @@ class TestDailySummaryServiceIssueCategorization:
         completed_yesterday = Issue(
             id="TASK-2",
             title="Completed yesterday",
-            status=Status.CLOSED,
+            status=Status.DONE,
             assignee="alice",
             priority=Priority.MEDIUM,
             actual_end_date=today - timedelta(days=1),

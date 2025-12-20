@@ -1,11 +1,11 @@
 """Unit tests for ProjectService - project operations and management."""
 
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from roadmap.core.domain.milestone import MilestoneStatus
+from roadmap.common.constants import MilestoneStatus
 from roadmap.core.domain.project import Project, ProjectStatus
 from roadmap.core.services.project_service import ProjectService
 
@@ -27,11 +27,22 @@ def temp_dirs(tmp_path):
 
 
 @pytest.fixture
-def project_service(mock_db, temp_dirs):
-    """Create a ProjectService instance with temp directories."""
+def mock_project_repository():
+    """Create a mock ProjectRepository."""
+    repo = Mock()
+    repo.list.return_value = []
+    repo.get.return_value = None
+    repo.save.return_value = None
+    repo.update.return_value = None
+    repo.delete.return_value = True
+    return repo
+
+
+@pytest.fixture
+def project_service(mock_project_repository, temp_dirs):
+    """Create a ProjectService instance with mock repository."""
     return ProjectService(
-        db=mock_db,
-        projects_dir=temp_dirs["projects"],
+        repository=mock_project_repository,
         milestones_dir=temp_dirs["milestones"],
     )
 
@@ -54,16 +65,14 @@ def sample_project():
 class TestProjectServiceInit:
     """Test ProjectService initialization."""
 
-    def test_init_sets_dependencies(self, mock_db, temp_dirs):
+    def test_init_sets_dependencies(self, mock_project_repository, temp_dirs):
         """Test initialization sets all dependencies correctly."""
         service = ProjectService(
-            db=mock_db,
-            projects_dir=temp_dirs["projects"],
+            repository=mock_project_repository,
             milestones_dir=temp_dirs["milestones"],
         )
 
-        assert service.db == mock_db
-        assert service.projects_dir == temp_dirs["projects"]
+        assert service.repository == mock_project_repository
         assert service.milestones_dir == temp_dirs["milestones"]
 
 
@@ -79,19 +88,14 @@ class TestProjectServiceList:
     def test_list_projects_returns_all(
         self, project_service, temp_dirs, sample_project
     ):
-        """Test listing returns all project files."""
-        # Create project files
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            return_value=sample_project,
-        ):
-            # Create dummy files
-            (temp_dirs["projects"] / "project1.md").touch()
-            (temp_dirs["projects"] / "project2.md").touch()
+        """Test listing returns all projects from repository."""
+        # Setup mock repository to return projects
+        project_service.repository.list.return_value = [sample_project, sample_project]
 
-            projects = project_service.list_projects()
+        projects = project_service.list_projects()
 
-            assert len(projects) == 2
+        assert len(projects) == 2
+        assert projects[0] == sample_project
 
     def test_list_projects_sorted_by_created(
         self, project_service, temp_dirs, sample_project
@@ -114,29 +118,30 @@ class TestProjectServiceList:
         (temp_dirs["projects"] / "project1.md").touch()
         (temp_dirs["projects"] / "project2.md").touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            side_effect=[project1, project2],
-        ):
-            projects = project_service.list_projects()
+        mock_repository = MagicMock()
+        # Repository returns projects sorted by created date (oldest first)
+        mock_repository.list.return_value = [project2, project1]
+        project_service.repository = mock_repository
 
-            # Should be sorted by created date (oldest first)
-            assert projects[0].id == "PROJ-002"
-            assert projects[1].id == "PROJ-001"
+        projects = project_service.list_projects()
+
+        # Should be sorted by created date (oldest first)
+        assert projects[0].id == "PROJ-002"
+        assert projects[1].id == "PROJ-001"
 
     def test_list_projects_skips_invalid_files(self, project_service, temp_dirs):
         """Test listing skips files that can't be parsed."""
         # Create dummy file
         (temp_dirs["projects"] / "invalid.md").touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            side_effect=Exception("Parse error"),
-        ):
-            projects = project_service.list_projects()
+        mock_repository = MagicMock()
+        mock_repository.list.return_value = []
+        project_service.repository = mock_repository
 
-            # Should return empty list, not raise exception
-            assert projects == []
+        projects = project_service.list_projects()
+
+        # Should return empty list, not raise exception
+        assert projects == []
 
 
 class TestProjectServiceGet:
@@ -146,18 +151,22 @@ class TestProjectServiceGet:
         """Test getting an existing project."""
         (temp_dirs["projects"] / "project.md").touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            return_value=sample_project,
-        ):
-            project = project_service.get_project("PROJ-001")
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        project_service.repository = mock_repository
 
-            assert project is not None
-            assert project.id == "PROJ-001"
-            assert project.name == "Test Project"
+        project = project_service.get_project("PROJ-001")
+
+        assert project is not None
+        assert project.id == "PROJ-001"
+        assert project.name == "Test Project"
 
     def test_get_project_not_found(self, project_service):
         """Test getting a non-existent project returns None."""
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = None
+        project_service.repository = mock_repository
+
         project = project_service.get_project("NONEXISTENT")
 
         assert project is None
@@ -168,28 +177,28 @@ class TestProjectServiceGet:
         """Test getting project with partial ID match."""
         (temp_dirs["projects"] / "project.md").touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            return_value=sample_project,
-        ):
-            # Should match with partial ID
-            project = project_service.get_project("PROJ")
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        project_service.repository = mock_repository
 
-            assert project is not None
-            assert project.id == "PROJ-001"
+        # Should match with partial ID
+        project = project_service.get_project("PROJ")
+
+        assert project is not None
+        assert project.id == "PROJ-001"
 
     def test_get_project_skips_invalid_files(self, project_service, temp_dirs):
         """Test get_project skips files that can't be parsed."""
         (temp_dirs["projects"] / "invalid.md").touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            side_effect=Exception("Parse error"),
-        ):
-            project = project_service.get_project("PROJ-001")
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = None
+        project_service.repository = mock_repository
 
-            # Should return None, not raise exception
-            assert project is None
+        project = project_service.get_project("PROJ-001")
+
+        # Should return None, not raise exception
+        assert project is None
 
 
 class TestProjectServiceSave:
@@ -200,44 +209,29 @@ class TestProjectServiceSave:
         project_file = temp_dirs["projects"] / "project.md"
         project_file.touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=sample_project,
-            ),
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.save_project_file"
-            ) as mock_save,
-            patch("roadmap.core.services.project_service.now_utc") as mock_now,
-        ):
-            mock_now.return_value = datetime(2025, 1, 20, tzinfo=timezone.utc)
+        mock_repository = MagicMock()
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
 
-            result = project_service.save_project(sample_project)
+        result = project_service.save_project(sample_project)
 
-            assert result is True
-            mock_save.assert_called_once()
-            # Check updated timestamp was set
-            assert sample_project.updated == datetime(2025, 1, 20, tzinfo=timezone.utc)
+        assert result is True
+        mock_repository.save.assert_called_once()
+        # Check updated timestamp was set
+        assert sample_project.updated is not None
 
     def test_save_project_new(self, project_service, temp_dirs, sample_project):
         """Test saving a new project creates a file."""
         # No existing files
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.save_project_file"
-            ) as mock_save,
-            patch("roadmap.core.services.project_service.now_utc") as mock_now,
-        ):
-            mock_now.return_value = datetime(2025, 1, 20, tzinfo=timezone.utc)
+        mock_repository = MagicMock()
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
 
-            result = project_service.save_project(sample_project)
+        result = project_service.save_project(sample_project)
 
-            assert result is True
-            mock_save.assert_called_once()
-            # Should save to expected path
-            expected_path = temp_dirs["projects"] / sample_project.filename
-            mock_save.assert_called_with(sample_project, expected_path)
+        assert result is True
+        mock_repository.save.assert_called_once()
 
     def test_save_project_handles_parse_errors(
         self, project_service, temp_dirs, sample_project
@@ -246,22 +240,15 @@ class TestProjectServiceSave:
         project_file = temp_dirs["projects"] / "project.md"
         project_file.touch()
 
-        # Parse error means it won't find existing file, will save as new
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                side_effect=Exception("Parse error"),
-            ),
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.save_project_file"
-            ) as mock_save,
-            patch("roadmap.core.services.project_service.now_utc"),
-        ):
-            result = project_service.save_project(sample_project)
+        # Mock repository that works despite parse errors
+        mock_repository = MagicMock()
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
 
-            # Should still save (as new file)
-            assert result is True
-            mock_save.assert_called_once()
+        result = project_service.save_project(sample_project)
+
+        assert result is True
+        mock_repository.save.assert_called_once()
 
 
 class TestProjectServiceCreate:
@@ -316,23 +303,25 @@ class TestProjectServiceUpdate:
         """Test updating a project successfully."""
         (temp_dirs["projects"] / "project.md").touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=sample_project,
-            ),
-            patch.object(project_service, "save_project", return_value=True),
-        ):
-            updated = project_service.update_project(
-                "PROJ-001", name="Updated Name", description="Updated Description"
-            )
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
 
-            assert updated is not None
-            assert updated.name == "Updated Name"
-            assert updated.description == "Updated Description"
+        updated = project_service.update_project(
+            "PROJ-001", name="Updated Name", description="Updated Description"
+        )
+
+        assert updated is not None
+        assert updated.name == "Updated Name"
+        assert updated.description == "Updated Description"
 
     def test_update_project_not_found(self, project_service):
         """Test updating a non-existent project returns None."""
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = None
+        project_service.repository = mock_repository
+
         result = project_service.update_project("NONEXISTENT", name="New Name")
 
         assert result is None
@@ -343,15 +332,14 @@ class TestProjectServiceUpdate:
         """Test update_project calls save_project."""
         (temp_dirs["projects"] / "project.md").touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=sample_project,
-            ),
-            patch.object(
-                project_service, "save_project", return_value=True
-            ) as mock_save,
-        ):
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
+
+        with patch.object(
+            project_service, "save_project", return_value=True
+        ) as mock_save:
             project_service.update_project("PROJ-001", name="Updated")
 
             mock_save.assert_called_once()
@@ -362,13 +350,12 @@ class TestProjectServiceUpdate:
         """Test updating with invalid field names is handled."""
         (temp_dirs["projects"] / "project.md").touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=sample_project,
-            ),
-            patch.object(project_service, "save_project", return_value=True),
-        ):
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
+
+        with patch.object(project_service, "save_project", return_value=True):
             # Should not raise exception for invalid field
             updated = project_service.update_project(
                 "PROJ-001", nonexistent_field="value"
@@ -385,17 +372,22 @@ class TestProjectServiceDelete:
         project_file = temp_dirs["projects"] / "project.md"
         project_file.touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            return_value=sample_project,
-        ):
-            result = project_service.delete_project("PROJ-001")
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        mock_repository.delete.return_value = True
+        project_service.repository = mock_repository
 
-            assert result is True
-            assert not project_file.exists()
+        result = project_service.delete_project("PROJ-001")
+
+        assert result is True
+        mock_repository.delete.assert_called_once_with("PROJ-001")
 
     def test_delete_project_not_found(self, project_service):
         """Test deleting a non-existent project returns False."""
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = None
+        project_service.repository = mock_repository
+
         result = project_service.delete_project("NONEXISTENT")
 
         assert result is False
@@ -407,27 +399,28 @@ class TestProjectServiceDelete:
         project_file = temp_dirs["projects"] / "project.md"
         project_file.touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            return_value=sample_project,
-        ):
-            result = project_service.delete_project("PROJ")
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        mock_repository.delete.return_value = True
+        project_service.repository = mock_repository
 
-            assert result is True
-            assert not project_file.exists()
+        result = project_service.delete_project("PROJ")
+
+        assert result is True
+        mock_repository.delete.assert_called_once()
 
     def test_delete_project_skips_invalid_files(self, project_service, temp_dirs):
         """Test delete_project skips files that can't be parsed."""
         (temp_dirs["projects"] / "invalid.md").touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            side_effect=Exception("Parse error"),
-        ):
-            result = project_service.delete_project("PROJ-001")
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = None
+        project_service.repository = mock_repository
 
-            # Should return False, not raise exception
-            assert result is False
+        result = project_service.delete_project("PROJ-001")
+
+        # Should return False, not raise exception
+        assert result is False
 
 
 class TestProjectServiceProgress:
@@ -435,6 +428,10 @@ class TestProjectServiceProgress:
 
     def test_calculate_progress_no_project(self, project_service):
         """Test calculating progress for non-existent project."""
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = None
+        project_service.repository = mock_repository
+
         progress = project_service.calculate_progress("NONEXISTENT")
 
         assert progress["total_milestones"] == 0
@@ -454,14 +451,14 @@ class TestProjectServiceProgress:
         )
         (temp_dirs["projects"] / "project.md").touch()
 
-        with patch(
-            "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-            return_value=project_without_milestones,
-        ):
-            progress = project_service.calculate_progress("PROJ-002")
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = project_without_milestones
+        project_service.repository = mock_repository
 
-            assert progress["total_milestones"] == 0
-            assert progress["progress"] == 0.0
+        progress = project_service.calculate_progress("PROJ-002")
+
+        assert progress["total_milestones"] == 0
+        assert progress["progress"] == 0.0
 
     def test_calculate_progress_all_completed(self, project_service, temp_dirs):
         """Test progress calculation with all milestones completed."""
@@ -487,15 +484,14 @@ class TestProjectServiceProgress:
         (temp_dirs["milestones"] / "m1.md").touch()
         (temp_dirs["milestones"] / "m2.md").touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=project,
-            ),
-            patch(
-                "roadmap.core.services.project_service.MilestoneParser.parse_milestone_file",
-                side_effect=[milestone1, milestone2],
-            ),
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = project
+        project_service.repository = mock_repository
+
+        # Mock FileEnumerationService.enumerate_and_parse to return our milestones
+        with patch(
+            "roadmap.core.services.project_service.FileEnumerationService.enumerate_and_parse",
+            return_value=[milestone1, milestone2],
         ):
             progress = project_service.calculate_progress("PROJ-001")
 
@@ -528,15 +524,14 @@ class TestProjectServiceProgress:
         (temp_dirs["milestones"] / "m1.md").touch()
         (temp_dirs["milestones"] / "m2.md").touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=project,
-            ),
-            patch(
-                "roadmap.core.services.project_service.MilestoneParser.parse_milestone_file",
-                side_effect=[milestone1, milestone2],
-            ),
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = project
+        project_service.repository = mock_repository
+
+        # Mock FileEnumerationService.enumerate_and_parse to return our milestones
+        with patch(
+            "roadmap.core.services.project_service.FileEnumerationService.enumerate_and_parse",
+            return_value=[milestone1, milestone2],
         ):
             progress = project_service.calculate_progress("PROJ-001")
 
@@ -552,20 +547,25 @@ class TestProjectServiceComplete:
         """Test marking a project as completed."""
         (temp_dirs["projects"] / "project.md").touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=sample_project,
-            ),
-            patch.object(project_service, "save_project", return_value=True),
-        ):
-            completed = project_service.complete_project("PROJ-001")
+        # Setup sample project with ACTIVE status
+        sample_project.status = ProjectStatus.ACTIVE
 
-            assert completed is not None
-            assert completed.status == ProjectStatus.COMPLETED
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
+
+        completed = project_service.complete_project("PROJ-001")
+
+        assert completed is not None
+        assert completed.status == ProjectStatus.COMPLETED
 
     def test_complete_project_not_found(self, project_service):
         """Test completing a non-existent project returns None."""
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = None
+        project_service.repository = mock_repository
+
         result = project_service.complete_project("NONEXISTENT")
 
         assert result is None
@@ -576,15 +576,16 @@ class TestProjectServiceComplete:
         """Test complete_project calls update_project with correct status."""
         (temp_dirs["projects"] / "project.md").touch()
 
-        with (
-            patch(
-                "roadmap.core.services.project_service.ProjectParser.parse_project_file",
-                return_value=sample_project,
-            ),
-            patch.object(
-                project_service, "update_project", return_value=sample_project
-            ) as mock_update,
-        ):
+        sample_project.status = ProjectStatus.ACTIVE
+
+        mock_repository = MagicMock()
+        mock_repository.get.return_value = sample_project
+        mock_repository.save.return_value = None
+        project_service.repository = mock_repository
+
+        with patch.object(
+            project_service, "update_project", return_value=sample_project
+        ) as mock_update:
             project_service.complete_project("PROJ-001")
 
             mock_update.assert_called_once_with(

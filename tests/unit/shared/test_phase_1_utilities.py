@@ -12,12 +12,12 @@ from unittest.mock import Mock, patch
 
 from roadmap.common.decorators import service_operation
 from roadmap.common.status_utils import StatusSummary
+from roadmap.core.domain.health import HealthStatus as ApplicationHealthStatus
 from roadmap.core.services.base_validator import (
     BaseValidator,
     HealthStatus,
 )
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
-from roadmap.infrastructure.health import HealthStatus as ApplicationHealthStatus
 
 # ============================================================================
 # BaseValidator Tests
@@ -542,7 +542,9 @@ class TestStatusSummary:
 
     def test_summarize_checks_empty(self):
         """Test summarizing empty checks."""
-        result = StatusSummary.summarize_checks({})  # type: ignore
+        from roadmap.core.domain.health import HealthStatus
+
+        result = StatusSummary.summarize_checks({}, HealthStatus)  # type: ignore
 
         assert result["total"] == 0
         assert result["healthy"] == 0

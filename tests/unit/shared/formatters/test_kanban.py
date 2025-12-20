@@ -33,7 +33,7 @@ class TestKanbanOrganizer:
 
     def test_categorize_issues_done(self):
         """categorize_issues should categorize done issues."""
-        issue = self.create_issue(status=Status.CLOSED)
+        issue = self.create_issue(status=Status.DONE)
 
         result = KanbanOrganizer.categorize_issues([issue])
 
@@ -84,7 +84,7 @@ class TestKanbanOrganizer:
     def test_categorize_issues_not_overdue_if_done(self):
         """categorize_issues should not mark done issues as overdue."""
         yesterday = datetime.now() - timedelta(days=1)
-        issue = self.create_issue(status=Status.CLOSED, due_date=yesterday)
+        issue = self.create_issue(status=Status.DONE, due_date=yesterday)
 
         result = KanbanOrganizer.categorize_issues([issue])
 
@@ -105,7 +105,7 @@ class TestKanbanOrganizer:
         """categorize_issues should handle multiple issues correctly."""
         yesterday = datetime.now() - timedelta(days=1)
         issues = [
-            self.create_issue(status=Status.CLOSED, title="Done issue"),
+            self.create_issue(status=Status.DONE, title="Done issue"),
             self.create_issue(status=Status.BLOCKED, title="Blocked issue"),
             self.create_issue(status=Status.IN_PROGRESS, title="In progress issue"),
             self.create_issue(status=Status.TODO, title="Not started issue"),

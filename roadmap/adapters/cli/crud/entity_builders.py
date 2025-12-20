@@ -108,7 +108,7 @@ class IssueBuilder:
         Returns:
             Dictionary ready for core.issues.create()
         """
-        create_dict = {"title": title}
+        create_dict: dict[str, Any] = {"title": title}
 
         if priority:
             create_dict["priority"] = IssueBuilder.validate_priority(priority)
@@ -242,7 +242,7 @@ class MilestoneBuilder:
         Returns:
             Dictionary ready for core.milestones.create()
         """
-        create_dict = {"name": name}
+        create_dict: dict[str, Any] = {"name": name}
 
         if description:
             create_dict["description"] = description

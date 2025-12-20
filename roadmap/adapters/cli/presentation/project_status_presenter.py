@@ -86,7 +86,7 @@ class IssueStatusPresenter:
             Status.IN_PROGRESS: "yellow",
             Status.BLOCKED: "red",
             Status.REVIEW: "blue",
-            Status.CLOSED: "green",
+            Status.DONE: "green",
         }
         return styles.get(status, "white")
 

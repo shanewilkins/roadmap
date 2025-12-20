@@ -195,16 +195,16 @@ class TestIssueStatisticsService:
             MagicMock(status=Status.TODO),
             MagicMock(status=Status.TODO),
             MagicMock(status=Status.IN_PROGRESS),
-            MagicMock(status=Status.CLOSED),
-            MagicMock(status=Status.CLOSED),
-            MagicMock(status=Status.CLOSED),
+            MagicMock(status=Status.DONE),
+            MagicMock(status=Status.DONE),
+            MagicMock(status=Status.DONE),
         ]
 
         result = IssueStatisticsService.get_issue_status_counts(mock_issues)
 
         assert result[Status.TODO] == 2
         assert result[Status.IN_PROGRESS] == 1
-        assert result[Status.CLOSED] == 3
+        assert result[Status.DONE] == 3
 
     def test_get_status_styling(self):
         """Test that all statuses have styling."""
@@ -214,13 +214,13 @@ class TestIssueStatisticsService:
         assert Status.IN_PROGRESS in styles
         assert Status.BLOCKED in styles
         assert Status.REVIEW in styles
-        assert Status.CLOSED in styles
+        assert Status.DONE in styles
 
     def test_get_all_status_counts_fills_zeros(self):
         """Test that all statuses are represented including zeros."""
         mock_issues = [
             MagicMock(status=Status.TODO),
-            MagicMock(status=Status.CLOSED),
+            MagicMock(status=Status.DONE),
         ]
 
         result = IssueStatisticsService.get_all_status_counts(mock_issues)
@@ -230,7 +230,7 @@ class TestIssueStatisticsService:
             assert status in result
 
         assert result[Status.TODO] == 1
-        assert result[Status.CLOSED] == 1
+        assert result[Status.DONE] == 1
         assert result[Status.IN_PROGRESS] == 0
         assert result[Status.BLOCKED] == 0
         assert result[Status.REVIEW] == 0
@@ -240,8 +240,8 @@ class TestIssueStatisticsService:
         mock_issues = [
             MagicMock(status=Status.TODO),
             MagicMock(status=Status.IN_PROGRESS),
-            MagicMock(status=Status.CLOSED),
-            MagicMock(status=Status.CLOSED),
+            MagicMock(status=Status.DONE),
+            MagicMock(status=Status.DONE),
             MagicMock(status=Status.REVIEW),
         ]
 
@@ -255,7 +255,7 @@ class TestIssueStatisticsService:
             MagicMock(status=Status.TODO),
             MagicMock(status=Status.BLOCKED),
             MagicMock(status=Status.BLOCKED),
-            MagicMock(status=Status.CLOSED),
+            MagicMock(status=Status.DONE),
         ]
 
         result = IssueStatisticsService.get_blocked_issue_count(mock_issues)
@@ -290,7 +290,7 @@ class TestRoadmapSummaryService:
             MagicMock(status=Status.TODO),
             MagicMock(status=Status.IN_PROGRESS),
             MagicMock(status=Status.BLOCKED),
-            MagicMock(status=Status.CLOSED),
+            MagicMock(status=Status.DONE),
         ]
 
         result = RoadmapSummaryService.compute_roadmap_summary(
@@ -338,7 +338,7 @@ class TestRoadmapSummaryService:
         mock_issues = [
             MagicMock(status=Status.TODO),
             MagicMock(status=Status.IN_PROGRESS),
-            MagicMock(status=Status.CLOSED),
+            MagicMock(status=Status.DONE),
         ]
 
         mock_milestones = [MagicMock(name="v1.0", due_date=None)]

@@ -201,7 +201,7 @@ class TestGitHubIntegrationService:
         ):
             with patch.object(service, "get_cached_team_members", return_value=[]):
                 with patch(
-                    "roadmap.adapters.github.github.GitHubClient"
+                    "roadmap.infrastructure.github_validator.GitHubClient"
                 ) as mock_client:
                     mock_client.return_value.validate_assignee.return_value = (
                         True,
@@ -217,7 +217,7 @@ class TestGitHubIntegrationService:
         ):
             with patch.object(service, "get_cached_team_members", return_value=[]):
                 with patch(
-                    "roadmap.adapters.github.github.GitHubClient"
+                    "roadmap.infrastructure.github_validator.GitHubClient"
                 ) as mock_client:
                     mock_client.return_value.validate_assignee.return_value = (
                         False,

@@ -7,16 +7,26 @@ providing unified access to application configuration and secrets.
 from pathlib import Path
 from typing import Any
 
-from roadmap.infrastructure.security.credentials import CredentialManager
+from roadmap.core.interfaces import CredentialProvider
 from roadmap.settings import settings
 
 
 class ConfigurationService:
     """Service for managing application configuration and credentials."""
 
-    def __init__(self):
-        """Initialize configuration service."""
-        self.credential_manager = CredentialManager()
+    def __init__(self, credential_provider: CredentialProvider | None = None):
+        """Initialize configuration service.
+
+        Args:
+            credential_provider: Optional credential provider implementation.
+                                If None, defaults to infrastructure CredentialManager.
+        """
+        if credential_provider is None:
+            from roadmap.infrastructure.security.credentials import CredentialManager
+
+            credential_provider = CredentialManager()
+
+        self.credential_manager = credential_provider
         self._settings = settings
 
     # ==================== Configuration Access ====================

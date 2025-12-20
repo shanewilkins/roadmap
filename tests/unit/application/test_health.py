@@ -3,7 +3,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from roadmap.infrastructure.health import HealthCheck, HealthStatus
+from roadmap.core.domain.health import HealthStatus
+from roadmap.infrastructure.health import HealthCheck
 
 
 class TestHealthCheck:

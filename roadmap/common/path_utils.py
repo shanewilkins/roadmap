@@ -1,11 +1,12 @@
 """Shared utilities for roadmap directory path construction."""
 
 from pathlib import Path
+from typing import Any
 
 
 def build_roadmap_paths(
     root_path: Path, roadmap_dir_name: str = ".roadmap"
-) -> dict[str, Path]:
+) -> dict[str, Any]:
     """Build all standard roadmap directory and file paths.
 
     Consolidates the common pattern of constructing roadmap paths

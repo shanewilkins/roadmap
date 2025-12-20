@@ -59,7 +59,7 @@ class TestRoadmapCoreUncoveredLines:
         # Update statuses after creation
         core.issues.update(issue1.id, status=Status.IN_PROGRESS)
         core.issues.update(issue2.id, status=Status.TODO)
-        core.issues.update(issue3.id, status=Status.CLOSED)
+        core.issues.update(issue3.id, status=Status.DONE)
 
         # Test with priority and assignee filters (hits duplicate filter lines)
         filtered_issues = core.issues.list(
