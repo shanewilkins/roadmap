@@ -57,20 +57,93 @@ Test Fixtures
 
 Common fixtures are defined in ``tests/conftest.py``.
 
-Writing Tests
-=============
+Writing Unit Tests
+===================
 
-Use pytest conventions:
+**Example: Testing a service function**
 
 .. code-block:: python
 
-    def test_create_issue():
-        """Test issue creation."""
-        issue = Issue("Test issue")
-        assert issue.title == "Test issue"
+    # tests/unit/core/services/test_issue_service.py
+    import pytest
+    from roadmap.core.services import IssueService
+    from roadmap.domain.models import Issue, Project
+
+    @pytest.fixture
+    def project():
+        """Create a test project."""
+        return Project(name="Test Project")
+
+    @pytest.fixture
+    def service(project):
+        """Create an issue service with test project."""
+        return IssueService(project)
+
+    def test_create_issue(service):
+        """Test creating a new issue."""
+        issue = service.create_issue(
+            title="Test Issue",
+            priority="high"
+        )
+
+        assert issue.title == "Test Issue"
+        assert issue.priority == "high"
+        assert issue.status == "open"
+
+    def test_create_issue_invalid_priority(service):
+        """Test that invalid priority raises error."""
+        with pytest.raises(ValidationError) as exc_info:
+            service.create_issue(
+                title="Test",
+                priority="invalid"
+            )
+
+        assert "priority" in str(exc_info.value).lower()
+
+Best Practices
+==============
+
+1. **Descriptive test names**
+
+   ✅ Good: `test_create_issue_with_high_priority_sets_priority`
+
+   ❌ Bad: `test_create`
+
+2. **Arrange-Act-Assert pattern**
+
+   .. code-block:: python
+
+       def test_issue_status_update():
+           # Arrange
+           issue = Issue("Test", status="open")
+
+           # Act
+           issue.update_status("in-progress")
+
+           # Assert
+           assert issue.status == "in-progress"
+
+3. **Test the public API, not implementation**
+
+4. **Keep tests independent** - Each test should run in any order
+
+5. **Use fixtures for common setup**
+
+Running Tests with Coverage
+============================
+
+**View coverage report**:
+
+.. code-block:: bash
+
+    poetry run pytest --cov=roadmap --cov-report=html
+    open htmlcov/index.html
+
+**Current coverage**: 2506 tests, 92% code coverage
 
 See Also
 ========
 
 - :doc:`setup` - Development setup
 - :doc:`development` - Development workflow
+- pytest documentation: https://docs.pytest.org
