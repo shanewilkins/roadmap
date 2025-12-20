@@ -3,6 +3,7 @@
 import click
 from structlog import get_logger
 
+from roadmap.adapters.cli.health.scan import scan as health_scan
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
@@ -144,7 +145,7 @@ def _determine_overall_health(checks: dict) -> HealthStatus:
     help="Show detailed debug information and all health check logs",
 )
 @click.pass_context
-def health(ctx: click.Context, verbose: bool) -> None:
+def check_health(ctx: click.Context, verbose: bool) -> None:
     """Check system health and component status.
 
     By default, shows a summary of health checks with status indicators
@@ -179,3 +180,27 @@ def health(ctx: click.Context, verbose: bool) -> None:
     except Exception as e:
         log.exception("health_check_error", error=str(e))
         click.secho(f"❌ Health check failed: {e}", fg="red", bold=True)
+
+
+# Create health group for health-related commands
+@click.group(invoke_without_command=True)
+@click.pass_context
+def health(ctx: click.Context) -> None:
+    """Health and diagnostics commands.
+
+    Provides infrastructure health checks and entity-level diagnostics.
+
+    If no subcommand is specified, runs the health check (default behavior).
+    """
+    if ctx.obj is None:
+        ctx.obj = {}
+
+    # If no subcommand was invoked, run 'check' by default
+    if ctx.invoked_subcommand is None:
+        # Invoke the check_health command with the same context
+        ctx.invoke(check_health)
+
+
+# Register health subcommands
+health.add_command(check_health, name="check")
+health.add_command(health_scan, name="scan")
