@@ -161,6 +161,11 @@ def _apply_additional_filters(
     "--overdue", is_flag=True, help="Show only overdue issues (past due date)"
 )
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
+@click.option(
+    "--show-github-ids",
+    is_flag=True,
+    help="Display GitHub issue IDs for linked issues",
+)
 @click.pass_context
 @with_output_support(
     available_columns=[
@@ -186,7 +191,7 @@ def _apply_additional_filters(
 )
 @verbose_output
 @require_initialized
-def list_issues(
+def list_issues(  # noqa: F841 - verbose is used by decorator
     ctx: click.Context,
     filter_type: str,
     milestone: str,
@@ -201,7 +206,8 @@ def list_issues(
     priority: str,
     issue_type: str,
     overdue: bool,
-    verbose: bool,
+    verbose: bool,  # noqa: F841 - used by @verbose_output decorator
+    show_github_ids: bool,
 ):
     """List all issues with various filtering options.
 
@@ -286,6 +292,7 @@ def list_issues(
             issues,
             title="Issues",
             description=filter_description,
+            show_github_ids=show_github_ids,
         )
 
         # Display workload summary if applicable
