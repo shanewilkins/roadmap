@@ -2,19 +2,19 @@
 id: 681e4fe2
 title: Enhance health command with entity-level diagnostics
 priority: high
-status: in-progress
+status: closed
 issue_type: feature
 milestone: '0.8'
 labels: []
 github_issue: null
 created: '2025-12-20T19:32:19.562077+00:00'
-updated: '2025-12-20T19:32:30.755490+00:00'
+updated: '2025-12-20T20:27:51.963471+00:00'
 assignee: shane
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-20T13:32:30.701230'
+actual_start_date: '2025-12-20T13:32:30.701230+00:00'
 actual_end_date: null
 progress_percentage: 0.0
 handoff_notes: null
