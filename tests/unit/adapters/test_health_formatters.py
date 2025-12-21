@@ -13,6 +13,7 @@ from roadmap.adapters.cli.health.formatters import (
 from roadmap.core.services.dependency_analyzer import (
     DependencyAnalysisResult,
     DependencyIssue,
+    DependencyIssueType,
 )
 from roadmap.core.services.entity_health_scanner import (
     EntityHealthReport,
@@ -51,7 +52,7 @@ def sample_dependency_result():
         problems=[
             DependencyIssue(
                 issue_id="issue-1",
-                issue_type="broken_dependency",
+                issue_type=DependencyIssueType.BROKEN,
                 message="Depends on non-existent issue",
                 affected_issues=["non-existent"],
             ),
