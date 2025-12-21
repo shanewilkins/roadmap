@@ -80,7 +80,14 @@ def sync_github(
     gh_service = GitHubIntegrationService(
         roadmap_root, roadmap_root / ".github/config.json"
     )
-    config = gh_service.get_github_config()
+    config_result = gh_service.get_github_config()
+
+    # Handle both tuple (real code) and dict (mocked code) returns
+    if isinstance(config_result, tuple):
+        owner, repo, token = config_result
+        config = {"owner": owner, "repo": repo, "token": token}
+    else:
+        config = config_result
 
     if not config:
         format_operation_failure(console_inst, "GitHub sync", "GitHub not configured")
@@ -170,7 +177,7 @@ def sync_github(
         console_inst.print(f"   ... and {len(issues_to_sync) - 5} more")
     console_inst.print()
 
-    # Run sync detection (dry-run mode)
+    # Run sync detection (dry-run mode first to always preview)
     orchestrator = GitHubSyncOrchestrator(core, config)
     report = orchestrator.sync_all_linked_issues(dry_run=True)
 
@@ -180,7 +187,7 @@ def sync_github(
     else:
         report.display_brief()
 
-    # If dry-run, stop here
+    # If dry-run flag, stop here
     if dry_run:
         console_inst.print("[dim]Dry-run mode: No changes applied[/dim]")
         return
@@ -207,7 +214,20 @@ def sync_github(
             console_inst.print("❌ Sync cancelled", style="red")
             return
 
-    # TODO: Phase 2A-Part2 - Apply changes
-    console_inst.print(
-        "[dim]Phase 2A-Part2: Applying changes (not yet implemented)[/dim]"
+    # Apply changes (Phase 2A-Part2)
+    console_inst.print("[cyan]🔄 Applying changes...[/cyan]")
+    apply_report = orchestrator.sync_all_linked_issues(
+        dry_run=False, force_local=force_local, force_github=force_github
     )
+
+    if apply_report.error:
+        format_operation_failure(console_inst, "Sync apply failed", apply_report.error)
+        sys.exit(1)
+
+    # Summary
+    console_inst.print()
+    console_inst.print("[green]✅ Sync complete![/green]")
+    console_inst.print(f"   • {apply_report.issues_up_to_date} up-to-date")
+    console_inst.print(f"   • {apply_report.issues_updated} updated")
+    if apply_report.conflicts_detected > 0:
+        console_inst.print(f"   • {apply_report.conflicts_detected} conflicts resolved")

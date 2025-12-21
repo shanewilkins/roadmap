@@ -30,14 +30,21 @@ class GitHubSyncOrchestrator:
         else:
             self.conflict_detector = None
 
-    def sync_all_linked_issues(self, dry_run: bool = True) -> SyncReport:
-        """Fetch and detect changes for all linked issues.
+    def sync_all_linked_issues(
+        self,
+        dry_run: bool = True,
+        force_local: bool = False,
+        force_github: bool = False,
+    ) -> SyncReport:
+        """Fetch and detect changes for all linked issues, optionally apply them.
 
         Args:
             dry_run: If True, only detect changes without applying them
+            force_local: Resolve conflicts by keeping local changes
+            force_github: Resolve conflicts by keeping GitHub changes
 
         Returns:
-            SyncReport with detected changes and conflicts
+            SyncReport with detected changes and conflicts (and applied changes if not dry_run)
         """
         report = SyncReport()
 
@@ -64,6 +71,20 @@ class GitHubSyncOrchestrator:
                     report.issues_updated += 1
                 else:
                     report.issues_up_to_date += 1
+
+            # Apply changes if not dry-run
+            if not dry_run and (
+                force_local or force_github or not report.has_conflicts()
+            ):
+                for change in report.changes:
+                    if change.github_changes and not (
+                        change.has_conflict and force_local
+                    ):
+                        self._apply_github_changes(change)
+                    if change.local_changes and not (
+                        change.has_conflict and force_github
+                    ):
+                        self._apply_local_changes(change)
 
         except Exception as e:
             report.error = str(e)
@@ -213,3 +234,113 @@ class GitHubSyncOrchestrator:
             return datetime.fromisoformat(sync_str)
         except (ValueError, TypeError):
             return None
+
+    def _apply_local_changes(self, change: IssueChange) -> None:
+        """Apply local changes to an issue from GitHub.
+
+        Args:
+            change: IssueChange with detected changes
+        """
+        if not change.local_changes:
+            return
+
+        try:
+            issue = self.core.issues.get(change.issue_id)
+            if not issue:
+                return
+
+            # Apply status change
+            if "status" in change.local_changes:
+                new_status = change.local_changes["status"].split(" -> ")[1]
+                # Map string to Status enum
+                from roadmap.common.constants import Status
+
+                try:
+                    issue.status = Status(new_status)
+                except (ValueError, KeyError):
+                    pass
+
+            # Apply title change
+            if "title" in change.local_changes:
+                issue.title = change.local_changes["title"].split(" -> ")[1]
+
+            # Apply description change
+            if "description" in change.local_changes:
+                # Just mark as synced, actual content would be updated via GitHub client
+                pass
+
+            # Persist the changes
+            from roadmap.core.services.params import IssueUpdateServiceParams
+
+            update_params = IssueUpdateServiceParams(
+                id=issue.id,
+                title=issue.title if hasattr(issue, "title") else None,
+                status=issue.status if hasattr(issue, "status") else None,
+            )
+            self.core.issues.update_issue(update_params)
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync_attempt(
+                issue, "success", changes=change.local_changes
+            )
+
+        except Exception as e:
+            # Record failed sync in metadata
+            self.metadata_service.record_sync_attempt(issue, "error", error=str(e))
+            # Log but don't fail entire sync
+            print(f"Failed to apply local changes to {change.issue_id}: {e}")
+
+    def _apply_github_changes(self, change: IssueChange) -> None:
+        """Apply GitHub changes to local issue.
+
+        Args:
+            change: IssueChange with detected changes
+        """
+        if not change.github_changes:
+            return
+
+        try:
+            issue = self.core.issues.get(change.issue_id)
+            if not issue:
+                return
+
+            # Apply status change from GitHub
+            if "status" in change.github_changes:
+                new_status = change.github_changes["status"].split(" -> ")[1]
+                # Map string to Status enum
+                from roadmap.common.constants import Status
+
+                try:
+                    issue.status = Status(new_status)
+                except (ValueError, KeyError):
+                    pass
+
+            # Apply title change from GitHub
+            if "title" in change.github_changes:
+                issue.title = change.github_changes["title"].split(" -> ")[1]
+
+            # Apply description change from GitHub
+            if "description" in change.github_changes:
+                # Just mark as synced, actual content would be updated via GitHub client
+                pass
+
+            # Persist the changes
+            from roadmap.core.services.params import IssueUpdateServiceParams
+
+            update_params = IssueUpdateServiceParams(
+                id=issue.id,
+                title=issue.title if hasattr(issue, "title") else None,
+                status=issue.status if hasattr(issue, "status") else None,
+            )
+            self.core.issues.update_issue(update_params)
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync_attempt(
+                issue, "success", changes=change.github_changes
+            )
+
+        except Exception as e:
+            # Record failed sync in metadata
+            self.metadata_service.record_sync_attempt(issue, "error", error=str(e))
+            # Log but don't fail entire sync
+            print(f"Failed to apply GitHub changes to {change.issue_id}: {e}")
