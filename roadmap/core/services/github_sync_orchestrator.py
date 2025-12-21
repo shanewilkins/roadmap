@@ -7,6 +7,7 @@ from roadmap.common.constants import Status
 from roadmap.core.domain import Issue
 from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
 from roadmap.core.services.github_issue_client import GitHubIssueClient
+from roadmap.core.services.sync_metadata_service import SyncMetadataService
 from roadmap.core.services.sync_report import IssueChange, SyncReport
 from roadmap.infrastructure.core import RoadmapCore
 
@@ -25,6 +26,7 @@ class GitHubSyncOrchestrator:
         self.config = config or {}
         token = self.config.get("token")
         self.github_client = GitHubIssueClient(token)
+        self.metadata_service = SyncMetadataService(core)
         if hasattr(core, "github_service"):
             self.conflict_detector = GitHubConflictDetector(core.github_service)
         else:
@@ -280,13 +282,17 @@ class GitHubSyncOrchestrator:
             self.core.issues.update_issue(update_params)
 
             # Record successful sync in metadata
-            self.metadata_service.record_sync_attempt(
-                issue, "success", changes=change.local_changes
+            self.metadata_service.record_sync(
+                issue, success=True, github_changes=change.local_changes
             )
 
         except Exception as e:
             # Record failed sync in metadata
-            self.metadata_service.record_sync_attempt(issue, "error", error=str(e))
+            issue = self.core.issues.get(change.issue_id)
+            if issue:
+                self.metadata_service.record_sync(
+                    issue, success=False, error_message=str(e)
+                )
             # Log but don't fail entire sync
             print(f"Failed to apply local changes to {change.issue_id}: {e}")
 
@@ -335,12 +341,16 @@ class GitHubSyncOrchestrator:
             self.core.issues.update_issue(update_params)
 
             # Record successful sync in metadata
-            self.metadata_service.record_sync_attempt(
-                issue, "success", changes=change.github_changes
+            self.metadata_service.record_sync(
+                issue, success=True, local_changes=change.github_changes
             )
 
         except Exception as e:
             # Record failed sync in metadata
-            self.metadata_service.record_sync_attempt(issue, "error", error=str(e))
+            issue = self.core.issues.get(change.issue_id)
+            if issue:
+                self.metadata_service.record_sync(
+                    issue, success=False, error_message=str(e)
+                )
             # Log but don't fail entire sync
             print(f"Failed to apply GitHub changes to {change.issue_id}: {e}")
