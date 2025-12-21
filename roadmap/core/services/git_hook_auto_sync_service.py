@@ -310,3 +310,62 @@ class GitHookAutoSyncService:
             issue for issue in all_issues if getattr(issue, "github_issue", None)
         ]
         return self.metadata_service.get_statistics(linked_issues)
+
+    def load_config_from_file(self, config_path: Path) -> bool:
+        """Load auto-sync config from file.
+
+        Args:
+            config_path: Path to config file
+
+        Returns:
+            True if config loaded successfully
+        """
+        try:
+            import json
+
+            if not config_path.exists():
+                return False
+
+            with open(config_path) as f:
+                data = json.load(f)
+
+            config_data = data.get("auto_sync", {})
+            if config_data:
+                self.config = GitHookAutoSyncConfig.from_dict(config_data)
+                return True
+
+            return False
+        except Exception:
+            return False
+
+    def save_config_to_file(self, config_path: Path) -> bool:
+        """Save auto-sync config to file.
+
+        Args:
+            config_path: Path to config file
+
+        Returns:
+            True if config saved successfully
+        """
+        try:
+            import json
+
+            # Ensure parent directory exists
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Load existing config or create new
+            config_dict = {}
+            if config_path.exists():
+                with open(config_path) as f:
+                    config_dict = json.load(f)
+
+            # Update auto_sync section
+            config_dict["auto_sync"] = self.config.to_dict()
+
+            # Save back to file
+            with open(config_path, "w") as f:
+                json.dump(config_dict, f, indent=2)
+
+            return True
+        except Exception:
+            return False

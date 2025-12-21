@@ -174,7 +174,7 @@ PYTHON_HOOK_EOF
         return base_script
 
     def handle_post_commit(self):
-        """Handle post-commit hook - log commit info.
+        """Handle post-commit hook - log commit info and trigger auto-sync.
 
         Note: CI tracking (post-1.0 feature) has been moved to future/ci_tracking.py
         """
@@ -200,12 +200,15 @@ PYTHON_HOOK_EOF
             except Exception:
                 pass  # Silent fail for logging
 
+            # Trigger auto-sync if enabled
+            self._trigger_auto_sync_on_commit(latest_commit_sha)
+
         except Exception:
             # Silent fail to avoid breaking Git operations
             pass
 
     def handle_post_checkout(self):
-        """Handle post-checkout hook - track branch changes.
+        """Handle post-checkout hook - track branch changes and trigger auto-sync.
 
         Note: Advanced CI branch tracking (post-1.0 feature) has been moved to future/ci_tracking.py
         """
@@ -233,12 +236,15 @@ PYTHON_HOOK_EOF
             except Exception:
                 pass  # Silent fail for logging
 
+            # Trigger auto-sync if enabled
+            self._trigger_auto_sync_on_checkout(branch_name)
+
         except Exception:
             # Silent fail to avoid breaking Git operations
             pass
 
     def handle_pre_push(self):
-        """Handle pre-push hook - basic push notification.
+        """Handle pre-push hook - basic push notification and trigger auto-sync.
 
         Note: Advanced CI automation (post-1.0 feature) has been moved to future/ci_tracking.py
         """
@@ -266,15 +272,31 @@ PYTHON_HOOK_EOF
             except Exception:
                 pass  # Silent fail for logging
 
+            # Note: We don't auto-sync on pre-push to avoid blocking the push
+            # Users can manually sync before pushing if desired
+
         except Exception:
             # Silent fail to avoid breaking Git operations
             pass
 
     def handle_post_merge(self):
-        """Handle post-merge hook - update milestone progress."""
+        """Handle post-merge hook - update milestone progress and trigger auto-sync."""
         try:
             # After a merge, check if any milestones should be updated
             self._update_milestone_progress()
+
+            # Trigger auto-sync if enabled
+            try:
+                result = subprocess.run(
+                    ["git", "rev-parse", "HEAD"],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                merge_commit_sha = result.stdout.strip()
+                self._trigger_auto_sync_on_merge(merge_commit_sha)
+            except Exception:
+                pass
 
         except Exception:
             pass
@@ -434,6 +456,105 @@ PYTHON_HOOK_EOF
                         self._save_milestone(milestone)
 
         except Exception:
+            pass
+
+    def _trigger_auto_sync_on_commit(self, commit_sha: str | None = None):
+        """Trigger auto-sync after commit if enabled.
+
+        Args:
+            commit_sha: Git commit SHA for logging
+        """
+        try:
+            from pathlib import Path
+
+            from roadmap.core.services.git_hook_auto_sync_service import (
+                GitHookAutoSyncService,
+            )
+
+            # Load config
+            config_path = Path(".roadmap") / "config.json"
+            if not config_path.exists():
+                return
+
+            # Initialize service and load config
+            service = GitHookAutoSyncService(self.core)
+            if not service.load_config_from_file(config_path):
+                return
+
+            # Trigger sync if enabled (no confirmation in hooks)
+            service.auto_sync_on_commit(
+                commit_sha=commit_sha,
+                confirm=False,  # Non-interactive in hooks
+            )
+
+        except Exception:
+            # Silent fail to avoid breaking Git operations
+            pass
+
+    def _trigger_auto_sync_on_checkout(self, branch: str | None = None):
+        """Trigger auto-sync after checkout if enabled.
+
+        Args:
+            branch: Branch name for logging
+        """
+        try:
+            from pathlib import Path
+
+            from roadmap.core.services.git_hook_auto_sync_service import (
+                GitHookAutoSyncService,
+            )
+
+            # Load config
+            config_path = Path(".roadmap") / "config.json"
+            if not config_path.exists():
+                return
+
+            # Initialize service and load config
+            service = GitHookAutoSyncService(self.core)
+            if not service.load_config_from_file(config_path):
+                return
+
+            # Trigger sync if enabled (no confirmation in hooks)
+            service.auto_sync_on_checkout(
+                branch=branch,
+                confirm=False,  # Non-interactive in hooks
+            )
+
+        except Exception:
+            # Silent fail to avoid breaking Git operations
+            pass
+
+    def _trigger_auto_sync_on_merge(self, commit_sha: str | None = None):
+        """Trigger auto-sync after merge if enabled.
+
+        Args:
+            commit_sha: Merge commit SHA for logging
+        """
+        try:
+            from pathlib import Path
+
+            from roadmap.core.services.git_hook_auto_sync_service import (
+                GitHookAutoSyncService,
+            )
+
+            # Load config
+            config_path = Path(".roadmap") / "config.json"
+            if not config_path.exists():
+                return
+
+            # Initialize service and load config
+            service = GitHookAutoSyncService(self.core)
+            if not service.load_config_from_file(config_path):
+                return
+
+            # Trigger sync if enabled (no confirmation in hooks)
+            service.auto_sync_on_merge(
+                commit_sha=commit_sha,
+                confirm=False,  # Non-interactive in hooks
+            )
+
+        except Exception:
+            # Silent fail to avoid breaking Git operations
             pass
 
     def _set_branch_context(self, branch_name: str, issue_id: str):

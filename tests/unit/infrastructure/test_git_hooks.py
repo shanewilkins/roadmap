@@ -295,7 +295,7 @@ class TestGitHookManagerHandlers:
         with (
             patch("subprocess.run") as mock_run,
             patch("builtins.open", mock_open()) as mock_file,
-            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.exists", return_value=False),  # No config file
         ):
             mock_run.return_value = Mock(stdout="abc123def\n", returncode=0)
 

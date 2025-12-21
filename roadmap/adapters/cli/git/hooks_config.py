@@ -1,5 +1,7 @@
 """Git hooks configuration command - Set up auto-sync behavior."""
 
+from pathlib import Path
+
 import click
 
 from roadmap.adapters.cli.helpers import require_initialized
@@ -110,11 +112,14 @@ def hooks_config(
     """
     core = ctx.obj.get("core") if isinstance(ctx.obj, dict) else ctx.obj
 
+    # Config file path
+    config_path = Path.cwd() / ".roadmap" / "config.json"
+
     # Initialize service
     service = GitHookAutoSyncService(core)
 
     # Load existing config from storage if available
-    # TODO: Persist config to roadmap project directory
+    service.load_config_from_file(config_path)
     current_config = service.get_config()
 
     # Build new config from options
@@ -141,6 +146,25 @@ def hooks_config(
 
     # Apply new config
     service.set_config(new_config)
+
+    # Save config to file if any settings changed
+    if any(
+        [
+            enable_auto_sync,
+            disable_auto_sync,
+            sync_on_commit,
+            no_sync_on_commit,
+            sync_on_checkout,
+            no_sync_on_checkout,
+            sync_on_merge,
+            no_sync_on_merge,
+            confirm is not None,
+            force_local,
+            force_github,
+        ]
+    ):
+        if service.save_config_to_file(config_path):
+            console.print("[dim]Config saved to .roadmap/config.json[/dim]")
 
     # Show configuration
     if show_config or not any(
@@ -171,6 +195,12 @@ def _display_config(
     console.print()
     console.print("[bold cyan]Git Hooks Auto-Sync Configuration[/bold cyan]")
     console.print()
+
+    # Check if config is persisted
+    config_path = Path.cwd() / ".roadmap" / "config.json"
+    if config_path.exists():
+        console.print(f"[dim]Config file: {config_path}[/dim]")
+        console.print()
 
     # Master switch
     master_status = (
