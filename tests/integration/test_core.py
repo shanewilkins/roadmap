@@ -14,6 +14,10 @@ class TestRoadmapCore:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
+        from roadmap.core.services.issue_service import IssueService
+
+        # Clear the class-level cache to prevent test interference
+        IssueService._list_issues_cache.clear()
         return RoadmapCore(temp_dir)
 
     def test_initialization(self, temp_dir):
