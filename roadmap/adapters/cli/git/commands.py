@@ -4,6 +4,7 @@ import click
 from rich.console import Console
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
+from roadmap.adapters.cli.git.hooks_config import hooks_config
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
 from roadmap.core.domain import Issue, Status
@@ -351,3 +352,7 @@ def git_link(ctx: click.Context, issue_id: str):
             fatal=True,
         )
         console.print(f"❌ Failed to link issue to Git branch: {e}", style="bold red")
+
+
+# Register hooks-config command
+git.add_command(hooks_config, name="hooks-config")
