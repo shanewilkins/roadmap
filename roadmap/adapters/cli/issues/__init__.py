@@ -36,6 +36,7 @@ from roadmap.adapters.cli.issues.restore import restore_issue
 from roadmap.adapters.cli.issues.start import start_issue
 from roadmap.adapters.cli.issues.sync import sync_github_issue
 from roadmap.adapters.cli.issues.unblock import unblock_issue
+from roadmap.adapters.cli.issues.unlink import unlink_github_issue
 from roadmap.adapters.cli.issues.update import update_issue
 from roadmap.adapters.cli.issues.view import view_issue
 
@@ -61,7 +62,8 @@ issue.add_command(view_issue, name="view")
 issue.add_command(archive_issue, name="archive")
 issue.add_command(restore_issue, name="restore")
 issue.add_command(comment_group, name="comment")
-issue.add_command(link_github_issue, name="link")
+issue.add_command(link_github_issue, name="link-github")
+issue.add_command(unlink_github_issue, name="unlink-github")
 issue.add_command(lookup_github_issue, name="lookup-github")
 issue.add_command(sync_github_issue, name="sync-github")
 
