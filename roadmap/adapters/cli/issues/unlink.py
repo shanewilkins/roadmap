@@ -1,17 +1,26 @@
 """Unlink GitHub issue command."""
 
-import sys
-
 import click
 
+from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
-from roadmap.infrastructure.logging import log_command
+from roadmap.common.console import get_console
+from roadmap.infrastructure.logging import (
+    log_command,
+    track_database_operation,
+)
+from roadmap.shared.formatters.text.operations import (
+    format_operation_failure,
+    format_operation_success,
+)
+
+console = get_console()
 
 
 @click.command("unlink-github")
 @click.argument("issue_id")
 @click.pass_context
-@log_command
+@log_command("issue_unlink", entity_type="issue", track_duration=True)
 @require_initialized
 def unlink_github_issue(ctx: click.Context, issue_id: str) -> None:
     """Remove GitHub link from a local issue.
@@ -21,31 +30,74 @@ def unlink_github_issue(ctx: click.Context, issue_id: str) -> None:
     """
     core = ctx.obj["core"]
 
-    # Get the issue
     try:
-        issue = core.issues.get_by_id(issue_id)
-    except ValueError:
-        click.secho(f"❌ Issue not found: {issue_id}", fg="red")
-        sys.exit(1)
+        # Get the issue
+        issue = core.issues.get(issue_id)
+        if not issue:
+            lines = format_operation_failure(
+                action="unlink",
+                entity_id=issue_id,
+                error="Issue not found",
+            )
+            for line in lines:
+                console.print(line, style="bold red")
+            return
 
-    # Check if issue is linked
-    if issue.github_issue is None:
-        click.secho(
-            f"⚠️  Issue '{issue_id}' is not linked to GitHub",
-            fg="yellow",
-        )
-        sys.exit(1)
+        # Check if issue is linked
+        if issue.github_issue is None:
+            console.print(
+                f"⚠️  Issue '{issue_id}' is not linked to GitHub",
+                style="yellow",
+            )
+            return
 
-    # Store the GitHub ID for display
-    github_id = issue.github_issue
+        # Store the GitHub ID for display
+        github_id = issue.github_issue
 
-    # Remove the link
-    try:
-        core.issues.update(issue_id, github_issue=None)
-        click.secho(
-            f"✅ Unlinked issue '{issue_id}' from GitHub issue #{github_id}",
-            fg="green",
-        )
+        # Remove the link
+        with track_database_operation(
+            "update", "issue", entity_id=issue_id, warn_threshold_ms=2000
+        ):
+            updated_issue = core.issues.update(issue_id, github_issue=None)
+
+        if updated_issue:
+            extra_details = {
+                "GitHub Issue": f"#{github_id}",
+                "Local Issue": issue_id,
+            }
+            lines = format_operation_success(
+                emoji="✅",
+                action="Unlinked",
+                entity_title=updated_issue.title,
+                entity_id=issue_id,
+                extra_details=extra_details,
+            )
+            for line in lines:
+                console.print(
+                    line, style="bold green" if "Unlinked" in line else "cyan"
+                )
+        else:
+            lines = format_operation_failure(
+                action="unlink",
+                entity_id=issue_id,
+                error="Failed to update issue",
+            )
+            for line in lines:
+                console.print(line, style="bold red")
+
     except Exception as e:
-        click.secho(f"❌ Failed to unlink issue: {str(e)}", fg="red")
-        sys.exit(1)
+        handle_cli_error(
+            error=e,
+            operation="unlink_github_issue",
+            entity_type="issue",
+            entity_id=issue_id,
+            context={},
+            fatal=True,
+        )
+        lines = format_operation_failure(
+            action="unlink",
+            entity_id=issue_id,
+            error=str(e),
+        )
+        for line in lines:
+            console.print(line, style="bold red")
