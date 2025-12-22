@@ -259,7 +259,8 @@ def view_project(ctx: click.Context, project_id: str):
         comment_text = ""
 
         # Show top-level comments and their replies
-        for top_level_id in sorted(k for k in threads.keys() if k is None):
+        top_level_ids = [k for k in threads.keys() if k is not None]
+        for top_level_id in sorted(top_level_ids):
             for comment in threads.get(top_level_id, []):
                 comment_text += (
                     CommentService.format_comment_for_display(comment, indent=0) + "\n"

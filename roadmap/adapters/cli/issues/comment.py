@@ -153,7 +153,8 @@ def list_comments(ctx: click.Context, issue_id: str, format: str):
         threads = CommentService.build_comment_threads(issue.comments)
 
         # Show top-level comments and their replies
-        for top_level_id in sorted(k for k in threads.keys() if k is None):
+        top_level_ids = [k for k in threads.keys() if k is not None]
+        for top_level_id in sorted(top_level_ids):
             for comment in threads.get(top_level_id, []):
                 console.print(
                     CommentService.format_comment_for_display(comment, indent=0)
