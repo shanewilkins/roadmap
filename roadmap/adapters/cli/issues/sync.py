@@ -90,20 +90,28 @@ def sync_github(
         config = config_result
 
     if not config:
-        format_operation_failure(console_inst, "GitHub sync", "GitHub not configured")
+        lines = format_operation_failure(
+            "configure sync", None, "GitHub not configured"
+        )
+        for line in lines:
+            console_inst.print(line)
         sys.exit(1)
 
     if validate_only:
         # Run validation
         if hasattr(core, "github_service"):
             # For now, validation is basic - can be extended later
-            format_operation_success(
-                console_inst, "Validation complete", "No conflicts"
+            lines = format_operation_success(
+                "✅", "Validation", None, None, "No conflicts"
             )
+            for line in lines:
+                console_inst.print(line)
         else:
-            format_operation_success(
-                console_inst, "Validation complete", "No conflicts"
+            lines = format_operation_success(
+                "✅", "Validation", None, None, "No conflicts"
             )
+            for line in lines:
+                console_inst.print(line)
         return
 
     # Get issues to sync
@@ -123,11 +131,11 @@ def sync_github(
                 and getattr(issue, "github_issue", None)
             ]
         except Exception as e:
-            format_operation_failure(
-                console_inst,
-                f"Failed to get issues in milestone {milestone}",
-                str(e),
+            lines = format_operation_failure(
+                "sync milestone", None, f"{milestone}: {str(e)}"
             )
+            for line in lines:
+                console_inst.print(line)
             sys.exit(1)
     elif status:
         try:
@@ -140,11 +148,9 @@ def sync_github(
                 and getattr(issue, "github_issue", None)
             ]
         except Exception as e:
-            format_operation_failure(
-                console_inst,
-                f"Failed to get issues with status {status}",
-                str(e),
-            )
+            lines = format_operation_failure("sync status", None, f"{status}: {str(e)}")
+            for line in lines:
+                console_inst.print(line)
             sys.exit(1)
     elif issue_id:
         # Single issue sync
@@ -221,7 +227,9 @@ def sync_github(
     )
 
     if apply_report.error:
-        format_operation_failure(console_inst, "Sync apply failed", apply_report.error)
+        lines = format_operation_failure("apply sync", None, apply_report.error)
+        for line in lines:
+            console_inst.print(line)
         sys.exit(1)
 
     # Summary

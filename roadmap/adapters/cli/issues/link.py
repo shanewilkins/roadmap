@@ -63,11 +63,9 @@ def link_github_issue(
     try:
         issue = core.issues.get_by_id(issue_id)
         if not issue:
-            format_operation_failure(
-                console,
-                f"Issue {issue_id} not found",
-                "Cannot link non-existent issue",
-            )
+            lines = format_operation_failure("link issue", issue_id, "Issue not found")
+            for line in lines:
+                console.print(line)
             ctx.exit(1)
     except Exception as e:
         handle_cli_error(
@@ -79,28 +77,29 @@ def link_github_issue(
 
     # Validate GitHub ID is positive
     if github_id <= 0:
-        format_operation_failure(
-            console,
-            f"Invalid GitHub issue number: {github_id}",
-            "GitHub issue numbers must be positive integers",
+        lines = format_operation_failure(
+            "link issue", issue_id, "Invalid GitHub issue number"
         )
+        for line in lines:
+            console.print(line)
         ctx.exit(1)
 
     # Check if already linked to a different GitHub issue
     if issue.github_issue is not None and issue.github_issue != github_id:
-        format_operation_failure(
-            console,
-            f"Issue {issue_id} is already linked to GitHub issue #{issue.github_issue}",
-            f"Use 'roadmap issue update {issue_id} --github-id {github_id}' to change the link",
+        lines = format_operation_failure(
+            "link issue",
+            issue_id,
+            f"Already linked to GitHub issue #{issue.github_issue}",
         )
+        for line in lines:
+            console.print(line)
         ctx.exit(1)
 
     # If already linked to same ID, nothing to do
     if issue.github_issue == github_id:
-        format_operation_success(
-            console,
-            f"Issue {issue_id} is already linked to GitHub issue #{github_id}",
-        )
+        lines = format_operation_success("✅", "Linked", issue.title, issue_id)
+        for line in lines:
+            console.print(line)
         return
 
     # Get owner/repo from config or command-line
@@ -121,18 +120,16 @@ def link_github_issue(
             token, config_owner, config_repo = gh_service.get_github_config()
 
             if not config_owner or not config_repo:
-                format_operation_failure(
-                    console,
-                    "GitHub repository not configured",
-                    "Provide --owner and --repo options, or configure GitHub in config.yaml",
+                lines = format_operation_failure(
+                    "configure GitHub", None, "GitHub repository not configured"
                 )
+                for line in lines:
+                    console.print(line)
                 ctx.exit(1)
         except Exception as e:
-            format_operation_failure(
-                console,
-                "Could not get GitHub configuration",
-                f"Error: {str(e)}",
-            )
+            lines = format_operation_failure("get GitHub configuration", None, str(e))
+            for line in lines:
+                console.print(line)
             ctx.exit(1)
 
     # Validate GitHub issue exists
@@ -140,18 +137,16 @@ def link_github_issue(
         gh_client = GitHubIssueClient()
         exists = gh_client.issue_exists(config_owner, config_repo, github_id)
         if not exists:
-            format_operation_failure(
-                console,
-                f"GitHub issue #{github_id} not found",
-                f"Repository: {config_owner}/{config_repo}",
+            lines = format_operation_failure(
+                "verify GitHub issue", None, f"GitHub issue #{github_id} not found"
             )
+            for line in lines:
+                console.print(line)
             ctx.exit(1)
     except Exception as e:
-        format_operation_failure(
-            console,
-            "Could not verify GitHub issue",
-            f"Error: {str(e)}",
-        )
+        lines = format_operation_failure("verify GitHub issue", None, str(e))
+        for line in lines:
+            console.print(line)
         ctx.exit(1)
 
     # Update the issue with GitHub ID
@@ -160,11 +155,9 @@ def link_github_issue(
         core.issues.update(issue)
 
         # Success message with link details
-        format_operation_success(
-            console,
-            f"✅ Linked issue {issue_id} to GitHub issue #{github_id}",
-        )
-        console.print(f"   Title: {issue.title}", style="cyan")
+        lines = format_operation_success("✅", "Linked", issue.title, issue_id)
+        for line in lines:
+            console.print(line)
         console.print(
             f"   Repository: {config_owner}/{config_repo}",
             style="cyan",
