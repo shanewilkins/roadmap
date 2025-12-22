@@ -10,6 +10,7 @@ from rich.text import Text
 
 from roadmap.adapters.cli.helpers import ensure_entity_exists
 from roadmap.common.console import get_console
+from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
 
 
@@ -24,8 +25,10 @@ console = get_console()
 def _format_timestamp(iso_str: str) -> str:
     """Format ISO timestamp to human-readable format."""
     try:
-        dt = datetime.fromisoformat(iso_str)
-        return dt.strftime("%Y-%m-%d %H:%M:%S")
+        dt = UnifiedDateTimeParser.parse_iso_datetime(iso_str)
+        if dt:
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        return iso_str
     except Exception:
         return iso_str
 

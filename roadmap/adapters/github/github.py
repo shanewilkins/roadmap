@@ -1,7 +1,7 @@
 """GitHub API client for roadmap CLI."""
 
 import os
-from typing import Any
+from typing import Any, cast
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -59,7 +59,7 @@ class GitHubClient(BaseGitHubHandler):
                 "TRACE",
             ],
         )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
+        adapter = HTTPAdapter(max_retries=cast(int, retry_strategy))
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 

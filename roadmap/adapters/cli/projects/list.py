@@ -5,6 +5,7 @@ import click
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.common.console import get_console
+from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.common.output_models import ColumnType
 from roadmap.infrastructure.logging import verbose_output
 from roadmap.shared import ProjectTableFormatter
@@ -62,7 +63,9 @@ def _apply_overdue_filter(metadata):
 
     try:
         if isinstance(target_end, str):
-            end_date = datetime.fromisoformat(target_end.replace("Z", "+00:00"))
+            end_date = UnifiedDateTimeParser.parse_iso_datetime(target_end)
+            if not end_date:
+                return False
         else:
             end_date = target_end
 

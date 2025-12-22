@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from roadmap.common.constants import Status
+from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.core.domain import Issue
 from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
 from roadmap.core.services.github_issue_client import GitHubIssueClient
@@ -244,7 +245,7 @@ class GitHubSyncOrchestrator:
 
         try:
             sync_str = metadata["last_sync"]
-            return datetime.fromisoformat(sync_str)
+            return UnifiedDateTimeParser.parse_iso_datetime(sync_str)
         except (ValueError, TypeError):
             return None
 

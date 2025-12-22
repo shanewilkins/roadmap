@@ -116,7 +116,8 @@ class TestDailySummaryPresenterRender:
             patch.object(DailySummaryPresenter, "_render_summary") as mock_summary,
             patch.object(DailySummaryPresenter, "_render_tips") as mock_tips,
         ):
-            DailySummaryPresenter.render(sample_data)
+            presenter = DailySummaryPresenter()
+            presenter.render(sample_data)
 
             mock_header.assert_called_once()
             mock_progress.assert_called_once()
@@ -146,7 +147,8 @@ class TestDailySummaryPresenterRender:
 
         # Should not raise an exception
         try:
-            DailySummaryPresenter.render(empty_data)
+            presenter = DailySummaryPresenter()
+            presenter.render(empty_data)
         except Exception as e:
             pytest.fail(f"Render should handle empty sections: {e}")
 
@@ -369,7 +371,8 @@ class TestDailySummaryPresenterIntegration:
     def test_full_render_cycle_with_realistic_data(self, mock_console, sample_data):
         """Test complete render cycle with realistic sample data."""
         try:
-            DailySummaryPresenter.render(sample_data)
+            presenter = DailySummaryPresenter()
+            presenter.render(sample_data)
             assert True
         except Exception as e:
             pytest.fail(f"Full render cycle failed: {e}")
@@ -377,7 +380,8 @@ class TestDailySummaryPresenterIntegration:
     @patch("roadmap.adapters.cli.presentation.daily_summary_presenter.console")
     def test_render_produces_console_output(self, mock_console, sample_data):
         """Test that render produces console output."""
-        DailySummaryPresenter.render(sample_data)
+        presenter = DailySummaryPresenter()
+        presenter.render(sample_data)
 
         # Should call print multiple times for different sections
         assert mock_console.print.call_count >= 5  # header + at least 4 sections
@@ -415,7 +419,8 @@ class TestDailySummaryPresenterIntegration:
         }
 
         try:
-            DailySummaryPresenter.render(data)
+            presenter = DailySummaryPresenter()
+            presenter.render(data)
             assert True
         except Exception as e:
             pytest.fail(f"Render failed with special characters: {e}")

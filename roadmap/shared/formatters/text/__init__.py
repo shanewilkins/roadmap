@@ -17,6 +17,7 @@ from .basic import (
 from .display import format_display_list, format_display_pairs
 from .duration import format_count, format_duration
 from .operations import (
+    OperationFormatter,
     format_entity_details,
     format_list_items,
     format_operation_failure,
@@ -45,6 +46,7 @@ __all__ = [
     "format_duration",
     "format_count",
     # Operations
+    "OperationFormatter",
     "format_operation_success",
     "format_operation_failure",
     "format_entity_details",

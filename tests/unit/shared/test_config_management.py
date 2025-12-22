@@ -155,6 +155,7 @@ class TestConfigPersistence:
         assert config_file.exists()
         with open(config_file) as f:
             data = yaml.safe_load(f)
+        assert isinstance(data, dict)
         assert data["user"]["name"] == "team"
 
     def test_save_local_override(self, temp_config_dir):
@@ -178,6 +179,7 @@ class TestConfigPersistence:
 
         with open(local_file) as f:
             data = yaml.safe_load(f)
+        assert isinstance(data, dict)
         assert data["user"]["name"] == "shane"
 
     def test_separate_shared_and_local_files(self, temp_config_dir):
@@ -209,8 +211,10 @@ class TestConfigPersistence:
 
         with open(config_file) as f:
             shared_data = yaml.safe_load(f)
+        assert isinstance(shared_data, dict)
         with open(local_file) as f:
             local_data = yaml.safe_load(f)
+        assert isinstance(local_data, dict)
 
         assert shared_data["user"]["name"] == "team"
         assert local_data["user"]["name"] == "shane"

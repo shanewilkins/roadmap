@@ -10,20 +10,20 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from roadmap.adapters.cli.presentation.base_presenter import BasePresenter
 from roadmap.common.console import get_console
 
 console = get_console()
 
 
-class DailySummaryPresenter:
+class DailySummaryPresenter(BasePresenter):
     """Presenter for daily summary output.
 
     Handles formatting and rendering of daily summary data
     including tables, panels, and styling.
     """
 
-    @staticmethod
-    def render(data: dict) -> None:
+    def render(self, data: dict) -> None:
         """Render complete daily summary to console.
 
         Args:
@@ -38,19 +38,19 @@ class DailySummaryPresenter:
             return
 
         # Render header
-        DailySummaryPresenter._render_header(data)
+        self._render_header(data)
 
         # Render sections
         issues = data["issues"]
-        DailySummaryPresenter._render_in_progress(issues["in_progress"])
-        DailySummaryPresenter._render_overdue(issues["overdue"])
-        DailySummaryPresenter._render_blocked(issues["blocked"])
-        DailySummaryPresenter._render_up_next(issues["todo_high_priority"])
-        DailySummaryPresenter._render_completed_today(issues["completed_today"])
+        self._render_in_progress(issues["in_progress"])
+        self._render_overdue(issues["overdue"])
+        self._render_blocked(issues["blocked"])
+        self._render_up_next(issues["todo_high_priority"])
+        self._render_completed_today(issues["completed_today"])
 
         # Render summary and tips
-        DailySummaryPresenter._render_summary(issues)
-        DailySummaryPresenter._render_tips(data)
+        self._render_summary(issues)
+        self._render_tips(data)
 
     @staticmethod
     def _render_header(data: dict) -> None:

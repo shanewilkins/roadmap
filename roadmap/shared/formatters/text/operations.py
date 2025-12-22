@@ -1,4 +1,137 @@
-"""CLI operation feedback formatting."""
+"""CLI operation feedback formatting.
+
+This module provides both functional and class-based formatters for operation results.
+Use OperationFormatter class for new code. Legacy functions remain for backward compatibility.
+"""
+
+
+class OperationFormatter:
+    """Unified formatter for all operation results.
+    
+    Provides a consistent interface for formatting operation successes, failures,
+    and entity details across the CLI. This class consolidates all formatting logic
+    that was previously scattered across multiple functions.
+    """
+
+    @staticmethod
+    def success(
+        emoji: str,
+        action: str,
+        entity_title: str | None = None,
+        entity_id: str | None = None,
+        details: dict[str, str] | None = None,
+    ) -> str:
+        """Format a successful operation as a string.
+
+        Args:
+            emoji: Emoji to display (e.g., "✅", "🚫", "📊")
+            action: Action verb (e.g., "Blocked", "Closed", "Updated")
+            entity_title: Title/name of the entity affected (e.g., issue title)
+            entity_id: ID of the entity (displayed separately as cyan)
+            details: Optional dict of additional details to display
+
+        Returns:
+            Formatted string for console output
+        """
+        lines = []
+
+        # Main success line: emoji + action + title
+        if entity_title:
+            lines.append(f"{emoji} {action} issue: {entity_title}")
+        else:
+            lines.append(f"{emoji} {action}")
+
+        # Entity ID line (if provided)
+        if entity_id:
+            lines.append(f"   ID: {entity_id}")
+
+        # Extra details (if provided)
+        if details:
+            for key, value in details.items():
+                lines.append(f"   {key}: {value}")
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def failure(
+        action: str,
+        entity_id: str | None = None,
+        error: str | None = None,
+        suggestion: str | None = None,
+    ) -> str:
+        """Format a failed operation as a string.
+
+        Args:
+            action: Action that failed (e.g., "block", "close", "update")
+            entity_id: ID of the entity that failed (optional)
+            error: Error message/reason for failure
+            suggestion: Suggested recovery action
+
+        Returns:
+            Formatted string for console output
+        """
+        lines = []
+
+        # Main failure line
+        if entity_id:
+            lines.append(f"❌ Failed to {action} issue: {entity_id}")
+        else:
+            lines.append(f"❌ Failed to {action}")
+
+        # Error details (if provided)
+        if error:
+            lines.append(f"   Error: {error}")
+
+        # Suggestion (if provided)
+        if suggestion:
+            lines.append(f"   💡 {suggestion}")
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def entity(
+        entity_id: str,
+        entity_title: str | None = None,
+        entity_type: str = "item",
+        status: str | None = None,
+        details: dict[str, str] | None = None,
+    ) -> str:
+        """Format entity details as a string.
+
+        Args:
+            entity_id: ID of the entity
+            entity_title: Title/name of the entity
+            entity_type: Type of entity (e.g., "issue", "milestone")
+            status: Current status of entity
+            details: Additional details dict
+
+        Returns:
+            Formatted string for console output
+        """
+        lines = []
+
+        # ID and title
+        if entity_title:
+            lines.append(f"📋 {entity_type.title()}: {entity_title}")
+        lines.append(f"   ID: {entity_id}")
+
+        # Status
+        if status:
+            lines.append(f"   Status: {status}")
+
+        # Additional details
+        if details:
+            for key, value in details.items():
+                lines.append(f"   {key}: {value}")
+
+        return "\n".join(lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Legacy Functions (Backward Compatibility)
+# ─────────────────────────────────────────────────────────────────────────────
+# These functions are deprecated. Use OperationFormatter class instead.
+# They are retained for backward compatibility with existing code.
 
 
 def format_operation_success(

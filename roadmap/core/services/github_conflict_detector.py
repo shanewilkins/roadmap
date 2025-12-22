@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Any
 
+from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.core.domain.issue import Issue
 from roadmap.core.services.github_integration_service import GitHubIntegrationService
 from roadmap.core.services.github_issue_client import GitHubIssueClient
@@ -150,9 +151,7 @@ class GitHubConflictDetector:
             return None
 
         try:
-            # GitHub uses ISO 8601 format with Z suffix
-            iso_string = timestamp.replace("Z", "+00:00")
-            return datetime.fromisoformat(iso_string)
+            return UnifiedDateTimeParser.parse_github_timestamp(timestamp)
         except (ValueError, AttributeError):
             return None
 

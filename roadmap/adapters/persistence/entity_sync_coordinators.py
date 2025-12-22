@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.adapters.persistence.file_parser import FileParser
+from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.common.logging import get_logger
 
 logger = get_logger(__name__)
@@ -53,7 +54,8 @@ class EntitySyncCoordinator:
             return None
         try:
             if isinstance(date_value, str):
-                return datetime.fromisoformat(date_value).date()
+                dt = UnifiedDateTimeParser.parse_any_datetime(date_value)
+                return dt.date() if dt else None
             return date_value
         except (ValueError, AttributeError):
             return None
