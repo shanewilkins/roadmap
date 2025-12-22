@@ -1,154 +1,11 @@
 """View project command."""
 
 import click
-from rich.markdown import Markdown
-from rich.panel import Panel
-from rich.text import Text
 
 from roadmap.adapters.cli.helpers import require_initialized
-from roadmap.adapters.cli.presentation.table_builders import (
-    create_list_table,
-    create_metadata_table,
-)
+from roadmap.adapters.cli.mappers import ProjectMapper
+from roadmap.adapters.cli.presentation.project_presenter import ProjectPresenter
 from roadmap.common.console import get_console
-
-
-def _get_console():
-    """Get a fresh console instance for test compatibility."""
-    return get_console()
-
-
-def _build_project_header(project):
-    """Build the project header with status and priority badges."""
-    status_colors = {
-        "planning": "blue",
-        "active": "green",
-        "on-hold": "yellow",
-        "completed": "bold green",
-        "cancelled": "red",
-    }
-    status_color = status_colors.get(project.status.value, "white")
-
-    priority_colors = {
-        "critical": "bold red",
-        "high": "red",
-        "medium": "yellow",
-        "low": "blue",
-    }
-    priority_color = priority_colors.get(project.priority.value, "white")
-
-    header = Text()
-    header.append(f"#{project.id}", style="bold cyan")
-    header.append(" • ", style="dim")
-    header.append(project.name, style="bold white")
-    header.append("\n")
-    header.append(f"[{project.status.value.upper()}]", style=f"bold {status_color}")
-    header.append(" • ", style="dim")
-    header.append(project.priority.value.upper(), style=priority_color)
-
-    return header
-
-
-def _build_metadata_table(project):
-    """Build metadata table with project dates."""
-    metadata = create_metadata_table()
-
-    metadata.add_row("Owner", project.owner or "Unassigned")
-
-    if project.start_date:
-        metadata.add_row("Start Date", project.start_date.strftime("%Y-%m-%d"))
-
-    if project.target_end_date:
-        metadata.add_row("Target End", project.target_end_date.strftime("%Y-%m-%d"))
-
-    if project.actual_end_date:
-        metadata.add_row("Actual End", project.actual_end_date.strftime("%Y-%m-%d"))
-
-    metadata.add_row("Created", project.created.strftime("%Y-%m-%d"))
-    metadata.add_row("Updated", project.updated.strftime("%Y-%m-%d"))
-
-    return metadata
-
-
-def _build_effort_table(project):
-    """Build effort/hours table if data exists."""
-    if not (project.estimated_hours or project.actual_hours):
-        return None
-
-    effort = create_metadata_table()
-
-    if project.estimated_hours:
-        if project.estimated_hours < 8:
-            estimated_display = f"{project.estimated_hours:.1f}h"
-        else:
-            days = project.estimated_hours / 8
-            estimated_display = f"{days:.1f}d ({project.estimated_hours:.1f}h)"
-        effort.add_row("Estimated", estimated_display)
-
-    if project.actual_hours:
-        if project.actual_hours < 8:
-            actual_display = f"{project.actual_hours:.1f}h"
-        else:
-            days = project.actual_hours / 8
-            actual_display = f"{days:.1f}d ({project.actual_hours:.1f}h)"
-        effort.add_row("Actual", actual_display)
-
-    return effort
-
-
-def _build_milestones_table(core, project):
-    """Build milestones table if milestones exist."""
-    if not project.milestones:
-        return None
-
-    all_milestones = core.milestones.list()
-
-    columns = [
-        ("Milestone", "cyan", None),
-        ("Status", None, 10),
-        ("Progress", None, 12),
-        ("Due Date", None, 12),
-    ]
-    milestones_table = create_list_table(columns)
-
-    for milestone_name in project.milestones:
-        milestone = next((m for m in all_milestones if m.name == milestone_name), None)
-        if milestone:
-            progress_data = core.milestones.get_progress(milestone_name)
-            completed = progress_data.get("completed", 0)
-            total = progress_data.get("total", 0)
-            progress_str = f"{completed}/{total}"
-
-            status_color = "green" if milestone.status.value == "closed" else "yellow"
-            due_date_str = (
-                milestone.due_date.strftime("%Y-%m-%d") if milestone.due_date else "-"
-            )
-
-            milestones_table.add_row(
-                milestone_name,
-                f"[{status_color}]{milestone.status.value}[/{status_color}]",
-                progress_str,
-                due_date_str,
-            )
-        else:
-            milestones_table.add_row(
-                milestone_name,
-                "[dim]not found[/dim]",
-                "-",
-                "-",
-            )
-
-    return milestones_table
-
-
-def _is_objectives_header(line):
-    """Check if line is objectives header."""
-    return "## Objectives" in line or "## objectives" in line.lower()
-
-
-def _is_other_header(line):
-    """Check if line is a header (but not objectives)."""
-    return line.startswith("## ")
 
 
 def _extract_description_and_objectives(content):
@@ -162,15 +19,15 @@ def _extract_description_and_objectives(content):
     in_objectives = False
 
     for line in content_lines:
-        if _is_objectives_header(line):
+        if "## Objectives" in line or "## objectives" in line.lower():
             in_objectives = True
             continue
-        elif in_objectives and _is_other_header(line):
+        elif in_objectives and line.startswith("## "):
             in_objectives = False
 
         if in_objectives:
             objectives_lines.append(line)
-        elif not _is_other_header(line):
+        elif not line.startswith("## "):
             description_lines.append(line)
 
     description = "\n".join(description_lines).strip() or None
@@ -196,69 +53,47 @@ def view_project(ctx: click.Context, project_id: str):
 
     project = core.projects.get(project_id)
     if not project:
-        _get_console().print(f"❌ Project '{project_id}' not found.", style="bold red")
-        _get_console().print(
+        get_console().print(f"❌ Project '{project_id}' not found.", style="bold red")
+        get_console().print(
             "\n💡 Tip: Use 'roadmap project list' to see all available projects.",
             style="dim",
         )
         ctx.exit(1)
 
-    # Display header
-    header = _build_project_header(project)
-    _get_console().print(Panel(header, border_style="cyan"))
+    # Convert project to DTO
+    project_dto = ProjectMapper.domain_to_dto(project)
 
-    # Display metadata
-    metadata = _build_metadata_table(project)
-    _get_console().print(Panel(metadata, title="📋 Metadata", border_style="blue"))
+    # Get milestones for display
+    milestones = None
+    milestone_progress = None
+    if project.milestones:
+        all_milestones = core.milestones.list()
+        milestones = [m for m in all_milestones if m.name in project.milestones]
+        milestone_progress = {
+            m.name: core.milestones.get_progress(m.name) for m in milestones
+        }
 
-    # Display effort if available
-    effort = _build_effort_table(project)
-    if effort:
-        _get_console().print(Panel(effort, title="⏱️  Effort", border_style="yellow"))
+    # Build effort data
+    effort_data = None
+    if project.estimated_hours or project.actual_hours:
+        effort_data = {
+            "estimated": project.estimated_hours,
+            "actual": project.actual_hours,
+        }
 
-    # Display milestones
-    milestones_table = _build_milestones_table(core, project)
-    if milestones_table:
-        _get_console().print(
-            Panel(milestones_table, title="🎯 Milestones", border_style="magenta")
-        )
-    else:
-        _get_console().print(
-            Panel(
-                "[dim]No milestones assigned to this project[/dim]",
-                title="🎯 Milestones",
-                border_style="magenta",
-            )
-        )
-
-    # Display description and objectives
+    # Extract description and objectives
     content_to_display = project.content or project.description
     description, objectives = _extract_description_and_objectives(content_to_display)
+    description_content = description
 
-    if description:
-        md = Markdown(description)
-        _get_console().print(Panel(md, title="📝 Description", border_style="white"))
-    else:
-        _get_console().print(
-            Panel(
-                "[dim]No description available[/dim]",
-                title="📝 Description",
-                border_style="white",
-            )
-        )
-
-    if objectives:
-        md = Markdown(objectives)
-        _get_console().print(Panel(md, title="✅ Objectives", border_style="green"))
-
-    # Display comments if any
+    # Prepare comments if any
+    comments_text = None
     if project.comments:
         from roadmap.core.services.comment_service import CommentService
 
         threads = CommentService.build_comment_threads(project.comments)
         comment_text = ""
 
-        # Show top-level comments and their replies
         top_level_ids = [k for k in threads.keys() if k is not None]
         for top_level_id in sorted(top_level_ids):
             for comment in threads.get(top_level_id, []):
@@ -266,7 +101,6 @@ def view_project(ctx: click.Context, project_id: str):
                     CommentService.format_comment_for_display(comment, indent=0) + "\n"
                 )
 
-                # Show replies to this comment
                 if comment.id in threads:
                     for reply in threads[comment.id]:
                         comment_text += (
@@ -276,10 +110,23 @@ def view_project(ctx: click.Context, project_id: str):
 
                 comment_text += "\n"
 
-        _get_console().print(
-            Panel(
-                comment_text.rstrip(),
-                title=f"💬 Comments ({len(project.comments)})",
-                border_style="cyan",
-            )
-        )
+        comments_text = comment_text.rstrip()
+
+    # Render using presenter
+    presenter = ProjectPresenter()
+    presenter.render(
+        project_dto,
+        milestones=milestones,
+        milestone_progress=milestone_progress,
+        description_content=description_content,
+        comments_text=comments_text,
+        effort_data=effort_data,
+    )
+
+    # Display objectives if present
+    if objectives:
+        from rich.markdown import Markdown
+        from rich.panel import Panel
+
+        md = Markdown(objectives)
+        get_console().print(Panel(md, title="✅ Objectives", border_style="green"))
