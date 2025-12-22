@@ -163,3 +163,34 @@ def format_list_items(
         lines.append(more_suffix.format(count=remaining))
 
     return lines
+
+
+# Console wrapper functions for CLI commands that need to print and potentially exit
+def print_operation_success(
+    console,
+    emoji: str,
+    action: str,
+    entity_title: str | None = None,
+    entity_id: str | None = None,
+    reason: str | None = None,
+    extra_details: dict[str, str] | None = None,
+) -> None:
+    """Print a successful operation message to console."""
+    lines = format_operation_success(
+        emoji, action, entity_title, entity_id, reason, extra_details
+    )
+    for line in lines:
+        console.print(line)
+
+
+def print_operation_failure(
+    console,
+    action: str,
+    entity_id: str | None = None,
+    error: str | None = None,
+    suggestion: str | None = None,
+) -> None:
+    """Print a failed operation message to console."""
+    lines = format_operation_failure(action, entity_id, error, suggestion)
+    for line in lines:
+        console.print(line)
