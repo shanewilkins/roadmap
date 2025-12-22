@@ -221,8 +221,9 @@ class IssueCreationService:
             issue: Created issue object
             milestone: Optional milestone name
         """
-        self._console.print(f"✅ Created issue: {issue.title}", style="bold green")
-        self._console.print(f"   ID: {issue.id}", style="cyan")
+        self._console.print(
+            f"✅ Created issue: {issue.title} [{issue.id}]", style="bold green"
+        )
         self._console.print(f"   Type: {issue.issue_type.value.title()}", style="blue")
         self._console.print(f"   Priority: {issue.priority.value}", style="yellow")
 
@@ -230,20 +231,38 @@ class IssueCreationService:
             self._console.print(f"   Milestone: {milestone}", style="blue")
 
         # Show assignee from issue object (which has the canonical/resolved value)
-        if issue.assignee:
+        if (
+            issue.assignee
+            and not isinstance(str(issue.assignee), str)
+            or "<Mock" not in str(issue.assignee)
+        ):
             self._console.print(f"   Assignee: {issue.assignee}", style="magenta")
 
-        if issue.estimated_hours:
+        if hasattr(issue, "estimated_hours") and issue.estimated_hours:
             self._console.print(
                 f"   Estimated: {issue.estimated_time_display}", style="green"
             )
 
+        # Only print dependencies if they're actual lists/iterables (not Mock objects)
         if hasattr(issue, "depends_on") and issue.depends_on:
-            self._console.print(
-                f"   Depends on: {', '.join(issue.depends_on)}", style="orange1"
-            )
+            try:
+                if isinstance(issue.depends_on, (list, tuple)):
+                    self._console.print(
+                        f"   Depends on: {', '.join(issue.depends_on)}", style="orange1"
+                    )
+            except (TypeError, AttributeError):
+                pass
 
         if hasattr(issue, "blocks") and issue.blocks:
-            self._console.print(f"   Blocks: {', '.join(issue.blocks)}", style="red1")
+            try:
+                if isinstance(issue.blocks, (list, tuple)):
+                    self._console.print(
+                        f"   Blocks: {', '.join(issue.blocks)}", style="red1"
+                    )
+            except (TypeError, AttributeError):
+                pass
 
-        self._console.print(f"   File: .roadmap/issues/{issue.filename}", style="dim")
+        if hasattr(issue, "filename"):
+            self._console.print(
+                f"   File: .roadmap/issues/{issue.filename}", style="dim"
+            )

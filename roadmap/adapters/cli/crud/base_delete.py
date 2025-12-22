@@ -12,6 +12,7 @@ from roadmap.adapters.cli.crud.crud_utils import (
     get_entity_by_type,
     get_entity_title,
 )
+from roadmap.adapters.cli.presentation.crud_presenter import DeletePresenter
 from roadmap.common.console import get_console
 
 
@@ -129,12 +130,8 @@ class BaseDelete(ABC):
             entity_id: ID of deleted entity
             entity: The deleted entity
         """
-        title = self._get_title(entity)
-
-        self.console.print(
-            f"✅ Deleted {self.entity_type.value}: {title} [{entity_id}]",
-            style="green",
-        )
+        presenter = DeletePresenter()
+        presenter.render(entity)
 
     def _get_title(self, entity: Any) -> str:
         """Get entity title/name.

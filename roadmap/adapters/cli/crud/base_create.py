@@ -9,6 +9,7 @@ from roadmap.adapters.cli.crud.crud_utils import (
     get_entity_id,
     get_entity_title,
 )
+from roadmap.adapters.cli.presentation.crud_presenter import CreatePresenter
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.infrastructure.logging import log_audit_event
@@ -122,18 +123,13 @@ class BaseCreate(ABC):
         return create_entity_by_type(self.core, self.entity_type, entity_dict)
 
     def _display_success(self, entity: Any) -> None:
-        """Display success message.
+        """Display success message using presenter.
 
         Args:
             entity: The created entity
         """
-        title = self._get_title(entity)
-        entity_id = self._get_id(entity)
-
-        self.console.print(
-            f"✅ Created {self.entity_type.value}: {title} [{entity_id}]",
-            style="green",
-        )
+        presenter = CreatePresenter()
+        presenter.render(entity)
 
     def _get_title(self, entity: Any) -> str:
         """Get entity title/name.

@@ -1,6 +1,6 @@
 """Base class for archive operations across all entity types."""
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +38,7 @@ class BaseArchive(ABC):
         self.core = core
         self.console = console or get_console()
 
+    @abstractmethod
     def post_archive_hook(self, archived_files: list[Path], **kwargs) -> None:
         """Optional hook after entities archived.
 

@@ -40,23 +40,14 @@ class IssueCreate(BaseCreate):
         )
 
     def _display_success(self, entity) -> None:
-        """Display detailed success message for issue creation."""
-        # Try to use full formatting if entity has all needed attributes
-        try:
-            from roadmap.core.services import IssueCreationService
+        """Display success message using presenter."""
+        # Use detailed service display which includes assignee, priority, etc.
+        from roadmap.core.services import IssueCreationService
 
-            service = IssueCreationService(self.core)
-            service.format_created_issue_display(
-                entity, milestone=getattr(entity, "milestone", None)
-            )
-        except (AttributeError, TypeError):
-            # Fallback for mocks or incomplete entities
-            title = self._get_title(entity)
-            entity_id = self._get_id(entity)
-            self.console.print(
-                f"✅ Created issue: {title} [{entity_id}]",
-                style="green",
-            )
+        service = IssueCreationService(self.core)
+        service.format_created_issue_display(
+            entity, milestone=getattr(entity, "milestone", None)
+        )
 
     def post_create_hook(self, entity, **kwargs) -> None:
         """Handle post-creation tasks like Git branch creation."""

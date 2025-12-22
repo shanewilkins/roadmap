@@ -5,8 +5,8 @@ import click
 from roadmap.adapters.cli.crud import BaseUpdate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.presentation.crud_presenter import UpdatePresenter
 from roadmap.common.cli_models import IssueUpdateParams
-from roadmap.common.update_constants import DISPLAYABLE_UPDATE_FIELDS
 from roadmap.infrastructure.logging import (
     log_command,
 )
@@ -50,44 +50,9 @@ class IssueUpdate(BaseUpdate):
         return super().execute(entity_id=entity_id, **kwargs)
 
     def _display_success(self, entity) -> None:
-        """Display detailed success message for issue update."""
-        # Use the same display logic as IssueUpdateService.display_update_result
-        try:
-            self.console.print(f"✅ Updated issue: {entity.title}", style="bold green")
-            self.console.print(f"   ID: {entity.id}", style="cyan")
-
-            # Show what was updated
-            for field, value in self._current_update_dict.items():
-                if field == "estimated_hours":
-                    # Use the value directly from the update dict, not from entity
-                    # This avoids stale cache/file read issues
-                    hours = value
-                    if hours is None:
-                        display_value = "Not estimated"
-                    elif hours < 1:
-                        minutes = int(hours * 60)
-                        display_value = f"{minutes}m"
-                    elif hours < 8:
-                        display_value = f"{hours:.1f}h"
-                    else:
-                        days = hours / 8
-                        display_value = f"{days:.1f}d"
-                    self.console.print(f"   estimate: {display_value}", style="cyan")
-                elif field in DISPLAYABLE_UPDATE_FIELDS:
-                    # Format enum values to show just the string value
-                    display_value = value.value if hasattr(value, "value") else value
-                    self.console.print(f"   {field}: {display_value}", style="cyan")
-
-            if self._current_reason:
-                self.console.print(f"   reason: {self._current_reason}", style="dim")
-        except (AttributeError, TypeError):
-            # Fallback for mocks or incomplete entities
-            title = self._get_title(entity)
-            entity_id = self._get_id(entity)
-            self.console.print(
-                f"✅ Updated issue: {title} [{entity_id}]",
-                style="green",
-            )
+        """Display success message using presenter."""
+        presenter = UpdatePresenter()
+        presenter.render(entity, self._current_update_dict)
 
 
 @click.command("update")

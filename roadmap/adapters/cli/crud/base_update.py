@@ -13,6 +13,7 @@ from roadmap.adapters.cli.crud.crud_utils import (
     get_entity_title,
     update_entity_by_type,
 )
+from roadmap.adapters.cli.presentation.crud_presenter import UpdatePresenter
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.infrastructure.logging import log_audit_event
@@ -159,13 +160,8 @@ class BaseUpdate(ABC):
         Args:
             entity: The updated entity
         """
-        title = get_entity_title(entity)
-        entity_id = get_entity_id(entity)
-
-        self.console.print(
-            f"✅ Updated {self.entity_type.value}: {title} [{entity_id}]",
-            style="green",
-        )
+        presenter = UpdatePresenter()
+        presenter.render(entity)
 
     def _get_title(self, entity: Any) -> str:
         """Get entity title/name.
