@@ -118,7 +118,7 @@ def link_github_issue(
 
             config_path = Path(core.root_path) / "config.yaml"
             gh_service = GitHubIntegrationService(Path(core.root_path), config_path)
-            token, config_owner, config_repo = gh_service.get_github_config()
+            _, config_owner, config_repo = gh_service.get_github_config()
 
             if not config_owner or not config_repo:
                 lines = format_operation_failure(
@@ -133,19 +133,26 @@ def link_github_issue(
                 console.print(line)
             ctx.exit(1)
 
+    # Type narrowing: at this point config_owner and config_repo must be non-None
+    # because we exit if they aren't
+    assert config_owner is not None
+    assert config_repo is not None
+
     # Validate GitHub issue exists
     try:
         gh_client = GitHubIssueClient()
         exists = gh_client.issue_exists(config_owner, config_repo, github_id)
         if not exists:
             lines = format_operation_failure(
-                "verify GitHub issue", None, f"GitHub issue #{github_id} not found"
+                "verify GitHub issue",
+                str(github_id),
+                f"GitHub issue #{github_id} not found",
             )
             for line in lines:
                 console.print(line)
             ctx.exit(1)
     except Exception as e:
-        lines = format_operation_failure("verify GitHub issue", None, str(e))
+        lines = format_operation_failure("verify GitHub issue", str(github_id), str(e))
         for line in lines:
             console.print(line)
         ctx.exit(1)

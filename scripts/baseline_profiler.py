@@ -287,4 +287,4 @@ def establish_baseline(profile_file: str | None, iterations: int):
 
 
 if __name__ == "__main__":
-    establish_baseline()
+    establish_baseline()  # type: ignore[call-arg]

@@ -151,3 +151,43 @@ class TestFormatterIntegration:
         rows = [("Test ✓", "Done ✓"), ("Test ✗", "Failed ✗")]
         result = format_table("Unicode", columns, rows)
         assert result is not None
+
+
+class TestFormatterModuleExports:
+    """Test that all formatters are properly imported and exported."""
+
+    def test_formatters_module_import(self):
+        """Test that formatters module can be imported."""
+        from roadmap import shared
+
+        assert hasattr(shared, "formatters")
+
+    def test_issue_exporter_available(self):
+        """Test that IssueExporter is available in formatters."""
+        from roadmap.shared.formatters import IssueExporter
+
+        assert IssueExporter is not None
+
+    def test_kanban_organizer_available(self):
+        """Test that KanbanOrganizer is available in formatters."""
+        from roadmap.shared.formatters import KanbanOrganizer
+
+        assert KanbanOrganizer is not None
+
+    def test_kanban_layout_available(self):
+        """Test that KanbanLayout is available in formatters."""
+        from roadmap.shared.formatters import KanbanLayout
+
+        assert KanbanLayout is not None
+
+    def test_table_formatters_available(self):
+        """Test that table formatters are available."""
+        from roadmap.shared.formatters import (
+            IssueTableFormatter,
+            MilestoneTableFormatter,
+            ProjectTableFormatter,
+        )
+
+        assert IssueTableFormatter is not None
+        assert MilestoneTableFormatter is not None
+        assert ProjectTableFormatter is not None
