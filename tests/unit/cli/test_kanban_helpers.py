@@ -3,6 +3,7 @@ Tests for kanban board helpers.
 """
 
 from datetime import datetime, timedelta
+from typing import cast
 from unittest.mock import Mock, patch
 
 from roadmap.core.domain import Issue, Priority, Status
@@ -116,7 +117,7 @@ class TestKanbanOrganizer:
             ),
         ]
 
-        result = KanbanOrganizer.categorize_issues(issues)  # type: ignore[arg-type]
+        result = KanbanOrganizer.categorize_issues(cast(list, issues))
 
         assert len(result["closed"]) == 1
         assert len(result["blocked"]) == 1
@@ -211,7 +212,7 @@ class TestKanbanLayout:
 
     def test_format_issue_cell_none_issue(self):
         """format_issue_cell should handle None issue."""
-        result = KanbanLayout.format_issue_cell(None, 30, False)  # type: ignore[arg-type]
+        result = KanbanLayout.format_issue_cell(cast(Issue, None), 30, False)
 
         assert result == " " * 30
 

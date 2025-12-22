@@ -8,6 +8,7 @@ Comprehensive test coverage for:
 """
 
 from enum import Enum
+from typing import cast
 from unittest.mock import Mock, patch
 
 from roadmap.common.decorators import service_operation
@@ -487,39 +488,45 @@ class TestStatusSummary:
 
     def test_count_by_status_single(self):
         """Test counting single status."""
-        items = [("check1", MockHealthStatus.HEALTHY)]  # type: ignore
-        result = StatusSummary.count_by_status(items)  # type: ignore
+        items = cast(list, [("check1", MockHealthStatus.HEALTHY)])
+        result = StatusSummary.count_by_status(items)
 
         assert result == {"healthy": 1}
 
     def test_count_by_status_multiple(self):
         """Test counting multiple statuses."""
-        items = [  # type: ignore
-            ("check1", MockHealthStatus.HEALTHY),
-            ("check2", MockHealthStatus.HEALTHY),
-            ("check3", MockHealthStatus.DEGRADED),
-            ("check4", MockHealthStatus.UNHEALTHY),
-        ]
-        result = StatusSummary.count_by_status(items)  # type: ignore
+        items = cast(
+            list,
+            [
+                ("check1", MockHealthStatus.HEALTHY),
+                ("check2", MockHealthStatus.HEALTHY),
+                ("check3", MockHealthStatus.DEGRADED),
+                ("check4", MockHealthStatus.UNHEALTHY),
+            ],
+        )
+        result = StatusSummary.count_by_status(items)
 
         assert result == {"healthy": 2, "degraded": 1, "unhealthy": 1}
 
     def test_count_by_status_empty(self):
         """Test counting empty list."""
-        result = StatusSummary.count_by_status([])  # type: ignore
+        result = StatusSummary.count_by_status(cast(list, []))
         assert result == {}
 
     def test_summarize_checks_balanced(self):
         """Test summarizing checks."""
         # Use actual ApplicationHealthStatus from health module
-        checks = {  # type: ignore
-            "check1": (ApplicationHealthStatus.HEALTHY, "OK"),
-            "check2": (ApplicationHealthStatus.HEALTHY, "OK"),
-            "check3": (ApplicationHealthStatus.DEGRADED, "Warning"),
-            "check4": (ApplicationHealthStatus.UNHEALTHY, "Error"),
-        }
+        checks = cast(
+            dict,
+            {
+                "check1": (ApplicationHealthStatus.HEALTHY, "OK"),
+                "check2": (ApplicationHealthStatus.HEALTHY, "OK"),
+                "check3": (ApplicationHealthStatus.DEGRADED, "Warning"),
+                "check4": (ApplicationHealthStatus.UNHEALTHY, "Error"),
+            },
+        )
 
-        result = StatusSummary.summarize_checks(checks)  # type: ignore
+        result = StatusSummary.summarize_checks(checks)
 
         assert result["total"] == 4
         assert result["healthy"] == 2
@@ -528,12 +535,15 @@ class TestStatusSummary:
 
     def test_summarize_checks_all_healthy(self):
         """Test summarizing all healthy checks."""
-        checks = {  # type: ignore
-            "check1": (ApplicationHealthStatus.HEALTHY, "OK"),
-            "check2": (ApplicationHealthStatus.HEALTHY, "OK"),
-        }
+        checks = cast(
+            dict,
+            {
+                "check1": (ApplicationHealthStatus.HEALTHY, "OK"),
+                "check2": (ApplicationHealthStatus.HEALTHY, "OK"),
+            },
+        )
 
-        result = StatusSummary.summarize_checks(checks)  # type: ignore
+        result = StatusSummary.summarize_checks(checks)
 
         assert result["total"] == 2
         assert result["healthy"] == 2
@@ -544,7 +554,7 @@ class TestStatusSummary:
         """Test summarizing empty checks."""
         from roadmap.core.domain.health import HealthStatus
 
-        result = StatusSummary.summarize_checks({}, HealthStatus)  # type: ignore
+        result = StatusSummary.summarize_checks(cast(dict, {}), HealthStatus)
 
         assert result["total"] == 0
         assert result["healthy"] == 0

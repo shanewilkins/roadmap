@@ -1,6 +1,7 @@
 """Comprehensive test suite for comment service."""
 
 from datetime import datetime
+from typing import cast
 
 import pytest
 
@@ -105,7 +106,7 @@ class TestCommentService:
         """Test that None author raises ValidationError."""
         with pytest.raises(ValidationError):
             CommentService.create_comment(
-                author=None,
+                author=cast(str, None),
                 body="Valid body",
             )
 
@@ -114,7 +115,7 @@ class TestCommentService:
         with pytest.raises(ValidationError):
             CommentService.create_comment(
                 author="author",
-                body=None,
+                body=cast(str, None),
             )
 
     def test_validate_comment_thread_empty_list(self):
@@ -157,7 +158,7 @@ class TestCommentService:
             issue_id="issue-1",
             author="author",
             body="Body",
-            created_at="not-a-datetime",  # Invalid
+            created_at=cast(datetime, "not-a-datetime"),
             updated_at=datetime.now(),
         )
 
@@ -172,7 +173,7 @@ class TestCommentService:
             author="author",
             body="Body",
             created_at=datetime.now(),
-            updated_at="not-a-datetime",  # Invalid
+            updated_at=cast(datetime, "not-a-datetime"),
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -233,12 +234,38 @@ class TestCommentService:
             issue_id="issue-1",
             author="",  # Error 1: empty author
             body="",  # Error 2: empty body
-            created_at="invalid",  # Error 3: invalid datetime
+            created_at=cast(datetime, "invalid"),
             updated_at=datetime.now(),
         )
 
         errors = CommentService.validate_comment_thread([comment1])
         assert len(errors) >= 3
+
+    def test_validate_comment_thread_circular_reference(self):
+        """Test validation catches circular references in reply chains."""
+        # Create a circular reference: comment1 -> comment2 -> comment1
+        comment1 = Comment(
+            id=1,
+            issue_id="issue-1",
+            author="author1",
+            body="Comment 1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            in_reply_to=2,  # Points to comment2
+        )
+        comment2 = Comment(
+            id=2,
+            issue_id="issue-1",
+            author="author2",
+            body="Comment 2",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            in_reply_to=1,  # Points back to comment1 - circular!
+        )
+
+        errors = CommentService.validate_comment_thread([comment1, comment2])
+        # Should detect circular reference or invalid reply references
+        assert len(errors) > 0
 
     def test_build_comment_threads_empty_list(self):
         """Test building threads from empty list."""

@@ -1,5 +1,6 @@
 """Tests for assignee validation functionality."""
 
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -59,7 +60,7 @@ class TestAssigneeValidation:
         assert "cannot be empty" in error.lower()
 
         # Test None
-        is_valid, error = core.team.validate_assignee(None)  # type: ignore[arg-type]
+        is_valid, error = core.team.validate_assignee(cast(str, None))
         assert not is_valid
         assert "cannot be empty" in error.lower()
 

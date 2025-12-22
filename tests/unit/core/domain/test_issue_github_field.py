@@ -1,5 +1,7 @@
 """Tests for Issue model GitHub issue field validation."""
 
+from typing import cast
+
 import pytest
 
 from roadmap.core.domain.issue import Issue
@@ -107,8 +109,8 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_validation_string_in_dict(self):
         """Test string conversion works in dict creation."""
-        data = {"title": "Test", "github_issue": "888"}
-        issue = Issue(**data)  # type: ignore
+        data = cast(dict, {"title": "Test", "github_issue": "888"})
+        issue = Issue(**data)
         assert issue.github_issue == 888
 
     def test_github_issue_validation_error_in_dict(self):

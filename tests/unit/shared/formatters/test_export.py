@@ -3,6 +3,7 @@
 import csv
 import json
 from io import StringIO
+from typing import cast
 from unittest.mock import Mock
 
 from roadmap.core.domain import Issue, IssueType, Priority, Status
@@ -39,7 +40,7 @@ class TestIssueExporter:
         def serializer(i):
             return {"id": i.id, "title": i.title, "status": i.status.value}
 
-        result = IssueExporter.to_json([issue], serializer)
+        result = IssueExporter.to_json(cast(list[Issue], [issue]), serializer)
 
         parsed = json.loads(result)
         assert len(parsed) == 1
@@ -57,7 +58,7 @@ class TestIssueExporter:
         def serializer(i):
             return {"id": i.id, "title": i.title}
 
-        result = IssueExporter.to_json(issues, serializer)  # type: ignore[arg-type]
+        result = IssueExporter.to_json(cast(list[Issue], issues), serializer)
 
         parsed = json.loads(result)
         assert len(parsed) == 2
@@ -90,7 +91,7 @@ class TestIssueExporter:
                 "milestone": i.milestone,
             }
 
-        result = IssueExporter.to_json([issue], serializer)
+        result = IssueExporter.to_json(cast(list[Issue], [issue]), serializer)
 
         parsed = json.loads(result)
         assert parsed[0]["id"] == "ISS-123"
@@ -113,7 +114,7 @@ class TestIssueExporter:
                 "milestone": i.milestone,
             }
 
-        result = IssueExporter.to_csv([issue], serializer)
+        result = IssueExporter.to_csv(cast(list[Issue], [issue]), serializer)
 
         # Parse the CSV
         reader = csv.DictReader(StringIO(result))
@@ -131,7 +132,7 @@ class TestIssueExporter:
         def serializer(i):
             return {"id": i.id, "title": i.title}
 
-        result = IssueExporter.to_csv([issue], serializer)
+        result = IssueExporter.to_csv(cast(list[Issue], [issue]), serializer)
 
         lines = result.strip().split("\n")
         assert len(lines) >= 1  # At least header
@@ -151,7 +152,7 @@ class TestIssueExporter:
             # Serializer only returns some fields
             return {"id": i.id, "title": i.title}
 
-        result = IssueExporter.to_csv([issue], serializer)
+        result = IssueExporter.to_csv(cast(list[Issue], [issue]), serializer)
 
         reader = csv.DictReader(StringIO(result))
         rows = list(reader)
@@ -173,7 +174,7 @@ class TestIssueExporter:
         def serializer(i):
             return {"id": i.id, "title": i.title}
 
-        result = IssueExporter.to_csv(issues, serializer)  # type: ignore[arg-type]
+        result = IssueExporter.to_csv(cast(list[Issue], issues), serializer)
 
         reader = csv.DictReader(StringIO(result))
         rows = list(reader)
@@ -186,7 +187,7 @@ class TestIssueExporter:
         """to_markdown should format single issue as table."""
         issue = self.create_sample_issue()
 
-        result = IssueExporter.to_markdown([issue])
+        result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
 
         lines = result.strip().split("\n")
         # Should have header, separator, and data row
@@ -211,7 +212,7 @@ class TestIssueExporter:
             self.create_sample_issue(id="ISS-2", title="Second"),
         ]
 
-        result = IssueExporter.to_markdown(issues)  # type: ignore[arg-type]
+        result = IssueExporter.to_markdown(cast(list[Issue], issues))
 
         lines = result.strip().split("\n")
         # Should have header, separator, and 2 data rows
@@ -224,7 +225,7 @@ class TestIssueExporter:
         """to_markdown should handle None values gracefully."""
         issue = self.create_sample_issue(assignee=None, milestone=None)
 
-        result = IssueExporter.to_markdown([issue])
+        result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
 
         # Should not raise exception and should contain the row
         assert "ISS-123" in result
@@ -234,7 +235,7 @@ class TestIssueExporter:
         issue = self.create_sample_issue(estimated_hours=8.0)
         issue.estimated_time_display = "1d"
 
-        result = IssueExporter.to_markdown([issue])
+        result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
 
         assert "1d" in result
 
@@ -242,7 +243,7 @@ class TestIssueExporter:
         """to_markdown should handle Status enum values."""
         issue = self.create_sample_issue(status=Status.IN_PROGRESS)
 
-        result = IssueExporter.to_markdown([issue])
+        result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
 
         assert "in-progress" in result
 
