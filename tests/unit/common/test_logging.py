@@ -51,8 +51,10 @@ class TestCorrelationId:
             "message": "test",
         }
         result = scrub_sensitive_data(None, "info", event_dict)
-        assert result["user"]["api_key"] == "***REDACTED***"
-        assert result["user"]["name"] == "john"
+        user_data = result.get("user")
+        assert isinstance(user_data, dict)
+        assert user_data.get("api_key") == "***REDACTED***"
+        assert user_data.get("name") == "john"
 
     def test_scrub_sensitive_data_list(self):
         """Test scrubbing sensitive data in lists."""
