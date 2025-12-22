@@ -174,6 +174,7 @@ def test_config_validator_repo_not_found():
 def test_conflict_detector_init():
     """Test conflict detector initialization."""
     service = Mock(spec=GitHubIntegrationService)
+    service.get_github_config.return_value = ("token", "owner", "repo")
     detector = GitHubConflictDetector(service)
     assert detector is not None
 
@@ -181,6 +182,7 @@ def test_conflict_detector_init():
 def test_conflict_detector_no_sync_history():
     """Test conflict detection when no sync history exists."""
     service = Mock(spec=GitHubIntegrationService)
+    service.get_github_config.return_value = ("token", "owner", "repo")
     detector = GitHubConflictDetector(service)
 
     issue = Mock()
@@ -199,6 +201,7 @@ def test_conflict_detector_no_sync_history():
 def test_conflict_detector_github_modified():
     """Test detection of GitHub-side modifications."""
     service = Mock(spec=GitHubIntegrationService)
+    service.get_github_config.return_value = ("token", "owner", "repo")
     detector = GitHubConflictDetector(service)
 
     issue = Mock()
@@ -221,11 +224,12 @@ def test_conflict_detector_github_modified():
 def test_conflict_detector_local_modified():
     """Test detection of local modifications."""
     service = Mock(spec=GitHubIntegrationService)
+    service.get_github_config.return_value = ("token", "owner", "repo")
     detector = GitHubConflictDetector(service)
 
     issue = Mock()
     issue.github_issue = 123
-    issue.updated_at = datetime.now()  # Just updated
+    issue.updated = datetime.now()  # Just updated
 
     last_sync = datetime.now() - timedelta(hours=1)
 
@@ -239,6 +243,7 @@ def test_conflict_detector_local_modified():
 def test_conflict_detector_both_modified():
     """Test detection of conflicts when both sides modified."""
     service = Mock(spec=GitHubIntegrationService)
+    service.get_github_config.return_value = ("token", "owner", "repo")
     detector = GitHubConflictDetector(service)
 
     issue = Mock()
@@ -259,8 +264,12 @@ def test_conflict_detector_both_modified():
                     return_value={"updated_at": "2025-12-21T12:00:00Z"},
                 ):
                     detector.detect_conflicts(issue, 123)
+
+
+def test_conflict_detector_summary():
     """Test conflict summary generation."""
     service = Mock(spec=GitHubIntegrationService)
+    service.get_github_config.return_value = ("token", "owner", "repo")
     detector = GitHubConflictDetector(service)
 
     conflicts = {

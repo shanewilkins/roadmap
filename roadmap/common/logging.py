@@ -175,24 +175,25 @@ def setup_logging(
 
     # Configure structlog with enhanced processors
     # Route through stdlib logging handlers (console → stderr, file → JSON)
+    processors: list = [
+        # Add correlation ID first (before any filtering)
+        add_correlation_id,
+        # Add span context for tracing
+        span_context_processor,
+        # Scrub sensitive data early in pipeline
+        scrub_sensitive_data,
+        # Add standard metadata
+        structlog.stdlib.add_log_level,
+        # NOTE: Do NOT use add_logger_name when using render_to_log_kwargs
+        # because it creates a "logger" key that becomes "name" kwarg in LogRecord,
+        # causing: KeyError: "Attempt to overwrite 'name' in LogRecord"
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        # Convert to stdlib logging kwargs and pass through to handlers
+        structlog.stdlib.render_to_log_kwargs,
+    ]
     structlog.configure(
-        processors=[
-            # Add correlation ID first (before any filtering)
-            add_correlation_id,
-            # Add span context for tracing
-            span_context_processor,
-            # Scrub sensitive data early in pipeline
-            scrub_sensitive_data,
-            # Add standard metadata
-            structlog.stdlib.add_log_level,
-            # NOTE: Do NOT use add_logger_name when using render_to_log_kwargs
-            # because it creates a "logger" key that becomes "name" kwarg in LogRecord,
-            # causing: KeyError: "Attempt to overwrite 'name' in LogRecord"
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.StackInfoRenderer(),
-            # Convert to stdlib logging kwargs and pass through to handlers
-            structlog.stdlib.render_to_log_kwargs,
-        ],
+        processors=processors,
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),
         context_class=dict,

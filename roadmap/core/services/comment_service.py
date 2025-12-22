@@ -17,7 +17,8 @@ class CommentService:
         Returns:
             A unique comment ID
         """
-        return int(str(int(uuid.uuid4().int))[:15])
+        uid = uuid.uuid4()
+        return int(str(uid.int)[:15])
 
     @staticmethod
     def create_comment(

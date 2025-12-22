@@ -69,10 +69,11 @@ def link_github_issue(
             ctx.exit(1)
     except Exception as e:
         handle_cli_error(
-            ctx,
-            e,
-            "Failed to retrieve issue",
-            f"Could not get issue {issue_id}: {str(e)}",
+            error=e,
+            operation="retrieve issue",
+            entity_type="issue",
+            entity_id=issue_id,
+            fatal=True,
         )
 
     # Validate GitHub ID is positive
@@ -168,8 +169,9 @@ def link_github_issue(
         )
     except Exception as e:
         handle_cli_error(
-            ctx,
-            e,
-            "Failed to link issue",
-            f"Could not update issue {issue_id}: {str(e)}",
+            error=e,
+            operation="link issue",
+            entity_type="issue",
+            entity_id=issue_id,
+            fatal=True,
         )

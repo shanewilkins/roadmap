@@ -34,11 +34,11 @@ def lookup_github_issue(ctx: click.Context, github_id: int) -> None:
 
     # Validate GitHub ID is positive
     if github_id <= 0:
-        format_operation_failure(
-            console,
-            f"Invalid GitHub issue number: {github_id}",
-            "GitHub issue numbers must be positive integers",
+        lines = format_operation_failure(
+            "lookup GitHub issue", None, "Invalid GitHub issue number"
         )
+        for line in lines:
+            console.print(line)
         sys.exit(1)
 
     # Get all issues and search for one with matching github_issue
@@ -51,11 +51,13 @@ def lookup_github_issue(ctx: click.Context, github_id: int) -> None:
             break
 
     if not matching_issue:
-        format_operation_failure(
-            console,
+        lines = format_operation_failure(
+            "lookup GitHub issue",
+            None,
             f"No issue found linked to GitHub issue #{github_id}",
-            f"Use 'roadmap issue link <id> --github-id {github_id}' to link an issue",
         )
+        for line in lines:
+            console.print(line)
         sys.exit(1)
 
     # Display issue details

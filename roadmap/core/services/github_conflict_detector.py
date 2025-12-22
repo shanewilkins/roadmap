@@ -18,7 +18,10 @@ class GitHubConflictDetector:
             integration_service: GitHub integration service instance
         """
         self.service = integration_service
-        self.client = GitHubIssueClient(integration_service.get_github_config())
+        token, owner, repo = integration_service.get_github_config()
+        self.owner = owner
+        self.repo = repo
+        self.client = GitHubIssueClient(token)
 
     def detect_conflicts(
         self, local_issue: Issue, github_number: int
@@ -58,9 +61,16 @@ class GitHubConflictDetector:
             )
             return conflicts
 
+        # Check if we have required GitHub config
+        if not self.owner or not self.repo:
+            conflicts["warnings"].append(
+                "GitHub configuration missing. Cannot check for GitHub changes."
+            )
+            return conflicts
+
         # Check if GitHub issue was modified after last sync
         try:
-            github_issue = self.client.fetch_issue(github_number)
+            github_issue = self.client.fetch_issue(self.owner, self.repo, github_number)
             github_updated_at = self._parse_github_timestamp(
                 github_issue.get("updated_at")
             )
@@ -98,14 +108,16 @@ class GitHubConflictDetector:
         Returns:
             Last sync datetime or None
         """
-        # Check if issue has sync metadata
-        if hasattr(issue, "github_sync_timestamp"):
-            return issue.github_sync_timestamp
+        # Check if issue has sync metadata with sync timestamp
+        if (
+            issue.github_sync_metadata
+            and "sync_timestamp" in issue.github_sync_metadata
+        ):
+            return issue.github_sync_metadata["sync_timestamp"]
 
-        # Check if issue has updated_at that might indicate sync
-        if hasattr(issue, "updated_at"):
-            # Note: This is approximate; ideally we'd track explicit sync times
-            return issue.updated_at
+        # Check issue updated_at as fallback
+        if issue.updated:
+            return issue.updated
 
         return None
 
@@ -119,20 +131,10 @@ class GitHubConflictDetector:
         Returns:
             True if modified after sync
         """
-        if not hasattr(issue, "updated_at"):
+        if not issue.updated:
             return False
 
-        updated_at = issue.updated_at
-        if not updated_at:
-            return False
-
-        # Convert to datetime if string
-        if isinstance(updated_at, str):
-            try:
-                updated_at = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
-            except (ValueError, AttributeError):
-                return False
-
+        updated_at = issue.updated
         return updated_at > last_sync
 
     def _parse_github_timestamp(self, timestamp: str | None) -> datetime | None:
@@ -149,7 +151,8 @@ class GitHubConflictDetector:
 
         try:
             # GitHub uses ISO 8601 format with Z suffix
-            return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            iso_string = timestamp.replace("Z", "+00:00")
+            return datetime.fromisoformat(iso_string)
         except (ValueError, AttributeError):
             return None
 

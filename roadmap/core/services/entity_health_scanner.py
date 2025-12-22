@@ -163,7 +163,7 @@ class EntityHealthScanner:
             EntityHealthReport with all issues found
         """
         report = EntityHealthReport(
-            entity_id=milestone.id,
+            entity_id=milestone.name,
             entity_type=EntityType.MILESTONE,
             entity_title=milestone.name,
             status=milestone.status.value if milestone.status else "unknown",
@@ -181,33 +181,34 @@ class EntityHealthScanner:
             )
 
         # Check dates
-        if milestone.start_date and milestone.end_date:
-            if milestone.start_date > milestone.end_date:
+        if milestone.created and milestone.due_date:
+            if milestone.created > milestone.due_date:
                 report.issues.append(
                     HealthIssue(
                         code="invalid_date_range",
-                        message=f"Start date ({milestone.start_date.date()}) is after end date ({milestone.end_date.date()})",
+                        message=f"Created date ({milestone.created.date()}) is after due date ({milestone.due_date.date()})",
                         severity=HealthSeverity.ERROR,
                         category="structure",
                         details={
-                            "start_date": milestone.start_date.isoformat(),
-                            "end_date": milestone.end_date.isoformat(),
+                            "created_date": milestone.created.isoformat(),
+                            "due_date": milestone.due_date.isoformat(),
                         },
                     )
                 )
 
         # Check progress
-        if milestone.status == Status.DONE:
-            if milestone.completion_percentage != 100:
+        if (
+            milestone.calculated_progress is not None
+            and milestone.status == Status.DONE
+        ):
+            if milestone.calculated_progress != 100:
                 report.issues.append(
                     HealthIssue(
                         code="inconsistent_completion",
-                        message=f"Milestone marked Done but only {milestone.completion_percentage}% complete",
+                        message=f"Milestone marked Done but only {milestone.calculated_progress}% complete",
                         severity=HealthSeverity.WARNING,
                         category="structure",
-                        details={
-                            "completion_percentage": milestone.completion_percentage
-                        },
+                        details={"calculated_progress": milestone.calculated_progress},
                     )
                 )
 

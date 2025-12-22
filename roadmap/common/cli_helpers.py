@@ -10,6 +10,7 @@ from functools import wraps
 from typing import Any
 
 import click
+from rich.table import Table
 
 from roadmap.common.output_formatter import OutputFormatter
 from roadmap.common.output_models import ColumnType, TableData
@@ -31,7 +32,7 @@ class OutputFormatHandler:
     }
 
     @staticmethod
-    def render(table_data: TableData, format_name: str = "rich") -> str:
+    def render(table_data: TableData, format_name: str = "rich") -> str | Table:
         """
         Render table data in specified format.
 
@@ -40,7 +41,7 @@ class OutputFormatHandler:
             format_name: Output format (rich, plain, json, csv, markdown).
 
         Returns:
-            Formatted string output.
+            Formatted string output or Rich Table object for rich format.
 
         Raises:
             ValueError: If format_name is not supported.

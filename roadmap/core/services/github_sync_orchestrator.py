@@ -118,6 +118,10 @@ class GitHubSyncOrchestrator:
                 }
                 return change
 
+            if not local_issue.github_issue:
+                change.github_changes = {"error": "Issue not linked to GitHub"}
+                return change
+
             github_issue = self.github_client.fetch_issue(
                 owner, repo, local_issue.github_issue
             )
@@ -272,14 +276,11 @@ class GitHubSyncOrchestrator:
                 pass
 
             # Persist the changes
-            from roadmap.core.services.params import IssueUpdateServiceParams
-
-            update_params = IssueUpdateServiceParams(
-                id=issue.id,
-                title=issue.title if hasattr(issue, "title") else None,
-                status=issue.status if hasattr(issue, "status") else None,
+            self.core.issues.update(
+                issue_id=issue.id,
+                title=issue.title,
+                status=issue.status,
             )
-            self.core.issues.update_issue(update_params)
 
             # Record successful sync in metadata
             self.metadata_service.record_sync(
@@ -331,14 +332,11 @@ class GitHubSyncOrchestrator:
                 pass
 
             # Persist the changes
-            from roadmap.core.services.params import IssueUpdateServiceParams
-
-            update_params = IssueUpdateServiceParams(
-                id=issue.id,
-                title=issue.title if hasattr(issue, "title") else None,
-                status=issue.status if hasattr(issue, "status") else None,
+            self.core.issues.update(
+                issue_id=issue.id,
+                title=issue.title,
+                status=issue.status,
             )
-            self.core.issues.update_issue(update_params)
 
             # Record successful sync in metadata
             self.metadata_service.record_sync(

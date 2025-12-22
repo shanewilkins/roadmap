@@ -72,7 +72,7 @@ class IssueService:
             priority = (
                 Priority[params.priority.upper()]
                 if isinstance(params.priority, str)
-                else params.priority
+                else params.priority or Priority.MEDIUM
             )
         except (AttributeError, KeyError):
             priority = Priority.MEDIUM
@@ -81,7 +81,7 @@ class IssueService:
             issue_type = (
                 IssueType[params.issue_type.upper()]
                 if isinstance(params.issue_type, str)
-                else params.issue_type
+                else params.issue_type or IssueType.OTHER
             )
         except (AttributeError, KeyError):
             issue_type = IssueType.OTHER
@@ -365,7 +365,7 @@ class IssueService:
                 "issue_field_updated", issue_id=params.issue_id, field="milestone"
             )
         if params.description is not None:
-            issue.description = params.description
+            issue.content = params.description
             log_event(
                 "issue_field_updated", issue_id=params.issue_id, field="description"
             )

@@ -9,6 +9,7 @@ Analyzes depends_on and blocks relationships to detect:
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 
 from roadmap.common.logging import get_logger
 from roadmap.core.domain.issue import Issue
@@ -16,7 +17,7 @@ from roadmap.core.domain.issue import Issue
 logger = get_logger(__name__)
 
 
-class DependencyIssueType(str):
+class DependencyIssueType(str, Enum):
     """Types of dependency issues that can be found."""
 
     CIRCULAR = "circular_dependency"
