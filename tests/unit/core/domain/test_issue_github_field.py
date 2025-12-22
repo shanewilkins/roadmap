@@ -108,7 +108,7 @@ class TestGitHubIssueValidation:
     def test_github_issue_validation_string_in_dict(self):
         """Test string conversion works in dict creation."""
         data = {"title": "Test", "github_issue": "888"}
-        issue = Issue(**data)
+        issue = Issue(**data)  # type: ignore
         assert issue.github_issue == 888
 
     def test_github_issue_validation_error_in_dict(self):

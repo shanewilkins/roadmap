@@ -122,8 +122,15 @@ class GitHubSyncOrchestrator:
                 change.github_changes = {"error": "Issue not linked to GitHub"}
                 return change
 
+            # Ensure github_issue is an int (should be after validation in Issue model)
+            github_issue_number = (
+                int(local_issue.github_issue)
+                if isinstance(local_issue.github_issue, str)
+                else local_issue.github_issue
+            )
+
             github_issue = self.github_client.fetch_issue(
-                owner, repo, local_issue.github_issue
+                owner, repo, github_issue_number
             )
             if not github_issue:
                 # GitHub issue was deleted

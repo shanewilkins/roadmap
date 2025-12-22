@@ -27,7 +27,7 @@ class Issue(BaseModel):
     issue_type: IssueType = IssueType.OTHER
     milestone: str | None = None
     labels: list[str] = Field(default_factory=list)
-    github_issue: int | None = None
+    github_issue: str | int | None = None
     created: datetime = Field(default_factory=now_utc)
     updated: datetime = Field(default_factory=now_utc)
     assignee: str | None = None
