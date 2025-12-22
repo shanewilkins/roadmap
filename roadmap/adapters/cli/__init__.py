@@ -9,6 +9,7 @@ import os
 
 import click
 
+from roadmap import __version__
 from roadmap.adapters.cli.exception_handler import handle_cli_exception
 
 # Initialize console for rich output
@@ -103,7 +104,7 @@ def _detect_project_context():
 
 
 @click.group(cls=RoadmapClickGroup)
-@click.version_option()
+@click.version_option(version=__version__)
 @click.pass_context
 def main(ctx: click.Context):
     """Roadmap CLI - A command line tool for creating and managing roadmaps."""

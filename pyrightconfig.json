@@ -76,6 +76,7 @@
   "useLibraryCodeForTypes": true,
   "autoSearchPaths": true,
   "extraPaths": [
-    "./roadmap"
+    "./roadmap",
+    "./.venv/lib/python3.12/site-packages"
   ]
 }
