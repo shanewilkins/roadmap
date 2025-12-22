@@ -3,7 +3,7 @@
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest  # type: ignore[import]
+import pytest
 
 from roadmap.common.constants import Status
 from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator

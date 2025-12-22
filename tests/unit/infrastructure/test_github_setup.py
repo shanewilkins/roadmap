@@ -318,6 +318,7 @@ class TestGitHubConfigManager:
         with open(manager.config_file) as f:
             config = yaml.safe_load(f)
 
+        assert isinstance(config, dict)
         assert "github" in config
         assert config["github"]["repository"] == "owner/repo"
         assert config["github"]["enabled"] is True

@@ -1,0 +1,44 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.autoFormatStrings": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.inlayHints.functionReturnTypes": true,
+  
+  // Pyright-specific settings
+  "pyright.disableOrganizeImports": false,
+  "pyright.disableTaggedHints": false,
+  
+  // Enable type checking for all files
+  "python.analysis.include": [
+    "roadmap/**/*.py",
+    "tests/**/*.py"
+  ],
+  
+  // Ignore certain directories
+  "python.analysis.exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    ".venv",
+    "htmlcov"
+  ],
+  
+  // Custom stub paths
+  "python.analysis.stubPath": "./typings",
+  
+  // Auto-import settings
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.extraPaths": [
+    "./roadmap"
+  ],
+  "python.analysis.logLevel": "Information",
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
+}
