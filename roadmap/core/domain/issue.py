@@ -57,6 +57,9 @@ class Issue(BaseModel):
     file_path: str | None = Field(
         default=None, exclude=True
     )  # Internal: absolute path where issue file is stored
+    github_sync_metadata: dict[str, Any] | None = Field(
+        default=None, exclude=True
+    )  # Internal: sync metadata tracking for GitHub integration
 
     @field_validator("github_issue", mode="before")
     @classmethod
