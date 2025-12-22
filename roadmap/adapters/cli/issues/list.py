@@ -5,6 +5,8 @@ import click
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.dtos import IssueDTO
+from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.common.cli_models import IssueListParams
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
@@ -32,8 +34,8 @@ def _validate_and_get_issues(
     next_milestone: bool,
     milestone: str | None,
     overdue: bool,
-) -> tuple[list | None, str | None]:
-    """Validate filter combinations and get filtered issues.
+) -> tuple[list[IssueDTO] | None, str | None]:
+    """Validate filter combinations and get filtered issues as DTOs.
 
     Args:
         core: RoadmapCore instance
@@ -46,7 +48,7 @@ def _validate_and_get_issues(
         overdue: Show overdue issues
 
     Returns:
-        Tuple of (issues list or None, filter description or None)
+        Tuple of (issues DTOs list or None, filter description or None)
     """
     is_valid, error_msg = IssueFilterValidator.validate_filters(
         assignee, my_issues, backlog, unassigned, next_milestone, milestone
@@ -66,7 +68,10 @@ def _validate_and_get_issues(
         my_issues=my_issues,
     )
 
-    return issues, filter_description
+    # Convert domain Issues to DTOs for CLI presentation
+    issue_dtos = [IssueMapper.domain_to_dto(issue) for issue in issues] if issues else []
+
+    return issue_dtos, filter_description
 
 
 def _handle_no_upcoming_milestones() -> None:
@@ -82,19 +87,19 @@ def _handle_no_upcoming_milestones() -> None:
 
 def _apply_additional_filters(
     core,
-    issues: list,
+    issues: list[IssueDTO],
     filter_description: str | None,
     open_flag: bool,
     blocked: bool,
     status: str | None,
     priority: str | None,
     issue_type: str | None,
-) -> tuple[list, str]:
-    """Apply additional filters to issues.
+) -> tuple[list[IssueDTO], str]:
+    """Apply additional filters to issue DTOs.
 
     Args:
         core: RoadmapCore instance
-        issues: List of issues to filter
+        issues: List of issue DTOs to filter
         filter_description: Current filter description
         open_flag: Show only open issues
         blocked: Show only blocked issues
@@ -103,11 +108,15 @@ def _apply_additional_filters(
         issue_type: Filter by issue type
 
     Returns:
-        Tuple of (filtered issues, updated filter description)
+        Tuple of (filtered issue DTOs, updated filter description)
     """
+    # Convert DTOs back to domain for filtering via service
+    from roadmap.adapters.cli.mappers import IssueMapper
+    domain_issues = [IssueMapper.dto_to_domain(dto) for dto in issues]
+    
     query_service = IssueQueryService(core)
-    issues, filter_description = query_service.apply_additional_filters(
-        issues,
+    filtered_domain_issues, filter_description = query_service.apply_additional_filters(
+        domain_issues,
         filter_description or "",
         open_only=open_flag,
         blocked_only=blocked,
@@ -115,7 +124,10 @@ def _apply_additional_filters(
         priority=priority,
         issue_type=issue_type,
     )
-    return issues, filter_description
+    
+    # Convert filtered domain issues back to DTOs
+    filtered_dtos = [IssueMapper.domain_to_dto(issue) for issue in filtered_domain_issues]
+    return filtered_dtos, filter_description
 
 
 @click.command("list")
@@ -287,18 +299,22 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
         header_text = f"📋 {issue_count} {filter_description} issue{'s' if issue_count != 1 else ''}"
         _get_console().print(header_text, style="bold cyan")
 
-        # Convert issues to TableData for structured output
+        # Convert DTOs back to domain objects for table formatter
+        # (formatters still work with domain models)
+        domain_issues = [IssueMapper.dto_to_domain(dto) for dto in issues]
+        
+        # Convert to TableData for structured output
         table_data = IssueTableFormatter.issues_to_table_data(
-            issues,
+            domain_issues,
             title="Issues",
             description=filter_description,
             show_github_ids=show_github_ids,
         )
 
         # Display workload summary if applicable
-        if (params.assignee or params.my_issues) and issues:
+        if (params.assignee or params.my_issues) and domain_issues:
             assignee_name = params.assignee if params.assignee else "you"
-            workload = WorkloadCalculator.calculate_workload(issues)
+            workload = WorkloadCalculator.calculate_workload(domain_issues)
             IssueTableFormatter.display_workload_summary(
                 assignee_name,
                 workload["total_hours"],
