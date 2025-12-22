@@ -121,24 +121,28 @@ class CommentService:
                     )
 
         # Check for circular references
-        seen_chains = {}
         for comment in comments:
             if comment.in_reply_to is None:
                 continue
 
             chain = set()
-            current_id = comment.id
+            current_id = comment.in_reply_to  # Start with what this comment replies to
             max_depth = len(comments) + 1  # Prevent infinite loops
 
-            while current_id in seen_chains and max_depth > 0:
-                if current_id in chain:
+            while current_id is not None and max_depth > 0:
+                if current_id == comment.id:
+                    # Found circular reference back to original
                     errors.append(f"Comment {comment.id}: circular reference detected")
                     break
+                if current_id in chain:
+                    # Found a cycle not including the original
+                    break
                 chain.add(current_id)
-                current_id = next(
-                    (c.in_reply_to for c in comments if c.id == current_id),
-                    None,
+                # Find what the current comment replies to
+                current_comment = next(
+                    (c for c in comments if c.id == current_id), None
                 )
+                current_id = current_comment.in_reply_to if current_comment else None
                 max_depth -= 1
 
         return errors

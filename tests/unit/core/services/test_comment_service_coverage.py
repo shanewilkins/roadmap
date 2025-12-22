@@ -416,6 +416,41 @@ class TestCommentServiceCircularReferenceDetection:
             in_reply_to=400,  # Replies to itself
         )
 
-        # This is technically a self-reference, test behavior
-        # May or may not be caught depending on implementation
-        CommentService.validate_comment_thread([comment])
+        errors = CommentService.validate_comment_thread([comment])
+        # Self-reply should be detected as circular reference
+        assert any("circular" in error.lower() for error in errors)
+
+    def test_validate_thread_indirect_cycle(self):
+        """Test validation detects indirect cycles (2->3->2)."""
+        comment1 = Comment(
+            id=500,
+            issue_id="issue-1",
+            author="author1",
+            body="Comment 1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            in_reply_to=None,
+        )
+        comment2 = Comment(
+            id=501,
+            issue_id="issue-1",
+            author="author2",
+            body="Comment 2",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            in_reply_to=502,  # Points to comment3
+        )
+        comment3 = Comment(
+            id=502,
+            issue_id="issue-1",
+            author="author3",
+            body="Comment 3",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            in_reply_to=501,  # Points back to comment2 - cycle!
+        )
+
+        errors = CommentService.validate_comment_thread([comment1, comment2, comment3])
+        # Should detect the 2<->3 cycle (doesn't include 1)
+        # At least one of the comments in the cycle should be flagged
+        assert len(errors) > 0
