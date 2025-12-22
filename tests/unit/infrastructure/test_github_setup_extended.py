@@ -3,7 +3,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
-import pytest
+import pytest  # type: ignore[import]
 import yaml
 
 from roadmap.infrastructure.github.setup import (

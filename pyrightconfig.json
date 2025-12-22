@@ -57,6 +57,7 @@
       "include": ["tests/**/*.py"],
       "typeCheckingMode": "basic",
       "reportMissingImports": false,
+      "reportMissingModuleSource": false,
       "reportUnknownArgumentType": false,
       "reportUnknownVariableType": false
     },

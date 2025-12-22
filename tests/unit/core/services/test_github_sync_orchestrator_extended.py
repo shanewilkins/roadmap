@@ -3,7 +3,7 @@
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import]
 
 from roadmap.common.constants import Status
 from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
@@ -414,7 +414,7 @@ class TestGitHubSyncOrchestratorApplyChanges:
         Covers lines 257-259: Early return for no changes
         """
         change = IssueChange(issue_id="issue1", title="Test")
-        change.local_changes = None
+        # local_changes defaults to empty dict, which is falsy in if check
 
         orchestrator._apply_local_changes(change)
 
@@ -515,7 +515,7 @@ class TestGitHubSyncOrchestratorApplyChanges:
         Covers lines 313-315: Early return for no changes
         """
         change = IssueChange(issue_id="issue1", title="Test")
-        change.github_changes = None
+        # github_changes defaults to empty dict, which is falsy in if check
 
         orchestrator._apply_github_changes(change)
 
