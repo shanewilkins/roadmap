@@ -101,180 +101,114 @@ class TestEntityHealthReport:
         assert len(report.issues) == 2
         assert report.issue_count == 2
 
-    def test_issue_count(self):
-        """Test issue count property."""
-        issues = [
-            HealthIssue(
-                code=f"issue_{i}",
-                message=f"Issue {i}",
-                severity=HealthSeverity.INFO,
-                category="test",
-            )
-            for i in range(5)
-        ]
+    @pytest.mark.parametrize(
+        "count_type,severity,expected_count",
+        [
+            ("issue_count", None, 5),
+            ("error_count", HealthSeverity.ERROR, 2),
+            ("warning_count", HealthSeverity.WARNING, 2),
+            ("info_count", HealthSeverity.INFO, 3),
+        ],
+    )
+    def test_count_properties(self, count_type, severity, expected_count):
+        """Test count properties with various severity levels."""
+        if count_type == "issue_count":
+            issues = [
+                HealthIssue(
+                    code=f"issue_{i}",
+                    message=f"Issue {i}",
+                    severity=HealthSeverity.INFO,
+                    category="test",
+                )
+                for i in range(5)
+            ]
+        elif count_type == "error_count":
+            issues = [
+                HealthIssue(
+                    code="error1",
+                    message="Error 1",
+                    severity=HealthSeverity.ERROR,
+                    category="test",
+                ),
+                HealthIssue(
+                    code="error2",
+                    message="Error 2",
+                    severity=HealthSeverity.ERROR,
+                    category="test",
+                ),
+                HealthIssue(
+                    code="warning1",
+                    message="Warning 1",
+                    severity=HealthSeverity.WARNING,
+                    category="test",
+                ),
+            ]
+        elif count_type == "warning_count":
+            issues = [
+                HealthIssue(
+                    code="warning1",
+                    message="Warning 1",
+                    severity=HealthSeverity.WARNING,
+                    category="test",
+                ),
+                HealthIssue(
+                    code="warning2",
+                    message="Warning 2",
+                    severity=HealthSeverity.WARNING,
+                    category="test",
+                ),
+            ]
+        else:  # info_count
+            issues = [
+                HealthIssue(
+                    code="info1",
+                    message="Info 1",
+                    severity=HealthSeverity.INFO,
+                    category="test",
+                ),
+                HealthIssue(
+                    code="info2",
+                    message="Info 2",
+                    severity=HealthSeverity.INFO,
+                    category="test",
+                ),
+                HealthIssue(
+                    code="info3",
+                    message="Info 3",
+                    severity=HealthSeverity.INFO,
+                    category="test",
+                ),
+            ]
+
         report = EntityHealthReport(
             entity_id="entity-1",
             entity_type=EntityType.MILESTONE,
-            entity_title="Test Milestone",
-            status="planned",
-            issues=issues,
-        )
-        assert report.issue_count == 5
-
-    def test_error_count(self):
-        """Test error count property."""
-        issues = [
-            HealthIssue(
-                code="error1",
-                message="Error 1",
-                severity=HealthSeverity.ERROR,
-                category="test",
-            ),
-            HealthIssue(
-                code="error2",
-                message="Error 2",
-                severity=HealthSeverity.ERROR,
-                category="test",
-            ),
-            HealthIssue(
-                code="warning1",
-                message="Warning 1",
-                severity=HealthSeverity.WARNING,
-                category="test",
-            ),
-        ]
-        report = EntityHealthReport(
-            entity_id="entity-1",
-            entity_type=EntityType.PROJECT,
-            entity_title="Test Project",
+            entity_title="Test",
             status="active",
             issues=issues,
         )
-        assert report.error_count == 2
 
-    def test_warning_count(self):
-        """Test warning count property."""
-        issues = [
-            HealthIssue(
-                code="warning1",
-                message="Warning 1",
-                severity=HealthSeverity.WARNING,
-                category="test",
-            ),
-            HealthIssue(
-                code="warning2",
-                message="Warning 2",
-                severity=HealthSeverity.WARNING,
-                category="test",
-            ),
-        ]
+        assert getattr(report, count_type) == expected_count
+
+    @pytest.mark.parametrize(
+        "issue_list,expect_healthy",
+        [
+            ([], True),
+            ([HealthIssue("info1", "Info", HealthSeverity.INFO, "test")], True),
+            ([HealthIssue("warning1", "Warning", HealthSeverity.WARNING, "test")], True),
+            ([HealthIssue("error1", "Error", HealthSeverity.ERROR, "test")], False),
+        ],
+    )
+    def test_is_healthy_with_various_severities(self, issue_list, expect_healthy):
+        """Test is_healthy with different severity levels."""
         report = EntityHealthReport(
             entity_id="entity-1",
             entity_type=EntityType.ISSUE,
             entity_title="Test",
             status="done",
-            issues=issues,
+            issues=issue_list,
         )
-        assert report.warning_count == 2
-
-    def test_info_count(self):
-        """Test info count property."""
-        issues = [
-            HealthIssue(
-                code="info1",
-                message="Info 1",
-                severity=HealthSeverity.INFO,
-                category="test",
-            ),
-            HealthIssue(
-                code="info2",
-                message="Info 2",
-                severity=HealthSeverity.INFO,
-                category="test",
-            ),
-            HealthIssue(
-                code="info3",
-                message="Info 3",
-                severity=HealthSeverity.INFO,
-                category="test",
-            ),
-        ]
-        report = EntityHealthReport(
-            entity_id="entity-1",
-            entity_type=EntityType.MILESTONE,
-            entity_title="Test",
-            status="completed",
-            issues=issues,
-        )
-        assert report.info_count == 3
-
-    def test_is_healthy_no_issues(self):
-        """Test is_healthy when there are no issues."""
-        report = EntityHealthReport(
-            entity_id="entity-1",
-            entity_type=EntityType.ISSUE,
-            entity_title="Test",
-            status="done",
-        )
-        assert report.is_healthy is True
-
-    def test_is_healthy_with_info_only(self):
-        """Test is_healthy with only info-level issues."""
-        issues = [
-            HealthIssue(
-                code="info1",
-                message="Info",
-                severity=HealthSeverity.INFO,
-                category="test",
-            ),
-        ]
-        report = EntityHealthReport(
-            entity_id="entity-1",
-            entity_type=EntityType.ISSUE,
-            entity_title="Test",
-            status="done",
-            issues=issues,
-        )
-        assert report.is_healthy is True
-
-    def test_is_healthy_with_warning(self):
-        """Test is_healthy with warning-level issues."""
-        issues = [
-            HealthIssue(
-                code="warning1",
-                message="Warning",
-                severity=HealthSeverity.WARNING,
-                category="test",
-            ),
-        ]
-        report = EntityHealthReport(
-            entity_id="entity-1",
-            entity_type=EntityType.ISSUE,
-            entity_title="Test",
-            status="done",
-            issues=issues,
-        )
-        # Warnings don't make it unhealthy - only errors/critical do
-        assert report.is_healthy is True
-
-    def test_is_healthy_with_error(self):
-        """Test is_healthy with error-level issues."""
-        issues = [
-            HealthIssue(
-                code="error1",
-                message="Error",
-                severity=HealthSeverity.ERROR,
-                category="test",
-            ),
-        ]
-        report = EntityHealthReport(
-            entity_id="entity-1",
-            entity_type=EntityType.ISSUE,
-            entity_title="Test",
-            status="done",
-            issues=issues,
-        )
-        assert report.is_healthy is False
+        assert report.is_healthy is expect_healthy
 
     def test_entity_types(self):
         """Test all entity types."""
@@ -362,19 +296,89 @@ class TestEntityHealthScanner:
         assert report.entity_title == "Test Issue"
         assert report.is_healthy is True
 
-    def test_scan_issue_missing_description(self, scanner, mock_issue):
-        """Test scanning issue with missing description."""
-        mock_issue.content = ""
-
+    @pytest.mark.parametrize(
+        "field_to_set,field_value,issue_code,expected_severity",
+        [
+            ("content", "", "missing_description", HealthSeverity.INFO),
+            ("progress_percentage", 150, "invalid_progress_percentage", HealthSeverity.ERROR),
+            ("estimated_hours", -5, "invalid_estimate", HealthSeverity.WARNING),
+            ("previous_assignee", "old-owner", "missing_handoff_date", HealthSeverity.WARNING),
+            ("status", Status.CLOSED, "missing_completion_date", HealthSeverity.WARNING),
+        ],
+    )
+    def test_scan_issue_with_problems(
+        self, scanner, mock_issue, field_to_set, field_value, issue_code, expected_severity
+    ):
+        """Test scanning issue with various problems."""
+        # Reset mock for clean state
+        if field_to_set == "content":
+            mock_issue.content = field_value
+        elif field_to_set == "status":
+            mock_issue.status = field_value
+            if field_value == Status.IN_PROGRESS:
+                mock_issue.estimated_hours = None
+            elif field_value == Status.CLOSED:
+                mock_issue.actual_end_date = None
+                if issue_code == "inconsistent_completion":
+                    mock_issue.progress_percentage = 75
+        elif field_to_set == "progress_percentage":
+            mock_issue.progress_percentage = field_value
+        elif field_to_set == "estimated_hours":
+            mock_issue.status = Status.IN_PROGRESS
+            mock_issue.estimated_hours = field_value
+        elif field_to_set == "previous_assignee":
+            mock_issue.previous_assignee = field_value
+            mock_issue.handoff_date = None
+        
         report = scanner.scan_issue(mock_issue)
-
         found_issue = next(
-            (i for i in report.issues if i.code == "missing_description"), None
+            (i for i in report.issues if i.code == issue_code), None
+        )
+        assert found_issue is not None
+        assert found_issue.severity == expected_severity
+
+    def test_scan_issue_missing_estimate(self, scanner, mock_issue):
+        """Test scanning issue with missing time estimate."""
+        mock_issue.status = Status.IN_PROGRESS
+        report = scanner.scan_issue(mock_issue)
+        found_issue = next(
+            (i for i in report.issues if i.code == "missing_estimate"), None
         )
         assert found_issue is not None
         assert found_issue.severity == HealthSeverity.INFO
-        # Info severity doesn't make it unhealthy
-        assert report.is_healthy is True
+
+    def test_scan_issue_invalid_estimate_in_progress(self, scanner, mock_issue):
+        """Test scanning issue with invalid estimate when in progress."""
+        mock_issue.status = Status.IN_PROGRESS
+        mock_issue.estimated_hours = -5
+        report = scanner.scan_issue(mock_issue)
+        found_issue = next(
+            (i for i in report.issues if i.code == "invalid_estimate"), None
+        )
+        assert found_issue is not None
+        assert found_issue.severity == HealthSeverity.WARNING
+
+    def test_scan_issue_inconsistent_completion(self, scanner, mock_issue):
+        """Test scanning issue marked done but incomplete."""
+        mock_issue.status = Status.CLOSED
+        mock_issue.progress_percentage = 75
+        report = scanner.scan_issue(mock_issue)
+        found_issue = next(
+            (i for i in report.issues if i.code == "inconsistent_completion"), None
+        )
+        assert found_issue is not None
+        assert found_issue.severity == HealthSeverity.WARNING
+
+    def test_scan_issue_inconsistent_status(self, scanner, mock_issue):
+        """Test scanning issue with start date but TODO status."""
+        mock_issue.status = Status.TODO
+        mock_issue.actual_start_date = datetime.now()
+        report = scanner.scan_issue(mock_issue)
+        found_issue = next(
+            (i for i in report.issues if i.code == "inconsistent_status"), None
+        )
+        assert found_issue is not None
+        assert found_issue.severity == HealthSeverity.WARNING
 
     def test_scan_issue_invalid_date_range(self, scanner, mock_issue):
         """Test scanning issue with invalid date range."""
@@ -390,69 +394,6 @@ class TestEntityHealthScanner:
         assert found_issue is not None
         assert found_issue.severity == HealthSeverity.ERROR
 
-    def test_scan_issue_missing_estimate(self, scanner, mock_issue):
-        """Test scanning issue with missing time estimate."""
-        mock_issue.status = Status.IN_PROGRESS
-
-        report = scanner.scan_issue(mock_issue)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "missing_estimate"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.INFO
-
-    def test_scan_issue_invalid_estimate(self, scanner, mock_issue):
-        """Test scanning issue with invalid estimate."""
-        mock_issue.status = Status.IN_PROGRESS
-        mock_issue.estimated_hours = -5
-
-        report = scanner.scan_issue(mock_issue)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "invalid_estimate"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
-
-    def test_scan_issue_inconsistent_completion(self, scanner, mock_issue):
-        """Test scanning issue marked done but incomplete."""
-        mock_issue.status = Status.CLOSED
-        mock_issue.progress_percentage = 75
-
-        report = scanner.scan_issue(mock_issue)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "inconsistent_completion"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
-
-    def test_scan_issue_invalid_progress_percentage(self, scanner, mock_issue):
-        """Test scanning issue with invalid progress percentage."""
-        mock_issue.progress_percentage = 150
-
-        report = scanner.scan_issue(mock_issue)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "invalid_progress_percentage"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.ERROR
-
-    def test_scan_issue_missing_handoff_date(self, scanner, mock_issue):
-        """Test scanning issue with previous assignee but no handoff date."""
-        mock_issue.previous_assignee = "old-owner"
-        mock_issue.handoff_date = None
-
-        report = scanner.scan_issue(mock_issue)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "missing_handoff_date"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
-
     def test_scan_issue_missed_due_date(self, scanner, mock_issue):
         """Test scanning issue completed after due date."""
         mock_issue.due_date = datetime(2024, 12, 20)
@@ -466,32 +407,6 @@ class TestEntityHealthScanner:
         assert found_issue is not None
         assert found_issue.severity == HealthSeverity.INFO
 
-    def test_scan_issue_missing_completion_date(self, scanner, mock_issue):
-        """Test scanning issue marked done but without completion date."""
-        mock_issue.status = Status.CLOSED
-        mock_issue.actual_end_date = None
-
-        report = scanner.scan_issue(mock_issue)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "missing_completion_date"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
-
-    def test_scan_issue_inconsistent_status(self, scanner, mock_issue):
-        """Test scanning issue with start date but TODO status."""
-        mock_issue.status = Status.TODO
-        mock_issue.actual_start_date = datetime.now()
-
-        report = scanner.scan_issue(mock_issue)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "inconsistent_status"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
-
     def test_scan_milestone_healthy(self, scanner, mock_milestone):
         """Test scanning a healthy milestone."""
         report = scanner.scan_milestone(mock_milestone)
@@ -500,17 +415,30 @@ class TestEntityHealthScanner:
         assert report.entity_type == EntityType.MILESTONE
         assert report.is_healthy is True
 
-    def test_scan_milestone_missing_description(self, scanner, mock_milestone):
-        """Test scanning milestone with missing description."""
-        mock_milestone.description = ""
+    @pytest.mark.parametrize(
+        "field_to_set,field_value,issue_code,expected_severity",
+        [
+            ("description", "", "missing_description", HealthSeverity.WARNING),
+            ("status", Status.CLOSED, "inconsistent_completion", HealthSeverity.WARNING),
+        ],
+    )
+    def test_scan_milestone_with_problems(
+        self, scanner, mock_milestone, field_to_set, field_value, issue_code, expected_severity
+    ):
+        """Test scanning milestone with various problems."""
+        if field_to_set == "description":
+            mock_milestone.description = field_value
+        elif field_to_set == "status":
+            mock_milestone.status = field_value
+            mock_milestone.calculated_progress = 80
 
         report = scanner.scan_milestone(mock_milestone)
 
         found_issue = next(
-            (i for i in report.issues if i.code == "missing_description"), None
+            (i for i in report.issues if i.code == issue_code), None
         )
         assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
+        assert found_issue.severity == expected_severity
 
     def test_scan_milestone_invalid_date_range(self, scanner, mock_milestone):
         """Test scanning milestone with invalid date range."""
@@ -525,19 +453,6 @@ class TestEntityHealthScanner:
         assert found_issue is not None
         assert found_issue.severity == HealthSeverity.ERROR
 
-    def test_scan_milestone_inconsistent_completion(self, scanner, mock_milestone):
-        """Test scanning milestone marked done but incomplete."""
-        mock_milestone.status = Status.CLOSED
-        mock_milestone.calculated_progress = 80
-
-        report = scanner.scan_milestone(mock_milestone)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "inconsistent_completion"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
-
     def test_scan_project_healthy(self, scanner, mock_project):
         """Test scanning a healthy project."""
         mock_project.status = Status.TODO  # Use a valid status
@@ -548,28 +463,27 @@ class TestEntityHealthScanner:
         assert report.entity_type == EntityType.PROJECT
         assert report.is_healthy is True
 
-    def test_scan_project_missing_description(self, scanner, mock_project):
-        """Test scanning project with missing description."""
+    @pytest.mark.parametrize(
+        "field_to_set,field_value,issue_code",
+        [
+            ("description", "", "missing_description"),
+            ("owner", "", "missing_owner"),
+        ],
+    )
+    def test_scan_project_with_problems(
+        self, scanner, mock_project, field_to_set, field_value, issue_code
+    ):
+        """Test scanning project with missing fields."""
         mock_project.status = Status.TODO
-        mock_project.description = ""
+        if field_to_set == "description":
+            mock_project.description = field_value
+        elif field_to_set == "owner":
+            mock_project.owner = field_value
 
         report = scanner.scan_project(mock_project)
 
         found_issue = next(
-            (i for i in report.issues if i.code == "missing_description"), None
-        )
-        assert found_issue is not None
-        assert found_issue.severity == HealthSeverity.WARNING
-
-    def test_scan_project_missing_owner(self, scanner, mock_project):
-        """Test scanning project with missing owner."""
-        mock_project.status = Status.TODO
-        mock_project.owner = ""
-
-        report = scanner.scan_project(mock_project)
-
-        found_issue = next(
-            (i for i in report.issues if i.code == "missing_owner"), None
+            (i for i in report.issues if i.code == issue_code), None
         )
         assert found_issue is not None
         assert found_issue.severity == HealthSeverity.WARNING
@@ -611,10 +525,61 @@ class TestEntityHealthScanner:
         assert any(r.entity_type == EntityType.MILESTONE for r in reports)
         assert any(r.entity_type == EntityType.PROJECT for r in reports)
 
-    def test_validate_comment_thread_empty(self, scanner):
-        """Test comment thread validation with empty list."""
-        errors = EntityHealthScanner._validate_comment_thread([])
-        assert errors == []
+    @pytest.mark.parametrize(
+        "comment_list,should_have_error,error_pattern",
+        [
+            ([], False, None),
+            (
+                [
+                    MagicMock(
+                        spec=Comment,
+                        id="comment-1",
+                        body="Test",
+                        author="user",
+                        created_at=datetime.now(),
+                        in_reply_to=None,
+                    )
+                ],
+                False,
+                None,
+            ),
+            (
+                [
+                    MagicMock(
+                        spec=Comment,
+                        id="comment-1",
+                        body="",
+                        author="user",
+                        created_at=datetime.now(),
+                        in_reply_to=None,
+                    )
+                ],
+                True,
+                "Empty",
+            ),
+            (
+                [
+                    MagicMock(
+                        spec=Comment,
+                        id="comment-1",
+                        body="Test",
+                        author="",
+                        created_at=datetime.now(),
+                        in_reply_to=None,
+                    )
+                ],
+                True,
+                "author",
+            ),
+        ],
+    )
+    def test_validate_comment_thread(self, scanner, comment_list, should_have_error, error_pattern):
+        """Test comment thread validation with various scenarios."""
+        errors = EntityHealthScanner._validate_comment_thread(comment_list)
+        if should_have_error:
+            assert any(error_pattern in error for error in errors)
+        else:
+            assert errors == []
 
     def test_validate_comment_thread_duplicate_ids(self, scanner):
         """Test comment thread validation with duplicate IDs."""
@@ -634,30 +599,6 @@ class TestEntityHealthScanner:
 
         errors = EntityHealthScanner._validate_comment_thread([comment1, comment2])
         assert any("Duplicate" in error for error in errors)
-
-    def test_validate_comment_thread_empty_body(self, scanner):
-        """Test comment thread validation with empty body."""
-        comment = MagicMock(spec=Comment)
-        comment.id = "comment-1"
-        comment.body = ""
-        comment.author = "user"
-        comment.created_at = datetime.now()
-        comment.in_reply_to = None
-
-        errors = EntityHealthScanner._validate_comment_thread([comment])
-        assert any("Empty" in error for error in errors)
-
-    def test_validate_comment_thread_missing_author(self, scanner):
-        """Test comment thread validation with missing author."""
-        comment = MagicMock(spec=Comment)
-        comment.id = "comment-1"
-        comment.body = "Test"
-        comment.author = ""
-        comment.created_at = datetime.now()
-        comment.in_reply_to = None
-
-        errors = EntityHealthScanner._validate_comment_thread([comment])
-        assert any("author" in error.lower() for error in errors)
 
     def test_validate_comment_thread_circular_reference(self, scanner):
         """Test comment thread validation with circular reference."""
