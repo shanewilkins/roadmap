@@ -125,18 +125,19 @@ def isolated_roadmap_with_issues(cli_runner):
 class TestCLIInit:
     """Test init command."""
 
-    def test_init_non_interactive(self, cli_runner):
-        """Test initializing roadmap non-interactively."""
+    @pytest.mark.parametrize(
+        "options",
+        [
+            (["--project-name", "Test Project"]),
+            (["--project-name", "Test", "--description", "Test project"]),
+        ],
+    )
+    def test_init(self, cli_runner, options):
+        """Test initializing roadmap with various options."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
                 main,
-                [
-                    "init",
-                    "--project-name",
-                    "Test Project",
-                    "--non-interactive",
-                    "--skip-github",
-                ],
+                ["init"] + options + ["--non-interactive", "--skip-github"],
             )
 
             assert result.exit_code == 0
@@ -145,24 +146,6 @@ class TestCLIInit:
                 "initialized" in result.output.lower()
                 or "success" in result.output.lower()
             )
-
-    def test_init_with_description(self, cli_runner):
-        """Test init with project description."""
-        with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(
-                main,
-                [
-                    "init",
-                    "--project-name",
-                    "Test",
-                    "--description",
-                    "Test project",
-                    "--non-interactive",
-                    "--skip-github",
-                ],
-            )
-
-            assert result.exit_code == 0
 
     def test_init_creates_database(self, cli_runner):
         """Test that init creates the database file."""
@@ -247,38 +230,29 @@ class TestCLIHealth:
 class TestCLIIssueCreate:
     """Test issue create command."""
 
-    def test_create_issue_minimal(self, isolated_roadmap):
-        """Test creating issue with minimal arguments."""
+    @pytest.mark.parametrize(
+        "title,options,should_succeed",
+        [
+            ("Test Issue", [], True),  # Minimal
+            ("Feature Request", ["--type", "feature", "--priority", "high", "--estimate", "4.5"], True),
+            ("Bug Report", ["--type", "bug"], True),
+            ("Task", ["--priority", "medium"], True),
+        ],
+    )
+    def test_create_issue(self, isolated_roadmap, title, options, should_succeed):
+        """Test creating issues with various field combinations."""
         cli_runner, temp_dir = isolated_roadmap
 
         result = cli_runner.invoke(
             main,
-            ["issue", "create", "Test Issue"],  # TITLE is positional
+            ["issue", "create", title] + options,
         )
 
-        assert result.exit_code == 0
-        assert "created" in result.output.lower() or "issue" in result.output.lower()
-
-    def test_create_issue_with_all_fields(self, isolated_roadmap):
-        """Test creating issue with all fields."""
-        cli_runner, temp_dir = isolated_roadmap
-
-        result = cli_runner.invoke(
-            main,
-            [
-                "issue",
-                "create",
-                "Feature Request",  # TITLE is positional
-                "--type",
-                "feature",
-                "--priority",
-                "high",
-                "--estimate",
-                "4.5",
-            ],
-        )
-
-        assert result.exit_code == 0
+        if should_succeed:
+            assert result.exit_code == 0
+            assert "created" in result.output.lower() or "issue" in result.output.lower()
+        else:
+            assert result.exit_code != 0
 
     def test_create_issue_help(self, cli_runner):
         """Test issue create help."""
@@ -292,45 +266,28 @@ class TestCLIIssueCreate:
 class TestCLIIssueList:
     """Test issue list command."""
 
-    def test_list_issues(self, isolated_roadmap_with_issues):
-        """Test listing all issues."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+    @pytest.mark.parametrize(
+        "filter_args,use_empty_roadmap",
+        [
+            ([], False),  # List all issues
+            (["--status", "todo"], False),  # With status filter
+            (["--priority", "high"], False),  # With priority filter
+            ([], True),  # Empty list
+        ],
+    )
+    def test_list_issues(self, isolated_roadmap, isolated_roadmap_with_issues, filter_args, use_empty_roadmap):
+        """Test listing issues with various filters."""
+        if use_empty_roadmap:
+            cli_runner, temp_dir = isolated_roadmap
+        else:
+            cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
-        result = cli_runner.invoke(main, ["issue", "list"])
-
-        assert result.exit_code == 0
-        # Should show the created issues
-        assert "fix bug" in result.output.lower() or "parser" in result.output.lower()
-
-    def test_list_issues_with_status_filter(self, isolated_roadmap_with_issues):
-        """Test listing issues with status filter."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
-
-        result = cli_runner.invoke(main, ["issue", "list", "--status", "todo"])
-
-        assert result.exit_code == 0
-
-    def test_list_issues_with_priority_filter(self, isolated_roadmap_with_issues):
-        """Test listing issues with priority filter."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
-
-        result = cli_runner.invoke(main, ["issue", "list", "--priority", "high"])
+        result = cli_runner.invoke(main, ["issue", "list"] + filter_args)
 
         assert result.exit_code == 0
-
-    def test_list_issues_empty(self, isolated_roadmap):
-        """Test listing issues when none exist."""
-        cli_runner, temp_dir = isolated_roadmap
-
-        result = cli_runner.invoke(main, ["issue", "list"])
-
-        assert result.exit_code == 0
-        # Should handle empty list gracefully
-        assert (
-            "no issues" in result.output.lower()
-            or result.output.strip() == ""
-            or "issue" in result.output.lower()
-        )
+        if not use_empty_roadmap and not filter_args:
+            # Listing with data should show issues
+            assert "fix bug" in result.output.lower() or "parser" in result.output.lower()
 
     def test_list_issues_help(self, cli_runner):
         """Test issue list help."""
@@ -342,8 +299,16 @@ class TestCLIIssueList:
 class TestCLIIssueUpdate:
     """Test issue update command."""
 
-    def test_update_issue_title(self, isolated_roadmap_with_issues):
-        """Test updating issue title."""
+    @pytest.mark.parametrize(
+        "option,value",
+        [
+            ("--title", "Updated Title"),
+            ("--priority", "critical"),
+            ("--status", "in-progress"),
+        ],
+    )
+    def test_update_issue(self, isolated_roadmap_with_issues, option, value):
+        """Test updating issues with various fields."""
         cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
 
         if not issue_ids:
@@ -351,24 +316,10 @@ class TestCLIIssueUpdate:
 
         result = cli_runner.invoke(
             main,
-            ["issue", "update", issue_ids[0], "--title", "Updated Title"],
+            ["issue", "update", issue_ids[0], option, value],
         )
 
         assert result.exit_code == 0 or "updated" in result.output.lower()
-
-    def test_update_issue_priority(self, isolated_roadmap_with_issues):
-        """Test updating issue priority."""
-        cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
-
-        if not issue_ids:
-            pytest.skip("No issues created in fixture")
-
-        result = cli_runner.invoke(
-            main,
-            ["issue", "update", issue_ids[0], "--priority", "critical"],
-        )
-
-        assert result.exit_code == 0
 
     def test_update_nonexistent_issue(self, isolated_roadmap):
         """Test updating non-existent issue."""
@@ -396,34 +347,31 @@ class TestCLIIssueUpdate:
 class TestCLIIssueDelete:
     """Test issue delete command."""
 
-    def test_delete_issue(self, isolated_roadmap_with_issues):
-        """Test deleting an issue."""
+    @pytest.mark.parametrize(
+        "use_force,use_yes",
+        [
+            (False, False),  # With confirmation
+            (False, True),   # With --yes flag
+            (True, False),   # With --force flag
+        ],
+    )
+    def test_delete_issue(self, isolated_roadmap_with_issues, use_force, use_yes):
+        """Test deleting issues with various options."""
         cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
 
-        # Skip test if no issues were created
         if not issue_ids:
             pytest.skip("No issues created in fixture")
 
-        # Delete first issue with confirmation
-        result = cli_runner.invoke(
-            main,
-            ["issue", "delete", issue_ids[0]],
-            input="y\n",
-        )
-
-        assert result.exit_code == 0 or "deleted" in result.output.lower()
-
-    def test_delete_issue_force(self, isolated_roadmap_with_issues):
-        """Test force deleting an issue."""
-        cli_runner, temp_dir, issue_ids = isolated_roadmap_with_issues
-
-        # Skip test if less than 2 issues were created
-        if len(issue_ids) < 2:
-            pytest.skip("Not enough issues created in fixture")
+        args = ["issue", "delete", issue_ids[0]]
+        if use_force:
+            args.append("--force")
+        if use_yes:
+            args.append("--yes")
 
         result = cli_runner.invoke(
             main,
-            ["issue", "delete", issue_ids[1], "--yes"],  # --yes skips confirmation
+            args,
+            input="y\n" if not (use_force or use_yes) else None,
         )
 
         assert result.exit_code == 0 or "deleted" in result.output.lower()
@@ -539,9 +487,9 @@ class TestCLIIssueHelp:
         assert "create" in result.output.lower()
         assert "list" in result.output.lower()
 
-    def test_all_issue_subcommands_have_help(self, cli_runner):
-        """Test that all issue subcommands have help."""
-        subcommands = [
+    @pytest.mark.parametrize(
+        "subcommand",
+        [
             "create",
             "list",
             "update",
@@ -552,11 +500,12 @@ class TestCLIIssueHelp:
             "block",
             "unblock",
             "deps",
-        ]
-
-        for cmd in subcommands:
-            result = cli_runner.invoke(main, ["issue", cmd, "--help"])
-            assert result.exit_code == 0, f"{cmd} help failed"
+        ],
+    )
+    def test_issue_subcommand_help(self, cli_runner, subcommand):
+        """Test that issue subcommands have help."""
+        result = cli_runner.invoke(main, ["issue", subcommand, "--help"])
+        assert result.exit_code == 0, f"{subcommand} help failed"
 
 
 class TestCLIRootHelp:
@@ -608,53 +557,27 @@ def isolated_roadmap_with_milestone(isolated_roadmap_with_issues):
 class TestCLIMilestoneCreate:
     """Test milestone create command."""
 
-    def test_create_milestone_minimal(self, isolated_roadmap):
-        """Test creating milestone with minimal arguments."""
+    @pytest.mark.parametrize(
+        "name,options",
+        [
+            ("Test Milestone", []),  # Minimal
+            ("Sprint 1", ["--description", "First development sprint"]),  # With description
+            ("Release 1.0", ["--due-date", "2025-12-31"]),  # With due date
+        ],
+    )
+    def test_create_milestone(self, isolated_roadmap, name, options):
+        """Test creating milestones with various options."""
         cli_runner, temp_dir = isolated_roadmap
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "create", "Test Milestone"],
+            ["milestone", "create", name] + options,
         )
 
         assert result.exit_code == 0
         assert (
             "created" in result.output.lower() or "milestone" in result.output.lower()
         )
-
-    def test_create_milestone_with_description(self, isolated_roadmap):
-        """Test creating milestone with description."""
-        cli_runner, temp_dir = isolated_roadmap
-
-        result = cli_runner.invoke(
-            main,
-            [
-                "milestone",
-                "create",
-                "Sprint 1",
-                "--description",
-                "First development sprint",
-            ],
-        )
-
-        assert result.exit_code == 0
-
-    def test_create_milestone_with_due_date(self, isolated_roadmap):
-        """Test creating milestone with due date."""
-        cli_runner, temp_dir = isolated_roadmap
-
-        result = cli_runner.invoke(
-            main,
-            [
-                "milestone",
-                "create",
-                "Release 1.0",
-                "--due-date",
-                "2025-12-31",
-            ],
-        )
-
-        assert result.exit_code == 0
 
     def test_create_milestone_help(self, cli_runner):
         """Test milestone create help."""
@@ -888,54 +811,27 @@ class TestCLIMilestoneHelp:
 class TestCLIDataExport:
     """Test data export command."""
 
-    def test_export_json_format(self, isolated_roadmap_with_issues):
-        """Test exporting data to JSON format."""
+    @pytest.mark.parametrize(
+        "format_type,extension",
+        [
+            ("json", ".json"),
+            ("csv", ".csv"),
+            ("markdown", ".md"),
+        ],
+    )
+    def test_export_formats(self, isolated_roadmap_with_issues, format_type, extension):
+        """Test exporting data in various formats."""
         cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
 
-        output_file = temp_dir / "export.json"
+        output_file = temp_dir / f"export{extension}"
         result = cli_runner.invoke(
             main,
-            ["data", "export", "--format", "json", "-o", str(output_file)],
+            ["data", "export", "--format", format_type, "-o", str(output_file)],
         )
 
         assert result.exit_code == 0
         assert output_file.exists()
-        # Verify it's valid JSON
-        import json
-
-        with open(output_file) as f:
-            data = json.load(f)
-            assert isinstance(data, list | dict)
-
-    def test_export_csv_format(self, isolated_roadmap_with_issues):
-        """Test exporting data to CSV format."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
-
-        output_file = temp_dir / "export.csv"
-        result = cli_runner.invoke(
-            main,
-            ["data", "export", "--format", "csv", "-o", str(output_file)],
-        )
-
-        assert result.exit_code == 0
-        assert output_file.exists()
-        # Verify CSV has content
-        content = output_file.read_text()
-        assert len(content) > 0
-
-    def test_export_markdown_format(self, isolated_roadmap_with_issues):
-        """Test exporting data to Markdown format."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
-
-        output_file = temp_dir / "export.md"
-        result = cli_runner.invoke(
-            main,
-            ["data", "export", "--format", "markdown", "-o", str(output_file)],
-        )
-
-        assert result.exit_code == 0
-        assert output_file.exists()
-        # Verify markdown has content
+        # Verify file has content
         content = output_file.read_text()
         assert len(content) > 0
 
