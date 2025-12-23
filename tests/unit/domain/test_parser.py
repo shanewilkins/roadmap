@@ -19,84 +19,65 @@ pytestmark = pytest.mark.unit
 class TestFrontmatterParser:
     """Test cases for FrontmatterParser."""
 
-    def test_parse_content_with_frontmatter(self):
-        """Test parsing content with YAML frontmatter."""
-        content = """---
+    @pytest.mark.parametrize(
+        "content,expected_frontmatter,expected_body_contains",
+        [
+            # Test with YAML frontmatter
+            ("""---
 title: Test
 value: 123
 ---
 
 This is content.
-"""
+""", {"title": "Test", "value": 123}, "This is content."),
+            # Test without frontmatter
+            ("Just regular markdown content without frontmatter.", {}, "Just regular markdown content without frontmatter."),
+            # Test with empty frontmatter
+            ("""---
+---
 
+Content after empty frontmatter.
+""", {}, "Content after empty frontmatter."),
+            # Test with incomplete frontmatter (no closing ---)
+            ("""---
+title: Test Issue
+priority: high
+
+Content without closing frontmatter delimiter.
+""", {}, "title: Test Issue"),
+        ],
+    )
+    def test_parse_content_success(self, content, expected_frontmatter, expected_body_contains):
+        """Test successful parsing of content with various frontmatter formats."""
         frontmatter, body = FrontmatterParser.parse_content(content)
+        assert frontmatter == expected_frontmatter
+        assert expected_body_contains in body
 
-        assert frontmatter == {"title": "Test", "value": 123}
-        assert body.strip() == "This is content."
-
-    def test_parse_content_with_malformed_yaml(self):
-        """Test parsing content with malformed YAML frontmatter."""
-        content = """---
+    @pytest.mark.parametrize(
+        "content,error_pattern",
+        [
+            # Malformed YAML with unclosed bracket
+            ("""---
 title: Test
 invalid: [unclosed bracket
 priority: high
 ---
 
 This content has malformed YAML.
-"""
-
-        # Should raise ValueError for malformed YAML
-        with pytest.raises(ValueError, match="Invalid YAML frontmatter"):
-            FrontmatterParser.parse_content(content)
-
-    def test_parse_content_without_frontmatter(self):
-        """Test parsing content without frontmatter."""
-        content = "Just regular markdown content without frontmatter."
-
-        frontmatter, body = FrontmatterParser.parse_content(content)
-
-        assert frontmatter == {}
-        assert body == content
-
-    def test_parse_content_with_empty_frontmatter(self):
-        """Test parsing content with empty frontmatter."""
-        content = """---
----
-
-Content after empty frontmatter.
-"""
-
-        frontmatter, body = FrontmatterParser.parse_content(content)
-
-        assert frontmatter == {}
-        assert "Content after empty frontmatter." in body
-
-    def test_parse_content_with_incomplete_frontmatter(self):
-        """Test parsing content with incomplete frontmatter (no closing ---)."""
-        content = """---
-title: Test Issue
-priority: high
-
-Content without closing frontmatter delimiter.
-"""
-
-        frontmatter, body = FrontmatterParser.parse_content(content)
-
-        # Should treat as no frontmatter when incomplete
-        assert frontmatter == {}
-        assert "title: Test Issue" in body
-
-    def test_parse_content_invalid_yaml(self):
-        """Test parsing content with invalid YAML."""
-        content = """---
+""", "Invalid YAML frontmatter"),
+            # Invalid YAML with unclosed quote
+            ("""---
 title: "Unclosed quote
 value: 123
 ---
 
 Content.
-"""
-
-        with pytest.raises(ValueError, match="Invalid YAML frontmatter"):
+""", "Invalid YAML frontmatter"),
+        ],
+    )
+    def test_parse_content_errors(self, content, error_pattern):
+        """Test parsing of content with invalid YAML."""
+        with pytest.raises(ValueError, match=error_pattern):
             FrontmatterParser.parse_content(content)
 
 

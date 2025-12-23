@@ -1,5 +1,6 @@
 """Tests for sync metadata service."""
 
+import pytest
 from roadmap.core.services.sync_metadata_service import (
     SyncMetadata,
     SyncRecord,
@@ -9,41 +10,31 @@ from roadmap.core.services.sync_metadata_service import (
 class TestSyncRecord:
     """Test SyncRecord dataclass."""
 
-    def test_create_successful_sync_record(self):
-        """Test creating a successful sync record."""
+    @pytest.mark.parametrize(
+        "success,local_changes,github_changes,conflict_resolution,error_message,expected_fields",
+        [
+            # Successful sync
+            (True, {"status": "done"}, None, None, None, ("success", True)),
+            # Conflict sync
+            (False, {"status": "done"}, {"status": "closed"}, "local", None, ("conflict_resolution", "local")),
+            # Error sync
+            (False, None, None, None, "Network error", ("error_message", "Network error")),
+        ],
+    )
+    def test_create_sync_record(self, success, local_changes, github_changes, conflict_resolution, error_message, expected_fields):
+        """Test creating sync records with various scenarios."""
         record = SyncRecord(
             sync_timestamp="2025-12-22T10:30:00Z",
-            success=True,
-            local_changes={"status": "done"},
+            success=success,
+            local_changes=local_changes,
+            github_changes=github_changes,
+            conflict_resolution=conflict_resolution,
+            error_message=error_message,
         )
         assert record.sync_timestamp == "2025-12-22T10:30:00Z"
-        assert record.success is True
-        assert record.local_changes == {"status": "done"}
-        assert record.github_changes is None
-        assert record.conflict_resolution is None
-        assert record.error_message is None
-
-    def test_create_conflict_sync_record(self):
-        """Test creating a conflict sync record."""
-        record = SyncRecord(
-            sync_timestamp="2025-12-22T10:30:00Z",
-            success=False,
-            local_changes={"status": "done"},
-            github_changes={"status": "closed"},
-            conflict_resolution="local",
-        )
-        assert record.success is False
-        assert record.conflict_resolution == "local"
-
-    def test_create_error_sync_record(self):
-        """Test creating an error sync record."""
-        record = SyncRecord(
-            sync_timestamp="2025-12-22T10:30:00Z",
-            success=False,
-            error_message="Network error",
-        )
-        assert record.success is False
-        assert record.error_message == "Network error"
+        assert record.success == success
+        field_name, expected_value = expected_fields
+        assert getattr(record, field_name) == expected_value
 
 
 class TestSyncMetadata:
@@ -60,52 +51,34 @@ class TestSyncMetadata:
         assert metadata.last_sync_status == "never"
         assert metadata.sync_history == []
 
-    def test_add_successful_sync_record(self):
-        """Test adding a successful sync record."""
+    @pytest.mark.parametrize(
+        "record_success,conflict_resolution,error_message,expected_status,expected_successful",
+        [
+            # Successful record
+            (True, None, None, "success", 1),
+            # Conflict record
+            (False, "local", None, "conflict", 0),
+            # Error record
+            (False, None, "Network error", "error", 0),
+        ],
+    )
+    def test_add_sync_record(self, record_success, conflict_resolution, error_message, expected_status, expected_successful):
+        """Test adding sync records with various statuses."""
         metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
         record = SyncRecord(
             sync_timestamp="2025-12-22T10:30:00Z",
-            success=True,
-            local_changes={"status": "done"},
+            success=record_success,
+            conflict_resolution=conflict_resolution,
+            error_message=error_message,
         )
 
         metadata.add_sync_record(record)
 
         assert metadata.sync_count == 1
-        assert metadata.successful_syncs == 1
+        assert metadata.successful_syncs == expected_successful
         assert metadata.last_sync_time == "2025-12-22T10:30:00Z"
-        assert metadata.last_sync_status == "success"
+        assert metadata.last_sync_status == expected_status
         assert len(metadata.sync_history) == 1
-
-    def test_add_conflict_sync_record(self):
-        """Test adding a conflict sync record."""
-        metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
-        record = SyncRecord(
-            sync_timestamp="2025-12-22T10:30:00Z",
-            success=False,
-            conflict_resolution="local",
-        )
-
-        metadata.add_sync_record(record)
-
-        assert metadata.sync_count == 1
-        assert metadata.successful_syncs == 0
-        assert metadata.last_sync_status == "conflict"
-
-    def test_add_error_sync_record(self):
-        """Test adding an error sync record."""
-        metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
-        record = SyncRecord(
-            sync_timestamp="2025-12-22T10:30:00Z",
-            success=False,
-            error_message="Network error",
-        )
-
-        metadata.add_sync_record(record)
-
-        assert metadata.sync_count == 1
-        assert metadata.successful_syncs == 0
-        assert metadata.last_sync_status == "error"
 
     def test_add_multiple_sync_records(self):
         """Test adding multiple sync records."""

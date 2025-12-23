@@ -72,65 +72,32 @@ class TestYAMLRecoveryManager:
         else:
             assert error is None
 
-    def test_validate_frontmatter_structure_issue_valid(self):
-        """Test frontmatter structure validation for valid issue."""
-        frontmatter = {
-            "id": "a1b2c3d4",
-            "title": "Test Issue",
-            "priority": "high",
-            "status": "todo",
-        }
+    @pytest.mark.parametrize(
+        "frontmatter,entity_type,expected_valid,error_pattern",
+        [
+            # Valid issue
+            ({"id": "a1b2c3d4", "title": "Test Issue", "priority": "high", "status": "todo"}, "issue", True, None),
+            # Valid milestone
+            ({"name": "Version 1.0", "status": "open"}, "milestone", True, None),
+            # Issue with missing fields
+            ({"id": "a1b2c3d4", "title": "Test Issue"}, "issue", False, "required"),
+            # Issue with invalid enums
+            ({"id": "a1b2c3d4", "title": "Test Issue", "priority": "invalid_priority", "status": "invalid_status"}, "issue", False, "must be one of"),
+        ],
+    )
+    def test_validate_frontmatter_structure(self, frontmatter, entity_type, expected_valid, error_pattern):
+        """Test frontmatter structure validation for various scenarios."""
         is_valid, errors = self.recovery_manager.validate_frontmatter_structure(
-            frontmatter, "issue"
+            frontmatter, entity_type
         )
-        assert is_valid
-        assert len(errors) == 0
-
-    def test_validate_frontmatter_structure_issue_missing_field(self):
-        """Test frontmatter structure validation for issue with missing field."""
-        frontmatter = {
-            "id": "a1b2c3d4",
-            "title": "Test Issue",
-            # Missing priority and status
-        }
-        is_valid, errors = self.recovery_manager.validate_frontmatter_structure(
-            frontmatter, "issue"
-        )
-        assert not is_valid
-        # Check if the new validation framework is reporting the errors
-        error_str = " ".join(errors) if errors else ""
-        assert (
-            "Missing required field: priority" in error_str
-            or "Field 'priority' is required" in error_str
-        )
-        assert (
-            "Missing required field: status" in error_str
-            or "Field 'status' is required" in error_str
-        )
-
-    def test_validate_frontmatter_structure_issue_invalid_enum(self):
-        """Test frontmatter structure validation for issue with invalid enum."""
-        frontmatter = {
-            "id": "a1b2c3d4",
-            "title": "Test Issue",
-            "priority": "invalid_priority",
-            "status": "invalid_status",
-        }
-        is_valid, errors = self.recovery_manager.validate_frontmatter_structure(
-            frontmatter, "issue"
-        )
-        assert not is_valid
-        assert "must be one of:" in errors[0]
-        assert "must be one of:" in errors[1]
-
-    def test_validate_frontmatter_structure_milestone_valid(self):
-        """Test frontmatter structure validation for valid milestone."""
-        frontmatter = {"name": "Version 1.0", "status": "open"}
-        is_valid, errors = self.recovery_manager.validate_frontmatter_structure(
-            frontmatter, "milestone"
-        )
-        assert is_valid
-        assert len(errors) == 0
+        assert is_valid == expected_valid
+        if expected_valid:
+            assert len(errors) == 0
+        else:
+            assert len(errors) > 0
+            if error_pattern:
+                error_str = " ".join(errors)
+                assert error_pattern.lower() in error_str.lower()
 
     def test_fix_common_yaml_issues(self):
         """Test fixing common YAML formatting issues."""

@@ -30,19 +30,18 @@ class TestEstimatedTimeModel:
         assert issue.estimated_hours is None
         assert issue.estimated_time_display == "Not estimated"
 
-    def test_estimated_time_display_formats(self):
+    @pytest.mark.parametrize(
+        "estimated_hours,expected_display",
+        [
+            (0.5, "30m"),  # minutes (< 1 hour)
+            (4.25, "4.2h"),  # hours (< 8 hours)
+            (16.0, "2.0d"),  # days (>= 8 hours)
+        ],
+    )
+    def test_estimated_time_display_formats(self, estimated_hours, expected_display):
         """Test different formats for estimated time display."""
-        # Test minutes (< 1 hour)
-        issue_minutes = Issue(title="Test", estimated_hours=0.5)
-        assert issue_minutes.estimated_time_display == "30m"
-
-        # Test hours (< 8 hours)
-        issue_hours = Issue(title="Test", estimated_hours=4.25)
-        assert issue_hours.estimated_time_display == "4.2h"
-
-        # Test days (>= 8 hours)
-        issue_days = Issue(title="Test", estimated_hours=16.0)
-        assert issue_days.estimated_time_display == "2.0d"
+        issue = Issue(title="Test", estimated_hours=estimated_hours)
+        assert issue.estimated_time_display == expected_display
 
 
 class TestMilestoneEstimatedTime:
@@ -92,32 +91,21 @@ class TestMilestoneEstimatedTime:
         remaining_hours = milestone.get_remaining_estimated_hours(issues)
         assert remaining_hours == 14.0  # 8.0 + 6.0 (excludes done issue)
 
-    def test_milestone_estimated_time_display(self):
+    @pytest.mark.parametrize(
+        "issues,expected_display",
+        [
+            # Test with no estimates
+            ([Issue(title="Issue 1", milestone="v1.0"), Issue(title="Issue 2", milestone="v1.0")], "Not estimated"),
+            # Test with small estimate (hours)
+            ([Issue(title="Issue 1", estimated_hours=2.0, milestone="v1.0"), Issue(title="Issue 2", estimated_hours=3.0, milestone="v1.0")], "5.0h"),
+            # Test with large estimate (days)
+            ([Issue(title="Issue 1", estimated_hours=8.0, milestone="v1.0"), Issue(title="Issue 2", estimated_hours=16.0, milestone="v1.0")], "3.0d"),
+        ],
+    )
+    def test_milestone_estimated_time_display(self, issues, expected_display):
         """Test milestone estimated time display formatting."""
         milestone = Milestone(name="v1.0")
-
-        # Test with no estimates
-        issues_no_estimate = [
-            Issue(title="Issue 1", milestone="v1.0"),
-            Issue(title="Issue 2", milestone="v1.0"),
-        ]
-        assert (
-            milestone.get_estimated_time_display(issues_no_estimate) == "Not estimated"
-        )
-
-        # Test with small estimate (hours)
-        issues_hours = [
-            Issue(title="Issue 1", estimated_hours=2.0, milestone="v1.0"),
-            Issue(title="Issue 2", estimated_hours=3.0, milestone="v1.0"),
-        ]
-        assert milestone.get_estimated_time_display(issues_hours) == "5.0h"
-
-        # Test with large estimate (days)
-        issues_days = [
-            Issue(title="Issue 1", estimated_hours=8.0, milestone="v1.0"),
-            Issue(title="Issue 2", estimated_hours=16.0, milestone="v1.0"),
-        ]
-        assert milestone.get_estimated_time_display(issues_days) == "3.0d"
+        assert milestone.get_estimated_time_display(issues) == expected_display
 
 
 class TestEstimatedTimeCLI:
@@ -351,26 +339,21 @@ class TestEstimatedTimePersistence:
 class TestEstimatedTimeEdgeCases:
     """Test edge cases for estimated time functionality."""
 
-    def test_zero_estimated_hours(self):
-        """Test handling of zero estimated hours."""
-        issue = Issue(title="Test", estimated_hours=0.0)
-        assert issue.estimated_time_display == "0m"
-
-    def test_very_small_estimated_hours(self):
-        """Test handling of very small estimated hours."""
-        issue = Issue(title="Test", estimated_hours=0.1)  # 6 minutes
-        assert issue.estimated_time_display == "6m"
-
-    def test_large_estimated_hours(self):
-        """Test handling of large estimated hours."""
-        issue = Issue(title="Test", estimated_hours=160.0)  # 20 days
-        assert issue.estimated_time_display == "20.0d"
-
-    def test_negative_estimated_hours_not_allowed(self):
-        """Test that negative estimated hours are handled gracefully."""
-        # Pydantic should handle validation, but let's test our display logic
-        issue = Issue(title="Test", estimated_hours=-5.0)
-        # This might raise an error or handle it gracefully depending on validation
-        # The important thing is our system doesn't crash
+    @pytest.mark.parametrize(
+        "estimated_hours,expected_display",
+        [
+            (0.0, "0m"),  # zero estimated hours
+            (0.1, "6m"),  # very small estimated hours (6 minutes)
+            (160.0, "20.0d"),  # large estimated hours (20 days)
+            (-5.0, str),  # negative estimated hours - should return string
+        ],
+    )
+    def test_estimated_time_edge_cases(self, estimated_hours, expected_display):
+        """Test edge cases for estimated time functionality."""
+        issue = Issue(title="Test", estimated_hours=estimated_hours)
         display = issue.estimated_time_display
-        assert isinstance(display, str)  # Should return some string representation
+        if expected_display is str:
+            # For negative, just check it returns a string
+            assert isinstance(display, str)
+        else:
+            assert display == expected_display
