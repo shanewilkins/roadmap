@@ -92,17 +92,23 @@ class TestHealthCheckService:
                 status = service.get_overall_status(checks=None)
                 assert status == HealthStatus.DEGRADED
 
-    def test_get_check_status_found(self, service, mock_checks):
-        """Test retrieving a specific check status."""
+    @pytest.mark.parametrize(
+        "check_name,exists,expected_status,expected_message",
+        [
+            # Check found case
+            ("database", True, None, None),  # Will be determined by mock_checks
+            # Check not found case
+            ("nonexistent", False, None, None),
+        ],
+    )
+    def test_get_check_status(self, service, mock_checks, check_name, exists, expected_status, expected_message):
+        """Test retrieving check status in various scenarios."""
         with patch.object(HealthCheck, "run_all_checks", return_value=mock_checks):
-            result = service.get_check_status("database")
-            assert result == (HealthStatus.HEALTHY, "Database connection OK")
-
-    def test_get_check_status_not_found(self, service, mock_checks):
-        """Test retrieving a non-existent check."""
-        with patch.object(HealthCheck, "run_all_checks", return_value=mock_checks):
-            result = service.get_check_status("nonexistent")
-            assert result is None
+            result = service.get_check_status(check_name)
+            if exists:
+                assert result == (HealthStatus.HEALTHY, "Database connection OK")
+            else:
+                assert result is None
 
     def test_get_health_summary_returns_dict(self, service, mock_checks):
         """Test that get_health_summary returns a dictionary."""

@@ -121,31 +121,31 @@ class TestGitHubIntegrationService:
                     result = service.get_team_members()
                     assert result == expected_result
 
-    def test_get_current_user_found(self, service, config_file):
-        """Test get_current_user when user is configured."""
+    @pytest.mark.parametrize(
+        "user_configured,expected_result",
+        [
+            # User found case
+            (True, "test-user"),
+            # User not found case
+            (False, None),
+        ],
+    )
+    def test_get_current_user(self, service, config_file, user_configured, expected_result):
+        """Test get_current_user in various scenarios."""
         with patch(
             "roadmap.core.services.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
-            mock_user = Mock()
-            mock_user.name = "test-user"
-            mock_config.load.return_value = Mock(user=mock_user)
+            if user_configured:
+                mock_user = Mock()
+                mock_user.name = "test-user"
+                mock_config.load.return_value = Mock(user=mock_user)
+            else:
+                mock_config.load.return_value = Mock(user=None)
             mock_config_cls.return_value = mock_config
 
             result = service.get_current_user()
-            assert result == "test-user"
-
-    def test_get_current_user_not_found(self, service):
-        """Test get_current_user when user is not configured."""
-        with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
-        ) as mock_config_cls:
-            mock_config = Mock()
-            mock_config.load.return_value = Mock(user=None)
-            mock_config_cls.return_value = mock_config
-
-            result = service.get_current_user()
-            assert result is None
+            assert result == expected_result
 
     def test_get_cached_team_members_first_call(self, service):
         """Test get_cached_team_members caches on first call."""
