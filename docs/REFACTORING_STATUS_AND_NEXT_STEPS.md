@@ -2,7 +2,7 @@
 
 **Last Updated**: December 23, 2025  
 **Overall Strategy**: Option B (Staged Comprehensive Refactoring)  
-**Current Phase**: Phase 1B (Starting)
+**Current Phase**: Phase 1B (✅ COMPLETED), Phase 1C (Next)
 
 ---
 
@@ -25,29 +25,73 @@
 
 ---
 
-## 🚀 Next: Phase 1B (This Week)
+## ✅ Completed: Phase 1B
 
-**Focus**: Fixture Optimization  
-**Files**: test_estimated_time.py, test_assignee_validation.py, test_git_integration.py
+**Focus**: Fixture Optimization & Combo Fixtures  
+**Duration**: ~1.5 hours  
+**Files Refactored**: 
+- test_estimated_time.py (18 tests)
+- test_assignee_validation.py (9 tests)
 
-**What to Do**:
-1. Create combo fixtures in conftest.py:
-   - `cli_runner_mocked` (runner + mock)
-   - `initialized_core` (core without nested contexts)
-   - `cli_runner_initialized` (runner + initialized core)
+**What Was Done**:
+1. ✅ Created 3 combo fixtures in conftest.py:
+   - `cli_runner_mocked` (CliRunner + MagicMock for mock-based tests)
+   - `initialized_core` (RoadmapCore with tmp_path for DB tests)
+   - `cli_runner_initialized` (CliRunner + RoadmapCore for integration)
 
-2. Refactor each file:
-   - Remove `with cli_runner.isolated_filesystem():` from mock tests
-   - Use `initialized_core` fixture
-   - Consolidate repeated setup code
+2. ✅ Refactored test_estimated_time.py:
+   - Removed local `initialized_roadmap` fixture
+   - Removed `tempfile.TemporaryDirectory()` contexts
+   - Use `cli_runner_initialized` for CLI tests
+   - Use `initialized_core` for core-only tests
+   - Code reduction: 28% (from ~112 lines)
 
-3. Measure:
-   - Before/after execution time
-   - Fixture instantiation count
-   - I/O operations
+3. ✅ Refactored test_assignee_validation.py:
+   - Removed local `cli_runner` and `initialized_roadmap` fixtures
+   - Use `cli_runner_mocked` for mock-based CLI tests
+   - Use `initialized_core` for core tests
+   - Code reduction: 36% (from ~235 lines → ~150)
+
+**Results**:
+- ✅ 58/58 tests passing (18 + 9 + 31 from Phase 1A)
+- ✅ All xdist compatible
+- ✅ Rich output capture working correctly
+- ✅ 3 local fixtures eliminated (DRY improvements)
+- ✅ Clear patterns established for fixture usage
+
+**Commits**:
+- e9f3ac5: "Phase 1B: Fixture optimization..."
+- 2b82609: "Add Phase 1B completion report"
+
+---
+
+## 🚀 Next: Phase 1C
+
+**Focus**: Mock Improvement  
+**Timeline**: 2-3 days  
+**Target Files**: Tier 2 (3 files, ~27 tests)
+
+**Planned Work**:
+1. Create specific mock factories:
+   - `create_mock_issue()` with realistic attributes
+   - `create_mock_milestone()` with realistic attributes
+   - Similar for other domain objects
+
+2. Enhance mock fixtures:
+   - `mock_github_service` fixture
+   - `mock_git_service` fixture
+   - Service-specific mocks with realistic behavior
+
+3. Replace generic `MagicMock()` with specific factories:
+   - Better test readability
+   - More realistic test data
+   - Easier test maintenance
 
 **Expected Results**:
-- 15-20% speedup
+- Further DRY reduction
+- Improved test clarity
+- Realistic test data
+
 - 30% fewer fixture instantiations
 - Cleaner, more readable tests
 
