@@ -1,14 +1,9 @@
 """Tests for estimated time functionality."""
 
-import os
-import tempfile
 
-import pytest
-from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Issue, Milestone, Status
-from roadmap.infrastructure.core import RoadmapCore
 from tests.unit.shared.test_helpers import (
     assert_command_success,
 )
@@ -124,61 +119,40 @@ class TestMilestoneEstimatedTime:
 class TestEstimatedTimeCLI:
     """Test CLI commands with estimated time functionality."""
 
-    @pytest.fixture
-    def initialized_roadmap(self):
-        """Create a temporary directory with initialized roadmap."""
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            result = runner.invoke(
-                main,
-                [
-                    "init",
-                    "--non-interactive",
-                    "--skip-github",
-                    "--project-name",
-                    "Test Project",
-                ],
-            )
-            assert result.exit_code == 0
-            yield runner
-
-    def test_create_issue_with_estimate(self, initialized_roadmap):
+    def test_create_issue_with_estimate(self, cli_runner_initialized):
         """Test creating an issue with estimated time via CLI."""
-        runner = initialized_roadmap
+        runner, core = cli_runner_initialized
 
         result = runner.invoke(
             main, ["issue", "create", "Test Issue", "--estimate", "4.5"]
         )
 
         assert_command_success(result)
-        # Verify issue was created by creating a fresh core instance
-        core = RoadmapCore()
+        # Verify issue was created in database
         issues = core.issues.list()
         assert any(i.title == "Test Issue" and i.estimated_hours == 4.5 for i in issues)
 
-    def test_create_issue_without_estimate(self, initialized_roadmap):
+    def test_create_issue_without_estimate(self, cli_runner_initialized):
         """Test creating an issue without estimated time via CLI."""
-        runner = initialized_roadmap
+        runner, core = cli_runner_initialized
 
         result = runner.invoke(main, ["issue", "create", "Test Issue"])
 
         assert_command_success(result)
-        core = RoadmapCore()
         issues = core.issues.list()
         assert any(
             i.title == "Test Issue" and i.estimated_hours is None for i in issues
         )
 
-    def test_update_issue_estimate(self, initialized_roadmap):
+    def test_update_issue_estimate(self, cli_runner_initialized):
         """Test updating an issue's estimated time via CLI."""
-        runner = initialized_roadmap
+        runner, core = cli_runner_initialized
 
         # Create an issue first
         create_result = runner.invoke(main, ["issue", "create", "Test Issue"])
         assert_command_success(create_result)
 
         # Get the created issue from database
-        core = RoadmapCore()
         issues = core.issues.list()
         issue = next((i for i in issues if i.title == "Test Issue"), None)
         assert issue is not None
@@ -190,13 +164,12 @@ class TestEstimatedTimeCLI:
 
         assert_command_success(update_result)
         # Verify update by refreshing and checking database
-        core_fresh = RoadmapCore()
-        updated_issue = core_fresh.issues.get(issue.id)
+        updated_issue = core.issues.get(issue.id)
         assert updated_issue.estimated_hours == 6.0
 
-    def test_issue_list_shows_estimates(self, initialized_roadmap):
+    def test_issue_list_shows_estimates(self, cli_runner_initialized):
         """Test that issue list shows estimated times."""
-        runner = initialized_roadmap
+        runner, core = cli_runner_initialized
 
         # Create issues with different estimates
         runner.invoke(main, ["issue", "create", "Quick Task", "--estimate", "1.0"])
@@ -209,7 +182,6 @@ class TestEstimatedTimeCLI:
         assert_command_success(result)
 
         # Verify the issues were created with correct estimates in database
-        core = RoadmapCore()
         issues = core.issues.list()
 
         quick_task = next((i for i in issues if i.title == "Quick Task"), None)
@@ -227,9 +199,9 @@ class TestEstimatedTimeCLI:
         assert no_estimate.estimated_hours is None
         assert no_estimate.estimated_time_display == "Not estimated"
 
-    def test_milestone_list_shows_estimates(self, initialized_roadmap):
+    def test_milestone_list_shows_estimates(self, cli_runner_initialized):
         """Test that milestone list shows total estimated times."""
-        runner = initialized_roadmap
+        runner, core = cli_runner_initialized
 
         # Create a milestone
         runner.invoke(main, ["milestone", "create", "Test Milestone"])
@@ -239,7 +211,6 @@ class TestEstimatedTimeCLI:
         runner.invoke(main, ["issue", "create", "Task 2", "--estimate", "16.0"])
 
         # Get created issues
-        core = RoadmapCore()
         issues = core.issues.list()
         task1 = next((i for i in issues if i.title == "Task 1"), None)
         task2 = next((i for i in issues if i.title == "Task 2"), None)
@@ -260,9 +231,8 @@ class TestEstimatedTimeCLI:
         assert_command_success(result)
 
         # Verify issues are assigned and their combined estimate (24 hours = 3 days) is correct
-        core_fresh = RoadmapCore()
-        fresh_task1 = core_fresh.issues.get(task1.id)
-        fresh_task2 = core_fresh.issues.get(task2.id)
+        fresh_task1 = core.issues.get(task1.id)
+        fresh_task2 = core.issues.get(task2.id)
         assert fresh_task1.milestone == "Test Milestone"
         assert fresh_task2.milestone == "Test Milestone"
 
@@ -277,55 +247,43 @@ class TestEstimatedTimeCLI:
 class TestEstimatedTimeCore:
     """Test estimated time functionality in RoadmapCore."""
 
-    def test_create_issue_with_estimated_hours(self):
+    def test_create_issue_with_estimated_hours(self, initialized_core):
         """Test creating an issue with estimated hours through core."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
+        core = initialized_core
 
-            core = RoadmapCore()
-            core.initialize()
+        issue = core.issues.create(title="Test Issue", estimated_hours=5.5)
 
-            issue = core.issues.create(title="Test Issue", estimated_hours=5.5)
+        assert issue.estimated_hours == 5.5
+        assert issue.estimated_time_display == "5.5h"
 
-            assert issue.estimated_hours == 5.5
-            assert issue.estimated_time_display == "5.5h"
-
-    def test_create_issue_without_estimated_hours(self):
+    def test_create_issue_without_estimated_hours(self, initialized_core):
         """Test creating an issue without estimated hours through core."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
+        core = initialized_core
 
-            core = RoadmapCore()
-            core.initialize()
+        issue = core.issues.create(title="Test Issue")
 
-            issue = core.issues.create(title="Test Issue")
-
-            assert issue.estimated_hours is None
-            assert issue.estimated_time_display == "Not estimated"
+        assert issue.estimated_hours is None
+        assert issue.estimated_time_display == "Not estimated"
 
 
 class TestEstimatedTimePersistence:
     """Test that estimated time persists correctly."""
 
-    def test_estimated_time_saves_and_loads(self):
+    def test_estimated_time_saves_and_loads(self, initialized_core):
         """Test that estimated time is saved to and loaded from files."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
+        core = initialized_core
 
-            # Create and save an issue with estimated time
-            core = RoadmapCore()
-            core.initialize()
+        # Create and save an issue with estimated time
+        original_issue = core.issues.create(
+            title="Persistent Issue", estimated_hours=12.0
+        )
 
-            original_issue = core.issues.create(
-                title="Persistent Issue", estimated_hours=12.0
-            )
+        # Load the issue back from file
+        loaded_issues = core.issues.list()
+        loaded_issue = next(i for i in loaded_issues if i.id == original_issue.id)
 
-            # Load the issue back from file
-            loaded_issues = core.issues.list()
-            loaded_issue = next(i for i in loaded_issues if i.id == original_issue.id)
-
-            assert loaded_issue.estimated_hours == 12.0
-            assert loaded_issue.estimated_time_display == "1.5d"
+        assert loaded_issue.estimated_hours == 12.0
+        assert loaded_issue.estimated_time_display == "1.5d"
 
 
 class TestEstimatedTimeEdgeCases:
