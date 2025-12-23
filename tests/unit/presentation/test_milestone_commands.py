@@ -1,5 +1,7 @@
 """Tests for milestone CLI commands."""
 
+import re
+
 from roadmap.adapters.cli import main
 from tests.unit.shared.test_utils import strip_ansi
 
@@ -119,10 +121,9 @@ def test_milestone_assign_command(cli_runner):
         result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
 
         # Extract issue ID
-        output_lines = result.output.split("\n")
-        id_line = [line for line in output_lines if "ID:" in line]
-        if id_line:
-            issue_id = id_line[0].split("ID:")[1].strip()
+        match = re.search(r"\[([^\]]+)\]", result.output)
+        if match:
+            issue_id = match.group(1)
 
             # Assign issue to milestone
             result = cli_runner.invoke(main, ["milestone", "assign", issue_id, "v1.0"])
@@ -143,9 +144,9 @@ def test_milestone_assign_command_nonexistent_milestone(cli_runner):
         # Create an issue
         result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
         output_lines = result.output.split("\n")
-        id_line = [line for line in output_lines if "ID:" in line]
-        if id_line:
-            issue_id = id_line[0].split("ID:")[1].strip()
+        match = re.search(r"\[([^\]]+)\]", result.output)
+        if match:
+            issue_id = match.group(1)
 
             # Try to assign to non-existent milestone
             result = cli_runner.invoke(

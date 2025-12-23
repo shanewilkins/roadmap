@@ -173,7 +173,7 @@ class TestEstimatedTimeCLI:
         assert create_result.exit_code == 0
 
         # Extract issue ID from output
-        issue_id = create_result.output.split("ID:")[1].split()[0]
+        issue_id = re.search(r"\[([^\]]+)\]", create_result.output).group(1)
 
         # Update the estimate
         update_result = runner.invoke(
@@ -221,12 +221,12 @@ class TestEstimatedTimeCLI:
         create_result1 = runner.invoke(
             main, ["issue", "create", "Task 1", "--estimate", "8.0"]
         )
-        issue_id1 = create_result1.output.split("ID:")[1].split()[0]
+        issue_id1 = re.search(r"\[([^\]]+)\]", create_result1.output).group(1)
 
         create_result2 = runner.invoke(
             main, ["issue", "create", "Task 2", "--estimate", "16.0"]
         )
-        issue_id2 = create_result2.output.split("ID:")[1].split()[0]
+        issue_id2 = re.search(r"\[([^\]]+)\]", create_result2.output).group(1)
 
         # Assign issues to milestone
         runner.invoke(

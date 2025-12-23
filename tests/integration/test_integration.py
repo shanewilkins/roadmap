@@ -507,11 +507,10 @@ class TestPerformanceAndStress:
 
             # Extract issue ID
             issue_id = None
-            for line in result.output.split("\n"):
-                if "ID:" in line:
-                    issue_id = line.split("ID:")[1].strip().split()[0]
-                    issue_ids.append(issue_id)
-                    break
+            match = re.search(r"\[([^\]]+)\]", result.output)
+            if match:
+                issue_id = match.group(1)
+                issue_ids.append(issue_id)
 
             # Only assign to milestone if we successfully extracted the ID
             if issue_id:

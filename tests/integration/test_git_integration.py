@@ -266,7 +266,7 @@ class TestGitIntegrationCLI:
             assert result.exit_code == 0
 
             # Extract issue ID from output
-            issue_id = result.output.split("ID:")[1].strip().split()[0]
+            issue_id = re.search(r"\[([^\]]+)\]", result.output).group(1)
 
             # Create a branch for the issue
             result = runner.invoke(main, ["git", "branch", issue_id])
@@ -285,7 +285,7 @@ class TestGitIntegrationCLI:
             # Create an issue
             result = runner.invoke(main, ["issue", "create", "Test Issue"])
             assert result.exit_code == 0
-            issue_id = result.output.split("ID:")[1].strip().split()[0]
+            issue_id = re.search(r"\[([^\]]+)\]", result.output).group(1)
 
             # Create a new branch
             subprocess.run(["git", "checkout", "-b", "test-branch"], check=True)
