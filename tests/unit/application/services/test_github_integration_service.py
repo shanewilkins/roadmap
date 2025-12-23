@@ -95,27 +95,31 @@ class TestGitHubIntegrationService:
             result = service.get_team_members()
             assert result == []
 
-    def test_get_team_members_success(self, service):
-        """Test get_team_members retrieves members from GitHub."""
-        with patch.object(
-            service, "get_github_config", return_value=("token", "owner", "repo")
-        ):
-            with patch(
-                "roadmap.core.services.github_integration_service.GitHubClient"
-            ) as mock_client_cls:
-                mock_client = Mock()
-                mock_client.get_team_members.return_value = ["user1", "user2"]
-                mock_client_cls.return_value = mock_client
+    @pytest.mark.parametrize(
+        "config_return,side_effect,expected_result",
+        [
+            # Success case
+            (("token", "owner", "repo"), None, ["user1", "user2"]),
+            # Error case
+            (None, Exception("API error"), []),
+        ],
+    )
+    def test_get_team_members(self, service, config_return, side_effect, expected_result):
+        """Test get_team_members in various scenarios."""
+        if side_effect:
+            with patch.object(service, "get_github_config", side_effect=side_effect):
                 result = service.get_team_members()
-                assert result == ["user1", "user2"]
-
-    def test_get_team_members_error_handling(self, service):
-        """Test get_team_members handles errors gracefully."""
-        with patch.object(
-            service, "get_github_config", side_effect=Exception("API error")
-        ):
-            result = service.get_team_members()
-            assert result == []
+                assert result == expected_result
+        else:
+            with patch.object(service, "get_github_config", return_value=config_return):
+                with patch(
+                    "roadmap.core.services.github_integration_service.GitHubClient"
+                ) as mock_client_cls:
+                    mock_client = Mock()
+                    mock_client.get_team_members.return_value = expected_result
+                    mock_client_cls.return_value = mock_client
+                    result = service.get_team_members()
+                    assert result == expected_result
 
     def test_get_current_user_found(self, service, config_file):
         """Test get_current_user when user is configured."""
@@ -194,8 +198,17 @@ class TestGitHubIntegrationService:
                 assert is_valid is True
                 assert error_msg == ""
 
-    def test_validate_assignee_github_validation_success(self, service):
-        """Test validate_assignee with successful GitHub validation."""
+    @pytest.mark.parametrize(
+        "validation_result,error_message,expected_valid,expected_in_error",
+        [
+            # Success case
+            ((True, ""), "new-user", True, None),
+            # Failure case
+            ((False, "User not found"), "invalid-user", False, "not found"),
+        ],
+    )
+    def test_validate_assignee_github_validation(self, service, validation_result, error_message, expected_valid, expected_in_error):
+        """Test validate_assignee with GitHub validation in various scenarios."""
         with patch.object(
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
@@ -203,29 +216,11 @@ class TestGitHubIntegrationService:
                 with patch(
                     "roadmap.infrastructure.github_validator.GitHubClient"
                 ) as mock_client:
-                    mock_client.return_value.validate_assignee.return_value = (
-                        True,
-                        "",
-                    )
-                    is_valid, error_msg = service.validate_assignee("new-user")
-                    assert is_valid is True
-
-    def test_validate_assignee_github_validation_failure(self, service):
-        """Test validate_assignee with failed GitHub validation."""
-        with patch.object(
-            service, "get_github_config", return_value=("token", "owner", "repo")
-        ):
-            with patch.object(service, "get_cached_team_members", return_value=[]):
-                with patch(
-                    "roadmap.infrastructure.github_validator.GitHubClient"
-                ) as mock_client:
-                    mock_client.return_value.validate_assignee.return_value = (
-                        False,
-                        "User not found",
-                    )
-                    is_valid, error_msg = service.validate_assignee("invalid-user")
-                    assert is_valid is False
-                    assert "not found" in error_msg.lower()
+                    mock_client.return_value.validate_assignee.return_value = validation_result
+                    is_valid, error_msg = service.validate_assignee(error_message)
+                    assert is_valid == expected_valid
+                    if expected_in_error:
+                        assert expected_in_error in error_msg.lower()
 
     def test_validate_assignee_with_strategy(self, service):
         """Test validate_assignee uses strategy when available."""
