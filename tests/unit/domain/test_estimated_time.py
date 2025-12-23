@@ -129,29 +129,32 @@ class TestEstimatedTimeCLI:
             assert result.exit_code == 0
             yield runner
 
-    def test_create_issue_with_estimate(self, initialized_roadmap):
-        """Test creating an issue with estimated time via CLI."""
+    @pytest.mark.parametrize(
+        "estimate_arg,should_contain_estimate,estimated_value",
+        [
+            # With estimate
+            (["--estimate", "4.5"], True, "4.5h"),
+            # Without estimate
+            (None, False, None),
+        ],
+    )
+    def test_create_issue_estimate_cli(self, initialized_roadmap, estimate_arg, should_contain_estimate, estimated_value):
+        """Test creating an issue with and without estimated time via CLI."""
         runner = initialized_roadmap
 
-        result = runner.invoke(
-            main, ["issue", "create", "Test Issue", "--estimate", "4.5"]
-        )
+        cmd = ["issue", "create", "Test Issue"]
+        if estimate_arg:
+            cmd.extend(estimate_arg)
+
+        result = runner.invoke(main, cmd)
 
         assert result.exit_code == 0
         clean_output = strip_ansi(result.output)
         assert "Created issue: Test Issue" in clean_output
-        assert "Estimated: 4.5h" in clean_output
-
-    def test_create_issue_without_estimate(self, initialized_roadmap):
-        """Test creating an issue without estimated time via CLI."""
-        runner = initialized_roadmap
-
-        result = runner.invoke(main, ["issue", "create", "Test Issue"])
-
-        assert result.exit_code == 0
-        clean_output = strip_ansi(result.output)
-        assert "Created issue: Test Issue" in clean_output
-        assert "Estimated:" not in clean_output
+        if should_contain_estimate:
+            assert f"Estimated: {estimated_value}" in clean_output
+        else:
+            assert "Estimated:" not in clean_output
 
     def test_update_issue_estimate(self, initialized_roadmap):
         """Test updating an issue's estimated time via CLI."""
@@ -285,31 +288,31 @@ class TestEstimatedTimeCLI:
 class TestEstimatedTimeCore:
     """Test estimated time functionality in RoadmapCore."""
 
-    def test_create_issue_with_estimated_hours(self):
-        """Test creating an issue with estimated hours through core."""
+    @pytest.mark.parametrize(
+        "estimated_hours,should_have_hours,expected_display",
+        [
+            # With estimated hours
+            (5.5, True, "5.5h"),
+            # Without estimated hours
+            (None, False, "Not estimated"),
+        ],
+    )
+    def test_create_issue_estimated_hours(self, estimated_hours, should_have_hours, expected_display):
+        """Test creating an issue with and without estimated hours through core."""
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
             core = RoadmapCore()
             core.initialize()
 
-            issue = core.issues.create(title="Test Issue", estimated_hours=5.5)
+            if estimated_hours is not None:
+                issue = core.issues.create(title="Test Issue", estimated_hours=estimated_hours)
+                assert issue.estimated_hours == estimated_hours
+            else:
+                issue = core.issues.create(title="Test Issue")
+                assert issue.estimated_hours is None
 
-            assert issue.estimated_hours == 5.5
-            assert issue.estimated_time_display == "5.5h"
-
-    def test_create_issue_without_estimated_hours(self):
-        """Test creating an issue without estimated hours through core."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
-
-            core = RoadmapCore()
-            core.initialize()
-
-            issue = core.issues.create(title="Test Issue")
-
-            assert issue.estimated_hours is None
-            assert issue.estimated_time_display == "Not estimated"
+            assert issue.estimated_time_display == expected_display
 
 
 class TestEstimatedTimePersistence:
