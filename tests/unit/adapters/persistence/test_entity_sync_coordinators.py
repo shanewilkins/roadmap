@@ -54,23 +54,21 @@ class TestEntitySyncCoordinator:
         assert coordinator._transaction == trans_ctx
         assert coordinator._parser is not None
 
-    def test_get_default_project_id_success(self, coordinator, mock_transaction):
-        """Test getting default project ID successfully."""
+    @pytest.mark.parametrize(
+        "return_value,expect_result",
+        [
+            (("proj-123",), "proj-123"),
+            (None, None),
+        ],
+    )
+    def test_get_default_project_id(self, coordinator, mock_transaction, return_value, expect_result):
+        """Test getting default project ID with various outcomes."""
         mock_conn = MagicMock()
-        mock_conn.execute.return_value.fetchone.return_value = ("proj-123",)
+        mock_conn.execute.return_value.fetchone.return_value = return_value
         mock_transaction.__enter__.return_value = mock_conn
 
         result = coordinator._get_default_project_id()
-        assert result == "proj-123"
-
-    def test_get_default_project_id_no_projects(self, coordinator, mock_transaction):
-        """Test getting default project ID when none exist."""
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value.fetchone.return_value = None
-        mock_transaction.__enter__.return_value = mock_conn
-
-        result = coordinator._get_default_project_id()
-        assert result is None
+        assert result == expect_result
 
     def test_get_default_project_id_exception(self, coordinator, mock_transaction):
         """Test getting default project ID handles exceptions."""
@@ -81,23 +79,21 @@ class TestEntitySyncCoordinator:
         result = coordinator._get_default_project_id()
         assert result is None
 
-    def test_get_milestone_id_by_name_success(self, coordinator, mock_transaction):
-        """Test getting milestone ID by name."""
+    @pytest.mark.parametrize(
+        "return_value,expect_result",
+        [
+            (("m-456",), "m-456"),
+            (None, None),
+        ],
+    )
+    def test_get_milestone_id_by_name(self, coordinator, mock_transaction, return_value, expect_result):
+        """Test getting milestone ID by name with various outcomes."""
         mock_conn = MagicMock()
-        mock_conn.execute.return_value.fetchone.return_value = ("m-456",)
+        mock_conn.execute.return_value.fetchone.return_value = return_value
         mock_transaction.__enter__.return_value = mock_conn
 
         result = coordinator._get_milestone_id_by_name("Q1 2024")
-        assert result == "m-456"
-
-    def test_get_milestone_id_by_name_not_found(self, coordinator, mock_transaction):
-        """Test milestone not found returns None."""
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value.fetchone.return_value = None
-        mock_transaction.__enter__.return_value = mock_conn
-
-        result = coordinator._get_milestone_id_by_name("Nonexistent")
-        assert result is None
+        assert result == expect_result
 
     def test_get_milestone_id_by_name_exception(self, coordinator, mock_transaction):
         """Test exception handling in milestone lookup."""
@@ -108,25 +104,22 @@ class TestEntitySyncCoordinator:
         result = coordinator._get_milestone_id_by_name("Q1 2024")
         assert result is None
 
-    def test_normalize_date_none(self, coordinator):
-        """Test normalizing None date."""
-        result = coordinator._normalize_date(None)
-        assert result is None
-
-    def test_normalize_date_empty_string(self, coordinator):
-        """Test normalizing empty string date."""
-        result = coordinator._normalize_date("")
-        assert result is None
-
-    def test_normalize_date_iso_string(self, coordinator):
-        """Test normalizing ISO format date string."""
-        result = coordinator._normalize_date("2024-01-15")
-        assert result is not None
-
-    def test_normalize_date_invalid_string(self, coordinator):
-        """Test invalid date string returns None."""
-        result = coordinator._normalize_date("invalid-date")
-        assert result is None
+    @pytest.mark.parametrize(
+        "input_value,expected_result",
+        [
+            (None, None),
+            ("", None),
+            ("2024-01-15", "valid_date"),
+            ("invalid-date", None),
+        ],
+    )
+    def test_normalize_date(self, coordinator, input_value, expected_result):
+        """Test normalizing dates with various inputs."""
+        result = coordinator._normalize_date(input_value)
+        if expected_result == "valid_date":
+            assert result is not None
+        else:
+            assert result is None
 
     def test_normalize_date_already_date(self, coordinator):
         """Test date object is returned as-is."""
@@ -134,33 +127,24 @@ class TestEntitySyncCoordinator:
         result = coordinator._normalize_date(date_obj)
         assert result == date_obj
 
-    def test_extract_metadata_with_extra_fields(self, coordinator):
-        """Test extracting metadata from extra fields."""
-        data = {
-            "id": "123",
-            "title": "Test",
-            "custom_field": "value",
-            "extra": "data",
-        }
-        result = coordinator._extract_metadata(data, ["id", "title"])
-        assert result is not None
-        import json
-
-        parsed = json.loads(result)
-        assert "custom_field" in parsed
-        assert "extra" in parsed
-        assert "id" not in parsed
-
-    def test_extract_metadata_no_extra_fields(self, coordinator):
-        """Test extracting metadata when no extra fields."""
-        data = {"id": "123", "title": "Test"}
-        result = coordinator._extract_metadata(data, ["id", "title"])
-        assert result is None
-
-    def test_extract_metadata_empty_data(self, coordinator):
-        """Test extracting metadata from empty dict."""
-        result = coordinator._extract_metadata({}, [])
-        assert result is None
+    @pytest.mark.parametrize(
+        "data,known_fields,should_have_metadata",
+        [
+            ({"id": "123", "title": "Test", "custom_field": "value", "extra": "data"}, ["id", "title"], True),
+            ({"id": "123", "title": "Test"}, ["id", "title"], False),
+            ({}, [], False),
+        ],
+    )
+    def test_extract_metadata(self, coordinator, data, known_fields, should_have_metadata):
+        """Test extracting metadata from data."""
+        result = coordinator._extract_metadata(data, known_fields)
+        if should_have_metadata:
+            assert result is not None
+            import json
+            parsed = json.loads(result)
+            assert "custom_field" in parsed
+        else:
+            assert result is None
 
     def test_update_sync_status_success(self, coordinator, mock_transaction):
         """Test updating sync status for a file."""
