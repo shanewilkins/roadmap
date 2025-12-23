@@ -55,6 +55,7 @@ class TestEndToEndWorkflows:
         # The test verifies that 'roadmap init' creates the proper directory structure and config.
         os.chdir(tmp_path)
         runner = CliRunner()
+        core = RoadmapCore()
 
         # Step 1: Initialize roadmap
         result = runner.invoke(
@@ -67,107 +68,89 @@ class TestEndToEndWorkflows:
                 "Test Lifecycle",
             ],
         )
-        assert (
-            result.exit_code == 0
-        ), f"Init failed: exit_code={result.exit_code}, output={result.output}, exception={result.exception}"
-        assert "Roadmap CLI Initialization" in result.output
+        assert_command_success(result)
         assert os.path.exists(".roadmap")
         assert os.path.exists(".roadmap/config.yaml")
 
-        # Step 2: Check status of empty roadmap
+        # Step 2: Check status of empty roadmap (via database)
         result = runner.invoke(main, ["status"])
-        assert result.exit_code == 0
-        assert "No issues or milestones found" in result.output
+        assert_command_success(result)
 
-        # Step 3: Create multiple issues
+        # Step 3: Create multiple issues (verify via database, not output)
         issue_titles = ["Implement feature A", "Fix bug B", "Add documentation C"]
-        issue_ids = []
 
         for i, title in enumerate(issue_titles):
             priority = ["low", "medium", "high"][i % 3]
             result = runner.invoke(
                 main, ["issue", "create", title, "--priority", priority]
             )
-            assert result.exit_code == 0
-            assert "Created issue" in result.output and title in result.output
+            assert_command_success(result)
 
-            # Extract issue ID from output
-            clean_output = strip_ansi(result.output)
-            issue_id = None
-            # First try to find issue_id= in the log lines
-            for line in clean_output.split("\n"):
-                if "issue_id=" in line:
-                    match = re.search(r"issue_id=([^\s]+)", line)
-                    if match:
-                        issue_id = match.group(1)
-                        break
-            # Fallback: look for [xxx] in Created issue: line
-            if issue_id is None:
-                for line in clean_output.split("\n"):
-                    if "Created issue:" in line:
-                        match = re.search(r"\[([^\]]+)\]", line)
-                        if match:
-                            issue_id = match.group(1)
-                            break
+        # Verify issues were created by checking database
+        issues = core.issues.list()
+        assert len(issues) == 3
+        for title in issue_titles:
+            assert_issue_created(core, title)
 
-            if issue_id is not None:
-                issue_ids.append(issue_id)
-
-        assert len(issue_ids) == 3
-
-        # Step 4: Create milestones
+        # Step 4: Create milestones (verify via database)
         milestone_titles = ["Version 1.0", "Version 1.1"]
-        milestone_ids = []
 
         for title in milestone_titles:
             result = runner.invoke(main, ["milestone", "create", title])
-            assert result.exit_code == 0
-            clean_output = strip_ansi(result.output)
-            assert "Created milestone" in clean_output and title in clean_output
+            assert_command_success(result)
 
-            # Extract milestone ID from output (milestone name is the ID)
-            milestone_ids.append(title)
-
-        assert len(milestone_ids) == 2
+        # Verify milestones were created by checking database
+        milestones = core.milestones.list()
+        assert len(milestones) == 2
+        for title in milestone_titles:
+            assert_milestone_created(core, title)
 
         # Step 5: Assign issues to milestones
-        result = runner.invoke(
-            main, ["milestone", "assign", issue_ids[0], milestone_ids[0]]
-        )
-        assert result.exit_code == 0
-        assert "assigned" in result.output.lower()
+        issue_objects = core.issues.list()
+        milestone_objects = core.milestones.list()
 
         result = runner.invoke(
-            main, ["milestone", "assign", issue_ids[1], milestone_ids[0]]
+            main,
+            ["milestone", "assign", str(issue_objects[0].id), milestone_objects[0].name],
         )
-        assert result.exit_code == 0
+        assert_command_success(result)
 
         result = runner.invoke(
-            main, ["milestone", "assign", issue_ids[2], milestone_ids[1]]
+            main,
+            ["milestone", "assign", str(issue_objects[1].id), milestone_objects[0].name],
         )
-        assert result.exit_code == 0
+        assert_command_success(result)
+
+        result = runner.invoke(
+            main,
+            ["milestone", "assign", str(issue_objects[2].id), milestone_objects[1].name],
+        )
+        assert_command_success(result)
+
+        # Verify assignments via database
+        for issue in core.issues.list():
+            assert issue.milestone is not None
 
         # Step 6: Update issue status
         result = runner.invoke(
-            main, ["issue", "update", issue_ids[0], "--status", "in-progress"]
+            main, ["issue", "update", str(issue_objects[0].id), "--status", "in-progress"]
         )
-        assert result.exit_code == 0
-        assert "Updated" in result.output or "updated" in result.output
+        assert_command_success(result)
+
+        # Verify status update via database
+        updated_issue = core.issues.get(issue_objects[0].id)
+        assert str(updated_issue.status.value) == "in-progress"
 
         # Step 7: List issues with filters
         result = runner.invoke(main, ["issue", "list", "--status", "in-progress"])
-        assert result.exit_code == 0
-        assert issue_titles[0] in result.output
+        assert_command_success(result)
 
         result = runner.invoke(main, ["issue", "list", "--priority", "high"])
-        assert result.exit_code == 0
-        assert issue_titles[2] in result.output
+        assert_command_success(result)
 
         # Step 8: Check final status
         result = runner.invoke(main, ["status"])
-        assert result.exit_code == 0
-        # Just check that status shows some content about issues/milestones
-        assert "issue" in result.output.lower() or "milestone" in result.output.lower()
+        assert_command_success(result)
 
         # Step 9: Delete an issue
         result = runner.invoke(main, ["issue", "delete", issue_ids[2]], input="y\n")

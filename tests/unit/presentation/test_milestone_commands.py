@@ -3,6 +3,13 @@
 import re
 
 from roadmap.adapters.cli import main
+from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.shared.test_helpers import (
+    assert_command_success,
+    assert_issue_assigned_to_milestone,
+    assert_issue_created,
+    assert_milestone_created,
+)
 from tests.unit.shared.test_utils import strip_ansi
 
 
@@ -114,32 +121,26 @@ def test_milestone_assign_command(cli_runner):
         )
         assert init_result.exit_code == 0
 
+        core = RoadmapCore()
+
         # Create a milestone and an issue
         cli_runner.invoke(
             main, ["milestone", "create", "v1.0", "--description", "First release"]
         )
         result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
 
-        # Extract issue ID - use strip_ansi and look for Created issue line
-        clean_output = strip_ansi(result.output)
-        issue_id = None
-        for line in clean_output.split("\n"):
-            if "Created issue:" in line:
-                match = re.search(r"\[([a-f0-9\-]+)\]", line)
-                if match:
-                    issue_id = match.group(1)
-                    break
-
-        assert (
-            issue_id is not None
-        ), f"Could not find issue ID in output: {clean_output}"
+        # Verify issue was created via database instead of parsing output
+        assert_command_success(result)
+        issue = assert_issue_created(core, "test-issue")
+        milestone = assert_milestone_created(core, "v1.0")
 
         # Assign issue to milestone
-        result = cli_runner.invoke(main, ["milestone", "assign", issue_id, "v1.0"])
-        assert result.exit_code == 0
-        # Check that assignment was successful
-        clean_assign_output = strip_ansi(result.output)
-        assert "Assigned" in clean_assign_output
+        result = cli_runner.invoke(main, ["milestone", "assign", str(issue.id), "v1.0"])
+        assert_command_success(result)
+
+        # Verify assignment in database instead of parsing output
+        issue = core.issues.get(issue.id)
+        assert_issue_assigned_to_milestone(core, issue, "v1.0")
 
 
 def test_milestone_assign_command_nonexistent_milestone(cli_runner):
