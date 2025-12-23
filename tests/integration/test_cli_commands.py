@@ -92,12 +92,31 @@ def isolated_roadmap_with_issues(cli_runner):
                 ],
             )
             if result.exit_code == 0:
-                # Parse the issue ID from the output (format: "[id]")
+                # Parse the issue ID from the output
+                # First try to find issue_id= in the log lines
                 import re
 
-                match = re.search(r"\[([^\]]+)\]", result.output)
-                if match:
-                    created_ids.append(match.group(1))
+                from tests.unit.shared.test_utils import strip_ansi
+
+                clean_output = strip_ansi(result.output)
+                issue_id = None
+
+                # Try to find issue_id= in the log lines
+                for line in clean_output.split("\n"):
+                    if "issue_id=" in line:
+                        match = re.search(r"issue_id=([^\s]+)", line)
+                        if match:
+                            issue_id = match.group(1)
+                            break
+
+                # Fallback: look for [xxx] pattern
+                if issue_id is None:
+                    match = re.search(r"\[([^\]]+)\]", result.output)
+                    if match:
+                        issue_id = match.group(1)
+
+                if issue_id:
+                    created_ids.append(issue_id)
 
         yield cli_runner, temp_dir, created_ids
         # Cleanup happens here when context exits

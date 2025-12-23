@@ -5,6 +5,7 @@ These tests verify end-to-end workflows and cross-module integration.
 """
 
 import os
+import re
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -15,6 +16,7 @@ from click.testing import CliRunner
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.shared.test_utils import strip_ansi
 
 pytestmark = pytest.mark.filesystem
 
@@ -46,7 +48,7 @@ def mock_github_client():
 class TestEndToEndWorkflows:
     """Test complete end-to-end workflows."""
 
-    def test_complete_roadmap_lifecycle(self, tmp_path, strip_ansi_fixture):
+    def test_complete_roadmap_lifecycle(self, tmp_path):
         """Test a complete roadmap lifecycle from init to issue management."""
         # CRITICAL: This test must use tmp_path (clean) instead of temp_workspace (pre-initialized)
         # because it needs to test the full initialization workflow starting from an empty directory.
@@ -89,14 +91,27 @@ class TestEndToEndWorkflows:
             assert result.exit_code == 0
             assert "Created issue" in result.output and title in result.output
 
-            # Extract issue ID from output - look for the line with "Created issue:"
-            clean_output = strip_ansi_fixture(result.output)
+            # Extract issue ID from output
+            clean_output = strip_ansi(result.output)
+            issue_id = None
+            # First try to find issue_id= in the log lines
             for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
+                if "issue_id=" in line:
+                    match = re.search(r"issue_id=([^\s]+)", line)
                     if match:
-                        issue_ids.append(match.group(1))
-                    break
+                        issue_id = match.group(1)
+                        break
+            # Fallback: look for [xxx] in Created issue: line
+            if issue_id is None:
+                for line in clean_output.split("\n"):
+                    if "Created issue:" in line:
+                        match = re.search(r"\[([^\]]+)\]", line)
+                        if match:
+                            issue_id = match.group(1)
+                            break
+
+            if issue_id is not None:
+                issue_ids.append(issue_id)
 
         assert len(issue_ids) == 3
 
@@ -107,7 +122,7 @@ class TestEndToEndWorkflows:
         for title in milestone_titles:
             result = runner.invoke(main, ["milestone", "create", title])
             assert result.exit_code == 0
-            clean_output = strip_ansi_fixture(result.output)
+            clean_output = strip_ansi(result.output)
             assert "Created milestone" in clean_output and title in clean_output
 
             # Extract milestone ID from output (milestone name is the ID)
@@ -262,35 +277,56 @@ class TestEndToEndWorkflows:
         # Create issues
         result = runner.invoke(main, ["issue", "create", "Issue 1"])
         issue1_id = None
-        clean_output = strip_ansi_fixture(result.output)
+        clean_output = strip_ansi(result.output)
         for line in clean_output.split("\n"):
-            if "Created issue:" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
                 if match:
                     issue1_id = match.group(1)
-                break
+                    break
+        if issue1_id is None:
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    match = re.search(r"\[([^\]]+)\]", line)
+                    if match:
+                        issue1_id = match.group(1)
+                    break
         assert issue1_id is not None, "Failed to parse issue1_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Issue 2"])
         issue2_id = None
-        clean_output = strip_ansi_fixture(result.output)
+        clean_output = strip_ansi(result.output)
         for line in clean_output.split("\n"):
-            if "Created issue:" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
                 if match:
                     issue2_id = match.group(1)
-                break
+                    break
+        if issue2_id is None:
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    match = re.search(r"\[([^\]]+)\]", line)
+                    if match:
+                        issue2_id = match.group(1)
+                    break
         assert issue2_id is not None, "Failed to parse issue2_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Backlog Issue"])
         backlog_issue_id = None
-        clean_output = strip_ansi_fixture(result.output)
+        clean_output = strip_ansi(result.output)
         for line in clean_output.split("\n"):
-            if "Created issue:" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
                 if match:
                     backlog_issue_id = match.group(1)
-                break
+                    break
+        if backlog_issue_id is None:
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    match = re.search(r"\[([^\]]+)\]", line)
+                    if match:
+                        backlog_issue_id = match.group(1)
+                    break
         assert (
             backlog_issue_id is not None
         ), "Failed to parse backlog_issue_id from output"
@@ -453,13 +489,22 @@ class TestCrossModuleIntegration:
 
         # Extract issue ID
         issue_id = None
-        clean_output = strip_ansi_fixture(result.output)
+        clean_output = strip_ansi(result.output)
+        # First try to find issue_id= in the log lines
         for line in clean_output.split("\n"):
-            if "Created issue:" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
                 if match:
                     issue_id = match.group(1)
-                break
+                    break
+        # Fallback: look for [xxx] in Created issue: line
+        if issue_id is None:
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    match = re.search(r"\[([^\]]+)\]", line)
+                    if match:
+                        issue_id = match.group(1)
+                    break
 
         # Update through CLI
         assert issue_id is not None, "Could not find issue ID in output"

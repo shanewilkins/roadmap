@@ -120,18 +120,26 @@ def test_milestone_assign_command(cli_runner):
         )
         result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
 
-        # Extract issue ID - use strip_ansi to handle logging output
+        # Extract issue ID - use strip_ansi and look for Created issue line
         clean_output = strip_ansi(result.output)
-        match = re.search(r"\[([^\]]+)\]", clean_output)
-        if match:
-            issue_id = match.group(1)
+        issue_id = None
+        for line in clean_output.split("\n"):
+            if "Created issue:" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    issue_id = match.group(1)
+                    break
 
-            # Assign issue to milestone
-            result = cli_runner.invoke(main, ["milestone", "assign", issue_id, "v1.0"])
-            assert result.exit_code == 0
-            # Check that assignment was successful
-            clean_assign_output = strip_ansi(result.output)
-            assert "Assigned" in clean_assign_output
+        assert (
+            issue_id is not None
+        ), f"Could not find issue ID in output: {clean_output}"
+
+        # Assign issue to milestone
+        result = cli_runner.invoke(main, ["milestone", "assign", issue_id, "v1.0"])
+        assert result.exit_code == 0
+        # Check that assignment was successful
+        clean_assign_output = strip_ansi(result.output)
+        assert "Assigned" in clean_assign_output
 
 
 def test_milestone_assign_command_nonexistent_milestone(cli_runner):
@@ -145,7 +153,6 @@ def test_milestone_assign_command_nonexistent_milestone(cli_runner):
 
         # Create an issue
         result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
-        output_lines = result.output.split("\n")
         match = re.search(r"\[([^\]]+)\]", result.output)
         if match:
             issue_id = match.group(1)

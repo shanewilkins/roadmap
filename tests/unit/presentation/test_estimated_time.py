@@ -231,29 +231,43 @@ class TestEstimatedTimeCLI:
         create_result1 = runner.invoke(
             main, ["issue", "create", "Task 1", "--estimate", "8.0"]
         )
-        # Extract ID from success message line
+        # Extract ID from log output (issue_id=) or success message [id]
         clean_create1 = strip_ansi(create_result1.output)
         issue_id1 = None
         for line in clean_create1.split("\n"):
-            if "Created issue" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
                 if match:
                     issue_id1 = match.group(1)
                     break
+        if issue_id1 is None:
+            for line in clean_create1.split("\n"):
+                if "Created issue" in line:
+                    match = re.search(r"\[([^\]]+)\]", line)
+                    if match:
+                        issue_id1 = match.group(1)
+                        break
         assert issue_id1 is not None, f"Could not find issue ID in: {clean_create1}"
 
         create_result2 = runner.invoke(
             main, ["issue", "create", "Task 2", "--estimate", "16.0"]
         )
-        # Extract ID from success message line
+        # Extract ID from log output (issue_id=) or success message [id]
         clean_create2 = strip_ansi(create_result2.output)
         issue_id2 = None
         for line in clean_create2.split("\n"):
-            if "Created issue" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
                 if match:
                     issue_id2 = match.group(1)
                     break
+        if issue_id2 is None:
+            for line in clean_create2.split("\n"):
+                if "Created issue" in line:
+                    match = re.search(r"\[([^\]]+)\]", line)
+                    if match:
+                        issue_id2 = match.group(1)
+                        break
         assert issue_id2 is not None, f"Could not find issue ID in: {clean_create2}"
 
         # Assign issues to milestone

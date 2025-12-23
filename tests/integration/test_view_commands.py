@@ -11,6 +11,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
+from tests.unit.shared.test_utils import strip_ansi
 
 
 @pytest.fixture
@@ -75,9 +76,24 @@ def roadmap_with_data(cli_runner):
         assert result.exit_code == 0, f"Issue creation failed: {result.output}"
 
         # Extract issue ID from create output
-        match = re.search(r"\[([^\]]+)\]", result.output)
-        assert match, f"Could not find issue ID in output: {result.output}"
-        issue_id = match.group(1)
+        clean_output = strip_ansi(result.output)
+        issue_id = None
+
+        # First try to find issue_id= in the log lines
+        for line in clean_output.split("\n"):
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
+                if match:
+                    issue_id = match.group(1)
+                    break
+
+        # Fallback: look for [xxx] pattern
+        if issue_id is None:
+            match = re.search(r"\[([^\]]+)\]", clean_output)
+            if match:
+                issue_id = match.group(1)
+
+        assert issue_id, f"Could not find issue ID in output: {result.output}"
 
         # Create a project
         result = cli_runner.invoke(
