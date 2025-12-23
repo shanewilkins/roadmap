@@ -348,8 +348,8 @@ PYTHON_HOOK_EOF
                 return
 
             # Mark as closed if not already
-            if issue.status != Status.DONE:
-                issue.status = Status.DONE
+            if issue.status != Status.CLOSED:
+                issue.status = Status.CLOSED
                 issue.progress_percentage = 100.0
                 issue.completed_date = datetime.now().isoformat()
 
@@ -411,7 +411,7 @@ PYTHON_HOOK_EOF
             return 0.0
 
         total_issues = len(milestone_issues)
-        completed_issues = len([i for i in milestone_issues if i.status == Status.DONE])
+        completed_issues = len([i for i in milestone_issues if i.status == Status.CLOSED])
         return (completed_issues / total_issues) * 100
 
     def _update_milestone_attributes(self, milestone, progress: float) -> None:

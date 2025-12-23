@@ -250,7 +250,7 @@ class TestRoadmapCoreMilestoneProgress:
         issue3 = core.issues.create(title="Issue 3", priority=Priority.LOW)
 
         # Update their statuses after creation
-        core.issues.update(issue1.id, status=Status.DONE)
+        core.issues.update(issue1.id, status=Status.CLOSED)
         core.issues.update(issue2.id, status=Status.IN_PROGRESS)
         core.issues.update(issue3.id, status=Status.TODO)
 
@@ -503,7 +503,7 @@ class TestRoadmapCoreFilteringAndSearch:
         # Update statuses after creation
         core.issues.update(issue1.id, status=Status.IN_PROGRESS)
         core.issues.update(issue2.id, status=Status.TODO)
-        core.issues.update(issue3.id, status=Status.DONE)
+        core.issues.update(issue3.id, status=Status.CLOSED)
 
         return core
 
@@ -523,7 +523,7 @@ class TestRoadmapCoreFilteringAndSearch:
         assert len(in_progress) == 1
         assert in_progress[0].title == "Bug Fix"
 
-        completed = core_with_data.issues.list(status=Status.DONE)
+        completed = core_with_data.issues.list(status=Status.CLOSED)
         assert len(completed) == 1
         assert completed[0].title == "Documentation Update"
 
@@ -553,7 +553,7 @@ class TestRoadmapCoreFilteringAndSearch:
         """Test filtering issues with multiple criteria."""
         # Filter by assignee and status
         alice_completed = core_with_data.issues.list(
-            assignee="alice@example.com", status=Status.DONE
+            assignee="alice@example.com", status=Status.CLOSED
         )
         assert len(alice_completed) == 1
         assert alice_completed[0].title == "Documentation Update"

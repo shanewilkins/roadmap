@@ -257,8 +257,8 @@ class WorkflowAutomation:
             updated = True
 
         # Update status based on completion and progress
-        if is_completed and issue.status != Status.DONE:
-            issue.status = Status.DONE
+        if is_completed and issue.status != Status.CLOSED:
+            issue.status = Status.CLOSED
             issue.completed_date = datetime.now().isoformat()
             updated = True
         elif highest_progress and highest_progress > 0 and issue.status == Status.TODO:

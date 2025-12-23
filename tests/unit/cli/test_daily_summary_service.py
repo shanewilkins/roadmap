@@ -225,7 +225,7 @@ class TestDailySummaryServiceIssueCategorization:
         completed_today = Issue(
             id="TASK-1",
             title="Completed today",
-            status=Status.DONE,
+            status=Status.CLOSED,
             assignee="alice",
             priority=Priority.MEDIUM,
             actual_end_date=today,
@@ -233,7 +233,7 @@ class TestDailySummaryServiceIssueCategorization:
         completed_yesterday = Issue(
             id="TASK-2",
             title="Completed yesterday",
-            status=Status.DONE,
+            status=Status.CLOSED,
             assignee="alice",
             priority=Priority.MEDIUM,
             actual_end_date=today - timedelta(days=1),

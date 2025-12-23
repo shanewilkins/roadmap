@@ -194,7 +194,7 @@ class TestIssueMapper:
             id="issue-4",
             title="Roundtrip test",
             priority=Priority.HIGH,
-            status=Status.DONE,
+            status=Status.CLOSED,
             issue_type=IssueType.FEATURE,
             assignee="charlie",
             milestone="v2.0",

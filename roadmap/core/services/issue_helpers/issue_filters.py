@@ -180,7 +180,7 @@ class IssueQueryService:
         issues: list[Issue], description: str
     ) -> tuple[list[Issue], str]:
         """Filter to only open issues (not closed)."""
-        filtered = [i for i in issues if i.status != Status.DONE]
+        filtered = [i for i in issues if i.status != Status.CLOSED]
         return filtered, description + " open"
 
     @staticmethod

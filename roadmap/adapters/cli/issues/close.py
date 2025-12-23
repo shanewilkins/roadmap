@@ -90,7 +90,7 @@ def close_issue(
 
         # Build update kwargs with status and progress
         update_kwargs = {
-            "status": Status.DONE,
+            "status": Status.CLOSED,
             "progress_percentage": 100.0,
         }
         if end_date:

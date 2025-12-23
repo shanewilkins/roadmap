@@ -144,7 +144,7 @@ class Issue(BaseModel):
             return f"{self.progress_percentage:.0f}%"
 
         # Infer progress from status when not explicitly set
-        if self.status == Status.DONE:
+        if self.status == Status.CLOSED:
             return "100%"
         elif self.status == Status.TODO:
             return ""  # Blank for todo - no progress tracking yet

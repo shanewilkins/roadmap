@@ -199,7 +199,7 @@ class EntityHealthScanner:
         # Check progress
         if (
             milestone.calculated_progress is not None
-            and milestone.status == Status.DONE
+            and milestone.status == Status.CLOSED
         ):
             if milestone.calculated_progress != 100:
                 report.issues.append(
@@ -353,7 +353,7 @@ class EntityHealthScanner:
     def _check_issue_estimates(self, issue: Issue, report: EntityHealthReport):
         """Check issue estimation."""
         # Only warn about missing estimates for in-progress or done issues
-        if issue.status not in (Status.IN_PROGRESS, Status.DONE):
+        if issue.status not in (Status.IN_PROGRESS, Status.CLOSED):
             return
 
         if issue.estimated_hours is None:
@@ -436,7 +436,7 @@ class EntityHealthScanner:
                 )
 
         # Check progress vs status consistency
-        if issue.status == Status.DONE and issue.progress_percentage != 100:
+        if issue.status == Status.CLOSED and issue.progress_percentage != 100:
             report.issues.append(
                 HealthIssue(
                     code="inconsistent_completion",
@@ -449,7 +449,7 @@ class EntityHealthScanner:
 
     def _check_issue_status_consistency(self, issue: Issue, report: EntityHealthReport):
         """Check overall status consistency."""
-        if issue.status == Status.DONE and not issue.actual_end_date:
+        if issue.status == Status.CLOSED and not issue.actual_end_date:
             report.issues.append(
                 HealthIssue(
                     code="missing_completion_date",

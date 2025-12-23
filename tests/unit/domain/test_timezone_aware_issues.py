@@ -273,7 +273,7 @@ class TestTimezoneAwareDateFields:
         # Set end date
         end_date = datetime.now(timezone.utc)
         updated_issue = core.issues.update(
-            issue.id, actual_end_date=end_date, status=Status.DONE
+            issue.id, actual_end_date=end_date, status=Status.CLOSED
         )
 
         # Verify end date is UTC

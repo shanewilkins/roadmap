@@ -4,12 +4,12 @@ title: Cross-platform compatibility testing (macOS, Linux, Windows)
 priority: high
 status: todo
 issue_type: feature
-milestone: v.0.8.0
+milestone: '0.9'
 labels:
 - testing,compatibility
 github_issue: null
 created: '2025-12-20T18:33:28.214417+00:00'
-updated: '2025-12-20T18:33:28.214421+00:00'
+updated: '2025-12-23T15:17:06.534813+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -24,6 +24,7 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: null
+comments: []
 ---
 
 # Cross-platform compatibility testing (macOS, Linux, Windows)

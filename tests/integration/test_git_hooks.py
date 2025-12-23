@@ -340,7 +340,7 @@ class TestWorkflowAutomation:
         assert len(updated_issue1.git_commits) == 1
 
         updated_issue2 = core.issues.get(issue2.id)
-        assert updated_issue2.status == Status.DONE
+        assert updated_issue2.status == Status.CLOSED
         assert updated_issue2.progress_percentage == 100.0
 
         # Issue 3 should be unchanged
@@ -382,7 +382,7 @@ class TestWorkflowAutomation:
         # Verify final state
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.progress_percentage == 100.0
-        assert updated_issue.status == Status.DONE
+        assert updated_issue.status == Status.CLOSED
         assert updated_issue.completed_date is not None
         assert len(updated_issue.git_commits) == 4
 
@@ -484,8 +484,8 @@ class TestWorkflowAutomation:
         automation = WorkflowAutomation(core)
 
         # Complete some issues
-        core.issues.update(issue1.id, status=Status.DONE)
-        core.issues.update(issue2.id, status=Status.DONE)
+        core.issues.update(issue1.id, status=Status.CLOSED)
+        core.issues.update(issue2.id, status=Status.CLOSED)
         # Issue 3 remains TODO
 
         # Update milestone progress
@@ -497,7 +497,7 @@ class TestWorkflowAutomation:
         assert abs(milestone_progress["progress"] - expected_progress) < 0.1
 
         # Complete last issue
-        core.issues.update(issue3.id, status=Status.DONE)
+        core.issues.update(issue3.id, status=Status.CLOSED)
         automation.hook_manager._update_milestone_progress()
 
         # Milestone should now be completed

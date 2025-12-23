@@ -97,7 +97,7 @@ class DailySummaryService:
             for i in issues
             if i.due_date
             and i.due_date.replace(tzinfo=None) < datetime.now()
-            and i.status != Status.DONE
+            and i.status != Status.CLOSED
         ]
 
     def _get_blocked_issues(self, issues: list) -> list:
@@ -139,7 +139,7 @@ class DailySummaryService:
         return [
             i
             for i in issues
-            if i.status == Status.DONE
+            if i.status == Status.CLOSED
             and i.actual_end_date
             and i.actual_end_date.date() == today
         ]

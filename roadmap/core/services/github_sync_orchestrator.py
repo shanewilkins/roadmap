@@ -219,7 +219,7 @@ class GitHubSyncOrchestrator:
         github_state = github_issue.get("state", "open")
 
         if github_state == "closed":
-            return Status.DONE.value
+            return Status.CLOSED.value
         elif github_issue.get("state_reason") == "not_planned":
             return Status.BLOCKED.value
         else:

@@ -235,7 +235,7 @@ class TestBlockedStatus:
         assert Status.IN_PROGRESS in statuses
         assert Status.BLOCKED in statuses
         assert Status.REVIEW in statuses
-        assert Status.DONE in statuses
+        assert Status.CLOSED in statuses
 
     def test_github_client_blocked_status_mapping(self):
         """Test that GitHub client handles blocked status."""

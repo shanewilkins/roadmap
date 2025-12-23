@@ -103,7 +103,7 @@ class TestIssueStatusPresenter:
 
     def test_get_status_style_closed(self):
         """Test getting style for CLOSED status."""
-        style = IssueStatusPresenter.get_status_style(Status.DONE)
+        style = IssueStatusPresenter.get_status_style(Status.CLOSED)
         assert style == "green"
 
     @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
@@ -129,7 +129,7 @@ class TestIssueStatusPresenter:
         issue_counts = {
             Status.TODO: 5,
             Status.IN_PROGRESS: 2,
-            Status.DONE: 3,
+            Status.CLOSED: 3,
         }
 
         IssueStatusPresenter.show_issue_status_table(issue_counts)
@@ -144,7 +144,7 @@ class TestIssueStatusPresenter:
     )
     def test_show_all_issue_statuses(self, mock_header, mock_table):
         """Test displaying all issue statuses."""
-        issue_counts = {Status.TODO: 5, Status.DONE: 3}
+        issue_counts = {Status.TODO: 5, Status.CLOSED: 3}
 
         IssueStatusPresenter.show_all_issue_statuses(issue_counts)
 
@@ -230,7 +230,7 @@ class TestRoadmapStatusPresenter:
                 Status.IN_PROGRESS: 4,
                 Status.BLOCKED: 2,
                 Status.REVIEW: 0,
-                Status.DONE: 6,
+                Status.CLOSED: 6,
             },
             "milestone_details": [
                 {"name": "v1.0", "progress": {"percentage": 100}},

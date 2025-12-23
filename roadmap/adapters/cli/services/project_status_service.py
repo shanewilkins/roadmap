@@ -145,7 +145,7 @@ class IssueStatisticsService:
             Status.IN_PROGRESS: "yellow",
             Status.BLOCKED: "red",
             Status.REVIEW: "blue",
-            Status.DONE: "green",
+            Status.CLOSED: "green",
         }
 
     @staticmethod
@@ -177,7 +177,7 @@ class IssueStatisticsService:
         Returns:
             Count of active (non-closed) issues
         """
-        return sum(1 for issue in issues if issue.status != Status.DONE)
+        return sum(1 for issue in issues if issue.status != Status.CLOSED)
 
     @staticmethod
     def get_blocked_issue_count(issues: list) -> int:

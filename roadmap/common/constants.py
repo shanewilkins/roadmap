@@ -19,7 +19,7 @@ class Status(str, Enum):
     IN_PROGRESS = "in-progress"
     BLOCKED = "blocked"
     REVIEW = "review"
-    DONE = "closed"
+    CLOSED = "closed"
 
 
 class MilestoneStatus(str, Enum):

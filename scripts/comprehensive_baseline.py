@@ -111,7 +111,7 @@ def measure_all_operations(temp_dir: Path, profiler):
         # Close (convenience wrapper)
         profiler.start_operation("ISSUE: close")
         if issue_ids:
-            core.issues.update(issue_ids[1], status=Status.DONE)
+            core.issues.update(issue_ids[1], status=Status.CLOSED)
         profiler.end_operation("ISSUE: close")
 
         # Start (convenience wrapper)

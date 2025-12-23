@@ -254,7 +254,7 @@ class TestGitHubStatusMapping:
         """
         github_issue = {"state": "closed"}
         status = orchestrator._map_github_status(github_issue)
-        assert status == Status.DONE.value
+        assert status == Status.CLOSED.value
 
     def test_map_github_status_not_planned(self, orchestrator):
         """Test mapping not_planned GitHub status.
@@ -266,7 +266,7 @@ class TestGitHubStatusMapping:
         github_issue = {"state": "closed", "state_reason": "not_planned"}
         status = orchestrator._map_github_status(github_issue)
         # Current behavior: closed state takes precedence
-        assert status == Status.DONE.value
+        assert status == Status.CLOSED.value
 
     def test_map_github_status_open(self, orchestrator):
         """Test mapping open GitHub status.
@@ -340,7 +340,7 @@ class TestGitHubSyncOrchestratorChangeDetection:
 
         changes = orchestrator._detect_github_changes(issue, github_issue)
         assert "status" in changes
-        # Status.DONE.value is "closed"
+        # Status.CLOSED.value is "closed"
         assert "closed" in changes["status"]
 
     def test_detect_github_changes_title_change(self, orchestrator):
@@ -454,7 +454,7 @@ class TestGitHubSyncOrchestratorApplyChanges:
 
         # The code splits on " -> " and takes second part
         # Then tries Status("closed") which should work
-        assert issue.status == Status.DONE
+        assert issue.status == Status.CLOSED
         mock_core.issues.update.assert_called_once()
 
     def test_apply_local_changes_invalid_status(self, orchestrator, mock_core):
@@ -547,14 +547,14 @@ class TestGitHubSyncOrchestratorApplyChanges:
         mock_core.issues.get.return_value = issue
 
         change = IssueChange(issue_id="issue1", title="Test")
-        # Note: Status.DONE.value is "closed"
+        # Note: Status.CLOSED.value is "closed"
         change.github_changes = {"status": "todo -> closed"}
 
         orchestrator._apply_github_changes(change)
 
         # Should attempt to parse the status change
         # The parsing logic splits on " -> " and tries to convert to Status
-        # "closed" should map to Status.DONE
+        # "closed" should map to Status.CLOSED
         mock_core.issues.update.assert_called_once()
 
     def test_apply_github_changes_title_change(self, orchestrator, mock_core):

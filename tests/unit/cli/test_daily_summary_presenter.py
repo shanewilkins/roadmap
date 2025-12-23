@@ -74,7 +74,7 @@ def sample_data():
     completed_issue = Issue(
         id="TASK-5",
         title="Completed task",
-        status=Status.DONE,
+        status=Status.CLOSED,
         assignee="alice",
         priority=Priority.MEDIUM,
         milestone="v1.0",
@@ -274,7 +274,7 @@ class TestDailySummaryPresenterSections:
         completed_issue = Issue(
             id="TASK-1",
             title="Completed task",
-            status=Status.DONE,
+            status=Status.CLOSED,
             assignee="alice",
             priority=Priority.MEDIUM,
             actual_end_date=datetime.now(),

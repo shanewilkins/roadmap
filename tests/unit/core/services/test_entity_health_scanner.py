@@ -351,7 +351,7 @@ class TestEntityHealthScanner:
 
     def test_scan_issue_healthy(self, scanner, mock_issue):
         """Test scanning a healthy issue."""
-        mock_issue.status = Status.DONE
+        mock_issue.status = Status.CLOSED
         mock_issue.progress_percentage = 100
         mock_issue.actual_end_date = datetime.now()
 
@@ -417,7 +417,7 @@ class TestEntityHealthScanner:
 
     def test_scan_issue_inconsistent_completion(self, scanner, mock_issue):
         """Test scanning issue marked done but incomplete."""
-        mock_issue.status = Status.DONE
+        mock_issue.status = Status.CLOSED
         mock_issue.progress_percentage = 75
 
         report = scanner.scan_issue(mock_issue)
@@ -468,7 +468,7 @@ class TestEntityHealthScanner:
 
     def test_scan_issue_missing_completion_date(self, scanner, mock_issue):
         """Test scanning issue marked done but without completion date."""
-        mock_issue.status = Status.DONE
+        mock_issue.status = Status.CLOSED
         mock_issue.actual_end_date = None
 
         report = scanner.scan_issue(mock_issue)
@@ -527,7 +527,7 @@ class TestEntityHealthScanner:
 
     def test_scan_milestone_inconsistent_completion(self, scanner, mock_milestone):
         """Test scanning milestone marked done but incomplete."""
-        mock_milestone.status = Status.DONE
+        mock_milestone.status = Status.CLOSED
         mock_milestone.calculated_progress = 80
 
         report = scanner.scan_milestone(mock_milestone)
@@ -738,7 +738,7 @@ class TestEntityHealthScannerIntegration:
         issue = MagicMock(spec=Issue)
         issue.id = "issue-1"
         issue.title = "Issue"
-        issue.status = Status.DONE
+        issue.status = Status.CLOSED
         issue.content = "Content"
         issue.comments = []
         issue.estimated_hours = 5
@@ -752,7 +752,7 @@ class TestEntityHealthScannerIntegration:
         milestone = MagicMock(spec=Milestone)
         milestone.name = "v1.0"
         milestone.description = "Release 1.0"
-        milestone.status = Status.DONE
+        milestone.status = Status.CLOSED
         milestone.created = datetime.now() - timedelta(days=30)
         milestone.due_date = datetime.now()
         milestone.calculated_progress = 100
