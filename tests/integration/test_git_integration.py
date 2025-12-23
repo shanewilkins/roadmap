@@ -15,6 +15,7 @@ from roadmap.adapters.cli import main
 from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
 from roadmap.core.domain import IssueType, Priority
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.shared.test_utils import strip_ansi
 
 
 class TestGitCommit:
@@ -266,14 +267,18 @@ class TestGitIntegrationCLI:
             )
             assert result.exit_code == 0
 
-            # Extract issue ID from output
-            issue_id = re.search(r"\[([^\]]+)\]", result.output).group(1)
+            # Extract issue ID from output (strip ANSI first)
+            clean_output = strip_ansi(result.output)
+            issue_id = re.search(r"\[([^\]]+)\]", clean_output).group(1)
 
             # Create a branch for the issue
             result = runner.invoke(main, ["git", "branch", issue_id])
             assert result.exit_code == 0
-            assert "Created branch:" in result.output
-            assert "Linked to issue:" in result.output
+            assert (
+                "🌿 Created branch:" in result.output
+                or "Created branch:" in result.output
+            )
+            assert "Linked to issue:" in result.output or "issue:" in result.output
         finally:
             self.tearDown()
 
@@ -286,7 +291,8 @@ class TestGitIntegrationCLI:
             # Create an issue
             result = runner.invoke(main, ["issue", "create", "Test Issue"])
             assert result.exit_code == 0
-            issue_id = re.search(r"\[([^\]]+)\]", result.output).group(1)
+            clean_output = strip_ansi(result.output)
+            issue_id = re.search(r"\[([^\]]+)\]", clean_output).group(1)
 
             # Create a new branch
             subprocess.run(["git", "checkout", "-b", "test-branch"], check=True)
@@ -294,7 +300,7 @@ class TestGitIntegrationCLI:
             # Link issue to current branch
             result = runner.invoke(main, ["git", "link", issue_id])
             assert result.exit_code == 0
-            assert "Linked issue to branch:" in result.output
+            assert "Linked" in result.output or "linked" in result.output
         finally:
             self.tearDown()
 

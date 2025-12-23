@@ -222,7 +222,7 @@ class IssueCreationService:
             milestone: Optional milestone name
         """
         self._console.print(
-            f"✅ Created issue: {issue.title} [{issue.id}]", style="bold green"
+            f"✅ Created issue: {issue.title} [{str(issue.id)}]", style="bold green"
         )
         self._console.print(f"   Type: {issue.issue_type.value.title()}", style="blue")
         self._console.print(f"   Priority: {issue.priority.value}", style="yellow")
@@ -246,7 +246,7 @@ class IssueCreationService:
         # Only print dependencies if they're actual lists/iterables (not Mock objects)
         if hasattr(issue, "depends_on") and issue.depends_on:
             try:
-                if isinstance(issue.depends_on, (list, tuple)):
+                if isinstance(issue.depends_on, list | tuple):
                     self._console.print(
                         f"   Depends on: {', '.join(issue.depends_on)}", style="orange1"
                     )
@@ -255,7 +255,7 @@ class IssueCreationService:
 
         if hasattr(issue, "blocks") and issue.blocks:
             try:
-                if isinstance(issue.blocks, (list, tuple)):
+                if isinstance(issue.blocks, list | tuple):
                     self._console.print(
                         f"   Blocks: {', '.join(issue.blocks)}", style="red1"
                     )

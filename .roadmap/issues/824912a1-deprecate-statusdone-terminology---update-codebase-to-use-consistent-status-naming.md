@@ -3,13 +3,13 @@ id: 824912a1
 title: Deprecate Status.DONE terminology - update codebase to use consistent status
   naming
 priority: high
-status: in-progress
+status: closed
 issue_type: other
 milestone: v0.8.0
 labels: []
 github_issue: null
 created: '2025-12-21T21:33:17.836668+00:00'
-updated: '2025-12-23T15:22:37.658087+00:00'
+updated: '2025-12-23T15:25:01.590955+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -17,7 +17,7 @@ depends_on: []
 blocks: []
 actual_start_date: '2025-12-23T09:17:10.245598+00:00'
 actual_end_date: null
-progress_percentage: 0.0
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

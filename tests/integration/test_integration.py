@@ -564,9 +564,10 @@ class TestPerformanceAndStress:
             )
             assert result.exit_code == 0
 
-            # Extract issue ID
+            # Extract issue ID (strip ANSI codes first)
             issue_id = None
-            match = re.search(r"\[([^\]]+)\]", result.output)
+            clean_output = strip_ansi(result.output)
+            match = re.search(r"\[([^\]]+)\]", clean_output)
             if match:
                 issue_id = match.group(1)
                 issue_ids.append(issue_id)
