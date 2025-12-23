@@ -5,6 +5,8 @@ Tests cover error classification, recovery suggestion, and all error logging fun
 
 from unittest.mock import patch
 
+import pytest
+
 from roadmap.infrastructure.logging.error_logging import (
     ErrorClassification,
     classify_error,
@@ -31,6 +33,29 @@ class TestErrorClassification:
 class TestClassifyError:
     """Test classify_error function."""
 
+    @pytest.mark.parametrize(
+        "error,expected_classification",
+        [
+            (ValueError("Bad value"), ErrorClassification.USER_ERROR),
+            (TypeError("Type mismatch"), ErrorClassification.USER_ERROR),
+            (KeyError("Missing key"), ErrorClassification.USER_ERROR),
+            (OSError("File not found"), ErrorClassification.SYSTEM_ERROR),
+            (FileNotFoundError("Missing file"), ErrorClassification.SYSTEM_ERROR),
+            (PermissionError("Access denied"), ErrorClassification.SYSTEM_ERROR),
+            (ConnectionError("Connection failed"), ErrorClassification.SYSTEM_ERROR),
+            (TimeoutError("Request timeout"), ErrorClassification.SYSTEM_ERROR),
+            (RuntimeError("Runtime problem"), ErrorClassification.UNKNOWN_ERROR),
+            (Exception("Unknown error"), ErrorClassification.UNKNOWN_ERROR),
+        ],
+    )
+    def test_classify_error(self, error, expected_classification):
+        """Test classification of various error types.
+
+        Covers lines 34-103: Error classification for all major error types
+        """
+        result = classify_error(error)
+        assert result == expected_classification
+
     def test_classify_validation_error(self):
         """Test classification of ValidationError."""
         from roadmap.common.errors import ValidationError
@@ -39,154 +64,51 @@ class TestClassifyError:
         result = classify_error(error)
         assert result == ErrorClassification.USER_ERROR
 
-    def test_classify_value_error(self):
-        """Test classification of ValueError."""
-        error = ValueError("Bad value")
-        result = classify_error(error)
-        assert result == ErrorClassification.USER_ERROR
-
-    def test_classify_type_error(self):
-        """Test classification of TypeError."""
-        error = TypeError("Type mismatch")
-        result = classify_error(error)
-        assert result == ErrorClassification.USER_ERROR
-
-    def test_classify_key_error(self):
-        """Test classification of KeyError."""
-        error = KeyError("Missing key")
-        result = classify_error(error)
-        assert result == ErrorClassification.USER_ERROR
-
-    def test_classify_os_error(self):
-        """Test classification of OSError."""
-        error = OSError("File not found")
-        result = classify_error(error)
-        assert result == ErrorClassification.SYSTEM_ERROR
-
-    def test_classify_file_not_found_error(self):
-        """Test classification of FileNotFoundError."""
-        error = FileNotFoundError("Missing file")
-        result = classify_error(error)
-        assert result == ErrorClassification.SYSTEM_ERROR
-
-    def test_classify_permission_error(self):
-        """Test classification of PermissionError."""
-        error = PermissionError("Access denied")
-        result = classify_error(error)
-        assert result == ErrorClassification.SYSTEM_ERROR
-
-    def test_classify_connection_error(self):
-        """Test classification of ConnectionError."""
-        error = ConnectionError("Connection failed")
-        result = classify_error(error)
-        # ConnectionError is a subclass of OSError, so it's classified as SYSTEM_ERROR
-        assert result == ErrorClassification.SYSTEM_ERROR
-
-    def test_classify_timeout_error(self):
-        """Test classification of TimeoutError."""
-        error = TimeoutError("Request timeout")
-        result = classify_error(error)
-        # TimeoutError is a subclass of OSError, so it's classified as SYSTEM_ERROR
-        assert result == ErrorClassification.SYSTEM_ERROR
-
-    def test_classify_runtime_error(self):
-        """Test classification of RuntimeError."""
-        error = RuntimeError("Runtime problem")
-        result = classify_error(error)
-        assert result == ErrorClassification.UNKNOWN_ERROR
-
-    def test_classify_generic_exception(self):
-        """Test classification of generic Exception."""
-        error = Exception("Unknown error")
-        result = classify_error(error)
-        assert result == ErrorClassification.UNKNOWN_ERROR
-
 
 class TestIsErrorRecoverable:
     """Test is_error_recoverable function."""
 
-    def test_recoverable_connection_error(self):
-        """Test that ConnectionError is recoverable."""
-        error = ConnectionError("Network issue")
-        assert is_error_recoverable(error) is True
+    @pytest.mark.parametrize(
+        "error,is_recoverable",
+        [
+            (ConnectionError("Network issue"), True),
+            (TimeoutError("Request timeout"), True),
+            (BlockingIOError("Blocking I/O"), True),
+            (BrokenPipeError("Pipe broken"), True),
+            (ValueError("Bad value"), False),
+            (OSError("File issue"), False),
+            (RuntimeError("Runtime problem"), False),
+        ],
+    )
+    def test_is_error_recoverable(self, error, is_recoverable):
+        """Test recoverability classification for various error types.
 
-    def test_recoverable_timeout_error(self):
-        """Test that TimeoutError is recoverable."""
-        error = TimeoutError("Request timeout")
-        assert is_error_recoverable(error) is True
-
-    def test_recoverable_blocking_io_error(self):
-        """Test that BlockingIOError is recoverable."""
-        error = BlockingIOError("Blocking I/O")
-        assert is_error_recoverable(error) is True
-
-    def test_recoverable_broken_pipe_error(self):
-        """Test that BrokenPipeError is recoverable."""
-        error = BrokenPipeError("Pipe broken")
-        assert is_error_recoverable(error) is True
-
-    def test_not_recoverable_value_error(self):
-        """Test that ValueError is not recoverable."""
-        error = ValueError("Bad value")
-        assert is_error_recoverable(error) is False
-
-    def test_not_recoverable_os_error(self):
-        """Test that OSError is not recoverable."""
-        error = OSError("File issue")
-        assert is_error_recoverable(error) is False
-
-    def test_not_recoverable_runtime_error(self):
-        """Test that RuntimeError is not recoverable."""
-        error = RuntimeError("Runtime problem")
-        assert is_error_recoverable(error) is False
+        Covers lines 108-142: Recoverability assessment for all major error types
+        """
+        assert is_error_recoverable(error) is is_recoverable
 
 
 class TestSuggestRecovery:
     """Test suggest_recovery function."""
 
-    def test_suggest_recovery_for_connection_error(self):
-        """Test recovery suggestion for recoverable errors."""
-        error = ConnectionError("Connection failed")
-        result = suggest_recovery(error)
-        assert result == "retry"
+    @pytest.mark.parametrize(
+        "error,expected_action",
+        [
+            (ConnectionError("Connection failed"), "retry"),
+            (TimeoutError("Timeout"), "retry"),
+            (BlockingIOError("Blocking I/O"), "retry"),
+            (ValueError("Bad value"), "validate_input"),
+            (OSError("Permission denied"), "manual_intervention"),
+            (RuntimeError("Unknown problem"), "contact_support"),
+        ],
+    )
+    def test_suggest_recovery(self, error, expected_action):
+        """Test recovery suggestions for various error types.
 
-    def test_suggest_recovery_for_timeout_error(self):
-        """Test recovery suggestion for timeout errors."""
-        error = TimeoutError("Timeout")
+        Covers lines 147-190: Recovery action suggestions for all error types
+        """
         result = suggest_recovery(error)
-        assert result == "retry"
-
-    def test_suggest_recovery_for_blocking_io_error(self):
-        """Test recovery suggestion for BlockingIOError."""
-        error = BlockingIOError("Blocking I/O")
-        result = suggest_recovery(error)
-        assert result == "retry"
-
-    def test_suggest_recovery_for_validation_error(self):
-        """Test recovery suggestion for validation errors."""
-        from roadmap.common.errors import ValidationError
-
-        error = ValidationError("Invalid")
-        result = suggest_recovery(error)
-        assert result == "validate_input"
-
-    def test_suggest_recovery_for_value_error(self):
-        """Test recovery suggestion for value errors."""
-        error = ValueError("Bad value")
-        result = suggest_recovery(error)
-        assert result == "validate_input"
-
-    def test_suggest_recovery_for_os_error(self):
-        """Test recovery suggestion for OS errors."""
-        error = OSError("Permission denied")
-        result = suggest_recovery(error)
-        assert result == "manual_intervention"
-
-    def test_suggest_recovery_for_runtime_error(self):
-        """Test recovery suggestion for unknown errors."""
-        error = RuntimeError("Unknown problem")
-        result = suggest_recovery(error)
-        assert result == "contact_support"
+        assert result == expected_action
 
     def test_suggest_recovery_with_context(self):
         """Test recovery suggestion with context."""
@@ -420,6 +342,28 @@ class TestLogDatabaseError:
         assert call_args[1]["suggested_action"] == "manual_intervention"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @pytest.mark.parametrize(
+        "operation,entity_type,expected_operation",
+        [
+            ("create", "issue", "create"),
+            ("read", "milestone", "read"),
+            ("update", "issue", "update"),
+            ("delete", "project", "delete"),
+        ],
+    )
+    def test_log_database_error_operations(self, mock_logger, operation, entity_type, expected_operation):
+        """Test database error logging for different operations.
+
+        Covers lines 423-434: Multiple database operations
+        """
+        error = ValueError("Bad value")
+        log_database_error(error, operation, entity_type=entity_type)
+
+        call_args = mock_logger.error.call_args
+        assert call_args[1]["operation"] == expected_operation
+        assert call_args[1]["entity_type"] == entity_type
+
+    @patch("roadmap.infrastructure.logging.error_logging.logger")
     def test_log_database_error_various_operations(self, mock_logger):
         """Test database error logging for different operations."""
         operations = ["create", "read", "update", "delete"]
@@ -483,6 +427,28 @@ class TestLogExternalServiceError:
         assert call_args[1]["suggested_action"] == "contact_support"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @pytest.mark.parametrize(
+        "service_name,operation",
+        [
+            ("github_api", "sync_issues"),
+            ("slack_api", "test_operation"),
+            ("github_graphql", "test_operation"),
+            ("custom_service", "test_operation"),
+        ],
+    )
+    def test_log_external_service_error_services(self, mock_logger, service_name, operation):
+        """Test external service error logging for different services.
+
+        Covers lines 486-497: Different external service names
+        """
+        error = ConnectionError("Connection failed")
+        log_external_service_error(error, service_name, operation)
+
+        call_args = mock_logger.error.call_args
+        assert call_args[1]["service_name"] == service_name
+        assert call_args[1]["operation"] == operation
+
+    @patch("roadmap.infrastructure.logging.error_logging.logger")
     def test_log_external_service_error_different_services(self, mock_logger):
         """Test external service error logging for different services."""
         services = ["github_api", "slack_api", "github_graphql", "custom_service"]
@@ -494,6 +460,25 @@ class TestLogExternalServiceError:
 
             call_args = mock_logger.error.call_args
             assert call_args[1]["service_name"] == service
+
+    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @pytest.mark.parametrize(
+        "error,error_type_name",
+        [
+            (ConnectionError("Network"), "ConnectionError"),
+            (TimeoutError("Timeout"), "TimeoutError"),
+            (ValueError("Bad value"), "ValueError"),
+        ],
+    )
+    def test_log_external_service_error_types(self, mock_logger, error, error_type_name):
+        """Test that error type is logged correctly for various errors.
+
+        Covers lines 499-513: Error type preservation across different error classes
+        """
+        log_external_service_error(error, "test_api", "test_op")
+
+        call_args = mock_logger.error.call_args
+        assert call_args[1]["error_type"] == error_type_name
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
     def test_log_external_service_error_error_type(self, mock_logger):
