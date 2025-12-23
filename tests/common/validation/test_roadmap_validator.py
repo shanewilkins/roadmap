@@ -59,124 +59,42 @@ class TestIssueValidation:
         result = validator.validate_issue(valid_issue)
         assert result.is_valid
 
-    def test_issue_missing_id(self, validator, valid_issue):
-        """Test issue validation fails without id."""
-        del valid_issue["id"]
+    @pytest.mark.parametrize(
+        "field_to_delete,field_to_mutate,mutation_value,expect_valid",
+        [
+            ("id", None, None, False),
+            (None, "id", "invalid", False),
+            ("title", None, None, False),
+            (None, "title", "", False),
+            (None, "title", "x" * 201, False),
+            ("priority", None, None, False),
+            (None, "priority", "urgent", False),
+            ("status", None, None, False),
+            (None, "status", "completed", False),
+            (None, "issue_type", "task", False),
+            (None, "assignee", "invalid@user", False),
+            (None, "assignee", "a" * 40, False),
+            (None, "assignee", "john_doe-smith", True),
+            (None, "milestone", "x" * 101, False),
+            (None, "estimated_hours", -5, False),
+            (None, "estimated_hours", "abc", False),
+            (None, "progress_percentage", -1, False),
+            (None, "progress_percentage", 101, False),
+            (None, "progress_percentage", 0, True),
+            (None, "progress_percentage", 100, True),
+        ],
+    )
+    def test_issue_field_mutations(
+        self, validator, valid_issue, field_to_delete, field_to_mutate, mutation_value, expect_valid
+    ):
+        """Test issue validation with various field mutations."""
+        if field_to_delete:
+            del valid_issue[field_to_delete]
+        elif field_to_mutate:
+            valid_issue[field_to_mutate] = mutation_value
+        
         result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-        assert any("id" in err.lower() for err in result.errors)
-
-    def test_issue_invalid_id_format(self, validator, valid_issue):
-        """Test issue validation fails with invalid id format."""
-        valid_issue["id"] = "invalid"
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_missing_title(self, validator, valid_issue):
-        """Test issue validation fails without title."""
-        del valid_issue["title"]
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_empty_title(self, validator, valid_issue):
-        """Test issue validation fails with empty title."""
-        valid_issue["title"] = ""
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_title_too_long(self, validator, valid_issue):
-        """Test issue validation fails with title > 200 chars."""
-        valid_issue["title"] = "x" * 201
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_missing_priority(self, validator, valid_issue):
-        """Test issue validation fails without priority."""
-        del valid_issue["priority"]
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_invalid_priority(self, validator, valid_issue):
-        """Test issue validation fails with invalid priority."""
-        valid_issue["priority"] = "urgent"
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_missing_status(self, validator, valid_issue):
-        """Test issue validation fails without status."""
-        del valid_issue["status"]
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_invalid_status(self, validator, valid_issue):
-        """Test issue validation fails with invalid status."""
-        valid_issue["status"] = "completed"
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_invalid_issue_type(self, validator, valid_issue):
-        """Test issue validation fails with invalid type."""
-        valid_issue["issue_type"] = "task"
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_invalid_assignee_format(self, validator, valid_issue):
-        """Test issue validation fails with invalid assignee format."""
-        valid_issue["assignee"] = "invalid@user"
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_assignee_too_long(self, validator, valid_issue):
-        """Test issue validation fails when assignee > 39 chars."""
-        valid_issue["assignee"] = "a" * 40
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_valid_assignee_with_special_chars(self, validator, valid_issue):
-        """Test valid assignees with hyphens and underscores."""
-        valid_issue["assignee"] = "john_doe-smith"
-        result = validator.validate_issue(valid_issue)
-        assert result.is_valid
-
-    def test_issue_milestone_too_long(self, validator, valid_issue):
-        """Test issue validation fails when milestone > 100 chars."""
-        valid_issue["milestone"] = "x" * 101
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_negative_estimated_hours(self, validator, valid_issue):
-        """Test issue validation fails with negative estimated hours."""
-        valid_issue["estimated_hours"] = -5
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_invalid_estimated_hours(self, validator, valid_issue):
-        """Test issue validation fails with non-numeric estimated hours."""
-        valid_issue["estimated_hours"] = "abc"
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_progress_percentage_below_zero(self, validator, valid_issue):
-        """Test issue validation fails with progress < 0."""
-        valid_issue["progress_percentage"] = -1
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_progress_percentage_above_100(self, validator, valid_issue):
-        """Test issue validation fails with progress > 100."""
-        valid_issue["progress_percentage"] = 101
-        result = validator.validate_issue(valid_issue)
-        assert not result.is_valid
-
-    def test_issue_valid_progress_percentage_boundaries(self, validator, valid_issue):
-        """Test issue validation accepts 0 and 100 for progress."""
-        valid_issue["progress_percentage"] = 0
-        result = validator.validate_issue(valid_issue)
-        assert result.is_valid
-
-        valid_issue["progress_percentage"] = 100
-        result = validator.validate_issue(valid_issue)
-        assert result.is_valid
+        assert result.is_valid == expect_valid
 
     def test_issue_optional_fields(self, validator):
         """Test issue with only required fields."""
@@ -211,58 +129,36 @@ class TestMilestoneValidation:
         result = validator.validate_milestone(valid_milestone)
         assert result.is_valid
 
-    def test_milestone_missing_name(self, validator, valid_milestone):
-        """Test milestone validation fails without name."""
-        del valid_milestone["name"]
+    @pytest.mark.parametrize(
+        "field_to_delete,field_to_mutate,mutation_value,expect_valid",
+        [
+            ("name", None, None, False),
+            (None, "name", "", False),
+            (None, "name", "x" * 101, False),
+            ("status", None, None, False),
+            (None, "status", "active", False),
+            (None, "due_date", 12345, False),
+        ],
+    )
+    def test_milestone_field_mutations(
+        self, validator, valid_milestone, field_to_delete, field_to_mutate, mutation_value, expect_valid
+    ):
+        """Test milestone validation with various field mutations."""
+        if field_to_delete:
+            del valid_milestone[field_to_delete]
+        elif field_to_mutate:
+            valid_milestone[field_to_mutate] = mutation_value
+        
         result = validator.validate_milestone(valid_milestone)
-        assert not result.is_valid
+        assert result.is_valid == expect_valid
 
-    def test_milestone_empty_name(self, validator, valid_milestone):
-        """Test milestone validation fails with empty name."""
-        valid_milestone["name"] = ""
-        result = validator.validate_milestone(valid_milestone)
-        assert not result.is_valid
-
-    def test_milestone_name_too_long(self, validator, valid_milestone):
-        """Test milestone validation fails with name > 100 chars."""
-        valid_milestone["name"] = "x" * 101
-        result = validator.validate_milestone(valid_milestone)
-        assert not result.is_valid
-
-    def test_milestone_missing_status(self, validator, valid_milestone):
-        """Test milestone validation fails without status."""
-        del valid_milestone["status"]
-        result = validator.validate_milestone(valid_milestone)
-        assert not result.is_valid
-
-    def test_milestone_invalid_status(self, validator, valid_milestone):
-        """Test milestone validation fails with invalid status."""
-        valid_milestone["status"] = "active"
-        result = validator.validate_milestone(valid_milestone)
-        assert not result.is_valid
-
-    def test_milestone_description_too_long(self, validator, valid_milestone):
-        """Test milestone validation fails with description > 1000 chars."""
-        valid_milestone["description"] = "x" * 1001
-        result = validator.validate_milestone(valid_milestone)
-        assert not result.is_valid
-
-    def test_milestone_invalid_due_date(self, validator, valid_milestone):
-        """Test milestone validation fails with invalid date."""
-        valid_milestone["due_date"] = 12345  # Invalid type
-        result = validator.validate_milestone(valid_milestone)
-        assert not result.is_valid
-
-    def test_milestone_valid_due_date_formats(self, validator, valid_milestone):
+    @pytest.mark.parametrize(
+        "date_value",
+        ["2025-12-31", "12/31/2025", "Dec 31, 2025", datetime(2025, 12, 31)],
+    )
+    def test_milestone_valid_date_formats(self, validator, valid_milestone, date_value):
         """Test milestone accepts various valid date formats."""
-        for date_str in ["2025-12-31", "12/31/2025", "Dec 31, 2025"]:
-            valid_milestone["due_date"] = date_str
-            result = validator.validate_milestone(valid_milestone)
-            assert result.is_valid, f"Failed for date format: {date_str}"
-
-    def test_milestone_with_datetime_object(self, validator, valid_milestone):
-        """Test milestone accepts datetime objects."""
-        valid_milestone["due_date"] = datetime(2025, 12, 31)
+        valid_milestone["due_date"] = date_value
         result = validator.validate_milestone(valid_milestone)
         assert result.is_valid
 
@@ -298,53 +194,29 @@ class TestProjectValidation:
         result = validator.validate_project(valid_project)
         assert result.is_valid
 
-    def test_project_missing_id(self, validator, valid_project):
-        """Test project validation fails without id."""
-        del valid_project["id"]
+    @pytest.mark.parametrize(
+        "field_to_delete,field_to_mutate,mutation_value,expect_valid",
+        [
+            ("id", None, None, False),
+            (None, "id", "invalid@id!", False),
+            ("name", None, None, False),
+            (None, "name", "", False),
+            (None, "name", "x" * 201, False),
+            (None, "owner", "x" * 101, False),
+            (None, "estimated_hours", -50, False),
+        ],
+    )
+    def test_project_field_mutations(
+        self, validator, valid_project, field_to_delete, field_to_mutate, mutation_value, expect_valid
+    ):
+        """Test project validation with various field mutations."""
+        if field_to_delete:
+            del valid_project[field_to_delete]
+        elif field_to_mutate:
+            valid_project[field_to_mutate] = mutation_value
+        
         result = validator.validate_project(valid_project)
-        assert not result.is_valid
-
-    def test_project_invalid_id_format(self, validator, valid_project):
-        """Test project validation fails with invalid id format."""
-        valid_project["id"] = "invalid@id!"
-        result = validator.validate_project(valid_project)
-        assert not result.is_valid
-
-    def test_project_missing_name(self, validator, valid_project):
-        """Test project validation fails without name."""
-        del valid_project["name"]
-        result = validator.validate_project(valid_project)
-        assert not result.is_valid
-
-    def test_project_empty_name(self, validator, valid_project):
-        """Test project validation fails with empty name."""
-        valid_project["name"] = ""
-        result = validator.validate_project(valid_project)
-        assert not result.is_valid
-
-    def test_project_name_too_long(self, validator, valid_project):
-        """Test project validation fails with name > 200 chars."""
-        valid_project["name"] = "x" * 201
-        result = validator.validate_project(valid_project)
-        assert not result.is_valid
-
-    def test_project_description_too_long(self, validator, valid_project):
-        """Test project validation fails with description > 2000 chars."""
-        valid_project["description"] = "x" * 2001
-        result = validator.validate_project(valid_project)
-        assert not result.is_valid
-
-    def test_project_owner_too_long(self, validator, valid_project):
-        """Test project validation fails with owner > 100 chars."""
-        valid_project["owner"] = "x" * 101
-        result = validator.validate_project(valid_project)
-        assert not result.is_valid
-
-    def test_project_negative_estimated_hours(self, validator, valid_project):
-        """Test project validation fails with negative estimated hours."""
-        valid_project["estimated_hours"] = -50
-        result = validator.validate_project(valid_project)
-        assert not result.is_valid
+        assert result.is_valid == expect_valid
 
     def test_project_minimal(self, validator):
         """Test project with only required fields."""
@@ -363,45 +235,21 @@ class TestRequiredFieldsValidation:
     def validator(self):
         return RoadmapValidator()
 
-    def test_all_fields_present(self, validator):
-        """Test validation passes when all fields present."""
-        data = {"name": "test", "status": "active", "owner": "user"}
-        result = validator.validate_required_fields(data, ["name", "status", "owner"])
-        assert result.is_valid
-
-    def test_missing_single_field(self, validator):
-        """Test validation fails when one field missing."""
-        data = {"name": "test", "owner": "user"}
-        result = validator.validate_required_fields(data, ["name", "status", "owner"])
-        assert not result.is_valid
-        assert "Missing required fields" in str(result.errors)
-
-    def test_missing_multiple_fields(self, validator):
-        """Test validation fails when multiple fields missing."""
-        data = {"name": "test"}
-        result = validator.validate_required_fields(
-            data, ["name", "status", "owner", "description"]
-        )
-        assert not result.is_valid
-        assert any("status" in err for err in result.errors)
-
-    def test_null_field_considered_missing(self, validator):
-        """Test validation fails when field is null."""
-        data = {"name": "test", "status": None, "owner": "user"}
-        result = validator.validate_required_fields(data, ["name", "status", "owner"])
-        assert not result.is_valid
-
-    def test_empty_string_field_considered_missing(self, validator):
-        """Test validation fails when field is empty string."""
-        data = {"name": "test", "status": "", "owner": "user"}
-        result = validator.validate_required_fields(data, ["name", "status", "owner"])
-        assert not result.is_valid
-
-    def test_empty_required_fields_list(self, validator):
-        """Test validation passes with empty required fields list."""
-        data = {"name": "test"}
-        result = validator.validate_required_fields(data, [])
-        assert result.is_valid
+    @pytest.mark.parametrize(
+        "data,required_fields,expect_valid",
+        [
+            ({"name": "test", "status": "active", "owner": "user"}, ["name", "status", "owner"], True),
+            ({"name": "test", "owner": "user"}, ["name", "status", "owner"], False),
+            ({"name": "test"}, ["name", "status", "owner", "description"], False),
+            ({"name": "test", "status": None, "owner": "user"}, ["name", "status", "owner"], False),
+            ({"name": "test", "status": "", "owner": "user"}, ["name", "status", "owner"], False),
+            ({"name": "test"}, [], True),
+        ],
+    )
+    def test_required_fields_validation(self, validator, data, required_fields, expect_valid):
+        """Test required fields validation with various scenarios."""
+        result = validator.validate_required_fields(data, required_fields)
+        assert result.is_valid == expect_valid
 
 
 class TestEnumFieldValidation:
@@ -411,45 +259,40 @@ class TestEnumFieldValidation:
     def validator(self):
         return RoadmapValidator()
 
-    def test_valid_enum_value(self, validator):
-        """Test validation passes with valid enum value."""
-        result = validator.validate_enum_field("high", "priority", Priority)
-        assert result.is_valid
+    @pytest.mark.parametrize(
+        "value,field_name,enum_class,expect_valid",
+        [
+            ("high", "priority", Priority, True),
+            ("urgent", "priority", Priority, False),
+            (Priority.HIGH, "priority", Priority, True),
+            (None, "priority", Priority, True),
+            (999999, "priority", Priority, False),
+        ],
+    )
+    def test_enum_field_validation(self, validator, value, field_name, enum_class, expect_valid):
+        """Test enum field validation with various values."""
+        result = validator.validate_enum_field(value, field_name, enum_class)
+        assert result.is_valid == expect_valid
 
-    def test_invalid_enum_value(self, validator):
-        """Test validation fails with invalid enum value."""
-        result = validator.validate_enum_field("urgent", "priority", Priority)
-        assert not result.is_valid
-
-    def test_enum_value_object(self, validator):
-        """Test validation accepts enum objects."""
-        result = validator.validate_enum_field(Priority.HIGH, "priority", Priority)
-        assert result.is_valid
-
-    def test_none_enum_value(self, validator):
-        """Test validation passes with None value."""
-        result = validator.validate_enum_field(None, "priority", Priority)
-        assert result.is_valid
-
-    def test_all_valid_priority_values(self, validator):
+    @pytest.mark.parametrize("priority", Priority)
+    def test_all_valid_priority_values(self, validator, priority):
         """Test all valid priority values."""
-        for priority in Priority:
-            result = validator.validate_enum_field(priority.value, "priority", Priority)
-            assert result.is_valid
+        result = validator.validate_enum_field(priority.value, "priority", Priority)
+        assert result.is_valid
 
-    def test_all_valid_status_values(self, validator):
+    @pytest.mark.parametrize("status", Status)
+    def test_all_valid_status_values(self, validator, status):
         """Test all valid status values."""
-        for status in Status:
-            result = validator.validate_enum_field(status.value, "status", Status)
-            assert result.is_valid
+        result = validator.validate_enum_field(status.value, "status", Status)
+        assert result.is_valid
 
-    def test_all_valid_milestone_status_values(self, validator):
+    @pytest.mark.parametrize("ms_status", MilestoneStatus)
+    def test_all_valid_milestone_status_values(self, validator, ms_status):
         """Test all valid milestone status values."""
-        for ms_status in MilestoneStatus:
-            result = validator.validate_enum_field(
-                ms_status.value, "milestone_status", MilestoneStatus
-            )
-            assert result.is_valid
+        result = validator.validate_enum_field(
+            ms_status.value, "milestone_status", MilestoneStatus
+        )
+        assert result.is_valid
 
 
 class TestStringLengthValidation:
@@ -459,59 +302,25 @@ class TestStringLengthValidation:
     def validator(self):
         return RoadmapValidator()
 
-    def test_valid_string_length(self, validator):
-        """Test validation passes with valid length."""
-        result = validator.validate_string_length(
-            "hello", "test_field", min_length=1, max_length=10
-        )
-        assert result.is_valid
-
-    def test_string_too_short(self, validator):
-        """Test validation fails when string too short."""
-        result = validator.validate_string_length(
-            "hi", "test_field", min_length=5, max_length=10
-        )
-        assert not result.is_valid
-
-    def test_string_too_long(self, validator):
-        """Test validation fails when string too long."""
-        result = validator.validate_string_length(
-            "hello world", "test_field", min_length=1, max_length=5
-        )
-        assert not result.is_valid
-
-    def test_string_at_min_boundary(self, validator):
-        """Test validation passes at minimum boundary."""
-        result = validator.validate_string_length(
-            "hello", "test_field", min_length=5, max_length=10
-        )
-        assert result.is_valid
-
-    def test_string_at_max_boundary(self, validator):
-        """Test validation passes at maximum boundary."""
-        result = validator.validate_string_length(
-            "hello", "test_field", min_length=1, max_length=5
-        )
-        assert result.is_valid
-
-    def test_empty_string_with_min_length(self, validator):
-        """Test empty string fails min_length validation."""
-        result = validator.validate_string_length(
-            "", "test_field", min_length=1, max_length=10
-        )
-        assert not result.is_valid
-
-    def test_none_value(self, validator):
-        """Test None value passes validation."""
-        result = validator.validate_string_length(None, "test_field")
-        assert result.is_valid
-
-    def test_no_max_length(self, validator):
-        """Test validation without max length."""
-        result = validator.validate_string_length(
-            "very long string here", "test_field", min_length=1
-        )
-        assert result.is_valid
+    @pytest.mark.parametrize(
+        "value,field_name,min_length,max_length,expect_valid",
+        [
+            ("hello", "test_field", 1, 10, True),
+            ("hi", "test_field", 5, 10, False),
+            ("hello world", "test_field", 1, 5, False),
+            ("hello", "test_field", 5, 10, True),
+            ("hello", "test_field", 1, 5, True),
+            ("", "test_field", 1, 10, False),
+            (None, "test_field", None, None, True),
+            ("very long string here", "test_field", 1, None, True),
+        ],
+    )
+    def test_string_length_validation(
+        self, validator, value, field_name, min_length, max_length, expect_valid
+    ):
+        """Test string length validation with various inputs."""
+        result = validator.validate_string_length(value, field_name, min_length=min_length, max_length=max_length)
+        assert result.is_valid == expect_valid
 
 
 class TestIdFormatValidation:
@@ -521,35 +330,21 @@ class TestIdFormatValidation:
     def validator(self):
         return RoadmapValidator()
 
-    def test_valid_issue_id(self, validator):
-        """Test valid 8-character hex ID."""
-        result = validator.validate_id_format("12345678", "issue_id")
-        assert result.is_valid
-
-    def test_valid_project_id(self, validator):
-        """Test valid UUID-like project ID."""
-        result = validator.validate_id_format("abc-123def", "project_id")
-        assert result.is_valid
-
-    def test_invalid_id_format(self, validator):
-        """Test invalid ID format."""
-        result = validator.validate_id_format("invalid@id!", "id")
-        assert not result.is_valid
-
-    def test_id_with_uppercase_hex(self, validator):
-        """Test ID with uppercase hex characters fails."""
-        result = validator.validate_id_format("ABCDEF12", "id")
-        assert not result.is_valid
-
-    def test_empty_id(self, validator):
-        """Test empty ID fails validation."""
-        result = validator.validate_id_format("", "id")
-        assert not result.is_valid
-
-    def test_none_id(self, validator):
-        """Test None ID fails validation."""
-        result = validator.validate_id_format(None, "id")
-        assert not result.is_valid
+    @pytest.mark.parametrize(
+        "id_value,field_name,expect_valid",
+        [
+            ("12345678", "issue_id", True),
+            ("abc-123def", "project_id", True),
+            ("invalid@id!", "id", False),
+            ("ABCDEF12", "id", False),
+            ("", "id", False),
+            (None, "id", False),
+        ],
+    )
+    def test_id_format_validation(self, validator, id_value, field_name, expect_valid):
+        """Test ID format validation with various inputs."""
+        result = validator.validate_id_format(id_value, field_name)
+        assert result.is_valid == expect_valid
 
 
 class TestPathValidation:
@@ -559,40 +354,22 @@ class TestPathValidation:
     def validator(self):
         return RoadmapValidator()
 
-    def test_valid_relative_path(self, validator):
-        """Test valid relative path."""
-        result = validator.validate_path("docs/readme.md", "filepath")
-        assert result.is_valid
-
-    def test_valid_path_with_directories(self, validator):
-        """Test valid path with multiple directories."""
-        result = validator.validate_path("src/components/Button.tsx", "filepath")
-        assert result.is_valid
-
-    def test_path_with_path_object(self, validator):
-        """Test path validation with Path object."""
-        result = validator.validate_path(Path("docs/readme.md"), "filepath")
-        assert result.is_valid
-
-    def test_path_with_traversal_fails(self, validator):
-        """Test path with '..' traversal fails validation."""
-        result = validator.validate_path("../../../etc/passwd", "filepath")
-        assert not result.is_valid
-
-    def test_absolute_path_for_relative_field(self, validator):
-        """Test absolute path fails when relative expected."""
-        result = validator.validate_path("/etc/passwd", "relative_path")
-        assert not result.is_valid
-
-    def test_absolute_path_for_filename(self, validator):
-        """Test absolute path fails for filename field."""
-        result = validator.validate_path("/path/to/file.txt", "filename")
-        assert not result.is_valid
-
-    def test_none_path(self, validator):
-        """Test None path passes validation."""
-        result = validator.validate_path(None, "filepath")
-        assert result.is_valid
+    @pytest.mark.parametrize(
+        "path_value,field_name,expect_valid",
+        [
+            ("docs/readme.md", "filepath", True),
+            ("src/components/Button.tsx", "filepath", True),
+            (Path("docs/readme.md"), "filepath", True),
+            ("../../../etc/passwd", "filepath", False),
+            ("/etc/passwd", "relative_path", False),
+            ("/path/to/file.txt", "filename", False),
+            (None, "filepath", True),
+        ],
+    )
+    def test_path_validation(self, validator, path_value, field_name, expect_valid):
+        """Test path validation with various inputs."""
+        result = validator.validate_path(path_value, field_name)
+        assert result.is_valid == expect_valid
 
 
 class TestGithubIssueNumberValidation:
@@ -602,40 +379,23 @@ class TestGithubIssueNumberValidation:
     def validator(self):
         return RoadmapValidator()
 
-    def test_valid_issue_number(self, validator):
-        """Test valid issue number."""
-        result = validator.validate_github_issue_number(123, "github_issue")
-        assert result.is_valid
-
-    def test_valid_issue_number_as_string(self, validator):
-        """Test valid issue number as string."""
-        result = validator.validate_github_issue_number("456", "github_issue")
-        assert result.is_valid
-
-    def test_invalid_negative_issue_number(self, validator):
-        """Test negative issue number fails validation."""
-        result = validator.validate_github_issue_number(-1, "github_issue")
-        assert not result.is_valid
-
-    def test_invalid_zero_issue_number(self, validator):
-        """Test zero issue number fails validation."""
-        result = validator.validate_github_issue_number(0, "github_issue")
-        assert not result.is_valid
-
-    def test_invalid_non_numeric_issue_number(self, validator):
-        """Test non-numeric issue number fails validation."""
-        result = validator.validate_github_issue_number("abc", "github_issue")
-        assert not result.is_valid
-
-    def test_none_issue_number(self, validator):
-        """Test None issue number passes validation."""
-        result = validator.validate_github_issue_number(None, "github_issue")
-        assert result.is_valid
-
-    def test_large_issue_number(self, validator):
-        """Test large issue number passes validation."""
-        result = validator.validate_github_issue_number(999999999, "github_issue")
-        assert result.is_valid
+    @pytest.mark.parametrize(
+        "issue_number,field_name,expect_valid",
+        [
+            (123, "github_issue", True),
+            ("456", "github_issue", True),
+            (-1, "github_issue", False),
+            (0, "github_issue", False),
+            ("abc", "github_issue", False),
+            (None, "github_issue", True),
+            (999999999, "github_issue", True),
+            (123.45, "github_issue", True),
+        ],
+    )
+    def test_github_issue_number_validation(self, validator, issue_number, field_name, expect_valid):
+        """Test GitHub issue number validation with various inputs."""
+        result = validator.validate_github_issue_number(issue_number, field_name)
+        assert result.is_valid == expect_valid
 
 
 class TestLabelsValidation:
@@ -645,59 +405,25 @@ class TestLabelsValidation:
     def validator(self):
         return RoadmapValidator()
 
-    def test_valid_labels(self, validator):
-        """Test valid labels list."""
-        result = validator.validate_labels(
-            ["bug", "feature", "documentation"], "labels"
-        )
-        assert result.is_valid
-
-    def test_empty_labels_list(self, validator):
-        """Test empty labels list passes validation."""
-        result = validator.validate_labels([], "labels")
-        assert result.is_valid
-
-    def test_labels_not_list(self, validator):
-        """Test non-list labels fails validation."""
-        result = validator.validate_labels("bug,feature", "labels")
-        assert not result.is_valid
-
-    def test_labels_with_non_string_element(self, validator):
-        """Test labels with non-string element fails validation."""
-        result = validator.validate_labels(["bug", 123, "feature"], "labels")
-        assert not result.is_valid
-
-    def test_label_too_long(self, validator):
-        """Test label > 50 characters fails validation."""
-        result = validator.validate_labels(["x" * 51], "labels")
-        assert not result.is_valid
-
-    def test_label_at_max_length(self, validator):
-        """Test label with exactly 50 characters passes validation."""
-        result = validator.validate_labels(["x" * 50], "labels")
-        assert result.is_valid
-
-    def test_empty_label_string(self, validator):
-        """Test empty label string fails validation."""
-        result = validator.validate_labels(["bug", "", "feature"], "labels")
-        assert not result.is_valid
-
-    def test_label_with_only_whitespace(self, validator):
-        """Test label with only whitespace fails validation."""
-        result = validator.validate_labels(["bug", "   ", "feature"], "labels")
-        assert not result.is_valid
-
-    def test_none_labels(self, validator):
-        """Test None labels passes validation."""
-        result = validator.validate_labels(None, "labels")
-        assert result.is_valid
-
-    def test_labels_with_special_characters(self, validator):
-        """Test labels with special characters pass validation."""
-        result = validator.validate_labels(
-            ["bug-fix", "type: feature", "p/high-priority"], "labels"
-        )
-        assert result.is_valid
+    @pytest.mark.parametrize(
+        "labels_value,field_name,expect_valid",
+        [
+            (["bug", "feature", "documentation"], "labels", True),
+            ([], "labels", True),
+            ("bug,feature", "labels", False),
+            (["bug", 123, "feature"], "labels", False),
+            (["x" * 51], "labels", False),
+            (["x" * 50], "labels", True),
+            (["bug", "", "feature"], "labels", False),
+            (["bug", "   ", "feature"], "labels", False),
+            (None, "labels", True),
+            (["bug-fix", "type: feature", "p/high-priority"], "labels", True),
+        ],
+    )
+    def test_labels_validation(self, validator, labels_value, field_name, expect_valid):
+        """Test labels validation with various inputs."""
+        result = validator.validate_labels(labels_value, field_name)
+        assert result.is_valid == expect_valid
 
 
 class TestValidationResultIntegration:
