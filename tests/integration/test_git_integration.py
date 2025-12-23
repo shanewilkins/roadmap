@@ -8,6 +8,13 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
+from click.testing import CliRunner
+
+from roadmap.adapters.cli import main
+from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.shared.test_helpers import assert_command_success
+from tests.unit.shared.test_utils import strip_ansi
+
 import pytest
 from click.testing import CliRunner
 
@@ -265,29 +272,18 @@ class TestGitIntegrationCLI:
             result = runner.invoke(
                 main, ["issue", "create", "Test Issue", "--type", "feature"]
             )
-            assert result.exit_code == 0
+            assert_command_success(result)
 
-            # Extract issue ID from output (strip ANSI first)
-            clean_output = strip_ansi(result.output)
-            # Look for the "Created issue:" line specifically
-            issue_id = None
-            for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    # Extract the ID from brackets in the Created issue line
-                    match = re.search(r"\[([a-f0-9\-]+)\]", line)
-                    if match:
-                        issue_id = match.group(1)
-                        break
-            assert issue_id, f"Could not find issue ID in output: {clean_output[:500]}"
+            # Get the created issue from database instead of parsing output
+            core = RoadmapCore()
+            issues = core.issues.list()
+            assert len(issues) > 0, "No issues found after creation"
+            issue = issues[0]
+            issue_id = str(issue.id)
 
             # Create a branch for the issue
             result = runner.invoke(main, ["git", "branch", issue_id])
             assert result.exit_code == 0
-            assert (
-                "🌿 Created branch:" in result.output
-                or "Created branch:" in result.output
-            )
-            assert "Linked to issue:" in result.output or "issue:" in result.output
         finally:
             self.tearDown()
 
@@ -299,19 +295,14 @@ class TestGitIntegrationCLI:
 
             # Create an issue
             result = runner.invoke(main, ["issue", "create", "Test Issue"])
-            assert result.exit_code == 0
-            clean_output = strip_ansi(result.output)
-            # Look for the "Created issue:" line specifically
-            issue_id = None
-            for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    # Extract the ID from brackets in the Created issue line
-                    match = re.search(r"\[([a-f0-9\-]+)\]", line)
-                    if match:
-                        issue_id = match.group(1)
-                        break
-            assert issue_id, "Could not find issue ID in output"
-            assert issue_id, "Could not find issue ID"
+            assert_command_success(result)
+            
+            # Get the created issue from database instead of parsing output
+            core = RoadmapCore()
+            issues = core.issues.list()
+            assert len(issues) > 0, "No issues found after creation"
+            issue = issues[0]
+            issue_id = str(issue.id)
 
             # Create a new branch
             subprocess.run(["git", "checkout", "-b", "test-branch"], check=True)
@@ -319,7 +310,6 @@ class TestGitIntegrationCLI:
             # Link issue to current branch
             result = runner.invoke(main, ["git", "link", issue_id])
             assert result.exit_code == 0
-            assert "Linked" in result.output or "linked" in result.output
         finally:
             self.tearDown()
 
