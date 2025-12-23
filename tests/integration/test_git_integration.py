@@ -1,19 +1,11 @@
 """Tests for Git integration functionality."""
 
 import os
-import re
 import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-
-from click.testing import CliRunner
-
-from roadmap.adapters.cli import main
-from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.shared.test_helpers import assert_command_success
-from tests.unit.shared.test_utils import strip_ansi
 
 import pytest
 from click.testing import CliRunner
@@ -22,7 +14,7 @@ from roadmap.adapters.cli import main
 from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
 from roadmap.core.domain import IssueType, Priority
 from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.shared.test_utils import strip_ansi
+from tests.unit.shared.test_helpers import assert_command_success
 
 
 class TestGitCommit:
@@ -42,9 +34,9 @@ class TestGitCommit:
         assert "abc12345" in commit.extract_roadmap_references()
         assert commit.extract_progress_info() == 50.0
 
-    def test_extract_roadmap_references(self):
-        """Test extracting roadmap references from commit messages."""
-        test_cases = [
+    @pytest.mark.parametrize(
+        "message,expected",
+        [
             ("feat: add login [roadmap:abc12345]", ["abc12345"]),
             ("fix: resolve bug [closes roadmap:def67890]", ["def67890"]),
             ("docs: update API [fixes roadmap:ghi13579]", ["ghi13579"]),
@@ -64,24 +56,26 @@ class TestGitCommit:
                 "Mixed formats: fixes #abc12345 and [roadmap:def67890]",
                 ["abc12345", "def67890"],
             ),
-        ]
+        ],
+    )
+    def test_extract_roadmap_references(self, message, expected):
+        """Test extracting roadmap references from commit messages."""
+        commit = GitCommit("hash", "author", datetime.now(), message, [])
+        assert set(commit.extract_roadmap_references()) == set(expected)
 
-        for message, expected in test_cases:
-            commit = GitCommit("hash", "author", datetime.now(), message, [])
-            assert set(commit.extract_roadmap_references()) == set(expected)
-
-    def test_extract_progress_info(self):
-        """Test extracting progress information from commit messages."""
-        test_cases = [
+    @pytest.mark.parametrize(
+        "message,expected",
+        [
             ("feat: add feature [progress:25%]", 25.0),
             ("fix: bug [progress:100]", 100.0),
             ("docs: progress:75%", 75.0),
             ("normal commit", None),
-        ]
-
-        for message, expected in test_cases:
-            commit = GitCommit("hash", "author", datetime.now(), message, [])
-            assert commit.extract_progress_info() == expected
+        ],
+    )
+    def test_extract_progress_info(self, message, expected):
+        """Test extracting progress information from commit messages."""
+        commit = GitCommit("hash", "author", datetime.now(), message, [])
+        assert commit.extract_progress_info() == expected
 
 
 class TestGitBranch:
@@ -98,9 +92,9 @@ class TestGitBranch:
         assert branch.extract_issue_id() == "abc12345"
         assert branch.suggests_issue_type() == "feature"
 
-    def test_extract_issue_id_patterns(self):
-        """Test various branch name patterns for issue ID extraction."""
-        test_cases = [
+    @pytest.mark.parametrize(
+        "branch_name,expected",
+        [
             ("feature/abc12345-description", "abc12345"),
             ("bugfix/def67890-fix-login", "def67890"),
             ("hotfix/abc13579-urgent-patch", "abc13579"),
@@ -108,15 +102,16 @@ class TestGitBranch:
             ("feature/issue-def67890-with-prefix", "def67890"),
             ("main", None),
             ("develop", None),
-        ]
+        ],
+    )
+    def test_extract_issue_id_patterns(self, branch_name, expected):
+        """Test various branch name patterns for issue ID extraction."""
+        branch = GitBranch(branch_name)
+        assert branch.extract_issue_id() == expected
 
-        for branch_name, expected in test_cases:
-            branch = GitBranch(branch_name)
-            assert branch.extract_issue_id() == expected
-
-    def test_suggest_issue_type(self):
-        """Test issue type suggestions based on branch names."""
-        test_cases = [
+    @pytest.mark.parametrize(
+        "branch_name,expected",
+        [
             ("feature/abc12345-new-feature", "feature"),
             ("feat/abc12345-new-feature", "feature"),
             ("bugfix/abc12345-fix-bug", "bug"),
@@ -126,11 +121,12 @@ class TestGitBranch:
             ("docs/abc12345-documentation", "documentation"),
             ("test/abc12345-add-tests", "testing"),
             ("main", None),
-        ]
-
-        for branch_name, expected in test_cases:
-            branch = GitBranch(branch_name)
-            assert branch.suggests_issue_type() == expected
+        ],
+    )
+    def test_suggest_issue_type(self, branch_name, expected):
+        """Test issue type suggestions based on branch names."""
+        branch = GitBranch(branch_name)
+        assert branch.suggests_issue_type() == expected
 
 
 class TestGitIntegration:
@@ -296,7 +292,7 @@ class TestGitIntegrationCLI:
             # Create an issue
             result = runner.invoke(main, ["issue", "create", "Test Issue"])
             assert_command_success(result)
-            
+
             # Get the created issue from database instead of parsing output
             core = RoadmapCore()
             issues = core.issues.list()

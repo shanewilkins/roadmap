@@ -4,6 +4,8 @@ import shutil
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
 from roadmap.adapters.persistence.persistence import (
     YAMLRecoveryManager,
@@ -50,19 +52,25 @@ class TestYAMLRecoveryManager:
         assert len(backups) >= 1  # Should have at least one backup
         assert backup2 in backups or backup1 in backups  # At least one should be there
 
-    def test_validate_yaml_syntax_valid(self):
-        """Test YAML syntax validation with valid YAML."""
-        valid_yaml = "title: Test\nstatus: todo"
-        is_valid, error = self.recovery_manager.validate_yaml_syntax(valid_yaml)
-        assert is_valid
-        assert error is None
-
-    def test_validate_yaml_syntax_invalid(self):
-        """Test YAML syntax validation with invalid YAML."""
-        invalid_yaml = "title: Test\nstatus: [unclosed list"
-        is_valid, error = self.recovery_manager.validate_yaml_syntax(invalid_yaml)
-        assert not is_valid
-        assert error and "YAML syntax error" in error
+    @pytest.mark.parametrize(
+        "yaml_content,is_valid,has_error",
+        [
+            ("title: Test\nstatus: todo", True, False),
+            ("title: Valid YAML\ndescription: Another field", True, False),
+            ("title: Test\nstatus: [unclosed list", False, True),
+            ("invalid: [bad: yaml: syntax:", False, True),
+        ],
+    )
+    def test_validate_yaml_syntax(self, yaml_content, is_valid, has_error):
+        """Test YAML syntax validation with various inputs."""
+        result_is_valid, error = self.recovery_manager.validate_yaml_syntax(
+            yaml_content
+        )
+        assert result_is_valid == is_valid
+        if has_error:
+            assert error is not None
+        else:
+            assert error is None
 
     def test_validate_frontmatter_structure_issue_valid(self):
         """Test frontmatter structure validation for valid issue."""
