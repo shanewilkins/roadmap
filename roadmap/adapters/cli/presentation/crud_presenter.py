@@ -84,7 +84,7 @@ class UpdatePresenter(BasePresenter):
 
         Args:
             entity: The updated entity object
-            _updates: Optional dict of fields that were updated (unused for simple display)
+            _updates: Optional dict of fields that were updated
         """
         console = self._get_console()
         entity_type = _infer_entity_type(entity)
@@ -95,6 +95,23 @@ class UpdatePresenter(BasePresenter):
             f"✅ Updated {entity_type.lower()}: {title} [{entity_id}]",
             style="green",
         )
+
+        # Display updated fields if provided
+        if _updates:
+            for field, value in _updates.items():
+                if value is not None and field != "id":  # Skip id field
+                    if field == "estimated_hours" and value is not None:
+                        # Format estimate as "Xh" or "Xd"
+                        hours = float(value)
+                        days = hours / 8.0
+                        if days >= 1:
+                            console.print(f"   estimate: {days:.1f}d", style="cyan")
+                        else:
+                            console.print(f"   estimate: {hours:.1f}h", style="cyan")
+                    else:
+                        # Format the field name nicely
+                        display_field = field.replace("_", " ").title()
+                        console.print(f"   {display_field}: {value}", style="cyan")
 
 
 class DeletePresenter(BasePresenter):

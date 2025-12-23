@@ -27,7 +27,7 @@ def reset_cli_state():
             main.make_context("main", [])
             # Context reset not available, skip
             pass
-        except:
+        except Exception:  # noqa: BLE001
             pass
 
     # Clear any module-level state
@@ -67,15 +67,18 @@ def cli_isolated_fs():
 
 
 @pytest.fixture
-def initialized_roadmap(temp_dir):
-    """Provide a temporary directory with an initialized roadmap."""
+def initialized_roadmap():
+    """Provide a CliRunner with an initialized roadmap in isolated filesystem."""
     from roadmap.infrastructure.core import RoadmapCore
 
-    # Initialize the roadmap
-    manager = RoadmapCore()
-    manager.initialize()  # The correct method name
+    runner = CliRunner()
 
-    yield temp_dir
+    with runner.isolated_filesystem():
+        # Initialize the roadmap
+        manager = RoadmapCore()
+        manager.initialize()
+
+        yield runner
 
 
 @pytest.fixture

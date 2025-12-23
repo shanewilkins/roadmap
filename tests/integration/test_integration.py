@@ -89,11 +89,13 @@ class TestEndToEndWorkflows:
             assert result.exit_code == 0
             assert "Created issue" in result.output and title in result.output
 
-            # Extract issue ID from output
-            for line in result.output.split("\n"):
-                if "ID:" in line:
-                    issue_id = line.split(":")[1].strip()
-                    issue_ids.append(issue_id)
+            # Extract issue ID from output - look for the line with "Created issue:"
+            clean_output = strip_ansi_fixture(result.output)
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    match = re.search(r"\[([^\]]+)\]", line)
+                    if match:
+                        issue_ids.append(match.group(1))
                     break
 
         assert len(issue_ids) == 3
@@ -260,25 +262,34 @@ class TestEndToEndWorkflows:
         # Create issues
         result = runner.invoke(main, ["issue", "create", "Issue 1"])
         issue1_id = None
-        for line in result.output.split("\n"):
-            if "ID:" in line:
-                issue1_id = line.split(":")[1].strip()
+        clean_output = strip_ansi_fixture(result.output)
+        for line in clean_output.split("\n"):
+            if "Created issue:" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    issue1_id = match.group(1)
                 break
         assert issue1_id is not None, "Failed to parse issue1_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Issue 2"])
         issue2_id = None
-        for line in result.output.split("\n"):
-            if "ID:" in line:
-                issue2_id = line.split(":")[1].strip()
+        clean_output = strip_ansi_fixture(result.output)
+        for line in clean_output.split("\n"):
+            if "Created issue:" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    issue2_id = match.group(1)
                 break
         assert issue2_id is not None, "Failed to parse issue2_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Backlog Issue"])
         backlog_issue_id = None
-        for line in result.output.split("\n"):
-            if "ID:" in line:
-                backlog_issue_id = line.split(":")[1].strip()
+        clean_output = strip_ansi_fixture(result.output)
+        for line in clean_output.split("\n"):
+            if "Created issue:" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    backlog_issue_id = match.group(1)
                 break
         assert (
             backlog_issue_id is not None
@@ -442,9 +453,12 @@ class TestCrossModuleIntegration:
 
         # Extract issue ID
         issue_id = None
-        for line in result.output.split("\n"):
-            if "ID:" in line:
-                issue_id = line.split(":")[1].strip()
+        clean_output = strip_ansi_fixture(result.output)
+        for line in clean_output.split("\n"):
+            if "Created issue:" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    issue_id = match.group(1)
                 break
 
         # Update through CLI

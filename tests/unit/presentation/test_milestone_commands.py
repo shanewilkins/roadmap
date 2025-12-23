@@ -120,8 +120,9 @@ def test_milestone_assign_command(cli_runner):
         )
         result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
 
-        # Extract issue ID
-        match = re.search(r"\[([^\]]+)\]", result.output)
+        # Extract issue ID - use strip_ansi to handle logging output
+        clean_output = strip_ansi(result.output)
+        match = re.search(r"\[([^\]]+)\]", clean_output)
         if match:
             issue_id = match.group(1)
 
@@ -129,7 +130,8 @@ def test_milestone_assign_command(cli_runner):
             result = cli_runner.invoke(main, ["milestone", "assign", issue_id, "v1.0"])
             assert result.exit_code == 0
             # Check that assignment was successful
-            assert "Assigned" in result.output
+            clean_assign_output = strip_ansi(result.output)
+            assert "Assigned" in clean_assign_output
 
 
 def test_milestone_assign_command_nonexistent_milestone(cli_runner):

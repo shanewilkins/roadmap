@@ -18,7 +18,7 @@ console = get_console()
 @click.pass_context
 @require_initialized
 @verbose_output
-def today(ctx: click.Context, verbose: bool):
+def today(ctx: click.Context, verbose: bool = False):  # noqa: F841
     """Show your daily workflow summary for the upcoming milestone.
 
     Displays your assigned issues for the next upcoming milestone:
@@ -40,7 +40,8 @@ def today(ctx: click.Context, verbose: bool):
         data = service.get_daily_summary_data()
 
         # Use presenter to render the data
-        DailySummaryPresenter.render(data)
+        presenter = DailySummaryPresenter()
+        presenter.render(data)
 
     except ValueError as e:
         console.print(f"❌ {e}", style="bold red")

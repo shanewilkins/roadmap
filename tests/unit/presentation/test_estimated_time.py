@@ -1,6 +1,7 @@
 """Tests for estimated time functionality."""
 
 import os
+import re
 import tempfile
 
 import pytest
@@ -172,8 +173,17 @@ class TestEstimatedTimeCLI:
         create_result = runner.invoke(main, ["issue", "create", "Test Issue"])
         assert create_result.exit_code == 0
 
-        # Extract issue ID from output
-        issue_id = re.search(r"\[([^\]]+)\]", create_result.output).group(1)
+        # Extract issue ID from output - look for the success message line
+        clean_create = strip_ansi(create_result.output)
+        # Find the line with "Created issue" which has the format:  ✅ Created issue: Test Issue [id]
+        for line in clean_create.split("\n"):
+            if "Created issue" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    issue_id = match.group(1)
+                    break
+        else:
+            raise ValueError(f"Could not find Created issue line in: {clean_create}")
 
         # Update the estimate
         update_result = runner.invoke(
@@ -221,12 +231,30 @@ class TestEstimatedTimeCLI:
         create_result1 = runner.invoke(
             main, ["issue", "create", "Task 1", "--estimate", "8.0"]
         )
-        issue_id1 = re.search(r"\[([^\]]+)\]", create_result1.output).group(1)
+        # Extract ID from success message line
+        clean_create1 = strip_ansi(create_result1.output)
+        issue_id1 = None
+        for line in clean_create1.split("\n"):
+            if "Created issue" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    issue_id1 = match.group(1)
+                    break
+        assert issue_id1 is not None, f"Could not find issue ID in: {clean_create1}"
 
         create_result2 = runner.invoke(
             main, ["issue", "create", "Task 2", "--estimate", "16.0"]
         )
-        issue_id2 = re.search(r"\[([^\]]+)\]", create_result2.output).group(1)
+        # Extract ID from success message line
+        clean_create2 = strip_ansi(create_result2.output)
+        issue_id2 = None
+        for line in clean_create2.split("\n"):
+            if "Created issue" in line:
+                match = re.search(r"\[([^\]]+)\]", line)
+                if match:
+                    issue_id2 = match.group(1)
+                    break
+        assert issue_id2 is not None, f"Could not find issue ID in: {clean_create2}"
 
         # Assign issues to milestone
         runner.invoke(
