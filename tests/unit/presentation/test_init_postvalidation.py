@@ -1,39 +1,40 @@
+"""Tests for post-initialization validation."""
+
+import pytest
+from click.testing import CliRunner
+
 from roadmap.adapters.cli import main
 
 
-def test_post_init_validation_warns_on_missing_project(cli_runner):
-    runner = cli_runner
-    with runner.isolated_filesystem():
-        # Run init with --skip-project to skip project creation
-        result = runner.invoke(
-            main,
-            [
+@pytest.fixture
+def cli_runner():
+    """Provide a Click test runner."""
+    return CliRunner()
+
+
+class TestPostInitValidation:
+    """Test post-initialization validation checks."""
+
+    @pytest.mark.parametrize("skip_project,expected_in_output", [
+        (True, None),  # Skip project validation
+        (False, "No project files found"),  # Check for warning
+    ])
+    def test_post_init_validation(self, cli_runner, skip_project, expected_in_output):
+        """Test that post-init validation handles missing projects appropriately."""
+        with cli_runner.isolated_filesystem():
+            args = [
                 "init",
                 "--non-interactive",
                 "--skip-github",
-                "--skip-project",
-            ],
-        )
+            ]
+            if skip_project:
+                args.append("--skip-project")
+            else:
+                args.extend(["--project-name", "Test Project"])
 
-        # Should succeed even without projects
-        assert result.exit_code == 0
+            result = cli_runner.invoke(main, args)
 
+            assert result.exit_code == 0
+            if expected_in_output:
+                assert expected_in_output not in result.output
 
-def test_post_init_validation_passes_with_project(cli_runner):
-    runner = cli_runner
-    with runner.isolated_filesystem():
-        # Run init normally with project creation
-        result = runner.invoke(
-            main,
-            [
-                "init",
-                "--non-interactive",
-                "--skip-github",
-                "--project-name",
-                "Test Project",
-            ],
-        )
-
-        assert result.exit_code == 0
-        # Should not show missing project warning
-        assert "No project files found" not in result.output

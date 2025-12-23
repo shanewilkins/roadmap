@@ -1,20 +1,32 @@
+"""Tests for credential flow in initialization."""
+
+import pytest
+from click.testing import CliRunner
+
 from roadmap.adapters.cli import main
 
 
-def test_init_with_github_token_stores_and_uses_token(cli_runner):
-    """Test that init handles --github-token flag gracefully when --skip-github is set."""
-    runner = cli_runner
-    with runner.isolated_filesystem():
-        # When --skip-github is set, GitHub token should be ignored and init should succeed
-        result = runner.invoke(
-            main,
-            [
-                "init",
-                "-y",
-                "--skip-github",
-                "--skip-project",
-            ],
-        )
+@pytest.fixture
+def cli_runner():
+    """Provide a Click test runner."""
+    return CliRunner()
 
-        # Should succeed without errors
-        assert result.exit_code == 0
+
+class TestInitCredentialFlow:
+    """Test credential flow in init command."""
+
+    def test_init_with_skip_github_flag(self, cli_runner):
+        """Test that init succeeds when --skip-github flag is set."""
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(
+                main,
+                [
+                    "init",
+                    "-y",
+                    "--skip-github",
+                    "--skip-project",
+                ],
+            )
+            # Should succeed without errors
+            assert result.exit_code == 0
+

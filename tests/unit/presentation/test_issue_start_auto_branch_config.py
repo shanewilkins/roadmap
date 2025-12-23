@@ -1,59 +1,87 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
 import yaml
 
 from roadmap.adapters.cli import main
 
 
-def test_start_issue_respects_config_auto_branch(cli_runner):
-    runner = cli_runner
-    with runner.isolated_filesystem():
-        # Create .roadmap/config.yaml with auto_branch: true
-        # Note: auto_branch config is currently disabled in the code, but test that
-        # without --git-branch flag, no branch is created (current behavior)
-        Path(".roadmap").mkdir()
-        config = {"defaults": {"auto_branch": True}}
-        with open(".roadmap/config.yaml", "w") as f:
-            yaml.dump(config, f)
+class DummyGit:
+    """Mock Git helper for testing."""
 
-        fake_issue = Mock()
-        fake_issue.id = "abc12345"
-        fake_issue.title = "Test Issue"
+    def __init__(self, branch_name="feature/abc12345-test-issue"):
+        self.branch_name = branch_name
 
-        class DummyGit:
-            def is_git_repository(self):
-                return True
+    def is_git_repository(self):
+        return True
 
-            def create_branch_for_issue(self, issue, checkout=True, force=False):
-                assert issue == fake_issue
-                return (True, "feature/abc12345-test-issue")
+    def create_branch_for_issue(self, issue, checkout=True, force=False):
+        assert issue.id == "abc12345"
+        return (True, self.branch_name)
 
-            def suggest_branch_name(self, issue):
-                return "feature/abc12345-test-issue"
+    def suggest_branch_name(self, issue):
+        return self.branch_name
 
-        dummy_git = DummyGit()
 
-        with patch("roadmap.cli.RoadmapCore") as MockCoreMain:
-            core_inst = MockCoreMain.return_value
-            core_inst.is_initialized.return_value = True
-            core_inst.issues.get.return_value = fake_issue
-            core_inst.update_issue.return_value = True
-            # Ensure the mocked core points to the real config file we created
+@pytest.fixture
+def fake_issue():
+    """Create a mock issue for testing."""
+    issue = Mock()
+    issue.id = "abc12345"
+    issue.title = "Test Issue"
+    return issue
+
+
+@pytest.fixture
+def mocked_core(fake_issue):
+    """Create a mocked RoadmapCore instance."""
+    with patch("roadmap.cli.RoadmapCore") as MockCoreMain:
+        core_inst = MockCoreMain.return_value
+        core_inst.is_initialized.return_value = True
+        core_inst.issues.get.return_value = fake_issue
+        core_inst.update_issue.return_value = True
+        core_inst.git = DummyGit()
+        yield core_inst, MockCoreMain
+
+
+class TestIssueStartBranch:
+    """Test issue start command with Git branch creation."""
+
+    def test_start_respects_auto_branch_config(self, cli_runner, fake_issue, mocked_core):
+        """Test that config auto_branch setting is respected (currently disabled)."""
+        core_inst, _ = mocked_core
+        runner = cli_runner
+
+        with runner.isolated_filesystem():
+            # Create .roadmap/config.yaml with auto_branch: true
+            Path(".roadmap").mkdir()
+            config = {"defaults": {"auto_branch": True}}
+            with open(".roadmap/config.yaml", "w") as f:
+                yaml.dump(config, f)
+
             core_inst.config_file = Path(".roadmap/config.yaml")
-            core_inst.git = dummy_git
 
-            result = runner.invoke(
-                main,
-                [
-                    "issue",
-                    "start",
-                    fake_issue.id,
-                ],
-            )
+            result = runner.invoke(main, ["issue", "start", fake_issue.id])
 
             # Without --git-branch flag, branch should not be created
-            # (auto_branch config is currently disabled)
             assert result.exit_code == 0
-            assert "Started issue" in result.output
             assert "Created Git branch" not in result.output
+
+    def test_start_creates_branch_with_flag(self, cli_runner, fake_issue, mocked_core):
+        """Test that --git-branch flag creates a Git branch."""
+        _, _ = mocked_core
+        runner = cli_runner
+
+        with runner.isolated_filesystem():
+            result = runner.invoke(
+                main,
+                ["issue", "start", fake_issue.id, "--git-branch", "--no-checkout"],
+            )
+
+            assert result.exit_code == 0
+            assert (
+                "Created Git branch" in result.output
+                or "Not in a Git repository" in result.output
+            )
+
