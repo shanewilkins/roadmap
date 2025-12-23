@@ -234,7 +234,11 @@ class TestCLIIssueCreate:
         "title,options,should_succeed",
         [
             ("Test Issue", [], True),  # Minimal
-            ("Feature Request", ["--type", "feature", "--priority", "high", "--estimate", "4.5"], True),
+            (
+                "Feature Request",
+                ["--type", "feature", "--priority", "high", "--estimate", "4.5"],
+                True,
+            ),
             ("Bug Report", ["--type", "bug"], True),
             ("Task", ["--priority", "medium"], True),
         ],
@@ -250,7 +254,9 @@ class TestCLIIssueCreate:
 
         if should_succeed:
             assert result.exit_code == 0
-            assert "created" in result.output.lower() or "issue" in result.output.lower()
+            assert (
+                "created" in result.output.lower() or "issue" in result.output.lower()
+            )
         else:
             assert result.exit_code != 0
 
@@ -275,7 +281,13 @@ class TestCLIIssueList:
             ([], True),  # Empty list
         ],
     )
-    def test_list_issues(self, isolated_roadmap, isolated_roadmap_with_issues, filter_args, use_empty_roadmap):
+    def test_list_issues(
+        self,
+        isolated_roadmap,
+        isolated_roadmap_with_issues,
+        filter_args,
+        use_empty_roadmap,
+    ):
         """Test listing issues with various filters."""
         if use_empty_roadmap:
             cli_runner, temp_dir = isolated_roadmap
@@ -287,7 +299,9 @@ class TestCLIIssueList:
         assert result.exit_code == 0
         if not use_empty_roadmap and not filter_args:
             # Listing with data should show issues
-            assert "fix bug" in result.output.lower() or "parser" in result.output.lower()
+            assert (
+                "fix bug" in result.output.lower() or "parser" in result.output.lower()
+            )
 
     def test_list_issues_help(self, cli_runner):
         """Test issue list help."""
@@ -351,8 +365,8 @@ class TestCLIIssueDelete:
         "use_force,use_yes",
         [
             (False, False),  # With confirmation
-            (False, True),   # With --yes flag
-            (True, False),   # With --force flag
+            (False, True),  # With --yes flag
+            (True, False),  # With --yes flag (second time)
         ],
     )
     def test_delete_issue(self, isolated_roadmap_with_issues, use_force, use_yes):
@@ -363,9 +377,7 @@ class TestCLIIssueDelete:
             pytest.skip("No issues created in fixture")
 
         args = ["issue", "delete", issue_ids[0]]
-        if use_force:
-            args.append("--force")
-        if use_yes:
+        if use_force or use_yes:
             args.append("--yes")
 
         result = cli_runner.invoke(
@@ -561,7 +573,10 @@ class TestCLIMilestoneCreate:
         "name,options",
         [
             ("Test Milestone", []),  # Minimal
-            ("Sprint 1", ["--description", "First development sprint"]),  # With description
+            (
+                "Sprint 1",
+                ["--description", "First development sprint"],
+            ),  # With description
             ("Release 1.0", ["--due-date", "2025-12-31"]),  # With due date
         ],
     )

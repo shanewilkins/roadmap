@@ -36,7 +36,8 @@ class FrontmatterParser:
         frontmatter_str, markdown_content = match.groups()
 
         try:
-            frontmatter = yaml.safe_load(frontmatter_str) or {}
+            loaded = yaml.safe_load(frontmatter_str)
+            frontmatter = loaded if isinstance(loaded, dict) else {}
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML frontmatter: {e}") from e
 

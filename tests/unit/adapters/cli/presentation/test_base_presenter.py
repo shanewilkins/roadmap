@@ -1,8 +1,8 @@
 """Tests for BasePresenter abstract base class."""
 
-import pytest
-from io import StringIO
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from roadmap.adapters.cli.presentation.base_presenter import BasePresenter
 
@@ -22,7 +22,7 @@ class TestBasePresenterAbstractMethods:
     def test_cannot_instantiate_abstract_class(self):
         """Test that BasePresenter cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            BasePresenter()
+            BasePresenter()  # type: ignore
 
     def test_concrete_class_can_be_instantiated(self):
         """Test that concrete implementations can be instantiated."""
@@ -36,7 +36,7 @@ class TestBasePresenterAbstractMethods:
             pass
 
         with pytest.raises(TypeError):
-            IncompletePresenter()
+            IncompletePresenter()  # type: ignore
 
 
 class TestBasePresenterUtilityMethods:
@@ -51,7 +51,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_header(self):
         """Test _render_header method."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -64,7 +66,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_header_with_custom_style(self):
         """Test _render_header with custom style."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -76,7 +80,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_section(self):
         """Test _render_section method."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -89,7 +95,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_footer(self):
         """Test _render_footer method."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -100,7 +108,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_footer_without_message(self):
         """Test _render_footer without message."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -111,7 +121,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_warning(self):
         """Test _render_warning method."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -123,7 +135,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_error(self):
         """Test _render_error method."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -135,7 +149,9 @@ class TestBasePresenterUtilityMethods:
 
     def test_render_success(self):
         """Test _render_success method."""
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
@@ -157,8 +173,9 @@ class TestConcretePresenterImplementation:
 
     def test_concrete_presenter_can_use_utility_methods(self):
         """Test that concrete presenter can use utility methods."""
-        presenter = ConcretePresenter()
-        with patch("roadmap.adapters.cli.presentation.base_presenter.get_console") as mock_console:
+        with patch(
+            "roadmap.adapters.cli.presentation.base_presenter.get_console"
+        ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 

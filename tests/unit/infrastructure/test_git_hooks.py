@@ -68,10 +68,13 @@ def sample_commit():
 class TestGitHookManagerInit:
     """Test GitHookManager initialization."""
 
-    @pytest.mark.parametrize("is_git_repo,expected_hooks_dir", [
-        (True, Path(".git/hooks")),
-        (False, None),
-    ])
+    @pytest.mark.parametrize(
+        "is_git_repo,expected_hooks_dir",
+        [
+            (True, Path(".git/hooks")),
+            (False, None),
+        ],
+    )
     def test_init_variants(self, mock_core, is_git_repo, expected_hooks_dir):
         """Test initialization with different Git repository states."""
         with patch(
@@ -90,16 +93,21 @@ class TestGitHookManagerInit:
 class TestGitHookManagerInstall:
     """Test Git hook installation."""
 
-    @pytest.mark.parametrize("hooks_dir,dir_exists,hook_count,expected_result,scenario", [
-        (Path("/fake/.git/hooks"), True, 4, True, "all_hooks"),
-        (Path("/fake/.git/hooks"), True, 2, True, "specific_hooks"),
-        (None, True, 0, False, "no_hooks_dir"),
-        (Path("/fake/.git/hooks"), False, 0, False, "dir_not_exists"),
-    ])
-    def test_install_hooks_variants(self, hook_manager, hooks_dir, dir_exists, hook_count, expected_result, scenario):
+    @pytest.mark.parametrize(
+        "hooks_dir,dir_exists,hook_count,expected_result,scenario",
+        [
+            (Path("/fake/.git/hooks"), True, 4, True, "all_hooks"),
+            (Path("/fake/.git/hooks"), True, 2, True, "specific_hooks"),
+            (None, True, 0, False, "no_hooks_dir"),
+            (Path("/fake/.git/hooks"), False, 0, False, "dir_not_exists"),
+        ],
+    )
+    def test_install_hooks_variants(
+        self, hook_manager, hooks_dir, dir_exists, hook_count, expected_result, scenario
+    ):
         """Test installation with different states and configurations."""
         hook_manager.hooks_dir = hooks_dir
-        
+
         with (
             patch("pathlib.Path.exists", return_value=dir_exists),
             patch("pathlib.Path.write_text") as mock_write,
@@ -235,13 +243,18 @@ class TestGitHookManagerConfig:
 class TestGitHookManagerHandlers:
     """Test Git hook event handlers."""
 
-    @pytest.mark.parametrize("handler_name,git_output,config_exists,should_call_write", [
-        ("post_commit", "abc123def\n", False, True),
-        ("post_commit", "", False, False),
-        ("post_checkout", "feature-branch\n", False, True),
-        ("pre_push", "main\n", False, True),
-    ])
-    def test_handle_hook_variants(self, hook_manager, handler_name, git_output, config_exists, should_call_write):
+    @pytest.mark.parametrize(
+        "handler_name,git_output,config_exists,should_call_write",
+        [
+            ("post_commit", "abc123def\n", False, True),
+            ("post_commit", "", False, False),
+            ("post_checkout", "feature-branch\n", False, True),
+            ("pre_push", "main\n", False, True),
+        ],
+    )
+    def test_handle_hook_variants(
+        self, hook_manager, handler_name, git_output, config_exists, should_call_write
+    ):
         """Test hook handlers with different git outputs and states."""
         with (
             patch("subprocess.run") as mock_run,
@@ -249,10 +262,10 @@ class TestGitHookManagerHandlers:
             patch("pathlib.Path.exists", return_value=config_exists),
         ):
             mock_run.return_value = Mock(stdout=git_output, returncode=0)
-            
+
             handler_method = getattr(hook_manager, f"handle_{handler_name}")
             handler_method()
-            
+
             if git_output:
                 mock_run.assert_called_once()
             if should_call_write:
@@ -274,11 +287,21 @@ class TestGitHookManagerHandlers:
 class TestWorkflowAutomationSetup:
     """Test workflow automation setup."""
 
-    @pytest.mark.parametrize("features_to_setup,expect_all,expect_status,expect_tracking", [
-        (None, True, True, True),
-        (["git-hooks"], False, False, False),
-    ])
-    def test_setup_automation_variants(self, workflow_automation, features_to_setup, expect_all, expect_status, expect_tracking):
+    @pytest.mark.parametrize(
+        "features_to_setup,expect_all,expect_status,expect_tracking",
+        [
+            (None, True, True, True),
+            (["git-hooks"], False, False, False),
+        ],
+    )
+    def test_setup_automation_variants(
+        self,
+        workflow_automation,
+        features_to_setup,
+        expect_all,
+        expect_status,
+        expect_tracking,
+    ):
         """Test setup of automation features with different configurations."""
         with (
             patch.object(
@@ -296,7 +319,9 @@ class TestWorkflowAutomationSetup:
             ) as mock_tracking,
         ):
             if features_to_setup:
-                results = workflow_automation.setup_automation(features=features_to_setup)
+                results = workflow_automation.setup_automation(
+                    features=features_to_setup
+                )
             else:
                 results = workflow_automation.setup_automation()
 
@@ -310,15 +335,22 @@ class TestWorkflowAutomationSetup:
                 assert mock_status.call_count == (1 if expect_status else 0)
                 assert mock_tracking.call_count == (1 if expect_tracking else 0)
 
-    @pytest.mark.parametrize("file_type,write_error,expected_result", [
-        ("status", None, True),
-        ("progress", None, True),
-        ("status", OSError("Write error"), False),
-        ("progress", OSError("Write error"), False),
-    ])
-    def test_setup_automation_config_variants(self, workflow_automation, file_type, write_error, expected_result):
+    @pytest.mark.parametrize(
+        "file_type,write_error,expected_result",
+        [
+            ("status", None, True),
+            ("progress", None, True),
+            ("status", OSError("Write error"), False),
+            ("progress", OSError("Write error"), False),
+        ],
+    )
+    def test_setup_automation_config_variants(
+        self, workflow_automation, file_type, write_error, expected_result
+    ):
         """Test setup of automation config with different error states."""
-        with patch("pathlib.Path.write_text", side_effect=write_error if write_error else None) as mock_write:
+        with patch(
+            "pathlib.Path.write_text", side_effect=write_error if write_error else None
+        ) as mock_write:
             if file_type == "status":
                 result = workflow_automation._setup_status_automation()
                 if expected_result:
@@ -338,12 +370,22 @@ class TestWorkflowAutomationSetup:
 class TestWorkflowAutomationDisable:
     """Test workflow automation disabling."""
 
-    @pytest.mark.parametrize("uninstall_success,context_files_exist,unlink_count,expected_result", [
-        (True, True, 3, True),
-        (True, False, 0, True),
-        (False, False, 0, False),
-    ])
-    def test_disable_automation_variants(self, workflow_automation, uninstall_success, context_files_exist, unlink_count, expected_result):
+    @pytest.mark.parametrize(
+        "uninstall_success,context_files_exist,unlink_count,expected_result",
+        [
+            (True, True, 3, True),
+            (True, False, 0, True),
+            (False, False, 0, False),
+        ],
+    )
+    def test_disable_automation_variants(
+        self,
+        workflow_automation,
+        uninstall_success,
+        context_files_exist,
+        unlink_count,
+        expected_result,
+    ):
         """Test disabling automation with different states."""
         if not uninstall_success:
             with patch.object(
@@ -356,9 +398,9 @@ class TestWorkflowAutomationDisable:
         else:
             with (
                 patch.object(
-                    workflow_automation.hook_manager, 
-                    "uninstall_hooks", 
-                    return_value=True
+                    workflow_automation.hook_manager,
+                    "uninstall_hooks",
+                    return_value=True,
                 ),
                 patch("pathlib.Path.exists", return_value=context_files_exist),
                 patch("pathlib.Path.unlink") as mock_unlink,
@@ -371,12 +413,24 @@ class TestWorkflowAutomationDisable:
 class TestWorkflowAutomationSync:
     """Test workflow automation syncing."""
 
-    @pytest.mark.parametrize("has_commits,commits_count,sync_success,scenario", [
-        (True, 1, True, "with_commits"),
-        (False, 0, False, "no_commits"),
-        (True, 1, False, "with_errors"),
-    ])
-    def test_sync_all_issues_variants(self, workflow_automation, mock_core, sample_commit, has_commits, commits_count, sync_success, scenario):
+    @pytest.mark.parametrize(
+        "has_commits,commits_count,sync_success,scenario",
+        [
+            (True, 1, True, "with_commits"),
+            (False, 0, False, "no_commits"),
+            (True, 1, False, "with_errors"),
+        ],
+    )
+    def test_sync_all_issues_variants(
+        self,
+        workflow_automation,
+        mock_core,
+        sample_commit,
+        has_commits,
+        commits_count,
+        sync_success,
+        scenario,
+    ):
         """Test syncing all issues with different commit and error states."""
         issue = Issue(
             id="TEST-001",
@@ -386,7 +440,9 @@ class TestWorkflowAutomationSync:
         mock_core.issues.list.return_value = [issue]
 
         if has_commits:
-            workflow_automation.git_integration.get_recent_commits.return_value = [sample_commit] * commits_count
+            workflow_automation.git_integration.get_recent_commits.return_value = [
+                sample_commit
+            ] * commits_count
         else:
             workflow_automation.git_integration.get_recent_commits.return_value = []
 
@@ -423,7 +479,9 @@ class TestWorkflowAutomationSync:
                     assert results["synced_issues"] == 0
                     assert len(results["updated_issues"]) == 0
 
-    def test_sync_issue_with_commits_updates_status(self, workflow_automation, mock_core):
+    def test_sync_issue_with_commits_updates_status(
+        self, workflow_automation, mock_core
+    ):
         """Test syncing issue updates its status from progress info."""
         issue = Issue(
             id="TEST-001",
@@ -440,7 +498,9 @@ class TestWorkflowAutomationSync:
         )
         progress_commit.extract_progress_info = Mock(return_value=50.0)
 
-        with patch("roadmap.adapters.git.git_hooks.IssueParser.save_issue_file") as mock_save:
+        with patch(
+            "roadmap.adapters.git.git_hooks.IssueParser.save_issue_file"
+        ) as mock_save:
             result = workflow_automation._sync_issue_with_commits(
                 issue, [progress_commit]
             )
@@ -450,7 +510,9 @@ class TestWorkflowAutomationSync:
             assert issue.progress_percentage == 50.0
             mock_save.assert_called_once()
 
-    def test_sync_issue_with_commits_marks_completed(self, workflow_automation, mock_core, sample_commit):
+    def test_sync_issue_with_commits_marks_completed(
+        self, workflow_automation, mock_core, sample_commit
+    ):
         """Test syncing issue marks it as completed when no progress value."""
         issue = Issue(
             id="TEST-001",
@@ -460,7 +522,9 @@ class TestWorkflowAutomationSync:
 
         sample_commit.extract_progress_info = Mock(return_value=None)
 
-        with patch("roadmap.adapters.git.git_hooks.IssueParser.save_issue_file") as mock_save:
+        with patch(
+            "roadmap.adapters.git.git_hooks.IssueParser.save_issue_file"
+        ) as mock_save:
             result = workflow_automation._sync_issue_with_commits(
                 issue, [sample_commit]
             )
@@ -470,7 +534,9 @@ class TestWorkflowAutomationSync:
             assert issue.progress_percentage == 100.0
             mock_save.assert_called_once()
 
-    def test_sync_issue_with_commits_no_changes(self, workflow_automation, mock_core, sample_commit):
+    def test_sync_issue_with_commits_no_changes(
+        self, workflow_automation, mock_core, sample_commit
+    ):
         """Test syncing issue with no new commits."""
         issue = Issue(
             id="TEST-001",

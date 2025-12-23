@@ -96,10 +96,7 @@ class TestMilestonePresenterFullRendering:
             name="v1.0.0",
             status="closed",
             due_date=None,
-            description=None,
-            progress_percentage=100,
-            issue_count=0,
-            completed_count=0,
+            description="",
             created=datetime.now(),
             updated=datetime.now(),
         )
@@ -116,13 +113,10 @@ class TestMilestonePresenterFullRendering:
         due_date = datetime.now() - timedelta(days=5)
         milestone_dto = MilestoneDTO(
             id="m1",
-            name="v0.9.0",
+            name="v1.0.0",
             status="open",
             due_date=due_date,
             description="Overdue milestone",
-            progress_percentage=25,
-            issue_count=4,
-            completed_count=1,
             created=datetime.now() - timedelta(days=30),
             updated=datetime.now(),
         )
@@ -148,8 +142,6 @@ class TestProjectPresenterFullRendering:
             owner="alice",
             target_end_date=datetime.now() + timedelta(days=60),
             actual_end_date=None,
-            milestone_count=3,
-            issue_count=12,
             created=datetime.now(),
             updated=datetime.now(),
         )
@@ -179,12 +171,10 @@ class TestProjectPresenterFullRendering:
             id="p1",
             name="Small Task",
             status="planning",
-            description=None,
+            description="",
             owner=None,
             target_end_date=None,
             actual_end_date=None,
-            milestone_count=0,
-            issue_count=0,
             created=datetime.now(),
             updated=datetime.now(),
         )
@@ -206,8 +196,6 @@ class TestProjectPresenterFullRendering:
             owner="bob",
             target_end_date=datetime.now() + timedelta(days=120),
             actual_end_date=None,
-            milestone_count=5,
-            issue_count=50,
             created=datetime.now(),
             updated=datetime.now(),
         )
@@ -230,15 +218,11 @@ class TestMilestonePresenterIntegrationWithMapper:
         """Test end-to-end flow: domain model -> DTO -> presenter."""
         # Create domain milestone
         milestone = Milestone(
-            id="m1",
             name="v1.0.0",
             status=MilestoneStatus.OPEN,
             due_date=datetime.now() + timedelta(days=30),
             description="Release version 1.0",
             content="Release version 1.0\n\n## Goals\n- Complete features",
-            progress_percentage=75,
-            issue_count=4,
-            completed_count=3,
             created=datetime.now(),
             updated=datetime.now(),
             comments=[],
@@ -262,15 +246,11 @@ class TestMilestonePresenterIntegrationWithMapper:
         """Test DTO roundtrip preserves data and handles enum conversion."""
         # Create domain milestone with enum status
         milestone = Milestone(
-            id="m1",
             name="v1.0.0",
             status=MilestoneStatus.CLOSED,
             due_date=None,
             description="Completed milestone",
             content="",  # Changed from None to empty string
-            progress_percentage=100,
-            issue_count=10,
-            completed_count=10,
             created=datetime.now(),
             updated=datetime.now(),
             comments=[],
@@ -305,8 +285,6 @@ class TestProjectPresenterIntegrationWithMapper:
             start_date=datetime.now() - timedelta(days=10),
             estimated_hours=320.0,
             actual_hours=240.0,
-            milestone_count=3,
-            issue_count=12,
             milestones=["Design", "Development", "Testing"],
             created=datetime.now(),
             updated=datetime.now(),
@@ -342,8 +320,6 @@ class TestProjectPresenterIntegrationWithMapper:
             start_date=None,
             estimated_hours=None,
             actual_hours=None,
-            milestone_count=0,
-            issue_count=0,
             milestones=[],
             created=datetime.now(),
             updated=datetime.now(),

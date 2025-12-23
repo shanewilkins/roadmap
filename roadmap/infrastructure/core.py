@@ -326,7 +326,8 @@ class RoadmapCore:
         import yaml
 
         with open(self.config_file) as f:
-            config_data = yaml.safe_load(f) or {}
+            loaded = yaml.safe_load(f)
+            config_data: dict = loaded if isinstance(loaded, dict) else {}
 
         # Ensure all expected config sections exist
         if "milestones" not in config_data:

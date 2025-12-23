@@ -21,18 +21,23 @@ from roadmap.core.domain import Status
 class TestMilestoneProgressPresenter:
     """Tests for milestone progress display."""
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_milestone_header(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_milestone_header(self, mock_get_console):
         """Test displaying milestone header."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         MilestoneProgressPresenter.show_milestone_header()
 
         mock_console.print.assert_called_once()
         call_args = mock_console.print.call_args
         assert "Milestones" in str(call_args)
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_milestone_progress_no_issues(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_milestone_progress_no_issues(self, mock_get_console):
         """Test displaying milestone with no issues."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
         progress = {"total": 0, "completed": 0}
 
         MilestoneProgressPresenter.show_milestone_progress("v1.0", progress)
@@ -42,9 +47,11 @@ class TestMilestoneProgressPresenter:
         assert "No issues" in calls or "assigned" in calls
 
     @patch("roadmap.adapters.cli.presentation.project_status_presenter.Progress")
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_milestone_progress_with_issues(self, mock_console, mock_progress):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_milestone_progress_with_issues(self, mock_get_console, mock_progress):
         """Test displaying milestone with progress."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
         progress = {"total": 10, "completed": 7}
 
         MilestoneProgressPresenter.show_milestone_progress("v1.0", progress)
@@ -106,26 +113,35 @@ class TestIssueStatusPresenter:
         style = IssueStatusPresenter.get_status_style(Status.CLOSED)
         assert style == "green"
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_issue_status_header(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_issue_status_header(self, mock_get_console):
         """Test displaying issue status header."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         IssueStatusPresenter.show_issue_status_header()
 
         mock_console.print.assert_called_once()
         call_args = mock_console.print.call_args
         assert "Issues by Status" in str(call_args)
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_issue_status_table_empty(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_issue_status_table_empty(self, mock_get_console):
         """Test displaying table when no issues."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         IssueStatusPresenter.show_issue_status_table({})
 
         calls = str(mock_console.print.call_args_list)
         assert "No issues" in calls
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_issue_status_table_with_issues(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_issue_status_table_with_issues(self, mock_get_console):
         """Test displaying table with issue counts."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         issue_counts = {
             Status.TODO: 5,
             Status.IN_PROGRESS: 2,
@@ -155,26 +171,35 @@ class TestIssueStatusPresenter:
 class TestRoadmapStatusPresenter:
     """Tests for overall roadmap status display."""
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_empty_state(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_empty_state(self, mock_get_console):
         """Test displaying empty state."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         RoadmapStatusPresenter.show_empty_state()
 
         calls = str(mock_console.print.call_args_list)
         assert "No issues" in calls
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_status_header(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_status_header(self, mock_get_console):
         """Test displaying status header."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         RoadmapStatusPresenter.show_status_header()
 
         mock_console.print.assert_called_once()
         call_args = mock_console.print.call_args
         assert "Status" in str(call_args)
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_roadmap_summary_basic(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_roadmap_summary_basic(self, mock_get_console):
         """Test displaying basic roadmap summary."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         summary = {
             "total_issues": 10,
             "active_issues": 7,
@@ -189,9 +214,12 @@ class TestRoadmapStatusPresenter:
         assert "Total Issues" in calls or "10" in calls
         assert "Active Issues" in calls or "7" in calls
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_roadmap_summary_no_blocked(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_roadmap_summary_no_blocked(self, mock_get_console):
         """Test summary display skips blocked when zero."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         summary = {
             "total_issues": 10,
             "active_issues": 10,
@@ -205,9 +233,12 @@ class TestRoadmapStatusPresenter:
         # Should not print blocked count for 0
         mock_console.print.assert_called()
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_error(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_error(self, mock_get_console):
         """Test displaying error message."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         error_msg = "Database connection failed"
 
         RoadmapStatusPresenter.show_error(error_msg)
@@ -216,9 +247,12 @@ class TestRoadmapStatusPresenter:
         call_args = str(mock_console.print.call_args)
         assert error_msg in call_args or "Failed" in call_args
 
-    @patch("roadmap.adapters.cli.presentation.project_status_presenter.console")
-    def test_show_roadmap_summary_complete(self, mock_console):
+    @patch("roadmap.adapters.cli.presentation.project_status_presenter.get_console")
+    def test_show_roadmap_summary_complete(self, mock_get_console):
         """Test summary with all fields populated."""
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         summary = {
             "total_issues": 20,
             "active_issues": 12,

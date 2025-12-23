@@ -64,7 +64,7 @@ def assert_issue_created(
         f"Expected {expected_count} issue(s) titled '{title}', "
         f"found {len(issues)}. {message}"
     )
-    return issues[0] if issues else None
+    return issues[0]
 
 
 def assert_issue_not_created(
@@ -105,7 +105,7 @@ def assert_milestone_created(
         f"Expected milestone '{name}' to be created, "
         f"found {len(milestones)} milestones. {message}"
     )
-    return milestones[0] if milestones else None
+    return milestones[0]
 
 
 def assert_milestone_not_created(
@@ -163,6 +163,7 @@ def assert_issue_status(
     """
     # Refresh the issue from the database
     fresh_issue = core.issues.get(issue.id)
+    assert fresh_issue is not None, f"Issue '{issue.title}' not found in database"
     assert str(fresh_issue.status.value) == expected_status, (
         f"Issue '{issue.title}' status should be '{expected_status}', "
         f"but is '{fresh_issue.status.value}'. {message}"

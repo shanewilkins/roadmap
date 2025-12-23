@@ -254,7 +254,8 @@ class EnhancedYAMLPersistence:
                     )
 
             # Parse YAML
-            frontmatter = yaml.safe_load(frontmatter_content) or {}
+            loaded = yaml.safe_load(frontmatter_content)
+            frontmatter: dict = loaded if isinstance(loaded, dict) else {}
 
             # Validate structure
             is_valid, errors = self.recovery_manager.validate_frontmatter_structure(

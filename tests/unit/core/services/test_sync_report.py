@@ -1,6 +1,7 @@
 """Tests for sync report model and formatting."""
 
 from datetime import datetime
+from unittest.mock import patch
 
 from roadmap.core.services.sync_report import IssueChange, SyncReport
 
@@ -183,12 +184,17 @@ class TestSyncReport:
         assert report.conflicts_detected == 1
         assert report.changes[0].has_conflict is True
 
-    def test_display_brief_with_error(self, capsys):
+    @patch("roadmap.core.services.sync_report.console")
+    def test_display_brief_with_error(self, mock_console):
         """Test displaying brief report with error."""
         report = SyncReport(error="Sync failed")
         report.display_brief()
-        captured = capsys.readouterr()
-        assert "Sync failed" in captured.out or "Sync failed" in str(captured)
+
+        # Verify console.print was called with the error message
+        mock_console.print.assert_called()
+        # Check that "Sync failed" was in any of the print calls
+        call_args_list = [str(call) for call in mock_console.print.call_args_list]
+        assert any("Sync failed" in str(call) for call in call_args_list)
 
     def test_display_brief_success(self, capsys):
         """Test displaying brief successful sync report."""

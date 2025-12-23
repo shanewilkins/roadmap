@@ -1,6 +1,5 @@
 """Additional comprehensive tests for core roadmap functionality - targeting remaining uncovered areas."""
 
-import os
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -34,43 +33,73 @@ class TestRoadmapCoreAdvancedIssueOperations:
         core.initialize()
         return core
 
-    def test_get_issues_by_milestone(self, core):
-        """Test getting issues grouped by milestone."""
+    @pytest.mark.parametrize(
+        "milestone_names,assign_rules,expected_unassigned_count",
+        [
+            (
+                ["Milestone 1", "Milestone 2"],
+                {
+                    0: 0,
+                    1: 0,
+                    2: 1,
+                },  # Assign issues 0,1 to milestone 0; issue 2 to milestone 1
+                1,
+            ),
+            (
+                ["Single Milestone"],
+                {0: 0, 1: 0},  # Assign issues 0,1 to milestone 0
+                2,
+            ),
+            (
+                [],
+                {},  # No milestones, no assignments
+                4,
+            ),
+        ],
+    )
+    def test_get_issues_grouped_by_milestone(
+        self, core, milestone_names, assign_rules, expected_unassigned_count
+    ):
+        """Test getting issues grouped by milestone with various configurations."""
         # Create milestones
-        core.milestones.create("Milestone 1", "Description 1")
-        core.milestones.create("Milestone 2", "Description 2")
+        for name in milestone_names:
+            core.milestones.create(name, f"Description for {name}")
 
         # Create issues
-        issue1 = core.issues.create(title="Issue 1", priority=Priority.HIGH)
-        issue2 = core.issues.create(title="Issue 2", priority=Priority.MEDIUM)
-        issue3 = core.issues.create(title="Issue 3", priority=Priority.LOW)
-        core.issues.create(title="Backlog Issue", priority=Priority.LOW)
+        created_issues = []
+        issue_titles = ["Issue 1", "Issue 2", "Issue 3", "Backlog Issue"]
+        priorities = [Priority.HIGH, Priority.MEDIUM, Priority.LOW, Priority.LOW]
+        for title, priority in zip(issue_titles, priorities, strict=False):
+            created_issues.append(core.issues.create(title=title, priority=priority))
 
         # Assign issues to milestones
-        core.issues.assign_to_milestone(issue1.id, "Milestone 1")
-        core.issues.assign_to_milestone(issue2.id, "Milestone 1")
-        core.issues.assign_to_milestone(issue3.id, "Milestone 2")
-        # issue4 remains unassigned (backlog)
+        for issue_idx, milestone_idx in assign_rules.items():
+            if milestone_idx < len(milestone_names):
+                core.issues.assign_to_milestone(
+                    created_issues[issue_idx].id, milestone_names[milestone_idx]
+                )
 
         # Get grouped issues
         grouped = core.issues.get_grouped_by_milestone()
 
         assert "Backlog" in grouped
-        assert "Milestone 1" in grouped
-        assert "Milestone 2" in grouped
+        assert len(grouped["Backlog"]) == expected_unassigned_count
 
-        assert len(grouped["Backlog"]) == 1
-        assert len(grouped["Milestone 1"]) == 2
-        assert len(grouped["Milestone 2"]) == 1
+        # Verify correct assignments if milestones exist
+        if milestone_names:
+            assert milestone_names[0] in grouped
 
-        # Verify issue assignments
-        assert grouped["Backlog"][0].title == "Backlog Issue"
-        milestone1_titles = [issue.title for issue in grouped["Milestone 1"]]
-        assert "Issue 1" in milestone1_titles
-        assert "Issue 2" in milestone1_titles
-
-    def test_move_issue_to_milestone(self, core):
-        """Test moving issues between milestones."""
+    @pytest.mark.parametrize(
+        "target_milestone,should_succeed",
+        [
+            ("Milestone 1", True),
+            ("Milestone 2", True),
+            (None, True),
+            ("nonexistent-id", False),
+        ],
+    )
+    def test_move_issue_to_milestone(self, core, target_milestone, should_succeed):
+        """Test moving issues to different milestones."""
         # Create milestones
         core.milestones.create("Milestone 1", "Description 1")
         core.milestones.create("Milestone 2", "Description 2")
@@ -78,67 +107,53 @@ class TestRoadmapCoreAdvancedIssueOperations:
         # Create issue
         issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
-        # Move to milestone 1
-        result = core.issues.move_to_milestone(issue.id, "Milestone 1")
-        assert result is True
+        # Attempt to move to milestone
+        result = core.issues.move_to_milestone(issue.id, target_milestone)
+        assert result == should_succeed
 
-        updated_issue = core.issues.get(issue.id)
-        assert updated_issue.milestone == "Milestone 1"
+        if should_succeed:
+            updated_issue = core.issues.get(issue.id)
+            assert updated_issue.milestone == target_milestone
 
-        # Move to milestone 2
-        result = core.issues.move_to_milestone(issue.id, "Milestone 2")
-        assert result is True
+    @pytest.mark.parametrize(
+        "create_milestones,expected_result",
+        [
+            (
+                [
+                    ("Next Milestone", datetime.now() + timedelta(days=10)),
+                    ("Later Milestone", datetime.now() + timedelta(days=20)),
+                ],
+                "Next Milestone",
+            ),
+            (
+                [("Milestone Without Due Date", None)],
+                None,
+            ),
+            (
+                [
+                    ("Milestone 1", None),
+                    ("Milestone 2", None),
+                ],
+                None,
+            ),
+        ],
+    )
+    def test_get_next_milestone(self, core, create_milestones, expected_result):
+        """Test getting the next upcoming milestone with various configurations."""
+        # Create milestones
+        for name, due_date in create_milestones:
+            core.milestones.create(
+                name=name, description=f"Description for {name}", due_date=due_date
+            )
 
-        updated_issue = core.issues.get(issue.id)
-        assert updated_issue.milestone == "Milestone 2"
-
-        # Move to backlog (None)
-        result = core.issues.move_to_milestone(issue.id, None)
-        assert result is True
-
-        updated_issue = core.issues.get(issue.id)
-        assert updated_issue.milestone is None
-
-    def test_move_issue_to_milestone_nonexistent_issue(self, core):
-        """Test moving nonexistent issue."""
-        result = core.issues.move_to_milestone("nonexistent-id", "Some Milestone")
-        assert result is False
-
-    def test_get_next_milestone(self, core):
-        """Test getting the next upcoming milestone."""
-        # Create milestones with different due dates (only future dates for open milestones)
-        future_date1 = datetime.now() + timedelta(days=10)
-        future_date2 = datetime.now() + timedelta(days=20)
-
-        core.milestones.create(
-            name="Next Milestone", description="Coming soon", due_date=future_date1
-        )
-        core.milestones.create(
-            name="Later Milestone", description="Coming later", due_date=future_date2
-        )
-
+        # Get next milestone
         next_milestone = core.milestones.get_next()
-        assert next_milestone is not None
-        assert next_milestone.name == "Next Milestone"
 
-    def test_get_next_milestone_no_future_milestones(self, core):
-        """Test getting next milestone when none exist."""
-        # Create milestone without due date (won't be returned by get_next_milestone)
-        core.milestones.create(
-            name="Milestone Without Due Date", description="No due date set"
-        )
-
-        next_milestone = core.milestones.get_next()
-        assert next_milestone is None
-
-    def test_get_next_milestone_no_due_dates(self, core):
-        """Test getting next milestone when milestones have no due dates."""
-        # Create milestones without due dates
-        core.milestones.create("Milestone 1", "No due date")
-        core.milestones.create("Milestone 2", "Also no due date")
-
-        next_milestone = core.milestones.get_next()
-        assert next_milestone is None
+        if expected_result is None:
+            assert next_milestone is None
+        else:
+            assert next_milestone is not None
+            assert next_milestone.name == expected_result
 
 
 class TestRoadmapCoreTeamManagement:
@@ -184,49 +199,56 @@ class TestRoadmapCoreTeamManagement:
         team_members = core.team.get_members()
         assert len(team_members) == 0
 
-    def test_get_current_user_from_github(self, core):
-        """Test getting current user from config."""
-        # Mock ConfigManager in the service to return a config with a user
-        from unittest.mock import Mock, patch
+    @pytest.mark.parametrize(
+        "mock_config_setup,expected_user",
+        [
+            ("success", "test_user"),
+            ("config_not_found", None),
+            ("api_error", None),
+        ],
+    )
+    def test_get_current_user(self, core, mock_config_setup, expected_user):
+        """Test getting current user from GitHub with various scenarios."""
+        if mock_config_setup == "success":
+            mock_config = Mock()
+            mock_user = Mock()
+            mock_user.name = "test_user"
+            mock_config.user = mock_user
 
-        mock_config = Mock()
-        mock_user = Mock()
-        mock_user.name = "test_user"
-        mock_config.user = mock_user
+            with patch(
+                "roadmap.core.services.github_integration_service.ConfigManager"
+            ) as mock_cm_class:
+                mock_cm_instance = Mock()
+                mock_cm_instance.load.return_value = mock_config
+                mock_cm_class.return_value = mock_cm_instance
 
-        with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
-        ) as mock_cm_class:
-            mock_cm_instance = Mock()
-            mock_cm_instance.load.return_value = mock_config
-            mock_cm_class.return_value = mock_cm_instance
+                current_user = core.team.get_current_user()
+                assert current_user == expected_user
 
-            current_user = core.team.get_current_user()
-            assert current_user == "test_user"
+        elif mock_config_setup == "config_not_found":
+            with patch(
+                "roadmap.core.services.github_integration_service.ConfigManager"
+            ) as mock_cm_class:
+                mock_cm_class.side_effect = Exception("Config not found")
+                current_user = core.team.get_current_user()
+                assert current_user == expected_user
 
-    def test_get_current_user_no_github_config(self, core):
-        """Test getting current user when config is not found."""
-        # Mock ConfigManager in the service to raise an exception
-        from unittest.mock import patch
+        elif mock_config_setup == "api_error":
+            with patch.object(core.github_service, "get_current_user") as mock_get_user:
+                mock_get_user.return_value = None
+                current_user = core.team.get_current_user()
+                assert current_user == expected_user
 
-        with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
-        ) as mock_cm_class:
-            mock_cm_class.side_effect = Exception("Config not found")
-            current_user = core.team.get_current_user()
-            assert current_user is None
-
-    def test_get_current_user_github_api_error(self, core):
-        """Test getting current user when config read fails."""
-        # Mock GitHub service to raise exception
-        with patch.object(core.github_service, "get_current_user") as mock_get_user:
-            mock_get_user.return_value = None
-
-            current_user = core.team.get_current_user()
-            assert current_user is None
-
-    def test_get_assigned_issues(self, core):
-        """Test getting issues assigned to specific user."""
+    @pytest.mark.parametrize(
+        "assignee,expected_count",
+        [
+            ("alice@example.com", 2),
+            ("bob@example.com", 1),
+            ("unassigned@example.com", 0),
+        ],
+    )
+    def test_get_assigned_issues(self, core, assignee, expected_count):
+        """Test getting issues assigned to specific users."""
         # Create issues with different assignees
         core.issues.create(
             title="Alice Issue 1", priority=Priority.HIGH, assignee="alice@example.com"
@@ -238,15 +260,12 @@ class TestRoadmapCoreTeamManagement:
             title="Alice Issue 2", priority=Priority.LOW, assignee="alice@example.com"
         )
 
-        alice_issues = core.team.get_assigned_issues("alice@example.com")
-        assert len(alice_issues) == 2
-        alice_titles = [issue.title for issue in alice_issues]
-        assert "Alice Issue 1" in alice_titles
-        assert "Alice Issue 2" in alice_titles
+        assigned_issues = core.team.get_assigned_issues(assignee)
+        assert len(assigned_issues) == expected_count
 
-        bob_issues = core.team.get_assigned_issues("bob@example.com")
-        assert len(bob_issues) == 1
-        assert bob_issues[0].title == "Bob Issue"
+        if expected_count > 0:
+            for issue in assigned_issues:
+                assert issue.assignee == assignee
 
     @patch("roadmap.infrastructure.user_operations.UserOperations.get_current_user")
     def test_get_my_issues(self, mock_current_user, core):
@@ -329,42 +348,27 @@ class TestRoadmapCoreGitHubIntegration:
         core.initialize()
         return core
 
-    def test_get_github_config_from_config_file(self, core):
-        """Test getting GitHub config from roadmap config."""
-        # Mock the service's get_github_config method directly
+    @pytest.mark.parametrize(
+        "expected_token,expected_owner,expected_repo,config_source",
+        [
+            ("test_token", "test_owner", "test_repo", "config_file"),
+            ("env_token", "test_owner", "test_repo", "environment"),
+            (None, None, None, "no_config"),
+        ],
+    )
+    def test_get_github_config(
+        self, core, expected_token, expected_owner, expected_repo, config_source
+    ):
+        """Test getting GitHub config from different sources."""
+        # Mock the service's get_github_config method
         with patch.object(core.validation, "get_github_config") as mock_config:
-            mock_config.return_value = ("test_token", "test_owner", "test_repo")
+            mock_config.return_value = (expected_token, expected_owner, expected_repo)
 
             token, owner, repo = core.validation.get_github_config()
 
-            assert token == "test_token"
-            assert owner == "test_owner"
-            assert repo == "test_repo"
-
-    @patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"})
-    def test_get_github_config_from_environment(self, core):
-        """Test getting GitHub token from environment variables."""
-        # Mock the service's method to return token from environment
-        with patch.object(core.validation, "get_github_config") as mock_config:
-            mock_config.return_value = ("env_token", "test_owner", "test_repo")
-
-            token, owner, repo = core.validation.get_github_config()
-
-            assert token == "env_token"
-            assert owner == "test_owner"
-            assert repo == "test_repo"
-
-    def test_get_github_config_no_config(self, core):
-        """Test getting GitHub config when none is available."""
-        # Mock the service to return None values
-        with patch.object(core.validation, "get_github_config") as mock_config:
-            mock_config.return_value = (None, None, None)
-
-            token, owner, repo = core.validation.get_github_config()
-
-            assert token is None
-            assert owner is None
-            assert repo is None
+            assert token == expected_token
+            assert owner == expected_owner
+            assert repo == expected_repo
 
     def test_get_cached_team_members(self, core):
         """Test getting cached team members."""

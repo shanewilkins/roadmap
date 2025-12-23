@@ -1,6 +1,5 @@
 """Tests for milestone CLI commands."""
 
-
 import pytest
 
 from roadmap.adapters.cli import main
@@ -114,6 +113,7 @@ class TestMilestoneAssign:
             assert_command_success(result)
 
             issue = core.issues.get(issue.id)
+            assert issue is not None
             assert_issue_assigned_to_milestone(core, issue, "v1.0")
 
     def test_milestone_assign_invalid_target(self, cli_runner):

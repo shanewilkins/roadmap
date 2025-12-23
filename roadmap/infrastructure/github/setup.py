@@ -175,9 +175,10 @@ class GitHubConfigManager:
         """Save GitHub repository configuration."""
         if self.config_file.exists():
             with open(self.config_file) as f:
-                config = yaml.safe_load(f) or {}
+                loaded = yaml.safe_load(f)
+                config = loaded if isinstance(loaded, dict) else {}
         else:
-            config = {}
+            config: dict = {}
 
         config["github"] = {
             "repository": github_repo,

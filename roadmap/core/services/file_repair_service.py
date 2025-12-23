@@ -65,6 +65,9 @@ class FileRepairService:
                 # Parse and fix common issues
                 try:
                     frontmatter = yaml.safe_load(frontmatter_str)
+                    if not isinstance(frontmatter, dict):
+                        result.add_error(file_rel)
+                        continue
                 except yaml.YAMLError:
                     result.add_error(file_rel)
                     continue

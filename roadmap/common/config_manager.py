@@ -28,17 +28,19 @@ class ConfigManager:
 
         Loads team config first, then merges local overrides if present.
         """
-        config_data = {}
+        config_data: dict = {}
 
         # Load shared config (team-level)
         if self.config_file.exists():
             with open(self.config_file) as f:
-                config_data = yaml.safe_load(f) or {}
+                loaded = yaml.safe_load(f)
+                config_data = loaded if isinstance(loaded, dict) else {}
 
         # Load and merge local config (user-level overrides)
         if self.local_config_file.exists():
             with open(self.local_config_file) as f:
-                local_data = yaml.safe_load(f) or {}
+                loaded = yaml.safe_load(f)
+                local_data = loaded if isinstance(loaded, dict) else {}
             # Deep merge: local overrides shared
             config_data = self._deep_merge(config_data, local_data)
 

@@ -133,35 +133,23 @@ class TestSafeOperationDecorator:
             create_issue()
         assert "Invalid field" in exc_info.value.domain_message
 
-    def test_safe_operation_create_converts_to_create_error(self):
-        """Test CREATE operations convert to CreateError."""
+    @pytest.mark.parametrize(
+        "op_type,expected_error",
+        [
+            (OperationType.CREATE, CreateError),
+            (OperationType.UPDATE, UpdateError),
+            (OperationType.DELETE, DeleteError),
+        ],
+    )
+    def test_safe_operation_converts_error_by_type(self, op_type, expected_error):
+        """Test operations convert exceptions to operation-specific errors."""
 
-        @safe_operation(OperationType.CREATE, "Issue")
-        def create_issue():
+        @safe_operation(op_type, "Issue")
+        def operation():
             raise RuntimeError("DB error")
 
-        with pytest.raises(CreateError):
-            create_issue()
-
-    def test_safe_operation_update_converts_to_update_error(self):
-        """Test UPDATE operations convert to UpdateError."""
-
-        @safe_operation(OperationType.UPDATE, "Issue")
-        def update_issue():
-            raise RuntimeError("DB error")
-
-        with pytest.raises(UpdateError):
-            update_issue()
-
-    def test_safe_operation_delete_converts_to_delete_error(self):
-        """Test DELETE operations convert to DeleteError."""
-
-        @safe_operation(OperationType.DELETE, "Issue")
-        def delete_issue():
-            raise RuntimeError("DB error")
-
-        with pytest.raises(DeleteError):
-            delete_issue()
+        with pytest.raises(expected_error):
+            operation()
 
     def test_safe_operation_retry_on_recoverable_error(self):
         """Test retry logic for recoverable errors."""
@@ -390,11 +378,17 @@ class TestRecoveryAction:
                 failing_operation, max_attempts=3, initial_delay=0.01
             )
 
-    def test_is_retryable(self):
+    @pytest.mark.parametrize(
+        "error_instance,should_retry",
+        [
+            (ConnectionError("timeout"), True),
+            (TimeoutError("timeout"), True),
+            (ValueError("invalid"), False),
+        ],
+    )
+    def test_is_retryable(self, error_instance, should_retry):
         """Test error classification for retry."""
-        assert RecoveryAction.is_retryable(ConnectionError("timeout"))
-        assert RecoveryAction.is_retryable(TimeoutError("timeout"))
-        assert not RecoveryAction.is_retryable(ValueError("invalid"))
+        assert RecoveryAction.is_retryable(error_instance) == should_retry
 
     def test_handle_missing_file_creates_file(self, tmp_path):
         """Test that missing file handler creates default file."""
@@ -435,19 +429,25 @@ class TestRecoveryAction:
 class TestOperationType:
     """Test OperationType constants."""
 
-    def test_operation_type_constants_exist(self):
-        """Test that all standard operation types are defined."""
-        assert OperationType.CREATE == "create"
-        assert OperationType.READ == "read"
-        assert OperationType.UPDATE == "update"
-        assert OperationType.DELETE == "delete"
-        assert OperationType.SYNC == "sync"
-        assert OperationType.IMPORT == "import"
-        assert OperationType.EXPORT == "export"
-        assert OperationType.VALIDATE == "validate"
-        assert OperationType.AUTHENTICATE == "authenticate"
-        assert OperationType.FETCH == "fetch"
-        assert OperationType.SAVE == "save"
+    @pytest.mark.parametrize(
+        "operation_type,expected_value",
+        [
+            (OperationType.CREATE, "create"),
+            (OperationType.READ, "read"),
+            (OperationType.UPDATE, "update"),
+            (OperationType.DELETE, "delete"),
+            (OperationType.SYNC, "sync"),
+            (OperationType.IMPORT, "import"),
+            (OperationType.EXPORT, "export"),
+            (OperationType.VALIDATE, "validate"),
+            (OperationType.AUTHENTICATE, "authenticate"),
+            (OperationType.FETCH, "fetch"),
+            (OperationType.SAVE, "save"),
+        ],
+    )
+    def test_operation_type_constants(self, operation_type, expected_value):
+        """Test that operation type constants have correct values."""
+        assert operation_type == expected_value
 
 
 # Integration tests

@@ -47,10 +47,12 @@ class FileParser:
             try:
                 end_marker = content.index("\n---\n", 4)
                 frontmatter = content[4:end_marker]
-                return yaml.safe_load(frontmatter) or {}
+                loaded = yaml.safe_load(frontmatter)
+                return loaded if isinstance(loaded, dict) else {}
             except ValueError:
                 # No end marker found, treat entire file as YAML
-                return yaml.safe_load(content) or {}
+                loaded = yaml.safe_load(content)
+                return loaded if isinstance(loaded, dict) else {}
 
         except Exception as e:
             logger.error(f"Failed to parse YAML from {file_path}", error=str(e))

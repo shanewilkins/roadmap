@@ -85,14 +85,20 @@ class TestIssueValidation:
         ],
     )
     def test_issue_field_mutations(
-        self, validator, valid_issue, field_to_delete, field_to_mutate, mutation_value, expect_valid
+        self,
+        validator,
+        valid_issue,
+        field_to_delete,
+        field_to_mutate,
+        mutation_value,
+        expect_valid,
     ):
         """Test issue validation with various field mutations."""
         if field_to_delete:
             del valid_issue[field_to_delete]
         elif field_to_mutate:
             valid_issue[field_to_mutate] = mutation_value
-        
+
         result = validator.validate_issue(valid_issue)
         assert result.is_valid == expect_valid
 
@@ -141,14 +147,20 @@ class TestMilestoneValidation:
         ],
     )
     def test_milestone_field_mutations(
-        self, validator, valid_milestone, field_to_delete, field_to_mutate, mutation_value, expect_valid
+        self,
+        validator,
+        valid_milestone,
+        field_to_delete,
+        field_to_mutate,
+        mutation_value,
+        expect_valid,
     ):
         """Test milestone validation with various field mutations."""
         if field_to_delete:
             del valid_milestone[field_to_delete]
         elif field_to_mutate:
             valid_milestone[field_to_mutate] = mutation_value
-        
+
         result = validator.validate_milestone(valid_milestone)
         assert result.is_valid == expect_valid
 
@@ -207,14 +219,20 @@ class TestProjectValidation:
         ],
     )
     def test_project_field_mutations(
-        self, validator, valid_project, field_to_delete, field_to_mutate, mutation_value, expect_valid
+        self,
+        validator,
+        valid_project,
+        field_to_delete,
+        field_to_mutate,
+        mutation_value,
+        expect_valid,
     ):
         """Test project validation with various field mutations."""
         if field_to_delete:
             del valid_project[field_to_delete]
         elif field_to_mutate:
             valid_project[field_to_mutate] = mutation_value
-        
+
         result = validator.validate_project(valid_project)
         assert result.is_valid == expect_valid
 
@@ -238,15 +256,29 @@ class TestRequiredFieldsValidation:
     @pytest.mark.parametrize(
         "data,required_fields,expect_valid",
         [
-            ({"name": "test", "status": "active", "owner": "user"}, ["name", "status", "owner"], True),
+            (
+                {"name": "test", "status": "active", "owner": "user"},
+                ["name", "status", "owner"],
+                True,
+            ),
             ({"name": "test", "owner": "user"}, ["name", "status", "owner"], False),
             ({"name": "test"}, ["name", "status", "owner", "description"], False),
-            ({"name": "test", "status": None, "owner": "user"}, ["name", "status", "owner"], False),
-            ({"name": "test", "status": "", "owner": "user"}, ["name", "status", "owner"], False),
+            (
+                {"name": "test", "status": None, "owner": "user"},
+                ["name", "status", "owner"],
+                False,
+            ),
+            (
+                {"name": "test", "status": "", "owner": "user"},
+                ["name", "status", "owner"],
+                False,
+            ),
             ({"name": "test"}, [], True),
         ],
     )
-    def test_required_fields_validation(self, validator, data, required_fields, expect_valid):
+    def test_required_fields_validation(
+        self, validator, data, required_fields, expect_valid
+    ):
         """Test required fields validation with various scenarios."""
         result = validator.validate_required_fields(data, required_fields)
         assert result.is_valid == expect_valid
@@ -269,7 +301,9 @@ class TestEnumFieldValidation:
             (999999, "priority", Priority, False),
         ],
     )
-    def test_enum_field_validation(self, validator, value, field_name, enum_class, expect_valid):
+    def test_enum_field_validation(
+        self, validator, value, field_name, enum_class, expect_valid
+    ):
         """Test enum field validation with various values."""
         result = validator.validate_enum_field(value, field_name, enum_class)
         assert result.is_valid == expect_valid
@@ -319,7 +353,9 @@ class TestStringLengthValidation:
         self, validator, value, field_name, min_length, max_length, expect_valid
     ):
         """Test string length validation with various inputs."""
-        result = validator.validate_string_length(value, field_name, min_length=min_length, max_length=max_length)
+        result = validator.validate_string_length(
+            value, field_name, min_length=min_length, max_length=max_length
+        )
         assert result.is_valid == expect_valid
 
 
@@ -392,7 +428,9 @@ class TestGithubIssueNumberValidation:
             (123.45, "github_issue", True),
         ],
     )
-    def test_github_issue_number_validation(self, validator, issue_number, field_name, expect_valid):
+    def test_github_issue_number_validation(
+        self, validator, issue_number, field_name, expect_valid
+    ):
         """Test GitHub issue number validation with various inputs."""
         result = validator.validate_github_issue_number(issue_number, field_name)
         assert result.is_valid == expect_valid
