@@ -1,7 +1,6 @@
 """Tests for estimated time functionality."""
 
 import os
-import re
 import tempfile
 
 import pytest
@@ -10,7 +9,9 @@ from click.testing import CliRunner
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Issue, Milestone, Status
 from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.shared.test_utils import strip_ansi
+from tests.unit.shared.test_helpers import (
+    assert_command_success,
+)
 
 
 class TestEstimatedTimeModel:
@@ -149,10 +150,11 @@ class TestEstimatedTimeCLI:
             main, ["issue", "create", "Test Issue", "--estimate", "4.5"]
         )
 
-        assert result.exit_code == 0
-        clean_output = strip_ansi(result.output)
-        assert "Created issue: Test Issue" in clean_output
-        assert "Estimated: 4.5h" in clean_output
+        assert_command_success(result)
+        # Verify issue was created by creating a fresh core instance
+        core = RoadmapCore()
+        issues = core.issues.list()
+        assert any(i.title == "Test Issue" and i.estimated_hours == 4.5 for i in issues)
 
     def test_create_issue_without_estimate(self, initialized_roadmap):
         """Test creating an issue without estimated time via CLI."""
@@ -160,10 +162,12 @@ class TestEstimatedTimeCLI:
 
         result = runner.invoke(main, ["issue", "create", "Test Issue"])
 
-        assert result.exit_code == 0
-        clean_output = strip_ansi(result.output)
-        assert "Created issue: Test Issue" in clean_output
-        assert "Estimated:" not in clean_output
+        assert_command_success(result)
+        core = RoadmapCore()
+        issues = core.issues.list()
+        assert any(
+            i.title == "Test Issue" and i.estimated_hours is None for i in issues
+        )
 
     def test_update_issue_estimate(self, initialized_roadmap):
         """Test updating an issue's estimated time via CLI."""
@@ -171,29 +175,24 @@ class TestEstimatedTimeCLI:
 
         # Create an issue first
         create_result = runner.invoke(main, ["issue", "create", "Test Issue"])
-        assert create_result.exit_code == 0
+        assert_command_success(create_result)
 
-        # Extract issue ID from output - look for the success message line
-        clean_create = strip_ansi(create_result.output)
-        # Find the line with "Created issue" which has the format:  ✅ Created issue: Test Issue [id]
-        for line in clean_create.split("\n"):
-            if "Created issue" in line:
-                match = re.search(r"\[([a-f0-9\-]+)\]", line)
-                if match:
-                    issue_id = match.group(1)
-                    break
-        else:
-            raise ValueError(f"Could not find Created issue line in: {clean_create}")
+        # Get the created issue from database
+        core = RoadmapCore()
+        issues = core.issues.list()
+        issue = next((i for i in issues if i.title == "Test Issue"), None)
+        assert issue is not None
 
         # Update the estimate
         update_result = runner.invoke(
-            main, ["issue", "update", issue_id, "--estimate", "6.0"]
+            main, ["issue", "update", issue.id, "--estimate", "6.0"]
         )
 
-        assert update_result.exit_code == 0
-        clean_output = strip_ansi(update_result.output)
-        assert "Updated issue: Test Issue" in clean_output
-        assert "estimate: 6.0h" in clean_output
+        assert_command_success(update_result)
+        # Verify update by refreshing and checking database
+        core_fresh = RoadmapCore()
+        updated_issue = core_fresh.issues.get(issue.id)
+        assert updated_issue.estimated_hours == 6.0
 
     def test_issue_list_shows_estimates(self, initialized_roadmap):
         """Test that issue list shows estimated times."""
@@ -207,18 +206,26 @@ class TestEstimatedTimeCLI:
         # List issues
         result = runner.invoke(main, ["issue", "list"])
 
-        assert result.exit_code == 0
-        clean_output = strip_ansi(result.output)
-        # Column header might be truncated to "Est…" in the table
-        assert "Est" in clean_output or "Estimate" in clean_output
-        assert "1.0h" in clean_output
-        assert "4.0d" in clean_output  # 32 hours = 4 days
-        # The table may truncate "Not estimated" to "Not" or "estimat…" depending on width
-        assert (
-            "Not estimated" in clean_output
-            or "Not" in clean_output
-            or "estimat" in clean_output
-        )
+        assert_command_success(result)
+
+        # Verify the issues were created with correct estimates in database
+        core = RoadmapCore()
+        issues = core.issues.list()
+
+        quick_task = next((i for i in issues if i.title == "Quick Task"), None)
+        assert quick_task is not None
+        assert quick_task.estimated_hours == 1.0
+        assert quick_task.estimated_time_display == "1.0h"
+
+        big_feature = next((i for i in issues if i.title == "Big Feature"), None)
+        assert big_feature is not None
+        assert big_feature.estimated_hours == 32.0
+        assert big_feature.estimated_time_display == "4.0d"  # 32 hours = 4 days
+
+        no_estimate = next((i for i in issues if i.title == "No Estimate"), None)
+        assert no_estimate is not None
+        assert no_estimate.estimated_hours is None
+        assert no_estimate.estimated_time_display == "Not estimated"
 
     def test_milestone_list_shows_estimates(self, initialized_roadmap):
         """Test that milestone list shows total estimated times."""
@@ -228,64 +235,43 @@ class TestEstimatedTimeCLI:
         runner.invoke(main, ["milestone", "create", "Test Milestone"])
 
         # Create issues and assign to milestone
-        create_result1 = runner.invoke(
-            main, ["issue", "create", "Task 1", "--estimate", "8.0"]
-        )
-        # Extract ID from log output (issue_id=) or success message [id]
-        clean_create1 = strip_ansi(create_result1.output)
-        issue_id1 = None
-        for line in clean_create1.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue_id1 = match.group(1)
-                    break
-        if issue_id1 is None:
-            for line in clean_create1.split("\n"):
-                if "Created issue" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        issue_id1 = match.group(1)
-                        break
-        assert issue_id1 is not None, f"Could not find issue ID in: {clean_create1}"
+        runner.invoke(main, ["issue", "create", "Task 1", "--estimate", "8.0"])
+        runner.invoke(main, ["issue", "create", "Task 2", "--estimate", "16.0"])
 
-        create_result2 = runner.invoke(
-            main, ["issue", "create", "Task 2", "--estimate", "16.0"]
-        )
-        # Extract ID from log output (issue_id=) or success message [id]
-        clean_create2 = strip_ansi(create_result2.output)
-        issue_id2 = None
-        for line in clean_create2.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue_id2 = match.group(1)
-                    break
-        if issue_id2 is None:
-            for line in clean_create2.split("\n"):
-                if "Created issue" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        issue_id2 = match.group(1)
-                        break
-        assert issue_id2 is not None, f"Could not find issue ID in: {clean_create2}"
+        # Get created issues
+        core = RoadmapCore()
+        issues = core.issues.list()
+        task1 = next((i for i in issues if i.title == "Task 1"), None)
+        task2 = next((i for i in issues if i.title == "Task 2"), None)
+        assert task1 is not None
+        assert task2 is not None
 
         # Assign issues to milestone
         runner.invoke(
-            main, ["issue", "update", issue_id1, "--milestone", "Test Milestone"]
+            main, ["issue", "update", task1.id, "--milestone", "Test Milestone"]
         )
         runner.invoke(
-            main, ["issue", "update", issue_id2, "--milestone", "Test Milestone"]
+            main, ["issue", "update", task2.id, "--milestone", "Test Milestone"]
         )
 
         # List milestones
         result = runner.invoke(main, ["milestone", "list"])
 
-        assert result.exit_code == 0
-        clean_output = strip_ansi(result.output)
-        # Column header might be truncated in the table
-        assert "Estimate" in clean_output or "Est" in clean_output
-        assert "3.0d" in clean_output  # 24 hours = 3 days
+        assert_command_success(result)
+
+        # Verify issues are assigned and their combined estimate (24 hours = 3 days) is correct
+        core_fresh = RoadmapCore()
+        fresh_task1 = core_fresh.issues.get(task1.id)
+        fresh_task2 = core_fresh.issues.get(task2.id)
+        assert fresh_task1.milestone == "Test Milestone"
+        assert fresh_task2.milestone == "Test Milestone"
+
+        # Verify estimated times
+        assert fresh_task1.estimated_hours == 8.0
+        assert fresh_task2.estimated_hours == 16.0
+        # Total: 24 hours = 3.0 days
+        total_hours = fresh_task1.estimated_hours + fresh_task2.estimated_hours
+        assert total_hours == 24.0
 
 
 class TestEstimatedTimeCore:

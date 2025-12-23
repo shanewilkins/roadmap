@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.shared.test_helpers import assert_command_success
 
 
 @pytest.fixture
@@ -255,8 +256,7 @@ class TestCLIAssigneeValidation:
                 main, ["issue", "create", "Test Issue", "--assignee", "gooduser"]
             )
 
-            assert result.exit_code == 0
-            assert "Created issue" in result.output
+            assert_command_success(result)
             # Should create issue when validation passes
             mock_core.issues.create.assert_called_once()
 
@@ -295,8 +295,7 @@ class TestCLIAssigneeValidation:
                 obj={"core": mock_core},
             )
 
-            assert result.exit_code == 0
-            assert "Created issue" in result.output
+            assert_command_success(result)
             # Validation should have been called but returned success
             mock_core.team.validate_assignee.assert_called_once_with("alice.local")
             # Issue should have been created successfully

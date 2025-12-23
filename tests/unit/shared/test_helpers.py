@@ -217,7 +217,7 @@ def get_latest_issue(core: RoadmapCore) -> Issue | None:
     issues = core.issues.list()
     if not issues:
         return None
-    return sorted(issues, key=lambda i: i.created_at or "")[-1]
+    return sorted(issues, key=lambda i: i.created or "")[-1]
 
 
 def get_latest_milestone(core: RoadmapCore) -> Milestone | None:
@@ -232,4 +232,4 @@ def get_latest_milestone(core: RoadmapCore) -> Milestone | None:
     milestones = core.milestones.list()
     if not milestones:
         return None
-    return sorted(milestones, key=lambda m: m.created_at or "")[-1]
+    return sorted(milestones, key=lambda m: m.created or "")[-1]

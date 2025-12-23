@@ -16,6 +16,11 @@ from click.testing import CliRunner
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.shared.test_helpers import (
+    assert_command_success,
+    assert_issue_created,
+    assert_milestone_created,
+)
 from tests.unit.shared.test_utils import strip_ansi
 
 pytestmark = pytest.mark.filesystem
@@ -111,19 +116,34 @@ class TestEndToEndWorkflows:
 
         result = runner.invoke(
             main,
-            ["milestone", "assign", str(issue_objects[0].id), milestone_objects[0].name],
+            [
+                "milestone",
+                "assign",
+                str(issue_objects[0].id),
+                milestone_objects[0].name,
+            ],
         )
         assert_command_success(result)
 
         result = runner.invoke(
             main,
-            ["milestone", "assign", str(issue_objects[1].id), milestone_objects[0].name],
+            [
+                "milestone",
+                "assign",
+                str(issue_objects[1].id),
+                milestone_objects[0].name,
+            ],
         )
         assert_command_success(result)
 
         result = runner.invoke(
             main,
-            ["milestone", "assign", str(issue_objects[2].id), milestone_objects[1].name],
+            [
+                "milestone",
+                "assign",
+                str(issue_objects[2].id),
+                milestone_objects[1].name,
+            ],
         )
         assert_command_success(result)
 
@@ -133,7 +153,8 @@ class TestEndToEndWorkflows:
 
         # Step 6: Update issue status
         result = runner.invoke(
-            main, ["issue", "update", str(issue_objects[0].id), "--status", "in-progress"]
+            main,
+            ["issue", "update", str(issue_objects[0].id), "--status", "in-progress"],
         )
         assert_command_success(result)
 
@@ -153,7 +174,10 @@ class TestEndToEndWorkflows:
         assert_command_success(result)
 
         # Step 9: Delete an issue
-        result = runner.invoke(main, ["issue", "delete", issue_ids[2]], input="y\n")
+        issue_objects_for_delete = core.issues.list()
+        result = runner.invoke(
+            main, ["issue", "delete", str(issue_objects_for_delete[2].id)], input="y\n"
+        )
         assert result.exit_code == 0
         assert "Deleted" in result.output or "deleted" in result.output
 
@@ -561,13 +585,11 @@ class TestPerformanceAndStress:
 
             # If extraction from output failed, get the latest issue from database
             if not issue_id:
-                from roadmap.core import RoadmapCore
-
                 core = RoadmapCore()
                 issues = core.issues.list()
                 if issues:
                     # Get the most recently created issue
-                    latest_issue = sorted(issues, key=lambda x: x.created_at or "")[-1]
+                    latest_issue = sorted(issues, key=lambda x: x.created or "")[-1]
                     issue_id = str(latest_issue.id)
 
             if issue_id:
