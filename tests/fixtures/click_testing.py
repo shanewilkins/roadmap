@@ -371,14 +371,14 @@ def roadmap_cli_with_data(isolated_roadmap_cli, isolated_cli_runner):
 
         # Create sample data
         issue_result = isolated_roadmap_cli.create_issue("Test Issue").assert_success()
-        issue_id = ClickTestHelper.create_id_extractor(r"ID:\s+(\w+)")(
+        issue_id = ClickTestHelper.create_id_extractor(r"\[([^\]]+)\]")(
             issue_result.output
         )
 
         milestone_result = isolated_roadmap_cli.create_milestone(
             "v1.0.0"
         ).assert_success()
-        milestone_id = ClickTestHelper.create_id_extractor(r"ID:\s+(\w+)")(
+        milestone_id = ClickTestHelper.create_id_extractor(r"\[([^\]]+)\]")(
             milestone_result.output
         )
 

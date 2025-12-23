@@ -75,7 +75,7 @@ def roadmap_with_data(cli_runner):
         assert result.exit_code == 0, f"Issue creation failed: {result.output}"
 
         # Extract issue ID from create output
-        match = re.search(r"ID:\s+(\w+)", result.output)
+        match = re.search(r"\[([^\]]+)\]", result.output)
         assert match, f"Could not find issue ID in output: {result.output}"
         issue_id = match.group(1)
 

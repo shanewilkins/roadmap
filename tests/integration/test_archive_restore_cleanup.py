@@ -90,7 +90,12 @@ def roadmap_with_issues_and_milestones(cli_runner):
                 ],
             )
             assert result.exit_code == 0, f"Issue creation failed: {result.output}"
-            match = re.search(r"ID:\s+([^\s]+)", result.output)
+            # Find "Created issue:" and extract the ID from the brackets on that line
+            if "Created issue:" in result.output:
+                created_part = result.output.split("Created issue:")[-1].split("\n")[0]
+                match = re.search(r"\[([^\]]+)\]", created_part)
+            else:
+                match = None
             assert (
                 match is not None
             ), f"Could not find issue ID in output: {result.output}"

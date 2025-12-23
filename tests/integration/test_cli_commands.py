@@ -92,10 +92,10 @@ def isolated_roadmap_with_issues(cli_runner):
                 ],
             )
             if result.exit_code == 0:
-                # Parse the issue ID from the output (format: "ID: <id>")
+                # Parse the issue ID from the output (format: "[id]")
                 import re
 
-                match = re.search(r"ID:\s+([^\s]+)", result.output)
+                match = re.search(r"\[([^\]]+)\]", result.output)
                 if match:
                     created_ids.append(match.group(1))
 
