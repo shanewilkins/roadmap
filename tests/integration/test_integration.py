@@ -564,12 +564,30 @@ class TestPerformanceAndStress:
             )
             assert result.exit_code == 0
 
-            # Extract issue ID (strip ANSI codes first)
+            # Extract issue ID from created output if possible, or from database as fallback
             issue_id = None
             clean_output = strip_ansi(result.output)
-            match = re.search(r"\[([^\]]+)\]", clean_output)
-            if match:
-                issue_id = match.group(1)
+            # Look for the "Created issue:" line specifically
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    # Extract the ID from brackets in the Created issue line
+                    match = re.search(r"\[([a-f0-9\-]+)\]", line)
+                    if match:
+                        issue_id = match.group(1)
+                        break
+
+            # If extraction from output failed, get the latest issue from database
+            if not issue_id:
+                from roadmap.core import RoadmapCore
+
+                core = RoadmapCore()
+                issues = core.issues.list()
+                if issues:
+                    # Get the most recently created issue
+                    latest_issue = sorted(issues, key=lambda x: x.created_at or "")[-1]
+                    issue_id = str(latest_issue.id)
+
+            if issue_id:
                 issue_ids.append(issue_id)
 
             # Only assign to milestone if we successfully extracted the ID

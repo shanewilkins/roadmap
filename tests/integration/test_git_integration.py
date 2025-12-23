@@ -269,7 +269,16 @@ class TestGitIntegrationCLI:
 
             # Extract issue ID from output (strip ANSI first)
             clean_output = strip_ansi(result.output)
-            issue_id = re.search(r"\[([^\]]+)\]", clean_output).group(1)
+            # Look for the "Created issue:" line specifically
+            issue_id = None
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    # Extract the ID from brackets in the Created issue line
+                    match = re.search(r"\[([a-f0-9\-]+)\]", line)
+                    if match:
+                        issue_id = match.group(1)
+                        break
+            assert issue_id, f"Could not find issue ID in output: {clean_output[:500]}"
 
             # Create a branch for the issue
             result = runner.invoke(main, ["git", "branch", issue_id])
@@ -292,7 +301,17 @@ class TestGitIntegrationCLI:
             result = runner.invoke(main, ["issue", "create", "Test Issue"])
             assert result.exit_code == 0
             clean_output = strip_ansi(result.output)
-            issue_id = re.search(r"\[([^\]]+)\]", clean_output).group(1)
+            # Look for the "Created issue:" line specifically
+            issue_id = None
+            for line in clean_output.split("\n"):
+                if "Created issue:" in line:
+                    # Extract the ID from brackets in the Created issue line
+                    match = re.search(r"\[([a-f0-9\-]+)\]", line)
+                    if match:
+                        issue_id = match.group(1)
+                        break
+            assert issue_id, "Could not find issue ID in output"
+            assert issue_id, "Could not find issue ID"
 
             # Create a new branch
             subprocess.run(["git", "checkout", "-b", "test-branch"], check=True)

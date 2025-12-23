@@ -125,7 +125,7 @@ def test_milestone_assign_command(cli_runner):
         issue_id = None
         for line in clean_output.split("\n"):
             if "Created issue:" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+                match = re.search(r"\[([a-f0-9\-]+)\]", line)
                 if match:
                     issue_id = match.group(1)
                     break

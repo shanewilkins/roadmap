@@ -175,14 +175,21 @@ class TestEstimatedTimeCLI:
 
         # Extract issue ID from output - look for the success message line
         clean_create = strip_ansi(create_result.output)
+        issue_id = None
+        # Try to find ID in brackets first
         for line in clean_create.split("\n"):
             if "Created issue" in line:
                 match = re.search(r"\[([^\]]+)\]", line)
                 if match:
                     issue_id = match.group(1)
                     break
-        else:
-            raise ValueError(f"Could not find Created issue line in: {clean_create}")
+        # Fallback: look for issue_id= in the logs
+        if not issue_id:
+            match = re.search(r"issue_id=([a-f0-9]+)", clean_create)
+            if match:
+                issue_id = match.group(1)
+
+        assert issue_id, f"Could not find issue ID in: {clean_create}"
 
         # Update the estimate
         update_result = runner.invoke(

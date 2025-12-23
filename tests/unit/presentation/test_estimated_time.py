@@ -178,7 +178,7 @@ class TestEstimatedTimeCLI:
         # Find the line with "Created issue" which has the format:  ✅ Created issue: Test Issue [id]
         for line in clean_create.split("\n"):
             if "Created issue" in line:
-                match = re.search(r"\[([^\]]+)\]", line)
+                match = re.search(r"\[([a-f0-9\-]+)\]", line)
                 if match:
                     issue_id = match.group(1)
                     break

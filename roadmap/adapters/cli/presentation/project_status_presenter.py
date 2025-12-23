@@ -15,8 +15,6 @@ from rich.text import Text
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
 
-console = get_console()
-
 
 class MilestoneProgressPresenter:
     """Presenter for milestone progress display."""
@@ -24,7 +22,7 @@ class MilestoneProgressPresenter:
     @staticmethod
     def show_milestone_header() -> None:
         """Display milestone section header."""
-        console.print("\n🎯 Milestones:", style="bold cyan")
+        get_console().print("\n🎯 Milestones:", style="bold cyan")
 
     @staticmethod
     def show_milestone_progress(milestone_name: str, progress: dict) -> None:
@@ -34,6 +32,7 @@ class MilestoneProgressPresenter:
             milestone_name: Name of the milestone
             progress: Progress dictionary with 'total', 'completed', 'percentage'
         """
+        console = get_console()
         console.print(f"\n  {milestone_name}")
 
         if progress.get("total", 0) > 0:
@@ -93,7 +92,7 @@ class IssueStatusPresenter:
     @staticmethod
     def show_issue_status_header() -> None:
         """Display issue status section header."""
-        console.print("\n📋 Issues by Status:", style="bold cyan")
+        get_console().print("\n📋 Issues by Status:", style="bold cyan")
 
     @staticmethod
     def show_issue_status_table(issue_counts: dict) -> None:
@@ -102,6 +101,7 @@ class IssueStatusPresenter:
         Args:
             issue_counts: Dictionary mapping Status enum to count
         """
+        console = get_console()
         if not issue_counts or not any(issue_counts.values()):
             console.print("  No issues found", style="dim")
             return
@@ -138,6 +138,7 @@ class RoadmapStatusPresenter:
     @staticmethod
     def show_empty_state() -> None:
         """Display message when no issues or milestones exist."""
+        console = get_console()
         console.print("\n📝 No issues or milestones found.", style="yellow")
         console.print("Get started with:")
         console.print("  roadmap issue create 'My first issue'")
@@ -146,7 +147,7 @@ class RoadmapStatusPresenter:
     @staticmethod
     def show_status_header() -> None:
         """Display main status header."""
-        console.print("📊 Roadmap Status", style="bold blue")
+        get_console().print("📊 Roadmap Status", style="bold blue")
 
     @staticmethod
     def show_roadmap_summary(summary: dict) -> None:
@@ -155,6 +156,7 @@ class RoadmapStatusPresenter:
         Args:
             summary: Dictionary with roadmap summary data
         """
+        console = get_console()
         console.print("\n📈 Summary:", style="bold cyan")
         console.print(
             f"  Total Issues: {summary.get('total_issues', 0)}", style="white"
@@ -180,4 +182,6 @@ class RoadmapStatusPresenter:
         Args:
             error_message: Error message to display
         """
-        console.print(f"❌ Failed to show status: {error_message}", style="bold red")
+        get_console().print(
+            f"❌ Failed to show status: {error_message}", style="bold red"
+        )

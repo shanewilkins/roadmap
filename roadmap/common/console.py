@@ -135,22 +135,28 @@ def get_console() -> Console:
     - Plain text output when piped/testing (POSIX compliance)
     - No ANSI codes when plain mode is detected
 
+    Returns a fresh instance each time to ensure file handle is current.
+
     Returns:
         Console: Configured Rich Console instance
     """
     plain = is_plain_mode()
 
-    # In testing/plain mode: no terminal, no colors, width=80 for consistency
+    # Use fresh instance each time to ensure file handle is correct
+    # This is critical for testing with CliRunner which replaces sys.stdout
     if plain:
         return Console(
+            file=sys.stdout,
             force_terminal=False,
             no_color=True,
             width=80,
             legacy_windows=False,
+            force_interactive=False,
+            force_jupyter=False,
         )
 
     # Interactive mode: full Rich features
-    return Console()
+    return Console(file=sys.stdout)
 
 
 def get_console_stderr() -> Console:
