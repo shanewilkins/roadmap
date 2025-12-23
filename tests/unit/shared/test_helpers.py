@@ -233,3 +233,133 @@ def get_latest_milestone(core: RoadmapCore) -> Milestone | None:
     if not milestones:
         return None
     return sorted(milestones, key=lambda m: m.created or "")[-1]
+
+
+# ============================================================================
+# Mock Factory Functions (Phase 1C - Mock Improvement)
+# ============================================================================
+# These factories create realistic mocks for domain objects, reducing DRY
+# violations and improving test clarity.
+
+
+def create_mock_issue(**kwargs) -> Any:
+    """Create a realistic mock Issue object.
+
+    Args:
+        **kwargs: Overrides for default mock attributes
+
+    Returns:
+        MagicMock configured as an Issue
+    """
+    from unittest.mock import MagicMock
+
+    defaults = {
+        "id": "issue-123",
+        "title": "Test Issue",
+        "description": "Test description",
+        "status": "todo",
+        "priority": "medium",
+        "assignee": None,
+        "milestone": None,
+        "github_issue": None,
+        "estimated_hours": None,
+        "created": "2023-01-01T00:00:00Z",
+        "updated": "2023-01-01T00:00:00Z",
+    }
+    defaults.update(kwargs)
+
+    mock_issue = MagicMock()
+    for key, value in defaults.items():
+        setattr(mock_issue, key, value)
+    return mock_issue
+
+
+def create_mock_milestone(**kwargs) -> Any:
+    """Create a realistic mock Milestone object.
+
+    Args:
+        **kwargs: Overrides for default mock attributes
+
+    Returns:
+        MagicMock configured as a Milestone
+    """
+    from unittest.mock import MagicMock
+
+    defaults = {
+        "name": "v1.0",
+        "description": "Version 1.0 release",
+        "status": "open",
+        "target_date": None,
+        "github_milestone": None,
+        "created": "2023-01-01T00:00:00Z",
+        "updated": "2023-01-01T00:00:00Z",
+    }
+    defaults.update(kwargs)
+
+    mock_milestone = MagicMock()
+    for key, value in defaults.items():
+        setattr(mock_milestone, key, value)
+    return mock_milestone
+
+
+def create_mock_comment(**kwargs) -> Any:
+    """Create a realistic mock Comment object.
+
+    Args:
+        **kwargs: Overrides for default mock attributes
+
+    Returns:
+        MagicMock configured as a Comment
+    """
+    from unittest.mock import MagicMock
+
+    defaults = {
+        "id": 123456,
+        "issue_id": "issue-123",
+        "author": "testuser",
+        "body": "This is a test comment",
+        "created_at": "2023-01-01T12:00:00Z",
+        "updated_at": "2023-01-01T12:00:00Z",
+        "github_url": None,
+    }
+    defaults.update(kwargs)
+
+    mock_comment = MagicMock()
+    for key, value in defaults.items():
+        setattr(mock_comment, key, value)
+    return mock_comment
+
+
+def create_mock_github_response(**kwargs) -> Any:
+    """Create a realistic mock GitHub API response.
+
+    Args:
+        **kwargs: Overrides for default response data
+
+    Returns:
+        MagicMock configured as a GitHub response
+    """
+    from unittest.mock import MagicMock
+
+    defaults = {
+        "id": 1,
+        "number": 1,
+        "title": "GitHub Issue",
+        "body": "Issue description",
+        "state": "open",
+        "created_at": "2023-01-01T00:00:00Z",
+        "updated_at": "2023-01-01T00:00:00Z",
+        "user": {"login": "testuser"},
+        "labels": [],
+        "assignees": [],
+        "html_url": "https://github.com/test/repo/issues/1",
+    }
+    defaults.update(kwargs)
+
+    mock_response = MagicMock()
+    for key, value in defaults.items():
+        setattr(mock_response, key, value)
+
+    # Add json() method
+    mock_response.json.return_value = defaults
+    return mock_response

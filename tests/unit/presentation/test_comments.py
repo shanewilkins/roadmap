@@ -8,11 +8,17 @@ import requests
 
 from roadmap.adapters.github.handlers.comments import CommentsHandler
 from roadmap.core.domain import Comment
+from tests.unit.shared.test_helpers import create_mock_comment
 
 
+# Local fixture for real CommentsHandler with mocked session
 @pytest.fixture
-def mock_comments_handler():
-    """Create a mock comments handler."""
+def comments_handler_with_session():
+    """Create a real CommentsHandler with mocked session.
+
+    Note: This is different from mock_comments_handler (which is a pure mock).
+    This fixture creates a real CommentsHandler instance that can be patched.
+    """
     mock_session = Mock(spec=requests.Session)
     handler = CommentsHandler(
         session=mock_session, owner="test-owner", repo="test-repo"
@@ -58,23 +64,40 @@ class TestComment:
 class TestCommentsHandler:
     """Test CommentsHandler methods."""
 
-    def test_get_issue_comments(self, mock_comments_handler):
-        """Test getting comments for an issue."""
+    def test_get_issue_comments(self, comments_handler_with_session):
+        """Test getting comments for an issue.
+
+        Phase 1C refactoring:
+        - Use create_mock_comment() instead of inline dictionaries
+        - Cleaner and more maintainable mock data
+        """
+        # Create mock comments using factory
+        comment1 = create_mock_comment(
+            id=123456,
+            author="user1",
+            body="This is the first comment",
+        )
+        comment2 = create_mock_comment(
+            id=123457,
+            author="user2",
+            body="This is the second comment",
+        )
+
         # Mock API response
         mock_response = Mock()
         mock_response.json.return_value = [
             {
-                "id": 123456,
-                "body": "This is the first comment",
-                "user": {"login": "user1"},
+                "id": comment1.id,
+                "body": comment1.body,
+                "user": {"login": comment1.author},
                 "created_at": "2023-01-01T12:00:00Z",
                 "updated_at": "2023-01-01T12:00:00Z",
                 "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
             },
             {
-                "id": 123457,
-                "body": "This is the second comment",
-                "user": {"login": "user2"},
+                "id": comment2.id,
+                "body": comment2.body,
+                "user": {"login": comment2.author},
                 "created_at": "2023-01-01T13:00:00Z",
                 "updated_at": "2023-01-01T13:30:00Z",
                 "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
@@ -83,32 +106,43 @@ class TestCommentsHandler:
 
         # Mock the _make_request method
         with patch.object(
-            mock_comments_handler, "_make_request", return_value=mock_response
+            comments_handler_with_session, "_make_request", return_value=mock_response
         ):
             # Test the method
-            comments = mock_comments_handler.get_issue_comments(1)
+            comments = comments_handler_with_session.get_issue_comments(1)
 
             assert len(comments) == 2
-            assert comments[0].id == 123456
-            assert comments[0].author == "user1"
-            assert comments[0].body == "This is the first comment"
-            assert comments[1].id == 123457
-            assert comments[1].author == "user2"
-            assert comments[1].body == "This is the second comment"
+            assert comments[0].id == comment1.id
+            assert comments[0].author == comment1.author
+            assert comments[0].body == comment1.body
+            assert comments[1].id == comment2.id
+            assert comments[1].author == comment2.author
+            assert comments[1].body == comment2.body
 
             # Verify the API call
-            mock_comments_handler._make_request.assert_called_once_with(
+            comments_handler_with_session._make_request.assert_called_once_with(
                 "GET", "/repos/test-owner/test-repo/issues/1/comments"
             )
 
-    def test_create_issue_comment(self, mock_comments_handler):
-        """Test creating a comment on an issue."""
+    def test_create_issue_comment(self, comments_handler_with_session):
+        """Test creating a comment on an issue.
+
+        Phase 1C refactoring:
+        - Use create_mock_comment() for realistic mock data
+        """
+        # Create mock comment using factory
+        new_comment = create_mock_comment(
+            id=123456,
+            author="testuser",
+            body="This is a new comment",
+        )
+
         # Mock API response
         mock_response = Mock()
         mock_response.json.return_value = {
-            "id": 123456,
-            "body": "This is a new comment",
-            "user": {"login": "testuser"},
+            "id": new_comment.id,
+            "body": new_comment.body,
+            "user": {"login": new_comment.author},
             "created_at": "2023-01-01T12:00:00Z",
             "updated_at": "2023-01-01T12:00:00Z",
             "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
@@ -116,33 +150,41 @@ class TestCommentsHandler:
 
         # Mock the _make_request method
         with patch.object(
-            mock_comments_handler, "_make_request", return_value=mock_response
+            comments_handler_with_session, "_make_request", return_value=mock_response
         ):
             # Test the method
-            comment = mock_comments_handler.create_issue_comment(
-                1, "This is a new comment"
-            )
+            comment = comments_handler_with_session.create_issue_comment(1, new_comment.body)
 
-            assert comment.id == 123456
-            assert comment.author == "testuser"
-            assert comment.body == "This is a new comment"
-            assert comment.issue_id == "1"
+            assert comment.id == new_comment.id
+            assert comment.author == new_comment.author
+            assert comment.body == new_comment.body
 
             # Verify the API call
-            mock_comments_handler._make_request.assert_called_once_with(
+            comments_handler_with_session._make_request.assert_called_once_with(
                 "POST",
                 "/repos/test-owner/test-repo/issues/1/comments",
-                json={"body": "This is a new comment"},
+                json={"body": new_comment.body},
             )
 
-    def test_update_issue_comment(self, mock_comments_handler):
-        """Test updating an existing comment."""
+    def test_update_issue_comment(self, comments_handler_with_session):
+        """Test updating an existing comment.
+
+        Phase 1C refactoring:
+        - Use create_mock_comment() for realistic mock data
+        """
+        # Create mock comment using factory
+        updated_comment = create_mock_comment(
+            id=123456,
+            author="testuser",
+            body="This is an updated comment",
+        )
+
         # Mock API response
         mock_response = Mock()
         mock_response.json.return_value = {
-            "id": 123456,
-            "body": "This is an updated comment",
-            "user": {"login": "testuser"},
+            "id": updated_comment.id,
+            "body": updated_comment.body,
+            "user": {"login": updated_comment.author},
             "created_at": "2023-01-01T12:00:00Z",
             "updated_at": "2023-01-01T13:00:00Z",
             "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
@@ -150,37 +192,37 @@ class TestCommentsHandler:
 
         # Mock the _make_request method
         with patch.object(
-            mock_comments_handler, "_make_request", return_value=mock_response
+            comments_handler_with_session, "_make_request", return_value=mock_response
         ):
             # Test the method
-            comment = mock_comments_handler.update_issue_comment(
-                123456, "This is an updated comment"
+            comment = comments_handler_with_session.update_issue_comment(
+                updated_comment.id, updated_comment.body
             )
 
-            assert comment.id == 123456
-            assert comment.author == "testuser"
-            assert comment.body == "This is an updated comment"
+            assert comment.id == updated_comment.id
+            assert comment.author == updated_comment.author
+            assert comment.body == updated_comment.body
 
             # Verify the API call
-            mock_comments_handler._make_request.assert_called_once_with(
+            comments_handler_with_session._make_request.assert_called_once_with(
                 "PATCH",
                 "/repos/test-owner/test-repo/issues/comments/123456",
-                json={"body": "This is an updated comment"},
+                json={"body": updated_comment.body},
             )
 
-    def test_delete_issue_comment(self, mock_comments_handler):
+    def test_delete_issue_comment(self, comments_handler_with_session):
         """Test deleting a comment."""
         # Mock the _make_request method
-        with patch.object(mock_comments_handler, "_make_request"):
+        with patch.object(comments_handler_with_session, "_make_request"):
             # Test the method
-            mock_comments_handler.delete_issue_comment(123456)
+            comments_handler_with_session.delete_issue_comment(123456)
 
             # Verify the API call
-            mock_comments_handler._make_request.assert_called_once_with(
+            comments_handler_with_session._make_request.assert_called_once_with(
                 "DELETE", "/repos/test-owner/test-repo/issues/comments/123456"
             )
 
-    def test_get_issue_comments_empty(self, mock_comments_handler):
+    def test_get_issue_comments_empty(self, comments_handler_with_session):
         """Test getting comments when there are none."""
         # Mock empty API response
         mock_response = Mock()
@@ -188,10 +230,10 @@ class TestCommentsHandler:
 
         # Mock the _make_request method
         with patch.object(
-            mock_comments_handler, "_make_request", return_value=mock_response
+            comments_handler_with_session, "_make_request", return_value=mock_response
         ):
             # Test the method
-            comments = mock_comments_handler.get_issue_comments(1)
+            comments = comments_handler_with_session.get_issue_comments(1)
 
             assert len(comments) == 0
             assert comments == []

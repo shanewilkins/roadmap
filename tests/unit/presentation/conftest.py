@@ -179,3 +179,79 @@ def cli_runner_initialized():
         core = RoadmapCore()
         core.initialize()
         yield runner, core
+
+
+# ============================================================================
+# Phase 1C: Service-Specific Mock Fixtures
+# ============================================================================
+
+
+@pytest.fixture
+def mock_github_service():
+    """Mock GitHub service with realistic behavior.
+
+    Use this for tests that need to mock GitHub API interactions.
+    Returns: MagicMock configured as GitHubService
+
+    Example:
+        def test_something(mock_github_service):
+            mock_github_service.get_issues.return_value = [...]
+            service = GitHubService(mock=mock_github_service)
+            issues = service.get_issues()
+            assert len(issues) > 0
+    """
+    mock_service = MagicMock()
+    mock_service.test_connection.return_value = True
+    mock_service.get_issues.return_value = []
+    mock_service.get_milestones.return_value = []
+    mock_service.create_issue.return_value = {"number": 1, "html_url": "https://github.com/test/repo/issues/1"}
+    mock_service.update_issue.return_value = True
+    mock_service.delete_issue.return_value = True
+    mock_service.validate_assignee.return_value = (True, "")
+    mock_service.get_team_members.return_value = []
+    return mock_service
+
+
+@pytest.fixture
+def mock_git_service():
+    """Mock Git service with realistic behavior.
+
+    Use this for tests that need to mock Git operations.
+    Returns: MagicMock configured as GitService
+
+    Example:
+        def test_something(mock_git_service):
+            mock_git_service.is_repository.return_value = True
+            service = GitService(mock=mock_git_service)
+            assert service.is_repository()
+    """
+    mock_service = MagicMock()
+    mock_service.is_repository.return_value = True
+    mock_service.get_current_branch.return_value = "main"
+    mock_service.get_commits.return_value = []
+    mock_service.create_branch.return_value = True
+    mock_service.delete_branch.return_value = True
+    mock_service.install_hooks.return_value = True
+    return mock_service
+
+
+@pytest.fixture
+def mock_comments_handler():
+    """Mock Comments handler with realistic behavior.
+
+    Use this for tests that need to mock comment operations.
+    Returns: MagicMock configured as CommentsHandler
+
+    Example:
+        def test_something(mock_comments_handler):
+            mock_comments_handler.get_comments.return_value = [...]
+            handler = CommentsHandler(mock=mock_comments_handler)
+            comments = handler.get_comments("issue-1")
+            assert len(comments) >= 0
+    """
+    mock_handler = MagicMock()
+    mock_handler.get_issue_comments.return_value = []
+    mock_handler.create_comment.return_value = {"id": 123456}
+    mock_handler.update_comment.return_value = True
+    mock_handler.delete_comment.return_value = True
+    return mock_handler
