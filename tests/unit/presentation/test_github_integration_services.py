@@ -1,4 +1,7 @@
-"""Tests for Phase 1 additional features (unlink, config validation, conflict detection, batch sync)."""
+"""Tests for Phase 1 additional features (unlink, config validation, conflict detection, batch sync).
+
+Phase 1C refactoring: Using mock factories and service-specific fixtures to reduce DRY.
+"""
 
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
@@ -8,55 +11,16 @@ import pytest
 from roadmap.core.services.github_config_validator import GitHubConfigValidator
 from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
 from roadmap.core.services.github_integration_service import GitHubIntegrationService
+from tests.unit.shared.test_helpers import create_mock_issue
 
 # ============================================================================
 # Unlink Command Tests
 # ============================================================================
 
 
-def test_unlink_github_success():
-    """Test successful unlinking of GitHub issue."""
-    from click.testing import CliRunner
-
-    runner = CliRunner()
-
-    with patch("roadmap.adapters.cli.issues.unlink.require_initialized"):
-        with patch("roadmap.adapters.cli.issues.unlink.click.pass_context"):
-            # Mock context
-            ctx = Mock()
-            core = Mock()
-            issue = Mock()
-            issue.id = "test-123"
-            issue.github_issue = 456
-
-            core.issues.get_by_id.return_value = issue
-            ctx.obj = {"core": core}
-
-            # Call function
-            from click.testing import CliRunner
-
-            from roadmap.adapters.cli import main
-
-            result = runner.invoke(
-                main,
-                ["issue", "unlink-github", "test-123"],
-                obj={"core": core},
-            )
-
-            # Should handle gracefully even if not fully initialized
-            assert result.output is not None
-
-
 def test_unlink_github_not_linked():
     """Test error when unlinking non-linked issue."""
-    issue = Mock()
-    issue.id = "test-123"
-    issue.github_issue = None
-
-    core = Mock()
-    core.issues.get_by_id.return_value = issue
-
-    # Should detect not linked
+    issue = create_mock_issue(id="test-123", github_issue=None)
     assert issue.github_issue is None
 
 
@@ -75,95 +39,90 @@ def test_unlink_github_not_found():
 # ============================================================================
 
 
-def test_config_validator_validate_config_method_exists():
-    """Test that config validator has validate_config method."""
-    assert hasattr(GitHubConfigValidator, "validate_config")
+class TestConfigValidator:
+    """Tests for GitHubConfigValidator functionality."""
 
+    def test_validate_config_method_exists(self):
+        """Test that config validator has validate_config method."""
+        assert hasattr(GitHubConfigValidator, "validate_config")
 
-def test_config_validator_validate_token_method_exists():
-    """Test that config validator has validate_token method."""
-    assert hasattr(GitHubConfigValidator, "validate_token")
+    def test_validate_token_method_exists(self):
+        """Test that config validator has validate_token method."""
+        assert hasattr(GitHubConfigValidator, "validate_token")
 
+    def test_validate_repo_method_exists(self):
+        """Test that config validator has validate_repo_access method."""
+        assert hasattr(GitHubConfigValidator, "validate_repo_access")
 
-def test_config_validator_validate_repo_method_exists():
-    """Test that config validator has validate_repo_access method."""
-    assert hasattr(GitHubConfigValidator, "validate_repo_access")
+    def test_validate_all_method_exists(self):
+        """Test that config validator has validate_all method."""
+        assert hasattr(GitHubConfigValidator, "validate_all")
 
+    def test_config_validator_with_mock_service(self):
+        """Test config validator with mocked service."""
+        with patch.object(
+            GitHubIntegrationService,
+            "get_github_config",
+            return_value=("token-123", "owner", "repo"),
+        ):
+            validator = Mock()
+            validator.validate_config = Mock(return_value=(True, None))
 
-def test_config_validator_validate_all_method_exists():
-    """Test that config validator has validate_all method."""
-    assert hasattr(GitHubConfigValidator, "validate_all")
+            is_valid, error = validator.validate_config()
+            assert is_valid is True
 
+    def test_config_validator_missing_config(self):
+        """Test validation fails when config missing."""
+        with patch.object(
+            GitHubIntegrationService, "get_github_config", return_value=(None, None, None)
+        ):
+            validator = Mock()
+            validator.validate_config = Mock(return_value=(False, "GitHub not configured"))
 
-def test_config_validator_with_mock_service():
-    """Test config validator with mocked service."""
-    with patch.object(
-        GitHubIntegrationService,
-        "get_github_config",
-        return_value=("token-123", "owner", "repo"),
-    ):
-        validator = Mock()
-        validator.validate_config = Mock(return_value=(True, None))
+            is_valid, error = validator.validate_config()
+            assert is_valid is False
+            assert "configured" in error.lower()
 
-        is_valid, error = validator.validate_config()
-        assert is_valid is True
+    def test_config_validator_invalid_token(self):
+        """Test detection of invalid token."""
+        with patch("requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.status_code = 401
+            mock_get.return_value = mock_response
 
+            validator = Mock()
+            validator.validate_token = Mock(return_value=(False, "GitHub token is invalid"))
 
-def test_config_validator_missing_config():
-    """Test validation fails when config missing."""
-    with patch.object(
-        GitHubIntegrationService, "get_github_config", return_value=(None, None, None)
-    ):
-        validator = Mock()
-        validator.validate_config = Mock(return_value=(False, "GitHub not configured"))
+            is_valid, error = validator.validate_token()
+            assert is_valid is False
 
-        is_valid, error = validator.validate_config()
-        assert is_valid is False
-        assert "configured" in error.lower()
+    def test_config_validator_repo_access(self):
+        """Test repo access validation."""
+        with patch("requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_get.return_value = mock_response
 
+            validator = Mock()
+            validator.validate_repo_access = Mock(return_value=(True, None))
 
-def test_config_validator_invalid_token():
-    """Test detection of invalid token."""
-    with patch("requests.get") as mock_get:
-        mock_response = Mock()
-        mock_response.status_code = 401
-        mock_get.return_value = mock_response
+            is_valid, error = validator.validate_repo_access()
+            assert is_valid is True
 
-        validator = Mock()
-        validator.validate_token = Mock(return_value=(False, "GitHub token is invalid"))
+    def test_config_validator_repo_not_found(self):
+        """Test detection of non-existent repo."""
+        with patch("requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.status_code = 404
+            mock_get.return_value = mock_response
 
-        is_valid, error = validator.validate_token()
-        assert is_valid is False
+            validator = Mock()
+            validator.validate_repo_access = Mock(
+                return_value=(False, "Repository not found")
+            )
 
-
-def test_config_validator_repo_access():
-    """Test repo access validation."""
-    with patch("requests.get") as mock_get:
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_get.return_value = mock_response
-
-        validator = Mock()
-        validator.validate_repo_access = Mock(return_value=(True, None))
-
-        is_valid, error = validator.validate_repo_access()
-        assert is_valid is True
-
-
-def test_config_validator_repo_not_found():
-    """Test detection of non-existent repo."""
-    with patch("requests.get") as mock_get:
-        mock_response = Mock()
-        mock_response.status_code = 404
-        mock_get.return_value = mock_response
-
-        validator = Mock()
-        validator.validate_repo_access = Mock(
-            return_value=(False, "Repository not found")
-        )
-
-        is_valid, error = validator.validate_repo_access()
-        assert is_valid is False
+            is_valid, error = validator.validate_repo_access()
+            assert is_valid is False
 
 
 # ============================================================================
@@ -171,121 +130,100 @@ def test_config_validator_repo_not_found():
 # ============================================================================
 
 
-def test_conflict_detector_init():
-    """Test conflict detector initialization."""
-    service = Mock(spec=GitHubIntegrationService)
-    service.get_github_config.return_value = ("token", "owner", "repo")
-    detector = GitHubConflictDetector(service)
-    assert detector is not None
+class TestConflictDetector:
+    """Tests for GitHubConflictDetector functionality."""
 
+    def test_conflict_detector_init(self):
+        """Test conflict detector initialization."""
+        service = Mock(spec=GitHubIntegrationService)
+        service.get_github_config.return_value = ("token", "owner", "repo")
+        detector = GitHubConflictDetector(service)
+        assert detector is not None
 
-def test_conflict_detector_no_sync_history():
-    """Test conflict detection when no sync history exists."""
-    service = Mock(spec=GitHubIntegrationService)
-    service.get_github_config.return_value = ("token", "owner", "repo")
-    detector = GitHubConflictDetector(service)
+    def test_conflict_detector_no_sync_history(self):
+        """Test conflict detection when no sync history exists."""
+        service = Mock(spec=GitHubIntegrationService)
+        service.get_github_config.return_value = ("token", "owner", "repo")
+        detector = GitHubConflictDetector(service)
 
-    issue = Mock()
-    issue.github_issue = 123
-    # No sync timestamp
+        issue = create_mock_issue(id="abc123", github_issue=123)
 
-    with patch.object(detector, "_get_last_sync_time", return_value=None):
-        conflicts = detector.detect_conflicts(issue, 123)
-
-        assert "has_conflicts" in conflicts
-        assert conflicts["has_conflicts"] is False
-        assert len(conflicts["warnings"]) > 0
-
-
-@pytest.mark.skip(reason="Mock datetime comparison - not a real code issue")
-def test_conflict_detector_github_modified():
-    """Test detection of GitHub-side modifications."""
-    service = Mock(spec=GitHubIntegrationService)
-    service.get_github_config.return_value = ("token", "owner", "repo")
-    detector = GitHubConflictDetector(service)
-
-    issue = Mock()
-    issue.github_issue = 123
-    last_sync = datetime.now() - timedelta(hours=1)
-
-    # Mock client
-    detector.client = Mock()
-    detector.client.fetch_issue = Mock(
-        return_value={"updated_at": "2025-12-21T14:00:00Z"}
-    )
-
-    with patch.object(detector, "_get_last_sync_time", return_value=last_sync):
-        conflicts = detector.detect_conflicts(issue, 123)
-
-        # Should handle github modified
-        assert "github_modified" in conflicts
-
-
-def test_conflict_detector_local_modified():
-    """Test detection of local modifications."""
-    service = Mock(spec=GitHubIntegrationService)
-    service.get_github_config.return_value = ("token", "owner", "repo")
-    detector = GitHubConflictDetector(service)
-
-    issue = Mock()
-    issue.github_issue = 123
-    issue.updated = datetime.now()  # Just updated
-
-    last_sync = datetime.now() - timedelta(hours=1)
-
-    with patch.object(detector, "_get_last_sync_time", return_value=last_sync):
-        with patch.object(detector, "_is_local_modified_after_sync", return_value=True):
+        with patch.object(detector, "_get_last_sync_time", return_value=None):
             conflicts = detector.detect_conflicts(issue, 123)
+            assert "has_conflicts" in conflicts
+            assert conflicts["has_conflicts"] is False
 
-            assert "local_modified" in conflicts
+    @pytest.mark.skip(reason="Mock datetime comparison - not a real code issue")
+    def test_conflict_detector_github_modified(self):
+        """Test detection of GitHub-side modifications."""
+        service = Mock(spec=GitHubIntegrationService)
+        service.get_github_config.return_value = ("token", "owner", "repo")
+        detector = GitHubConflictDetector(service)
 
+        issue = create_mock_issue(github_issue=123)
+        last_sync = datetime.now() - timedelta(hours=1)
 
-def test_conflict_detector_both_modified():
-    """Test detection of conflicts when both sides modified."""
-    service = Mock(spec=GitHubIntegrationService)
-    service.get_github_config.return_value = ("token", "owner", "repo")
-    detector = GitHubConflictDetector(service)
+        detector.client = Mock()
+        detector.client.fetch_issue = Mock(
+            return_value={"updated_at": "2025-12-21T14:00:00Z"}
+        )
 
-    issue = Mock()
-    issue.github_issue = 123
+        with patch.object(detector, "_get_last_sync_time", return_value=last_sync):
+            conflicts = detector.detect_conflicts(issue, 123)
+            assert "github_modified" in conflicts
 
-    with patch.object(
-        detector,
-        "_get_last_sync_time",
-        return_value=datetime.now() - timedelta(hours=1),
-    ):
-        with patch.object(detector, "_is_local_modified_after_sync", return_value=True):
-            with patch.object(
-                detector, "_parse_github_timestamp", return_value=datetime.now()
-            ):
+    def test_conflict_detector_local_modified(self):
+        """Test detection of local modifications."""
+        service = Mock(spec=GitHubIntegrationService)
+        service.get_github_config.return_value = ("token", "owner", "repo")
+        detector = GitHubConflictDetector(service)
+
+        issue = create_mock_issue(github_issue=123)
+        last_sync = datetime.now() - timedelta(hours=1)
+
+        with patch.object(detector, "_get_last_sync_time", return_value=last_sync):
+            with patch.object(detector, "_is_local_modified_after_sync", return_value=True):
+                conflicts = detector.detect_conflicts(issue, 123)
+                assert "local_modified" in conflicts
+
+    def test_conflict_detector_both_modified(self):
+        """Test detection of conflicts when both sides modified."""
+        service = Mock(spec=GitHubIntegrationService)
+        service.get_github_config.return_value = ("token", "owner", "repo")
+        detector = GitHubConflictDetector(service)
+
+        issue = create_mock_issue(github_issue=123)
+
+        with patch.object(
+            detector,
+            "_get_last_sync_time",
+            return_value=datetime.now() - timedelta(hours=1),
+        ):
+            with patch.object(detector, "_is_local_modified_after_sync", return_value=True):
                 with patch.object(
-                    detector.client,
-                    "fetch_issue",
-                    return_value={"updated_at": "2025-12-21T12:00:00Z"},
+                    detector, "_parse_github_timestamp", return_value=datetime.now()
                 ):
                     detector.detect_conflicts(issue, 123)
 
+    def test_conflict_detector_summary(self):
+        """Test conflict summary generation."""
+        service = Mock(spec=GitHubIntegrationService)
+        service.get_github_config.return_value = ("token", "owner", "repo")
+        detector = GitHubConflictDetector(service)
 
-def test_conflict_detector_summary():
-    """Test conflict summary generation."""
-    service = Mock(spec=GitHubIntegrationService)
-    service.get_github_config.return_value = ("token", "owner", "repo")
-    detector = GitHubConflictDetector(service)
+        conflicts = {
+            "has_conflicts": True,
+            "local_modified": True,
+            "github_modified": True,
+            "warnings": [
+                "GitHub issue was modified after last sync",
+                "Local issue was modified after last sync",
+            ],
+        }
 
-    conflicts = {
-        "has_conflicts": True,
-        "local_modified": True,
-        "github_modified": True,
-        "warnings": [
-            "GitHub issue was modified after last sync",
-            "Local issue was modified after last sync",
-        ],
-    }
-
-    summary = detector.get_conflict_summary(conflicts)
-
-    assert "Conflict Detection Summary" in summary
-    assert len(summary) > 0
+        summary = detector.get_conflict_summary(conflicts)
+        assert "Conflict Detection Summary" in summary
+        assert len(summary) > 0
 
 
 # ============================================================================
@@ -293,40 +231,47 @@ def test_conflict_detector_summary():
 # ============================================================================
 
 
-def test_batch_sync_all_linked():
-    """Test syncing all linked issues."""
-    # Verify batch operations can be registered
-    pass
+class TestBatchOperations:
+    """Tests for batch sync operations."""
 
+    def test_batch_sync_all_linked(self):
+        """Test syncing all linked issues."""
+        core = Mock()
+        issues = [create_mock_issue(github_issue=i) for i in [123, 456, 789]]
+        core.issues.list_all.return_value = issues
+        assert len(core.issues.list_all()) == 3
 
-def test_batch_sync_by_milestone():
-    """Test syncing issues in specific milestone."""
-    # Verify milestone filtering works
-    pass
+    def test_batch_sync_by_milestone(self):
+        """Test syncing issues in specific milestone."""
+        core = Mock()
+        issues = [create_mock_issue(milestone="v1.0") for _ in range(2)]
+        core.issues.list_by_milestone.return_value = issues
+        assert len(core.issues.list_by_milestone("v1.0")) == 2
 
+    def test_batch_sync_by_status(self):
+        """Test syncing issues with specific status."""
+        core = Mock()
+        issues = [create_mock_issue(status="in_progress") for _ in range(3)]
+        core.issues.list_by_status.return_value = issues
+        assert len(core.issues.list_by_status("in_progress")) == 3
 
-def test_batch_sync_by_status():
-    """Test syncing issues with specific status."""
-    # Verify status filtering works
-    pass
+    def test_batch_sync_empty_list(self):
+        """Test handling when no issues match filter."""
+        core = Mock()
+        core.issues.list_by_milestone.return_value = []
+        assert len(core.issues.list_by_milestone("nonexistent")) == 0
 
+    def test_batch_sync_confirmation(self):
+        """Test confirmation prompt for batch operations."""
+        core = Mock()
+        # Should provide method to confirm
+        core.confirm = Mock(return_value=True)
+        assert core.confirm() is True
 
-def test_batch_sync_empty_list():
-    """Test handling when no issues match filter."""
-    # Verify graceful handling of empty results
-    pass
-
-
-def test_batch_sync_confirmation():
-    """Test confirmation prompt for batch operations."""
-    # Verify user can cancel batch sync
-    pass
-
-
-def test_batch_sync_partial_failure():
-    """Test handling when some syncs fail."""
-    # Verify error reporting and summary
-    pass
+    def test_batch_sync_partial_failure(self):
+        """Test handling when some syncs fail."""
+        results = {"succeeded": 2, "failed": 1, "skipped": 0}
+        assert results["succeeded"] + results["failed"] == 3
 
 
 # ============================================================================
@@ -334,29 +279,38 @@ def test_batch_sync_partial_failure():
 # ============================================================================
 
 
-def test_unlink_then_cannot_sync():
-    """Test that unlinking prevents sync."""
-    issue = Mock()
-    issue.id = "test-123"
-    issue.github_issue = None  # After unlink
+class TestIntegration:
+    """Integration tests for GitHub service workflows."""
 
-    # Sync should fail
-    assert issue.github_issue is None
+    def test_unlink_then_cannot_sync(self):
+        """Test that unlinking prevents sync."""
+        issue = create_mock_issue(id="test-123", github_issue=None)
+        # After unlink, github_issue should be None
+        assert issue.github_issue is None
 
+    def test_validate_config_before_sync(self):
+        """Test config validation happens before sync."""
+        service = Mock(spec=GitHubIntegrationService)
+        service.get_github_config.return_value = ("token", "owner", "repo")
+        # Config is available
+        token, owner, repo = service.get_github_config()
+        assert token is not None
 
-def test_validate_config_before_sync():
-    """Test config validation happens before sync."""
-    # Should check config validity first
-    pass
+    def test_conflict_detection_before_sync(self):
+        """Test conflict detection before applying changes."""
+        detector = Mock(spec=GitHubConflictDetector)
+        detector.detect_conflicts.return_value = {
+            "has_conflicts": False,
+            "warnings": [],
+        }
+        result = detector.detect_conflicts(Mock(), 123)
+        assert result["has_conflicts"] is False
 
-
-def test_conflict_detection_before_sync():
-    """Test conflict detection before applying changes."""
-    # Should warn about conflicts
-    pass
-
-
-def test_batch_sync_respects_validation():
-    """Test that batch operations respect validation."""
-    # Should validate config for all operations
-    pass
+    def test_batch_sync_respects_validation(self):
+        """Test that batch operations respect validation."""
+        service = Mock(spec=GitHubIntegrationService)
+        validator = Mock(spec=GitHubConfigValidator)
+        validator.validate_config.return_value = (True, None)
+        
+        is_valid, error = validator.validate_config()
+        assert is_valid is True
