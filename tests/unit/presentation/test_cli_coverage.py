@@ -8,15 +8,8 @@ using a simpler approach that works with the existing codebase.
 from unittest.mock import patch
 
 import pytest
-from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click CLI runner for testing."""
-    return CliRunner()
 
 
 class TestCLIStatus:
@@ -31,41 +24,38 @@ class TestCLIStatus:
         """Test basic status command."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ["status"])
-            assert result.exit_code in [0, 1]
+            assert result.exit_code in (0, 1)
 
-    def test_handoff_list(self, cli_runner):
-        """Test handoff list command."""
+    @pytest.mark.parametrize(
+        "args,expected_codes",
+        [
+            (["handoff", "--list"], (0, 1, 2)),
+            (["handoff", "--context"], (0, 1, 2)),
+            (["analytics", "--velocity"], (0, 1, 2)),
+            (["export", "--format", "csv"], (0, 1, 2)),
+        ],
+    )
+    def test_command_variants(self, cli_runner, args, expected_codes):
+        """Test various command variants with parametrization."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["handoff", "--list"])
-            assert result.exit_code in [0, 1, 2]  # Include Click error code
-
-    def test_handoff_context(self, cli_runner):
-        """Test handoff context command."""
-        with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["handoff", "--context"])
-            assert result.exit_code in [0, 1, 2]  # Include Click error code
-
-    def test_analytics_velocity(self, cli_runner):
-        """Test analytics velocity command."""
-        with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["analytics", "--velocity"])
-            assert result.exit_code in [0, 1, 2]  # Include Click error code
-
-    def test_export_csv(self, cli_runner):
-        """Test export CSV functionality."""
-        with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["export", "--format", "csv"])
-            assert result.exit_code in [0, 1, 2]  # Include Click error code
+            result = cli_runner.invoke(main, args)
+            assert result.exit_code in expected_codes
 
 
 class TestCLISync:
     """Test sync command coverage."""
 
-    def test_team_list(self, cli_runner):
-        """Test team list command."""
+    @pytest.mark.parametrize(
+        "args",
+        [
+            ["team", "list"],
+        ],
+    )
+    def test_sync_commands(self, cli_runner, args):
+        """Test sync-related commands."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["team", "list"])
-            assert result.exit_code in [0, 1, 2]  # Include Click error code
+            result = cli_runner.invoke(main, args)
+            assert result.exit_code in (0, 1, 2)
 
 
 class TestCLIGitIntegration:
@@ -74,16 +64,13 @@ class TestCLIGitIntegration:
     def test_git_hooks_help(self, cli_runner):
         """Test git hooks command help."""
         result = cli_runner.invoke(main, ["git-hooks", "--help"])
-        assert result.exit_code in [
-            0,
-            2,
-        ]  # Include Click error code for non-existent command
+        assert result.exit_code in (0, 2)
 
     def test_git_hooks_install(self, cli_runner):
         """Test git hooks install command."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ["git-hooks", "--install"])
-            assert result.exit_code in [0, 1, 2]  # Include Click error code
+            assert result.exit_code in (0, 1, 2)
 
 
 class TestCLIHelperFunctions:
@@ -97,12 +84,10 @@ class TestCLIHelperFunctions:
             patch("os.getenv") as mock_getenv,
             patch("getpass.getuser") as mock_getuser,
         ):
-            # Test environment variable first
             mock_getenv.return_value = "test_user"
             mock_getuser.return_value = "fallback_user"
 
             user = _get_current_user()  # type: ignore[call-arg]
-            # Should return either the mocked value or actual system value
             assert user is not None
             assert isinstance(user, str)
 
@@ -112,7 +97,6 @@ class TestCLIHelperFunctions:
 
         with cli_runner.isolated_filesystem():
             context = _detect_project_context()  # type: ignore[call-arg]
-
             assert isinstance(context, dict)
             assert "project_name" in context
             assert "has_git" in context
@@ -121,22 +105,21 @@ class TestCLIHelperFunctions:
 class TestCLIInitAdvanced:
     """Test advanced init functionality."""
 
-    def test_init_with_template(self, cli_runner):
-        """Test init with template option."""
-        with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(  # type: ignore[call-arg]
-                main,
+    @pytest.mark.parametrize(
+        "args,expected_codes",
+        [
+            (
                 ["init", "--template", "basic", "--non-interactive", "--skip-github"],
-            )
-            # Should succeed or gracefully handle missing template
-            assert result.exit_code in [0, 1]
-
-    def test_init_dry_run(self, cli_runner):
-        """Test init with dry-run option."""
+                (0, 1),
+            ),
+            (["init", "--dry-run", "--non-interactive"], (0, 1, 2)),
+        ],
+    )
+    def test_init_variants(self, cli_runner, args, expected_codes):
+        """Test init with various options."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["init", "--dry-run", "--non-interactive"])
-            # Should show what would be created without creating
-            assert result.exit_code in [0, 1, 2]  # Include Click error code
+            result = cli_runner.invoke(main, args)
+            assert result.exit_code in expected_codes
 
 
 class TestCLIErrorHandling:
@@ -145,13 +128,12 @@ class TestCLIErrorHandling:
     def test_invalid_command(self, cli_runner):
         """Test handling of invalid commands."""
         result = cli_runner.invoke(main, ["nonexistent-command"])
-        assert result.exit_code == 2  # Click's standard "no such command" exit code
+        assert result.exit_code == 2
 
     def test_missing_arguments(self, cli_runner):
         """Test handling of missing required arguments."""
         result = cli_runner.invoke(main, ["handoff"])
-        # Should show usage or error message
-        assert result.exit_code in [0, 1, 2]
+        assert result.exit_code in (0, 1, 2)
 
 
 class TestCLIOutputFormatting:
@@ -168,5 +150,4 @@ class TestCLIOutputFormatting:
     def test_version_output(self, cli_runner):
         """Test version output."""
         result = cli_runner.invoke(main, ["--version"])
-        # Should show version or handle gracefully
-        assert result.exit_code in [0, 1]
+        assert result.exit_code in (0, 1)

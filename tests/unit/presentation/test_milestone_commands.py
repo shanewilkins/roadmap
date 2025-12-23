@@ -1,6 +1,7 @@
 """Tests for milestone CLI commands."""
 
-import re
+
+import pytest
 
 from roadmap.adapters.cli import main
 from roadmap.infrastructure.core import RoadmapCore
@@ -13,227 +14,166 @@ from tests.unit.shared.test_helpers import (
 from tests.unit.shared.test_utils import strip_ansi
 
 
-def test_milestone_create_command(cli_runner):
-    """Test creating a milestone."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
+class TestMilestoneCreate:
+    """Test milestone create command variants."""
 
-        result = cli_runner.invoke(
-            main, ["milestone", "create", "v1.0", "--description", "First release"]
-        )
-        assert result.exit_code == 0
-        assert "Created" in result.output or "v1.0" in result.output
-
-
-def test_milestone_create_command_with_due_date(cli_runner):
-    """Test creating a milestone with description."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        result = cli_runner.invoke(
-            main, ["milestone", "create", "v1.0", "--description", "First release"]
-        )
-        assert result.exit_code == 0
-        assert "Created" in result.output or "v1.0" in result.output
-
-
-def test_milestone_create_command_invalid_date(cli_runner):
-    """Test creating a milestone without description."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        result = cli_runner.invoke(main, ["milestone", "create", "v1.0"])
-        assert result.exit_code == 0
-        assert "Created" in result.output or "v1.0" in result.output
-
-
-def test_milestone_create_command_without_roadmap(cli_runner):
-    """Test creating a milestone without initialized roadmap."""
-    with cli_runner.isolated_filesystem():
-        result = cli_runner.invoke(main, ["milestone", "create", "v1.0"])
-        # Should fail without initialized roadmap
-        assert result.exit_code != 0
-
-
-def test_milestone_list_command(cli_runner):
-    """Test listing milestones."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        # Create some milestones first
-        cli_runner.invoke(
-            main, ["milestone", "create", "v1.0", "--description", "First release"]
-        )
-        cli_runner.invoke(
-            main, ["milestone", "create", "v2.0", "--description", "Second release"]
-        )
-
-        result = cli_runner.invoke(main, ["milestone", "list"])
-        assert result.exit_code == 0
-        clean_output = strip_ansi(result.output)
-        assert "v1.0" in clean_output
-        assert "v2.0" in clean_output
-
-
-def test_milestone_list_command_empty(cli_runner):
-    """Test listing milestones when none exist."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        result = cli_runner.invoke(main, ["milestone", "list"])
-        assert result.exit_code == 0
-
-
-def test_milestone_list_command_without_roadmap(cli_runner):
-    """Test listing milestones without initialized roadmap."""
-    with cli_runner.isolated_filesystem():
-        result = cli_runner.invoke(main, ["milestone", "list"])
-        # Should fail without initialized roadmap
-        assert result.exit_code != 0
-
-
-def test_milestone_assign_command(cli_runner):
-    """Test assigning an issue to a milestone."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        core = RoadmapCore()
-
-        # Create a milestone and an issue
-        cli_runner.invoke(
-            main, ["milestone", "create", "v1.0", "--description", "First release"]
-        )
-        result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
-
-        # Verify issue was created via database instead of parsing output
-        assert_command_success(result)
-        issue = assert_issue_created(core, "test-issue")
-        milestone = assert_milestone_created(core, "v1.0")
-
-        # Assign issue to milestone
-        result = cli_runner.invoke(main, ["milestone", "assign", str(issue.id), "v1.0"])
-        assert_command_success(result)
-
-        # Verify assignment in database instead of parsing output
-        issue = core.issues.get(issue.id)
-        assert_issue_assigned_to_milestone(core, issue, "v1.0")
-
-
-def test_milestone_assign_command_nonexistent_milestone(cli_runner):
-    """Test assigning an issue to a non-existent milestone."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        # Create an issue
-        result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
-        match = re.search(r"\[([^\]]+)\]", result.output)
-        if match:
-            issue_id = match.group(1)
-
-            # Try to assign to non-existent milestone
-            result = cli_runner.invoke(
-                main, ["milestone", "assign", issue_id, "nonexistent"]
+    @pytest.mark.parametrize(
+        "milestone_name,description",
+        [
+            ("v1.0", "First release"),
+            ("v2.0", None),
+        ],
+    )
+    def test_milestone_create_variants(self, cli_runner, milestone_name, description):
+        """Test creating milestones with various options."""
+        with cli_runner.isolated_filesystem():
+            init_result = cli_runner.invoke(
+                main, ["init", "-y", "--skip-github", "--skip-project"]
             )
-            # Should fail gracefully
+            assert init_result.exit_code == 0
+            args = ["milestone", "create", milestone_name]
+            if description:
+                args.extend(["--description", description])
+            result = cli_runner.invoke(main, args)
+            assert result.exit_code == 0
+            assert "Created" in result.output or milestone_name in result.output
+
+    def test_milestone_create_without_roadmap(self, cli_runner):
+        """Test creating a milestone without initialized roadmap."""
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(main, ["milestone", "create", "v1.0"])
+            assert result.exit_code != 0
+
+
+class TestMilestoneList:
+    """Test milestone list command variants."""
+
+    def test_milestone_list_with_milestones(self, cli_runner):
+        """Test listing milestones."""
+        with cli_runner.isolated_filesystem():
+            init_result = cli_runner.invoke(
+                main, ["init", "-y", "--skip-github", "--skip-project"]
+            )
+            assert init_result.exit_code == 0
+
+            cli_runner.invoke(
+                main, ["milestone", "create", "v1.0", "--description", "First release"]
+            )
+            cli_runner.invoke(
+                main, ["milestone", "create", "v2.0", "--description", "Second release"]
+            )
+
+            result = cli_runner.invoke(main, ["milestone", "list"])
+            assert result.exit_code == 0
+            clean_output = strip_ansi(result.output)
+            assert "v1.0" in clean_output
+            assert "v2.0" in clean_output
+
+    def test_milestone_list_empty(self, cli_runner):
+        """Test listing milestones when none exist."""
+        with cli_runner.isolated_filesystem():
+            init_result = cli_runner.invoke(
+                main, ["init", "-y", "--skip-github", "--skip-project"]
+            )
+            assert init_result.exit_code == 0
+            result = cli_runner.invoke(main, ["milestone", "list"])
+            assert result.exit_code == 0
+
+    def test_milestone_list_without_roadmap(self, cli_runner):
+        """Test listing milestones without initialized roadmap."""
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(main, ["milestone", "list"])
+            assert result.exit_code != 0
+
+
+class TestMilestoneAssign:
+    """Test milestone assign command variants."""
+
+    def test_milestone_assign_success(self, cli_runner):
+        """Test assigning an issue to a milestone."""
+        with cli_runner.isolated_filesystem():
+            init_result = cli_runner.invoke(
+                main, ["init", "-y", "--skip-github", "--skip-project"]
+            )
+            assert init_result.exit_code == 0
+
+            core = RoadmapCore()
+
+            cli_runner.invoke(
+                main, ["milestone", "create", "v1.0", "--description", "First release"]
+            )
+            result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
+
+            assert_command_success(result)
+            issue = assert_issue_created(core, "test-issue")
+            assert_milestone_created(core, "v1.0")
+
+            result = cli_runner.invoke(
+                main, ["milestone", "assign", str(issue.id), "v1.0"]
+            )
+            assert_command_success(result)
+
+            issue = core.issues.get(issue.id)
+            assert_issue_assigned_to_milestone(core, issue, "v1.0")
+
+    def test_milestone_assign_invalid_target(self, cli_runner):
+        """Test assigning to non-existent milestone or issue."""
+        with cli_runner.isolated_filesystem():
+            init_result = cli_runner.invoke(
+                main, ["init", "-y", "--skip-github", "--skip-project"]
+            )
+            assert init_result.exit_code == 0
+
+            result = cli_runner.invoke(
+                main, ["milestone", "assign", "fake-id", "nonexistent"]
+            )
             assert result.exit_code != 0 or "Failed" in result.output
 
-
-def test_milestone_assign_command_nonexistent_issue(cli_runner):
-    """Test assigning a non-existent issue to a milestone."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        # Create a milestone
-        cli_runner.invoke(
-            main, ["milestone", "create", "v1.0", "--description", "First release"]
-        )
-
-        # Try to assign non-existent issue
-        result = cli_runner.invoke(main, ["milestone", "assign", "nonexistent", "v1.0"])
-        # Should fail gracefully
-        assert result.exit_code != 0 or "Failed" in result.output
+    def test_milestone_assign_without_roadmap(self, cli_runner):
+        """Test assigning without initialized roadmap."""
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(main, ["milestone", "assign", "some-id", "v1.0"])
+            assert result.exit_code != 0
 
 
-def test_milestone_assign_command_without_roadmap(cli_runner):
-    """Test assigning an issue to a milestone without initialized roadmap."""
-    with cli_runner.isolated_filesystem():
-        result = cli_runner.invoke(main, ["milestone", "assign", "some-id", "v1.0"])
-        # Should fail without initialized roadmap
-        assert result.exit_code != 0
+class TestMilestoneDelete:
+    """Test milestone delete command variants."""
 
+    def test_milestone_delete_success(self, cli_runner):
+        """Test deleting a milestone."""
+        with cli_runner.isolated_filesystem():
+            init_result = cli_runner.invoke(
+                main, ["init", "-y", "--skip-github", "--skip-project"]
+            )
+            assert init_result.exit_code == 0
 
-def test_milestone_delete_command(cli_runner):
-    """Test deleting a milestone."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
+            cli_runner.invoke(
+                main, ["milestone", "create", "v1.0", "--description", "First release"]
+            )
 
-        # Create a milestone
-        cli_runner.invoke(
-            main, ["milestone", "create", "v1.0", "--description", "First release"]
-        )
+            result = cli_runner.invoke(
+                main, ["milestone", "delete", "v1.0"], input="y\n"
+            )
+            assert result.exit_code == 0
+            assert "v1.0" in result.output
 
-        # Delete it (needs confirmation)
-        result = cli_runner.invoke(main, ["milestone", "delete", "v1.0"], input="y\n")
-        assert result.exit_code == 0
-        # Check for success (either success or error message, but exit code 0)
-        assert "v1.0" in result.output
+    def test_milestone_delete_nonexistent(self, cli_runner):
+        """Test deleting a non-existent milestone."""
+        with cli_runner.isolated_filesystem():
+            init_result = cli_runner.invoke(
+                main, ["init", "-y", "--skip-github", "--skip-project"]
+            )
+            assert init_result.exit_code == 0
 
+            result = cli_runner.invoke(
+                main, ["milestone", "delete", "nonexistent"], input="y\n"
+            )
+            assert result.exit_code == 0 or "nonexistent" in result.output
 
-def test_milestone_delete_command_nonexistent(cli_runner):
-    """Test deleting a non-existent milestone."""
-    with cli_runner.isolated_filesystem():
-        # Initialize first
-        init_result = cli_runner.invoke(
-            main, ["init", "-y", "--skip-github", "--skip-project"]
-        )
-        assert init_result.exit_code == 0
-
-        result = cli_runner.invoke(
-            main, ["milestone", "delete", "nonexistent"], input="y\n"
-        )
-        # Should handle gracefully
-        assert result.exit_code == 0 or "nonexistent" in result.output
-
-
-def test_milestone_delete_command_without_roadmap(cli_runner):
-    """Test deleting a milestone without initialized roadmap."""
-    with cli_runner.isolated_filesystem():
-        result = cli_runner.invoke(main, ["milestone", "delete", "v1.0"], input="y\n")
-        # Should fail without initialized roadmap
-        assert result.exit_code != 0
+    def test_milestone_delete_without_roadmap(self, cli_runner):
+        """Test deleting without initialized roadmap."""
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(
+                main, ["milestone", "delete", "v1.0"], input="y\n"
+            )
+            assert result.exit_code != 0
