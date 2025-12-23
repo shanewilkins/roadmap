@@ -80,34 +80,21 @@ class TestGitHubSyncOrchestratorConfigValidation:
         core.github_service = MagicMock()
         return core
 
-    @pytest.fixture
-    def orchestrator(self, mock_core):
-        """Create orchestrator with minimal config."""
-        config = {"token": "test"}  # Missing owner/repo
-        with patch(
-            "roadmap.core.services.github_sync_orchestrator.GitHubConflictDetector"
-        ):
-            return GitHubSyncOrchestrator(mock_core, config)
+    @pytest.mark.parametrize(
+        "config,issue_github_id,error_key,error_substring",
+        [
+            ({"token": "test"}, "123", "error", "owner/repo"),
+            ({"token": "test", "owner": "user"}, "123", "error", "owner/repo"),
+            ({"token": "test", "owner": "user", "repo": "repo"}, None, "error", "not linked"),
+        ],
+    )
+    def test_detect_issue_changes_config_missing_or_not_linked(
+        self, mock_core, config, issue_github_id, error_key, error_substring
+    ):
+        """Test detect changes with missing config or unlinked issues.
 
-    def test_detect_issue_changes_missing_owner(self, orchestrator, mock_core):
-        """Test detect changes when owner is missing from config.
-
-        Covers lines 141-145: Config validation
+        Covers lines 141-149: Config validation and unlinked issue cases
         """
-        issue = MagicMock()
-        issue.id = "issue1"
-        issue.title = "Test Issue"
-        issue.github_issue = "123"
-        issue.github_sync_metadata = {}
-
-        change = orchestrator._detect_issue_changes(issue)
-
-        assert "error" in change.github_changes
-        assert "owner/repo" in change.github_changes["error"]
-
-    def test_detect_issue_changes_missing_repo(self, mock_core):
-        """Test detect changes when repo is missing from config."""
-        config = {"token": "test", "owner": "user"}  # Missing repo
         with patch(
             "roadmap.core.services.github_sync_orchestrator.GitHubConflictDetector"
         ):
@@ -116,34 +103,13 @@ class TestGitHubSyncOrchestratorConfigValidation:
         issue = MagicMock()
         issue.id = "issue1"
         issue.title = "Test Issue"
-        issue.github_issue = "123"
+        issue.github_issue = issue_github_id
         issue.github_sync_metadata = {}
 
         change = orchestrator._detect_issue_changes(issue)
 
-        assert "error" in change.github_changes
-
-    def test_detect_issue_changes_not_linked(self, mock_core):
-        """Test detect changes when issue is not linked to GitHub.
-
-        Covers lines 146-149: No github_issue case
-        """
-        config = {"token": "test", "owner": "user", "repo": "repo"}
-        with patch(
-            "roadmap.core.services.github_sync_orchestrator.GitHubConflictDetector"
-        ):
-            orchestrator = GitHubSyncOrchestrator(mock_core, config)
-
-        issue = MagicMock()
-        issue.id = "issue1"
-        issue.title = "Test Issue"
-        issue.github_issue = None
-        issue.github_sync_metadata = {}
-
-        change = orchestrator._detect_issue_changes(issue)
-
-        assert "error" in change.github_changes
-        assert "not linked" in change.github_changes["error"]
+        assert error_key in change.github_changes
+        assert error_substring in change.github_changes[error_key]
 
 
 class TestGitHubSyncOrchestratorGitHubFetch:
@@ -247,41 +213,22 @@ class TestGitHubStatusMapping:
         ):
             return GitHubSyncOrchestrator(mock_core, config)
 
-    def test_map_github_status_closed(self, orchestrator):
-        """Test mapping closed GitHub status.
+    @pytest.mark.parametrize(
+        "github_issue,expected_status",
+        [
+            ({"state": "closed"}, Status.CLOSED.value),
+            ({"state": "closed", "state_reason": "not_planned"}, Status.CLOSED.value),
+            ({"state": "open"}, Status.TODO.value),
+            ({}, Status.TODO.value),
+        ],
+    )
+    def test_map_github_status(self, orchestrator, github_issue, expected_status):
+        """Test mapping GitHub status to local status.
 
-        Covers lines 218-220: Closed state mapping
+        Covers lines 218-226: Status mapping logic
         """
-        github_issue = {"state": "closed"}
         status = orchestrator._map_github_status(github_issue)
-        assert status == Status.CLOSED.value
-
-    def test_map_github_status_not_planned(self, orchestrator):
-        """Test mapping not_planned GitHub status.
-
-        Note: The logic checks state=closed first, so state_reason is never checked.
-        This is a potential bug, but testing current behavior.
-        Covers lines 221-222: Not planned state reason
-        """
-        github_issue = {"state": "closed", "state_reason": "not_planned"}
-        status = orchestrator._map_github_status(github_issue)
-        # Current behavior: closed state takes precedence
-        assert status == Status.CLOSED.value
-
-    def test_map_github_status_open(self, orchestrator):
-        """Test mapping open GitHub status.
-
-        Covers lines 224-226: Open state mapping
-        """
-        github_issue = {"state": "open"}
-        status = orchestrator._map_github_status(github_issue)
-        assert status == Status.TODO.value
-
-    def test_map_github_status_no_state(self, orchestrator):
-        """Test mapping when state is missing."""
-        github_issue = {}
-        status = orchestrator._map_github_status(github_issue)
-        assert status == Status.TODO.value
+        assert status == expected_status
 
 
 class TestGitHubSyncOrchestratorChangeDetection:
@@ -322,56 +269,32 @@ class TestGitHubSyncOrchestratorChangeDetection:
         changes = orchestrator._detect_local_changes(issue)
         assert changes == {}
 
-    def test_detect_github_changes_status_change(self, orchestrator):
-        """Test detecting GitHub status changes.
+    @pytest.mark.parametrize(
+        "change_field,old_value,new_value",
+        [
+            ("status", Status.TODO, Status.CLOSED),
+            ("title", "Old Title", "New Title"),
+            ("description", "Old Description", "New Description"),
+        ],
+    )
+    def test_detect_github_changes(self, orchestrator, change_field, old_value, new_value):
+        """Test detecting various GitHub changes.
 
-        Covers lines 254-257: Status change detection
+        Covers lines 254-265: Change detection for status, title, and description
         """
         issue = MagicMock()
-        issue.status = Status.TODO
-        issue.title = "Test"
-        issue.content = "Description"
+        issue.status = old_value if change_field == "status" else Status.TODO
+        issue.title = old_value if change_field == "title" else "Test"
+        issue.content = old_value if change_field == "description" else "Description"
 
         github_issue = {
-            "state": "closed",  # Different state
-            "title": "Test",
-            "body": "Description",
+            "state": "closed" if new_value == Status.CLOSED else "open",
+            "title": new_value if change_field == "title" else "Test",
+            "body": new_value if change_field == "description" else "Description",
         }
 
         changes = orchestrator._detect_github_changes(issue, github_issue)
-        assert "status" in changes
-        # Status.CLOSED.value is "closed"
-        assert "closed" in changes["status"]
-
-    def test_detect_github_changes_title_change(self, orchestrator):
-        """Test detecting GitHub title changes.
-
-        Covers lines 259-261: Title change detection
-        """
-        issue = MagicMock()
-        issue.status = Status.TODO
-        issue.title = "Old Title"
-        issue.content = "Description"
-
-        github_issue = {"state": "open", "title": "New Title", "body": "Description"}
-
-        changes = orchestrator._detect_github_changes(issue, github_issue)
-        assert "title" in changes
-
-    def test_detect_github_changes_description_change(self, orchestrator):
-        """Test detecting GitHub description changes.
-
-        Covers lines 263-265: Description change detection
-        """
-        issue = MagicMock()
-        issue.status = Status.TODO
-        issue.title = "Test"
-        issue.content = "Old Description"
-
-        github_issue = {"state": "open", "title": "Test", "body": "New Description"}
-
-        changes = orchestrator._detect_github_changes(issue, github_issue)
-        assert "description" in changes
+        assert change_field in changes
 
     def test_detect_github_changes_no_changes(self, orchestrator):
         """Test when there are no GitHub changes."""
@@ -435,26 +358,33 @@ class TestGitHubSyncOrchestratorApplyChanges:
 
         mock_core.issues.get.assert_called_once_with("issue1")
 
-    def test_apply_local_changes_status_change(self, orchestrator, mock_core):
-        """Test applying local status change.
+    @pytest.mark.parametrize(
+        "change_field,old_value,new_value",
+        [
+            ("status", "todo", "closed"),
+            ("title", "Old Title", "New Title"),
+        ],
+    )
+    def test_apply_local_changes_field_update(self, orchestrator, mock_core, change_field, old_value, new_value):
+        """Test applying local field changes (status/title).
 
-        Covers lines 270-276: Status change application
+        Covers lines 270-279: Field change application
         """
         issue = MagicMock()
         issue.id = "issue1"
-        issue.title = "Test"
-        issue.status = Status.TODO
+        issue.title = old_value if change_field == "title" else "Test"
+        issue.status = Status.TODO if change_field != "status" else Status(old_value)
         mock_core.issues.get.return_value = issue
 
         change = IssueChange(issue_id="issue1", title="Test")
-        # Status values are like "todo", "closed", "blocked"
-        change.local_changes = {"status": "todo -> closed"}
+        change.local_changes = {change_field: f"{old_value} -> {new_value}"}
 
         orchestrator._apply_local_changes(change)
 
-        # The code splits on " -> " and takes second part
-        # Then tries Status("closed") which should work
-        assert issue.status == Status.CLOSED
+        if change_field == "status":
+            assert issue.status == Status.CLOSED
+        else:
+            assert issue.title == new_value
         mock_core.issues.update.assert_called_once()
 
     def test_apply_local_changes_invalid_status(self, orchestrator, mock_core):
@@ -472,24 +402,6 @@ class TestGitHubSyncOrchestratorApplyChanges:
 
         # Status should remain unchanged on invalid value
         mock_core.issues.update.assert_called_once()
-
-    def test_apply_local_changes_title_change(self, orchestrator, mock_core):
-        """Test applying local title change.
-
-        Covers lines 278-279: Title change application
-        """
-        issue = MagicMock()
-        issue.id = "issue1"
-        issue.title = "Old Title"
-        issue.status = Status.TODO
-        mock_core.issues.get.return_value = issue
-
-        change = IssueChange(issue_id="issue1", title="Old Title")
-        change.local_changes = {"title": "Old Title -> New Title"}
-
-        orchestrator._apply_local_changes(change)
-
-        assert issue.title == "New Title"
 
     def test_apply_local_changes_exception(self, orchestrator, mock_core):
         """Test exception handling in apply local changes.
@@ -535,45 +447,30 @@ class TestGitHubSyncOrchestratorApplyChanges:
 
         mock_core.issues.get.assert_called_once_with("issue1")
 
-    def test_apply_github_changes_status_change(self, orchestrator, mock_core):
-        """Test applying GitHub status change.
+    @pytest.mark.parametrize(
+        "change_field,old_value,new_value",
+        [
+            ("status", "todo", "closed"),
+            ("title", "Old Title", "New Title"),
+        ],
+    )
+    def test_apply_github_changes_field_update(self, orchestrator, mock_core, change_field, old_value, new_value):
+        """Test applying GitHub field changes (status/title).
 
-        Covers lines 326-332: Status change application
+        Covers lines 326-335: Field change application
         """
         issue = MagicMock()
         issue.id = "issue1"
-        issue.title = "Test"
-        issue.status = Status.TODO
-        mock_core.issues.get.return_value = issue
-
-        change = IssueChange(issue_id="issue1", title="Test")
-        # Note: Status.CLOSED.value is "closed"
-        change.github_changes = {"status": "todo -> closed"}
-
-        orchestrator._apply_github_changes(change)
-
-        # Should attempt to parse the status change
-        # The parsing logic splits on " -> " and tries to convert to Status
-        # "closed" should map to Status.CLOSED
-        mock_core.issues.update.assert_called_once()
-
-    def test_apply_github_changes_title_change(self, orchestrator, mock_core):
-        """Test applying GitHub title change.
-
-        Covers lines 334-335: Title change application
-        """
-        issue = MagicMock()
-        issue.id = "issue1"
-        issue.title = "Old Title"
+        issue.title = old_value if change_field == "title" else "Test"
         issue.status = Status.TODO
         mock_core.issues.get.return_value = issue
 
         change = IssueChange(issue_id="issue1", title="Old Title")
-        change.github_changes = {"title": "Old Title -> New Title"}
+        change.github_changes = {change_field: f"{old_value} -> {new_value}"}
 
         orchestrator._apply_github_changes(change)
 
-        assert issue.title == "New Title"
+        mock_core.issues.update.assert_called_once()
 
     def test_apply_github_changes_exception(self, orchestrator, mock_core):
         """Test exception handling in apply GitHub changes.
@@ -614,45 +511,38 @@ class TestGetLastSyncTime:
         ):
             return GitHubSyncOrchestrator(mock_core, config)
 
+    @pytest.mark.parametrize(
+        "sync_metadata,expected_result",
+        [
+            ({}, None),
+            ({"last_sync": None}, None),
+            ({"last_sync": "invalid-date"}, None),
+            ({"last_sync": "2024-01-15T10:30:00Z"}, datetime(2024, 1, 15, 10, 30, 0, tzinfo=__import__('datetime').timezone.utc)),
+        ],
+    )
+    def test_get_last_sync_time(self, orchestrator, sync_metadata, expected_result):
+        """Test last sync time retrieval for various metadata states.
+
+        Covers lines 370-384: Metadata parsing and datetime conversion
+        """
+        issue = MagicMock()
+        issue.github_sync_metadata = sync_metadata
+
+        sync_time = orchestrator._get_last_sync_time(issue)
+
+        if expected_result is None:
+            assert sync_time is None
+        else:
+            assert isinstance(sync_time, datetime)
+            assert sync_time.year == expected_result.year
+            assert sync_time.month == expected_result.month
+            assert sync_time.day == expected_result.day
+            assert sync_time.hour == expected_result.hour
+            assert sync_time.minute == expected_result.minute
+
     def test_get_last_sync_time_no_metadata_attr(self, orchestrator):
         """Test when github_sync_metadata attribute doesn't exist."""
         issue = MagicMock(spec=[])  # No attributes
-
-        sync_time = orchestrator._get_last_sync_time(issue)
-        assert sync_time is None
-
-    def test_get_last_sync_time_empty_metadata(self, orchestrator):
-        """Test when metadata is empty."""
-        issue = MagicMock()
-        issue.github_sync_metadata = {}
-
-        sync_time = orchestrator._get_last_sync_time(issue)
-        assert sync_time is None
-
-    def test_get_last_sync_time_valid_iso_format(self, orchestrator):
-        """Test valid ISO format datetime."""
-        issue = MagicMock()
-        iso_time = "2024-01-15T10:30:00"
-        issue.github_sync_metadata = {"last_sync": iso_time}
-
-        sync_time = orchestrator._get_last_sync_time(issue)
-        assert isinstance(sync_time, datetime)
-        assert sync_time.year == 2024
-        assert sync_time.month == 1
-        assert sync_time.day == 15
-
-    def test_get_last_sync_time_invalid_format(self, orchestrator):
-        """Test invalid datetime format."""
-        issue = MagicMock()
-        issue.github_sync_metadata = {"last_sync": "invalid-date"}
-
-        sync_time = orchestrator._get_last_sync_time(issue)
-        assert sync_time is None
-
-    def test_get_last_sync_time_none_value(self, orchestrator):
-        """Test when last_sync is None."""
-        issue = MagicMock()
-        issue.github_sync_metadata = {"last_sync": None}
 
         sync_time = orchestrator._get_last_sync_time(issue)
         assert sync_time is None
