@@ -1,7 +1,5 @@
 """Tests for estimated time functionality."""
 
-
-
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Issue, Milestone, Status
 from tests.unit.shared.test_helpers import (
@@ -181,22 +179,43 @@ class TestEstimatedTimeCLI:
 
         assert_command_success(result)
 
+    def test_issue_list_creates_estimates(self, cli_runner_initialized):
+        """Test that issues are created with correct estimate values."""
+        runner, core = cli_runner_initialized
+
+        # Create issues with different estimates
+        runner.invoke(main, ["issue", "create", "Quick Task", "--estimate", "1.0"])
+        runner.invoke(main, ["issue", "create", "Big Feature", "--estimate", "32.0"])
+
         # Verify the issues were created with correct estimates in database
         issues = core.issues.list()
 
         quick_task = next((i for i in issues if i.title == "Quick Task"), None)
         assert quick_task is not None
         assert quick_task.estimated_hours == 1.0
-        assert quick_task.estimated_time_display == "1.0h"
 
         big_feature = next((i for i in issues if i.title == "Big Feature"), None)
         assert big_feature is not None
         assert big_feature.estimated_hours == 32.0
+
+    def test_issue_list_displays_estimate_format(self, cli_runner_initialized):
+        """Test that estimated times are displayed in correct format."""
+        runner, core = cli_runner_initialized
+
+        # Create issues with different estimates
+        runner.invoke(main, ["issue", "create", "Quick Task", "--estimate", "1.0"])
+        runner.invoke(main, ["issue", "create", "Big Feature", "--estimate", "32.0"])
+        runner.invoke(main, ["issue", "create", "No Estimate"])
+
+        issues = core.issues.list()
+
+        quick_task = next((i for i in issues if i.title == "Quick Task"), None)
+        assert quick_task.estimated_time_display == "1.0h"
+
+        big_feature = next((i for i in issues if i.title == "Big Feature"), None)
         assert big_feature.estimated_time_display == "4.0d"  # 32 hours = 4 days
 
         no_estimate = next((i for i in issues if i.title == "No Estimate"), None)
-        assert no_estimate is not None
-        assert no_estimate.estimated_hours is None
         assert no_estimate.estimated_time_display == "Not estimated"
 
     def test_milestone_list_shows_estimates(self, cli_runner_initialized):

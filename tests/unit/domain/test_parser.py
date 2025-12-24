@@ -23,31 +23,49 @@ class TestFrontmatterParser:
         "content,expected_frontmatter,expected_body_contains",
         [
             # Test with YAML frontmatter
-            ("""---
+            (
+                """---
 title: Test
 value: 123
 ---
 
 This is content.
-""", {"title": "Test", "value": 123}, "This is content."),
+""",
+                {"title": "Test", "value": 123},
+                "This is content.",
+            ),
             # Test without frontmatter
-            ("Just regular markdown content without frontmatter.", {}, "Just regular markdown content without frontmatter."),
+            (
+                "Just regular markdown content without frontmatter.",
+                {},
+                "Just regular markdown content without frontmatter.",
+            ),
             # Test with empty frontmatter
-            ("""---
+            (
+                """---
 ---
 
 Content after empty frontmatter.
-""", {}, "Content after empty frontmatter."),
+""",
+                {},
+                "Content after empty frontmatter.",
+            ),
             # Test with incomplete frontmatter (no closing ---)
-            ("""---
+            (
+                """---
 title: Test Issue
 priority: high
 
 Content without closing frontmatter delimiter.
-""", {}, "title: Test Issue"),
+""",
+                {},
+                "title: Test Issue",
+            ),
         ],
     )
-    def test_parse_content_success(self, content, expected_frontmatter, expected_body_contains):
+    def test_parse_content_success(
+        self, content, expected_frontmatter, expected_body_contains
+    ):
         """Test successful parsing of content with various frontmatter formats."""
         frontmatter, body = FrontmatterParser.parse_content(content)
         assert frontmatter == expected_frontmatter
@@ -57,22 +75,28 @@ Content without closing frontmatter delimiter.
         "content,error_pattern",
         [
             # Malformed YAML with unclosed bracket
-            ("""---
+            (
+                """---
 title: Test
 invalid: [unclosed bracket
 priority: high
 ---
 
 This content has malformed YAML.
-""", "Invalid YAML frontmatter"),
+""",
+                "Invalid YAML frontmatter",
+            ),
             # Invalid YAML with unclosed quote
-            ("""---
+            (
+                """---
 title: "Unclosed quote
 value: 123
 ---
 
 Content.
-""", "Invalid YAML frontmatter"),
+""",
+                "Invalid YAML frontmatter",
+            ),
         ],
     )
     def test_parse_content_errors(self, content, error_pattern):
@@ -143,13 +167,93 @@ More details here.
             issue = IssueParser.parse_issue_file(Path(f.name))
 
         assert issue.title == "Complex Issue"
+        assert issue.id == "abcdef12"
+
+    def test_parse_issue_file_priority_and_status(self):
+        """Test parsing issue priority and status fields."""
+        content = """---
+id: "abcdef12"
+title: Complex Issue
+priority: critical
+status: in-progress
+---
+
+Test content.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            f.flush()
+
+            issue = IssueParser.parse_issue_file(Path(f.name))
+
         assert issue.priority == Priority.CRITICAL
         assert issue.status == Status.IN_PROGRESS
+
+    def test_parse_issue_file_milestone_and_assignee(self):
+        """Test parsing issue milestone and assignee."""
+        content = """---
+id: "abcdef12"
+title: Complex Issue
+milestone: v1.0
+assignee: user1
+---
+
+Test content.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            f.flush()
+
+            issue = IssueParser.parse_issue_file(Path(f.name))
+
         assert issue.milestone == "v1.0"
-        assert issue.labels == ["bug", "urgent"]
         assert issue.assignee == "user1"
+
+    def test_parse_issue_file_labels_and_github(self):
+        """Test parsing issue labels and GitHub issue number."""
+        content = """---
+id: "abcdef12"
+title: Complex Issue
+labels:
+  - bug
+  - urgent
+github_issue: 123
+---
+
+Test content.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            f.flush()
+
+            issue = IssueParser.parse_issue_file(Path(f.name))
+
+        assert issue.labels == ["bug", "urgent"]
         assert issue.github_issue == 123
-        assert issue.id == "abcdef12"
+
+    def test_parse_issue_file_content(self):
+        """Test parsing issue content section."""
+        content = """---
+id: "abcdef12"
+title: Complex Issue
+---
+
+This is a complex issue with all fields.
+
+## Details
+
+More details here.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            f.flush()
+
+            issue = IssueParser.parse_issue_file(Path(f.name))
+
         assert "More details here." in issue.content
 
     def test_save_issue_file(self):
@@ -197,14 +301,55 @@ More details here.
         IssueParser.save_issue_file(original_issue, file_path)
         parsed_issue = IssueParser.parse_issue_file(file_path)
 
-        # Should be identical
+        # Check core fields
         assert parsed_issue.id == original_issue.id
         assert parsed_issue.title == original_issue.title
+        assert parsed_issue.content == original_issue.content
+
+    def test_roundtrip_metadata_fields(self):
+        """Test that metadata is preserved in roundtrip."""
+        original_issue = Issue(
+            id="12345678",
+            title="Roundtrip Test",
+            priority=Priority.MEDIUM,
+            status=Status.REVIEW,
+            milestone="v2.0",
+            labels=["test"],
+            content="Test description",
+            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=timezone.utc),
+            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=timezone.utc),
+        )
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            file_path = Path(f.name)
+
+        # Save then parse
+        IssueParser.save_issue_file(original_issue, file_path)
+        parsed_issue = IssueParser.parse_issue_file(file_path)
+
+        # Check metadata fields
         assert parsed_issue.priority == original_issue.priority
         assert parsed_issue.status == original_issue.status
         assert parsed_issue.milestone == original_issue.milestone
         assert parsed_issue.labels == original_issue.labels
-        assert parsed_issue.content == original_issue.content
+
+    def test_roundtrip_timestamps(self):
+        """Test that timestamps are preserved in roundtrip."""
+        original_issue = Issue(
+            id="12345678",
+            title="Roundtrip Test",
+            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=timezone.utc),
+            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=timezone.utc),
+        )
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            file_path = Path(f.name)
+
+        # Save then parse
+        IssueParser.save_issue_file(original_issue, file_path)
+        parsed_issue = IssueParser.parse_issue_file(file_path)
+
+        # Check timestamp fields
         assert parsed_issue.created == original_issue.created
         assert parsed_issue.updated == original_issue.updated
 
@@ -312,10 +457,27 @@ class TestMilestoneParser:
         "name,description,status,due_date_str,github_milestone,expected_has_due_date,expected_has_github_milestone",
         [
             ("v1.0", "First release", "open", None, None, False, False),
-            ("v2.0", "Second release", "closed", "2024-12-31T23:59:59", 456, True, True),
+            (
+                "v2.0",
+                "Second release",
+                "closed",
+                "2024-12-31T23:59:59",
+                456,
+                True,
+                True,
+            ),
         ],
     )
-    def test_parse_milestone_file(self, name, description, status, due_date_str, github_milestone, expected_has_due_date, expected_has_github_milestone):
+    def test_parse_milestone_file(
+        self,
+        name,
+        description,
+        status,
+        due_date_str,
+        github_milestone,
+        expected_has_due_date,
+        expected_has_github_milestone,
+    ):
         """Test parsing milestone files with various configurations."""
         frontmatter_lines = [
             f"name: {name}",
@@ -326,10 +488,12 @@ class TestMilestoneParser:
             frontmatter_lines.append(f'due_date: "{due_date_str}"')
         if github_milestone:
             frontmatter_lines.append(f"github_milestone: {github_milestone}")
-        frontmatter_lines.extend([
-            'created: "2024-01-01T00:00:00"',
-            'updated: "2024-01-01T00:00:00"',
-        ])
+        frontmatter_lines.extend(
+            [
+                'created: "2024-01-01T00:00:00"',
+                'updated: "2024-01-01T00:00:00"',
+            ]
+        )
 
         content = "---\n" + "\n".join(frontmatter_lines) + "\n---\n\n"
         if status == "open":
@@ -354,9 +518,11 @@ class TestMilestoneParser:
         assert milestone.status == MilestoneStatus(status)
         assert milestone.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        
+
         if expected_has_due_date:
-            assert milestone.due_date == datetime(2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+            assert milestone.due_date == datetime(
+                2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc
+            )
         if expected_has_github_milestone:
             assert milestone.github_milestone == 456
 

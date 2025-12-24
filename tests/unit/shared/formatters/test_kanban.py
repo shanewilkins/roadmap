@@ -136,19 +136,79 @@ class TestKanbanOrganizer:
         result = KanbanOrganizer.create_column_definitions(categories, no_color=False)
 
         assert len(result) == 5
-        # Check structure
+
+    def test_create_column_definitions_overdue_column(self):
+        """create_column_definitions should format overdue column correctly."""
+        categories = {
+            "overdue": [Mock()],
+            "blocked": [],
+            "in_progress": [],
+            "not_started": [],
+            "closed": [],
+        }
+
+        result = KanbanOrganizer.create_column_definitions(categories, no_color=False)
+
         assert result[0][0] == "🚨 Overdue"
         assert result[0][1] == categories["overdue"]
         assert result[0][2] == "bold red"
 
+    def test_create_column_definitions_blocked_column(self):
+        """create_column_definitions should format blocked column correctly."""
+        categories = {
+            "overdue": [],
+            "blocked": [],
+            "in_progress": [],
+            "not_started": [],
+            "closed": [],
+        }
+
+        result = KanbanOrganizer.create_column_definitions(categories, no_color=False)
+
         assert result[1][0] == "🚫 Blocked"
         assert result[1][2] == "bold yellow"
+
+    def test_create_column_definitions_in_progress_column(self):
+        """create_column_definitions should format in-progress column correctly."""
+        categories = {
+            "overdue": [],
+            "blocked": [],
+            "in_progress": [Mock(), Mock()],
+            "not_started": [],
+            "closed": [],
+        }
+
+        result = KanbanOrganizer.create_column_definitions(categories, no_color=False)
 
         assert result[2][0] == "🔄 In Progress"
         assert result[2][2] == "bold blue"
 
+    def test_create_column_definitions_not_started_column(self):
+        """create_column_definitions should format not-started column correctly."""
+        categories = {
+            "overdue": [],
+            "blocked": [],
+            "in_progress": [],
+            "not_started": [],
+            "closed": [],
+        }
+
+        result = KanbanOrganizer.create_column_definitions(categories, no_color=False)
+
         assert result[3][0] == "⏸️  Not Started"
         assert result[3][2] == "dim white"
+
+    def test_create_column_definitions_closed_column(self):
+        """create_column_definitions should format closed column correctly."""
+        categories = {
+            "overdue": [],
+            "blocked": [],
+            "in_progress": [],
+            "not_started": [],
+            "closed": [Mock()],
+        }
+
+        result = KanbanOrganizer.create_column_definitions(categories, no_color=False)
 
         assert result[4][0] == "✅ Closed"
         assert result[4][2] == "bold green"
