@@ -23,6 +23,7 @@ from roadmap.common.errors.exceptions import (
     UpdateError,
 )
 from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitIntegrationOpsInitialization:
@@ -31,7 +32,7 @@ class TestGitIntegrationOpsInitialization:
     def test_init_with_valid_dependencies(self):
         """Test successful initialization with valid git and core."""
         mock_git = Mock()
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core()
 
         ops = GitIntegrationOps(mock_git, mock_core)
 
@@ -40,18 +41,18 @@ class TestGitIntegrationOpsInitialization:
 
     def test_init_with_none_git(self):
         """Test initialization with None git (fails at usage)."""
-        ops = GitIntegrationOps(None, Mock())
+        ops = GitIntegrationOps(None, TestDataFactory.create_mock_core())  # type: ignore
         assert ops.git is None
 
     def test_init_with_none_core(self):
         """Test initialization with None core (fails at usage)."""
-        ops = GitIntegrationOps(Mock(), None)
+        ops = GitIntegrationOps(Mock(), None)  # type: ignore
         assert ops.core is None
 
     def test_init_preserves_references(self):
         """Test initialization stores exact references."""
         mock_git = Mock()
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core()
 
         ops = GitIntegrationOps(mock_git, mock_core)
 
@@ -104,13 +105,18 @@ class TestGetGitContext:
         mock_branch.extract_issue_id.return_value = "123"
         mock_git.get_current_branch.return_value = mock_branch
 
+        # Create mock issue and core
         mock_issue = Mock()
         mock_issue.id = "123"
         mock_issue.title = "Test Issue"
-        mock_issue.status.value = "open"
-        mock_issue.priority.value = "high"
+        mock_status = Mock()
+        mock_status.value = "open"
+        mock_issue.status = mock_status
+        mock_priority = Mock()
+        mock_priority.value = "high"
+        mock_issue.priority = mock_priority
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core()
         mock_core.issues.get.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -126,7 +132,7 @@ class TestGetGitContext:
         mock_git.is_git_repository.return_value = True
         mock_git.get_repository_info.side_effect = Exception("Git error")
 
-        ops = GitIntegrationOps(mock_git, Mock())
+        ops = GitIntegrationOps(mock_git, TestDataFactory.create_mock_core())
 
         # safe_operation wraps as GitError for READ operations on GitRepository
         with pytest.raises((Exception, GitError)):
@@ -139,7 +145,7 @@ class TestGetGitContext:
         mock_git.get_repository_info.return_value = {}
         mock_git.get_current_branch.return_value = None
 
-        ops = GitIntegrationOps(mock_git, Mock())
+        ops = GitIntegrationOps(mock_git, TestDataFactory.create_mock_core())
 
         result = ops.get_git_context()
 
