@@ -329,7 +329,7 @@ class TestMetricsIntegration:
     """Integration tests for metrics module."""
 
     def test_complete_workflow(self):
-        """Test complete metrics collection workflow."""
+        """Test complete metrics collection workflow - collection and stats."""
         collector = MetricsCollector()
 
         # Simulate various operations
@@ -355,8 +355,57 @@ class TestMetricsIntegration:
         stats = collector.get_stats()
         assert stats["total_operations"] == 6
         assert stats["success_rate"] == pytest.approx(5 / 6)
+
+    def test_complete_workflow_errors(self):
+        """Test complete metrics collection workflow - error tracking."""
+        collector = MetricsCollector()
+
+        # Simulate various operations
+        operations = [
+            ("fetch_user", 150.0, True, None),
+            ("fetch_user", 180.0, True, None),
+            ("fetch_user", 5000.0, False, "Timeout"),
+            ("save_data", 50.0, True, None),
+            ("save_data", 75.0, True, None),
+            ("delete_cache", 10.0, True, None),
+        ]
+
+        for op_name, duration, success, error in operations:
+            metric = OperationMetric(
+                operation=op_name,
+                duration_ms=duration,
+                success=success,
+                error=error,
+            )
+            collector.record(metric)
+
+        # Verify errors and operations
+        stats = collector.get_stats()
         assert len(stats["errors"]) == 1
         assert len(stats["operations_by_type"]) == 3
+
+    def test_complete_workflow_operation_stats(self):
+        """Test complete metrics collection workflow - operation-specific stats."""
+        collector = MetricsCollector()
+
+        # Simulate various operations
+        operations = [
+            ("fetch_user", 150.0, True, None),
+            ("fetch_user", 180.0, True, None),
+            ("fetch_user", 5000.0, False, "Timeout"),
+            ("save_data", 50.0, True, None),
+            ("save_data", 75.0, True, None),
+            ("delete_cache", 10.0, True, None),
+        ]
+
+        for op_name, duration, success, error in operations:
+            metric = OperationMetric(
+                operation=op_name,
+                duration_ms=duration,
+                success=success,
+                error=error,
+            )
+            collector.record(metric)
 
         # Verify operation-specific stats
         fetch_stats = collector.get_operation_stats("fetch_user")

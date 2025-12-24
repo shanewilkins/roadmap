@@ -65,7 +65,7 @@ class TestIssueTableFormatter:
         assert table_data.total_count == 0
 
     def test_issues_to_table_data_column_definitions(self):
-        """Test that column definitions are correct."""
+        """Test that column definitions are correct - core columns."""
         issue = self.create_sample_issue()
         table_data = IssueTableFormatter.issues_to_table_data([issue])
 
@@ -75,8 +75,24 @@ class TestIssueTableFormatter:
         assert "title" in column_names
         assert "priority" in column_names
         assert "status" in column_names
+
+    def test_issues_to_table_data_column_definitions_progress(self):
+        """Test that column definitions are correct - progress and assignee."""
+        issue = self.create_sample_issue()
+        table_data = IssueTableFormatter.issues_to_table_data([issue])
+
+        # Check column names
+        column_names = [col.name for col in table_data.columns]
         assert "progress" in column_names
         assert "assignee" in column_names
+
+    def test_issues_to_table_data_column_definitions_time_and_milestone(self):
+        """Test that column definitions are correct - estimate and milestone."""
+        issue = self.create_sample_issue()
+        table_data = IssueTableFormatter.issues_to_table_data([issue])
+
+        # Check column names
+        column_names = [col.name for col in table_data.columns]
         assert "estimate" in column_names
         assert "milestone" in column_names
 

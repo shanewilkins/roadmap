@@ -1,6 +1,5 @@
 """Tests for CLI DTOs and mappers."""
 
-import pytest
 from datetime import datetime, timedelta
 
 from roadmap.adapters.cli.dtos import IssueDTO, MilestoneDTO, ProjectDTO
@@ -143,7 +142,7 @@ class TestIssueMapper:
         assert dto.issue_type == "bug"
 
     def test_domain_to_dto_preserves_fields(self):
-        """Test that domain_to_dto preserves all important fields."""
+        """Test that domain_to_dto preserves all important fields - basic."""
         now = datetime.now()
         issue = Issue(
             id="issue-2",
@@ -163,9 +162,47 @@ class TestIssueMapper:
         assert dto.id == "issue-2"
         assert dto.title == "Feature"
         assert dto.assignee == "bob"
+
+    def test_domain_to_dto_preserves_fields_milestone(self):
+        """Test that domain_to_dto preserves all important fields - milestone."""
+        now = datetime.now()
+        issue = Issue(
+            id="issue-2",
+            title="Feature",
+            priority=Priority.MEDIUM,
+            status=Status.TODO,
+            assignee="bob",
+            milestone="v1.0",
+            due_date=now,
+            estimated_hours=5.0,
+            content="Description here",
+            labels=["bug", "urgent"],
+        )
+
+        dto = IssueMapper.domain_to_dto(issue)
+
         assert dto.milestone == "v1.0"
         assert dto.due_date == now
         assert dto.estimated_hours == 5.0
+
+    def test_domain_to_dto_preserves_fields_content(self):
+        """Test that domain_to_dto preserves all important fields - content."""
+        now = datetime.now()
+        issue = Issue(
+            id="issue-2",
+            title="Feature",
+            priority=Priority.MEDIUM,
+            status=Status.TODO,
+            assignee="bob",
+            milestone="v1.0",
+            due_date=now,
+            estimated_hours=5.0,
+            content="Description here",
+            labels=["bug", "urgent"],
+        )
+
+        dto = IssueMapper.domain_to_dto(issue)
+
         assert dto.content == "Description here"
         assert dto.labels == ["bug", "urgent"]
 

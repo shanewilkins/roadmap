@@ -391,7 +391,7 @@ class TestRoadmapCoreTemplatesAndConfig:
         return core
 
     def test_create_default_templates(self, core):
-        """Test that default templates are created during initialization."""
+        """Test that default templates are created - directory and files."""
         # Templates should already be created by initialization
         assert core.templates_dir.exists()
 
@@ -402,12 +402,23 @@ class TestRoadmapCoreTemplatesAndConfig:
         assert issue_template.exists()
         assert milestone_template.exists()
 
+    def test_create_default_templates_issue_content(self, core):
+        """Test that default templates are created - issue template content."""
+        # Templates should already be created by initialization
+        issue_template = core.templates_dir / "issue.md"
+
         # Verify template content structure
         issue_content = issue_template.read_text()
         assert "title:" in issue_content
         assert "priority:" in issue_content
         assert "Description" in issue_content
 
+    def test_create_default_templates_milestone_content(self, core):
+        """Test that default templates are created - milestone template content."""
+        # Templates should already be created by initialization
+        milestone_template = core.templates_dir / "milestone.md"
+
+        # Verify milestone template content
         milestone_content = milestone_template.read_text()
         assert "name:" in milestone_content
         assert "description:" in milestone_content

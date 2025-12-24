@@ -18,15 +18,27 @@ class TestIssueCreateParams:
     """Test IssueCreateParams dataclass."""
 
     def test_create_with_defaults(self):
-        """Test creating IssueCreateParams with defaults."""
+        """Test creating IssueCreateParams with defaults - title and type."""
         params = IssueCreateParams(title="Test Issue")
         assert params.title == "Test Issue"
         assert params.priority == Priority.MEDIUM
         assert params.issue_type == IssueType.OTHER
+
+    def test_create_with_defaults_milestone_and_labels(self):
+        """Test creating IssueCreateParams with defaults - milestone and labels."""
+        params = IssueCreateParams(title="Test Issue")
         assert params.milestone is None
         assert params.labels is None
+
+    def test_create_with_defaults_assignee_and_time(self):
+        """Test creating IssueCreateParams with defaults - assignee and time."""
+        params = IssueCreateParams(title="Test Issue")
         assert params.assignee is None
         assert params.estimated_hours is None
+
+    def test_create_with_defaults_dependencies(self):
+        """Test creating IssueCreateParams with defaults - dependencies."""
+        params = IssueCreateParams(title="Test Issue")
         assert params.depends_on is None
         assert params.blocks is None
 

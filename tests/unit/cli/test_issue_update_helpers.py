@@ -231,7 +231,7 @@ class TestIssueUpdateBuilder:
         assert result == {"estimated_hours": 0.0}
 
     def test_build_updates_with_multiple_fields(self):
-        """build_updates should handle multiple update fields."""
+        """build_updates should handle multiple update fields - length and title/priority."""
         mock_core = Mock()
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "testuser"
@@ -252,8 +252,48 @@ class TestIssueUpdateBuilder:
         assert len(result) == 7
         assert result["title"] == "Updated Title"
         assert result["priority"] == Priority.CRITICAL
+
+    def test_build_updates_with_multiple_fields_status(self):
+        """build_updates should handle multiple update fields - status and assignee."""
+        mock_core = Mock()
+        mock_core.validate_assignee.return_value = (True, None)
+        mock_core.team.get_canonical_assignee.return_value = "testuser"
+        mock_console = Mock()
+        service = IssueUpdateService(mock_core)
+        service._console = mock_console
+
+        result = service.build_update_dict(
+            title="Updated Title",
+            priority="critical",
+            status="closed",
+            assignee="testuser",
+            milestone="v2.0",
+            description="Updated description",
+            estimate=16.0,
+        )
+
         assert result["status"] == "closed"
         assert result["assignee"] == "testuser"
+
+    def test_build_updates_with_multiple_fields_milestone(self):
+        """build_updates should handle multiple update fields - milestone and estimate."""
+        mock_core = Mock()
+        mock_core.validate_assignee.return_value = (True, None)
+        mock_core.team.get_canonical_assignee.return_value = "testuser"
+        mock_console = Mock()
+        service = IssueUpdateService(mock_core)
+        service._console = mock_console
+
+        result = service.build_update_dict(
+            title="Updated Title",
+            priority="critical",
+            status="closed",
+            assignee="testuser",
+            milestone="v2.0",
+            description="Updated description",
+            estimate=16.0,
+        )
+
         assert result["milestone"] == "v2.0"
         assert result["description"] == "Updated description"
         assert result["estimated_hours"] == 16.0
