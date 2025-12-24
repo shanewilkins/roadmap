@@ -591,8 +591,8 @@ class TestMilestoneParser:
         assert "status: open" in saved_content
         assert "Milestone content" in saved_content
 
-    def test_roundtrip_serialization(self):
-        """Test that saving and parsing are consistent."""
+    def test_roundtrip_serialization_basic_fields(self):
+        """Test that basic milestone fields survive roundtrip."""
         original_milestone = Milestone(
             name="v1.5",
             description="Patch release",
@@ -610,10 +610,31 @@ class TestMilestoneParser:
         MilestoneParser.save_milestone_file(original_milestone, file_path)
         parsed_milestone = MilestoneParser.parse_milestone_file(file_path)
 
-        # Should be identical
+        # Check basic fields
         assert parsed_milestone.name == original_milestone.name
         assert parsed_milestone.description == original_milestone.description
         assert parsed_milestone.status == original_milestone.status
+
+    def test_roundtrip_serialization_dates_and_content(self):
+        """Test that dates and content survive roundtrip."""
+        original_milestone = Milestone(
+            name="v1.5",
+            description="Patch release",
+            status=MilestoneStatus.OPEN,
+            due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+            content="Patch release content",
+            created=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+            updated=datetime(2024, 1, 2, 14, 30, 0, tzinfo=timezone.utc),
+        )
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            file_path = Path(f.name)
+
+        # Save then parse
+        MilestoneParser.save_milestone_file(original_milestone, file_path)
+        parsed_milestone = MilestoneParser.parse_milestone_file(file_path)
+
+        # Check dates and content
         assert parsed_milestone.due_date == original_milestone.due_date
         assert parsed_milestone.content == original_milestone.content
         assert parsed_milestone.created == original_milestone.created

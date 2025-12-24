@@ -12,13 +12,17 @@ from roadmap.core.services.git_hook_auto_sync_service import (
 class TestGitHookAutoSyncConfig:
     """Test GitHookAutoSyncConfig class."""
 
-    def test_init_defaults(self):
-        """Test initialization with default values."""
+    def test_init_defaults_sync_flags_disabled(self):
+        """Test initialization sets sync flags to disabled by default."""
         config = GitHookAutoSyncConfig()
         assert not config.auto_sync_enabled
         assert not config.sync_on_commit
         assert not config.sync_on_checkout
         assert not config.sync_on_merge
+
+    def test_init_defaults_confirm_and_force_flags(self):
+        """Test initialization sets confirmation and force flags by default."""
+        config = GitHookAutoSyncConfig()
         assert config.confirm_before_sync
         assert not config.force_local
         assert not config.force_github

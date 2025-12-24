@@ -338,8 +338,8 @@ class TestGitHookAutoSyncFileOperations:
         assert config_path.parent.exists()
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
-    def test_config_roundtrip_file(self, mock_sync_service, tmp_path):
-        """Test save and load roundtrip preserves config."""
+    def test_config_roundtrip_file_save_and_load(self, mock_sync_service, tmp_path):
+        """Test config save and load operations complete successfully."""
 
         mock_core = MagicMock()
         service = GitHookAutoSyncService(mock_core)
@@ -368,12 +368,63 @@ class TestGitHookAutoSyncFileOperations:
         load_result = service2.load_config_from_file(config_path)
         assert load_result
 
-        # Verify all settings match
+    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    def test_config_roundtrip_file_sync_flags_preserved(self, mock_sync_service, tmp_path):
+        """Test roundtrip preserves sync trigger flags."""
+
+        mock_core = MagicMock()
+        service = GitHookAutoSyncService(mock_core)
+
+        original_config = GitHookAutoSyncConfig(
+            auto_sync_enabled=True,
+            sync_on_commit=True,
+            sync_on_checkout=False,
+            sync_on_merge=True,
+            confirm_before_sync=False,
+            force_local=True,
+            force_github=False,
+        )
+        service.set_config(original_config)
+
+        config_path = tmp_path / "config.json"
+        service.save_config_to_file(config_path)
+
+        mock_core2 = MagicMock()
+        service2 = GitHookAutoSyncService(mock_core2)
+        service2.load_config_from_file(config_path)
+
         loaded_config = service2.get_config()
         assert loaded_config.auto_sync_enabled == original_config.auto_sync_enabled
         assert loaded_config.sync_on_commit == original_config.sync_on_commit
         assert loaded_config.sync_on_checkout == original_config.sync_on_checkout
         assert loaded_config.sync_on_merge == original_config.sync_on_merge
+
+    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    def test_config_roundtrip_file_behavior_flags_preserved(self, mock_sync_service, tmp_path):
+        """Test roundtrip preserves confirmation and force behavior flags."""
+
+        mock_core = MagicMock()
+        service = GitHookAutoSyncService(mock_core)
+
+        original_config = GitHookAutoSyncConfig(
+            auto_sync_enabled=True,
+            sync_on_commit=True,
+            sync_on_checkout=False,
+            sync_on_merge=True,
+            confirm_before_sync=False,
+            force_local=True,
+            force_github=False,
+        )
+        service.set_config(original_config)
+
+        config_path = tmp_path / "config.json"
+        service.save_config_to_file(config_path)
+
+        mock_core2 = MagicMock()
+        service2 = GitHookAutoSyncService(mock_core2)
+        service2.load_config_from_file(config_path)
+
+        loaded_config = service2.get_config()
         assert loaded_config.confirm_before_sync == original_config.confirm_before_sync
         assert loaded_config.force_local == original_config.force_local
         assert loaded_config.force_github == original_config.force_github
