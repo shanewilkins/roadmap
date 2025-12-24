@@ -11,7 +11,12 @@ class TestDependencyAnalyzer:
     """Test suite for DependencyAnalyzer."""
 
     @staticmethod
-    def create_issue(issue_id: str, title: str = None, depends_on: list = None, blocks: list = None):
+    def create_issue(
+        issue_id: str,
+        title: str | None = None,
+        depends_on: list | None = None,
+        blocks: list | None = None,
+    ):
         """Helper to create Issue objects with sensible defaults."""
         return Issue(
             id=issue_id,
@@ -194,8 +199,12 @@ class TestDependencyAnalyzer:
         """Test that problem severities are correctly classified."""
         issues = [
             self.create_issue("1", depends_on=["1"], blocks=[]),  # Self (error)
-            self.create_issue("2", depends_on=["non-existent"], blocks=[]),  # Broken (error)
-            self.create_issue("3", depends_on=["1"], blocks=[]),  # Unidirectional (warning)
+            self.create_issue(
+                "2", depends_on=["non-existent"], blocks=[]
+            ),  # Broken (error)
+            self.create_issue(
+                "3", depends_on=["1"], blocks=[]
+            ),  # Unidirectional (warning)
         ]
 
         analyzer = DependencyAnalyzer()
@@ -211,7 +220,9 @@ class TestDependencyAnalyzer:
         """Test that result correctly counts problems."""
         issues = [
             self.create_issue("1", depends_on=["1"], blocks=[]),  # error
-            self.create_issue("2", depends_on=["1"], blocks=[]),  # warning (missing bidirectional)
+            self.create_issue(
+                "2", depends_on=["1"], blocks=[]
+            ),  # warning (missing bidirectional)
         ]
 
         analyzer = DependencyAnalyzer()
