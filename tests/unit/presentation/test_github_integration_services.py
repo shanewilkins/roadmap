@@ -153,15 +153,17 @@ class TestConflictDetector:
             assert "has_conflicts" in conflicts
             assert not conflicts["has_conflicts"]
 
-    @pytest.mark.skip(reason="Mock datetime comparison - not a real code issue")
     def test_conflict_detector_github_modified(self):
         """Test detection of GitHub-side modifications."""
+        from datetime import timezone
+        
         service = Mock(spec=GitHubIntegrationService)
         service.get_github_config.return_value = ("token", "owner", "repo")
         detector = GitHubConflictDetector(service)
 
-        issue = create_mock_issue(github_issue=123)
-        last_sync = datetime.now() - timedelta(hours=1)
+        # Create issue with proper datetime for updated field
+        last_sync = datetime.now(timezone.utc) - timedelta(hours=1)
+        issue = create_mock_issue(github_issue=123, updated=last_sync)
 
         detector.client = Mock()
         detector.client.fetch_issue = Mock(

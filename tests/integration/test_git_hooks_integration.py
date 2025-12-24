@@ -364,67 +364,6 @@ class TestGitHooksIntegration:
             # Git commit should succeed even if hook has issues
             assert result.returncode == 0
 
-    @pytest.mark.skip(
-        reason="Archived CI tracking feature - implementation moved to post-1.0"
-    )
-    def test_hook_performance_integration(self, git_hooks_repo, mock_git_operations):
-        """Test git hook performance with multiple commits and issues."""
-        core, repo_path = git_hooks_repo
-
-        # Create multiple issues
-        issue_ids = []
-        for i in range(5):
-            core.issues.create(
-                title=f"Performance Test Issue {i+1}",
-                priority=Priority.MEDIUM,
-                issue_type=IssueType.FEATURE,
-            )
-            issues = core.issues.list()
-            issue_ids.append(issues[-1].id)
-
-        # Install hooks
-        hook_manager = GitHookManager(core)
-        hook_manager.install_hooks()
-
-        # Create many commits quickly
-        start_time = time.time()
-
-        for i in range(10):
-            issue_id = issue_ids[i % len(issue_ids)]
-            test_file = repo_path / f"perf_test_{i}.py"
-            test_file.write_text(f"# Performance test file {i}\n# Issue: {issue_id}\n")
-            subprocess.run(
-                ["git", "add", f"perf_test_{i}.py"], cwd=repo_path, check=True
-            )
-            subprocess.run(
-                [
-                    "git",
-                    "commit",
-                    "-m",
-                    f"{issue_id}: Performance test commit {i} [progress:{(i+1)*10}%]",
-                ],
-                cwd=repo_path,
-                check=True,
-            )
-
-        end_time = time.time()
-        total_time = end_time - start_time
-
-        # Should complete within reasonable time (hooks shouldn't add significant overhead)
-        assert total_time < 30.0  # 30 seconds should be more than enough for 10 commits
-
-        # Check that log file exists and has entries
-        log_file = repo_path / ".git" / "roadmap-hooks.log"
-        if log_file.exists():
-            log_content = log_file.read_text()
-            log_lines = [
-                line
-                for line in log_content.split("\n")
-                if "Post-commit hook tracked commit" in line
-            ]
-            # Should have log entries for most/all commits
-            assert len(log_lines) >= 5
-
     def test_hook_uninstall_integration(self, git_hooks_repo):
         """Test complete hook installation and uninstallation cycle."""
         core, repo_path = git_hooks_repo
