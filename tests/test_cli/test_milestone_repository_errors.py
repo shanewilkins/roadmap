@@ -302,7 +302,7 @@ class TestMilestoneRepositoryGet:
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
-        result = repo.get(None)
+        result = repo.get(None)  # type: ignore
 
         assert result is None
         mock_conn.execute.assert_called_once()
@@ -753,7 +753,7 @@ class TestMilestoneRepositoryEdgeCases:
         repo = MilestoneRepository(mock_get_connection, Mock())
 
         # Should work as parameters are bound
-        result = repo.get(123)
+        result = repo.get(123)  # type: ignore
 
         assert result is None
         mock_conn.execute.assert_called_once()

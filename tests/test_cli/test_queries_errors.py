@@ -28,7 +28,7 @@ class TestQueryServiceInitialization:
 
     def test_initialization_accepts_none_state_manager(self):
         """Test QueryService handles None state manager gracefully."""
-        service = QueryService(None)
+        service = QueryService(None)  # type: ignore
         assert service.state_manager is None
 
 
