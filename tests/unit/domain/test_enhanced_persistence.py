@@ -124,8 +124,8 @@ class TestEnhancedParsers:
         """Clean up test environment."""
         shutil.rmtree(self.temp_dir)
 
-    def test_parse_issue_file_safe_valid(self):
-        """Test safe parsing of valid issue file."""
+    def test_parse_issue_file_safe_valid_success_result(self):
+        """Test safe parsing of valid issue file returns success."""
         issue_file = self.temp_dir / "test_issue.md"
         content = """---
 id: a1b2c3d4
@@ -142,6 +142,22 @@ This is the issue content."""
         assert success
         assert issue is not None
         assert error is None
+
+    def test_parse_issue_file_safe_valid_parsed_data(self):
+        """Test safe parsing of valid issue file extracts data correctly."""
+        issue_file = self.temp_dir / "test_issue.md"
+        content = """---
+id: a1b2c3d4
+title: Test Issue
+priority: high
+status: todo
+created: 2024-01-01T00:00:00
+---
+
+This is the issue content."""
+        issue_file.write_text(content)
+
+        success, issue, error = IssueParser.parse_issue_file_safe(issue_file)
         assert issue.id == "a1b2c3d4"
         assert issue.title == "Test Issue"
         assert issue.priority == Priority.HIGH

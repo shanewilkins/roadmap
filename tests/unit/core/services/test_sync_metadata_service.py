@@ -40,15 +40,27 @@ class TestSyncRecord:
 class TestSyncMetadata:
     """Test SyncMetadata dataclass."""
 
-    def test_create_new_sync_metadata(self):
-        """Test creating new sync metadata."""
+    def test_create_new_sync_metadata_ids(self):
+        """Test creating new sync metadata stores issue IDs."""
         metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
         assert metadata.issue_id == "issue-1"
         assert metadata.github_issue_id == 123
+
+    def test_create_new_sync_metadata_initial_sync_state(self):
+        """Test creating new sync metadata has no previous sync."""
+        metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
         assert metadata.last_sync_time is None
         assert metadata.sync_count == 0
         assert metadata.successful_syncs == 0
+
+    def test_create_new_sync_metadata_initial_status(self):
+        """Test creating new sync metadata has never synced status."""
+        metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
         assert metadata.last_sync_status == "never"
+
+    def test_create_new_sync_metadata_empty_history(self):
+        """Test creating new sync metadata has empty sync history."""
+        metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
         assert metadata.sync_history == []
 
     @pytest.mark.parametrize(

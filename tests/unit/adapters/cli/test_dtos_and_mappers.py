@@ -225,8 +225,8 @@ class TestIssueMapper:
         assert isinstance(issue.issue_type, IssueType)
         assert issue.issue_type == IssueType.FEATURE
 
-    def test_roundtrip_conversion(self):
-        """Test that domain -> DTO -> domain roundtrip preserves data."""
+    def test_roundtrip_conversion_basic_fields(self):
+        """Test that domain -> DTO -> domain preserves basic fields."""
         original = Issue(
             id="issue-4",
             title="Roundtrip test",
@@ -242,12 +242,50 @@ class TestIssueMapper:
         dto = IssueMapper.domain_to_dto(original)
         roundtrip = IssueMapper.dto_to_domain(dto)
 
-        # Verify key fields match
+        # Verify basic fields match
         assert roundtrip.id == original.id
         assert roundtrip.title == original.title
         assert roundtrip.priority == original.priority
+
+    def test_roundtrip_conversion_status_and_assignee(self):
+        """Test that domain -> DTO -> domain preserves status and assignee."""
+        original = Issue(
+            id="issue-4",
+            title="Roundtrip test",
+            priority=Priority.HIGH,
+            status=Status.CLOSED,
+            issue_type=IssueType.FEATURE,
+            assignee="charlie",
+            milestone="v2.0",
+            estimated_hours=8.0,
+        )
+
+        # Convert to DTO and back
+        dto = IssueMapper.domain_to_dto(original)
+        roundtrip = IssueMapper.dto_to_domain(dto)
+
+        # Verify status and assignee match
         assert roundtrip.status == original.status
         assert roundtrip.assignee == original.assignee
+
+    def test_roundtrip_conversion_milestone_and_hours(self):
+        """Test that domain -> DTO -> domain preserves milestone and estimated hours."""
+        original = Issue(
+            id="issue-4",
+            title="Roundtrip test",
+            priority=Priority.HIGH,
+            status=Status.CLOSED,
+            issue_type=IssueType.FEATURE,
+            assignee="charlie",
+            milestone="v2.0",
+            estimated_hours=8.0,
+        )
+
+        # Convert to DTO and back
+        dto = IssueMapper.domain_to_dto(original)
+        roundtrip = IssueMapper.dto_to_domain(dto)
+
+        # Verify milestone and hours match
         assert roundtrip.milestone == original.milestone
         assert roundtrip.estimated_hours == original.estimated_hours
 

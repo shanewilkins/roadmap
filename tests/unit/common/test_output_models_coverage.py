@@ -12,24 +12,36 @@ from roadmap.common.output_models import (
 class TestColumnType:
     """Tests for ColumnType enum."""
 
-    def test_column_types_exist(self):
-        """Test all expected column types exist."""
+    def test_column_types_basic_types_exist(self):
+        """Test that basic column types exist."""
         assert hasattr(ColumnType, "STRING")
         assert hasattr(ColumnType, "INTEGER")
         assert hasattr(ColumnType, "FLOAT")
+
+    def test_column_types_boolean_and_date_types_exist(self):
+        """Test that boolean and date column types exist."""
         assert hasattr(ColumnType, "BOOLEAN")
         assert hasattr(ColumnType, "DATE")
         assert hasattr(ColumnType, "DATETIME")
+
+    def test_column_types_enum_type_exists(self):
+        """Test that enum column type exists."""
         assert hasattr(ColumnType, "ENUM")
 
-    def test_column_type_values(self):
-        """Test that column types have correct values."""
+    def test_column_type_values_basic(self):
+        """Test that basic column types have correct values."""
         assert ColumnType.STRING.value == "string"
         assert ColumnType.INTEGER.value == "integer"
         assert ColumnType.FLOAT.value == "float"
+
+    def test_column_type_values_boolean_and_date(self):
+        """Test that boolean and date types have correct values."""
         assert ColumnType.BOOLEAN.value == "boolean"
         assert ColumnType.DATE.value == "date"
         assert ColumnType.DATETIME.value == "datetime"
+
+    def test_column_type_values_enum(self):
+        """Test that enum type has correct value."""
         assert ColumnType.ENUM.value == "enum"
 
     def test_column_type_string_comparison(self):
