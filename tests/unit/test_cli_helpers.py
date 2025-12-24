@@ -78,35 +78,20 @@ class TestOutputFormatHandler:
 class TestColumnSelector:
     """Tests for ColumnSelector utility."""
 
-    def test_parse_single_column(self):
-        """Test parsing single column."""
-        available = ["id", "name", "email"]
-        result = ColumnSelector.parse("name", available)
-        assert result == ["name"]
-
-    def test_parse_multiple_columns(self):
-        """Test parsing multiple columns."""
-        available = ["id", "name", "email"]
-        result = ColumnSelector.parse("id,name", available)
-        assert result == ["id", "name"]
-
-    def test_parse_with_spaces(self):
-        """Test parsing with spaces around commas."""
-        available = ["id", "name", "email"]
-        result = ColumnSelector.parse("id , name , email", available)
-        assert result == ["id", "name", "email"]
-
-    def test_parse_case_insensitive(self):
-        """Test case-insensitive matching."""
-        available = ["id", "name", "email"]
-        result = ColumnSelector.parse("ID,NAME", available)
-        assert result == ["id", "name"]
-
-    def test_parse_respects_order(self):
-        """Test that column order is preserved."""
-        available = ["id", "name", "email"]
-        result = ColumnSelector.parse("email,id,name", available)
-        assert result == ["email", "id", "name"]
+    @pytest.mark.parametrize(
+        "col_spec,available,expected",
+        [
+            ("name", ["id", "name", "email"], ["name"]),
+            ("id,name", ["id", "name", "email"], ["id", "name"]),
+            ("id , name , email", ["id", "name", "email"], ["id", "name", "email"]),
+            ("ID,NAME", ["id", "name", "email"], ["id", "name"]),
+            ("email,id,name", ["id", "name", "email"], ["email", "id", "name"]),
+        ],
+    )
+    def test_parse_columns(self, col_spec, available, expected):
+        """Test parsing column selections with various inputs."""
+        result = ColumnSelector.parse(col_spec, available)
+        assert result == expected
 
     def test_parse_unknown_column(self):
         """Test error on unknown column."""
@@ -137,47 +122,22 @@ class TestColumnSelector:
 class TestSortSpecParser:
     """Tests for SortSpecParser."""
 
-    def test_parse_single_column_default_asc(self):
-        """Test single column sorting (default ascending)."""
-        available = ["name", "age", "status"]
-        result = SortSpecParser.parse("name", available)
-        assert result == [("name", "asc")]
-
-    def test_parse_single_column_explicit_asc(self):
-        """Test single column with explicit ascending."""
-        available = ["name", "age", "status"]
-        result = SortSpecParser.parse("name:asc", available)
-        assert result == [("name", "asc")]
-
-    def test_parse_single_column_desc(self):
-        """Test single column descending."""
-        available = ["name", "age", "status"]
-        result = SortSpecParser.parse("name:desc", available)
-        assert result == [("name", "desc")]
-
-    def test_parse_multiple_columns(self):
-        """Test multiple column sorting."""
-        available = ["name", "age", "status"]
-        result = SortSpecParser.parse("status:asc,name:desc", available)
-        assert result == [("status", "asc"), ("name", "desc")]
-
-    def test_parse_mixed_directions(self):
-        """Test mixed sort directions."""
-        available = ["name", "age", "status"]
-        result = SortSpecParser.parse("status,name:desc,age:asc", available)
-        assert result == [("status", "asc"), ("name", "desc"), ("age", "asc")]
-
-    def test_parse_case_insensitive(self):
-        """Test case-insensitive column names."""
-        available = ["name", "age", "status"]
-        result = SortSpecParser.parse("NAME:DESC", available)
-        assert result == [("name", "desc")]
-
-    def test_parse_with_spaces(self):
-        """Test parsing with spaces."""
-        available = ["name", "age", "status"]
-        result = SortSpecParser.parse("name : desc , age : asc", available)
-        assert result == [("name", "desc"), ("age", "asc")]
+    @pytest.mark.parametrize(
+        "sort_spec,available,expected",
+        [
+            ("name", ["name", "age", "status"], [("name", "asc")]),
+            ("name:asc", ["name", "age", "status"], [("name", "asc")]),
+            ("name:desc", ["name", "age", "status"], [("name", "desc")]),
+            ("status:asc,name:desc", ["name", "age", "status"], [("status", "asc"), ("name", "desc")]),
+            ("status,name:desc,age:asc", ["name", "age", "status"], [("status", "asc"), ("name", "desc"), ("age", "asc")]),
+            ("NAME:DESC", ["name", "age", "status"], [("name", "desc")]),
+            ("name : desc , age : asc", ["name", "age", "status"], [("name", "desc"), ("age", "asc")]),
+        ],
+    )
+    def test_parse_sort_spec(self, sort_spec, available, expected):
+        """Test sort specification parsing with various inputs."""
+        result = SortSpecParser.parse(sort_spec, available)
+        assert result == expected
 
     def test_parse_unknown_column(self):
         """Test error on unknown column."""
@@ -257,21 +217,27 @@ class TestFilterSpecParser:
         assert result is not None
         assert len(result) == 2
 
-    def test_parse_boolean_true(self):
+    @pytest.mark.parametrize(
+        "bool_true_val",
+        ["true", "True", "TRUE", "yes", "1", "on"],
+    )
+    def test_parse_boolean_true(self, bool_true_val):
         """Test boolean filter - true variants."""
         column_types = {"active": ColumnType.BOOLEAN}
-        for val in ["true", "True", "TRUE", "yes", "1", "on"]:
-            result = FilterSpecParser.parse(f"active={val}", column_types)
-            assert result is not None
-            assert result[0].value is True
+        result = FilterSpecParser.parse(f"active={bool_true_val}", column_types)
+        assert result is not None
+        assert result[0].value is True
 
-    def test_parse_boolean_false(self):
+    @pytest.mark.parametrize(
+        "bool_false_val",
+        ["false", "False", "FALSE", "no", "0", "off"],
+    )
+    def test_parse_boolean_false(self, bool_false_val):
         """Test boolean filter - false variants."""
         column_types = {"active": ColumnType.BOOLEAN}
-        for val in ["false", "False", "FALSE", "no", "0", "off"]:
-            result = FilterSpecParser.parse(f"active={val}", column_types)
-            assert result is not None
-            assert result[0].value is False
+        result = FilterSpecParser.parse(f"active={bool_false_val}", column_types)
+        assert result is not None
+        assert result[0].value is False
 
     def test_parse_case_insensitive_column(self):
         """Test case-insensitive column names."""
