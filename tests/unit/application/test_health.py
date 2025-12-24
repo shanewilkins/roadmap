@@ -198,8 +198,8 @@ class TestHealthCheck:
             assert status == HealthStatus.DEGRADED
             assert ".git not found" in message
 
-    def test_run_all_checks(self):
-        """Test running all health checks."""
+    def test_run_all_checks_calls_no_param_checks(self):
+        """Test that run_all_checks calls checks that take no parameters."""
         from unittest.mock import MagicMock
 
         with (
@@ -240,7 +240,7 @@ class TestHealthCheck:
 
             checks = HealthCheck.run_all_checks(mock_core)
 
-            # Verify all checks were called
+            # Verify no-param checks were called
             mock_roadmap.assert_called_once()
             mock_state.assert_called_once()
             mock_issues.assert_called_once()
@@ -248,12 +248,98 @@ class TestHealthCheck:
             mock_git.assert_called_once()
             mock_db.assert_called_once()
             mock_data.assert_called_once()
+            mock_backups.assert_called_once()
+
+    def test_run_all_checks_calls_core_param_checks(self):
+        """Test that run_all_checks calls checks that take core parameter."""
+        from unittest.mock import MagicMock
+
+        with (
+            patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
+            patch.object(HealthCheck, "check_state_file") as mock_state,
+            patch.object(HealthCheck, "check_issues_directory") as mock_issues,
+            patch.object(HealthCheck, "check_milestones_directory") as mock_milestones,
+            patch.object(HealthCheck, "check_git_repository") as mock_git,
+            patch.object(HealthCheck, "check_database_integrity") as mock_db,
+            patch.object(HealthCheck, "check_data_integrity") as mock_data,
+            patch.object(HealthCheck, "check_duplicate_issues") as mock_duplicates,
+            patch.object(HealthCheck, "check_folder_structure") as mock_folders,
+            patch.object(HealthCheck, "check_orphaned_issues") as mock_orphaned,
+            patch.object(HealthCheck, "check_old_backups") as mock_backups,
+            patch.object(HealthCheck, "check_archivable_issues") as mock_arch_issues,
+            patch.object(
+                HealthCheck, "check_archivable_milestones"
+            ) as mock_arch_milestones,
+        ):
+            # Set up mock returns
+            ok_status: tuple[HealthStatus, str] = (HealthStatus.HEALTHY, "OK")
+            mock_roadmap.return_value = ok_status
+            mock_state.return_value = ok_status
+            mock_issues.return_value = ok_status
+            mock_milestones.return_value = ok_status
+            mock_git.return_value = ok_status
+            mock_db.return_value = ok_status
+            mock_data.return_value = ok_status
+            mock_duplicates.return_value = ok_status
+            mock_folders.return_value = ok_status
+            mock_orphaned.return_value = ok_status
+            mock_backups.return_value = ok_status
+            mock_arch_issues.return_value = ok_status
+            mock_arch_milestones.return_value = ok_status
+
+            # Create mock core
+            mock_core = MagicMock()
+
+            checks = HealthCheck.run_all_checks(mock_core)
+
+            # Verify core-param checks were called with core
             mock_duplicates.assert_called_once_with(mock_core)
             mock_folders.assert_called_once_with(mock_core)
             mock_orphaned.assert_called_once_with(mock_core)
-            mock_backups.assert_called_once()
             mock_arch_issues.assert_called_once_with(mock_core)
             mock_arch_milestones.assert_called_once_with(mock_core)
+
+    def test_run_all_checks_returns_expected_structure(self):
+        """Test that run_all_checks returns checks with expected keys."""
+        from unittest.mock import MagicMock
+
+        with (
+            patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
+            patch.object(HealthCheck, "check_state_file") as mock_state,
+            patch.object(HealthCheck, "check_issues_directory") as mock_issues,
+            patch.object(HealthCheck, "check_milestones_directory") as mock_milestones,
+            patch.object(HealthCheck, "check_git_repository") as mock_git,
+            patch.object(HealthCheck, "check_database_integrity") as mock_db,
+            patch.object(HealthCheck, "check_data_integrity") as mock_data,
+            patch.object(HealthCheck, "check_duplicate_issues") as mock_duplicates,
+            patch.object(HealthCheck, "check_folder_structure") as mock_folders,
+            patch.object(HealthCheck, "check_orphaned_issues") as mock_orphaned,
+            patch.object(HealthCheck, "check_old_backups") as mock_backups,
+            patch.object(HealthCheck, "check_archivable_issues") as mock_arch_issues,
+            patch.object(
+                HealthCheck, "check_archivable_milestones"
+            ) as mock_arch_milestones,
+        ):
+            # Set up mock returns
+            ok_status: tuple[HealthStatus, str] = (HealthStatus.HEALTHY, "OK")
+            mock_roadmap.return_value = ok_status
+            mock_state.return_value = ok_status
+            mock_issues.return_value = ok_status
+            mock_milestones.return_value = ok_status
+            mock_git.return_value = ok_status
+            mock_db.return_value = ok_status
+            mock_data.return_value = ok_status
+            mock_duplicates.return_value = ok_status
+            mock_folders.return_value = ok_status
+            mock_orphaned.return_value = ok_status
+            mock_backups.return_value = ok_status
+            mock_arch_issues.return_value = ok_status
+            mock_arch_milestones.return_value = ok_status
+
+            # Create mock core
+            mock_core = MagicMock()
+
+            checks = HealthCheck.run_all_checks(mock_core)
 
             # Verify results structure
             assert "roadmap_directory" in checks
@@ -263,6 +349,48 @@ class TestHealthCheck:
             assert "git_repository" in checks
             assert "duplicate_issues" in checks
             assert "folder_structure" in checks
+
+    def test_run_all_checks_all_healthy(self):
+        """Test that run_all_checks returns all healthy statuses."""
+        from unittest.mock import MagicMock
+
+        with (
+            patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
+            patch.object(HealthCheck, "check_state_file") as mock_state,
+            patch.object(HealthCheck, "check_issues_directory") as mock_issues,
+            patch.object(HealthCheck, "check_milestones_directory") as mock_milestones,
+            patch.object(HealthCheck, "check_git_repository") as mock_git,
+            patch.object(HealthCheck, "check_database_integrity") as mock_db,
+            patch.object(HealthCheck, "check_data_integrity") as mock_data,
+            patch.object(HealthCheck, "check_duplicate_issues") as mock_duplicates,
+            patch.object(HealthCheck, "check_folder_structure") as mock_folders,
+            patch.object(HealthCheck, "check_orphaned_issues") as mock_orphaned,
+            patch.object(HealthCheck, "check_old_backups") as mock_backups,
+            patch.object(HealthCheck, "check_archivable_issues") as mock_arch_issues,
+            patch.object(
+                HealthCheck, "check_archivable_milestones"
+            ) as mock_arch_milestones,
+        ):
+            # Set up mock returns
+            ok_status: tuple[HealthStatus, str] = (HealthStatus.HEALTHY, "OK")
+            mock_roadmap.return_value = ok_status
+            mock_state.return_value = ok_status
+            mock_issues.return_value = ok_status
+            mock_milestones.return_value = ok_status
+            mock_git.return_value = ok_status
+            mock_db.return_value = ok_status
+            mock_data.return_value = ok_status
+            mock_duplicates.return_value = ok_status
+            mock_folders.return_value = ok_status
+            mock_orphaned.return_value = ok_status
+            mock_backups.return_value = ok_status
+            mock_arch_issues.return_value = ok_status
+            mock_arch_milestones.return_value = ok_status
+
+            # Create mock core
+            mock_core = MagicMock()
+
+            checks = HealthCheck.run_all_checks(mock_core)
 
             # All should be healthy
             for status, _ in checks.values():
