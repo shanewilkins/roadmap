@@ -276,8 +276,8 @@ class TestDailySummaryServiceIssueCategorization:
 class TestDailySummaryServiceGetDailySummaryData:
     """Test main data aggregation method."""
 
-    def test_get_daily_summary_data_returns_complete_structure(self):
-        """Test that get_daily_summary_data returns all required fields."""
+    def test_get_daily_summary_data_returns_required_keys(self):
+        """Test that get_daily_summary_data returns all required keys."""
         core = MagicMock()
         core.team.get_current_user.return_value = "alice"
 
@@ -303,13 +303,79 @@ class TestDailySummaryServiceGetDailySummaryData:
         service = DailySummaryService(core)
         data = service.get_daily_summary_data()
 
-        # Check structure
+        # Check structure keys exist
         assert "current_user" in data
         assert "milestone" in data
         assert "issues" in data
         assert "has_issues" in data
+
+    def test_get_daily_summary_data_current_user_value(self):
+        """Test that current_user is correctly populated."""
+        core = MagicMock()
+        core.team.get_current_user.return_value = "alice"
+
+        today = datetime.now()
+        milestone = Milestone(
+            name="v1.0",
+            description="First release",
+            status=MilestoneStatus.OPEN,
+            due_date=today + timedelta(days=10),
+        )
+        core.milestones.list.return_value = [milestone]
+        core.issues.list.return_value = []
+
+        service = DailySummaryService(core)
+        data = service.get_daily_summary_data()
+
         assert data["current_user"] == "alice"
+
+    def test_get_daily_summary_data_milestone_value(self):
+        """Test that milestone is correctly populated."""
+        core = MagicMock()
+        core.team.get_current_user.return_value = "alice"
+
+        today = datetime.now()
+        milestone = Milestone(
+            name="v1.0",
+            description="First release",
+            status=MilestoneStatus.OPEN,
+            due_date=today + timedelta(days=10),
+        )
+        core.milestones.list.return_value = [milestone]
+        core.issues.list.return_value = []
+
+        service = DailySummaryService(core)
+        data = service.get_daily_summary_data()
+
         assert data["milestone"].name == "v1.0"
+
+    def test_get_daily_summary_data_issues_structure(self):
+        """Test that issues dictionary has expected structure."""
+        core = MagicMock()
+        core.team.get_current_user.return_value = "alice"
+
+        today = datetime.now()
+        milestone = Milestone(
+            name="v1.0",
+            description="First release",
+            status=MilestoneStatus.OPEN,
+            due_date=today + timedelta(days=10),
+        )
+        core.milestones.list.return_value = [milestone]
+
+        issue = Issue(
+            id="TASK-1",
+            title="Test task",
+            status=Status.IN_PROGRESS,
+            assignee="alice",
+            priority=Priority.HIGH,
+            milestone="v1.0",
+        )
+        core.issues.list.return_value = [issue]
+
+        service = DailySummaryService(core)
+        data = service.get_daily_summary_data()
+
         assert "in_progress" in data["issues"]
 
     def test_get_daily_summary_data_raises_when_no_user(self):

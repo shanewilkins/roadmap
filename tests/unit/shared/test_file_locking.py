@@ -32,8 +32,8 @@ class TestFileLock:
         """Clean up test environment."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    def test_acquire_and_release_lock(self):
-        """Test basic lock acquisition and release."""
+    def test_acquire_lock_success(self):
+        """Test successful lock acquisition."""
         lock = FileLock(self.test_file, timeout=5.0)
 
         # Initially not acquired
@@ -43,12 +43,29 @@ class TestFileLock:
         success = lock.acquire()
         assert success
         assert lock.acquired
+
+    def test_lock_file_created_on_acquisition(self):
+        """Test that lock file is created on acquisition."""
+        lock = FileLock(self.test_file, timeout=5.0)
+        lock.acquire()
+
         assert lock.lock_path.exists()
 
-        # Release lock
+    def test_release_lock_success(self):
+        """Test successful lock release."""
+        lock = FileLock(self.test_file, timeout=5.0)
+        lock.acquire()
+
         success = lock.release()
         assert success
         assert not lock.acquired
+
+    def test_lock_file_removed_on_release(self):
+        """Test that lock file is removed on release."""
+        lock = FileLock(self.test_file, timeout=5.0)
+        lock.acquire()
+        lock.release()
+
         assert not lock.lock_path.exists()
 
     def test_context_manager(self):

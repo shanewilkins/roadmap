@@ -202,8 +202,8 @@ class TestAddOutputFlags:
 class TestIntegrationWithRealCommands:
     """Integration tests with realistic command scenarios."""
 
-    def test_issue_list_with_formatting(self):
-        """Test issue-list-like command with all output options."""
+    def test_issue_list_with_default_format(self):
+        """Test issue-list command with default format."""
 
         @click.command()
         @with_output_support(
@@ -232,28 +232,142 @@ class TestIntegrationWithRealCommands:
             return TableData(columns=cols, rows=rows, title="Issues")
 
         runner = CliRunner()
-
-        # Test with default format
         result = runner.invoke(issue_list, [])
         assert result.exit_code == 0
 
-        # Test with JSON export
+    def test_issue_list_with_json_format(self):
+        """Test issue-list command with JSON export."""
+
+        @click.command()
+        @with_output_support(
+            available_columns=["id", "title", "status", "created"],
+            column_types={
+                "id": ColumnType.INTEGER,
+                "title": ColumnType.STRING,
+                "status": ColumnType.ENUM,
+                "created": ColumnType.DATETIME,
+            },
+        )
+        def issue_list():
+            cols = [
+                ColumnDef(name="id", display_name="ID", type=ColumnType.INTEGER),
+                ColumnDef(name="title", display_name="Title", type=ColumnType.STRING),
+                ColumnDef(name="status", display_name="Status", type=ColumnType.ENUM),
+                ColumnDef(
+                    name="created", display_name="Created", type=ColumnType.DATETIME
+                ),
+            ]
+            rows = [
+                [1, "Fix bug", "open", "2025-01-01"],
+                [2, "Add feature", "closed", "2025-01-02"],
+                [3, "Update docs", "open", "2025-01-03"],
+            ]
+            return TableData(columns=cols, rows=rows, title="Issues")
+
+        runner = CliRunner()
         result = runner.invoke(issue_list, ["--format", "json"])
         assert result.exit_code == 0
         assert "{" in result.output
 
-        # Test with CSV export
+    def test_issue_list_with_csv_format(self):
+        """Test issue-list command with CSV export."""
+
+        @click.command()
+        @with_output_support(
+            available_columns=["id", "title", "status", "created"],
+            column_types={
+                "id": ColumnType.INTEGER,
+                "title": ColumnType.STRING,
+                "status": ColumnType.ENUM,
+                "created": ColumnType.DATETIME,
+            },
+        )
+        def issue_list():
+            cols = [
+                ColumnDef(name="id", display_name="ID", type=ColumnType.INTEGER),
+                ColumnDef(name="title", display_name="Title", type=ColumnType.STRING),
+                ColumnDef(name="status", display_name="Status", type=ColumnType.ENUM),
+                ColumnDef(
+                    name="created", display_name="Created", type=ColumnType.DATETIME
+                ),
+            ]
+            rows = [
+                [1, "Fix bug", "open", "2025-01-01"],
+                [2, "Add feature", "closed", "2025-01-02"],
+                [3, "Update docs", "open", "2025-01-03"],
+            ]
+            return TableData(columns=cols, rows=rows, title="Issues")
+
+        runner = CliRunner()
         result = runner.invoke(issue_list, ["--format", "csv"])
         assert result.exit_code == 0
         assert "," in result.output
 
-        # Test with column selection
+    def test_issue_list_with_column_selection(self):
+        """Test issue-list command with column selection."""
+
+        @click.command()
+        @with_output_support(
+            available_columns=["id", "title", "status", "created"],
+            column_types={
+                "id": ColumnType.INTEGER,
+                "title": ColumnType.STRING,
+                "status": ColumnType.ENUM,
+                "created": ColumnType.DATETIME,
+            },
+        )
+        def issue_list():
+            cols = [
+                ColumnDef(name="id", display_name="ID", type=ColumnType.INTEGER),
+                ColumnDef(name="title", display_name="Title", type=ColumnType.STRING),
+                ColumnDef(name="status", display_name="Status", type=ColumnType.ENUM),
+                ColumnDef(
+                    name="created", display_name="Created", type=ColumnType.DATETIME
+                ),
+            ]
+            rows = [
+                [1, "Fix bug", "open", "2025-01-01"],
+                [2, "Add feature", "closed", "2025-01-02"],
+                [3, "Update docs", "open", "2025-01-03"],
+            ]
+            return TableData(columns=cols, rows=rows, title="Issues")
+
+        runner = CliRunner()
         result = runner.invoke(
             issue_list, ["--format", "plain", "--columns", "id,title"]
         )
         assert result.exit_code == 0
 
-        # Test with sorting
+    def test_issue_list_with_sorting(self):
+        """Test issue-list command with sorting."""
+
+        @click.command()
+        @with_output_support(
+            available_columns=["id", "title", "status", "created"],
+            column_types={
+                "id": ColumnType.INTEGER,
+                "title": ColumnType.STRING,
+                "status": ColumnType.ENUM,
+                "created": ColumnType.DATETIME,
+            },
+        )
+        def issue_list():
+            cols = [
+                ColumnDef(name="id", display_name="ID", type=ColumnType.INTEGER),
+                ColumnDef(name="title", display_name="Title", type=ColumnType.STRING),
+                ColumnDef(name="status", display_name="Status", type=ColumnType.ENUM),
+                ColumnDef(
+                    name="created", display_name="Created", type=ColumnType.DATETIME
+                ),
+            ]
+            rows = [
+                [1, "Fix bug", "open", "2025-01-01"],
+                [2, "Add feature", "closed", "2025-01-02"],
+                [3, "Update docs", "open", "2025-01-03"],
+            ]
+            return TableData(columns=cols, rows=rows, title="Issues")
+
+        runner = CliRunner()
         result = runner.invoke(
             issue_list, ["--format", "plain", "--sort-by", "title:asc"]
         )

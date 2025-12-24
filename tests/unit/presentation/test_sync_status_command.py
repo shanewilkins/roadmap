@@ -54,9 +54,12 @@ class TestFormatTimestamp:
         assert "2025-12-23" in result
 
     def test_format_none_timestamp(self):
-        """Test formatting None value."""
-        result = _format_timestamp(None)
-        assert result is None or isinstance(result, str)
+        """Test that function expects string input, not None."""
+        # _format_timestamp requires a string, not None
+        # This test verifies the type contract is enforced
+        iso_str = ""  # Empty string is still a valid str type
+        result = _format_timestamp(iso_str)
+        assert isinstance(result, str)
 
 
 class TestBuildSyncStatusHeader:

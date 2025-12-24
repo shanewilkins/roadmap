@@ -26,6 +26,7 @@ class TestExtractDescriptionAndObjectives:
         """Test extracting description when no objectives section."""
         content = "This is a description\nWith multiple lines\nNo objectives here"
         description, objectives = _extract_description_and_objectives(content)
+        assert description is not None
         assert "This is a description" in description
         assert "With multiple lines" in description
         assert objectives is None
@@ -34,6 +35,7 @@ class TestExtractDescriptionAndObjectives:
         """Test extracting objectives section."""
         content = "## Objectives\n- Goal 1\n- Goal 2\n- Goal 3"
         description, objectives = _extract_description_and_objectives(content)
+        assert objectives is not None
         assert "- Goal 1" in objectives
         assert "- Goal 2" in objectives
         assert "- Goal 3" in objectives
@@ -73,6 +75,7 @@ Project description line 2
 - Target 1"""
         description, objectives = _extract_description_and_objectives(content)
         assert description is not None
+        assert objectives is not None
 
     def test_extract_stops_at_next_header(self):
         """Test that objectives section stops at next ## header."""
@@ -114,6 +117,7 @@ Other content"""
   - Sub goal 1b
 - Main goal 2"""
         description, objectives = _extract_description_and_objectives(content)
+        assert objectives is not None
         assert "Main goal 1" in objectives
         assert "Sub goal 1a" in objectives
 
@@ -210,6 +214,7 @@ More description"""
 ## Objectives
 - Objective 1"""
         description, objectives = _extract_description_and_objectives(content)
+        assert description is not None
         assert "Feature 1" in description
         assert "Feature 2" in description
         assert objectives is not None
@@ -223,6 +228,7 @@ Line 3
 ## Objectives
 - Goal"""
         description, objectives = _extract_description_and_objectives(content)
+        assert description is not None
         assert "Line 1" in description
         assert "Line 2" in description
         assert "Line 3" in description
@@ -234,6 +240,7 @@ Line 3
 - Goal 2
 - Goal 3"""
         description, objectives = _extract_description_and_objectives(content)
+        assert objectives is not None
         assert "Goal 1" in objectives
         assert "Goal 2" in objectives
         assert "Goal 3" in objectives
@@ -246,6 +253,7 @@ Line 3
 - Goal with `code` formatting
 - Another **bold** goal"""
         description, objectives = _extract_description_and_objectives(content)
+        assert description is not None
         assert "bold" in description
         assert objectives is not None
 

@@ -65,12 +65,7 @@ class TestCommentsHandler:
     """Test CommentsHandler methods."""
 
     def test_get_issue_comments(self, comments_handler_with_session):
-        """Test getting comments for an issue.
-
-        Phase 1C refactoring:
-        - Use create_mock_comment() instead of inline dictionaries
-        - Cleaner and more maintainable mock data
-        """
+        """Test getting comments for an issue returns correct count."""
         # Create mock comments using factory
         comment1 = create_mock_comment(
             id=123456,
@@ -112,12 +107,138 @@ class TestCommentsHandler:
             comments = comments_handler_with_session.get_issue_comments(1)
 
             assert len(comments) == 2
+
+    def test_get_issue_comments_first_comment_data(self, comments_handler_with_session):
+        """Test that first comment data is correctly populated."""
+        # Create mock comments using factory
+        comment1 = create_mock_comment(
+            id=123456,
+            author="user1",
+            body="This is the first comment",
+        )
+        comment2 = create_mock_comment(
+            id=123457,
+            author="user2",
+            body="This is the second comment",
+        )
+
+        # Mock API response
+        mock_response = Mock()
+        mock_response.json.return_value = [
+            {
+                "id": comment1.id,
+                "body": comment1.body,
+                "user": {"login": comment1.author},
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-01T12:00:00Z",
+                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
+            },
+            {
+                "id": comment2.id,
+                "body": comment2.body,
+                "user": {"login": comment2.author},
+                "created_at": "2023-01-01T13:00:00Z",
+                "updated_at": "2023-01-01T13:30:00Z",
+                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
+            },
+        ]
+
+        # Mock the _make_request method
+        with patch.object(
+            comments_handler_with_session, "_make_request", return_value=mock_response
+        ):
+            comments = comments_handler_with_session.get_issue_comments(1)
+
             assert comments[0].id == comment1.id
             assert comments[0].author == comment1.author
             assert comments[0].body == comment1.body
+
+    def test_get_issue_comments_second_comment_data(self, comments_handler_with_session):
+        """Test that second comment data is correctly populated."""
+        # Create mock comments using factory
+        comment1 = create_mock_comment(
+            id=123456,
+            author="user1",
+            body="This is the first comment",
+        )
+        comment2 = create_mock_comment(
+            id=123457,
+            author="user2",
+            body="This is the second comment",
+        )
+
+        # Mock API response
+        mock_response = Mock()
+        mock_response.json.return_value = [
+            {
+                "id": comment1.id,
+                "body": comment1.body,
+                "user": {"login": comment1.author},
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-01T12:00:00Z",
+                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
+            },
+            {
+                "id": comment2.id,
+                "body": comment2.body,
+                "user": {"login": comment2.author},
+                "created_at": "2023-01-01T13:00:00Z",
+                "updated_at": "2023-01-01T13:30:00Z",
+                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
+            },
+        ]
+
+        # Mock the _make_request method
+        with patch.object(
+            comments_handler_with_session, "_make_request", return_value=mock_response
+        ):
+            comments = comments_handler_with_session.get_issue_comments(1)
+
             assert comments[1].id == comment2.id
             assert comments[1].author == comment2.author
             assert comments[1].body == comment2.body
+
+    def test_get_issue_comments_makes_correct_api_call(self, comments_handler_with_session):
+        """Test that get_issue_comments makes the correct API call."""
+        # Create mock comments using factory
+        comment1 = create_mock_comment(
+            id=123456,
+            author="user1",
+            body="This is the first comment",
+        )
+        comment2 = create_mock_comment(
+            id=123457,
+            author="user2",
+            body="This is the second comment",
+        )
+
+        # Mock API response
+        mock_response = Mock()
+        mock_response.json.return_value = [
+            {
+                "id": comment1.id,
+                "body": comment1.body,
+                "user": {"login": comment1.author},
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-01T12:00:00Z",
+                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
+            },
+            {
+                "id": comment2.id,
+                "body": comment2.body,
+                "user": {"login": comment2.author},
+                "created_at": "2023-01-01T13:00:00Z",
+                "updated_at": "2023-01-01T13:30:00Z",
+                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
+            },
+        ]
+
+        # Mock the _make_request method
+        with patch.object(
+            comments_handler_with_session, "_make_request", return_value=mock_response
+        ):
+            # Test the method
+            comments_handler_with_session.get_issue_comments(1)
 
             # Verify the API call
             comments_handler_with_session._make_request.assert_called_once_with(
@@ -264,12 +385,21 @@ class TestCommentCLI:
 class TestBlockedStatus:
     """Test blocked status functionality."""
 
-    def test_blocked_status_enum(self):
-        """Test that blocked status is properly defined."""
+    def test_blocked_status_enum_value(self):
+        """Test that blocked status has correct value."""
         from roadmap.core.domain import Status
 
         assert Status.BLOCKED == "blocked"
+
+    def test_blocked_status_enum_membership(self):
+        """Test that blocked status is in Status enum."""
+        from roadmap.core.domain import Status
+
         assert Status.BLOCKED in Status
+
+    def test_all_statuses_exist(self):
+        """Test that all expected statuses exist."""
+        from roadmap.core.domain import Status
 
         # Test all statuses in order
         statuses = list(Status)
@@ -279,8 +409,8 @@ class TestBlockedStatus:
         assert Status.REVIEW in statuses
         assert Status.CLOSED in statuses
 
-    def test_github_client_blocked_status_mapping(self):
-        """Test that GitHub client handles blocked status."""
+    def test_github_client_blocked_status_to_labels(self):
+        """Test that GitHub client converts blocked status to labels."""
         from unittest.mock import patch
 
         from roadmap.adapters.github.github import GitHubClient
@@ -292,6 +422,16 @@ class TestBlockedStatus:
             # Test status to labels
             labels = client.status_to_labels(Status.BLOCKED)
             assert labels == ["status:blocked"]
+
+    def test_github_client_blocked_labels_to_status(self):
+        """Test that GitHub client converts blocked labels to status."""
+        from unittest.mock import patch
+
+        from roadmap.adapters.github.github import GitHubClient
+        from roadmap.core.domain import Status
+
+        with patch("roadmap.adapters.github.github.GitHubClient._check_repository"):
+            client = GitHubClient(token="fake-token", owner="test", repo="test")
 
             # Test labels to status
             status = client.labels_to_status(["status:blocked"])

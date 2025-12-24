@@ -320,11 +320,55 @@ class TestProjectCreationService:
         assert result is not None
         assert len(result["id"]) == 8  # UUID-like ID (8 chars)
         assert result["name"] == "Test Project"
+
+    @patch("roadmap.core.services.project_init.creation.RoadmapCore")
+    def test_create_project_creates_file(self, mock_core_class, tmp_path):
+        """Test that project creation creates the project file."""
+        # Setup mock
+        mock_core = MagicMock(spec=RoadmapCore)
+        mock_core.roadmap_dir = tmp_path / ".roadmap"
+
+        # Create projects directory
+        (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
+
+        detected_info = {"git_repo": None, "git_user": "testuser"}
+
+        result = ProjectCreationService.create_project(
+            mock_core,
+            "Test Project",
+            "A test project",
+            detected_info,
+            "basic",
+        )
+
         assert result["filename"] == f"{result['id']}-test-project.md"
 
         # Verify file was created
         project_file = mock_core.roadmap_dir / "projects" / result["filename"]
         assert project_file.exists()
+
+    @patch("roadmap.core.services.project_init.creation.RoadmapCore")
+    def test_create_project_file_content(self, mock_core_class, tmp_path):
+        """Test that project file contains correct content."""
+        # Setup mock
+        mock_core = MagicMock(spec=RoadmapCore)
+        mock_core.roadmap_dir = tmp_path / ".roadmap"
+
+        # Create projects directory
+        (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
+
+        detected_info = {"git_repo": None, "git_user": "testuser"}
+
+        result = ProjectCreationService.create_project(
+            mock_core,
+            "Test Project",
+            "A test project",
+            detected_info,
+            "basic",
+        )
+
+        # Verify file content
+        project_file = mock_core.roadmap_dir / "projects" / result["filename"]
         content = project_file.read_text()
         assert "Test Project" in content
         assert "A test project" in content

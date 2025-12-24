@@ -218,8 +218,36 @@ class TestEstimatedTimeCLI:
         no_estimate = next((i for i in issues if i.title == "No Estimate"), None)
         assert no_estimate.estimated_time_display == "Not estimated"
 
-    def test_milestone_list_shows_estimates(self, cli_runner_initialized):
-        """Test that milestone list shows total estimated times."""
+    def test_milestone_list_shows_estimates_command_success(self, cli_runner_initialized):
+        """Test that milestone list command succeeds."""
+        runner, core = cli_runner_initialized
+
+        # Create a milestone
+        runner.invoke(main, ["milestone", "create", "Test Milestone"])
+
+        # Create issues and assign to milestone
+        runner.invoke(main, ["issue", "create", "Task 1", "--estimate", "8.0"])
+        runner.invoke(main, ["issue", "create", "Task 2", "--estimate", "16.0"])
+
+        # Get created issues
+        issues = core.issues.list()
+        task1 = next((i for i in issues if i.title == "Task 1"), None)
+        task2 = next((i for i in issues if i.title == "Task 2"), None)
+
+        # Assign issues to milestone
+        runner.invoke(
+            main, ["issue", "update", task1.id, "--milestone", "Test Milestone"]
+        )
+        runner.invoke(
+            main, ["issue", "update", task2.id, "--milestone", "Test Milestone"]
+        )
+
+        # List milestones
+        result = runner.invoke(main, ["milestone", "list"])
+        assert_command_success(result)
+
+    def test_milestone_list_issues_assigned_to_milestone(self, cli_runner_initialized):
+        """Test that milestone list shows issues assigned to milestone."""
         runner, core = cli_runner_initialized
 
         # Create a milestone
@@ -244,18 +272,39 @@ class TestEstimatedTimeCLI:
             main, ["issue", "update", task2.id, "--milestone", "Test Milestone"]
         )
 
-        # List milestones
-        result = runner.invoke(main, ["milestone", "list"])
-
-        assert_command_success(result)
-
-        # Verify issues are assigned and their combined estimate (24 hours = 3 days) is correct
+        # Verify issues are assigned
         fresh_task1 = core.issues.get(task1.id)
         fresh_task2 = core.issues.get(task2.id)
         assert fresh_task1.milestone == "Test Milestone"
         assert fresh_task2.milestone == "Test Milestone"
 
+    def test_milestone_list_shows_estimated_hours(self, cli_runner_initialized):
+        """Test that milestone issues show estimated hours."""
+        runner, core = cli_runner_initialized
+
+        # Create a milestone
+        runner.invoke(main, ["milestone", "create", "Test Milestone"])
+
+        # Create issues and assign to milestone
+        runner.invoke(main, ["issue", "create", "Task 1", "--estimate", "8.0"])
+        runner.invoke(main, ["issue", "create", "Task 2", "--estimate", "16.0"])
+
+        # Get created issues
+        issues = core.issues.list()
+        task1 = next((i for i in issues if i.title == "Task 1"), None)
+        task2 = next((i for i in issues if i.title == "Task 2"), None)
+
+        # Assign issues to milestone
+        runner.invoke(
+            main, ["issue", "update", task1.id, "--milestone", "Test Milestone"]
+        )
+        runner.invoke(
+            main, ["issue", "update", task2.id, "--milestone", "Test Milestone"]
+        )
+
         # Verify estimated times
+        fresh_task1 = core.issues.get(task1.id)
+        fresh_task2 = core.issues.get(task2.id)
         assert fresh_task1.estimated_hours == 8.0
         assert fresh_task2.estimated_hours == 16.0
         # Total: 24 hours = 3.0 days

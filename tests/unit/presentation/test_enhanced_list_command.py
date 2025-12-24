@@ -57,15 +57,30 @@ def temp_roadmap():
 class TestListAllVariants:
     """Test list command with various filters."""
 
-    def test_list_all_issues(self, temp_roadmap):
-        """Test listing all issues with all priority levels and types."""
+    def test_list_all_issues_exit_code(self, temp_roadmap):
+        """Test listing all issues returns success."""
         runner = CliRunner()
         result = runner.invoke(main, ["issue", "list"])
         assert result.exit_code == 0
+
+    def test_list_all_issues_count(self, temp_roadmap):
+        """Test listing all issues shows correct count."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["issue", "list"])
         assert "5 all issues" in result.output
+
+    def test_list_all_issues_contains_statuses(self, temp_roadmap):
+        """Test listing all issues includes all status categories."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["issue", "list"])
         assert "Todo" in result.output
         assert "Blocked" in result.output
         assert "Done" in result.output
+
+    def test_list_all_issues_contains_backlog_and_future(self, temp_roadmap):
+        """Test listing all issues includes backlog and future categories."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["issue", "list"])
         assert "Backlog" in result.output
         assert "Future" in result.output
 

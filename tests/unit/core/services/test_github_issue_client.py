@@ -285,7 +285,7 @@ class TestGetIssueDiff:
             assert set(result["changes"]["labels"]["github"]) == {"bug", "urgent"}
 
     def test_get_issue_diff_multiple_changes(self, client, github_issue_data):
-        """Test diff with multiple field changes."""
+        """Test diff detects multiple field changes."""
         local_data = {
             "title": "Local Title",
             "body": "Local description",
@@ -301,6 +301,22 @@ class TestGetIssueDiff:
 
             assert result["has_changes"]
             assert len(result["changes"]) == 5  # All 5 fields changed
+
+    def test_get_issue_diff_multiple_changes_includes_fields(self, client, github_issue_data):
+        """Test diff result includes all changed fields."""
+        local_data = {
+            "title": "Local Title",
+            "body": "Local description",
+            "state": "closed",
+            "labels": ["feature"],
+            "assignees": ["user3"],
+        }
+
+        with patch.object(client, "fetch_issue") as mock_fetch:
+            mock_fetch.return_value = github_issue_data
+
+            result = client.get_issue_diff("owner", "repo", 123, local_data)
+
             assert "title" in result["changes"]
             assert "body" in result["changes"]
             assert "state" in result["changes"]

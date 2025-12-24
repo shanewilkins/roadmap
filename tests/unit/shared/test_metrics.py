@@ -12,15 +12,30 @@ from roadmap.common.metrics import (
 class TestOperationMetric:
     """Tests for OperationMetric dataclass."""
 
-    def test_metric_creation(self):
-        """Test creating a basic operation metric."""
+    def test_metric_creation_basic_fields(self):
+        """Test metric has correct basic field values."""
         metric = OperationMetric(operation="test_op", duration_ms=150.5, success=True)
 
         assert metric.operation == "test_op"
         assert metric.duration_ms == 150.5
         assert metric.success
+
+    def test_metric_creation_error_is_none(self):
+        """Test metric error is None for successful operation."""
+        metric = OperationMetric(operation="test_op", duration_ms=150.5, success=True)
+
         assert metric.error is None
+
+    def test_metric_creation_has_timestamp(self):
+        """Test metric has timestamp set."""
+        metric = OperationMetric(operation="test_op", duration_ms=150.5, success=True)
+
         assert isinstance(metric.timestamp, datetime)
+
+    def test_metric_creation_empty_metadata(self):
+        """Test metric has empty metadata dict by default."""
+        metric = OperationMetric(operation="test_op", duration_ms=150.5, success=True)
+
         assert isinstance(metric.metadata, dict)
         assert len(metric.metadata) == 0
 

@@ -183,8 +183,8 @@ class TestIssueExporter:
         assert rows[0]["id"] == "ISS-1"
         assert rows[1]["id"] == "ISS-2"
 
-    def test_to_markdown_single_issue(self):
-        """to_markdown should format single issue as table."""
+    def test_to_markdown_single_issue_structure(self):
+        """to_markdown should format single issue as table with correct structure."""
         issue = self.create_sample_issue()
 
         result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
@@ -193,14 +193,35 @@ class TestIssueExporter:
         # Should have header, separator, and data row
         assert len(lines) == 3
 
+    def test_to_markdown_single_issue_header(self):
+        """to_markdown header should include expected columns."""
+        issue = self.create_sample_issue()
+
+        result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
+
+        lines = result.strip().split("\n")
         # Check header
         assert "id" in lines[0]
         assert "title" in lines[0]
         assert "status" in lines[0]
 
+    def test_to_markdown_single_issue_separator(self):
+        """to_markdown should include proper separator row."""
+        issue = self.create_sample_issue()
+
+        result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
+
+        lines = result.strip().split("\n")
         # Check separator
         assert "|---|" in lines[1]
 
+    def test_to_markdown_single_issue_data(self):
+        """to_markdown data row should include issue data."""
+        issue = self.create_sample_issue()
+
+        result = IssueExporter.to_markdown(cast(list[Issue], [issue]))
+
+        lines = result.strip().split("\n")
         # Check data row
         assert "ISS-123" in lines[2]
         assert "Test Issue" in lines[2]

@@ -116,7 +116,7 @@ class TestUpdateMilestoneProgress:
         milestone.update_automatic_fields = Mock()
 
         issues = [Mock(), Mock(), Mock()]
-        engine.update_milestone_progress(milestone, issues)
+        engine.update_milestone_progress(milestone, issues)  # type: ignore[arg-type]
 
         # Verify issues were passed to update
         call_args = milestone.update_automatic_fields.call_args
@@ -286,7 +286,7 @@ class TestRecalculateAllProgress:
 
         with patch.object(engine, "update_milestone_progress", return_value=True):
             with patch.object(engine, "update_project_progress", return_value=True):
-                result = engine.recalculate_all_progress([], milestones, projects)
+                result = engine.recalculate_all_progress([], milestones, projects)  # type: ignore[arg-type]
 
                 assert result["milestones"] == 3
                 assert result["projects"] == 2
@@ -503,7 +503,7 @@ def mock_milestone():
     return Mock(
         name="Test",
         calculated_progress=50,
-        status=MilestoneStatus.IN_PROGRESS,
+        status=MilestoneStatus.OPEN,
     )
 
 
@@ -513,7 +513,7 @@ def mock_project():
     return Mock(
         name="Test",
         calculated_progress=50,
-        status=MilestoneStatus.IN_PROGRESS,
+        status=ProjectStatus.ACTIVE,
         milestones=[],
         target_end_date=None,
     )
