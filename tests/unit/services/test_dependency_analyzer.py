@@ -10,11 +10,21 @@ from roadmap.core.services.dependency_analyzer import (
 class TestDependencyAnalyzer:
     """Test suite for DependencyAnalyzer."""
 
+    @staticmethod
+    def create_issue(issue_id: str, title: str = None, depends_on: list = None, blocks: list = None):
+        """Helper to create Issue objects with sensible defaults."""
+        return Issue(
+            id=issue_id,
+            title=title or f"Issue {issue_id}",
+            depends_on=depends_on or [],
+            blocks=blocks or [],
+        )
+
     def test_analyze_healthy_dependencies(self):
         """Test analyzing a set of healthy dependencies."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=[], blocks=["2"]),
-            Issue(id="2", title="Issue 2", depends_on=["1"], blocks=[]),
+            self.create_issue("1", depends_on=[], blocks=["2"]),
+            self.create_issue("2", depends_on=["1"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -29,7 +39,7 @@ class TestDependencyAnalyzer:
     def test_detect_self_dependency(self):
         """Test detection of self-dependency (issue depends on itself)."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=["1"], blocks=[]),
+            self.create_issue("1", depends_on=["1"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -41,8 +51,8 @@ class TestDependencyAnalyzer:
     def test_detect_circular_dependency_two_issues(self):
         """Test detection of circular dependency between two issues."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=["2"], blocks=[]),
-            Issue(id="2", title="Issue 2", depends_on=["1"], blocks=[]),
+            self.create_issue("1", depends_on=["2"], blocks=[]),
+            self.create_issue("2", depends_on=["1"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -57,9 +67,9 @@ class TestDependencyAnalyzer:
     def test_detect_circular_dependency_three_issues(self):
         """Test detection of circular dependency chain (A->B->C->A)."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=["2"], blocks=[]),
-            Issue(id="2", title="Issue 2", depends_on=["3"], blocks=[]),
-            Issue(id="3", title="Issue 3", depends_on=["1"], blocks=[]),
+            self.create_issue("1", depends_on=["2"], blocks=[]),
+            self.create_issue("2", depends_on=["3"], blocks=[]),
+            self.create_issue("3", depends_on=["1"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -71,12 +81,7 @@ class TestDependencyAnalyzer:
     def test_detect_broken_dependency(self):
         """Test detection of broken dependency (points to non-existent issue)."""
         issues = [
-            Issue(
-                id="1",
-                title="Issue 1",
-                depends_on=["non-existent"],
-                blocks=[],
-            ),
+            self.create_issue("1", depends_on=["non-existent"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -88,7 +93,7 @@ class TestDependencyAnalyzer:
     def test_detect_orphaned_blocker(self):
         """Test detection of orphaned blocker (blocks non-existent issue)."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=[], blocks=["non-existent"]),
+            self.create_issue("1", depends_on=[], blocks=["non-existent"]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -104,13 +109,13 @@ class TestDependencyAnalyzer:
         """Test detection of deep dependency chain (>5 levels)."""
         # Create a chain: 1 <- 2 <- 3 <- 4 <- 5 <- 6 <- 7
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=[], blocks=[]),
-            Issue(id="2", title="Issue 2", depends_on=["1"], blocks=[]),
-            Issue(id="3", title="Issue 3", depends_on=["2"], blocks=[]),
-            Issue(id="4", title="Issue 4", depends_on=["3"], blocks=[]),
-            Issue(id="5", title="Issue 5", depends_on=["4"], blocks=[]),
-            Issue(id="6", title="Issue 6", depends_on=["5"], blocks=[]),
-            Issue(id="7", title="Issue 7", depends_on=["6"], blocks=[]),
+            self.create_issue("1", depends_on=[], blocks=[]),
+            self.create_issue("2", depends_on=["1"], blocks=[]),
+            self.create_issue("3", depends_on=["2"], blocks=[]),
+            self.create_issue("4", depends_on=["3"], blocks=[]),
+            self.create_issue("5", depends_on=["4"], blocks=[]),
+            self.create_issue("6", depends_on=["5"], blocks=[]),
+            self.create_issue("7", depends_on=["6"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -142,9 +147,7 @@ class TestDependencyAnalyzer:
         """Test detection of missing bidirectional link (A blocks B, but B doesn't depend on A)."""
         issues = [
             Issue(id="1", title="Issue 1", depends_on=[], blocks=["2"]),
-            Issue(
-                id="2", title="Issue 2", depends_on=[], blocks=[]
-            ),  # Doesn't depend on 1
+            self.create_issue("2", depends_on=[], blocks=[]),  # Doesn't depend on 1
         ]
 
         analyzer = DependencyAnalyzer()
@@ -171,10 +174,10 @@ class TestDependencyAnalyzer:
         # 1 <- 2 <- 3
         # 1 <- 4
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=[], blocks=["2", "4"]),
-            Issue(id="2", title="Issue 2", depends_on=["1"], blocks=["3"]),
-            Issue(id="3", title="Issue 3", depends_on=["2"], blocks=[]),
-            Issue(id="4", title="Issue 4", depends_on=["1"], blocks=[]),
+            self.create_issue("1", depends_on=[], blocks=["2", "4"]),
+            self.create_issue("2", depends_on=["1"], blocks=["3"]),
+            self.create_issue("3", depends_on=["2"], blocks=[]),
+            self.create_issue("4", depends_on=["1"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
@@ -190,13 +193,9 @@ class TestDependencyAnalyzer:
     def test_result_severity_classification(self):
         """Test that problem severities are correctly classified."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=["1"], blocks=[]),  # Self (error)
-            Issue(
-                id="2", title="Issue 2", depends_on=["non-existent"], blocks=[]
-            ),  # Broken (error)
-            Issue(
-                id="3", title="Issue 3", depends_on=["1"], blocks=[]
-            ),  # Unidirectional (warning)
+            self.create_issue("1", depends_on=["1"], blocks=[]),  # Self (error)
+            self.create_issue("2", depends_on=["non-existent"], blocks=[]),  # Broken (error)
+            self.create_issue("3", depends_on=["1"], blocks=[]),  # Unidirectional (warning)
         ]
 
         analyzer = DependencyAnalyzer()
@@ -211,10 +210,8 @@ class TestDependencyAnalyzer:
     def test_result_counts(self):
         """Test that result correctly counts problems."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=["1"], blocks=[]),  # error
-            Issue(
-                id="2", title="Issue 2", depends_on=["1"], blocks=[]
-            ),  # warning (missing bidirectional)
+            self.create_issue("1", depends_on=["1"], blocks=[]),  # error
+            self.create_issue("2", depends_on=["1"], blocks=[]),  # warning (missing bidirectional)
         ]
 
         analyzer = DependencyAnalyzer()
@@ -226,10 +223,10 @@ class TestDependencyAnalyzer:
     def test_multiple_blocking_relationships(self):
         """Test issue that blocks multiple other issues."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=[], blocks=["2", "3", "4"]),
-            Issue(id="2", title="Issue 2", depends_on=["1"], blocks=[]),
-            Issue(id="3", title="Issue 3", depends_on=["1"], blocks=[]),
-            Issue(id="4", title="Issue 4", depends_on=["1"], blocks=[]),
+            self.create_issue("1", depends_on=[], blocks=["2", "3", "4"]),
+            self.create_issue("2", depends_on=["1"], blocks=[]),
+            self.create_issue("3", depends_on=["1"], blocks=[]),
+            self.create_issue("4", depends_on=["1"], blocks=[]),
         ]
 
         analyzer = DependencyAnalyzer()
