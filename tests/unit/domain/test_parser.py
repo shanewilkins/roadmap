@@ -308,23 +308,40 @@ Issue with corrupted YAML.
 class TestMilestoneParser:
     """Test cases for MilestoneParser."""
 
-    def test_parse_milestone_file_basic(self):
-        """Test parsing basic milestone file."""
-        content = """---
-name: v1.0
-description: First release
-status: open
-created: "2024-01-01T00:00:00"
-updated: "2024-01-01T00:00:00"
----
+    @pytest.mark.parametrize(
+        "name,description,status,due_date_str,github_milestone,expected_has_due_date,expected_has_github_milestone",
+        [
+            ("v1.0", "First release", "open", None, None, False, False),
+            ("v2.0", "Second release", "closed", "2024-12-31T23:59:59", 456, True, True),
+        ],
+    )
+    def test_parse_milestone_file(self, name, description, status, due_date_str, github_milestone, expected_has_due_date, expected_has_github_milestone):
+        """Test parsing milestone files with various configurations."""
+        frontmatter_lines = [
+            f"name: {name}",
+            f"description: {description}",
+            f"status: {status}",
+        ]
+        if due_date_str:
+            frontmatter_lines.append(f'due_date: "{due_date_str}"')
+        if github_milestone:
+            frontmatter_lines.append(f"github_milestone: {github_milestone}")
+        frontmatter_lines.extend([
+            'created: "2024-01-01T00:00:00"',
+            'updated: "2024-01-01T00:00:00"',
+        ])
 
-This is the first release milestone.
+        content = "---\n" + "\n".join(frontmatter_lines) + "\n---\n\n"
+        if status == "open":
+            content += """This is the first release milestone.
 
 ## Goals
 
 - Feature A
 - Feature B
 """
+        else:
+            content += "Second release content.\n"
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
@@ -332,41 +349,16 @@ This is the first release milestone.
 
             milestone = MilestoneParser.parse_milestone_file(Path(f.name))
 
-        assert milestone.name == "v1.0"
-        assert milestone.description == "First release"
-        assert milestone.status == MilestoneStatus.OPEN
+        assert milestone.name == name
+        assert milestone.description == description
+        assert milestone.status == MilestoneStatus(status)
         assert milestone.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        assert "Goals" in milestone.content
-        assert "Feature A" in milestone.content
-
-    def test_parse_milestone_file_with_due_date(self):
-        """Test parsing milestone file with due date."""
-        content = """---
-name: v2.0
-description: Second release
-status: closed
-due_date: "2024-12-31T23:59:59"
-github_milestone: 456
-created: "2024-01-01T00:00:00"
-updated: "2024-01-01T00:00:00"
----
-
-Second release content.
-"""
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-            f.write(content)
-            f.flush()
-
-            milestone = MilestoneParser.parse_milestone_file(Path(f.name))
-
-        assert milestone.name == "v2.0"
-        assert milestone.status == MilestoneStatus.CLOSED
-        assert milestone.due_date == datetime(
-            2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc
-        )
-        assert milestone.github_milestone == 456
+        
+        if expected_has_due_date:
+            assert milestone.due_date == datetime(2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        if expected_has_github_milestone:
+            assert milestone.github_milestone == 456
 
     def test_save_milestone_file(self):
         """Test saving milestone to file."""

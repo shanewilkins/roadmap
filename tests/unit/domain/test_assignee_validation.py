@@ -49,83 +49,68 @@ def initialized_roadmap(temp_dir):
 class TestAssigneeValidation:
     """Test cases for assignee validation."""
 
-    def test_empty_assignee_validation(self, initialized_roadmap):
+    @pytest.mark.parametrize(
+        "assignee_input,description",
+        [
+            ("", "empty string"),
+            (cast(str, None), "None"),
+            ("   ", "whitespace only"),
+        ],
+    )
+    def test_empty_assignee_validation(self, initialized_roadmap, assignee_input, description):
         """Test that empty assignees are rejected."""
         from pathlib import Path
 
         core = RoadmapCore(Path(initialized_roadmap))
 
-        # Test empty string
-        is_valid, error = core.team.validate_assignee("")
-        assert not is_valid
+        is_valid, error = core.team.validate_assignee(assignee_input)
+        assert not is_valid, f"Failed for {description}"
         assert "cannot be empty" in error.lower()
 
-        # Test None
-        is_valid, error = core.team.validate_assignee(cast(str, None))
-        assert not is_valid
-        assert "cannot be empty" in error.lower()
-
-        # Test whitespace
-        is_valid, error = core.team.validate_assignee("   ")
-        assert not is_valid
-        assert "cannot be empty" in error.lower()
-
-    def test_assignee_validation_without_github(self, initialized_roadmap):
-        """Test that any assignee is accepted when GitHub is not configured.
-
-        This supports local-only roadmap usage where users want to assign
-        issues without GitHub integration validation.
-        """
+    @pytest.mark.parametrize(
+        "github_configured,assignee,should_accept",
+        [
+            # No GitHub - accept anything
+            (False, "localuser", True),
+            (False, "john.doe@company.com", True),
+            (False, "alice", True),
+            # With GitHub - accept based on mock result
+            (True, "validuser", True),
+            (True, "invaliduser", False),
+        ],
+    )
+    def test_assignee_validation_github_config(self, initialized_roadmap, github_configured, assignee, should_accept):
+        """Test assignee validation with and without GitHub configuration."""
         from pathlib import Path
 
         core = RoadmapCore(Path(initialized_roadmap))
 
-        # Mock no GitHub configuration (local-only usage)
-        with patch.object(
-            core.validation, "get_github_config", return_value=(None, None, None)
-        ):
-            # Should accept any assignee without validation
-            is_valid, error = core.team.validate_assignee("localuser")
-            assert is_valid
-            assert error == ""
-
-            # Should also accept usernames that wouldn't exist on GitHub
-            is_valid, error = core.team.validate_assignee("john.doe@company.com")
-            assert is_valid
-            assert error == ""
-
-            # Should accept simple names
-            is_valid, error = core.team.validate_assignee("alice")
-            assert is_valid
-            assert error == ""
-
-    def test_assignee_validation_with_github_valid_user(self, initialized_roadmap):
-        """Test validation with GitHub configured and valid user."""
-        from pathlib import Path
-
-        core = RoadmapCore(Path(initialized_roadmap))
-
-        # Mock GitHub service to return valid user
-        with patch.object(
-            core.github_service, "validate_assignee", return_value=(True, "")
-        ):
-            is_valid, error = core.team.validate_assignee("validuser")
-            assert is_valid
-            assert error == ""
-
-    def test_assignee_validation_with_github_invalid_user(self, initialized_roadmap):
-        """Test validation with GitHub configured and invalid user."""
-        from pathlib import Path
-
-        core = RoadmapCore(Path(initialized_roadmap))
-
-        # Mock the service to return invalid result
-        with patch.object(core.github_service, "validate_assignee") as mock_validate:
-            mock_validate.return_value = (False, "User 'invaliduser' does not exist")
-
-            is_valid, error = core.team.validate_assignee("invaliduser")
-            assert not is_valid
-            assert "does not exist" in error
+        if not github_configured:
+            # Test without GitHub
+            with patch.object(
+                core.validation, "get_github_config", return_value=(None, None, None)
+            ):
+                is_valid, error = core.team.validate_assignee(assignee)
+                assert is_valid
+                assert error == ""
+        else:
+            # Test with GitHub
+            if should_accept:
+                with patch.object(
+                    core.github_service, "validate_assignee", return_value=(True, "")
+                ):
+                    is_valid, error = core.team.validate_assignee(assignee)
+                    assert is_valid
+                    assert error == ""
+            else:
+                with patch.object(
+                    core.github_service,
+                    "validate_assignee",
+                    return_value=(False, f"User '{assignee}' not found"),
+                ):
+                    is_valid, error = core.team.validate_assignee(assignee)
+                    assert not is_valid
+                    assert "not found" in error.lower()
 
     def test_validation_only_when_github_configured(self, initialized_roadmap):
         """Test that validation logic is conditional on GitHub configuration."""

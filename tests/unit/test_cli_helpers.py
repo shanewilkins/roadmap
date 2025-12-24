@@ -39,24 +39,20 @@ class TestOutputFormatHandler:
         assert "ID" in output
         assert "Alice" in output
 
-    def test_render_json_format(self, sample_table):
-        """Test rendering JSON format."""
-        output = OutputFormatHandler.render(sample_table, "json")
+    @pytest.mark.parametrize(
+        "format_name,check_fn",
+        [
+            ("plain", lambda o: "ID" in o and "Alice" in o),
+            ("json", lambda o: ('"title"' in o or "'title'" in o)),
+            ("csv", lambda o: "ID" in o and "Alice" in o),
+            ("markdown", lambda o: "|" in o),
+        ],
+    )
+    def test_render_format(self, sample_table, format_name, check_fn):
+        """Test rendering various output formats."""
+        output = OutputFormatHandler.render(sample_table, format_name)
         assert isinstance(output, str)
-        assert '"title"' in output or "'title'" in output
-
-    def test_render_csv_format(self, sample_table):
-        """Test rendering CSV format."""
-        output = OutputFormatHandler.render(sample_table, "csv")
-        assert isinstance(output, str)
-        assert "ID" in output
-        assert "Alice" in output
-
-    def test_render_markdown_format(self, sample_table):
-        """Test rendering Markdown format."""
-        output = OutputFormatHandler.render(sample_table, "markdown")
-        assert isinstance(output, str)
-        assert "|" in output  # Markdown table delimiter
+        assert check_fn(output)
 
     def test_render_rich_format(self, sample_table):
         """Test rendering Rich format (returns Table object)."""

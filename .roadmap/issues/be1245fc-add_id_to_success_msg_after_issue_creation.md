@@ -1,22 +1,22 @@
 ---
-id: bbb5c6c2
-title: fix_the_test_suite
-priority: critical
-status: closed
+id: be1245fc
+title: add_id_to_success_msg_after_issue_creation
+priority: medium
+status: todo
 issue_type: other
-milestone: v.0.8.0
+milestone: ''
 labels: []
 github_issue: null
-created: '2025-12-23T22:08:47.964369+00:00'
-updated: '2025-12-23T23:42:16.189505+00:00'
+created: '2025-12-23T23:42:51.672668+00:00'
+updated: '2025-12-23T23:42:51.672671+00:00'
 assignee: shanewilkins
-estimated_hours: 6.0
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# fix_the_test_suite
+# add_id_to_success_msg_after_issue_creation
 
 ## Description
 

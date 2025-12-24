@@ -21,22 +21,26 @@ from roadmap.infrastructure.core import RoadmapCore
 class TestTimezoneManager:
     """Test TimezoneManager functionality."""
 
-    def test_timezone_manager_default_timezone(self):
-        """Test TimezoneManager uses UTC as default."""
-        tz_manager = TimezoneManager()
-        assert tz_manager.user_timezone is not None
-        # Default should be either UTC or system timezone
-        assert len(tz_manager.user_timezone) > 0
-
-    def test_timezone_manager_with_specific_timezone(self):
-        """Test TimezoneManager with specified timezone."""
-        tz_manager = TimezoneManager("America/New_York")
-        assert tz_manager.user_timezone == "America/New_York"
-
-    def test_timezone_manager_with_utc(self):
-        """Test TimezoneManager with UTC timezone."""
-        tz_manager = TimezoneManager("UTC")
-        assert tz_manager.user_timezone == "UTC"
+    @pytest.mark.parametrize(
+        "timezone_input,expected_timezone",
+        [
+            # Default timezone
+            (None, None),  # Will check that it's set to UTC or system
+            # Specific timezone
+            ("America/New_York", "America/New_York"),
+            # UTC timezone
+            ("UTC", "UTC"),
+        ],
+    )
+    def test_timezone_manager_initialization(self, timezone_input, expected_timezone):
+        """Test TimezoneManager initialization with various timezones."""
+        if timezone_input is None:
+            tz_manager = TimezoneManager()
+            assert tz_manager.user_timezone is not None
+            assert len(tz_manager.user_timezone) > 0
+        else:
+            tz_manager = TimezoneManager(timezone_input)
+            assert tz_manager.user_timezone == expected_timezone
 
     def test_timezone_manager_is_timezone_aware(self):
         """Test TimezoneManager.is_timezone_aware method."""
