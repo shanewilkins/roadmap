@@ -105,8 +105,8 @@ class TestGitStatusDisplay:
         assert any("Current branch: main" in c for c in calls)
         assert any("No linked issue" in c for c in calls)
 
-    def test_show_current_branch_with_linked_issue(self, display, console):
-        """show_current_branch should show linked issue details."""
+    def test_show_current_branch_with_linked_issue_call_count(self, display, console):
+        """show_current_branch should print multiple lines for linked issue."""
         git_context = {
             "current_branch": "feature/ISS-123",
             "linked_issue": {
@@ -120,14 +120,74 @@ class TestGitStatusDisplay:
         display.show_current_branch(git_context)
 
         assert console.print.call_count >= 5
-        calls = [call[0][0] for call in console.print.call_args_list]
 
-        # Check branch name
+    def test_show_current_branch_with_linked_issue_shows_branch(self, display, console):
+        """show_current_branch should display branch name."""
+        git_context = {
+            "current_branch": "feature/ISS-123",
+            "linked_issue": {
+                "id": "ISS-123",
+                "title": "Test Issue",
+                "status": "in-progress",
+                "priority": "high",
+            },
+        }
+
+        display.show_current_branch(git_context)
+
+        calls = [call[0][0] for call in console.print.call_args_list]
         assert any("feature/ISS-123" in c for c in calls)
-        # Check linked issue details
+
+    def test_show_current_branch_with_linked_issue_shows_issue_header(self, display, console):
+        """show_current_branch should show linked issue header."""
+        git_context = {
+            "current_branch": "feature/ISS-123",
+            "linked_issue": {
+                "id": "ISS-123",
+                "title": "Test Issue",
+                "status": "in-progress",
+                "priority": "high",
+            },
+        }
+
+        display.show_current_branch(git_context)
+
+        calls = [call[0][0] for call in console.print.call_args_list]
         assert any("Linked issue:" in c for c in calls)
+
+    def test_show_current_branch_with_linked_issue_shows_title_and_id(self, display, console):
+        """show_current_branch should display issue title and id."""
+        git_context = {
+            "current_branch": "feature/ISS-123",
+            "linked_issue": {
+                "id": "ISS-123",
+                "title": "Test Issue",
+                "status": "in-progress",
+                "priority": "high",
+            },
+        }
+
+        display.show_current_branch(git_context)
+
+        calls = [call[0][0] for call in console.print.call_args_list]
         assert any("Test Issue" in c for c in calls)
         assert any("ISS-123" in c for c in calls)
+
+    def test_show_current_branch_with_linked_issue_shows_status_and_priority(self, display, console):
+        """show_current_branch should display status and priority."""
+        git_context = {
+            "current_branch": "feature/ISS-123",
+            "linked_issue": {
+                "id": "ISS-123",
+                "title": "Test Issue",
+                "status": "in-progress",
+                "priority": "high",
+            },
+        }
+
+        display.show_current_branch(git_context)
+
+        calls = [call[0][0] for call in console.print.call_args_list]
         assert any("Status: in-progress" in c for c in calls)
         assert any("Priority: high" in c for c in calls)
 

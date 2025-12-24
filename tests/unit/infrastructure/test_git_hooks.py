@@ -221,8 +221,8 @@ class TestGitHookManagerStatus:
 class TestGitHookManagerConfig:
     """Test hook configuration retrieval."""
 
-    def test_get_hook_config_full(self, hook_manager):
-        """Test getting full hook configuration."""
+    def test_get_hook_config_full_returns_config(self, hook_manager):
+        """Test getting full hook configuration returns non-None config."""
         with (
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.read_text", return_value="#!/bin/bash\n# roadmap-hook"),
@@ -232,10 +232,54 @@ class TestGitHookManagerConfig:
             config = hook_manager.get_hook_config()
 
             assert config is not None
+
+    def test_get_hook_config_full_has_paths(self, hook_manager):
+        """Test hook config includes expected paths."""
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value="#!/bin/bash\n# roadmap-hook"),
+            patch("pathlib.Path.stat", return_value=Mock(st_mode=0o755)),
+            patch("pathlib.Path.cwd", return_value=Path("/fake/repo")),
+        ):
+            config = hook_manager.get_hook_config()
+
             assert config["hooks_directory"] == "/fake/.git/hooks"
             assert config["repository_root"] == "/fake/repo"
+
+    def test_get_hook_config_full_has_repository_flag(self, hook_manager):
+        """Test hook config indicates git repository."""
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value="#!/bin/bash\n# roadmap-hook"),
+            patch("pathlib.Path.stat", return_value=Mock(st_mode=0o755)),
+            patch("pathlib.Path.cwd", return_value=Path("/fake/repo")),
+        ):
+            config = hook_manager.get_hook_config()
+
             assert config["git_repository"]
+
+    def test_get_hook_config_full_has_available_hooks(self, hook_manager):
+        """Test hook config includes available hooks."""
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value="#!/bin/bash\n# roadmap-hook"),
+            patch("pathlib.Path.stat", return_value=Mock(st_mode=0o755)),
+            patch("pathlib.Path.cwd", return_value=Path("/fake/repo")),
+        ):
+            config = hook_manager.get_hook_config()
+
             assert len(config["available_hooks"]) == 4
+
+    def test_get_hook_config_full_has_initialization_status(self, hook_manager):
+        """Test hook config includes initialization status and hooks_status."""
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", return_value="#!/bin/bash\n# roadmap-hook"),
+            patch("pathlib.Path.stat", return_value=Mock(st_mode=0o755)),
+            patch("pathlib.Path.cwd", return_value=Path("/fake/repo")),
+        ):
+            config = hook_manager.get_hook_config()
+
             assert config["core_initialized"]
             assert "hooks_status" in config
 

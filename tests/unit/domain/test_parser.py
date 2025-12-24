@@ -108,8 +108,8 @@ Content.
 class TestIssueParser:
     """Test cases for IssueParser."""
 
-    def test_parse_issue_file_basic(self):
-        """Test parsing basic issue file."""
+    def test_parse_issue_file_basic_title_and_priority(self):
+        """Test parsing basic issue file returns title and priority."""
         content = """---
 id: "12345678"
 title: Test Issue
@@ -130,8 +130,50 @@ This is a test issue description.
 
         assert issue.title == "Test Issue"
         assert issue.priority == Priority.HIGH
+
+    def test_parse_issue_file_basic_status_and_id(self):
+        """Test parsing basic issue file returns status and id."""
+        content = """---
+id: "12345678"
+title: Test Issue
+priority: high
+status: todo
+created: "2024-01-01T00:00:00"
+updated: "2024-01-01T00:00:00"
+---
+
+This is a test issue description.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            f.flush()
+
+            issue = IssueParser.parse_issue_file(Path(f.name))
+
         assert issue.status == Status.TODO
         assert issue.id == "12345678"
+
+    def test_parse_issue_file_basic_content_and_dates(self):
+        """Test parsing basic issue file returns content and dates."""
+        content = """---
+id: "12345678"
+title: Test Issue
+priority: high
+status: todo
+created: "2024-01-01T00:00:00"
+updated: "2024-01-01T00:00:00"
+---
+
+This is a test issue description.
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            f.flush()
+
+            issue = IssueParser.parse_issue_file(Path(f.name))
+
         assert issue.content == "This is a test issue description."
         assert issue.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         assert issue.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
