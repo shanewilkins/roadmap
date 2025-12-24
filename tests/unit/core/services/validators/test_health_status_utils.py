@@ -1,5 +1,7 @@
 """Tests for health status utilities."""
 
+import pytest
+
 from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.validators.health_status_utils import get_overall_status
 
@@ -7,77 +9,64 @@ from roadmap.core.services.validators.health_status_utils import get_overall_sta
 class TestGetOverallStatus:
     """Test get_overall_status function."""
 
-    def test_get_overall_status_empty_checks(self):
-        """Test with empty checks returns UNHEALTHY."""
-        result = get_overall_status({})
-        assert result == HealthStatus.UNHEALTHY
-
-    def test_get_overall_status_all_healthy(self):
-        """Test with all healthy checks returns HEALTHY."""
-        checks = {
-            "check1": (HealthStatus.HEALTHY, "All good"),
-            "check2": (HealthStatus.HEALTHY, "All good"),
-            "check3": (HealthStatus.HEALTHY, "All good"),
-        }
+    @pytest.mark.parametrize(
+        "checks,expected_status",
+        [
+            ({}, HealthStatus.UNHEALTHY),  # empty
+            (
+                {
+                    "check1": (HealthStatus.HEALTHY, "All good"),
+                    "check2": (HealthStatus.HEALTHY, "All good"),
+                    "check3": (HealthStatus.HEALTHY, "All good"),
+                },
+                HealthStatus.HEALTHY,
+            ),  # all healthy
+            (
+                {
+                    "check1": (HealthStatus.HEALTHY, "All good"),
+                    "check2": (HealthStatus.UNHEALTHY, "Problem found"),
+                    "check3": (HealthStatus.HEALTHY, "All good"),
+                },
+                HealthStatus.UNHEALTHY,
+            ),  # one unhealthy
+            (
+                {
+                    "check1": (HealthStatus.UNHEALTHY, "Problem 1"),
+                    "check2": (HealthStatus.UNHEALTHY, "Problem 2"),
+                },
+                HealthStatus.UNHEALTHY,
+            ),  # all unhealthy
+            (
+                {
+                    "check1": (HealthStatus.DEGRADED, "Minor issue"),
+                    "check2": (HealthStatus.UNHEALTHY, "Major issue"),
+                    "check3": (HealthStatus.HEALTHY, "All good"),
+                },
+                HealthStatus.UNHEALTHY,
+            ),  # degraded + unhealthy priority
+            (
+                {
+                    "check1": (HealthStatus.DEGRADED, "Minor issue"),
+                    "check2": (HealthStatus.HEALTHY, "All good"),
+                    "check3": (HealthStatus.HEALTHY, "All good"),
+                },
+                HealthStatus.DEGRADED,
+            ),  # degraded no unhealthy
+            (
+                {
+                    "check1": (HealthStatus.DEGRADED, "Issue 1"),
+                    "check2": (HealthStatus.DEGRADED, "Issue 2"),
+                    "check3": (HealthStatus.HEALTHY, "All good"),
+                },
+                HealthStatus.DEGRADED,
+            ),  # multiple degraded
+            ({"check1": (HealthStatus.DEGRADED, "Some issue")}, HealthStatus.DEGRADED),  # single check
+        ],
+    )
+    def test_get_overall_status(self, checks, expected_status):
+        """Test get_overall_status with various check combinations."""
         result = get_overall_status(checks)
-        assert result == HealthStatus.HEALTHY
-
-    def test_get_overall_status_single_unhealthy(self):
-        """Test with one unhealthy check returns UNHEALTHY."""
-        checks = {
-            "check1": (HealthStatus.HEALTHY, "All good"),
-            "check2": (HealthStatus.UNHEALTHY, "Problem found"),
-            "check3": (HealthStatus.HEALTHY, "All good"),
-        }
-        result = get_overall_status(checks)
-        assert result == HealthStatus.UNHEALTHY
-
-    def test_get_overall_status_all_unhealthy(self):
-        """Test with all unhealthy checks returns UNHEALTHY."""
-        checks = {
-            "check1": (HealthStatus.UNHEALTHY, "Problem 1"),
-            "check2": (HealthStatus.UNHEALTHY, "Problem 2"),
-        }
-        result = get_overall_status(checks)
-        assert result == HealthStatus.UNHEALTHY
-
-    def test_get_overall_status_degraded_priority(self):
-        """Test that UNHEALTHY takes priority over DEGRADED."""
-        checks = {
-            "check1": (HealthStatus.DEGRADED, "Minor issue"),
-            "check2": (HealthStatus.UNHEALTHY, "Major issue"),
-            "check3": (HealthStatus.HEALTHY, "All good"),
-        }
-        result = get_overall_status(checks)
-        assert result == HealthStatus.UNHEALTHY
-
-    def test_get_overall_status_degraded_no_unhealthy(self):
-        """Test with degraded but no unhealthy returns DEGRADED."""
-        checks = {
-            "check1": (HealthStatus.DEGRADED, "Minor issue"),
-            "check2": (HealthStatus.HEALTHY, "All good"),
-            "check3": (HealthStatus.HEALTHY, "All good"),
-        }
-        result = get_overall_status(checks)
-        assert result == HealthStatus.DEGRADED
-
-    def test_get_overall_status_multiple_degraded(self):
-        """Test with multiple degraded checks returns DEGRADED."""
-        checks = {
-            "check1": (HealthStatus.DEGRADED, "Issue 1"),
-            "check2": (HealthStatus.DEGRADED, "Issue 2"),
-            "check3": (HealthStatus.HEALTHY, "All good"),
-        }
-        result = get_overall_status(checks)
-        assert result == HealthStatus.DEGRADED
-
-    def test_get_overall_status_single_check(self):
-        """Test with single check."""
-        checks = {"check1": (HealthStatus.DEGRADED, "Some issue")}
-        result = get_overall_status(checks)
-        assert result == HealthStatus.DEGRADED
-
-    def test_get_overall_status_preserves_message_tuples(self):
+        assert result == expected_status
         """Test that message part of tuple is preserved."""
         checks = {
             "check1": (HealthStatus.HEALTHY, "First message"),
