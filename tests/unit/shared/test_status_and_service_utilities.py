@@ -11,6 +11,8 @@ from enum import Enum
 from typing import cast
 from unittest.mock import Mock, patch
 
+import pytest
+
 from roadmap.common.decorators import service_operation
 from roadmap.common.status_utils import StatusSummary
 from roadmap.core.domain.health import HealthStatus as ApplicationHealthStatus
@@ -162,53 +164,26 @@ class TestServiceOperationDecorator:
         result = failing_func(mock_self)
         assert result == {}
 
-    def test_log_level_error(self):
-        """Test error log level."""
+    @pytest.mark.parametrize(
+        "log_level,logger_method",
+        [
+            ("error", "error"),
+            ("warning", "warning"),
+            ("debug", "debug"),
+            ("info", "info"),
+        ],
+    )
+    def test_log_level_handling(self, log_level, logger_method):
+        """Test various log level settings in service_operation decorator."""
 
-        @service_operation(log_level="error")
+        @service_operation(log_level=log_level)
         def failing_func(self):
-            raise ValueError("Error message")
+            raise ValueError(f"{log_level.title()} message")
 
         with patch("roadmap.common.decorators.logger") as mock_logger:
             mock_self = Mock()
             failing_func(mock_self)
-            mock_logger.error.assert_called_once()
-
-    def test_log_level_warning(self):
-        """Test warning log level."""
-
-        @service_operation(log_level="warning")
-        def failing_func(self):
-            raise ValueError("Warning message")
-
-        with patch("roadmap.common.decorators.logger") as mock_logger:
-            mock_self = Mock()
-            failing_func(mock_self)
-            mock_logger.warning.assert_called_once()
-
-    def test_log_level_debug(self):
-        """Test debug log level."""
-
-        @service_operation(log_level="debug")
-        def failing_func(self):
-            raise ValueError("Debug message")
-
-        with patch("roadmap.common.decorators.logger") as mock_logger:
-            mock_self = Mock()
-            failing_func(mock_self)
-            mock_logger.debug.assert_called_once()
-
-    def test_log_level_info(self):
-        """Test info log level."""
-
-        @service_operation(log_level="info")
-        def failing_func(self):
-            raise ValueError("Info message")
-
-        with patch("roadmap.common.decorators.logger") as mock_logger:
-            mock_self = Mock()
-            failing_func(mock_self)
-            mock_logger.info.assert_called_once()
+            getattr(mock_logger, logger_method).assert_called_once()
 
     def test_invalid_log_level(self):
         """Test that invalid log level is rejected."""
