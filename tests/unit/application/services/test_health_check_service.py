@@ -170,42 +170,42 @@ class TestHealthCheckService:
         with patch.object(
             HealthCheck, "get_overall_status", return_value=HealthStatus.HEALTHY
         ):
-            assert service.is_healthy() is True
+            assert service.is_healthy()
 
     def test_is_healthy_false(self, service):
         """Test is_healthy returns False for non-healthy system."""
         with patch.object(
             HealthCheck, "get_overall_status", return_value=HealthStatus.DEGRADED
         ):
-            assert service.is_healthy() is False
+            assert not service.is_healthy()
 
     def test_is_degraded_true(self, service):
         """Test is_degraded returns True for degraded system."""
         with patch.object(
             HealthCheck, "get_overall_status", return_value=HealthStatus.DEGRADED
         ):
-            assert service.is_degraded() is True
+            assert service.is_degraded()
 
     def test_is_degraded_false(self, service):
         """Test is_degraded returns False for non-degraded system."""
         with patch.object(
             HealthCheck, "get_overall_status", return_value=HealthStatus.HEALTHY
         ):
-            assert service.is_degraded() is False
+            assert not service.is_degraded()
 
     def test_is_unhealthy_true(self, service):
         """Test is_unhealthy returns True for unhealthy system."""
         with patch.object(
             HealthCheck, "get_overall_status", return_value=HealthStatus.UNHEALTHY
         ):
-            assert service.is_unhealthy() is True
+            assert service.is_unhealthy()
 
     def test_is_unhealthy_false(self, service):
         """Test is_unhealthy returns False for healthy system."""
         with patch.object(
             HealthCheck, "get_overall_status", return_value=HealthStatus.HEALTHY
         ):
-            assert service.is_unhealthy() is False
+            assert not service.is_unhealthy()
 
     def test_service_error_handling_run_checks(self, service):
         """Test error handling in run_all_checks."""
@@ -249,9 +249,9 @@ class TestHealthCheckService:
             result2 = service.is_degraded()
             result3 = service.is_unhealthy()
 
-            assert result1 is True
-            assert result2 is False
-            assert result3 is False
+            assert result1
+            assert not result2
+            assert not result3
 
     def test_check_status_error_handling(self, service):
         """Test error handling when retrieving specific check."""
@@ -280,6 +280,6 @@ class TestHealthCheckService:
                 assert summary["overall_status"] == "degraded"
 
                 # Check status flags
-                assert service.is_degraded() is True
-                assert service.is_healthy() is False
-                assert service.is_unhealthy() is False
+                assert service.is_degraded()
+                assert not service.is_healthy()
+                assert not service.is_unhealthy()

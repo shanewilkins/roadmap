@@ -215,7 +215,7 @@ class TestProjectServiceSave:
 
         result = project_service.save_project(sample_project)
 
-        assert result is True
+        assert result
         mock_repository.save.assert_called_once()
         # Check updated timestamp was set
         assert sample_project.updated is not None
@@ -230,7 +230,7 @@ class TestProjectServiceSave:
 
         result = project_service.save_project(sample_project)
 
-        assert result is True
+        assert result
         mock_repository.save.assert_called_once()
 
     def test_save_project_handles_parse_errors(
@@ -247,7 +247,7 @@ class TestProjectServiceSave:
 
         result = project_service.save_project(sample_project)
 
-        assert result is True
+        assert result
         mock_repository.save.assert_called_once()
 
 
@@ -379,7 +379,7 @@ class TestProjectServiceDelete:
 
         result = project_service.delete_project("PROJ-001")
 
-        assert result is True
+        assert result
         mock_repository.delete.assert_called_once_with("PROJ-001")
 
     def test_delete_project_not_found(self, project_service):
@@ -390,7 +390,7 @@ class TestProjectServiceDelete:
 
         result = project_service.delete_project("NONEXISTENT")
 
-        assert result is False
+        assert not result
 
     def test_delete_project_partial_id(
         self, project_service, temp_dirs, sample_project
@@ -406,7 +406,7 @@ class TestProjectServiceDelete:
 
         result = project_service.delete_project("PROJ")
 
-        assert result is True
+        assert result
         mock_repository.delete.assert_called_once()
 
     def test_delete_project_skips_invalid_files(self, project_service, temp_dirs):
@@ -420,7 +420,7 @@ class TestProjectServiceDelete:
         result = project_service.delete_project("PROJ-001")
 
         # Should return False, not raise exception
-        assert result is False
+        assert not result
 
 
 class TestProjectServiceProgress:

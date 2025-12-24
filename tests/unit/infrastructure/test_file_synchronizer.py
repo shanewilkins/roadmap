@@ -219,7 +219,7 @@ invalid: yaml: content: here
         # Modify file
         test_file.write_text("modified content")
 
-        assert file_synchronizer.has_file_changed(test_file) is True
+        assert file_synchronizer.has_file_changed(test_file)
 
     def test_has_file_changed_detects_no_changes(
         self, file_synchronizer, db_manager, temp_data_dir
@@ -237,11 +237,11 @@ invalid: yaml: content: here
         )
 
         # Don't modify file - check immediately
-        assert file_synchronizer.has_file_changed(test_file) is False
+        assert not file_synchronizer.has_file_changed(test_file)
 
     def test_has_file_changed_unknown_file(self, file_synchronizer):
         """has_file_changed should return True for unknown files."""
-        assert file_synchronizer.has_file_changed(Path("unknown_file.md")) is True
+        assert file_synchronizer.has_file_changed(Path("unknown_file.md"))
 
     def test_should_do_full_rebuild_method_exists(self, file_synchronizer):
         """should_do_full_rebuild method should exist."""

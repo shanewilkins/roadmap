@@ -200,7 +200,7 @@ class TestVersionManager:
 
         manager = VersionManager(tmp_path)
         result = manager.check_version_consistency()
-        assert result["consistent"] is True
+        assert result["consistent"]
         assert result["pyproject_version"] == "1.2.3"
         assert result["init_version"] == "1.2.3"
 
@@ -208,7 +208,7 @@ class TestVersionManager:
         """Test version consistency check when pyproject missing."""
         manager = VersionManager(tmp_path)
         result = manager.check_version_consistency()
-        assert result["consistent"] is False
+        assert not result["consistent"]
         assert "No version found in pyproject.toml" in result["issues"]
 
     def test_check_version_consistency_mismatch(self, tmp_path):
@@ -223,5 +223,5 @@ class TestVersionManager:
 
         manager = VersionManager(tmp_path)
         result = manager.check_version_consistency()
-        assert result["consistent"] is False
+        assert not result["consistent"]
         assert "version mismatch" in " ".join(result["issues"]).lower()

@@ -186,7 +186,7 @@ class TestLogErrorWithContext:
         call_args = mock_logger.error.call_args
         # ConnectionError is subclass of OSError, so classified as SYSTEM_ERROR
         assert call_args[1]["error_classification"] == ErrorClassification.SYSTEM_ERROR
-        assert call_args[1]["is_recoverable"] is True
+        assert call_args[1]["is_recoverable"]
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
     def test_log_error_recovery_suggestion(self, mock_logger):
@@ -328,7 +328,7 @@ class TestLogDatabaseError:
         log_database_error(error, "delete", entity_type="project")
 
         call_args = mock_logger.error.call_args
-        assert call_args[1]["is_recoverable"] is True
+        assert call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "retry"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
@@ -338,7 +338,7 @@ class TestLogDatabaseError:
         log_database_error(error, "create", entity_type="issue")
 
         call_args = mock_logger.error.call_args
-        assert call_args[1]["is_recoverable"] is False
+        assert not call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "manual_intervention"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
@@ -413,7 +413,7 @@ class TestLogExternalServiceError:
         log_external_service_error(error, "slack_api", "post_message")
 
         call_args = mock_logger.error.call_args
-        assert call_args[1]["is_recoverable"] is True
+        assert call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "check_connectivity"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
@@ -423,7 +423,7 @@ class TestLogExternalServiceError:
         log_external_service_error(error, "github_api", "get_user")
 
         call_args = mock_logger.error.call_args
-        assert call_args[1]["is_recoverable"] is False
+        assert not call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "contact_support"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
@@ -512,7 +512,7 @@ class TestErrorLoggingIntegration:
 
         # Check if recoverable
         recoverable = is_error_recoverable(error)
-        assert recoverable is True
+        assert recoverable
 
         # Get recovery suggestion
         recovery = suggest_recovery(error)
@@ -527,7 +527,7 @@ class TestErrorLoggingIntegration:
         )
 
         call_args = mock_logger.error.call_args
-        assert call_args[1]["is_recoverable"] is True
+        assert call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "retry"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")
@@ -541,7 +541,7 @@ class TestErrorLoggingIntegration:
 
         # Check if recoverable
         recoverable = is_error_recoverable(error)
-        assert recoverable is False
+        assert not recoverable
 
         # Get recovery suggestion
         recovery = suggest_recovery(error)
@@ -565,7 +565,7 @@ class TestErrorLoggingIntegration:
 
         # Check if recoverable
         recoverable = is_error_recoverable(error)
-        assert recoverable is False
+        assert not recoverable
 
         # Log database error
         log_database_error(
@@ -576,7 +576,7 @@ class TestErrorLoggingIntegration:
         )
 
         call_args = mock_logger.error.call_args
-        assert call_args[1]["is_recoverable"] is False
+        assert not call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "manual_intervention"
 
     @patch("roadmap.infrastructure.logging.error_logging.logger")

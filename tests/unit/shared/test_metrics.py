@@ -18,7 +18,7 @@ class TestOperationMetric:
 
         assert metric.operation == "test_op"
         assert metric.duration_ms == 150.5
-        assert metric.success is True
+        assert metric.success
         assert metric.error is None
         assert isinstance(metric.timestamp, datetime)
         assert isinstance(metric.metadata, dict)
@@ -33,7 +33,7 @@ class TestOperationMetric:
             error="Connection timeout",
         )
 
-        assert metric.success is False
+        assert not metric.success
         assert metric.error == "Connection timeout"
 
     def test_metric_with_metadata(self):

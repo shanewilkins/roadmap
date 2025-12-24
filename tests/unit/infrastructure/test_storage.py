@@ -139,7 +139,7 @@ class TestStateManager:
 
     def test_is_initialized_returns_true_when_initialized(self, state_manager):
         """is_initialized should return True when database is initialized."""
-        assert state_manager.is_initialized() is True
+        assert state_manager.is_initialized()
 
     def test_is_initialized_returns_false_on_error(self, state_manager):
         """is_initialized should return False on database error."""
@@ -148,7 +148,7 @@ class TestStateManager:
             state_manager._local.connection.close()
         state_manager.db_path.unlink()
 
-        assert state_manager.is_initialized() is False
+        assert not state_manager.is_initialized()
 
     def test_create_project_inserts_project(self, state_manager):
         """create_project should insert project into database."""
@@ -245,7 +245,7 @@ class TestStateManager:
             "proj-126", {"name": "Updated Name", "description": "New description"}
         )
 
-        assert success is True
+        assert success
 
         # Verify update
         project = state_manager.get_project("proj-126")
@@ -255,7 +255,7 @@ class TestStateManager:
     def test_update_project_returns_false_when_not_found(self, state_manager):
         """update_project should return False when project doesn't exist."""
         success = state_manager.update_project("nonexistent", {"name": "New Name"})
-        assert success is False
+        assert not success
 
     def test_delete_project_removes_project(self, state_manager):
         """delete_project should remove project from database."""
@@ -271,13 +271,13 @@ class TestStateManager:
         # Delete the project
         success = state_manager.delete_project("proj-127")
 
-        assert success is True
+        assert success
         assert state_manager.get_project("proj-127") is None
 
     def test_delete_project_returns_false_when_not_found(self, state_manager):
         """delete_project should return False when project doesn't exist."""
         success = state_manager.delete_project("nonexistent")
-        assert success is False
+        assert not success
 
     def test_get_sync_state_returns_value(self, state_manager):
         """get_sync_state should return stored sync state value."""

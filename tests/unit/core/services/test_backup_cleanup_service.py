@@ -184,7 +184,7 @@ class TestShouldDeleteBackup:
         }
 
         # Index 10 with keep=5 should be deleted
-        assert BackupCleanupService._should_delete_backup(10, backup, 5, None) is True
+        assert BackupCleanupService._should_delete_backup(10, backup, 5, None)
 
     def test_keep_within_count(self):
         """Test preservation when within keep count."""
@@ -196,7 +196,7 @@ class TestShouldDeleteBackup:
         }
 
         # Index 3 with keep=5 should be kept
-        assert BackupCleanupService._should_delete_backup(3, backup, 5, None) is False
+        assert not BackupCleanupService._should_delete_backup(3, backup, 5, None)
 
     def test_delete_older_than_cutoff(self):
         """Test deletion when older than cutoff date."""
@@ -239,7 +239,7 @@ class TestShouldDeleteBackup:
         cutoff = datetime.now() - timedelta(days=7)
 
         # Beyond keep count AND older than cutoff
-        assert BackupCleanupService._should_delete_backup(10, backup, 5, cutoff) is True
+        assert BackupCleanupService._should_delete_backup(10, backup, 5, cutoff)
 
 
 class TestSelectBackupsForDeletion:

@@ -80,21 +80,21 @@ class TestRoadmapCoreAdvancedIssueOperations:
 
         # Move to milestone 1
         result = core.issues.move_to_milestone(issue.id, "Milestone 1")
-        assert result is True
+        assert result
 
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone == "Milestone 1"
 
         # Move to milestone 2
         result = core.issues.move_to_milestone(issue.id, "Milestone 2")
-        assert result is True
+        assert result
 
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone == "Milestone 2"
 
         # Move to backlog (None)
         result = core.issues.move_to_milestone(issue.id, None)
-        assert result is True
+        assert result
 
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.milestone is None
@@ -102,7 +102,7 @@ class TestRoadmapCoreAdvancedIssueOperations:
     def test_move_issue_to_milestone_nonexistent_issue(self, core):
         """Test moving nonexistent issue."""
         result = core.issues.move_to_milestone("nonexistent-id", "Some Milestone")
-        assert result is False
+        assert not result
 
     def test_get_next_milestone(self, core):
         """Test getting the next upcoming milestone."""
@@ -483,7 +483,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
 
             result = core.issues.delete(issue.id)
             # Should handle error gracefully
-            assert result is False
+            assert not result
 
     def test_delete_milestone_with_file_error(self, core):
         """Test milestone deletion with file system errors."""
@@ -495,7 +495,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
 
             result = core.milestones.delete("Test Milestone")
             # Should handle error gracefully
-            assert result is False
+            assert not result
 
     def test_list_issues_with_corrupted_files(self, core):
         """Test issue listing with corrupted issue files."""

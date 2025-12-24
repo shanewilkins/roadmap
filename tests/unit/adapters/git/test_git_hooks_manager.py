@@ -61,7 +61,7 @@ class TestGitHookManager:
 
             manager = GitHookManager(mock_core)
             result = manager.install_hooks()
-            assert result is False
+            assert not result
 
     def test_uninstall_hooks(self, manager):
         """Test uninstalling hooks."""
@@ -78,7 +78,7 @@ class TestGitHookManager:
             manager = GitHookManager(mock_core)
             manager.hooks_dir = None
             result = manager.uninstall_hooks()
-            assert result is False
+            assert not result
 
     def test_get_hooks_status(self, manager):
         """Test getting hooks status."""

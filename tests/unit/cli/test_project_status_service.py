@@ -30,7 +30,7 @@ class TestStatusDataService:
 
         result = StatusDataService.gather_status_data(mock_core)
 
-        assert result["has_data"] is False
+        assert not result["has_data"]
         assert result["issue_count"] == 0
         assert result["milestone_count"] == 0
         assert result["issues"] == []
@@ -45,7 +45,7 @@ class TestStatusDataService:
 
         result = StatusDataService.gather_status_data(mock_core)
 
-        assert result["has_data"] is True
+        assert result["has_data"]
         assert result["issue_count"] == 3
         assert result["milestone_count"] == 0
         assert result["issues"] == mock_issues
@@ -59,7 +59,7 @@ class TestStatusDataService:
 
         result = StatusDataService.gather_status_data(mock_core)
 
-        assert result["has_data"] is True
+        assert result["has_data"]
         assert result["issue_count"] == 0
         assert result["milestone_count"] == 2
         assert result["milestones"] == mock_milestones
@@ -74,7 +74,7 @@ class TestStatusDataService:
 
         result = StatusDataService.gather_status_data(mock_core)
 
-        assert result["has_data"] is True
+        assert result["has_data"]
         assert result["issue_count"] == 2
         assert result["milestone_count"] == 1
 
@@ -85,7 +85,7 @@ class TestStatusDataService:
 
         result = StatusDataService.gather_status_data(mock_core)
 
-        assert result["has_data"] is False
+        assert not result["has_data"]
         assert result["issue_count"] == 0
         assert result["issues"] == []
 

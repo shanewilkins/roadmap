@@ -226,7 +226,7 @@ class TestFilterSpecParser:
         column_types = {"active": ColumnType.BOOLEAN}
         result = FilterSpecParser.parse(f"active={bool_true_val}", column_types)
         assert result is not None
-        assert result[0].value is True
+        assert result[0].value
 
     @pytest.mark.parametrize(
         "bool_false_val",
@@ -237,7 +237,7 @@ class TestFilterSpecParser:
         column_types = {"active": ColumnType.BOOLEAN}
         result = FilterSpecParser.parse(f"active={bool_false_val}", column_types)
         assert result is not None
-        assert result[0].value is False
+        assert not result[0].value
 
     def test_parse_case_insensitive_column(self):
         """Test case-insensitive column names."""

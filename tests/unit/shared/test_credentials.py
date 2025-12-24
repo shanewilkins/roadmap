@@ -96,7 +96,7 @@ class TestMacOSKeychain:
         mock_run.return_value.returncode = 0
 
         result = macos_manager._store_token_keychain("test_token")
-        assert result is True
+        assert result
 
         # Verify correct command was called
         mock_run.assert_called_once()
@@ -112,7 +112,7 @@ class TestMacOSKeychain:
         repo_info = {"owner": "testuser", "repo": "testrepo"}
 
         result = macos_manager._store_token_keychain("test_token", repo_info)
-        assert result is True
+        assert result
 
         # Verify repository info is included in comment
         args = mock_run.call_args[0][0]
@@ -126,7 +126,7 @@ class TestMacOSKeychain:
         mock_run.return_value.returncode = 1
 
         result = macos_manager._store_token_keychain("test_token")
-        assert result is False
+        assert not result
 
     @patch("subprocess.run")
     def test_get_token_keychain_success(self, mock_run, macos_manager):
@@ -157,7 +157,7 @@ class TestMacOSKeychain:
         mock_run.return_value.returncode = 0
 
         result = macos_manager._delete_token_keychain()
-        assert result is True
+        assert result
 
         # Verify correct command was called
         args = mock_run.call_args[0][0]
@@ -170,7 +170,7 @@ class TestMacOSKeychain:
         mock_run.return_value.returncode = 0
 
         result = macos_manager._check_keychain_available()
-        assert result is True
+        assert result
 
     @patch("subprocess.run")
     def test_check_keychain_available_failure(self, mock_run, macos_manager):
@@ -178,7 +178,7 @@ class TestMacOSKeychain:
         mock_run.side_effect = FileNotFoundError()
 
         result = macos_manager._check_keychain_available()
-        assert result is False
+        assert not result
 
 
 class TestWindowsCredentialManager:
@@ -197,7 +197,7 @@ class TestWindowsCredentialManager:
 
         with patch.dict("sys.modules", {"keyring": mock_keyring}):
             result = windows_manager._store_token_wincred("test_token")
-            assert result is True
+            assert result
             mock_keyring.set_password.assert_called_once()
 
     def test_store_token_wincred_without_keyring(self, windows_manager):
@@ -207,7 +207,7 @@ class TestWindowsCredentialManager:
         ) as mock_cmdkey:
             with patch("builtins.__import__", side_effect=ImportError()):
                 result = windows_manager._store_token_wincred("test_token")
-                assert result is True
+                assert result
                 mock_cmdkey.assert_called_once()
 
     def test_get_token_wincred_with_keyring(self, windows_manager):
@@ -225,7 +225,7 @@ class TestWindowsCredentialManager:
 
         with patch.dict("sys.modules", {"keyring": mock_keyring}):
             result = windows_manager._check_wincred_available()
-            assert result is True
+            assert result
 
     @patch("subprocess.run")
     def test_check_wincred_available_with_cmdkey(self, mock_run, windows_manager):
@@ -234,7 +234,7 @@ class TestWindowsCredentialManager:
 
         with patch("builtins.__import__", side_effect=ImportError()):
             result = windows_manager._check_wincred_available()
-            assert result is True
+            assert result
 
 
 class TestLinuxSecretService:
@@ -253,7 +253,7 @@ class TestLinuxSecretService:
 
         with patch.dict("sys.modules", {"keyring": mock_keyring}):
             result = linux_manager._store_token_secretservice("test_token")
-            assert result is True
+            assert result
             mock_keyring.set_password.assert_called_once()
 
     def test_store_token_secretservice_without_keyring(self, linux_manager):
@@ -263,7 +263,7 @@ class TestLinuxSecretService:
         ) as mock_fallback:
             with patch("builtins.__import__", side_effect=ImportError()):
                 result = linux_manager._store_token_secretservice("test_token")
-                assert result is False
+                assert not result
                 mock_fallback.assert_called_once()
 
     def test_check_secretservice_available_with_keyring(self, linux_manager):
@@ -273,7 +273,7 @@ class TestLinuxSecretService:
 
         with patch.dict("sys.modules", {"keyring": mock_keyring}):
             result = linux_manager._check_secretservice_available()
-            assert result is True
+            assert result
 
 
 class TestFallbackImplementation:
@@ -289,7 +289,7 @@ class TestFallbackImplementation:
     def test_store_token_fallback(self, unsupported_manager):
         """Test fallback token storage."""
         result = unsupported_manager._store_token_fallback("test_token")
-        assert result is False
+        assert not result
 
     @patch.dict("os.environ", {"GITHUB_TOKEN": "env_token"})
     def test_get_token_fallback_with_env(self, unsupported_manager):
@@ -306,12 +306,12 @@ class TestFallbackImplementation:
     def test_delete_token_fallback(self, unsupported_manager):
         """Test fallback token deletion."""
         result = unsupported_manager._delete_token_fallback()
-        assert result is True
+        assert result
 
     def test_is_available_unsupported(self, unsupported_manager):
         """Test availability check for unsupported system."""
         result = unsupported_manager.is_available()
-        assert result is False
+        assert not result
 
 
 class TestIntegrationScenarios:
@@ -336,7 +336,7 @@ class TestIntegrationScenarios:
                     with patch.object(credential_manager, "system", "darwin"):
                         # Store token
                         result = credential_manager.store_token("test_token")
-                        assert result is True
+                        assert result
 
                         # Retrieve token (with no environment variable)
                         with patch.dict("os.environ", {}, clear=True):

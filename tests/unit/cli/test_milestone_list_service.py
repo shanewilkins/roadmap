@@ -203,7 +203,7 @@ class TestMilestoneListService:
         service = MilestoneListService(mock_core)
         result = service.get_milestones_list_data()
 
-        assert result["has_data"] is False
+        assert not result["has_data"]
         assert result["count"] == 0
         assert result["milestones"] == []
 
@@ -228,7 +228,7 @@ class TestMilestoneListService:
         service = MilestoneListService(mock_core)
         result = service.get_milestones_list_data()
 
-        assert result["has_data"] is True
+        assert result["has_data"]
         assert result["count"] == 1
         assert "v1.0" in result["progress"]
         assert "v1.0" in result["estimates"]
@@ -311,5 +311,5 @@ class TestMilestoneListService:
         service = MilestoneListService(mock_core)
         result = service.get_milestones_list_data()
 
-        assert result["has_data"] is False
+        assert not result["has_data"]
         assert result["count"] == 0

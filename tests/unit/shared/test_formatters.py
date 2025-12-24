@@ -76,13 +76,13 @@ class TestFormatPanel:
         """Test expanded panel."""
         panel = format_panel("Content", title="Title", expand=True)
         assert panel is not None
-        assert panel.expand is True
+        assert panel.expand
 
     def test_format_panel_not_expanded(self):
         """Test non-expanded panel."""
         panel = format_panel("Content", expand=False)
         assert panel is not None
-        assert panel.expand is False
+        assert not panel.expand
 
     def test_format_panel_empty_content(self):
         """Test panel with empty content."""

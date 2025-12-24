@@ -74,7 +74,7 @@ class TestShowGitHubSetupInstructions:
         """Test showing instructions in --yes mode."""
         with patch("roadmap.infrastructure.github.setup.console"):
             result = show_github_setup_instructions("owner/repo", yes=True)
-            assert result is True
+            assert result
 
     def test_show_instructions_with_confirm_yes(self):
         """Test showing instructions with user confirming."""
@@ -83,7 +83,7 @@ class TestShowGitHubSetupInstructions:
                 "roadmap.infrastructure.github.setup.click.confirm", return_value=True
             ):
                 result = show_github_setup_instructions("owner/repo", yes=False)
-                assert result is True
+                assert result
 
     def test_show_instructions_with_confirm_no(self):
         """Test showing instructions with user declining."""
@@ -92,7 +92,7 @@ class TestShowGitHubSetupInstructions:
                 "roadmap.infrastructure.github.setup.click.confirm", return_value=False
             ):
                 result = show_github_setup_instructions("owner/repo", yes=False)
-                assert result is False
+                assert not result
 
 
 class TestGitHubInitializationServiceCoverage:
@@ -134,7 +134,7 @@ class TestGitHubInitializationServiceCoverage:
                         "owner/repo", interactive=False, yes=True, token=None
                     )
                     # Should return False due to import error
-                    assert result is False
+                    assert not result
 
     def test_configure_integration_general_exception(self, mock_core):
         """Test configure integration with general exception.
@@ -152,7 +152,7 @@ class TestGitHubInitializationServiceCoverage:
                     "owner/repo", interactive=False, yes=True, token=None
                 )
                 # Should return False due to exception
-                assert result is False
+                assert not result
 
     def test_resolve_and_test_token_no_token(self, mock_core):
         """Test when token resolution returns no token.
@@ -217,7 +217,7 @@ class TestGitHubInitializationServiceCoverage:
                     result = service._validate_github_access(
                         "test_token", "owner/repo", interactive=True, yes=False
                     )
-                    assert result is False
+                    assert not result
 
     def test_validate_github_access_auth_failure_interactive_cancel(self, mock_core):
         """Test auth failure with user choosing to cancel.
@@ -244,7 +244,7 @@ class TestGitHubInitializationServiceCoverage:
                     result = service._validate_github_access(
                         "test_token", "owner/repo", interactive=True, yes=False
                     )
-                    assert result is False
+                    assert not result
 
     def test_validate_github_access_repo_failure_interactive_continue(self, mock_core):
         """Test repo access failure with user choosing to continue.
@@ -272,7 +272,7 @@ class TestGitHubInitializationServiceCoverage:
                     result = service._validate_github_access(
                         "test_token", "owner/repo", interactive=True, yes=False
                     )
-                    assert result is True
+                    assert result
 
     def test_validate_github_access_success_path(self, mock_core):
         """Test successful GitHub access validation."""
@@ -293,7 +293,7 @@ class TestGitHubInitializationServiceCoverage:
                 result = service._validate_github_access(
                     "test_token", "owner/repo", interactive=False, yes=True
                 )
-                assert result is True
+                assert result
 
     def test_store_credentials_and_config_new_token(self, mock_core):
         """Test storing new credentials.

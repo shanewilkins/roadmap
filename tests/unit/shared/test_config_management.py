@@ -131,7 +131,7 @@ class TestConfigSplitting:
         config = manager.load()
 
         # Verify deep merge
-        assert config.github.enabled is True  # Shared
+        assert config.github.enabled  # Shared
         assert config.github.owner == "org"  # Shared
         # Note: sync_settings will be merged based on the implementation
 

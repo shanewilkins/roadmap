@@ -51,20 +51,20 @@ class TestGitHubConfigValidator:
         """Test config validation with missing token."""
         mock_service.get_github_config.return_value = (None, "owner", "repo")
         is_valid, error = validator.validate_config()
-        assert is_valid is False
+        assert not is_valid
         assert "GitHub not configured" in error
 
     def test_validate_config_no_repo(self, validator, mock_service):
         """Test config validation with missing repo."""
         mock_service.get_github_config.return_value = ("token123", "owner", None)
         is_valid, error = validator.validate_config()
-        assert is_valid is False
+        assert not is_valid
 
     def test_validate_config_token_too_short(self, validator, mock_service):
         """Test config validation with token too short."""
         mock_service.get_github_config.return_value = ("short", "owner", "repo")
         is_valid, error = validator.validate_config()
-        assert is_valid is False
+        assert not is_valid
         assert "token appears invalid" in error
 
     def test_validate_config_valid(self, validator, mock_service):
@@ -75,14 +75,14 @@ class TestGitHubConfigValidator:
             "owner/repo",
         )
         is_valid, error = validator.validate_config()
-        assert is_valid is True
+        assert is_valid
         assert error is None
 
     def test_validate_token_no_token(self, validator, mock_service):
         """Test token validation with no token."""
         mock_service.get_github_config.return_value = (None, "owner", "repo")
         is_valid, error = validator.validate_token()
-        assert is_valid is False
+        assert not is_valid
         assert "GitHub token not set" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -98,7 +98,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_token()
-        assert is_valid is True
+        assert is_valid
         assert error is None
         mock_get.assert_called_once()
 
@@ -115,7 +115,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_token()
-        assert is_valid is False
+        assert not is_valid
         assert "invalid or expired" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -133,7 +133,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_token()
-        assert is_valid is False
+        assert not is_valid
         assert "insufficient permissions" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -149,7 +149,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_token()
-        assert is_valid is False
+        assert not is_valid
         assert "GitHub API error" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -163,7 +163,7 @@ class TestGitHubConfigValidator:
         mock_get.side_effect = requests.RequestException("Connection failed")
 
         is_valid, error = validator.validate_token()
-        assert is_valid is False
+        assert not is_valid
         assert "Failed to reach GitHub" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -173,7 +173,7 @@ class TestGitHubConfigValidator:
         """Test repo validation with incomplete config."""
         mock_service.get_github_config.return_value = (None, "owner", None)
         is_valid, error = validator.validate_repo_access()
-        assert is_valid is False
+        assert not is_valid
         assert "incomplete" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -189,7 +189,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_repo_access()
-        assert is_valid is True
+        assert is_valid
         assert error is None
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -205,7 +205,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_repo_access()
-        assert is_valid is False
+        assert not is_valid
         assert "Access denied" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -221,7 +221,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_repo_access()
-        assert is_valid is False
+        assert not is_valid
         assert "not found" in error
 
     @patch("roadmap.core.services.github_config_validator.requests.get")
@@ -237,7 +237,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_all()
-        assert is_valid is True
+        assert is_valid
         assert error is None
         # Should call requests 2 times (token and repo)
         assert mock_get.call_count == 2
@@ -248,7 +248,7 @@ class TestGitHubConfigValidator:
         mock_service.get_github_config.return_value = (None, "owner", "repo")
 
         is_valid, error = validator.validate_all()
-        assert is_valid is False
+        assert not is_valid
         assert "GitHub not configured" in error
         # Should not call requests
         mock_get.assert_not_called()
@@ -266,7 +266,7 @@ class TestGitHubConfigValidator:
         mock_get.return_value = mock_response
 
         is_valid, error = validator.validate_all()
-        assert is_valid is False
+        assert not is_valid
         assert "invalid or expired" in error
         # Should call requests 1 time (token check)
         assert mock_get.call_count == 1
@@ -287,7 +287,7 @@ class TestGitHubConfigValidator:
         mock_get.side_effect = [success_response, fail_response]
 
         is_valid, error = validator.validate_all()
-        assert is_valid is False
+        assert not is_valid
         assert "not found" in error
         # Should call requests 2 times
         assert mock_get.call_count == 2

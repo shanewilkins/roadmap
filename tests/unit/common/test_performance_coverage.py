@@ -161,7 +161,7 @@ class TestTimedOperationDecorator:
             # Verify metric was recorded with success=True
             call_args = mock_instance.record.call_args
             metric = call_args[0][0]
-            assert metric.success is True
+            assert metric.success
 
     def test_timed_operation_records_failure_metric(self):
         """Test timed operation records failure metric."""
@@ -181,7 +181,7 @@ class TestTimedOperationDecorator:
             # Verify metric was recorded with success=False
             call_args = mock_instance.record.call_args
             metric = call_args[0][0]
-            assert metric.success is False
+            assert not metric.success
 
 
 class TestAsyncTimedOperationDecorator:

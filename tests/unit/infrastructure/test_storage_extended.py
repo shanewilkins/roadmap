@@ -60,7 +60,7 @@ class TestStateManagerUtilities:
 
     def test_database_exists(self, state_manager, temp_db):
         """Test database_exists returns True for existing database."""
-        assert state_manager.database_exists() is True
+        assert state_manager.database_exists()
 
     def test_database_exists_returns_false_for_missing_file(self):
         """Test database_exists returns False when file doesn't exist."""
@@ -72,7 +72,7 @@ class TestStateManagerUtilities:
             # Delete the file that was created by init
             db_path.unlink()
 
-            assert manager.database_exists() is False
+            assert not manager.database_exists()
 
 
 class TestStateManagerFileHashing:
@@ -111,14 +111,14 @@ class TestStateManagerFileHashing:
 
         try:
             result = state_manager.has_file_changed(file_path)
-            assert result is True
+            assert result
         finally:
             file_path.unlink()
 
     def test_has_file_changed_nonexistent_file(self, state_manager):
         """Test has_file_changed returns True for nonexistent file."""
         result = state_manager.has_file_changed(Path("/nonexistent/file.txt"))
-        assert result is True
+        assert result
 
     def test_has_file_changed_after_sync(self, state_manager):
         """Test has_file_changed returns False after syncing."""
@@ -139,7 +139,7 @@ class TestStateManagerFileHashing:
 
             # File should not show as changed
             result = state_manager.has_file_changed(file_path)
-            assert result is False
+            assert not result
         finally:
             file_path.unlink()
 
@@ -163,7 +163,7 @@ class TestStateManagerFileHashing:
 
             # Should detect change
             result = state_manager.has_file_changed(file_path)
-            assert result is True
+            assert result
         finally:
             file_path.unlink()
 
@@ -243,7 +243,7 @@ class TestStateManagerConflictDetection:
         """Test has_git_conflicts returns False when no conflicts."""
         with patch.object(state_manager, "check_git_conflicts", return_value=[]):
             result = state_manager.has_git_conflicts()
-            assert result is False
+            assert not result
 
     def test_has_git_conflicts_with_conflicts(self, state_manager):
         """Test has_git_conflicts returns True when conflicts exist."""
@@ -313,7 +313,7 @@ class TestStateManagerSafetyChecks:
     def test_is_safe_for_writes_no_conflicts(self, state_manager):
         """Test is_safe_for_writes returns True when safe."""
         safe, message = state_manager.is_safe_for_writes()
-        assert safe is True
+        assert safe
         assert isinstance(message, str)
         assert len(message) > 0
 
@@ -328,5 +328,5 @@ class TestStateManagerSafetyChecks:
             ),
         ):
             safe, message = state_manager.is_safe_for_writes()
-            assert safe is False
+            assert not safe
             assert "conflicts" in message.lower()

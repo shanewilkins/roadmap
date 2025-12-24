@@ -113,8 +113,8 @@ class TestColumnDef:
             type=ColumnType.STRING,
             sortable=False,
         )
-        assert sortable_col.sortable is True
-        assert non_sortable_col.sortable is False
+        assert sortable_col.sortable
+        assert not non_sortable_col.sortable
 
     def test_column_visibility(self):
         """Test column filterable flag."""
@@ -130,8 +130,8 @@ class TestColumnDef:
             type=ColumnType.STRING,
             filterable=False,
         )
-        assert filterable_col.filterable is True
-        assert non_filterable_col.filterable is False
+        assert filterable_col.filterable
+        assert not non_filterable_col.filterable
 
     def test_column_style_and_description(self):
         """Test column with style and description."""

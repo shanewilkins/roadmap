@@ -168,7 +168,7 @@ class TestMetricsCollection:
         )
         assert metric.operation == "test_op"
         assert metric.duration_ms == 123.45
-        assert metric.success is True
+        assert metric.success
         assert metric.error is None
 
     def test_operation_metric_with_error(self):
@@ -182,5 +182,5 @@ class TestMetricsCollection:
             error="Connection timeout",
         )
         assert metric.operation == "failed_op"
-        assert metric.success is False
+        assert not metric.success
         assert metric.error == "Connection timeout"

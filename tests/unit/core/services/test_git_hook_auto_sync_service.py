@@ -15,13 +15,13 @@ class TestGitHookAutoSyncConfig:
     def test_init_defaults(self):
         """Test initialization with default values."""
         config = GitHookAutoSyncConfig()
-        assert config.auto_sync_enabled is False
-        assert config.sync_on_commit is False
-        assert config.sync_on_checkout is False
-        assert config.sync_on_merge is False
-        assert config.confirm_before_sync is True
-        assert config.force_local is False
-        assert config.force_github is False
+        assert not config.auto_sync_enabled
+        assert not config.sync_on_commit
+        assert not config.sync_on_checkout
+        assert not config.sync_on_merge
+        assert config.confirm_before_sync
+        assert not config.force_local
+        assert not config.force_github
 
     def test_init_custom_values(self):
         """Test initialization with custom values."""
@@ -32,12 +32,12 @@ class TestGitHookAutoSyncConfig:
             confirm_before_sync=False,
             force_local=True,
         )
-        assert config.auto_sync_enabled is True
-        assert config.sync_on_commit is True
-        assert config.sync_on_checkout is True
-        assert config.confirm_before_sync is False
-        assert config.force_local is True
-        assert config.sync_on_merge is False
+        assert config.auto_sync_enabled
+        assert config.sync_on_commit
+        assert config.sync_on_checkout
+        assert not config.confirm_before_sync
+        assert config.force_local
+        assert not config.sync_on_merge
 
     def test_to_dict(self):
         """Test converting config to dictionary."""
@@ -47,10 +47,10 @@ class TestGitHookAutoSyncConfig:
             confirm_before_sync=False,
         )
         result = config.to_dict()
-        assert result["auto_sync_enabled"] is True
-        assert result["sync_on_commit"] is True
-        assert result["confirm_before_sync"] is False
-        assert result["force_local"] is False
+        assert result["auto_sync_enabled"]
+        assert result["sync_on_commit"]
+        assert not result["confirm_before_sync"]
+        assert not result["force_local"]
 
     def test_from_dict(self):
         """Test creating config from dictionary."""
@@ -64,20 +64,20 @@ class TestGitHookAutoSyncConfig:
             "force_github": True,
         }
         config = GitHookAutoSyncConfig.from_dict(data)
-        assert config.auto_sync_enabled is True
-        assert config.sync_on_commit is True
-        assert config.sync_on_checkout is False
-        assert config.sync_on_merge is True
-        assert config.confirm_before_sync is False
-        assert config.force_github is True
+        assert config.auto_sync_enabled
+        assert config.sync_on_commit
+        assert not config.sync_on_checkout
+        assert config.sync_on_merge
+        assert not config.confirm_before_sync
+        assert config.force_github
 
     def test_from_dict_with_defaults(self):
         """Test from_dict with partial data uses defaults."""
         data = {"auto_sync_enabled": True}
         config = GitHookAutoSyncConfig.from_dict(data)
-        assert config.auto_sync_enabled is True
-        assert config.sync_on_commit is False
-        assert config.confirm_before_sync is True
+        assert config.auto_sync_enabled
+        assert not config.sync_on_commit
+        assert config.confirm_before_sync
 
     def test_to_dict_from_dict_roundtrip(self):
         """Test roundtrip conversion."""
@@ -115,7 +115,7 @@ class TestGitHookAutoSyncService:
             service = GitHookAutoSyncService(mock_core)
             config = service.get_config()
             assert isinstance(config, GitHookAutoSyncConfig)
-            assert config.auto_sync_enabled is False
+            assert not config.auto_sync_enabled
 
     def test_set_config(self):
         """Test setting configuration."""
@@ -126,9 +126,9 @@ class TestGitHookAutoSyncService:
             service = GitHookAutoSyncService(mock_core)
             config = GitHookAutoSyncConfig(auto_sync_enabled=True, sync_on_commit=True)
             service.set_config(config)
-            assert service.get_config().auto_sync_enabled is True
+            assert service.get_config().auto_sync_enabled
         # Verify config was set
-        assert service.get_config().auto_sync_enabled is True
+        assert service.get_config().auto_sync_enabled
 
     def test_config_persistence(self):
         """Test that config can be persisted and retrieved."""
@@ -160,15 +160,15 @@ class TestGitHookAutoSyncService:
             # First config
             config1 = GitHookAutoSyncConfig(auto_sync_enabled=True)
             service.set_config(config1)
-            assert service.get_config().auto_sync_enabled is True
+            assert service.get_config().auto_sync_enabled
 
             # Second config
             config2 = GitHookAutoSyncConfig(
                 auto_sync_enabled=False, sync_on_commit=True
             )
             service.set_config(config2)
-            assert service.get_config().auto_sync_enabled is False
-            assert service.get_config().sync_on_commit is True
+            assert not service.get_config().auto_sync_enabled
+            assert service.get_config().sync_on_commit
 
 
 class TestGitHookAutoSyncConfigEdgeCases:
@@ -189,10 +189,10 @@ class TestGitHookAutoSyncConfigEdgeCases:
     def test_from_dict_with_empty_dict(self):
         """Test from_dict with empty dictionary."""
         config = GitHookAutoSyncConfig.from_dict({})
-        assert config.auto_sync_enabled is False
-        assert config.sync_on_commit is False
-        assert config.sync_on_checkout is False
-        assert config.sync_on_merge is False
+        assert not config.auto_sync_enabled
+        assert not config.sync_on_commit
+        assert not config.sync_on_checkout
+        assert not config.sync_on_merge
 
     def test_from_dict_ignores_extra_keys(self):
         """Test from_dict ignores unknown keys."""
@@ -202,7 +202,7 @@ class TestGitHookAutoSyncConfigEdgeCases:
             "another_unknown": 123,
         }
         config = GitHookAutoSyncConfig.from_dict(data)
-        assert config.auto_sync_enabled is True
+        assert config.auto_sync_enabled
 
     def test_to_dict_contains_all_fields(self):
         """Test to_dict includes all configuration fields."""
@@ -222,8 +222,8 @@ class TestGitHookAutoSyncConfigEdgeCases:
     def test_force_local_and_force_github_mutually_exclusive_behavior(self):
         """Test that both force flags can be set independently."""
         config = GitHookAutoSyncConfig(force_local=True, force_github=True)
-        assert config.force_local is True
-        assert config.force_github is True
+        assert config.force_local
+        assert config.force_github
 
     def test_config_with_all_sync_triggers_enabled(self):
         """Test config with all sync triggers enabled."""
@@ -233,10 +233,10 @@ class TestGitHookAutoSyncConfigEdgeCases:
             sync_on_checkout=True,
             sync_on_merge=True,
         )
-        assert config.auto_sync_enabled is True
-        assert config.sync_on_commit is True
-        assert config.sync_on_checkout is True
-        assert config.sync_on_merge is True
+        assert config.auto_sync_enabled
+        assert config.sync_on_commit
+        assert config.sync_on_checkout
+        assert config.sync_on_merge
 
     def test_config_with_all_sync_triggers_disabled(self):
         """Test config with all sync triggers disabled."""
@@ -246,10 +246,10 @@ class TestGitHookAutoSyncConfigEdgeCases:
             sync_on_checkout=False,
             sync_on_merge=False,
         )
-        assert config.auto_sync_enabled is False
-        assert config.sync_on_commit is False
-        assert config.sync_on_checkout is False
-        assert config.sync_on_merge is False
+        assert not config.auto_sync_enabled
+        assert not config.sync_on_commit
+        assert not config.sync_on_checkout
+        assert not config.sync_on_merge
 
 
 class TestGitHookAutoSyncServiceAdvanced:
@@ -374,8 +374,8 @@ class TestGitHookAutoSyncConfigSerialization:
             "force_github": False,
         }
         config = GitHookAutoSyncConfig.from_dict(data)
-        assert config.auto_sync_enabled is True
-        assert config.sync_on_checkout is True
+        assert config.auto_sync_enabled
+        assert config.sync_on_checkout
 
 
 class TestGitHookAutoSyncIntegration:
@@ -390,19 +390,19 @@ class TestGitHookAutoSyncIntegration:
         # Step 1: Enable auto-sync
         config = GitHookAutoSyncConfig(auto_sync_enabled=True)
         service.set_config(config)
-        assert service.get_config().auto_sync_enabled is True
+        assert service.get_config().auto_sync_enabled
 
         # Step 2: Enable commit trigger
         config = service.get_config()
         config.sync_on_commit = True
         service.set_config(config)
-        assert service.get_config().sync_on_commit is True
+        assert service.get_config().sync_on_commit
 
         # Step 3: Disable confirmation
         config = service.get_config()
         config.confirm_before_sync = False
         service.set_config(config)
-        assert service.get_config().confirm_before_sync is False
+        assert not service.get_config().confirm_before_sync
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_workflow_reset_to_defaults(self, mock_sync_service):
@@ -426,12 +426,12 @@ class TestGitHookAutoSyncIntegration:
         service.set_config(default_config)
         retrieved = service.get_config()
 
-        assert retrieved.auto_sync_enabled is False
-        assert retrieved.sync_on_commit is False
-        assert retrieved.sync_on_checkout is False
-        assert retrieved.sync_on_merge is False
-        assert retrieved.confirm_before_sync is True
-        assert retrieved.force_local is False
+        assert not retrieved.auto_sync_enabled
+        assert not retrieved.sync_on_commit
+        assert not retrieved.sync_on_checkout
+        assert not retrieved.sync_on_merge
+        assert retrieved.confirm_before_sync
+        assert not retrieved.force_local
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_workflow_toggle_features(self, mock_sync_service):
@@ -449,4 +449,4 @@ class TestGitHookAutoSyncIntegration:
             service.set_config(config)
 
         # Should end up with auto_sync_enabled = True
-        assert service.get_config().auto_sync_enabled is True
+        assert service.get_config().auto_sync_enabled

@@ -135,7 +135,7 @@ class TestValidateToken:
 
             is_valid, message = client.validate_token()
 
-            assert is_valid is True
+            assert is_valid
             assert "Token is valid" in message
 
     def test_validate_token_invalid(self, client):
@@ -152,7 +152,7 @@ class TestValidateToken:
 
             is_valid, message = client.validate_token()
 
-            assert is_valid is False
+            assert not is_valid
             assert "invalid" in message.lower()
 
     def test_validate_token_api_error(self, client):
@@ -168,7 +168,7 @@ class TestValidateToken:
 
             is_valid, message = client.validate_token()
 
-            assert is_valid is False
+            assert not is_valid
             assert "error" in message.lower()
 
 
@@ -187,7 +187,7 @@ class TestIssueExists:
 
             result = client.issue_exists("owner", "repo", 123)
 
-            assert result is True
+            assert result
             mock_fetch.assert_called_once_with("owner", "repo", 123)
 
     def test_issue_exists_returns_false(self, client):
@@ -197,7 +197,7 @@ class TestIssueExists:
 
             result = client.issue_exists("owner", "repo", 999)
 
-            assert result is False
+            assert not result
 
 
 class TestGetIssueDiff:
@@ -239,7 +239,7 @@ class TestGetIssueDiff:
 
             result = client.get_issue_diff("owner", "repo", 123, local_data)
 
-            assert result["has_changes"] is False
+            assert not result["has_changes"]
             assert result["changes"] == {}
             assert result["github_data"] == github_issue_data
 
@@ -258,11 +258,11 @@ class TestGetIssueDiff:
 
             result = client.get_issue_diff("owner", "repo", 123, local_data)
 
-            assert result["has_changes"] is True
+            assert result["has_changes"]
             assert "title" in result["changes"]
             assert result["changes"]["title"]["local"] == "Local Title"
             assert result["changes"]["title"]["github"] == "GitHub Title"
-            assert result["changes"]["title"]["changed"] is True
+            assert result["changes"]["title"]["changed"]
 
     def test_get_issue_diff_labels_changed(self, client, github_issue_data):
         """Test diff when labels have changed."""
@@ -279,7 +279,7 @@ class TestGetIssueDiff:
 
             result = client.get_issue_diff("owner", "repo", 123, local_data)
 
-            assert result["has_changes"] is True
+            assert result["has_changes"]
             assert "labels" in result["changes"]
             assert set(result["changes"]["labels"]["local"]) == {"bug", "enhancement"}
             assert set(result["changes"]["labels"]["github"]) == {"bug", "urgent"}
@@ -299,7 +299,7 @@ class TestGetIssueDiff:
 
             result = client.get_issue_diff("owner", "repo", 123, local_data)
 
-            assert result["has_changes"] is True
+            assert result["has_changes"]
             assert len(result["changes"]) == 5  # All 5 fields changed
             assert "title" in result["changes"]
             assert "body" in result["changes"]
@@ -316,7 +316,7 @@ class TestGetIssueDiff:
 
             result = client.get_issue_diff("owner", "repo", 123, local_data)
 
-            assert result["has_changes"] is True
+            assert result["has_changes"]
             # Should detect changes in all fields
             assert len(result["changes"]) >= 1
 
@@ -423,4 +423,4 @@ class TestEdgeCases:
             result = client.get_issue_diff("owner", "repo", 123, local_data)
 
             # Should be considered the same after deduplication
-            assert result["has_changes"] is False
+            assert not result["has_changes"]

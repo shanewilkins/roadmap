@@ -69,7 +69,7 @@ class TestConfigValidator:
             validator.validate_config = Mock(return_value=(True, None))
 
             is_valid, error = validator.validate_config()
-            assert is_valid is True
+            assert is_valid
 
     def test_config_validator_missing_config(self):
         """Test validation fails when config missing."""
@@ -80,7 +80,7 @@ class TestConfigValidator:
             validator.validate_config = Mock(return_value=(False, "GitHub not configured"))
 
             is_valid, error = validator.validate_config()
-            assert is_valid is False
+            assert not is_valid
             assert "configured" in error.lower()
 
     def test_config_validator_invalid_token(self):
@@ -94,7 +94,7 @@ class TestConfigValidator:
             validator.validate_token = Mock(return_value=(False, "GitHub token is invalid"))
 
             is_valid, error = validator.validate_token()
-            assert is_valid is False
+            assert not is_valid
 
     def test_config_validator_repo_access(self):
         """Test repo access validation."""
@@ -107,7 +107,7 @@ class TestConfigValidator:
             validator.validate_repo_access = Mock(return_value=(True, None))
 
             is_valid, error = validator.validate_repo_access()
-            assert is_valid is True
+            assert is_valid
 
     def test_config_validator_repo_not_found(self):
         """Test detection of non-existent repo."""
@@ -122,7 +122,7 @@ class TestConfigValidator:
             )
 
             is_valid, error = validator.validate_repo_access()
-            assert is_valid is False
+            assert not is_valid
 
 
 # ============================================================================
@@ -151,7 +151,7 @@ class TestConflictDetector:
         with patch.object(detector, "_get_last_sync_time", return_value=None):
             conflicts = detector.detect_conflicts(issue, 123)
             assert "has_conflicts" in conflicts
-            assert conflicts["has_conflicts"] is False
+            assert not conflicts["has_conflicts"]
 
     @pytest.mark.skip(reason="Mock datetime comparison - not a real code issue")
     def test_conflict_detector_github_modified(self):
@@ -266,7 +266,7 @@ class TestBatchOperations:
         core = Mock()
         # Should provide method to confirm
         core.confirm = Mock(return_value=True)
-        assert core.confirm() is True
+        assert core.confirm()
 
     def test_batch_sync_partial_failure(self):
         """Test handling when some syncs fail."""
@@ -304,7 +304,7 @@ class TestIntegration:
             "warnings": [],
         }
         result = detector.detect_conflicts(Mock(), 123)
-        assert result["has_conflicts"] is False
+        assert not result["has_conflicts"]
 
     def test_batch_sync_respects_validation(self):
         """Test that batch operations respect validation."""
@@ -313,4 +313,4 @@ class TestIntegration:
         validator.validate_config.return_value = (True, None)
         
         is_valid, error = validator.validate_config()
-        assert is_valid is True
+        assert is_valid

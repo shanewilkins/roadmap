@@ -133,7 +133,7 @@ class TestGitHookManagerInstall:
         ):
             result = hook_manager.install_hooks()
 
-            assert result is False
+            assert not result
 
 
 class TestGitHookManagerUninstall:
@@ -148,7 +148,7 @@ class TestGitHookManagerUninstall:
         ):
             result = hook_manager.uninstall_hooks()
 
-            assert result is True
+            assert result
             # Should unlink 4 hooks
             assert mock_unlink.call_count == 4
 
@@ -158,7 +158,7 @@ class TestGitHookManagerUninstall:
 
         result = hook_manager.uninstall_hooks()
 
-        assert result is False
+        assert not result
 
     def test_uninstall_hooks_non_roadmap_hook(self, hook_manager):
         """Test uninstallation skips non-roadmap hooks."""
@@ -171,7 +171,7 @@ class TestGitHookManagerUninstall:
         ):
             result = hook_manager.uninstall_hooks()
 
-            assert result is True
+            assert result
             # Should NOT unlink non-roadmap hooks
             mock_unlink.assert_not_called()
 
@@ -183,7 +183,7 @@ class TestGitHookManagerUninstall:
         ):
             result = hook_manager.uninstall_hooks()
 
-            assert result is False
+            assert not result
 
 
 class TestGitHookManagerStatus:
@@ -204,10 +204,10 @@ class TestGitHookManagerStatus:
             assert len(status) == 4
             for hook_name in ["post-commit", "pre-push", "post-merge", "post-checkout"]:
                 assert hook_name in status
-                assert status[hook_name]["installed"] is True
-                assert status[hook_name]["is_roadmap_hook"] is True
-                assert status[hook_name]["executable"] is True
-                assert status[hook_name]["file_exists"] is True
+                assert status[hook_name]["installed"]
+                assert status[hook_name]["is_roadmap_hook"]
+                assert status[hook_name]["executable"]
+                assert status[hook_name]["file_exists"]
 
     def test_get_hooks_status_no_hooks_dir(self, hook_manager):
         """Test getting status when hooks_dir is None."""
@@ -234,9 +234,9 @@ class TestGitHookManagerConfig:
             assert config is not None
             assert config["hooks_directory"] == "/fake/.git/hooks"
             assert config["repository_root"] == "/fake/repo"
-            assert config["git_repository"] is True
+            assert config["git_repository"]
             assert len(config["available_hooks"]) == 4
-            assert config["core_initialized"] is True
+            assert config["core_initialized"]
             assert "hooks_status" in config
 
 
@@ -325,10 +325,10 @@ class TestWorkflowAutomationSetup:
             else:
                 results = workflow_automation.setup_automation()
 
-            assert results["git-hooks"] is True
+            assert results["git-hooks"]
             if expect_all:
-                assert results["status-automation"] is True
-                assert results["progress-tracking"] is True
+                assert results["status-automation"]
+                assert results["progress-tracking"]
                 assert mock_status.called is expect_status
                 assert mock_tracking.called is expect_tracking
             else:
@@ -362,7 +362,7 @@ class TestWorkflowAutomationSetup:
                 if expected_result:
                     state_arg = mock_write.call_args[0][0]
                     state = json.loads(state_arg)
-                    assert state["enabled"] is True
+                    assert state["enabled"]
 
             assert result is expected_result
 
@@ -505,7 +505,7 @@ class TestWorkflowAutomationSync:
                 issue, [progress_commit]
             )
 
-            assert result is True
+            assert result
             assert issue.status == Status.IN_PROGRESS
             assert issue.progress_percentage == 50.0
             mock_save.assert_called_once()
@@ -529,7 +529,7 @@ class TestWorkflowAutomationSync:
                 issue, [sample_commit]
             )
 
-            assert result is True
+            assert result
             assert issue.status == Status.CLOSED
             assert issue.progress_percentage == 100.0
             mock_save.assert_called_once()
@@ -552,4 +552,4 @@ class TestWorkflowAutomationSync:
                 issue, [sample_commit]
             )
 
-            assert result is False
+            assert not result

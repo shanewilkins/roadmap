@@ -76,7 +76,7 @@ class TestFocusedProjectStateManager:
 
         result = manager.update_project("proj-1", updates)
 
-        assert result is True
+        assert result
         mock_state_manager.update_project.assert_called_once_with("proj-1", updates)
 
     def test_delete_project(self, mock_state_manager):
@@ -86,7 +86,7 @@ class TestFocusedProjectStateManager:
 
         result = manager.delete_project("proj-1")
 
-        assert result is True
+        assert result
         mock_state_manager.delete_project.assert_called_once_with("proj-1")
 
     def test_mark_project_archived_true(self, mock_state_manager):
@@ -96,7 +96,7 @@ class TestFocusedProjectStateManager:
 
         result = manager.mark_project_archived("proj-1", archived=True)
 
-        assert result is True
+        assert result
         mock_state_manager.mark_project_archived.assert_called_once_with("proj-1", True)
 
     def test_mark_project_archived_false(self, mock_state_manager):
@@ -106,7 +106,7 @@ class TestFocusedProjectStateManager:
 
         result = manager.mark_project_archived("proj-1", archived=False)
 
-        assert result is True
+        assert result
         mock_state_manager.mark_project_archived.assert_called_once_with(
             "proj-1", False
         )
@@ -143,7 +143,7 @@ class TestFocusedIssueStateManager:
 
         result = manager.mark_issue_archived("issue-1", archived=True)
 
-        assert result is True
+        assert result
 
     def test_update_issue(self, mock_state_manager):
         """Test updating an issue."""
@@ -153,7 +153,7 @@ class TestFocusedIssueStateManager:
 
         result = manager.update_issue("issue-1", updates)
 
-        assert result is True
+        assert result
 
     def test_delete_issue(self, mock_state_manager):
         """Test deleting an issue."""
@@ -162,7 +162,7 @@ class TestFocusedIssueStateManager:
 
         result = manager.delete_issue("issue-1")
 
-        assert result is True
+        assert result
 
 
 class TestFocusedMilestoneStateManager:
@@ -196,7 +196,7 @@ class TestFocusedMilestoneStateManager:
 
         result = manager.update_milestone("milestone-1", updates)
 
-        assert result is True
+        assert result
 
     def test_mark_milestone_archived(self, mock_state_manager):
         """Test marking a milestone as archived."""
@@ -205,7 +205,7 @@ class TestFocusedMilestoneStateManager:
 
         result = manager.mark_milestone_archived("milestone-1", archived=True)
 
-        assert result is True
+        assert result
 
 
 class TestFocusedQueryStateManager:

@@ -143,7 +143,7 @@ This issue is missing the title field.
     def test_delete_issue_nonexistent(self, initialized_core):
         """Test deleting a non-existent issue."""
         result = initialized_core.issues.delete("nonexistent-id")
-        assert result is False
+        assert not result
 
     def test_move_issue_to_nonexistent_milestone(self, initialized_core):
         """Test moving issue to non-existent milestone."""
@@ -152,7 +152,7 @@ This issue is missing the title field.
         result = initialized_core.issues.move_to_milestone(
             issue.id, "Nonexistent Milestone"
         )
-        assert result is False
+        assert not result
 
     def test_move_nonexistent_issue_to_milestone(self, initialized_core):
         """Test moving non-existent issue to milestone."""
@@ -161,7 +161,7 @@ This issue is missing the title field.
         result = initialized_core.issues.move_to_milestone(
             "nonexistent-id", "Test Milestone"
         )
-        assert result is False
+        assert not result
 
     def test_list_issues_with_assignee_edge_cases(self, initialized_core):
         """Test assignee filtering edge cases."""

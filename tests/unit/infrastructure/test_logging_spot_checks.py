@@ -96,31 +96,31 @@ class TestErrorRecoverability:
         """Test that connection errors are considered recoverable."""
         error = ConnectionError("Connection refused")
         is_recoverable = is_error_recoverable(error)
-        assert is_recoverable is True
+        assert is_recoverable
 
     def test_validation_error_not_recoverable(self):
         """Test that validation errors are not recoverable."""
         error = ValidationError("Invalid input")
         is_recoverable = is_error_recoverable(error)
-        assert is_recoverable is False
+        assert not is_recoverable
 
     def test_permission_error_not_recoverable(self):
         """Test that permission errors are not recoverable."""
         error = PermissionError("Access denied")
         is_recoverable = is_error_recoverable(error)
-        assert is_recoverable is False
+        assert not is_recoverable
 
     def test_timeout_error_recoverable(self):
         """Test that timeout errors are recoverable."""
         error = TimeoutError("Request timed out")
         is_recoverable = is_error_recoverable(error)
-        assert is_recoverable is True
+        assert is_recoverable
 
     def test_broken_pipe_recoverable(self):
         """Test that broken pipe errors are recoverable."""
         error = BrokenPipeError("Broken pipe")
         is_recoverable = is_error_recoverable(error)
-        assert is_recoverable is True
+        assert is_recoverable
 
 
 class TestErrorContextLogging:

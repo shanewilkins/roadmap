@@ -90,7 +90,7 @@ class TestConflictResolver:
         )
 
         result = conflict_resolver.resolve_conflict(test_file, "ours")
-        assert result is True
+        assert result
         assert "Our content" in test_file.read_text()
         assert "Their content" not in test_file.read_text()
         assert "<<<<<<<" not in test_file.read_text()
@@ -103,7 +103,7 @@ class TestConflictResolver:
         )
 
         result = conflict_resolver.resolve_conflict(test_file, "theirs")
-        assert result is True
+        assert result
         assert "Their content" in test_file.read_text()
         assert "Our content" not in test_file.read_text()
         assert "<<<<<<<" not in test_file.read_text()
@@ -124,7 +124,7 @@ class TestConflictResolver:
         """resolve_conflict should handle missing files gracefully."""
         missing_file = temp_dir / "missing.md"
         result = conflict_resolver.resolve_conflict(missing_file, "ours")
-        assert result is False
+        assert not result
 
     def test_resolve_conflict_handles_permission_error(
         self, conflict_resolver, temp_dir
@@ -135,7 +135,7 @@ class TestConflictResolver:
         test_file.chmod(0o444)  # Read-only
 
         result = conflict_resolver.resolve_conflict(test_file, "ours")
-        assert result is False
+        assert not result
 
         # Restore permissions for cleanup
         test_file.chmod(0o644)
@@ -151,7 +151,7 @@ class TestConflictResolver:
         sync_tracker = SyncStateTracker(db_manager._get_connection)
 
         result = conflict_resolver.auto_resolve_conflicts(sync_tracker, "ours")
-        assert result is True
+        assert result
         assert "<<<<<<< HEAD" not in file1.read_text()
         assert "<<<<<<< HEAD" not in file2.read_text()
 
@@ -166,7 +166,7 @@ class TestConflictResolver:
         sync_tracker = SyncStateTracker(db_manager._get_connection)
 
         conflict_resolver.auto_resolve_conflicts(sync_tracker, "ours")
-        assert sync_tracker.has_git_conflicts() is False
+        assert not sync_tracker.has_git_conflicts()
 
     def test_auto_resolve_conflicts_no_conflicts_found(
         self, conflict_resolver, temp_dir, temp_db
@@ -176,12 +176,12 @@ class TestConflictResolver:
         sync_tracker = SyncStateTracker(db_manager._get_connection)
 
         result = conflict_resolver.auto_resolve_conflicts(sync_tracker)
-        assert result is True
+        assert result
 
     def test_get_conflict_summary_no_conflicts(self, conflict_resolver):
         """get_conflict_summary should return empty summary when no conflicts."""
         summary = conflict_resolver.get_conflict_summary()
-        assert summary["has_conflicts"] is False
+        assert not summary["has_conflicts"]
         assert summary["conflict_count"] == 0
         assert summary["files"] == []
 
@@ -193,7 +193,7 @@ class TestConflictResolver:
         file2.write_text("<<<<<<< HEAD\nOur2\n=======\nTheir2\n>>>>>>> branch\n")
 
         summary = conflict_resolver.get_conflict_summary()
-        assert summary["has_conflicts"] is True
+        assert summary["has_conflicts"]
         assert summary["conflict_count"] == 2
         assert len(summary["files"]) == 2
 

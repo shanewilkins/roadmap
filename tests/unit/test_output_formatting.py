@@ -26,8 +26,8 @@ class TestColumnDef:
         assert col.name == "id"
         assert col.display_name == "ID"
         assert col.type == ColumnType.STRING
-        assert col.sortable is True
-        assert col.filterable is True
+        assert col.sortable
+        assert col.filterable
 
     def test_create_column_with_all_attributes(self):
         """Test creating column with all attributes."""

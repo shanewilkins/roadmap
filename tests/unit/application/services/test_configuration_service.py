@@ -87,9 +87,9 @@ class TestConfigurationServiceGitHubConfig:
         """Test getting GitHub config with defaults."""
         result = config_service.get_github_config()
 
-        assert result["enabled"] is False
+        assert not result["enabled"]
         assert result["repo"] == ""
-        assert result["sync_labels"] is True
+        assert result["sync_labels"]
 
     def test_get_github_config_custom_values(self, config_service, mock_settings):
         """Test getting GitHub config with custom values."""
@@ -101,9 +101,9 @@ class TestConfigurationServiceGitHubConfig:
 
         result = config_service.get_github_config()
 
-        assert result["enabled"] is True
+        assert result["enabled"]
         assert result["repo"] == "owner/repo"
-        assert result["sync_labels"] is False
+        assert not result["sync_labels"]
 
 
 class TestConfigurationServiceCredentials:

@@ -112,7 +112,7 @@ class TestRoadmapCoreUncoveredLines:
 
         # Delete milestone
         result = core.milestones.delete("Test Milestone")
-        assert result is True
+        assert result
 
         # Verify issues are unassigned
         updated_issue1 = core.issues.get(issue1.id)
@@ -126,7 +126,7 @@ class TestRoadmapCoreUncoveredLines:
     def test_delete_nonexistent_milestone(self, core):
         """Test deleting a milestone that doesn't exist."""
         result = core.milestones.delete("Nonexistent Milestone")
-        assert result is False
+        assert not result
 
     def test_create_issue_with_git_branch(self, core):
         """Test create_issue_with_git_branch functionality."""
@@ -198,7 +198,7 @@ class TestRoadmapCoreUncoveredLines:
 
                     context = core.git.get_context()
 
-                    assert context["is_git_repo"] is True
+                    assert context["is_git_repo"]
                     assert context["current_branch"] == "main"
                     assert "linked_issue" not in context
 
@@ -222,7 +222,7 @@ class TestRoadmapCoreUncoveredLines:
 
                     context = core.git.get_context()
 
-                    assert context["is_git_repo"] is True
+                    assert context["is_git_repo"]
                     assert "current_branch" not in context
                     assert "linked_issue" not in context
 
@@ -237,11 +237,11 @@ class TestRoadmapCoreUncoveredLines:
     def test_validate_assignee_empty_assignee(self, core):
         """Test validate_assignee with empty assignee."""
         is_valid, error = core.team.validate_assignee("")
-        assert is_valid is False
+        assert not is_valid
         assert "Assignee cannot be empty" in error
 
         is_valid, error = core.team.validate_assignee("   ")
-        assert is_valid is False
+        assert not is_valid
         assert "Assignee cannot be empty" in error
 
     def test_validate_assignee_no_github_config(self, core):
@@ -252,7 +252,7 @@ class TestRoadmapCoreUncoveredLines:
 
             # Should allow any assignee without validation
             is_valid, error = core.team.validate_assignee("any_user@example.com")
-            assert is_valid is True
+            assert is_valid
             assert error == ""
 
     def test_create_issue_failed_return(self, core):

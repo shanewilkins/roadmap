@@ -131,7 +131,7 @@ class TestMilestoneUpdateParams:
         assert params.name == "v1.0"
         assert params.description is None
         assert params.due_date is None
-        assert params.clear_due_date is False
+        assert not params.clear_due_date
         assert params.status is None
 
     def test_create_with_all_fields(self):
@@ -147,7 +147,7 @@ class TestMilestoneUpdateParams:
         assert params.name == "v1.0"
         assert params.description == "Updated description"
         assert params.due_date == due_date
-        assert params.clear_due_date is False
+        assert not params.clear_due_date
         assert params.status == "completed"
 
     def test_clear_due_date(self):
@@ -156,7 +156,7 @@ class TestMilestoneUpdateParams:
             name="v1.0",
             clear_due_date=True,
         )
-        assert params.clear_due_date is True
+        assert params.clear_due_date
         assert params.due_date is None
 
 

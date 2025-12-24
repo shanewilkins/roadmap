@@ -79,7 +79,7 @@ class TestProjectInitializationService:
             mock_validator.check_existing_roadmap.return_value = (True, "")
 
             is_valid, error_msg = service.validate_prerequisites(force=False)
-            assert is_valid is False
+            assert not is_valid
             assert "Lock file" in error_msg
 
     def test_validate_prerequisites_existing_roadmap_check(self, service):
@@ -94,7 +94,7 @@ class TestProjectInitializationService:
             )
 
             is_valid, error_msg = service.validate_prerequisites(force=False)
-            assert is_valid is False
+            assert not is_valid
             assert "exists" in error_msg
 
     def test_service_integration_basic_workflow(self, service):
@@ -107,7 +107,7 @@ class TestProjectInitializationService:
 
             # Validate prerequisites
             is_valid, error_msg = service.validate_prerequisites(force=False)
-            assert is_valid is True
+            assert is_valid
 
     def test_validate_prerequisites_without_force(self, service):
         """Test prerequisite validation without force flag."""

@@ -54,12 +54,12 @@ class TestSyncStateTracker:
 
     def test_has_git_conflicts_returns_false_by_default(self, sync_tracker):
         """has_git_conflicts should return False when no conflicts detected."""
-        assert sync_tracker.has_git_conflicts() is False
+        assert not sync_tracker.has_git_conflicts()
 
     def test_has_git_conflicts_returns_true_when_marked(self, sync_tracker):
         """has_git_conflicts should return True after marking conflicts."""
         sync_tracker.mark_conflicts_detected(["file1.md", "file2.md"])
-        assert sync_tracker.has_git_conflicts() is True
+        assert sync_tracker.has_git_conflicts()
 
     def test_get_conflict_files_empty_list_by_default(self, sync_tracker):
         """get_conflict_files should return empty list by default."""
@@ -76,16 +76,16 @@ class TestSyncStateTracker:
         files = ["conflict1.md", "conflict2.md"]
         sync_tracker.mark_conflicts_detected(files)
 
-        assert sync_tracker.has_git_conflicts() is True
+        assert sync_tracker.has_git_conflicts()
         assert sync_tracker.get_conflict_files() == files
 
     def test_clear_conflicts_removes_flag(self, sync_tracker):
         """clear_conflicts should remove conflict markers."""
         sync_tracker.mark_conflicts_detected(["file1.md"])
-        assert sync_tracker.has_git_conflicts() is True
+        assert sync_tracker.has_git_conflicts()
 
         sync_tracker.clear_conflicts()
-        assert sync_tracker.has_git_conflicts() is False
+        assert not sync_tracker.has_git_conflicts()
         assert sync_tracker.get_conflict_files() == []
 
     def test_update_last_incremental_sync(self, sync_tracker):

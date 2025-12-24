@@ -99,7 +99,7 @@ class TestProjectContextDetectionService:
 
         result = ProjectContextDetectionService.detect_project_context()
 
-        assert result["has_git"] is False
+        assert not result["has_git"]
         assert result["git_repo"] is None
         assert result["git_user"] is None
         assert result["project_name"] == Path.cwd().name
@@ -118,7 +118,7 @@ class TestProjectContextDetectionService:
 
         result = ProjectContextDetectionService.detect_project_context()
 
-        assert result["has_git"] is True
+        assert result["has_git"]
         assert result["git_repo"] == "owner/myproject"
         assert result["project_name"] == "myproject"
         assert result["git_user"] == "John Doe"
@@ -137,7 +137,7 @@ class TestProjectContextDetectionService:
 
         result = ProjectContextDetectionService.detect_project_context()
 
-        assert result["has_git"] is True
+        assert result["has_git"]
         assert result["git_repo"] == "owner/myproject"
         assert result["project_name"] == "myproject"
         assert result["git_user"] == "Jane Smith"
@@ -155,7 +155,7 @@ class TestProjectContextDetectionService:
 
         result = ProjectContextDetectionService.detect_project_context()
 
-        assert result["has_git"] is True
+        assert result["has_git"]
         assert result["git_repo"] is None  # Not a GitHub repo
 
     @patch("subprocess.run")
@@ -178,7 +178,7 @@ class TestProjectContextDetectionService:
             # Should have detected context
             assert result["project_name"] is not None
             # Should have git detection attempted
-            assert result["has_git"] is False
+            assert not result["has_git"]
         finally:
             os.chdir(original_cwd)
 
@@ -189,7 +189,7 @@ class TestProjectContextDetectionService:
 
         result = ProjectContextDetectionService.detect_project_context()
 
-        assert result["has_git"] is False
+        assert not result["has_git"]
         assert result["project_name"] == Path.cwd().name
 
     @patch("subprocess.run")
@@ -199,7 +199,7 @@ class TestProjectContextDetectionService:
 
         result = ProjectContextDetectionService.detect_project_context()
 
-        assert result["has_git"] is False
+        assert not result["has_git"]
         assert result["project_name"] == Path.cwd().name
 
 

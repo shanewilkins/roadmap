@@ -60,7 +60,7 @@ class TestGitHubTokenResolver:
             existing_token=None,
         )
         assert token == "ghp_cli_token"
-        assert should_continue is True
+        assert should_continue
 
     def test_resolve_token_env_variable(self):
         """Test resolving token from environment variable."""
@@ -73,7 +73,7 @@ class TestGitHubTokenResolver:
                 existing_token=None,
             )
             assert token == "ghp_env_token"
-            assert should_continue is True
+            assert should_continue
 
     def test_resolve_token_existing_with_yes(self):
         """Test resolving token when using existing token with yes flag."""
@@ -85,7 +85,7 @@ class TestGitHubTokenResolver:
             existing_token="ghp_existing_token",
         )
         assert token == "ghp_existing_token"
-        assert should_continue is True
+        assert should_continue
 
     def test_resolve_token_existing_with_confirm(self):
         """Test resolving token when user confirms existing token."""
@@ -98,7 +98,7 @@ class TestGitHubTokenResolver:
                 existing_token="ghp_existing_token",
             )
             assert token == "ghp_existing_token"
-            assert should_continue is True
+            assert should_continue
 
     def test_resolve_token_existing_with_reject(self):
         """Test resolving token when user rejects existing token."""
@@ -112,7 +112,7 @@ class TestGitHubTokenResolver:
                     existing_token="ghp_existing_token",
                 )
                 assert token == "ghp_new_token"
-                assert should_continue is True
+                assert should_continue
 
     def test_resolve_token_interactive_prompt(self):
         """Test resolving token via interactive prompt."""
@@ -125,7 +125,7 @@ class TestGitHubTokenResolver:
                 existing_token=None,
             )
             assert token == "ghp_prompted_token"
-            assert should_continue is True
+            assert should_continue
 
     def test_resolve_token_non_interactive_no_token(self):
         """Test resolving token in non-interactive mode without token."""
@@ -137,7 +137,7 @@ class TestGitHubTokenResolver:
             existing_token=None,
         )
         assert token is None
-        assert should_continue is False
+        assert not should_continue
 
     def test_resolve_token_priority_cli_over_env(self):
         """Test that CLI token takes priority over environment."""
@@ -190,7 +190,7 @@ class TestGitHubSetupValidator:
 
         success, username = validator.validate_authentication()
 
-        assert success is True
+        assert success
         assert username == "testuser"
         mock_client._make_request.assert_called_once_with("GET", "/user")
 
@@ -200,7 +200,7 @@ class TestGitHubSetupValidator:
 
         success, error = validator.validate_authentication()
 
-        assert success is False
+        assert not success
         assert "Invalid token" in error
 
     def test_validate_repository_access_success(self, validator, mock_client):
@@ -218,7 +218,7 @@ class TestGitHubSetupValidator:
 
         success, repo_info = validator.validate_repository_access("user/repo")
 
-        assert success is True
+        assert success
         assert repo_info["full_name"] == "user/repo"
         mock_client.set_repository.assert_called_once_with("user", "repo")
 
@@ -228,7 +228,7 @@ class TestGitHubSetupValidator:
 
         success, error_info = validator.validate_repository_access("invalid/repo")
 
-        assert success is False
+        assert not success
         assert "error" in error_info
 
     def test_validate_repository_access_read_only(self, validator, mock_client):
@@ -240,8 +240,8 @@ class TestGitHubSetupValidator:
 
         success, repo_info = validator.validate_repository_access("user/repo")
 
-        assert success is True
-        assert repo_info["permissions"]["pull"] is True
+        assert success
+        assert repo_info["permissions"]["pull"]
 
     def test_test_api_access_success(self, validator, mock_client):
         """Test successful API access test."""
@@ -251,7 +251,7 @@ class TestGitHubSetupValidator:
 
         result = validator.test_api_access("user/repo")
 
-        assert result is True
+        assert result
         mock_client._make_request.assert_called_once()
 
     def test_test_api_access_failure(self, validator, mock_client):
@@ -260,7 +260,7 @@ class TestGitHubSetupValidator:
 
         result = validator.test_api_access("user/repo")
 
-        assert result is False
+        assert not result
 
 
 class TestGitHubConfigManager:
@@ -321,9 +321,9 @@ class TestGitHubConfigManager:
         assert isinstance(config, dict)
         assert "github" in config
         assert config["github"]["repository"] == "owner/repo"
-        assert config["github"]["enabled"] is True
-        assert config["github"]["sync_enabled"] is True
-        assert config["github"]["sync_settings"]["bidirectional"] is True
+        assert config["github"]["enabled"]
+        assert config["github"]["sync_enabled"]
+        assert config["github"]["sync_settings"]["bidirectional"]
 
 
 class TestShowGitHubSetupInstructions:
@@ -332,19 +332,19 @@ class TestShowGitHubSetupInstructions:
     def test_show_instructions_with_yes(self):
         """Test showing instructions when yes flag is set."""
         result = show_github_setup_instructions("owner/repo", yes=True)
-        assert result is True
+        assert result
 
     def test_show_instructions_with_confirm(self):
         """Test showing instructions when user confirms."""
         with patch("click.confirm", return_value=True):
             result = show_github_setup_instructions("owner/repo", yes=False)
-            assert result is True
+            assert result
 
     def test_show_instructions_with_reject(self):
         """Test showing instructions when user rejects."""
         with patch("click.confirm", return_value=False):
             result = show_github_setup_instructions("owner/repo", yes=False)
-            assert result is False
+            assert not result
 
 
 class TestGitHubInitializationService:
@@ -375,7 +375,7 @@ class TestGitHubInitializationService:
             yes=True,
             github_token=None,
         )
-        assert result is False
+        assert not result
 
     def test_setup_no_repo_name(self, mock_core):
         """Test setup when no repository name is provided."""
@@ -388,7 +388,7 @@ class TestGitHubInitializationService:
             yes=True,
             github_token=None,
         )
-        assert result is False
+        assert not result
 
     def test_setup_with_presenter(self, mock_core):
         """Test setup with custom presenter."""
@@ -461,7 +461,7 @@ class TestGitHubInitializationService:
         with patch("roadmap.infrastructure.github.setup.GitHubClient", None):
             with patch("roadmap.infrastructure.github.setup.CredentialManager", None):
                 result = service._configure_integration("owner/repo", False, True, None)
-                assert result is False
+                assert not result
 
     def test_configure_integration_exception(self, mock_core):
         """Test configuration handles exceptions."""
@@ -471,7 +471,7 @@ class TestGitHubInitializationService:
             service, "_validate_setup_conditions", side_effect=Exception("Setup error")
         ):
             result = service._configure_integration("owner/repo", False, True, None)
-            assert result is False
+            assert not result
 
 
 class TestGitHubSetupValidation:

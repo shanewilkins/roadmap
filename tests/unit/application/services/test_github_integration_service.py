@@ -169,13 +169,13 @@ class TestGitHubIntegrationService:
     def test_validate_assignee_empty(self, service):
         """Test validate_assignee rejects empty assignee."""
         is_valid, error_msg = service.validate_assignee("")
-        assert is_valid is False
+        assert not is_valid
         assert "empty" in error_msg.lower()
 
     def test_validate_assignee_whitespace(self, service):
         """Test validate_assignee rejects whitespace-only assignee."""
         is_valid, error_msg = service.validate_assignee("   ")
-        assert is_valid is False
+        assert not is_valid
 
     def test_validate_assignee_github_not_configured(self, service):
         """Test validate_assignee allows any user when GitHub not configured."""
@@ -183,7 +183,7 @@ class TestGitHubIntegrationService:
             service, "get_github_config", return_value=(None, None, None)
         ):
             is_valid, error_msg = service.validate_assignee("any-user")
-            assert is_valid is True
+            assert is_valid
             assert error_msg == ""
 
     def test_validate_assignee_in_cached_members(self, service):
@@ -195,7 +195,7 @@ class TestGitHubIntegrationService:
                 service, "get_cached_team_members", return_value=["user1", "user2"]
             ):
                 is_valid, error_msg = service.validate_assignee("user1")
-                assert is_valid is True
+                assert is_valid
                 assert error_msg == ""
 
     @pytest.mark.parametrize(
@@ -233,7 +233,7 @@ class TestGitHubIntegrationService:
                 "canonical-id",
             )
             is_valid, error_msg = service.validate_assignee("user")
-            assert is_valid is True
+            assert is_valid
             assert service._last_canonical_assignee == "canonical-id"
 
     def test_get_last_canonical_assignee(self, service):
@@ -263,7 +263,7 @@ class TestGitHubIntegrationService:
             ):
                 # Validate user
                 is_valid, _ = service.validate_assignee("user1")
-                assert is_valid is True
+                assert is_valid
 
                 # Get canonical form
                 canonical = service.get_canonical_assignee("user1")

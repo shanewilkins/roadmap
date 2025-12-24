@@ -27,7 +27,7 @@ class TestTrackOperationTime:
 
         assert "duration_ms" in result
         assert result["duration_ms"] >= 10  # At least 10ms for sleep
-        assert result["exceeded_threshold"] is False
+        assert not result["exceeded_threshold"]
         assert mock_logger.debug.called
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
@@ -39,7 +39,7 @@ class TestTrackOperationTime:
         ) as result:
             time.sleep(0.02)
 
-        assert result["exceeded_threshold"] is True
+        assert result["exceeded_threshold"]
         assert result["duration_ms"] >= 20
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
@@ -54,7 +54,7 @@ class TestTrackOperationTime:
         ) as result:
             pass  # No sleep
 
-        assert result["exceeded_threshold"] is False
+        assert not result["exceeded_threshold"]
         mock_logger.warning.assert_not_called()
         mock_logger.debug.assert_called_once()
 
@@ -67,7 +67,7 @@ class TestTrackOperationTime:
         ) as result:
             pass
 
-        assert result["exceeded_threshold"] is False
+        assert not result["exceeded_threshold"]
         mock_logger.info.assert_called_once()
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
@@ -99,7 +99,7 @@ class TestTrackOperationTime:
         ) as result:
             time.sleep(0.01)
 
-        assert result["exceeded_threshold"] is True
+        assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
@@ -122,7 +122,7 @@ class TestTrackDatabaseOperation:
             pass
 
         assert "duration_ms" in result
-        assert result["exceeded_threshold"] is False
+        assert not result["exceeded_threshold"]
         mock_logger.debug.assert_called_once()
         call_args = mock_logger.debug.call_args
         assert call_args[1]["operation"] == "create"
@@ -147,7 +147,7 @@ class TestTrackDatabaseOperation:
         ) as result:
             time.sleep(0.02)
 
-        assert result["exceeded_threshold"] is True
+        assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert call_args[1]["operation"] == "update"
@@ -176,7 +176,7 @@ class TestTrackDatabaseOperation:
         ) as result:
             time.sleep(0.01)
 
-        assert result["exceeded_threshold"] is True
+        assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
@@ -203,7 +203,7 @@ class TestTrackFileOperation:
             pass
 
         assert "duration_ms" in result
-        assert result["exceeded_threshold"] is False
+        assert not result["exceeded_threshold"]
         mock_logger.debug.assert_called_once()
         call_args = mock_logger.debug.call_args
         assert call_args[1]["operation"] == "read"
@@ -237,7 +237,7 @@ class TestTrackFileOperation:
         ) as result:
             time.sleep(0.02)
 
-        assert result["exceeded_threshold"] is True
+        assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert call_args[1]["operation"] == "read"
@@ -253,7 +253,7 @@ class TestTrackFileOperation:
         ) as result:
             time.sleep(0.01)
 
-        assert result["exceeded_threshold"] is True
+        assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
@@ -318,7 +318,7 @@ class TestTrackSyncOperation:
         ) as result:
             time.sleep(0.02)
 
-        assert result["exceeded_threshold"] is True
+        assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert call_args[1]["entity_count"] == 50
@@ -334,7 +334,7 @@ class TestTrackSyncOperation:
         ) as result:
             time.sleep(0.001)  # Sleep slightly to avoid division by zero
 
-        assert result["exceeded_threshold"] is False
+        assert not result["exceeded_threshold"]
         mock_logger.warning.assert_not_called()
         mock_logger.info.assert_called_once()
 

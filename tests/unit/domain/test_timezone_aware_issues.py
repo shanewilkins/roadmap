@@ -48,11 +48,11 @@ class TestTimezoneManager:
 
         # UTC aware datetime
         utc_aware = datetime.now(timezone.utc)
-        assert tz_manager.is_timezone_aware(utc_aware) is True
+        assert tz_manager.is_timezone_aware(utc_aware)
 
         # Naive datetime
         naive_dt = datetime.now()
-        assert tz_manager.is_timezone_aware(naive_dt) is False
+        assert not tz_manager.is_timezone_aware(naive_dt)
 
     def test_timezone_manager_parse_user_input(self):
         """Test parsing user input in different timezone."""

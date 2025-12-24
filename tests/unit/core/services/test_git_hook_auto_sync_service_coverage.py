@@ -18,9 +18,9 @@ class TestGitHookAutoSyncEventHandling:
         service = GitHookAutoSyncService(mock_core)
 
         # Auto-sync is disabled by default
-        assert service.should_sync_on_event("commit") is False
-        assert service.should_sync_on_event("checkout") is False
-        assert service.should_sync_on_event("merge") is False
+        assert not service.should_sync_on_event("commit")
+        assert not service.should_sync_on_event("checkout")
+        assert not service.should_sync_on_event("merge")
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_enabled_all(self, mock_sync_service):
@@ -36,9 +36,9 @@ class TestGitHookAutoSyncEventHandling:
         )
         service.set_config(config)
 
-        assert service.should_sync_on_event("commit") is True
-        assert service.should_sync_on_event("checkout") is True
-        assert service.should_sync_on_event("merge") is True
+        assert service.should_sync_on_event("commit")
+        assert service.should_sync_on_event("checkout")
+        assert service.should_sync_on_event("merge")
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_selective(self, mock_sync_service):
@@ -54,9 +54,9 @@ class TestGitHookAutoSyncEventHandling:
         )
         service.set_config(config)
 
-        assert service.should_sync_on_event("commit") is True
-        assert service.should_sync_on_event("checkout") is False
-        assert service.should_sync_on_event("merge") is True
+        assert service.should_sync_on_event("commit")
+        assert not service.should_sync_on_event("checkout")
+        assert service.should_sync_on_event("merge")
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_unknown_event(self, mock_sync_service):
@@ -68,7 +68,7 @@ class TestGitHookAutoSyncEventHandling:
         service.set_config(config)
 
         # Unknown event should return False
-        assert service.should_sync_on_event("unknown") is False
+        assert not service.should_sync_on_event("unknown")
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_auto_sync_disabled_overrides(self, mock_sync_service):
@@ -85,9 +85,9 @@ class TestGitHookAutoSyncEventHandling:
         service.set_config(config)
 
         # All should return False because auto_sync_enabled is False
-        assert service.should_sync_on_event("commit") is False
-        assert service.should_sync_on_event("checkout") is False
-        assert service.should_sync_on_event("merge") is False
+        assert not service.should_sync_on_event("commit")
+        assert not service.should_sync_on_event("checkout")
+        assert not service.should_sync_on_event("merge")
 
 
 class TestGitHookAutoSyncCommit:
@@ -101,7 +101,7 @@ class TestGitHookAutoSyncCommit:
 
         # Default config has auto-sync disabled
         result = service.auto_sync_on_commit()
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_enabled_no_linked_issues(self, mock_sync_service):
@@ -158,7 +158,7 @@ class TestGitHookAutoSyncCheckout:
         service = GitHookAutoSyncService(mock_core)
 
         result = service.auto_sync_on_checkout()
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_checkout_enabled(self, mock_sync_service):
@@ -197,7 +197,7 @@ class TestGitHookAutoSyncMerge:
         service = GitHookAutoSyncService(mock_core)
 
         result = service.auto_sync_on_merge()
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_merge_enabled(self, mock_sync_service):
@@ -224,7 +224,7 @@ class TestGitHookAutoSyncFileOperations:
 
         config_path = tmp_path / "nonexistent.json"
         result = service.load_config_from_file(config_path)
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_load_config_from_file_exists_valid(self, mock_sync_service, tmp_path):
@@ -250,9 +250,9 @@ class TestGitHookAutoSyncFileOperations:
             json.dump(config_data, f)
 
         result = service.load_config_from_file(config_path)
-        assert result is True
-        assert service.get_config().auto_sync_enabled is True
-        assert service.get_config().sync_on_commit is True
+        assert result
+        assert service.get_config().auto_sync_enabled
+        assert service.get_config().sync_on_commit
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_load_config_from_file_empty(self, mock_sync_service, tmp_path):
@@ -268,7 +268,7 @@ class TestGitHookAutoSyncFileOperations:
             json.dump(config_data, f)
 
         result = service.load_config_from_file(config_path)
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_save_config_to_file_new(self, mock_sync_service, tmp_path):
@@ -285,14 +285,14 @@ class TestGitHookAutoSyncFileOperations:
 
         config_path = tmp_path / "config.json"
         result = service.save_config_to_file(config_path)
-        assert result is True
+        assert result
         assert config_path.exists()
 
         # Verify saved content
         with open(config_path) as f:
             data = json.load(f)
-        assert data["auto_sync"]["auto_sync_enabled"] is True
-        assert data["auto_sync"]["sync_on_commit"] is True
+        assert data["auto_sync"]["auto_sync_enabled"]
+        assert data["auto_sync"]["sync_on_commit"]
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_save_config_to_file_existing(self, mock_sync_service, tmp_path):
@@ -313,7 +313,7 @@ class TestGitHookAutoSyncFileOperations:
         config = GitHookAutoSyncConfig(auto_sync_enabled=True)
         service.set_config(config)
         result = service.save_config_to_file(config_path)
-        assert result is True
+        assert result
 
         # Verify both old and new data are preserved
         with open(config_path) as f:
@@ -333,7 +333,7 @@ class TestGitHookAutoSyncFileOperations:
         service.set_config(config)
 
         result = service.save_config_to_file(config_path)
-        assert result is True
+        assert result
         assert config_path.exists()
         assert config_path.parent.exists()
 
@@ -360,13 +360,13 @@ class TestGitHookAutoSyncFileOperations:
 
         # Save
         save_result = service.save_config_to_file(config_path)
-        assert save_result is True
+        assert save_result
 
         # Create new service and load
         mock_core2 = MagicMock()
         service2 = GitHookAutoSyncService(mock_core2)
         load_result = service2.load_config_from_file(config_path)
-        assert load_result is True
+        assert load_result
 
         # Verify all settings match
         loaded_config = service2.get_config()
@@ -417,7 +417,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         result = service._perform_auto_sync(event="commit")
 
         # Should return False when GitHub not configured
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubSyncOrchestrator")
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubIntegrationService")
@@ -441,7 +441,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         result = service._perform_auto_sync(event="commit")
 
         # Should return False when no linked issues
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubSyncOrchestrator")
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubIntegrationService")
@@ -475,7 +475,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         result = service._perform_auto_sync(event="commit")
 
         # Should work and return True (no changes = no errors)
-        assert result is True
+        assert result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubSyncOrchestrator")
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubIntegrationService")
@@ -511,7 +511,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         result = service._perform_auto_sync(event="commit", confirm=False)
 
         # Should attempt sync with force_local
-        assert result is True or result is False  # Depends on implementation
+        assert not result is True or result  # Depends on implementation
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubSyncOrchestrator")
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubIntegrationService")
@@ -535,7 +535,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         result = service._perform_auto_sync(event="commit")
 
         # Should return False on exception
-        assert result is False
+        assert not result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubSyncOrchestrator")
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubIntegrationService")
@@ -560,7 +560,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         # Test with different event types
         for event in ["commit", "checkout", "merge"]:
             result = service._perform_auto_sync(event=event)
-            assert result is False  # No linked issues
+            assert not result  # No linked issues
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubSyncOrchestrator")
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubIntegrationService")
@@ -584,14 +584,14 @@ class TestGitHookAutoSyncPerformAutoSync:
             commit_sha="abc123",
             confirm=False,
         )
-        assert result1 is False
+        assert not result1
 
         result2 = service._perform_auto_sync(
             event="checkout",
             branch="feature/test",
             confirm=True,
         )
-        assert result2 is False
+        assert not result2
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_get_sync_stats_with_linked_issues(self, mock_sync_service):

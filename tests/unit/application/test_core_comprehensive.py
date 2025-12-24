@@ -118,7 +118,7 @@ class TestRoadmapCoreMilestoneOperations:
             description="Updated description",
             status=MilestoneStatus.OPEN,
         )
-        assert result is True
+        assert result
 
         # Verify updates
         updated_milestone = core.milestones.get("Test Milestone")
@@ -137,7 +137,7 @@ class TestRoadmapCoreMilestoneOperations:
 
         # Clear due date
         result = core.milestones.update(name="Test Milestone", clear_due_date=True)
-        assert result is True
+        assert result
 
         # Verify due date is cleared
         updated_milestone = core.milestones.get("Test Milestone")
@@ -148,7 +148,7 @@ class TestRoadmapCoreMilestoneOperations:
         result = core.milestones.update(
             name="Nonexistent Milestone", description="New description"
         )
-        assert result is False
+        assert not result
 
     def test_update_milestone_not_initialized(self, temp_dir):
         """Test updating milestone on uninitialized roadmap."""
@@ -171,7 +171,7 @@ class TestRoadmapCoreMilestoneOperations:
             result = core.milestones.update(
                 name="Test Milestone", description="Updated description"
             )
-            assert result is False
+            assert not result
 
 
 class TestRoadmapCoreIssueAssignment:
@@ -194,7 +194,7 @@ class TestRoadmapCoreIssueAssignment:
 
         # Assign issue to milestone
         result = core.issues.assign_to_milestone(issue.id, "Test Milestone")
-        assert result is True
+        assert result
 
         # Verify assignment
         updated_issue = core.issues.get(issue.id)
@@ -208,7 +208,7 @@ class TestRoadmapCoreIssueAssignment:
         )
 
         result = core.issues.assign_to_milestone("nonexistent-id", "Test Milestone")
-        assert result is False
+        assert not result
 
     def test_assign_issue_to_milestone_milestone_not_found(self, core):
         """Test assigning issue to nonexistent milestone."""
@@ -217,14 +217,14 @@ class TestRoadmapCoreIssueAssignment:
 
         result = core.issues.assign_to_milestone(issue.id, "Nonexistent Milestone")
         # Assigning to non-existent milestone returns False
-        assert result is False
+        assert not result
 
     def test_assign_issue_to_milestone_both_not_found(self, core):
         """Test assigning nonexistent issue to nonexistent milestone."""
         result = core.issues.assign_to_milestone(
             "nonexistent-id", "Nonexistent Milestone"
         )
-        assert result is False
+        assert not result
 
 
 class TestRoadmapCoreMilestoneProgress:

@@ -92,7 +92,7 @@ class TestDatabaseManager:
 
     def test_is_initialized_returns_true_after_init(self, db_manager):
         """is_initialized() should return True after initialization."""
-        assert db_manager.is_initialized() is True
+        assert db_manager.is_initialized()
 
     def test_is_initialized_returns_false_on_error(self, db_manager):
         """is_initialized() should return False if database is corrupted."""
@@ -105,7 +105,7 @@ class TestDatabaseManager:
 
         result = db_manager.is_initialized()
         # After corruption, is_initialized should return False
-        assert result is False
+        assert not result
 
     def test_database_schema_created(self, db_manager):
         """Database schema should be created with all required tables."""
@@ -162,7 +162,7 @@ class TestDatabaseManager:
 
     def test_database_exists_returns_true_for_existing_db(self, db_manager):
         """database_exists() should return True for initialized database."""
-        assert db_manager.database_exists() is True
+        assert db_manager.database_exists()
 
     def test_database_exists_returns_false_for_missing_tables(self, temp_db):
         """database_exists() should return False if tables are missing."""
@@ -179,12 +179,12 @@ class TestDatabaseManager:
         db_manager = DatabaseManager(db_path=temp_db)
         # Since initialization creates tables, this will be True after init
         # The method checks for core tables
-        assert db_manager.is_initialized() is True
+        assert db_manager.is_initialized()
 
     def test_is_safe_for_writes_returns_true_for_valid_db(self, db_manager):
         """is_safe_for_writes() should return True for valid database."""
         safe, msg = db_manager.is_safe_for_writes()
-        assert safe is True
+        assert safe
         assert isinstance(msg, str)
 
     def test_is_safe_for_writes_returns_false_for_corrupted_db(self, db_manager):
@@ -196,7 +196,7 @@ class TestDatabaseManager:
 
         safe, msg = db_manager.is_safe_for_writes()
         # After corruption, safety check should fail
-        assert safe is False
+        assert not safe
 
     def test_multiple_transactions_sequential(self, db_manager):
         """Multiple sequential transactions should work correctly."""

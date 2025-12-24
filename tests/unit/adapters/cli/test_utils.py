@@ -28,4 +28,4 @@ class TestCliUtils:
         """Test that is_testing_environment returns True during testing."""
         # This test runs in the test environment
         result = is_testing_environment()
-        assert result is True
+        assert result

@@ -294,7 +294,7 @@ class TestEntityHealthScanner:
         assert report.entity_id == "issue-1"
         assert report.entity_type == EntityType.ISSUE
         assert report.entity_title == "Test Issue"
-        assert report.is_healthy is True
+        assert report.is_healthy
 
     @pytest.mark.parametrize(
         "field_to_set,field_value,issue_code,expected_severity",
@@ -413,7 +413,7 @@ class TestEntityHealthScanner:
 
         assert report.entity_id == "v1.0.0"
         assert report.entity_type == EntityType.MILESTONE
-        assert report.is_healthy is True
+        assert report.is_healthy
 
     @pytest.mark.parametrize(
         "field_to_set,field_value,issue_code,expected_severity",
@@ -461,7 +461,7 @@ class TestEntityHealthScanner:
 
         assert report.entity_id == "project-1"
         assert report.entity_type == EntityType.PROJECT
-        assert report.is_healthy is True
+        assert report.is_healthy
 
     @pytest.mark.parametrize(
         "field_to_set,field_value,issue_code",
@@ -665,7 +665,7 @@ class TestEntityHealthScannerIntegration:
 
         assert len(reports) == 3
         # First issue should be clean
-        assert reports[0].is_healthy is True
+        assert reports[0].is_healthy
         # Second issue should have missing description
         assert any(i.code == "missing_description" for i in reports[1].issues)
         # Third issue should have missing estimate warning
@@ -709,6 +709,6 @@ class TestEntityHealthScannerIntegration:
         milestone_report = scanner.scan_milestone(milestone)
         project_report = scanner.scan_project(project)
 
-        assert issue_report.is_healthy is True
-        assert milestone_report.is_healthy is True
-        assert project_report.is_healthy is True
+        assert issue_report.is_healthy
+        assert milestone_report.is_healthy
+        assert project_report.is_healthy

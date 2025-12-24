@@ -28,12 +28,12 @@ class TestRoadmapCore:
 
     def test_is_initialized_false(self, core):
         """Test is_initialized returns False when not initialized."""
-        assert core.is_initialized() is False
+        assert not core.is_initialized()
 
     def test_is_initialized_true(self, core):
         """Test is_initialized returns True when initialized."""
         core.initialize()
-        assert core.is_initialized() is True
+        assert core.is_initialized()
 
     def test_initialize_creates_directories(self, core):
         """Test initialization creates required directories."""
@@ -217,7 +217,7 @@ class TestRoadmapCore:
         assert issue_file.exists()
 
         success = core.issues.delete(issue.id)
-        assert success is True
+        assert success
         assert not issue_file.exists()
 
     def test_delete_issue_not_found(self, core):
@@ -225,7 +225,7 @@ class TestRoadmapCore:
         core.initialize()
 
         success = core.issues.delete("nonexistent")
-        assert success is False
+        assert not success
 
     def test_create_milestone(self, core):
         """Test creating a milestone."""
@@ -284,7 +284,7 @@ class TestRoadmapCore:
         core.milestones.create("v1.0", "First release")
 
         success = core.issues.assign_to_milestone(issue.id, "v1.0")
-        assert success is True
+        assert success
 
         # Verify assignment
         updated_issue = core.issues.get(issue.id)
@@ -297,7 +297,7 @@ class TestRoadmapCore:
         core.milestones.create("v1.0", "First release")
 
         success = core.issues.assign_to_milestone("nonexistent", "v1.0")
-        assert success is False
+        assert not success
 
     def test_assign_issue_to_milestone_milestone_not_found(self, core):
         """Test assigning issue to non-existent milestone."""
@@ -308,7 +308,7 @@ class TestRoadmapCore:
 
         # Assigning to a non-existent milestone returns False
         success = core.issues.assign_to_milestone(issue.id, "nonexistent")
-        assert success is False
+        assert not success
 
         # Verify the assignment was NOT made (milestone should remain unchanged)
         updated_issue = core.issues.get(issue.id)
@@ -375,7 +375,7 @@ class TestRoadmapCore:
 
         # Delete milestone
         result = core.milestones.delete("test-milestone")
-        assert result is True
+        assert result
 
         # Verify deletion
         deleted_milestone = core.milestones.get("test-milestone")
@@ -390,4 +390,4 @@ class TestRoadmapCore:
         core.initialize()
 
         result = core.milestones.delete("non-existent")
-        assert result is False
+        assert not result

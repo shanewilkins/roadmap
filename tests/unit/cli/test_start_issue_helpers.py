@@ -99,7 +99,7 @@ class TestStartIssueWorkflow:
         """should_create_branch returns True when git_branch_flag is True."""
         mock_core = Mock()
         result = StartIssueService(mock_core).should_create_branch(True)
-        assert result is True
+        assert result
 
     def test_should_create_branch_false_when_flag_false(self):
         """should_create_branch returns False when git_branch_flag is False.
@@ -109,7 +109,7 @@ class TestStartIssueWorkflow:
         """
         mock_core = Mock()
         result = StartIssueService(mock_core).should_create_branch(False)
-        assert result is False
+        assert not result
 
 
 class TestStartIssueDisplay:

@@ -411,7 +411,7 @@ class TestRecoveryAction:
         result = RecoveryAction.handle_missing_file(
             "/nonexistent", create_default=False
         )
-        assert result is False
+        assert not result
 
     def test_handle_permission_error_message(self):
         """Test permission error suggestion."""

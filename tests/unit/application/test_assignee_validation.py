@@ -22,7 +22,7 @@ class TestAssigneeValidationResult:
             is_valid=True, message="", canonical_id="test_user"
         )
 
-        assert result.is_valid is True
+        assert result.is_valid
         assert result.message == ""
         assert result.canonical_id == "test_user"
 
@@ -32,7 +32,7 @@ class TestAssigneeValidationResult:
             is_valid=False, message="User not found", canonical_id=""
         )
 
-        assert result.is_valid is False
+        assert not result.is_valid
         assert result.message == "User not found"
         assert result.canonical_id == ""
 

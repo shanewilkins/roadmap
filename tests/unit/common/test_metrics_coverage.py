@@ -23,7 +23,7 @@ class TestOperationMetric:
         )
         assert metric.operation == "save_file"
         assert metric.duration_ms == 125.5
-        assert metric.success is True
+        assert metric.success
         assert metric.error is None
 
     def test_create_failed_metric(self):
@@ -35,7 +35,7 @@ class TestOperationMetric:
             error="Connection timeout",
         )
         assert metric.operation == "api_call"
-        assert metric.success is False
+        assert not metric.success
         assert metric.error == "Connection timeout"
 
     def test_default_timestamp(self):

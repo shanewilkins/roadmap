@@ -287,7 +287,7 @@ class TestIssueSyncCoordinator:
     def test_sync_issue_file_file_not_found(self, coordinator):
         """Test sync fails when file doesn't exist."""
         result = coordinator.sync_issue_file(Path("nonexistent.md"))
-        assert result is False
+        assert not result
 
     def test_sync_issue_file_no_yaml(self, coordinator, tmp_path):
         """Test sync fails when no YAML frontmatter."""
@@ -298,7 +298,7 @@ class TestIssueSyncCoordinator:
             coordinator._parser, "parse_yaml_frontmatter", return_value=None
         ):
             result = coordinator.sync_issue_file(issue_file)
-            assert result is False
+            assert not result
 
     def test_sync_issue_file_no_project_id(
         self, coordinator, tmp_path, mock_transaction
@@ -315,7 +315,7 @@ class TestIssueSyncCoordinator:
             with patch.object(coordinator, "_extract_issue_id", return_value="123"):
                 mock_parse.return_value = {}
                 result = coordinator.sync_issue_file(issue_file)
-                assert result is False
+                assert not result
 
     def test_sync_issue_file_calls_database(
         self, coordinator, tmp_path, mock_transaction
@@ -359,7 +359,7 @@ class TestIssueSyncCoordinator:
         with patch.object(coordinator._parser, "parse_yaml_frontmatter") as mock_parse:
             mock_parse.side_effect = ValueError("Parsing error")
             result = coordinator.sync_issue_file(issue_file)
-            assert result is False
+            assert not result
 
 
 class TestMilestoneSyncCoordinator:
@@ -388,7 +388,7 @@ class TestMilestoneSyncCoordinator:
     def test_sync_milestone_file_not_found(self, coordinator):
         """Test sync fails when milestone file doesn't exist."""
         result = coordinator.sync_milestone_file(Path("nonexistent.md"))
-        assert result is False
+        assert not result
 
     def test_sync_milestone_file_no_yaml(self, coordinator, tmp_path):
         """Test sync fails when no YAML frontmatter."""
@@ -399,7 +399,7 @@ class TestMilestoneSyncCoordinator:
             coordinator._parser, "parse_yaml_frontmatter", return_value=None
         ):
             result = coordinator.sync_milestone_file(milestone_file)
-            assert result is False
+            assert not result
 
     def test_sync_milestone_file_no_project_id(
         self, coordinator, tmp_path, mock_transaction
@@ -415,7 +415,7 @@ class TestMilestoneSyncCoordinator:
         with patch.object(coordinator._parser, "parse_yaml_frontmatter") as mock_parse:
             mock_parse.return_value = {"title": "v1.0"}
             result = coordinator.sync_milestone_file(milestone_file)
-            assert result is False
+            assert not result
 
     def test_sync_milestone_file_success(self, coordinator, tmp_path, mock_transaction):
         """Test successfully syncing a milestone file."""
@@ -439,7 +439,7 @@ class TestMilestoneSyncCoordinator:
                 with patch.object(coordinator, "_extract_metadata", return_value=None):
                     with patch.object(coordinator, "_update_sync_status"):
                         result = coordinator.sync_milestone_file(milestone_file)
-                        assert result is True
+                        assert result
                         mock_conn.execute.assert_called()
 
     def test_sync_milestone_file_uses_name_field(
@@ -463,7 +463,7 @@ class TestMilestoneSyncCoordinator:
                 with patch.object(coordinator, "_extract_metadata", return_value=None):
                     with patch.object(coordinator, "_update_sync_status"):
                         result = coordinator.sync_milestone_file(milestone_file)
-                        assert result is True
+                        assert result
                         assert milestone_data["title"] == "Version 1.0"
 
     def test_sync_milestone_file_sets_defaults(
@@ -487,7 +487,7 @@ class TestMilestoneSyncCoordinator:
                 with patch.object(coordinator, "_extract_metadata", return_value=None):
                     with patch.object(coordinator, "_update_sync_status"):
                         result = coordinator.sync_milestone_file(milestone_file)
-                        assert result is True
+                        assert result
                         assert milestone_data["status"] == "open"
                         assert milestone_data["progress_percentage"] == 0.0
 
@@ -501,7 +501,7 @@ class TestMilestoneSyncCoordinator:
         with patch.object(coordinator._parser, "parse_yaml_frontmatter") as mock_parse:
             mock_parse.side_effect = ValueError("Parsing error")
             result = coordinator.sync_milestone_file(milestone_file)
-            assert result is False
+            assert not result
 
 
 class TestProjectSyncCoordinator:
@@ -530,7 +530,7 @@ class TestProjectSyncCoordinator:
     def test_sync_project_file_not_found(self, coordinator):
         """Test sync fails when project file doesn't exist."""
         result = coordinator.sync_project_file(Path("nonexistent.md"))
-        assert result is False
+        assert not result
 
     def test_sync_project_file_no_yaml(self, coordinator, tmp_path):
         """Test sync fails when no YAML frontmatter."""
@@ -541,7 +541,7 @@ class TestProjectSyncCoordinator:
             coordinator._parser, "parse_yaml_frontmatter", return_value=None
         ):
             result = coordinator.sync_project_file(project_file)
-            assert result is False
+            assert not result
 
     def test_sync_project_file_success(self, coordinator, tmp_path, mock_transaction):
         """Test successfully syncing a project file."""
@@ -562,7 +562,7 @@ class TestProjectSyncCoordinator:
             with patch.object(coordinator, "_extract_metadata", return_value=None):
                 with patch.object(coordinator, "_update_sync_status"):
                     result = coordinator.sync_project_file(project_file)
-                    assert result is True
+                    assert result
                     mock_conn.execute.assert_called()
 
     def test_sync_project_file_uses_title_as_name(
@@ -583,7 +583,7 @@ class TestProjectSyncCoordinator:
             with patch.object(coordinator, "_extract_metadata", return_value=None):
                 with patch.object(coordinator, "_update_sync_status"):
                     result = coordinator.sync_project_file(project_file)
-                    assert result is True
+                    assert result
                     assert project_data["name"] == "My Project"
 
     def test_sync_project_file_sets_defaults(
@@ -605,7 +605,7 @@ class TestProjectSyncCoordinator:
             with patch.object(coordinator, "_extract_metadata", return_value=None):
                 with patch.object(coordinator, "_update_sync_status"):
                     result = coordinator.sync_project_file(project_file)
-                    assert result is True
+                    assert result
                     # Verify status was set to default
                     assert project_data.get("status") == "active"
 
@@ -627,7 +627,7 @@ class TestProjectSyncCoordinator:
             with patch.object(coordinator, "_extract_metadata", return_value=None):
                 with patch.object(coordinator, "_update_sync_status"):
                     result = coordinator.sync_project_file(project_file)
-                    assert result is True
+                    assert result
                     assert project_data["id"] == "web-app"
 
     def test_sync_project_file_preserves_existing_id(
@@ -648,7 +648,7 @@ class TestProjectSyncCoordinator:
             with patch.object(coordinator, "_extract_metadata", return_value=None):
                 with patch.object(coordinator, "_update_sync_status"):
                     result = coordinator.sync_project_file(project_file)
-                    assert result is True
+                    assert result
                     assert project_data["id"] == "existing-id"
 
     def test_sync_project_file_includes_metadata(
@@ -677,7 +677,7 @@ class TestProjectSyncCoordinator:
             ) as mock_extract:
                 with patch.object(coordinator, "_update_sync_status"):
                     result = coordinator.sync_project_file(project_file)
-                    assert result is True
+                    assert result
                     mock_extract.assert_called()
 
     def test_sync_project_file_exception_handling(
@@ -690,4 +690,4 @@ class TestProjectSyncCoordinator:
         with patch.object(coordinator._parser, "parse_yaml_frontmatter") as mock_parse:
             mock_parse.side_effect = ValueError("Parsing error")
             result = coordinator.sync_project_file(project_file)
-            assert result is False
+            assert not result

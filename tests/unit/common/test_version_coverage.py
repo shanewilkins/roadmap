@@ -181,7 +181,7 @@ class TestVersionManager:
 
         manager = VersionManager(tmp_path)
         result = manager.check_version_consistency()
-        assert result["consistent"] is True
+        assert result["consistent"]
         assert result["pyproject_version"] == "1.2.3"
         assert result["init_version"] == "1.2.3"
 

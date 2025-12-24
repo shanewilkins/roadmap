@@ -106,7 +106,7 @@ class TestIssueCreationService:
 
         success, branch_name = service.create_branch_for_issue(mock_issue)
 
-        assert success is False
+        assert not success
         assert branch_name is None
 
     def test_create_branch_for_issue_safe_create_success(
@@ -121,7 +121,7 @@ class TestIssueCreationService:
             mock_issue, checkout=True
         )
 
-        assert success is True
+        assert success
         assert branch_name == "issue-1-test"
 
     def test_create_branch_for_issue_explicit_name(
@@ -148,7 +148,7 @@ class TestIssueCreationService:
 
         success, branch_name = service.create_branch_for_issue(mock_issue)
 
-        assert success is False
+        assert not success
 
     def test_create_branch_for_issue_no_checkout(self, service, mock_core, mock_issue):
         """Test branch creation without checkout."""
@@ -160,7 +160,7 @@ class TestIssueCreationService:
             mock_issue, checkout=False
         )
 
-        assert success is True
+        assert success
         assert branch_name == "issue-1-test"
 
     def test_has_uncommitted_changes_true(self, service, mock_core):
@@ -169,7 +169,7 @@ class TestIssueCreationService:
 
         result = service._has_uncommitted_changes()
 
-        assert result is True
+        assert result
 
     def test_has_uncommitted_changes_false(self, service, mock_core):
         """Test no uncommitted changes."""
@@ -177,7 +177,7 @@ class TestIssueCreationService:
 
         result = service._has_uncommitted_changes()
 
-        assert result is False
+        assert not result
 
     def test_has_uncommitted_changes_exception(self, service, mock_core):
         """Test exception handling in uncommitted changes check."""
@@ -185,7 +185,7 @@ class TestIssueCreationService:
 
         result = service._has_uncommitted_changes()
 
-        assert result is False
+        assert not result
 
     def test_try_safe_create_branch_success(self, service, mock_core, mock_issue):
         """Test safe branch creation success."""
@@ -193,7 +193,7 @@ class TestIssueCreationService:
 
         result = service._try_safe_create_branch(mock_issue, True, False)
 
-        assert result is True
+        assert result
 
     def test_try_safe_create_branch_type_error_fallback(
         self, service, mock_core, mock_issue
@@ -207,7 +207,7 @@ class TestIssueCreationService:
 
         result = service._try_safe_create_branch(mock_issue, True, True)
 
-        assert result is True
+        assert result
 
     def test_try_safe_create_branch_all_failures(self, service, mock_core, mock_issue):
         """Test all attempts fail in safe branch creation."""
@@ -215,7 +215,7 @@ class TestIssueCreationService:
 
         result = service._try_safe_create_branch(mock_issue, True, False)
 
-        assert result is False
+        assert not result
 
     def test_try_direct_git_command_success(self, service, mock_core):
         """Test direct git command success."""
@@ -223,7 +223,7 @@ class TestIssueCreationService:
 
         result = service._try_direct_git_command("test-branch", True)
 
-        assert result is True
+        assert result
 
     def test_try_direct_git_command_branch_exists(self, service, mock_core):
         """Test branch already exists."""
@@ -234,7 +234,7 @@ class TestIssueCreationService:
 
         result = service._try_direct_git_command("test-branch", True)
 
-        assert result is True
+        assert result
 
     def test_try_direct_git_command_exception(self, service, mock_core):
         """Test exception in direct git command."""
@@ -242,7 +242,7 @@ class TestIssueCreationService:
 
         result = service._try_direct_git_command("test-branch", True)
 
-        assert result is False
+        assert not result
 
     @patch("subprocess.run")
     def test_try_subprocess_git_success(self, mock_subprocess, service, mock_core):
@@ -252,7 +252,7 @@ class TestIssueCreationService:
 
         result = service._try_subprocess_git("test-branch", True)
 
-        assert result is True
+        assert result
         mock_subprocess.assert_called_once()
 
     @patch("subprocess.run")
@@ -262,7 +262,7 @@ class TestIssueCreationService:
 
         result = service._try_subprocess_git("test-branch", True)
 
-        assert result is False
+        assert not result
 
     def test_show_branch_success_message(self, service):
         """Test branch success message display."""
@@ -342,7 +342,7 @@ class TestIssueCreationServiceIntegration:
 
         # Test branch creation
         success, branch_name = service.create_branch_for_issue(issue)
-        assert success is True
+        assert success
         assert branch_name == "issue-1-feature"
 
         # Test display
@@ -408,7 +408,7 @@ class TestIssueCreationServiceIntegration:
             success, branch = service.create_branch_for_issue(issue)
 
             assert assignee is not None
-            assert success is True
+            assert success
 
     def test_issue_with_dependencies_display(self, mock_core):
         """Test displaying issue with complex dependencies."""

@@ -16,7 +16,7 @@ class TestIssueChange:
         assert change.title == "Test Issue"
         assert change.local_changes == {}
         assert change.github_changes == {}
-        assert change.has_conflict is False
+        assert not change.has_conflict
         assert change.last_sync_time is None
 
     def test_create_with_local_changes(self):
@@ -46,7 +46,7 @@ class TestIssueChange:
             github_changes={"status": "closed"},
             has_conflict=True,
         )
-        assert change.has_conflict is True
+        assert change.has_conflict
 
     def test_get_conflict_description_no_conflict(self):
         """Test getting conflict description when no conflict exists."""
@@ -182,7 +182,7 @@ class TestSyncReport:
             changes=[change1],
         )
         assert report.conflicts_detected == 1
-        assert report.changes[0].has_conflict is True
+        assert report.changes[0].has_conflict
 
     @patch("roadmap.core.services.sync_report.console")
     def test_display_brief_with_error(self, mock_console):
