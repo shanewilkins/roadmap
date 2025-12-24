@@ -35,7 +35,7 @@ class TestRoadmapCoreAdvancedIssueOperations:
         return core
 
     def test_get_issues_by_milestone(self, core):
-        """Test getting issues grouped by milestone."""
+        """Test getting issues grouped by milestone - group structure."""
         # Create milestones
         core.milestones.create("Milestone 1", "Description 1")
         core.milestones.create("Milestone 2", "Description 2")
@@ -50,7 +50,6 @@ class TestRoadmapCoreAdvancedIssueOperations:
         core.issues.assign_to_milestone(issue1.id, "Milestone 1")
         core.issues.assign_to_milestone(issue2.id, "Milestone 1")
         core.issues.assign_to_milestone(issue3.id, "Milestone 2")
-        # issue4 remains unassigned (backlog)
 
         # Get grouped issues
         grouped = core.issues.get_grouped_by_milestone()
@@ -59,9 +58,49 @@ class TestRoadmapCoreAdvancedIssueOperations:
         assert "Milestone 1" in grouped
         assert "Milestone 2" in grouped
 
+    def test_get_issues_by_milestone_counts(self, core):
+        """Test getting issues grouped by milestone - issue counts."""
+        # Create milestones
+        core.milestones.create("Milestone 1", "Description 1")
+        core.milestones.create("Milestone 2", "Description 2")
+
+        # Create issues
+        issue1 = core.issues.create(title="Issue 1", priority=Priority.HIGH)
+        issue2 = core.issues.create(title="Issue 2", priority=Priority.MEDIUM)
+        issue3 = core.issues.create(title="Issue 3", priority=Priority.LOW)
+        core.issues.create(title="Backlog Issue", priority=Priority.LOW)
+
+        # Assign issues to milestones
+        core.issues.assign_to_milestone(issue1.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue2.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue3.id, "Milestone 2")
+
+        # Get grouped issues
+        grouped = core.issues.get_grouped_by_milestone()
+
         assert len(grouped["Backlog"]) == 1
         assert len(grouped["Milestone 1"]) == 2
         assert len(grouped["Milestone 2"]) == 1
+
+    def test_get_issues_by_milestone_assignments(self, core):
+        """Test getting issues grouped by milestone - verify issue titles."""
+        # Create milestones
+        core.milestones.create("Milestone 1", "Description 1")
+        core.milestones.create("Milestone 2", "Description 2")
+
+        # Create issues
+        issue1 = core.issues.create(title="Issue 1", priority=Priority.HIGH)
+        issue2 = core.issues.create(title="Issue 2", priority=Priority.MEDIUM)
+        issue3 = core.issues.create(title="Issue 3", priority=Priority.LOW)
+        core.issues.create(title="Backlog Issue", priority=Priority.LOW)
+
+        # Assign issues to milestones
+        core.issues.assign_to_milestone(issue1.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue2.id, "Milestone 1")
+        core.issues.assign_to_milestone(issue3.id, "Milestone 2")
+
+        # Get grouped issues
+        grouped = core.issues.get_grouped_by_milestone()
 
         # Verify issue assignments
         assert grouped["Backlog"][0].title == "Backlog Issue"
@@ -438,7 +477,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         return core
 
     def test_update_issue_with_various_fields(self, core):
-        """Test updating issues with different field types."""
+        """Test updating issues - basic fields."""
         # Create issue
         issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
@@ -457,11 +496,65 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         assert updated_issue is not None
         assert updated_issue.title == "Updated Title"
         assert updated_issue.priority == Priority.HIGH
+
+    def test_update_issue_with_various_fields_status(self, core):
+        """Test updating issues - status and assignee."""
+        # Create issue
+        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
+
+        # Update various fields
+        updated_issue = core.issues.update(
+            issue.id,
+            title="Updated Title",
+            priority=Priority.HIGH,
+            status=Status.IN_PROGRESS,
+            assignee="alice@example.com",
+            estimated_hours=5.5,
+            labels=["bug", "urgent"],
+            milestone="Test Milestone",
+        )
+
         assert updated_issue.status == Status.IN_PROGRESS
         assert updated_issue.assignee == "alice@example.com"
+
+    def test_update_issue_with_various_fields_metrics(self, core):
+        """Test updating issues - estimated hours and labels."""
+        # Create issue
+        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
+
+        # Update various fields
+        updated_issue = core.issues.update(
+            issue.id,
+            title="Updated Title",
+            priority=Priority.HIGH,
+            status=Status.IN_PROGRESS,
+            assignee="alice@example.com",
+            estimated_hours=5.5,
+            labels=["bug", "urgent"],
+            milestone="Test Milestone",
+        )
+
         assert updated_issue.estimated_hours == 5.5
         assert "bug" in updated_issue.labels
         assert "urgent" in updated_issue.labels
+
+    def test_update_issue_with_various_fields_milestone(self, core):
+        """Test updating issues - milestone."""
+        # Create issue
+        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
+
+        # Update various fields
+        updated_issue = core.issues.update(
+            issue.id,
+            title="Updated Title",
+            priority=Priority.HIGH,
+            status=Status.IN_PROGRESS,
+            assignee="alice@example.com",
+            estimated_hours=5.5,
+            labels=["bug", "urgent"],
+            milestone="Test Milestone",
+        )
+
         assert updated_issue.milestone == "Test Milestone"
 
     def test_update_issue_invalid_priority(self, core):

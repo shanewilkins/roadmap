@@ -57,18 +57,34 @@ class TestRoadmapCore:
         assert milestone_template.exists()
         assert project_template.exists()
 
-        # Check template content
+    def test_initialize_creates_issue_template_content(self, core):
+        """Test issue template contains required placeholders."""
+        core.initialize()
+
+        issue_template = core.templates_dir / "issue.md"
         issue_content = issue_template.read_text()
+
         assert "{{ title }}" in issue_content
         assert "priority:" in issue_content
 
-        # Check project template content
+    def test_initialize_creates_project_template_content(self, core):
+        """Test project template contains required placeholders."""
+        core.initialize()
+
+        project_template = core.templates_dir / "project.md"
         project_content = project_template.read_text()
+
         assert "{{ project_name }}" in project_content
         assert "{{ project_owner }}" in project_content
         assert "start_date:" in project_content
 
+    def test_initialize_creates_milestone_template_content(self, core):
+        """Test milestone template contains required placeholders."""
+        core.initialize()
+
+        milestone_template = core.templates_dir / "milestone.md"
         milestone_content = milestone_template.read_text()
+
         assert "{{ milestone_name }}" in milestone_content
 
     def test_initialize_already_initialized_raises_error(self, core):

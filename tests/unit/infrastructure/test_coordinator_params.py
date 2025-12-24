@@ -46,10 +46,34 @@ class TestIssueCreateParams:
         assert params.title == "Test Issue"
         assert params.priority == Priority.HIGH
         assert params.issue_type == IssueType.FEATURE
+
+    def test_create_with_all_fields_milestone_and_labels(self):
+        """Test creating IssueCreateParams milestone and labels."""
+        params = IssueCreateParams(
+            title="Test Issue",
+            milestone="v1.0",
+            labels=["bug", "urgent"],
+        )
         assert params.milestone == "v1.0"
         assert params.labels == ["bug", "urgent"]
+
+    def test_create_with_all_fields_assignee_and_time(self):
+        """Test creating IssueCreateParams with assignee and estimated time."""
+        params = IssueCreateParams(
+            title="Test Issue",
+            assignee="john@example.com",
+            estimated_hours=5.5,
+        )
         assert params.assignee == "john@example.com"
         assert params.estimated_hours == 5.5
+
+    def test_create_with_all_fields_dependencies(self):
+        """Test creating IssueCreateParams with dependencies."""
+        params = IssueCreateParams(
+            title="Test Issue",
+            depends_on=["issue-1"],
+            blocks=["issue-2"],
+        )
         assert params.depends_on == ["issue-1"]
         assert params.blocks == ["issue-2"]
 
