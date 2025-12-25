@@ -18,6 +18,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from roadmap.adapters.cli.layout import SmartTableLayout
 from roadmap.common.output_formatter import OutputFormatter
 from roadmap.common.output_models import TableData
 
@@ -101,6 +102,9 @@ class OutputManager:
             width=80 if is_testing else 120,
         )
 
+        # Initialize smart layout system for responsive table rendering
+        self.layout = SmartTableLayout()
+
     @staticmethod
     def _is_testing_environment() -> bool:
         """Detect if running in a test environment."""
@@ -180,6 +184,7 @@ class OutputManager:
 
         Handles both terminal output and file saves.
         Automatically detects test environment and strips ANSI codes.
+        For 'table' format, uses smart responsive layout system.
 
         Args:
             table_data: TableData object to render
@@ -187,9 +192,9 @@ class OutputManager:
         formatter = OutputFormatter(table_data)
 
         if self.format == "table":
-            # Rich table for terminal (pretty output)
-            content = formatter.to_rich()
-            self.console.print(content)
+            # Use smart responsive layout for 'table' format
+            renderable = self.layout.render(table_data)
+            self.console.print(renderable)
 
         elif self.format == "plain":
             # Plain ASCII for POSIX compatibility
