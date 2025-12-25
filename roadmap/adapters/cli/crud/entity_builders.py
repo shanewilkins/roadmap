@@ -136,8 +136,9 @@ class IssueBuilder:
         if blocks:
             create_dict["blocks"] = blocks
 
-        if description:
-            create_dict["content"] = description
+        # Note: description is stored in issue.content during creation via IssueService
+        # We don't pass it here as the coordinator.create() doesn't accept it
+        # Instead, it's set in IssueService.create_issue() with a default template
 
         return create_dict
 

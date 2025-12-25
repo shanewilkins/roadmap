@@ -42,8 +42,9 @@ class TestGitIntegrationOpsInitialization:
     def test_init_with_none_git(self):
         """Test initialization with None git (fails at usage)."""
         ops = GitIntegrationOps(
-            None, TestDataFactory.create_mock_core(is_initialized=True)
-        )  # type: ignore
+            None,  # type: ignore[arg-type]
+            TestDataFactory.create_mock_core(is_initialized=True),
+        )
         assert ops.git is None
 
     def test_init_with_none_core(self):

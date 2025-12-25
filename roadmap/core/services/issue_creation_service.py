@@ -221,9 +221,8 @@ class IssueCreationService:
             issue: Created issue object
             milestone: Optional milestone name
         """
-        self._console.print(
-            f"✅ Created issue: {issue.title} [{str(issue.id)}]", style="bold green"
-        )
+        self._console.print(f"✅ Created issue: {issue.title}", style="bold green")
+        self._console.print(f"   ID: {issue.id}", style="bold cyan")
         self._console.print(f"   Type: {issue.issue_type.value.title()}", style="blue")
         self._console.print(f"   Priority: {issue.priority.value}", style="yellow")
 
