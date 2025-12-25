@@ -1,5 +1,7 @@
 """List issues command."""
 
+from dataclasses import asdict
+
 import click
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
@@ -319,7 +321,7 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
         # Handle export if requested
         if export:
             export_manager = ExportManager()
-            export_data = [dto.model_dump() for dto in issues]
+            export_data = [asdict(dto) for dto in issues]
             content, export_path = export_manager.export_data(export_data, "issues")
             _get_console().print(
                 f"✅ Exported {issue_count} issues to {export_path}", style="green"

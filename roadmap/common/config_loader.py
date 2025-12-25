@@ -87,6 +87,15 @@ class ConfigLoader:
             with open(path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
 
+            # Ensure data is a dictionary
+            if not isinstance(data, dict):
+                logger.warning(
+                    "invalid_config_format",
+                    path=str(path),
+                    error="config is not a mapping",
+                )
+                return None
+
             # Validate and create config from data
             config = RoadmapConfig(**data)
             logger.info("loaded_config", path=str(path))

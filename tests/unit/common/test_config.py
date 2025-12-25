@@ -181,11 +181,13 @@ class TestConfigLoader:
 
             # Load, modify, and save
             loaded = ConfigLoader._load_config_file(config_file)
+            assert loaded is not None
             loaded.export.directory = "/new/exports"
             ConfigLoader._save_config_file(config_file, loaded)
 
             # Verify change persisted
             reloaded = ConfigLoader._load_config_file(config_file)
+            assert reloaded is not None
             assert reloaded.export.directory == "/new/exports"
 
     def test_invalid_config_file(self):
