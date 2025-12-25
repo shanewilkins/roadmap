@@ -1,14 +1,14 @@
 """Tests for critical path calculator."""
 
-import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 
+import pytest
+
+from roadmap.core.domain.issue import Issue, Priority
 from roadmap.core.services.critical_path_calculator import (
     CriticalPathCalculator,
     PathNode,
-    CriticalPathResult,
 )
-from roadmap.core.domain.issue import Issue, Priority, Status
 
 
 @pytest.fixture

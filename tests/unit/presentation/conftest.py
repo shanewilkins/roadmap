@@ -204,7 +204,10 @@ def mock_github_service():
     mock_service.test_connection.return_value = True
     mock_service.get_issues.return_value = []
     mock_service.get_milestones.return_value = []
-    mock_service.create_issue.return_value = {"number": 1, "html_url": "https://github.com/test/repo/issues/1"}
+    mock_service.create_issue.return_value = {
+        "number": 1,
+        "html_url": "https://github.com/test/repo/issues/1",
+    }
     mock_service.update_issue.return_value = True
     mock_service.delete_issue.return_value = True
     mock_service.validate_assignee.return_value = (True, "")

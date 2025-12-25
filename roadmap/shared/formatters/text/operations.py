@@ -7,7 +7,7 @@ Use OperationFormatter class for new code. Legacy functions remain for backward 
 
 class OperationFormatter:
     """Unified formatter for all operation results.
-    
+
     Provides a consistent interface for formatting operation successes, failures,
     and entity details across the CLI. This class consolidates all formatting logic
     that was previously scattered across multiple functions.

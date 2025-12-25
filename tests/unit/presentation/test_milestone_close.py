@@ -35,5 +35,7 @@ class TestMilestoneClose:
             close_result = cli_runner.invoke(main, ["milestone", "close", "v0.2.0"])
             if close_result.exit_code == 0:
                 # Verify output contains milestone reference
-                assert "v0.2.0" in close_result.output or "closed" in close_result.output.lower()
-
+                assert (
+                    "v0.2.0" in close_result.output
+                    or "closed" in close_result.output.lower()
+                )

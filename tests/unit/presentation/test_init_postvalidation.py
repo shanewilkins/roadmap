@@ -15,10 +15,13 @@ def cli_runner():
 class TestPostInitValidation:
     """Test post-initialization validation checks."""
 
-    @pytest.mark.parametrize("skip_project,expected_in_output", [
-        (True, None),  # Skip project validation
-        (False, "No project files found"),  # Check for warning
-    ])
+    @pytest.mark.parametrize(
+        "skip_project,expected_in_output",
+        [
+            (True, None),  # Skip project validation
+            (False, "No project files found"),  # Check for warning
+        ],
+    )
     def test_post_init_validation(self, cli_runner, skip_project, expected_in_output):
         """Test that post-init validation handles missing projects appropriately."""
         with cli_runner.isolated_filesystem():
@@ -37,4 +40,3 @@ class TestPostInitValidation:
             assert result.exit_code == 0
             if expected_in_output:
                 assert expected_in_output not in result.output
-

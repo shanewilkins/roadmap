@@ -1,6 +1,5 @@
 """Tests for OperationFormatter class."""
 
-import pytest
 
 from roadmap.shared.formatters.text.operations import OperationFormatter
 
@@ -148,8 +147,12 @@ class TestOperationFormatterIntegration:
 
     def test_success_and_failure_consistency(self):
         """Test that success and failure formats are consistent."""
-        success = OperationFormatter.success("✅", "Created", entity_title="Test", entity_id="test-123")
-        failure = OperationFormatter.failure("create", entity_id="test-123", error="Failed")
+        success = OperationFormatter.success(
+            "✅", "Created", entity_title="Test", entity_id="test-123"
+        )
+        failure = OperationFormatter.failure(
+            "create", entity_id="test-123", error="Failed"
+        )
 
         # Both should contain ID
         assert "test-123" in success
@@ -172,9 +175,7 @@ class TestOperationFormatterIntegration:
         """Test that None/empty values are handled gracefully."""
         result1 = OperationFormatter.success("✅", "Done", entity_title=None)
         result2 = OperationFormatter.failure("delete", entity_id=None)
-        result3 = OperationFormatter.entity(
-            "id-1", details=None, status=None
-        )
+        result3 = OperationFormatter.entity("id-1", details=None, status=None)
 
         # Should not contain "None" strings
         assert "None" not in result1

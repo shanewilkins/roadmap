@@ -1,7 +1,6 @@
 """Unit tests for the profiling module."""
 
 import time
-import pytest
 
 from roadmap.common.profiling import (
     OperationProfile,

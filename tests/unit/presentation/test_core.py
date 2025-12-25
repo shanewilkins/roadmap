@@ -22,10 +22,13 @@ class TestCoreCommands:
         assert result.exit_code == 0
         assert "roadmap" in result.output.lower()
 
-    @pytest.mark.parametrize("args,expected_output", [
-        (["init"], ["roadmap", "initialization"]),
-        (["status"], ["roadmap", "status"]),
-    ])
+    @pytest.mark.parametrize(
+        "args,expected_output",
+        [
+            (["init"], ["roadmap", "initialization"]),
+            (["status"], ["roadmap", "status"]),
+        ],
+    )
     def test_cli_commands(self, cli_isolated_fs, args, expected_output):
         """Test various CLI commands."""
         result = cli_isolated_fs.invoke(main, args)

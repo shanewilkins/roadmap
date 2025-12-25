@@ -8,9 +8,9 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
+from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.core.domain import Milestone, MilestoneStatus, Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
-from roadmap.adapters.persistence.parser import MilestoneParser
 
 
 @pytest.fixture
@@ -84,12 +84,23 @@ class TestListAllVariants:
         assert "Backlog" in result.output
         assert "Future" in result.output
 
-    @pytest.mark.parametrize("filter_flag,expected_count,should_contain,should_not_contain", [
-        ("--open", "4", ["Open Todo", "Blocked", "Backlog", "Future"], ["Done"]),
-        ("--blocked", "1", ["Blocked Issue"], ["Open Todo", "Done"]),
-        ("--backlog", "1", ["Backlog Issue"], ["Open Todo"]),
-    ])
-    def test_list_with_status_filters(self, temp_roadmap, strip_ansi_fixture, filter_flag, expected_count, should_contain, should_not_contain):
+    @pytest.mark.parametrize(
+        "filter_flag,expected_count,should_contain,should_not_contain",
+        [
+            ("--open", "4", ["Open Todo", "Blocked", "Backlog", "Future"], ["Done"]),
+            ("--blocked", "1", ["Blocked Issue"], ["Open Todo", "Done"]),
+            ("--backlog", "1", ["Backlog Issue"], ["Open Todo"]),
+        ],
+    )
+    def test_list_with_status_filters(
+        self,
+        temp_roadmap,
+        strip_ansi_fixture,
+        filter_flag,
+        expected_count,
+        should_contain,
+        should_not_contain,
+    ):
         """Test listing with various status filters."""
         runner = CliRunner()
         result = runner.invoke(main, ["issue", "list", filter_flag])
@@ -148,7 +159,9 @@ class TestListAllVariants:
             main, ["issue", "list", "--backlog", "--milestone", "Test Sprint"]
         )
         assert result.exit_code == 0
-        assert "Cannot combine --backlog, --unassigned, --next-milestone" in result.output
+        assert (
+            "Cannot combine --backlog, --unassigned, --next-milestone" in result.output
+        )
         assert "and --milestone" in result.output
 
     def test_empty_filter_results(self, temp_roadmap):
@@ -159,13 +172,16 @@ class TestListAllVariants:
         assert "No all review issues found" in result.output
         assert "Create one with" in result.output
 
-    @pytest.mark.parametrize("args,expected_desc", [
-        (["--open"], "all open"),
-        (["--blocked"], "all blocked"),
-        (["--backlog"], "backlog"),
-        (["--open", "--priority", "high"], "all open high priority"),
-        (["--milestone", "Test Sprint"], "milestone 'test sprint'"),
-    ])
+    @pytest.mark.parametrize(
+        "args,expected_desc",
+        [
+            (["--open"], "all open"),
+            (["--blocked"], "all blocked"),
+            (["--backlog"], "backlog"),
+            (["--open", "--priority", "high"], "all open high priority"),
+            (["--milestone", "Test Sprint"], "milestone 'test sprint'"),
+        ],
+    )
     def test_header_descriptions(self, temp_roadmap, args, expected_desc):
         """Test that filter descriptions are shown correctly in headers."""
         runner = CliRunner()

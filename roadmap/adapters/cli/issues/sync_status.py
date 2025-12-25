@@ -1,7 +1,6 @@
 """Sync status command - View sync history and statistics for GitHub-linked issues."""
 
 import sys
-from datetime import datetime
 
 import click
 from rich.panel import Panel

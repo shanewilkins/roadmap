@@ -22,7 +22,9 @@ class TestInitTemplate:
         with cli_runner.isolated_filesystem():
             # Create custom template
             tpl = Path("custom_project_template.md")
-            tpl.write_text("# CUSTOM TEMPLATE\n\nThis is a custom template for testing.")
+            tpl.write_text(
+                "# CUSTOM TEMPLATE\n\nThis is a custom template for testing."
+            )
 
             # Run init with custom template
             result = cli_runner.invoke(
@@ -40,7 +42,7 @@ class TestInitTemplate:
 
             assert result.exit_code == 0, result.output
             assert Path(".roadmap").exists()
-            
+
             # Verify project file contains custom marker
             projects_dir = Path(".roadmap/projects")
             if projects_dir.exists():
@@ -48,4 +50,3 @@ class TestInitTemplate:
                 if files:
                     content = files[0].read_text()
                     assert "CUSTOM TEMPLATE" in content
-

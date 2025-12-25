@@ -230,7 +230,11 @@ class PerformanceReport:
         )
 
         for profile in sorted_ops:
-            pct = (profile.total_time_ms / self.total_time_ms * 100) if self.total_time_ms > 0 else 0
+            pct = (
+                (profile.total_time_ms / self.total_time_ms * 100)
+                if self.total_time_ms > 0
+                else 0
+            )
             error_str = f" ({profile.errors} errors)" if profile.errors > 0 else ""
 
             lines.append(

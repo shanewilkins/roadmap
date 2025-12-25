@@ -6,8 +6,8 @@ pre-checks, and error handling.
 
 from unittest import mock
 
-import pytest
 import click
+import pytest
 
 from roadmap.adapters.cli.issues.issue_status_helpers import (
     StatusChangeConfig,
@@ -104,9 +104,7 @@ class TestApplyStatusChangeSuccess:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ):
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 apply_status_change(
                     mock_core, "ISSUE-1", config, reason="Waiting for approval"
                 )
@@ -141,9 +139,7 @@ class TestApplyStatusChangePreCheck:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ):
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 apply_status_change(mock_core, "ISSUE-1", config)
 
                 # Should proceed with update
@@ -171,9 +167,7 @@ class TestApplyStatusChangePreCheck:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ):
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 apply_status_change(mock_core, "ISSUE-1", config)
 
                 # Should NOT update since pre-check failed
@@ -222,9 +216,7 @@ class TestApplyStatusChangeErrors:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ):
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 with pytest.raises(click.Abort):
                     apply_status_change(mock_core, "ISSUE-1", config)
 
@@ -252,9 +244,7 @@ class TestApplyStatusChangeAllStatuses:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ):
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 apply_status_change(mock_core, "ISSUE-1", config)
                 assert mock_core.issues.update.called
 
@@ -278,9 +268,7 @@ class TestApplyStatusChangeAllStatuses:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ):
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 apply_status_change(mock_core, "ISSUE-1", config)
                 assert mock_core.issues.update.called
 
@@ -316,9 +304,7 @@ class TestStatusChangeIntegration:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ):
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 apply_status_change(mock_core, "ISSUE-1", config1)
                 apply_status_change(mock_core, "ISSUE-1", config2)
 

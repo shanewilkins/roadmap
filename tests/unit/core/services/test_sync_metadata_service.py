@@ -1,6 +1,7 @@
 """Tests for sync metadata service."""
 
 import pytest
+
 from roadmap.core.services.sync_metadata_service import (
     SyncMetadata,
     SyncRecord,
@@ -16,12 +17,34 @@ class TestSyncRecord:
             # Successful sync
             (True, {"status": "done"}, None, None, None, ("success", True)),
             # Conflict sync
-            (False, {"status": "done"}, {"status": "closed"}, "local", None, ("conflict_resolution", "local")),
+            (
+                False,
+                {"status": "done"},
+                {"status": "closed"},
+                "local",
+                None,
+                ("conflict_resolution", "local"),
+            ),
             # Error sync
-            (False, None, None, None, "Network error", ("error_message", "Network error")),
+            (
+                False,
+                None,
+                None,
+                None,
+                "Network error",
+                ("error_message", "Network error"),
+            ),
         ],
     )
-    def test_create_sync_record(self, success, local_changes, github_changes, conflict_resolution, error_message, expected_fields):
+    def test_create_sync_record(
+        self,
+        success,
+        local_changes,
+        github_changes,
+        conflict_resolution,
+        error_message,
+        expected_fields,
+    ):
         """Test creating sync records with various scenarios."""
         record = SyncRecord(
             sync_timestamp="2025-12-22T10:30:00Z",
@@ -74,7 +97,14 @@ class TestSyncMetadata:
             (False, None, "Network error", "error", 0),
         ],
     )
-    def test_add_sync_record(self, record_success, conflict_resolution, error_message, expected_status, expected_successful):
+    def test_add_sync_record(
+        self,
+        record_success,
+        conflict_resolution,
+        error_message,
+        expected_status,
+        expected_successful,
+    ):
         """Test adding sync records with various statuses."""
         metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
         record = SyncRecord(

@@ -52,20 +52,20 @@ class IssueDTO(BaseDTO):
     id: str
     title: str
     priority: str  # String, not enum (e.g., "high", "medium")
-    status: str    # String, not enum (e.g., "todo", "in_progress")
+    status: str  # String, not enum (e.g., "todo", "in_progress")
     issue_type: str = "other"  # String, not enum
-    assignee: Optional[str] = None
-    milestone: Optional[str] = None
-    due_date: Optional[datetime] = None
-    estimated_hours: Optional[float] = None
-    actual_end_date: Optional[datetime] = None
-    progress_percentage: Optional[float] = None
-    created: Optional[datetime] = None
-    updated: Optional[datetime] = None
+    assignee: str | None = None
+    milestone: str | None = None
+    due_date: datetime | None = None
+    estimated_hours: float | None = None
+    actual_end_date: datetime | None = None
+    progress_percentage: float | None = None
+    created: datetime | None = None
+    updated: datetime | None = None
     # Extended fields for detailed views
-    content: Optional[str] = None
+    content: str | None = None
     labels: list[str] = field(default_factory=list)
-    github_issue: Optional[str] = None
+    github_issue: str | None = None
 
 
 @dataclass
@@ -86,13 +86,13 @@ class MilestoneDTO(BaseDTO):
     id: str
     name: str
     status: str  # String, not enum
-    due_date: Optional[datetime] = None
+    due_date: datetime | None = None
     description: str = ""
-    progress_percentage: Optional[float] = None
+    progress_percentage: float | None = None
     issue_count: int = 0
     completed_count: int = 0
-    created: Optional[datetime] = None
-    updated: Optional[datetime] = None
+    created: datetime | None = None
+    updated: datetime | None = None
 
 
 @dataclass
@@ -115,13 +115,13 @@ class ProjectDTO(BaseDTO):
     name: str
     status: str  # String, not enum
     description: str = ""
-    owner: Optional[str] = None
-    target_end_date: Optional[datetime] = None
-    actual_end_date: Optional[datetime] = None
+    owner: str | None = None
+    target_end_date: datetime | None = None
+    actual_end_date: datetime | None = None
     milestone_count: int = 0
     issue_count: int = 0
-    created: Optional[datetime] = None
-    updated: Optional[datetime] = None
+    created: datetime | None = None
+    updated: datetime | None = None
 
 
 __all__ = [

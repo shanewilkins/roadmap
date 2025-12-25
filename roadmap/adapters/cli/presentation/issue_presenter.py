@@ -2,13 +2,14 @@
 
 from datetime import datetime
 
+from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.text import Text
+
 from roadmap.adapters.cli.dtos import IssueDTO
 from roadmap.adapters.cli.presentation.base_presenter import BasePresenter
 from roadmap.adapters.cli.presentation.table_builders import create_metadata_table
 from roadmap.adapters.cli.styling import PRIORITY_COLORS, STATUS_COLORS
-from rich.markdown import Markdown
-from rich.panel import Panel
-from rich.text import Text
 
 
 class IssuePresenter(BasePresenter):
@@ -108,13 +109,9 @@ class IssuePresenter(BasePresenter):
         metadata.add_row("Assignee", issue_dto.assignee or "Unassigned")
         metadata.add_row("Milestone", issue_dto.milestone or "None")
         if issue_dto.created:
-            metadata.add_row(
-                "Created", issue_dto.created.strftime("%Y-%m-%d %H:%M")
-            )
+            metadata.add_row("Created", issue_dto.created.strftime("%Y-%m-%d %H:%M"))
         if issue_dto.updated:
-            metadata.add_row(
-                "Updated", issue_dto.updated.strftime("%Y-%m-%d %H:%M")
-            )
+            metadata.add_row("Updated", issue_dto.updated.strftime("%Y-%m-%d %H:%M"))
 
         if issue_dto.labels:
             metadata.add_row("Labels", ", ".join(issue_dto.labels))
@@ -191,7 +188,10 @@ class IssuePresenter(BasePresenter):
         in_acceptance = False
 
         for line in content_lines:
-            if "## Acceptance Criteria" in line or "## acceptance criteria" in line.lower():
+            if (
+                "## Acceptance Criteria" in line
+                or "## acceptance criteria" in line.lower()
+            ):
                 in_acceptance = True
                 continue
             elif line.startswith("## ") and in_acceptance:

@@ -76,16 +76,38 @@ class TestYAMLRecoveryManager:
         "frontmatter,entity_type,expected_valid,error_pattern",
         [
             # Valid issue
-            ({"id": "a1b2c3d4", "title": "Test Issue", "priority": "high", "status": "todo"}, "issue", True, None),
+            (
+                {
+                    "id": "a1b2c3d4",
+                    "title": "Test Issue",
+                    "priority": "high",
+                    "status": "todo",
+                },
+                "issue",
+                True,
+                None,
+            ),
             # Valid milestone
             ({"name": "Version 1.0", "status": "open"}, "milestone", True, None),
             # Issue with missing fields
             ({"id": "a1b2c3d4", "title": "Test Issue"}, "issue", False, "required"),
             # Issue with invalid enums
-            ({"id": "a1b2c3d4", "title": "Test Issue", "priority": "invalid_priority", "status": "invalid_status"}, "issue", False, "must be one of"),
+            (
+                {
+                    "id": "a1b2c3d4",
+                    "title": "Test Issue",
+                    "priority": "invalid_priority",
+                    "status": "invalid_status",
+                },
+                "issue",
+                False,
+                "must be one of",
+            ),
         ],
     )
-    def test_validate_frontmatter_structure(self, frontmatter, entity_type, expected_valid, error_pattern):
+    def test_validate_frontmatter_structure(
+        self, frontmatter, entity_type, expected_valid, error_pattern
+    ):
         """Test frontmatter structure validation for various scenarios."""
         is_valid, errors = self.recovery_manager.validate_frontmatter_structure(
             frontmatter, entity_type

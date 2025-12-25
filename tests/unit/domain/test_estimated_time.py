@@ -95,11 +95,29 @@ class TestMilestoneEstimatedTime:
         "issues,expected_display",
         [
             # Test with no estimates
-            ([Issue(title="Issue 1", milestone="v1.0"), Issue(title="Issue 2", milestone="v1.0")], "Not estimated"),
+            (
+                [
+                    Issue(title="Issue 1", milestone="v1.0"),
+                    Issue(title="Issue 2", milestone="v1.0"),
+                ],
+                "Not estimated",
+            ),
             # Test with small estimate (hours)
-            ([Issue(title="Issue 1", estimated_hours=2.0, milestone="v1.0"), Issue(title="Issue 2", estimated_hours=3.0, milestone="v1.0")], "5.0h"),
+            (
+                [
+                    Issue(title="Issue 1", estimated_hours=2.0, milestone="v1.0"),
+                    Issue(title="Issue 2", estimated_hours=3.0, milestone="v1.0"),
+                ],
+                "5.0h",
+            ),
             # Test with large estimate (days)
-            ([Issue(title="Issue 1", estimated_hours=8.0, milestone="v1.0"), Issue(title="Issue 2", estimated_hours=16.0, milestone="v1.0")], "3.0d"),
+            (
+                [
+                    Issue(title="Issue 1", estimated_hours=8.0, milestone="v1.0"),
+                    Issue(title="Issue 2", estimated_hours=16.0, milestone="v1.0"),
+                ],
+                "3.0d",
+            ),
         ],
     )
     def test_milestone_estimated_time_display(self, issues, expected_display):
@@ -138,7 +156,13 @@ class TestEstimatedTimeCLI:
             (None, False, None),
         ],
     )
-    def test_create_issue_estimate_cli(self, initialized_roadmap, estimate_arg, should_contain_estimate, estimated_value):
+    def test_create_issue_estimate_cli(
+        self,
+        initialized_roadmap,
+        estimate_arg,
+        should_contain_estimate,
+        estimated_value,
+    ):
         """Test creating an issue with and without estimated time via CLI."""
         runner = initialized_roadmap
 
@@ -297,7 +321,9 @@ class TestEstimatedTimeCore:
             (None, False, "Not estimated"),
         ],
     )
-    def test_create_issue_estimated_hours(self, estimated_hours, should_have_hours, expected_display):
+    def test_create_issue_estimated_hours(
+        self, estimated_hours, should_have_hours, expected_display
+    ):
         """Test creating an issue with and without estimated hours through core."""
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
@@ -306,7 +332,9 @@ class TestEstimatedTimeCore:
             core.initialize()
 
             if estimated_hours is not None:
-                issue = core.issues.create(title="Test Issue", estimated_hours=estimated_hours)
+                issue = core.issues.create(
+                    title="Test Issue", estimated_hours=estimated_hours
+                )
                 assert issue.estimated_hours == estimated_hours
             else:
                 issue = core.issues.create(title="Test Issue")

@@ -39,4 +39,3 @@ class TestProjectCommand:
             # Test list command
             list_result = cli_runner.invoke(main, ["project", "list"])
             assert list_result.exit_code == 0
-

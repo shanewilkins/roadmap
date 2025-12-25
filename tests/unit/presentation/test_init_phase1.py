@@ -47,4 +47,3 @@ class TestInitCommand:
             assert res2.exit_code == 0
             # Marker should be gone after force reinit
             assert not (Path(".roadmap") / "marker.txt").exists()
-

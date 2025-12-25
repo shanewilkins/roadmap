@@ -15,15 +15,18 @@ def cli_runner():
 class TestCliSmoke:
     """Smoke tests for CLI command availability."""
 
-    @pytest.mark.parametrize("cmd", [
-        "--help",
-        "data",
-        "init",
-        "issue",
-        "milestone",
-        "project",
-        "status",
-    ])
+    @pytest.mark.parametrize(
+        "cmd",
+        [
+            "--help",
+            "data",
+            "init",
+            "issue",
+            "milestone",
+            "project",
+            "status",
+        ],
+    )
     def test_command_help(self, cli_runner, cmd):
         """Ensure top-level commands print help and exit correctly."""
         args = [] if cmd == "--help" else [cmd, "--help"]
@@ -41,4 +44,3 @@ class TestCliSmoke:
         """Test that git command group has help available."""
         result = cli_runner.invoke(main, ["git", "--help"])
         assert result.exit_code == 0
-

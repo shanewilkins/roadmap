@@ -8,17 +8,20 @@ from roadmap.core.domain import Issue, Milestone, Status
 class TestEstimatedTimePresentation:
     """Test estimated time display formatting."""
 
-    @pytest.mark.parametrize("hours,expected_display", [
-        (0.5, "30m"),  # Minutes (< 1 hour)
-        (1.0, "1.0h"),  # 1 hour
-        (2.0, "2.0h"),  # Multiple hours
-        (4.25, "4.2h"),  # Hours with decimals
-        (7.75, "7.8h"),  # Just under 8 hours
-        (8.0, "1.0d"),  # Exactly 1 day
-        (16.0, "2.0d"),  # Multiple days
-        (32.0, "4.0d"),  # Large estimate
-        (None, "Not estimated"),  # No estimate
-    ])
+    @pytest.mark.parametrize(
+        "hours,expected_display",
+        [
+            (0.5, "30m"),  # Minutes (< 1 hour)
+            (1.0, "1.0h"),  # 1 hour
+            (2.0, "2.0h"),  # Multiple hours
+            (4.25, "4.2h"),  # Hours with decimals
+            (7.75, "7.8h"),  # Just under 8 hours
+            (8.0, "1.0d"),  # Exactly 1 day
+            (16.0, "2.0d"),  # Multiple days
+            (32.0, "4.0d"),  # Large estimate
+            (None, "Not estimated"),  # No estimate
+        ],
+    )
     def test_issue_estimated_time_display_formats(self, hours, expected_display):
         """Test different estimated time display formats."""
         issue = Issue(title="Test", estimated_hours=hours)
@@ -64,24 +67,33 @@ class TestEstimatedTimePresentation:
         remaining_hours = milestone.get_remaining_estimated_hours(issues)
         assert remaining_hours == 14.0
 
-    @pytest.mark.parametrize("issues,expected_display", [
-        (
-            [Issue(title="Issue 1", milestone="v1.0"), Issue(title="Issue 2", milestone="v1.0")],
-            "Not estimated",
-        ),
-        (
-            [Issue(title="Issue 1", estimated_hours=2.0, milestone="v1.0"), 
-             Issue(title="Issue 2", estimated_hours=3.0, milestone="v1.0")],
-            "5.0h",
-        ),
-        (
-            [Issue(title="Issue 1", estimated_hours=8.0, milestone="v1.0"),
-             Issue(title="Issue 2", estimated_hours=16.0, milestone="v1.0")],
-            "3.0d",
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "issues,expected_display",
+        [
+            (
+                [
+                    Issue(title="Issue 1", milestone="v1.0"),
+                    Issue(title="Issue 2", milestone="v1.0"),
+                ],
+                "Not estimated",
+            ),
+            (
+                [
+                    Issue(title="Issue 1", estimated_hours=2.0, milestone="v1.0"),
+                    Issue(title="Issue 2", estimated_hours=3.0, milestone="v1.0"),
+                ],
+                "5.0h",
+            ),
+            (
+                [
+                    Issue(title="Issue 1", estimated_hours=8.0, milestone="v1.0"),
+                    Issue(title="Issue 2", estimated_hours=16.0, milestone="v1.0"),
+                ],
+                "3.0d",
+            ),
+        ],
+    )
     def test_milestone_estimated_time_display(self, issues, expected_display):
         """Test milestone estimated time display formatting."""
         milestone = Milestone(name="v1.0")
         assert milestone.get_estimated_time_display(issues) == expected_display
-

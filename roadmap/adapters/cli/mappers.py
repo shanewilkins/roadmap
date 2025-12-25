@@ -30,7 +30,7 @@ class IssueMapper:
             id=issue.id,
             title=issue.title,
             priority=issue.priority.value,  # Convert enum to string
-            status=issue.status.value,      # Convert enum to string
+            status=issue.status.value,  # Convert enum to string
             issue_type=issue.issue_type.value,  # Convert enum to string
             assignee=issue.assignee,
             milestone=issue.milestone,
@@ -73,7 +73,9 @@ class IssueMapper:
             progress_percentage=dto.progress_percentage,
             content=dto.content or "",
             labels=dto.labels.copy() if dto.labels else [],
-            github_issue=int(dto.github_issue) if dto.github_issue and dto.github_issue.isdigit() else None,
+            github_issue=int(dto.github_issue)
+            if dto.github_issue and dto.github_issue.isdigit()
+            else None,
         )
 
 

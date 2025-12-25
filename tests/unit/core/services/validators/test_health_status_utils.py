@@ -60,7 +60,10 @@ class TestGetOverallStatus:
                 },
                 HealthStatus.DEGRADED,
             ),  # multiple degraded
-            ({"check1": (HealthStatus.DEGRADED, "Some issue")}, HealthStatus.DEGRADED),  # single check
+            (
+                {"check1": (HealthStatus.DEGRADED, "Some issue")},
+                HealthStatus.DEGRADED,
+            ),  # single check
         ],
     )
     def test_get_overall_status(self, checks, expected_status):

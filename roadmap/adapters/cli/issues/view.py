@@ -2,7 +2,6 @@
 
 import click
 
-from roadmap.adapters.cli.dtos import IssueDTO
 from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
@@ -32,4 +31,3 @@ def view_issue(ctx: click.Context, issue_id: str):
     # Use presenter to render the issue
     presenter = IssuePresenter()
     presenter.render(issue_dto)
-

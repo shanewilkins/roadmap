@@ -4,7 +4,6 @@ Calculates which issues are on the critical path and impact project timeline.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
 from datetime import datetime, timedelta
 
 from roadmap.core.domain.issue import Issue
@@ -19,8 +18,8 @@ class PathNode:
     issue_title: str
     duration_hours: float
     dependencies: list[str] = field(default_factory=list)
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     slack_time: float = 0.0  # Time available before blocking other tasks
     is_critical: bool = False
 
@@ -33,7 +32,7 @@ class CriticalPathResult:
     total_duration: float
     critical_issue_ids: list[str]
     blocking_issues: dict[str, list[str]]  # issue_id -> list of blocked issue_ids
-    project_end_date: Optional[datetime] = None
+    project_end_date: datetime | None = None
     issues_by_criticality: dict[str, list[str]] = field(default_factory=dict)
 
 
@@ -45,7 +44,7 @@ class CriticalPathCalculator:
         pass
 
     def calculate_critical_path(
-        self, issues: list[Issue], milestone: Optional[Milestone] = None
+        self, issues: list[Issue], milestone: Milestone | None = None
     ) -> CriticalPathResult:
         """Calculate critical path from issues with dependencies.
 
@@ -245,7 +244,8 @@ class CriticalPathCalculator:
 
             # Follow the dependency with longest duration
             current_id = max(
-                dependencies, key=lambda d: nodes.get(d, PathNode("", "", 0)).duration_hours
+                dependencies,
+                key=lambda d: nodes.get(d, PathNode("", "", 0)).duration_hours,
             )
 
         return list(reversed(path))
@@ -289,8 +289,8 @@ class CriticalPathCalculator:
     def _calculate_project_end_date(
         self,
         nodes: dict[str, PathNode],
-        milestone: Optional[Milestone] = None,
-    ) -> Optional[datetime]:
+        milestone: Milestone | None = None,
+    ) -> datetime | None:
         """Calculate expected project completion date.
 
         Args:

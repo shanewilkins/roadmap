@@ -8,14 +8,14 @@ Improve the entire test suite's DRY, consistency, and maintainability by systema
 ### Completed
 ✅ Created `/tests/test_cli/conftest.py` with:
 - `test_factory` fixture providing TestDataFactory access
-- `mock_core`, `mock_git`, `mock_config` fixtures  
+- `mock_core`, `mock_git`, `mock_config` fixtures
 - `mock_issue`, `mock_milestone` fixtures
 - All fixtures use TestDataFactory for consistency
 
 ✅ Fixed Phase 10 test failures:
 - Corrected `ensure_entity_exists` mock paths (roadmap.adapters.cli.helpers)
 - Fixed 3 failing close_errors tests
-- Fixed 3 failing issue_status_helpers tests  
+- Fixed 3 failing issue_status_helpers tests
 - Simplified problematic threshold test
 
 ✅ Started refactoring:
@@ -49,7 +49,7 @@ create_command_execution_context(**kwargs)
 ### Next Steps
 1. Complete refactoring of Phase 10 error test modules
 2. Refactor unit tests in `/tests/unit/` to use factories
-3. Refactor integration tests in `/tests/integration/` 
+3. Refactor integration tests in `/tests/integration/`
 4. Identify and add missing factory methods
 5. Document factory usage patterns in docstrings
 

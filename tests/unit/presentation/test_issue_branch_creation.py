@@ -37,4 +37,3 @@ class TestIssueBranchCreation:
             )
             # CLI should exit gracefully even if git isn't present
             assert result.exit_code == 0
-

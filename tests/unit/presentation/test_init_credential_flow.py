@@ -29,4 +29,3 @@ class TestInitCredentialFlow:
             )
             # Should succeed without errors
             assert result.exit_code == 0
-

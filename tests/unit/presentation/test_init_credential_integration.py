@@ -30,4 +30,3 @@ class TestInitCredential:
             )
             # Command should complete without error
             assert result.exit_code == 0, result.output
-

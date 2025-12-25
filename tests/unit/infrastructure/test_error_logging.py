@@ -351,7 +351,9 @@ class TestLogDatabaseError:
             ("delete", "project", "delete"),
         ],
     )
-    def test_log_database_error_operations(self, mock_logger, operation, entity_type, expected_operation):
+    def test_log_database_error_operations(
+        self, mock_logger, operation, entity_type, expected_operation
+    ):
         """Test database error logging for different operations.
 
         Covers lines 423-434: Multiple database operations
@@ -436,7 +438,9 @@ class TestLogExternalServiceError:
             ("custom_service", "test_operation"),
         ],
     )
-    def test_log_external_service_error_services(self, mock_logger, service_name, operation):
+    def test_log_external_service_error_services(
+        self, mock_logger, service_name, operation
+    ):
         """Test external service error logging for different services.
 
         Covers lines 486-497: Different external service names
@@ -470,7 +474,9 @@ class TestLogExternalServiceError:
             (ValueError("Bad value"), "ValueError"),
         ],
     )
-    def test_log_external_service_error_types(self, mock_logger, error, error_type_name):
+    def test_log_external_service_error_types(
+        self, mock_logger, error, error_type_name
+    ):
         """Test that error type is logged correctly for various errors.
 
         Covers lines 499-513: Error type preservation across different error classes

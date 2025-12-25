@@ -3,14 +3,12 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from roadmap.adapters.cli.dtos import IssueDTO, MilestoneDTO, ProjectDTO
 from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
 from roadmap.adapters.cli.presentation.milestone_presenter import MilestonePresenter
 from roadmap.adapters.cli.presentation.project_presenter import ProjectPresenter
-from roadmap.common.constants import Priority, Status, IssueType
+from roadmap.common.constants import IssueType, Priority, Status
 from roadmap.core.domain.issue import Issue
 
 
@@ -34,7 +32,9 @@ class TestIssueDTOPresenterIntegration:
         domain_issue.progress_percentage = 50
         domain_issue.created = datetime.datetime(2024, 1, 1)
         domain_issue.updated = datetime.datetime(2024, 1, 15)
-        domain_issue.content = "## Description\nTest feature\n\n## Acceptance Criteria\n- Works"
+        domain_issue.content = (
+            "## Description\nTest feature\n\n## Acceptance Criteria\n- Works"
+        )
         domain_issue.labels = ["feature", "backend"]
         domain_issue.github_issue = 123
 
@@ -97,18 +97,20 @@ class TestMilestoneDTOPresenterIntegration:
     def test_milestone_dto_to_presenter(self):
         """Test Milestone DTO → Presenter rendering."""
         # Create DTO directly (no domain conversion needed for this test)
-        milestone_dto = MilestoneDTO.from_dict({
-            "id": "milestone001",
-            "name": "Q1 2024",
-            "status": "active",
-            "due_date": datetime.datetime(2024, 3, 31),
-            "description": "First quarter goals",
-            "progress_percentage": 60,
-            "issue_count": 20,
-            "completed_count": 12,
-            "created": datetime.datetime(2024, 1, 1),
-            "updated": datetime.datetime(2024, 1, 20),
-        })
+        milestone_dto = MilestoneDTO.from_dict(
+            {
+                "id": "milestone001",
+                "name": "Q1 2024",
+                "status": "active",
+                "due_date": datetime.datetime(2024, 3, 31),
+                "description": "First quarter goals",
+                "progress_percentage": 60,
+                "issue_count": 20,
+                "completed_count": 12,
+                "created": datetime.datetime(2024, 1, 1),
+                "updated": datetime.datetime(2024, 1, 20),
+            }
+        )
 
         # Render DTO with presenter
         presenter = MilestonePresenter()
@@ -123,19 +125,21 @@ class TestProjectDTOPresenterIntegration:
     def test_project_dto_to_presenter(self):
         """Test Project DTO → Presenter rendering."""
         # Create DTO directly (no domain conversion needed for this test)
-        project_dto = ProjectDTO.from_dict({
-            "id": "project001",
-            "name": "Main Application",
-            "status": "active",
-            "description": "Core application",
-            "owner": "Team A",
-            "target_end_date": datetime.datetime(2024, 6, 30),
-            "actual_end_date": None,
-            "milestone_count": 4,
-            "issue_count": 50,
-            "created": datetime.datetime(2024, 1, 1),
-            "updated": datetime.datetime(2024, 1, 15),
-        })
+        project_dto = ProjectDTO.from_dict(
+            {
+                "id": "project001",
+                "name": "Main Application",
+                "status": "active",
+                "description": "Core application",
+                "owner": "Team A",
+                "target_end_date": datetime.datetime(2024, 6, 30),
+                "actual_end_date": None,
+                "milestone_count": 4,
+                "issue_count": 50,
+                "created": datetime.datetime(2024, 1, 1),
+                "updated": datetime.datetime(2024, 1, 15),
+            }
+        )
 
         # Render DTO with presenter
         presenter = ProjectPresenter()
@@ -188,32 +192,38 @@ class TestListCommandDTOFlow:
     def test_mixed_entity_dto_rendering(self):
         """Test rendering different entity types as DTOs."""
         # Create issue DTO
-        issue_dto = IssueDTO.from_dict({
-            "id": "i1",
-            "title": "Issue",
-            "priority": "critical",
-            "status": "blocked",
-            "issue_type": "bug",
-        })
+        issue_dto = IssueDTO.from_dict(
+            {
+                "id": "i1",
+                "title": "Issue",
+                "priority": "critical",
+                "status": "blocked",
+                "issue_type": "bug",
+            }
+        )
 
         # Create milestone DTO
-        milestone_dto = MilestoneDTO.from_dict({
-            "id": "m1",
-            "name": "Milestone",
-            "status": "active",
-            "progress_percentage": 0,
-            "issue_count": 0,
-            "completed_count": 0,
-        })
+        milestone_dto = MilestoneDTO.from_dict(
+            {
+                "id": "m1",
+                "name": "Milestone",
+                "status": "active",
+                "progress_percentage": 0,
+                "issue_count": 0,
+                "completed_count": 0,
+            }
+        )
 
         # Create project DTO
-        project_dto = ProjectDTO.from_dict({
-            "id": "p1",
-            "name": "Project",
-            "status": "active",
-            "milestone_count": 0,
-            "issue_count": 0,
-        })
+        project_dto = ProjectDTO.from_dict(
+            {
+                "id": "p1",
+                "name": "Project",
+                "status": "active",
+                "milestone_count": 0,
+                "issue_count": 0,
+            }
+        )
 
         # Verify all DTOs were created correctly
         assert isinstance(issue_dto, IssueDTO)

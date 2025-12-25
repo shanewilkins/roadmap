@@ -218,7 +218,9 @@ class TestEstimatedTimeCLI:
         no_estimate = next((i for i in issues if i.title == "No Estimate"), None)
         assert no_estimate.estimated_time_display == "Not estimated"
 
-    def test_milestone_list_shows_estimates_command_success(self, cli_runner_initialized):
+    def test_milestone_list_shows_estimates_command_success(
+        self, cli_runner_initialized
+    ):
         """Test that milestone list command succeeds."""
         runner, core = cli_runner_initialized
 

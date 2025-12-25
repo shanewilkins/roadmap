@@ -128,10 +128,22 @@ class TestSortSpecParser:
             ("name", ["name", "age", "status"], [("name", "asc")]),
             ("name:asc", ["name", "age", "status"], [("name", "asc")]),
             ("name:desc", ["name", "age", "status"], [("name", "desc")]),
-            ("status:asc,name:desc", ["name", "age", "status"], [("status", "asc"), ("name", "desc")]),
-            ("status,name:desc,age:asc", ["name", "age", "status"], [("status", "asc"), ("name", "desc"), ("age", "asc")]),
+            (
+                "status:asc,name:desc",
+                ["name", "age", "status"],
+                [("status", "asc"), ("name", "desc")],
+            ),
+            (
+                "status,name:desc,age:asc",
+                ["name", "age", "status"],
+                [("status", "asc"), ("name", "desc"), ("age", "asc")],
+            ),
             ("NAME:DESC", ["name", "age", "status"], [("name", "desc")]),
-            ("name : desc , age : asc", ["name", "age", "status"], [("name", "desc"), ("age", "asc")]),
+            (
+                "name : desc , age : asc",
+                ["name", "age", "status"],
+                [("name", "desc"), ("age", "asc")],
+            ),
         ],
     )
     def test_parse_sort_spec(self, sort_spec, available, expected):

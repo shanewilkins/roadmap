@@ -1,13 +1,12 @@
 """Unit tests for the session cache module."""
 
 import time
-import pytest
 
 from roadmap.common.cache import (
     SessionCache,
+    cache_result,
     clear_session_cache,
     get_session_cache,
-    cache_result,
 )
 
 

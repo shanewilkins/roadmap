@@ -175,23 +175,33 @@ class TestStateManagerYAMLParsing:
         "file_content,expected_result,description",
         [
             # Valid YAML frontmatter
-            ("""---
+            (
+                """---
 id: TEST-001
 title: Test Issue
 status: open
 ---
 
 # Issue Content
-""", {"id": "TEST-001", "title": "Test Issue", "status": "open"}, "valid"),
+""",
+                {"id": "TEST-001", "title": "Test Issue", "status": "open"},
+                "valid",
+            ),
             # File without frontmatter
             ("# Just regular markdown\n\nNo frontmatter here.", {}, "no_frontmatter"),
             # Invalid YAML
-            ("""---
+            (
+                """---
 invalid: yaml: content: here
----""", {}, "invalid_yaml"),
+---""",
+                {},
+                "invalid_yaml",
+            ),
         ],
     )
-    def test_parse_yaml_frontmatter(self, state_manager, file_content, expected_result, description):
+    def test_parse_yaml_frontmatter(
+        self, state_manager, file_content, expected_result, description
+    ):
         """Test parsing YAML frontmatter in various scenarios."""
         parser = FileParser()
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".md") as f:
