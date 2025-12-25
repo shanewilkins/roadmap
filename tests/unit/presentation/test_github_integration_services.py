@@ -74,10 +74,14 @@ class TestConfigValidator:
     def test_config_validator_missing_config(self):
         """Test validation fails when config missing."""
         with patch.object(
-            GitHubIntegrationService, "get_github_config", return_value=(None, None, None)
+            GitHubIntegrationService,
+            "get_github_config",
+            return_value=(None, None, None),
         ):
             validator = Mock()
-            validator.validate_config = Mock(return_value=(False, "GitHub not configured"))
+            validator.validate_config = Mock(
+                return_value=(False, "GitHub not configured")
+            )
 
             is_valid, error = validator.validate_config()
             assert not is_valid
@@ -91,7 +95,9 @@ class TestConfigValidator:
             mock_get.return_value = mock_response
 
             validator = Mock()
-            validator.validate_token = Mock(return_value=(False, "GitHub token is invalid"))
+            validator.validate_token = Mock(
+                return_value=(False, "GitHub token is invalid")
+            )
 
             is_valid, error = validator.validate_token()
             assert not is_valid
@@ -156,7 +162,7 @@ class TestConflictDetector:
     def test_conflict_detector_github_modified(self):
         """Test detection of GitHub-side modifications."""
         from datetime import timezone
-        
+
         service = Mock(spec=GitHubIntegrationService)
         service.get_github_config.return_value = ("token", "owner", "repo")
         detector = GitHubConflictDetector(service)
@@ -184,7 +190,9 @@ class TestConflictDetector:
         last_sync = datetime.now() - timedelta(hours=1)
 
         with patch.object(detector, "_get_last_sync_time", return_value=last_sync):
-            with patch.object(detector, "_is_local_modified_after_sync", return_value=True):
+            with patch.object(
+                detector, "_is_local_modified_after_sync", return_value=True
+            ):
                 conflicts = detector.detect_conflicts(issue, 123)
                 assert "local_modified" in conflicts
 
@@ -201,7 +209,9 @@ class TestConflictDetector:
             "_get_last_sync_time",
             return_value=datetime.now() - timedelta(hours=1),
         ):
-            with patch.object(detector, "_is_local_modified_after_sync", return_value=True):
+            with patch.object(
+                detector, "_is_local_modified_after_sync", return_value=True
+            ):
                 with patch.object(
                     detector, "_parse_github_timestamp", return_value=datetime.now()
                 ):
@@ -310,9 +320,9 @@ class TestIntegration:
 
     def test_batch_sync_respects_validation(self):
         """Test that batch operations respect validation."""
-        service = Mock(spec=GitHubIntegrationService)
+        Mock(spec=GitHubIntegrationService)
         validator = Mock(spec=GitHubConfigValidator)
         validator.validate_config.return_value = (True, None)
-        
+
         is_valid, error = validator.validate_config()
         assert is_valid

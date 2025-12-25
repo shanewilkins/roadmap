@@ -20,6 +20,7 @@ from roadmap.adapters.cli.projects.restore import (
     _restore_single_project,
     _validate_restore_arguments,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 # ========== Unit Tests: Validation & Argument Checking ==========
 
@@ -282,7 +283,7 @@ class TestRestoreProjectFile:
         archive_file = archive_dir / "project.md"
         archive_file.write_text("project data")
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.db.mark_project_archived = Mock()
 
         _restore_project_file(mock_core, archive_file, active_dir, "p1")
@@ -304,7 +305,7 @@ class TestRestoreProjectFile:
         archive_file = archive_dir / "project.md"
         archive_file.write_text("project data")
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.db.mark_project_archived.side_effect = Exception("DB error")
 
         _restore_project_file(mock_core, archive_file, active_dir, "p1")
@@ -334,7 +335,7 @@ class TestRestoreSingleProject:
         archive_dir.mkdir()
         active_dir.mkdir()
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         result = _restore_single_project(
             mock_core,
@@ -365,7 +366,7 @@ class TestRestoreSingleProject:
         active_file = active_dir / "project.md"
         active_file.write_text("active")
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         with patch(
             "roadmap.adapters.cli.projects.restore.ProjectParser"
@@ -401,7 +402,7 @@ class TestRestoreSingleProject:
         archive_file = archive_dir / "project.md"
         archive_file.write_text("invalid")
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         with patch(
             "roadmap.adapters.cli.projects.restore.ProjectParser"
@@ -440,7 +441,7 @@ class TestRestoreSingleProject:
         archive_file = archive_dir / "project.md"
         archive_file.write_text("project data")
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         with patch(
             "roadmap.adapters.cli.projects.restore.ProjectParser"
@@ -495,7 +496,7 @@ class TestRestoreMultipleProjects:
             (file2, "p2", "Project 2"),
         ]
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         result = _restore_multiple_projects(
             mock_core,
@@ -534,7 +535,7 @@ class TestRestoreMultipleProjects:
             (file2, "p2", "Project 2"),
         ]
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         result = _restore_multiple_projects(
             mock_core,
@@ -564,7 +565,7 @@ class TestRestoreMultipleProjects:
             (file1, "p1", "Project 1"),
         ]
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         result = _restore_multiple_projects(
             mock_core,

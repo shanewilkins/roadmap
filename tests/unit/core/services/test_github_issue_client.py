@@ -302,7 +302,9 @@ class TestGetIssueDiff:
             assert result["has_changes"]
             assert len(result["changes"]) == 5  # All 5 fields changed
 
-    def test_get_issue_diff_multiple_changes_includes_fields(self, client, github_issue_data):
+    def test_get_issue_diff_multiple_changes_includes_fields(
+        self, client, github_issue_data
+    ):
         """Test diff result includes all changed fields."""
         local_data = {
             "title": "Local Title",

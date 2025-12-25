@@ -15,6 +15,7 @@ import pytest
 
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
 from roadmap.core.domain import MilestoneStatus, Status
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 # ========== Unit Tests: Hook Installation ==========
 
@@ -24,7 +25,7 @@ class TestHookInstallation:
 
     def test_install_hooks_returns_false_if_no_hooks_dir(self):
         """Test that install_hooks returns False when hooks directory is None."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = False
 
@@ -39,7 +40,7 @@ class TestHookInstallation:
 
     def test_install_hooks_returns_false_if_hooks_dir_not_exists(self):
         """Test that install_hooks returns False when hooks directory doesn't exist."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -55,7 +56,7 @@ class TestHookInstallation:
 
     def test_install_hooks_catches_exception_during_install(self):
         """Test that install_hooks catches and returns False on exception."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -73,7 +74,7 @@ class TestHookInstallation:
 
     def test_install_hooks_with_custom_hooks_list(self):
         """Test install_hooks with custom hooks list."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -93,7 +94,7 @@ class TestHookInstallation:
 
     def test_install_hooks_ignores_invalid_hook_names(self):
         """Test install_hooks ignores hook names not in available list."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -120,7 +121,7 @@ class TestHookUninstallation:
 
     def test_uninstall_hooks_returns_false_if_no_hooks_dir(self):
         """Test that uninstall_hooks returns False when hooks directory is None."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = False
 
@@ -135,7 +136,7 @@ class TestHookUninstallation:
 
     def test_uninstall_hooks_only_removes_roadmap_hooks(self):
         """Test that uninstall only removes files containing roadmap marker."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -160,7 +161,7 @@ class TestHookUninstallation:
 
     def test_uninstall_hooks_catches_read_error(self):
         """Test that uninstall_hooks catches file read errors."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -191,7 +192,7 @@ class TestHookStatus:
 
     def test_get_hooks_status_returns_empty_if_no_hooks_dir(self):
         """Test get_hooks_status returns empty dict if hooks directory is None."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = False
 
@@ -206,7 +207,7 @@ class TestHookStatus:
 
     def test_get_hooks_status_handles_file_stat_error(self):
         """Test get_hooks_status handles stat errors gracefully."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -234,7 +235,7 @@ class TestHookStatus:
 
     def test_get_hooks_status_detects_executable_permission(self):
         """Test get_hooks_status detects executable permissions."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -270,7 +271,7 @@ class TestHookConfiguration:
 
     def test_get_hook_config_returns_config_structure(self):
         """Test get_hook_config returns properly structured config."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -302,7 +303,7 @@ class TestPostCommitHandler:
     @patch("subprocess.run")
     def test_handle_post_commit_gets_commit_sha(self, mock_run):
         """Test handle_post_commit retrieves commit SHA."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -325,7 +326,7 @@ class TestPostCommitHandler:
     @patch("subprocess.run")
     def test_handle_post_commit_handles_empty_commit_sha(self, mock_run):
         """Test handle_post_commit handles empty commit SHA."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -346,7 +347,7 @@ class TestPostCommitHandler:
     @patch("subprocess.run", side_effect=Exception("Git error"))
     def test_handle_post_commit_catches_subprocess_error(self, mock_run):
         """Test handle_post_commit catches subprocess errors."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -370,7 +371,7 @@ class TestBranchOperations:
     @patch("subprocess.run")
     def test_handle_post_checkout_gets_branch_name(self, mock_run):
         """Test handle_post_checkout retrieves branch name."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -393,7 +394,7 @@ class TestBranchOperations:
     @patch("subprocess.run")
     def test_handle_post_checkout_handles_empty_branch(self, mock_run):
         """Test handle_post_checkout handles empty branch name."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -414,7 +415,7 @@ class TestBranchOperations:
     @patch("subprocess.run")
     def test_handle_pre_push_gets_current_branch(self, mock_run):
         """Test handle_pre_push retrieves current branch."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -442,7 +443,7 @@ class TestMilestoneOperations:
 
     def test_is_milestone_active_with_open_status(self):
         """Test _is_milestone_active returns True for open milestone."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -461,7 +462,7 @@ class TestMilestoneOperations:
 
     def test_is_milestone_active_with_closed_status(self):
         """Test _is_milestone_active returns False for closed milestone."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -480,7 +481,7 @@ class TestMilestoneOperations:
 
     def test_calculate_milestone_progress_empty_issues(self):
         """Test _calculate_milestone_progress with no issues."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -496,7 +497,7 @@ class TestMilestoneOperations:
 
     def test_calculate_milestone_progress_with_issues(self):
         """Test _calculate_milestone_progress calculates correctly."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -524,7 +525,7 @@ class TestMilestoneOperations:
 
     def test_update_milestone_attributes_sets_progress(self):
         """Test _update_milestone_attributes sets progress."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -544,7 +545,7 @@ class TestMilestoneOperations:
 
     def test_update_milestone_attributes_closes_at_100_percent(self):
         """Test _update_milestone_attributes closes milestone at 100%."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -572,7 +573,7 @@ class TestContextManagement:
 
     def test_set_branch_context_creates_json_file(self, tmp_path, monkeypatch):
         """Test _set_branch_context creates context file."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 
@@ -598,7 +599,7 @@ class TestContextManagement:
 
     def test_set_branch_context_catches_write_error(self):
         """Test _set_branch_context handles write errors gracefully."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_git_integration = Mock()
         mock_git_integration.is_git_repository.return_value = True
 

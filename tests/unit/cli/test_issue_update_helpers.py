@@ -9,6 +9,7 @@ import pytest
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.core.domain import Priority
 from roadmap.core.services import IssueUpdateService
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestIssueUpdateBuilder:
@@ -16,7 +17,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_empty_params(self):
         """build_updates should return empty dict when no params provided."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -36,7 +37,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_title(self):
         """build_updates should include title when provided."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -56,7 +57,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_priority(self):
         """build_updates should convert priority string to Priority enum."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -76,7 +77,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_status(self):
         """build_updates should include status when provided."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -96,7 +97,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_valid_assignee(self):
         """build_updates should include validated assignee."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "testuser"
         service = IssueUpdateService(mock_core)
@@ -116,7 +117,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_empty_assignee_for_unassignment(self):
         """build_updates should convert empty string assignee to None."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = IssueUpdateService(mock_core)
 
         result = service.build_update_dict(
@@ -133,7 +134,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_invalid_assignee(self):
         """build_updates should raise ValidationError when assignee validation fails."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (False, "User not found")
         service = IssueUpdateService(mock_core)
 
@@ -152,7 +153,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_milestone(self):
         """build_updates should include milestone when provided."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -172,7 +173,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_description(self):
         """build_updates should include description when provided."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -192,7 +193,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_estimate(self):
         """build_updates should include estimated_hours when estimate provided."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -212,7 +213,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_zero_estimate(self):
         """build_updates should include zero estimate (not None)."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -232,7 +233,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_multiple_fields(self):
         """build_updates should handle multiple update fields - length and title/priority."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
@@ -255,7 +256,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_multiple_fields_status(self):
         """build_updates should handle multiple update fields - status and assignee."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
@@ -277,7 +278,7 @@ class TestIssueUpdateBuilder:
 
     def test_build_updates_with_multiple_fields_milestone(self):
         """build_updates should handle multiple update fields - milestone and estimate."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
@@ -300,7 +301,7 @@ class TestIssueUpdateBuilder:
 
     def test_resolve_assignee_empty_string(self):
         """_resolve_assignee should return None for empty string."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = IssueUpdateService(mock_core)
         service._console = mock_console
@@ -311,7 +312,7 @@ class TestIssueUpdateBuilder:
 
     def test_resolve_assignee_valid(self):
         """_resolve_assignee should return canonical assignee for valid user."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "canonicaluser"
         mock_console = Mock()
@@ -326,7 +327,7 @@ class TestIssueUpdateBuilder:
 
     def test_resolve_assignee_invalid(self):
         """_resolve_assignee should raise ValidationError for invalid user."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (False, "User not found")
         service = IssueUpdateService(mock_core)
 
@@ -335,7 +336,7 @@ class TestIssueUpdateBuilder:
 
     def test_resolve_assignee_with_warning(self):
         """_resolve_assignee should display warning but accept assignee."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, "Warning: User not in team")
         mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
@@ -350,7 +351,7 @@ class TestIssueUpdateBuilder:
 
     def test_resolve_assignee_shows_resolution(self):
         """_resolve_assignee should show when name is resolved to canonical form."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "john.doe"
         mock_console = Mock()
@@ -365,7 +366,7 @@ class TestIssueUpdateBuilder:
 
     def test_resolve_assignee_no_resolution_message_when_same(self):
         """_resolve_assignee should not show resolution message when name unchanged."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.validate_assignee.return_value = (True, None)
         mock_core.team.get_canonical_assignee.return_value = "testuser"
         mock_console = Mock()
@@ -383,8 +384,8 @@ class TestIssueUpdateDisplay:
 
     def test_show_update_result_basic(self):
         """show_update_result should display updated issue info."""
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.id = "ISS-123"
         mock_issue.title = "Test Issue"
         mock_console = Mock()
@@ -403,8 +404,8 @@ class TestIssueUpdateDisplay:
 
     def test_show_update_result_with_title(self):
         """show_update_result should display title update."""
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.id = "ISS-123"
         mock_issue.title = "New Title"
         mock_console = Mock()
@@ -421,8 +422,8 @@ class TestIssueUpdateDisplay:
 
     def test_show_update_result_with_estimate(self):
         """show_update_result should display estimate using estimated_time_display."""
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.id = "ISS-123"
         mock_issue.title = "Test Issue"
         mock_issue.estimated_time_display = "1d"
@@ -440,8 +441,8 @@ class TestIssueUpdateDisplay:
 
     def test_show_update_result_with_multiple_fields(self):
         """show_update_result should display multiple update fields."""
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.id = "ISS-123"
         mock_issue.title = "Test Issue"
         mock_issue.estimated_time_display = "2d"
@@ -471,8 +472,8 @@ class TestIssueUpdateDisplay:
 
     def test_show_update_result_with_reason(self):
         """show_update_result should display reason when provided."""
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.id = "ISS-123"
         mock_issue.title = "Test Issue"
         mock_console = Mock()
@@ -490,8 +491,8 @@ class TestIssueUpdateDisplay:
 
     def test_show_update_result_without_reason(self):
         """show_update_result should not display reason when None."""
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.id = "ISS-123"
         mock_issue.title = "Test Issue"
         mock_console = Mock()

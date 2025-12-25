@@ -19,6 +19,7 @@ from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectTemplateService,
 )
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestProjectDetectionService:
@@ -433,7 +434,7 @@ class TestProjectCreationService:
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_creates_directory(self, mock_core_class, tmp_path):
         """Test that project creation creates projects directory if missing."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.roadmap_dir = tmp_path / ".roadmap"
 
         # Don't create projects directory
@@ -456,7 +457,7 @@ class TestProjectCreationService:
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_handles_file_write_error(self, mock_core_class, tmp_path):
         """Test graceful handling of file write errors."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.roadmap_dir = tmp_path / ".roadmap"
 
         # Setup directory but make it read-only to trigger error

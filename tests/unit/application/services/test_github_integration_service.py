@@ -104,7 +104,9 @@ class TestGitHubIntegrationService:
             (None, Exception("API error"), []),
         ],
     )
-    def test_get_team_members(self, service, config_return, side_effect, expected_result):
+    def test_get_team_members(
+        self, service, config_return, side_effect, expected_result
+    ):
         """Test get_team_members in various scenarios."""
         if side_effect:
             with patch.object(service, "get_github_config", side_effect=side_effect):
@@ -130,7 +132,9 @@ class TestGitHubIntegrationService:
             (False, None),
         ],
     )
-    def test_get_current_user(self, service, config_file, user_configured, expected_result):
+    def test_get_current_user(
+        self, service, config_file, user_configured, expected_result
+    ):
         """Test get_current_user in various scenarios."""
         with patch(
             "roadmap.core.services.github_integration_service.ConfigManager"
@@ -207,7 +211,14 @@ class TestGitHubIntegrationService:
             ((False, "User not found"), "invalid-user", False, "not found"),
         ],
     )
-    def test_validate_assignee_github_validation(self, service, validation_result, error_message, expected_valid, expected_in_error):
+    def test_validate_assignee_github_validation(
+        self,
+        service,
+        validation_result,
+        error_message,
+        expected_valid,
+        expected_in_error,
+    ):
         """Test validate_assignee with GitHub validation in various scenarios."""
         with patch.object(
             service, "get_github_config", return_value=("token", "owner", "repo")
@@ -216,7 +227,9 @@ class TestGitHubIntegrationService:
                 with patch(
                     "roadmap.infrastructure.github_validator.GitHubClient"
                 ) as mock_client:
-                    mock_client.return_value.validate_assignee.return_value = validation_result
+                    mock_client.return_value.validate_assignee.return_value = (
+                        validation_result
+                    )
                     is_valid, error_msg = service.validate_assignee(error_message)
                     assert is_valid == expected_valid
                     if expected_in_error:

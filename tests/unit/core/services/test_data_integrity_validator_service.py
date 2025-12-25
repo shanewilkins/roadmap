@@ -8,6 +8,7 @@ from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.data_integrity_validator_service import (
     DataIntegrityValidatorService,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestDataIntegrityValidatorService:
@@ -21,7 +22,7 @@ class TestDataIntegrityValidatorService:
     @pytest.fixture
     def mock_core(self):
         """Create a mock core object."""
-        core = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     def test_service_init(self, service):
@@ -373,7 +374,7 @@ class TestDataIntegrityValidatorServiceIntegration:
     ):
         """Test complete validation workflow."""
         service = DataIntegrityValidatorService()
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         # Setup validators
         mock_duplicate.perform_check.return_value = (
@@ -445,7 +446,7 @@ class TestDataIntegrityValidatorServiceIntegration:
     ):
         """Test validation with mixed results."""
         service = DataIntegrityValidatorService()
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         # Setup mixed results
         mock_duplicate.perform_check.return_value = (

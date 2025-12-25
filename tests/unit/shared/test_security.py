@@ -36,6 +36,7 @@ from roadmap.common.security import (
     validate_export_size,
     validate_path,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 pytestmark = pytest.mark.unit
 
@@ -110,18 +111,21 @@ class TestSecurityExceptions:
 class TestCreateSecureFile:
     """Test create_secure_file function."""
 
-    @pytest.mark.parametrize("mode,content,expected_content", [
-        ("w", "test content", "test content"),
-        ("wb", b"binary data", b"binary data"),
-        ("a", "appended", "initial appended"),
-    ])
+    @pytest.mark.parametrize(
+        "mode,content,expected_content",
+        [
+            ("w", "test content", "test content"),
+            ("wb", b"binary data", b"binary data"),
+            ("a", "appended", "initial appended"),
+        ],
+    )
     def test_create_secure_file_modes(self, temp_dir, mode, content, expected_content):
         """Test secure file creation with different file modes."""
         test_path = temp_dir / "test_file.txt"
-        
+
         if mode == "a":
             test_path.write_text("initial ")
-        
+
         with create_secure_file(test_path, mode) as f:
             f.write(content)
 
@@ -408,22 +412,25 @@ class TestValidatePath:
 class TestSanitizeFilename:
     """Test sanitize_filename function."""
 
-    @pytest.mark.parametrize("input_name,expected", [
-        ("normal_file.txt", "normal_file.txt"),
-        ("file<name>.txt", "file_name_.txt"),
-        ("file>name.txt", "file_name.txt"),
-        ('file"name.txt', "file_name.txt"),
-        ("file|name.txt", "file_name.txt"),
-        ("file?name.txt", "file_name.txt"),
-        ("file*name.txt", "file_name.txt"),
-        ("file\\name.txt", "file_name.txt"),
-        ("file/name.txt", "file_name.txt"),
-        ("file:name.txt", "file_name.txt"),
-        (" filename.txt ", "filename.txt"),
-        (".filename.txt", "filename.txt"),
-        ("filename.txt.", "filename.txt"),
-        (" . filename . ", "filename"),
-    ])
+    @pytest.mark.parametrize(
+        "input_name,expected",
+        [
+            ("normal_file.txt", "normal_file.txt"),
+            ("file<name>.txt", "file_name_.txt"),
+            ("file>name.txt", "file_name.txt"),
+            ('file"name.txt', "file_name.txt"),
+            ("file|name.txt", "file_name.txt"),
+            ("file?name.txt", "file_name.txt"),
+            ("file*name.txt", "file_name.txt"),
+            ("file\\name.txt", "file_name.txt"),
+            ("file/name.txt", "file_name.txt"),
+            ("file:name.txt", "file_name.txt"),
+            (" filename.txt ", "filename.txt"),
+            (".filename.txt", "filename.txt"),
+            ("filename.txt.", "filename.txt"),
+            (" . filename . ", "filename"),
+        ],
+    )
     def test_sanitize_filename_variants(self, input_name, expected):
         """Test sanitization of various filename formats."""
         result = sanitize_filename(input_name)
@@ -611,15 +618,18 @@ class TestSecureFilePermissions:
 class TestLogSecurityEvent:
     """Test log_security_event function."""
 
-    @pytest.mark.parametrize("event_type,has_details", [
-        ("test_event", True),
-        ("simple_event", False),
-        ("complex_event", True),
-    ])
+    @pytest.mark.parametrize(
+        "event_type,has_details",
+        [
+            ("test_event", True),
+            ("simple_event", False),
+            ("complex_event", True),
+        ],
+    )
     def test_log_security_event_variants(self, event_type, has_details):
         """Test logging with and without event details."""
-        mock_handler = MagicMock()
-        mock_handler.stream = MagicMock()
+        mock_handler = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_handler.stream = TestDataFactory.create_mock_core(is_initialized=True)
         mock_handler.stream.closed = False
 
         with (
@@ -639,8 +649,8 @@ class TestLogSecurityEvent:
 
     def test_log_security_event_with_timestamp(self):
         """Test that timestamp is added to logged events."""
-        mock_handler = MagicMock()
-        mock_handler.stream = MagicMock()
+        mock_handler = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_handler.stream = TestDataFactory.create_mock_core(is_initialized=True)
         mock_handler.stream.closed = False
 
         with (
@@ -657,7 +667,9 @@ class TestLogSecurityEvent:
         """Test that logging exceptions don't break functionality."""
         with (
             patch.object(security_logger, "handlers", [MagicMock()]),
-            patch.object(security_logger, "info", side_effect=Exception("Logging failed")),
+            patch.object(
+                security_logger, "info", side_effect=Exception("Logging failed")
+            ),
         ):
             log_security_event("failing_event")
 
@@ -696,12 +708,15 @@ class TestConfigureSecurityLogging:
             security_logger.addHandler(handler)
         security_logger.setLevel(original_level)
 
-    @pytest.mark.parametrize("level_str,expected_level", [
-        ("DEBUG", logging.DEBUG),
-        ("INFO", logging.INFO),
-        ("WARNING", logging.WARNING),
-        ("ERROR", logging.ERROR),
-    ])
+    @pytest.mark.parametrize(
+        "level_str,expected_level",
+        [
+            ("DEBUG", logging.DEBUG),
+            ("INFO", logging.INFO),
+            ("WARNING", logging.WARNING),
+            ("ERROR", logging.ERROR),
+        ],
+    )
     def test_configure_security_logging_levels(self, level_str, expected_level):
         """Test different logging levels."""
         configure_security_logging(level_str)
@@ -732,8 +747,13 @@ class TestConfigureSecurityLogging:
         assert formatter is not None
 
         log_record = logging.LogRecord(
-            name="test", level=logging.INFO, pathname="", lineno=0,
-            msg="test message", args=(), exc_info=None,
+            name="test",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="test message",
+            args=(),
+            exc_info=None,
         )
         formatted = formatter.format(log_record)
         assert "test message" in formatted
@@ -742,14 +762,19 @@ class TestConfigureSecurityLogging:
 class TestValidateExportSize:
     """Test validate_export_size function."""
 
-    @pytest.mark.parametrize("file_size_mb,limit_mb,should_fail", [
-        (0.5, 1, False),
-        (1.0, 1, False),
-        (2.0, 1, True),
-        (10.0, 5, True),
-        (0.1, 1, False),
-    ])
-    def test_validate_export_size_various_limits(self, temp_dir, file_size_mb, limit_mb, should_fail):
+    @pytest.mark.parametrize(
+        "file_size_mb,limit_mb,should_fail",
+        [
+            (0.5, 1, False),
+            (1.0, 1, False),
+            (2.0, 1, True),
+            (10.0, 5, True),
+            (0.1, 1, False),
+        ],
+    )
+    def test_validate_export_size_various_limits(
+        self, temp_dir, file_size_mb, limit_mb, should_fail
+    ):
         """Test validation with various file sizes and limits."""
         test_file = temp_dir / "test.txt"
         content_size = int(file_size_mb * 1024 * 1024)
@@ -811,13 +836,18 @@ class TestCleanupOldBackups:
         result = cleanup_old_backups(backup_dir, retention_days=30)
         assert result == 0
 
-    @pytest.mark.parametrize("retention_days,file_age_days,should_delete", [
-        (30, 35, True),
-        (30, 25, False),
-        (7, 10, True),
-        (7, 5, False),
-    ])
-    def test_cleanup_old_backups_retention_policy(self, temp_dir, retention_days, file_age_days, should_delete):
+    @pytest.mark.parametrize(
+        "retention_days,file_age_days,should_delete",
+        [
+            (30, 35, True),
+            (30, 25, False),
+            (7, 10, True),
+            (7, 5, False),
+        ],
+    )
+    def test_cleanup_old_backups_retention_policy(
+        self, temp_dir, retention_days, file_age_days, should_delete
+    ):
         """Test cleanup respects retention policy."""
         backup_dir = temp_dir / "backups"
         backup_dir.mkdir()
@@ -845,7 +875,10 @@ class TestCleanupOldBackups:
         (backup_dir / "file.txt").write_text("other")
 
         with patch("pathlib.Path.glob") as mock_glob:
-            mock_glob.return_value = [(backup_dir / "file.backup"), (backup_dir / "file.backup.gz")]
+            mock_glob.return_value = [
+                (backup_dir / "file.backup"),
+                (backup_dir / "file.backup.gz"),
+            ]
             with patch.object(Path, "stat") as mock_stat:
                 mock_stat.return_value.st_mtime = time.time() - (35 * 24 * 60 * 60)
                 cleanup_old_backups(backup_dir, retention_days=30)
@@ -869,9 +902,7 @@ class TestCleanupOldBackups:
 
         log_calls = mock_log.call_args_list
 
-        cleanup_logged = any(
-            call[0][0] == "backup_cleaned" for call in log_calls
-        )
+        cleanup_logged = any(call[0][0] == "backup_cleaned" for call in log_calls)
         completion_logged = any(
             call[0][0] == "backup_cleanup_completed" for call in log_calls
         )

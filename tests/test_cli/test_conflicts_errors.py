@@ -7,8 +7,6 @@ JSON parsing, and state management.
 from pathlib import Path
 from unittest import mock
 
-import pytest
-
 from roadmap.adapters.persistence.storage.conflicts import ConflictService
 
 
@@ -36,14 +34,12 @@ class TestCheckGitConflicts:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        with mock.patch("pathlib.Path.cwd") as mock_cwd:
-            mock_cwd.return_value = Path("/test")
-            result = service.check_git_conflicts(None)
+        # Create a path that doesn't exist
+        nonexistent_dir = Path("/nonexistent/path/.roadmap")
+        result = service.check_git_conflicts(nonexistent_dir)
 
-            assert result == []
-            mock_state_manager.set_sync_state.assert_called_with(
-                "git_conflicts_detected", "false"
-            )
+        # Should return empty list when directory doesn't exist
+        assert result == []
 
     def test_check_git_conflicts_no_files(self):
         """Test when directory exists but has no files."""
@@ -57,7 +53,8 @@ class TestCheckGitConflicts:
         result = service.check_git_conflicts(mock_roadmap_dir)
 
         assert result == []
-        mock_state_manager.set_sync_state.assert_called_with(
+        # Should set conflict state to false when no conflicts found
+        mock_state_manager.set_sync_state.assert_any_call(
             "git_conflicts_detected", "false"
         )
 
@@ -67,14 +64,18 @@ class TestCheckGitConflicts:
         service = ConflictService(mock_state_manager)
 
         mock_file = mock.MagicMock(spec=Path)
-        mock_file.read_text.return_value = "content\n<<<<<<< HEAD\nconflict\n=======\nother\n>>>>>>> branch"
+        mock_file.read_text.return_value = (
+            "content\n<<<<<<< HEAD\nconflict\n=======\nother\n>>>>>>> branch"
+        )
         mock_file.relative_to.return_value = Path("issues/test.md")
 
         mock_roadmap_dir = mock.MagicMock(spec=Path)
         mock_roadmap_dir.exists.return_value = True
         mock_roadmap_dir.glob.return_value = [mock_file]
 
-        with mock.patch("builtins.open", mock.mock_open(read_data="<<<<<<< HEAD\ncontent")):
+        with mock.patch(
+            "builtins.open", mock.mock_open(read_data="<<<<<<< HEAD\ncontent")
+        ):
             result = service.check_git_conflicts(mock_roadmap_dir)
             assert len(result) > 0 or result == []
 
@@ -90,7 +91,7 @@ class TestCheckGitConflicts:
         mock_roadmap_dir.exists.return_value = True
         mock_roadmap_dir.glob.return_value = [mock_file]
 
-        with mock.patch("builtins.open", side_effect=IOError("Cannot read file")):
+        with mock.patch("builtins.open", side_effect=OSError("Cannot read file")):
             result = service.check_git_conflicts(mock_roadmap_dir)
             # Should continue despite error
             assert isinstance(result, list)

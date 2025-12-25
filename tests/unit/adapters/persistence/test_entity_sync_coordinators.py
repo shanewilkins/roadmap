@@ -61,7 +61,9 @@ class TestEntitySyncCoordinator:
             (None, None),
         ],
     )
-    def test_get_default_project_id(self, coordinator, mock_transaction, return_value, expect_result):
+    def test_get_default_project_id(
+        self, coordinator, mock_transaction, return_value, expect_result
+    ):
         """Test getting default project ID with various outcomes."""
         mock_conn = MagicMock()
         mock_conn.execute.return_value.fetchone.return_value = return_value
@@ -86,7 +88,9 @@ class TestEntitySyncCoordinator:
             (None, None),
         ],
     )
-    def test_get_milestone_id_by_name(self, coordinator, mock_transaction, return_value, expect_result):
+    def test_get_milestone_id_by_name(
+        self, coordinator, mock_transaction, return_value, expect_result
+    ):
         """Test getting milestone ID by name with various outcomes."""
         mock_conn = MagicMock()
         mock_conn.execute.return_value.fetchone.return_value = return_value
@@ -130,17 +134,29 @@ class TestEntitySyncCoordinator:
     @pytest.mark.parametrize(
         "data,known_fields,should_have_metadata",
         [
-            ({"id": "123", "title": "Test", "custom_field": "value", "extra": "data"}, ["id", "title"], True),
+            (
+                {
+                    "id": "123",
+                    "title": "Test",
+                    "custom_field": "value",
+                    "extra": "data",
+                },
+                ["id", "title"],
+                True,
+            ),
             ({"id": "123", "title": "Test"}, ["id", "title"], False),
             ({}, [], False),
         ],
     )
-    def test_extract_metadata(self, coordinator, data, known_fields, should_have_metadata):
+    def test_extract_metadata(
+        self, coordinator, data, known_fields, should_have_metadata
+    ):
         """Test extracting metadata from data."""
         result = coordinator._extract_metadata(data, known_fields)
         if should_have_metadata:
             assert result is not None
             import json
+
             parsed = json.loads(result)
             assert "custom_field" in parsed
         else:

@@ -4,11 +4,8 @@ Tests cover incremental sync, full rebuild, decision logic,
 error handling, and file synchronization.
 """
 
-from datetime import datetime
 from pathlib import Path
 from unittest import mock
-
-import pytest
 
 from roadmap.adapters.persistence.sync_orchestrator import SyncOrchestrator
 
@@ -28,6 +25,7 @@ class TestSyncOrchestratorInitialization:
 
     def test_initialization_with_callables(self):
         """Test initialization stores callable references."""
+
         def get_connection():
             return mock.MagicMock()
 
@@ -71,7 +69,9 @@ class TestHasFileChanged:
         mock_file = mock.MagicMock(spec=Path)
         mock_file.exists.return_value = True
 
-        with mock.patch.object(orchestrator._parser, "calculate_file_hash") as mock_hash:
+        with mock.patch.object(
+            orchestrator._parser, "calculate_file_hash"
+        ) as mock_hash:
             mock_hash.return_value = "abc123"
             result = orchestrator._has_file_changed(mock_file)
 
@@ -93,7 +93,9 @@ class TestHasFileChanged:
         mock_file = mock.MagicMock(spec=Path)
         mock_file.exists.return_value = True
 
-        with mock.patch.object(orchestrator._parser, "calculate_file_hash") as mock_hash:
+        with mock.patch.object(
+            orchestrator._parser, "calculate_file_hash"
+        ) as mock_hash:
             mock_hash.return_value = test_hash
             result = orchestrator._has_file_changed(mock_file)
 
@@ -114,7 +116,9 @@ class TestHasFileChanged:
         mock_file = mock.MagicMock(spec=Path)
         mock_file.exists.return_value = True
 
-        with mock.patch.object(orchestrator._parser, "calculate_file_hash") as mock_hash:
+        with mock.patch.object(
+            orchestrator._parser, "calculate_file_hash"
+        ) as mock_hash:
             mock_hash.return_value = "new_hash"
             result = orchestrator._has_file_changed(mock_file)
 
@@ -153,7 +157,9 @@ class TestSyncFileByType:
 
         stats = {"files_synced": 0, "files_failed": 0}
 
-        with mock.patch.object(orchestrator._issue_sync, "sync_issue_file") as mock_sync:
+        with mock.patch.object(
+            orchestrator._issue_sync, "sync_issue_file"
+        ) as mock_sync:
             mock_sync.return_value = True
             result = orchestrator._sync_file_by_type(mock_file, stats)
 
@@ -193,7 +199,9 @@ class TestSyncFileByType:
 
         stats = {"files_synced": 0, "files_failed": 0}
 
-        with mock.patch.object(orchestrator._project_sync, "sync_project_file") as mock_sync:
+        with mock.patch.object(
+            orchestrator._project_sync, "sync_project_file"
+        ) as mock_sync:
             mock_sync.return_value = True
             result = orchestrator._sync_file_by_type(mock_file, stats)
 
@@ -228,7 +236,9 @@ class TestSyncFileByType:
 
         stats = {"files_synced": 0, "files_failed": 0}
 
-        with mock.patch.object(orchestrator._issue_sync, "sync_issue_file") as mock_sync:
+        with mock.patch.object(
+            orchestrator._issue_sync, "sync_issue_file"
+        ) as mock_sync:
             mock_sync.return_value = False
             result = orchestrator._sync_file_by_type(mock_file, stats)
 
@@ -360,7 +370,9 @@ class TestShouldDoFullRebuild:
         mock_dir.exists.return_value = True
         mock_dir.glob.side_effect = [[], [], []]  # No files
 
-        with mock.patch.object(orchestrator._state_tracker, "get_last_incremental_sync") as mock_check:
+        with mock.patch.object(
+            orchestrator._state_tracker, "get_last_incremental_sync"
+        ) as mock_check:
             mock_check.return_value = None
 
             result = orchestrator.should_do_full_rebuild(mock_dir)
@@ -369,10 +381,40 @@ class TestShouldDoFullRebuild:
 
     def test_threshold_not_exceeded(self):
         """Test when file change threshold is not exceeded."""
-        # NOTE: This test mocks the internal threshold logic. 
-        # The actual implementation may default to True on error.
-        # Comprehensive threshold testing is in test_sync_orchestrator_errors.py
-        pass
+        mock_get_conn = mock.MagicMock()
+        mock_transaction = mock.MagicMock()
+
+        orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
+
+        # Create 10 mock files for testing
+        mock_files = [mock.MagicMock(spec=Path) for _ in range(10)]
+
+        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir.exists.return_value = True
+
+        # Mock glob to return files matching patterns
+        # The function calls glob 6 times (3 patterns x 2 loops)
+        def glob_side_effect(pattern):
+            if "issues" in pattern:
+                return mock_files  # 10 files
+            else:
+                return []  # No milestones or projects
+
+        mock_dir.glob = mock.MagicMock(side_effect=glob_side_effect)
+
+        with mock.patch.object(
+            orchestrator._state_tracker, "get_last_incremental_sync"
+        ) as mock_sync:
+            mock_sync.return_value = "2024-01-01"  # Has previous sync
+
+            with mock.patch.object(orchestrator, "_has_file_changed") as mock_changed:
+                # Only 1 out of 10 files changed (10% < 50% threshold)
+                mock_changed.side_effect = [True] + [False] * 9
+
+                result = orchestrator.should_do_full_rebuild(mock_dir, threshold=50)
+
+                # 1 changed out of 10 = 10% < 50%, so should return False
+                assert result is False
 
     def test_rebuild_decision_error(self):
         """Test error handling in rebuild decision."""

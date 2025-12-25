@@ -9,6 +9,7 @@ from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.validators.archivable_milestones_validator import (
     ArchivableMilestonesValidator,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestArchivableMilestonesValidator:
@@ -17,8 +18,8 @@ class TestArchivableMilestonesValidator:
     @pytest.fixture
     def mock_core(self):
         """Create mock core with milestone service."""
-        core = MagicMock()
-        core.milestone_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.milestone_service = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     def test_scan_for_archivable_milestones_empty_list(self, mock_core):

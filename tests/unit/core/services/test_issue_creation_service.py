@@ -7,6 +7,7 @@ import pytest
 
 from roadmap.common.constants import IssueType, Priority
 from roadmap.core.services.issue_creation_service import IssueCreationService
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestIssueCreationService:
@@ -14,10 +15,10 @@ class TestIssueCreationService:
 
     @pytest.fixture
     def mock_core(self):
-        """Create a mock core object."""
-        core = MagicMock()
-        core.git = MagicMock()
-        core.team = MagicMock()
+        """Create mock RoadmapCore."""
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.git = TestDataFactory.create_mock_core(is_initialized=True)
+        core.team = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.fixture
@@ -28,7 +29,7 @@ class TestIssueCreationService:
     @pytest.fixture
     def mock_issue(self):
         """Create a mock issue object."""
-        issue = MagicMock()
+        issue = TestDataFactory.create_mock_core(is_initialized=True)
         issue.id = "issue-1"
         issue.title = "Test Issue"
         issue.issue_type = IssueType.FEATURE
@@ -304,10 +305,10 @@ class TestIssueCreationServiceIntegration:
 
     @pytest.fixture
     def mock_core(self):
-        """Create a fully-featured mock core."""
-        core = MagicMock()
-        core.git = MagicMock()
-        core.team = MagicMock()
+        """Create mock RoadmapCore."""
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.git = TestDataFactory.create_mock_core(is_initialized=True)
+        core.team = TestDataFactory.create_mock_core(is_initialized=True)
         core.root_path = "/repo"
         return core
 

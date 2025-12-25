@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from roadmap.core.domain.health import HealthStatus
 from roadmap.infrastructure.health import HealthCheck
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestHealthCheck:
@@ -200,7 +201,6 @@ class TestHealthCheck:
 
     def test_run_all_checks_calls_no_param_checks(self):
         """Test that run_all_checks calls checks that take no parameters."""
-        from unittest.mock import MagicMock
 
         with (
             patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
@@ -236,9 +236,9 @@ class TestHealthCheck:
             mock_arch_milestones.return_value = ok_status
 
             # Create mock core
-            mock_core = MagicMock()
+            mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
-            checks = HealthCheck.run_all_checks(mock_core)
+            HealthCheck.run_all_checks(mock_core)
 
             # Verify no-param checks were called
             mock_roadmap.assert_called_once()
@@ -252,7 +252,6 @@ class TestHealthCheck:
 
     def test_run_all_checks_calls_core_param_checks(self):
         """Test that run_all_checks calls checks that take core parameter."""
-        from unittest.mock import MagicMock
 
         with (
             patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
@@ -288,9 +287,9 @@ class TestHealthCheck:
             mock_arch_milestones.return_value = ok_status
 
             # Create mock core
-            mock_core = MagicMock()
+            mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
-            checks = HealthCheck.run_all_checks(mock_core)
+            HealthCheck.run_all_checks(mock_core)
 
             # Verify core-param checks were called with core
             mock_duplicates.assert_called_once_with(mock_core)
@@ -301,7 +300,6 @@ class TestHealthCheck:
 
     def test_run_all_checks_returns_expected_structure(self):
         """Test that run_all_checks returns checks with expected keys."""
-        from unittest.mock import MagicMock
 
         with (
             patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
@@ -337,7 +335,7 @@ class TestHealthCheck:
             mock_arch_milestones.return_value = ok_status
 
             # Create mock core
-            mock_core = MagicMock()
+            mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
             checks = HealthCheck.run_all_checks(mock_core)
 
@@ -352,7 +350,6 @@ class TestHealthCheck:
 
     def test_run_all_checks_all_healthy(self):
         """Test that run_all_checks returns all healthy statuses."""
-        from unittest.mock import MagicMock
 
         with (
             patch.object(HealthCheck, "check_roadmap_directory") as mock_roadmap,
@@ -388,7 +385,7 @@ class TestHealthCheck:
             mock_arch_milestones.return_value = ok_status
 
             # Create mock core
-            mock_core = MagicMock()
+            mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
             checks = HealthCheck.run_all_checks(mock_core)
 

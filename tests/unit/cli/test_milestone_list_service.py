@@ -17,6 +17,7 @@ from roadmap.adapters.cli.services.milestone_list_service import (
     MilestoneProgressService,
     MilestoneTimeEstimateService,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestMilestoneFilterService:
@@ -81,7 +82,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_success(self):
         """Test getting progress for a milestone."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.milestones.get_progress.return_value = {
             "total": 10,
             "completed": 7,
@@ -95,7 +96,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_zero_total(self):
         """Test progress with zero total issues."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.milestones.get_progress.return_value = {
             "total": 0,
             "completed": 0,
@@ -109,7 +110,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_complete(self):
         """Test progress when all issues completed."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.milestones.get_progress.return_value = {
             "total": 10,
             "completed": 10,
@@ -121,7 +122,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_exception(self):
         """Test progress calculation handles exceptions."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.milestones.get_progress.side_effect = Exception("DB error")
 
         result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
@@ -132,7 +133,7 @@ class TestMilestoneProgressService:
 
     def test_get_all_milestones_progress(self):
         """Test getting progress for multiple milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         def progress_side_effect(name):
             if name == "v1.0":
@@ -196,7 +197,7 @@ class TestMilestoneListService:
 
     def test_get_milestones_list_data_empty(self):
         """Test getting milestone list data when empty."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.milestones.list.return_value = []
         mock_core.issues.list.return_value = []
 
@@ -209,7 +210,7 @@ class TestMilestoneListService:
 
     def test_get_milestones_list_data_with_milestones(self):
         """Test getting milestone list data with milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         mock_ms = MagicMock()
         mock_ms.name = "v1.0"
@@ -235,7 +236,7 @@ class TestMilestoneListService:
 
     def test_get_milestones_list_data_overdue_filter(self):
         """Test getting milestone list data with overdue filter."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         mock_ms_past = MagicMock()
         mock_ms_past.name = "v0.9"
@@ -305,7 +306,7 @@ class TestMilestoneListService:
 
     def test_get_milestones_list_data_exception(self):
         """Test handling of exceptions."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.milestones.list.side_effect = Exception("DB error")
 
         service = MilestoneListService(mock_core)

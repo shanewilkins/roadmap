@@ -6,6 +6,7 @@ import pytest
 
 from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
 from roadmap.core.services.sync_report import SyncReport
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitHubSyncOrchestrator:
@@ -13,10 +14,10 @@ class TestGitHubSyncOrchestrator:
 
     @pytest.fixture
     def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.github_service = MagicMock()
-        return core
+        """Create mock RoadmapCore with GitHub integration."""
+        return TestDataFactory.create_mock_core(
+            is_initialized=True, github_service=MagicMock()
+        )
 
     @pytest.fixture
     def orchestrator(self, mock_core):

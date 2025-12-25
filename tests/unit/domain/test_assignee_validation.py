@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.domain.test_data_factory import TestDataFactory
 from tests.unit.shared.test_helpers import assert_command_success
 
 
@@ -57,7 +58,9 @@ class TestAssigneeValidation:
             ("   ", "whitespace only"),
         ],
     )
-    def test_empty_assignee_validation(self, initialized_roadmap, assignee_input, description):
+    def test_empty_assignee_validation(
+        self, initialized_roadmap, assignee_input, description
+    ):
         """Test that empty assignees are rejected."""
         from pathlib import Path
 
@@ -79,7 +82,9 @@ class TestAssigneeValidation:
             (True, "invaliduser", False),
         ],
     )
-    def test_assignee_validation_github_config(self, initialized_roadmap, github_configured, assignee, should_accept):
+    def test_assignee_validation_github_config(
+        self, initialized_roadmap, github_configured, assignee, should_accept
+    ):
         """Test assignee validation with and without GitHub configuration."""
         from pathlib import Path
 
@@ -181,7 +186,7 @@ class TestCLIAssigneeValidation:
         from roadmap.adapters.cli import main
 
         # Create a mock core
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.is_initialized.return_value = True
         mock_core.team.validate_assignee.return_value = (
             False,
@@ -214,7 +219,7 @@ class TestCLIAssigneeValidation:
         from roadmap.adapters.cli import main
 
         # Create a mock core
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.is_initialized.return_value = True
         mock_core.team.validate_assignee.return_value = (True, "")
         mock_core.team.get_current_user.return_value = None
@@ -250,7 +255,7 @@ class TestCLIAssigneeValidation:
         from roadmap.adapters.cli import main
 
         # Create a mock core that simulates local-only usage (no GitHub config)
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.is_initialized.return_value = True
         mock_core.team.validate_assignee.return_value = (
             True,

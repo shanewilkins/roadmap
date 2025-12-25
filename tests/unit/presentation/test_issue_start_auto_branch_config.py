@@ -48,7 +48,9 @@ def mocked_core(fake_issue):
 class TestIssueStartBranch:
     """Test issue start command with Git branch creation."""
 
-    def test_start_respects_auto_branch_config(self, cli_runner, fake_issue, mocked_core):
+    def test_start_respects_auto_branch_config(
+        self, cli_runner, fake_issue, mocked_core
+    ):
         """Test that config auto_branch setting is respected (currently disabled)."""
         core_inst, _ = mocked_core
         runner = cli_runner
@@ -84,4 +86,3 @@ class TestIssueStartBranch:
                 "Created Git branch" in result.output
                 or "Not in a Git repository" in result.output
             )
-

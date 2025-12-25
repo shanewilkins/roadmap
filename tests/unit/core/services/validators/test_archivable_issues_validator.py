@@ -9,6 +9,7 @@ from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.validators.archivable_issues_validator import (
     ArchivableIssuesValidator,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestArchivableIssuesValidator:
@@ -17,8 +18,8 @@ class TestArchivableIssuesValidator:
     @pytest.fixture
     def mock_core(self):
         """Create mock core with issue service."""
-        core = MagicMock()
-        core.issue_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issue_service = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     def test_scan_for_archivable_issues_empty_list(self, mock_core):

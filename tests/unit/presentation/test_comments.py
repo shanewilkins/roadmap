@@ -153,7 +153,9 @@ class TestCommentsHandler:
             assert comments[0].author == comment1.author
             assert comments[0].body == comment1.body
 
-    def test_get_issue_comments_second_comment_data(self, comments_handler_with_session):
+    def test_get_issue_comments_second_comment_data(
+        self, comments_handler_with_session
+    ):
         """Test that second comment data is correctly populated."""
         # Create mock comments using factory
         comment1 = create_mock_comment(
@@ -198,7 +200,9 @@ class TestCommentsHandler:
             assert comments[1].author == comment2.author
             assert comments[1].body == comment2.body
 
-    def test_get_issue_comments_makes_correct_api_call(self, comments_handler_with_session):
+    def test_get_issue_comments_makes_correct_api_call(
+        self, comments_handler_with_session
+    ):
         """Test that get_issue_comments makes the correct API call."""
         # Create mock comments using factory
         comment1 = create_mock_comment(
@@ -274,7 +278,9 @@ class TestCommentsHandler:
             comments_handler_with_session, "_make_request", return_value=mock_response
         ):
             # Test the method
-            comment = comments_handler_with_session.create_issue_comment(1, new_comment.body)
+            comment = comments_handler_with_session.create_issue_comment(
+                1, new_comment.body
+            )
 
             assert comment.id == new_comment.id
             assert comment.author == new_comment.author

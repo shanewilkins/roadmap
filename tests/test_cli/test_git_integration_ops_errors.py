@@ -32,7 +32,7 @@ class TestGitIntegrationOpsInitialization:
     def test_init_with_valid_dependencies(self):
         """Test successful initialization with valid git and core."""
         mock_git = Mock()
-        mock_core = TestDataFactory.create_mock_core()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         ops = GitIntegrationOps(mock_git, mock_core)
 
@@ -41,7 +41,9 @@ class TestGitIntegrationOpsInitialization:
 
     def test_init_with_none_git(self):
         """Test initialization with None git (fails at usage)."""
-        ops = GitIntegrationOps(None, TestDataFactory.create_mock_core())  # type: ignore
+        ops = GitIntegrationOps(
+            None, TestDataFactory.create_mock_core(is_initialized=True)
+        )  # type: ignore
         assert ops.git is None
 
     def test_init_with_none_core(self):
@@ -52,7 +54,7 @@ class TestGitIntegrationOpsInitialization:
     def test_init_preserves_references(self):
         """Test initialization stores exact references."""
         mock_git = Mock()
-        mock_core = TestDataFactory.create_mock_core()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         ops = GitIntegrationOps(mock_git, mock_core)
 
@@ -106,7 +108,7 @@ class TestGetGitContext:
         mock_git.get_current_branch.return_value = mock_branch
 
         # Create mock issue and core
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Test Issue"
         mock_status = Mock()
@@ -116,7 +118,7 @@ class TestGetGitContext:
         mock_priority.value = "high"
         mock_issue.priority = mock_priority
 
-        mock_core = TestDataFactory.create_mock_core()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -132,7 +134,9 @@ class TestGetGitContext:
         mock_git.is_git_repository.return_value = True
         mock_git.get_repository_info.side_effect = Exception("Git error")
 
-        ops = GitIntegrationOps(mock_git, TestDataFactory.create_mock_core())
+        ops = GitIntegrationOps(
+            mock_git, TestDataFactory.create_mock_core(is_initialized=True)
+        )
 
         # safe_operation wraps as GitError for READ operations on GitRepository
         with pytest.raises((Exception, GitError)):
@@ -145,7 +149,9 @@ class TestGetGitContext:
         mock_git.get_repository_info.return_value = {}
         mock_git.get_current_branch.return_value = None
 
-        ops = GitIntegrationOps(mock_git, TestDataFactory.create_mock_core())
+        ops = GitIntegrationOps(
+            mock_git, TestDataFactory.create_mock_core(is_initialized=True)
+        )
 
         result = ops.get_git_context()
 
@@ -162,7 +168,7 @@ class TestGetGitContext:
         mock_branch.extract_issue_id.return_value = "999"
         mock_git.get_current_branch.return_value = mock_branch
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = None
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -226,8 +232,8 @@ class TestCreateIssueWithGitBranch:
     def test_create_issue_without_branch(self):
         """Test creating issue without creating a branch."""
         mock_git = Mock()
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_core.issues.create.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -244,9 +250,8 @@ class TestCreateIssueWithGitBranch:
         """Test creating issue with branch in git repository."""
         mock_git = Mock()
         mock_git.is_git_repository.return_value = True
-        mock_core = Mock()
-        mock_issue = Mock()
-        mock_issue.id = "123"
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_core.issues.create.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -264,8 +269,8 @@ class TestCreateIssueWithGitBranch:
         """Test creating issue with branch flag but not in git repo."""
         mock_git = Mock()
         mock_git.is_git_repository.return_value = False
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_core.issues.create.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -278,7 +283,7 @@ class TestCreateIssueWithGitBranch:
     def test_create_issue_fails(self):
         """Test when issue creation fails."""
         mock_git = Mock()
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.create.return_value = None
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -294,8 +299,8 @@ class TestCreateIssueWithGitBranch:
         mock_git.create_branch_for_issue.side_effect = Exception(
             "Branch creation failed"
         )
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_core.issues.create.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -306,8 +311,8 @@ class TestCreateIssueWithGitBranch:
     def test_create_issue_with_extra_kwargs(self):
         """Test creating issue with additional parameters."""
         mock_git = Mock()
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_core.issues.create.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -336,9 +341,9 @@ class TestLinkIssueToBranch:
         mock_branch.name = "feature/issue-123"
         mock_git.get_current_branch.return_value = mock_branch
 
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.git_branches = []
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = mock_issue
         mock_core.issues.update.return_value = mock_issue
 
@@ -380,7 +385,7 @@ class TestLinkIssueToBranch:
         mock_branch = Mock()
         mock_git.get_current_branch.return_value = mock_branch
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = None
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -397,9 +402,9 @@ class TestLinkIssueToBranch:
         mock_branch.name = "feature/issue-123"
         mock_git.get_current_branch.return_value = mock_branch
 
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.git_branches = ["feature/issue-123"]
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = mock_issue
         mock_core.issues.update.return_value = mock_issue
 
@@ -419,9 +424,9 @@ class TestLinkIssueToBranch:
         mock_branch.name = "feature/issue-123"
         mock_git.get_current_branch.return_value = mock_branch
 
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.git_branches = []
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = mock_issue
         mock_core.issues.update.return_value = None
 
@@ -512,7 +517,7 @@ class TestUpdateIssueFromGitActivity:
             "status": "in_progress"
         }
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = Mock()
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -573,7 +578,7 @@ class TestUpdateIssueFromGitActivity:
             {"status": "done"},
         ]
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = Mock()
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -593,7 +598,7 @@ class TestUpdateIssueFromGitActivity:
         mock_git.get_commits_for_issue.return_value = mock_commits
         mock_git.parse_commit_message_for_updates.return_value = {"status": "done"}
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.side_effect = Exception("Update failed")
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -611,8 +616,8 @@ class TestSuggestBranchName:
         mock_git.is_git_repository.return_value = True
         mock_git.suggest_branch_name.return_value = "feature/issue-123"
 
-        mock_issue = Mock()
-        mock_core = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -626,8 +631,8 @@ class TestSuggestBranchName:
         mock_git = Mock()
         mock_git.is_git_repository.return_value = False
 
-        mock_issue = Mock()
-        mock_core = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = mock_issue
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -641,7 +646,7 @@ class TestSuggestBranchName:
         mock_git = Mock()
         mock_git.is_git_repository.return_value = True
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = None
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -671,7 +676,7 @@ class TestGetBranchLinkedIssues:
 
         mock_issue1 = Mock()
         mock_issue2 = Mock()
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.side_effect = [mock_issue1, mock_issue2]
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -721,7 +726,7 @@ class TestGetBranchLinkedIssues:
 
         mock_git.get_all_branches.return_value = [mock_branch]
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = None
 
         ops = GitIntegrationOps(mock_git, mock_core)
@@ -758,11 +763,11 @@ class TestGitIntegrationOpsIntegration:
         mock_git.get_current_branch.return_value = mock_branch
         mock_git.create_branch_for_issue.return_value = True
 
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.git_branches = []
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.create.return_value = mock_issue
         mock_core.issues.get.return_value = mock_issue
         mock_core.issues.update.return_value = mock_issue

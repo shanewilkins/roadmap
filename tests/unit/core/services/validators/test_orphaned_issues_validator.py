@@ -8,6 +8,7 @@ from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.validators.orphaned_issues_validator import (
     OrphanedIssuesValidator,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestOrphanedIssuesValidator:
@@ -16,8 +17,8 @@ class TestOrphanedIssuesValidator:
     @pytest.fixture
     def mock_core(self):
         """Create mock core with issue service."""
-        core = MagicMock()
-        core.issue_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issue_service = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     def test_scan_for_orphaned_issues_empty_list(self, mock_core):

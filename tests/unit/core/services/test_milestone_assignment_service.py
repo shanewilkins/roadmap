@@ -1,10 +1,9 @@
 """Tests for milestone service operations - tests service logic directly without CLI output parsing."""
 
-from unittest.mock import MagicMock
-
 import pytest
 
 from roadmap.core.domain import Issue, Milestone
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestMilestoneServiceAssignment:
@@ -13,9 +12,9 @@ class TestMilestoneServiceAssignment:
     @pytest.fixture
     def mock_core(self):
         """Create a mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.milestones = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
+        core.milestones = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     def test_assign_issue_to_milestone(self, mock_core):

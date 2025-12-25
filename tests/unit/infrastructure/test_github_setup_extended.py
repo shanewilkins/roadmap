@@ -11,6 +11,7 @@ from roadmap.infrastructure.github.setup import (
     GitHubInitializationService,
     show_github_setup_instructions,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitHubConfigManager:
@@ -19,7 +20,7 @@ class TestGitHubConfigManager:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
         core.roadmap_dir = Path("/test/roadmap")
         return core
 
@@ -101,7 +102,7 @@ class TestGitHubInitializationServiceCoverage:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
         core.roadmap_dir = Path("/test/roadmap")
         return core
 

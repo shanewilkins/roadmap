@@ -87,7 +87,10 @@ class TestSyncGitHubEnhancedHelp:
             result = cli_runner.invoke(sync_github, [], obj=mock_core)
 
             assert result.exit_code == 1
-            assert "Must specify issue_id, --all, --milestone, or --status" in result.output
+            assert (
+                "Must specify issue_id, --all, --milestone, or --status"
+                in result.output
+            )
 
     def test_all_flag_no_linked_issues(self, cli_runner, mock_core):
         """Test sync --all when there are no linked issues."""
@@ -125,11 +128,14 @@ class TestSyncGitHubFlags:
         return_issue=None,
     ):
         """Helper to invoke sync_github with standard patches."""
-        with patch(
-            "roadmap.adapters.cli.issues.sync.GitHubIntegrationService"
-        ) as mock_gh_service_cls, patch(
-            "roadmap.adapters.cli.issues.sync.GitHubSyncOrchestrator"
-        ) as mock_orchestrator_cls:
+        with (
+            patch(
+                "roadmap.adapters.cli.issues.sync.GitHubIntegrationService"
+            ) as mock_gh_service_cls,
+            patch(
+                "roadmap.adapters.cli.issues.sync.GitHubSyncOrchestrator"
+            ) as mock_orchestrator_cls,
+        ):
             mock_gh_service = Mock()
             mock_gh_service.get_github_config.return_value = {
                 "owner": "user",
@@ -239,11 +245,14 @@ class TestSyncGitHubFilters:
         has_changes=False,
     ):
         """Helper to invoke sync_github with standard patches."""
-        with patch(
-            "roadmap.adapters.cli.issues.sync.GitHubIntegrationService"
-        ) as mock_gh_service_cls, patch(
-            "roadmap.adapters.cli.issues.sync.GitHubSyncOrchestrator"
-        ) as mock_orchestrator_cls:
+        with (
+            patch(
+                "roadmap.adapters.cli.issues.sync.GitHubIntegrationService"
+            ) as mock_gh_service_cls,
+            patch(
+                "roadmap.adapters.cli.issues.sync.GitHubSyncOrchestrator"
+            ) as mock_orchestrator_cls,
+        ):
             mock_gh_service = Mock()
             mock_gh_service.get_github_config.return_value = {
                 "owner": "user",
@@ -290,4 +299,3 @@ class TestSyncGitHubFilters:
         assert result.exit_code == 0
         assert "Will sync 1 issue(s)" in result.output
         mock_core.issues.get.assert_called_once_with("issue1")
-

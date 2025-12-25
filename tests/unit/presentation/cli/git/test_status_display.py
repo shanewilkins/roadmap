@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from roadmap.adapters.cli.git.status_display import GitStatusDisplay
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitStatusDisplay:
@@ -138,7 +139,9 @@ class TestGitStatusDisplay:
         calls = [call[0][0] for call in console.print.call_args_list]
         assert any("feature/ISS-123" in c for c in calls)
 
-    def test_show_current_branch_with_linked_issue_shows_issue_header(self, display, console):
+    def test_show_current_branch_with_linked_issue_shows_issue_header(
+        self, display, console
+    ):
         """show_current_branch should show linked issue header."""
         git_context = {
             "current_branch": "feature/ISS-123",
@@ -155,7 +158,9 @@ class TestGitStatusDisplay:
         calls = [call[0][0] for call in console.print.call_args_list]
         assert any("Linked issue:" in c for c in calls)
 
-    def test_show_current_branch_with_linked_issue_shows_title_and_id(self, display, console):
+    def test_show_current_branch_with_linked_issue_shows_title_and_id(
+        self, display, console
+    ):
         """show_current_branch should display issue title and id."""
         git_context = {
             "current_branch": "feature/ISS-123",
@@ -173,7 +178,9 @@ class TestGitStatusDisplay:
         assert any("Test Issue" in c for c in calls)
         assert any("ISS-123" in c for c in calls)
 
-    def test_show_current_branch_with_linked_issue_shows_status_and_priority(self, display, console):
+    def test_show_current_branch_with_linked_issue_shows_status_and_priority(
+        self, display, console
+    ):
         """show_current_branch should display status and priority."""
         git_context = {
             "current_branch": "feature/ISS-123",
@@ -227,7 +234,7 @@ class TestGitStatusDisplay:
 
     def test_show_branch_issue_links_empty(self, display, console):
         """show_branch_issue_links should handle empty branch_issues."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         display.show_branch_issue_links({}, "main", mock_core)
 
@@ -235,8 +242,8 @@ class TestGitStatusDisplay:
 
     def test_show_branch_issue_links_single(self, display, console):
         """show_branch_issue_links should display single branch-issue link."""
-        mock_core = Mock()
-        mock_issue = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.title = "Test Issue"
         mock_core.issues.get.return_value = mock_issue
 
@@ -252,7 +259,7 @@ class TestGitStatusDisplay:
 
     def test_show_branch_issue_links_multiple(self, display, console):
         """show_branch_issue_links should display multiple branch-issue links."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issue1 = Mock()
         mock_issue1.title = "First Issue"
         mock_issue2 = Mock()
@@ -273,7 +280,7 @@ class TestGitStatusDisplay:
 
     def test_show_branch_issue_links_skips_none_issues(self, display, console):
         """show_branch_issue_links should skip branches with None issues."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.return_value = None
 
         branch_issues = {"feature/test": ["ISS-MISSING"]}
@@ -287,7 +294,7 @@ class TestGitStatusDisplay:
 
     def test_show_branch_issue_link_current_branch(self, display, console):
         """_show_branch_issue_link should mark current branch."""
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.title = "Test Issue"
 
         display._show_branch_issue_link("feature/test", mock_issue, "feature/test")
@@ -299,7 +306,7 @@ class TestGitStatusDisplay:
 
     def test_show_branch_issue_link_other_branch(self, display, console):
         """_show_branch_issue_link should not mark other branches."""
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.title = "Test Issue"
 
         display._show_branch_issue_link("feature/other", mock_issue, "main")
@@ -311,7 +318,7 @@ class TestGitStatusDisplay:
 
     def test_show_branch_issue_link_truncates_long_title(self, display, console):
         """_show_branch_issue_link should truncate long titles."""
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.title = "A" * 60  # 60 character title
 
         display._show_branch_issue_link("feature/test", mock_issue, "main")
@@ -324,7 +331,7 @@ class TestGitStatusDisplay:
 
     def test_show_recent_commits_not_git_repo(self, display, console):
         """show_recent_commits should return early if not git repo."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git.is_git_repository.return_value = False
 
         display.show_recent_commits(mock_core)
@@ -333,7 +340,7 @@ class TestGitStatusDisplay:
 
     def test_show_recent_commits_no_roadmap_commits(self, display, console):
         """show_recent_commits should skip if no roadmap references."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git.is_git_repository.return_value = True
 
         mock_commit = Mock()
@@ -347,7 +354,7 @@ class TestGitStatusDisplay:
 
     def test_show_recent_commits_with_roadmap_refs(self, display, console):
         """show_recent_commits should display commits with roadmap references."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git.is_git_repository.return_value = True
 
         mock_commit = Mock()
@@ -367,7 +374,7 @@ class TestGitStatusDisplay:
 
     def test_show_recent_commits_limits_to_three(self, display, console):
         """show_recent_commits should limit display to 3 commits."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git.is_git_repository.return_value = True
 
         # Create 5 commits with roadmap references

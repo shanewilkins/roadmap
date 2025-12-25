@@ -101,7 +101,15 @@ class TestHealthCheckService:
             ("nonexistent", False, None, None),
         ],
     )
-    def test_get_check_status(self, service, mock_checks, check_name, exists, expected_status, expected_message):
+    def test_get_check_status(
+        self,
+        service,
+        mock_checks,
+        check_name,
+        exists,
+        expected_status,
+        expected_message,
+    ):
         """Test retrieving check status in various scenarios."""
         with patch.object(HealthCheck, "run_all_checks", return_value=mock_checks):
             result = service.get_check_status(check_name)

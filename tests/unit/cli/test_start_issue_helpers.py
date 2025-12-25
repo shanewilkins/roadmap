@@ -7,6 +7,7 @@ from unittest.mock import Mock
 
 from roadmap.core.domain import Status
 from roadmap.core.services import StartIssueService
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestStartDateParser:
@@ -46,7 +47,7 @@ class TestStartDateParser:
         service = StartIssueService(None)
         try:
             service.parse_start_date("not-a-date")
-            assert False, "Should have raised ValueError"
+            raise AssertionError("Should have raised ValueError")
         except ValueError as e:
             assert "Invalid date format" in str(e)
 
@@ -55,7 +56,7 @@ class TestStartDateParser:
         service = StartIssueService(None)
         try:
             service.parse_start_date("2024-01")
-            assert False, "Should have raised ValueError"
+            raise AssertionError("Should have raised ValueError")
         except ValueError as e:
             assert "Invalid date format" in str(e)
 
@@ -65,9 +66,9 @@ class TestStartIssueWorkflow:
 
     def test_start_work_updates_issue(self):
         """start_work should call core.issues.update with correct parameters."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues = Mock()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_core.issues.update.return_value = mock_issue
         service = StartIssueService(mock_core)
 
@@ -86,7 +87,7 @@ class TestStartIssueWorkflow:
 
     def test_start_work_returns_none_on_failure(self):
         """start_work should return None when update fails."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues = Mock()
         mock_core.issues.update.return_value = None
         service = StartIssueService(mock_core)
@@ -97,7 +98,7 @@ class TestStartIssueWorkflow:
 
     def test_should_create_branch_true_when_flag_set(self):
         """should_create_branch returns True when git_branch_flag is True."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         result = StartIssueService(mock_core).should_create_branch(True)
         assert result
 
@@ -107,7 +108,7 @@ class TestStartIssueWorkflow:
         Note: Config checking code tries to import non-existent RoadmapConfig,
         so it always falls through to the except block returning False.
         """
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         result = StartIssueService(mock_core).should_create_branch(False)
         assert not result
 
@@ -117,11 +118,11 @@ class TestStartIssueDisplay:
 
     def test_show_started_displays_issue_info(self):
         """show_started should display issue title and start date."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = StartIssueService(mock_core)
         service._console = mock_console
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue(status="open", priority="medium")
         mock_issue.title = "Test Issue"
         start_date = datetime(2024, 1, 15, 14, 30)
 
@@ -142,7 +143,7 @@ class TestStartIssueDisplay:
 
     def test_show_branch_created_without_checkout(self):
         """show_branch_created should display branch name without checkout message."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = StartIssueService(mock_core)
         service._console = mock_console
@@ -157,7 +158,7 @@ class TestStartIssueDisplay:
 
     def test_show_branch_created_with_checkout(self):
         """show_branch_created should display branch name and checkout message."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_console = Mock()
         service = StartIssueService(mock_core)
         service._console = mock_console
@@ -178,7 +179,7 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_with_uncommitted_changes(self):
         """show_branch_warning should display uncommitted changes warning."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git._run_git_command.return_value = "M  some_file.py\n"
         mock_console = Mock()
         service = StartIssueService(mock_core)
@@ -193,7 +194,7 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_with_clean_tree(self):
         """show_branch_warning should display generic warning for clean tree."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git._run_git_command.return_value = ""
         mock_console = Mock()
         service = StartIssueService(mock_core)
@@ -208,7 +209,7 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_with_none_status(self):
         """show_branch_warning should handle None status output."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git._run_git_command.return_value = None
         mock_console = Mock()
         service = StartIssueService(mock_core)
@@ -222,7 +223,7 @@ class TestStartIssueDisplay:
 
     def test_show_branch_warning_on_git_exception(self):
         """show_branch_warning should handle git command exceptions."""
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.git._run_git_command.side_effect = Exception("Git error")
         mock_console = Mock()
         service = StartIssueService(mock_core)

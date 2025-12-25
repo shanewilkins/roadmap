@@ -8,6 +8,7 @@ import pytest
 from roadmap.common.constants import Status
 from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
 from roadmap.core.services.sync_report import IssueChange
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitHubSyncOrchestratorConflictDetector:
@@ -16,7 +17,7 @@ class TestGitHubSyncOrchestratorConflictDetector:
     @pytest.fixture
     def mock_core_no_github_service(self):
         """Create mock core without github_service."""
-        core = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
         # Explicitly remove github_service attribute
         if hasattr(core, "github_service"):
             delattr(core, "github_service")
@@ -41,9 +42,8 @@ class TestGitHubSyncOrchestratorEmptyIssues:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.fixture
@@ -75,9 +75,8 @@ class TestGitHubSyncOrchestratorConfigValidation:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.mark.parametrize(
@@ -85,7 +84,12 @@ class TestGitHubSyncOrchestratorConfigValidation:
         [
             ({"token": "test"}, "123", "error", "owner/repo"),
             ({"token": "test", "owner": "user"}, "123", "error", "owner/repo"),
-            ({"token": "test", "owner": "user", "repo": "repo"}, None, "error", "not linked"),
+            (
+                {"token": "test", "owner": "user", "repo": "repo"},
+                None,
+                "error",
+                "not linked",
+            ),
         ],
     )
     def test_detect_issue_changes_config_missing_or_not_linked(
@@ -118,9 +122,8 @@ class TestGitHubSyncOrchestratorGitHubFetch:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.fixture
@@ -132,7 +135,7 @@ class TestGitHubSyncOrchestratorGitHubFetch:
         ):
             orch = GitHubSyncOrchestrator(mock_core, config)
             # Mock the github_client
-            orch.github_client = MagicMock()
+            orch.github_client = TestDataFactory.create_mock_core(is_initialized=True)
             return orch
 
     def test_detect_issue_changes_github_issue_deleted(self, orchestrator):
@@ -199,9 +202,8 @@ class TestGitHubStatusMapping:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.fixture
@@ -237,9 +239,8 @@ class TestGitHubSyncOrchestratorChangeDetection:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.fixture
@@ -277,7 +278,9 @@ class TestGitHubSyncOrchestratorChangeDetection:
             ("description", "Old Description", "New Description"),
         ],
     )
-    def test_detect_github_changes(self, orchestrator, change_field, old_value, new_value):
+    def test_detect_github_changes(
+        self, orchestrator, change_field, old_value, new_value
+    ):
         """Test detecting various GitHub changes.
 
         Covers lines 254-265: Change detection for status, title, and description
@@ -315,9 +318,8 @@ class TestGitHubSyncOrchestratorApplyChanges:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.fixture
@@ -328,7 +330,9 @@ class TestGitHubSyncOrchestratorApplyChanges:
             "roadmap.core.services.github_sync_orchestrator.GitHubConflictDetector"
         ):
             orch = GitHubSyncOrchestrator(mock_core, config)
-            orch.metadata_service = MagicMock()
+            orch.metadata_service = TestDataFactory.create_mock_core(
+                is_initialized=True
+            )
             return orch
 
     def test_apply_local_changes_no_changes(self, orchestrator):
@@ -365,7 +369,9 @@ class TestGitHubSyncOrchestratorApplyChanges:
             ("title", "Old Title", "New Title"),
         ],
     )
-    def test_apply_local_changes_field_update(self, orchestrator, mock_core, change_field, old_value, new_value):
+    def test_apply_local_changes_field_update(
+        self, orchestrator, mock_core, change_field, old_value, new_value
+    ):
         """Test applying local field changes (status/title).
 
         Covers lines 270-279: Field change application
@@ -454,7 +460,9 @@ class TestGitHubSyncOrchestratorApplyChanges:
             ("title", "Old Title", "New Title"),
         ],
     )
-    def test_apply_github_changes_field_update(self, orchestrator, mock_core, change_field, old_value, new_value):
+    def test_apply_github_changes_field_update(
+        self, orchestrator, mock_core, change_field, old_value, new_value
+    ):
         """Test applying GitHub field changes (status/title).
 
         Covers lines 326-335: Field change application
@@ -497,9 +505,8 @@ class TestGetLastSyncTime:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
         return core
 
     @pytest.fixture
@@ -517,7 +524,12 @@ class TestGetLastSyncTime:
             ({}, None),
             ({"last_sync": None}, None),
             ({"last_sync": "invalid-date"}, None),
-            ({"last_sync": "2024-01-15T10:30:00Z"}, datetime(2024, 1, 15, 10, 30, 0, tzinfo=__import__('datetime').timezone.utc)),
+            (
+                {"last_sync": "2024-01-15T10:30:00Z"},
+                datetime(
+                    2024, 1, 15, 10, 30, 0, tzinfo=__import__("datetime").timezone.utc
+                ),
+            ),
         ],
     )
     def test_get_last_sync_time(self, orchestrator, sync_metadata, expected_result):

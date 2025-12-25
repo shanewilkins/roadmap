@@ -17,6 +17,7 @@ from roadmap.core.services.entity_health_scanner import (
     HealthIssue,
     HealthSeverity,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestHealthIssue:
@@ -195,7 +196,10 @@ class TestEntityHealthReport:
         [
             ([], True),
             ([HealthIssue("info1", "Info", HealthSeverity.INFO, "test")], True),
-            ([HealthIssue("warning1", "Warning", HealthSeverity.WARNING, "test")], True),
+            (
+                [HealthIssue("warning1", "Warning", HealthSeverity.WARNING, "test")],
+                True,
+            ),
             ([HealthIssue("error1", "Error", HealthSeverity.ERROR, "test")], False),
         ],
     )
@@ -279,7 +283,7 @@ class TestEntityHealthScanner:
 
     def test_scanner_init_with_core(self):
         """Test scanner initialization with core."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         scanner = EntityHealthScanner(core=mock_core)
         assert scanner.core == mock_core
 
@@ -300,14 +304,35 @@ class TestEntityHealthScanner:
         "field_to_set,field_value,issue_code,expected_severity",
         [
             ("content", "", "missing_description", HealthSeverity.INFO),
-            ("progress_percentage", 150, "invalid_progress_percentage", HealthSeverity.ERROR),
+            (
+                "progress_percentage",
+                150,
+                "invalid_progress_percentage",
+                HealthSeverity.ERROR,
+            ),
             ("estimated_hours", -5, "invalid_estimate", HealthSeverity.WARNING),
-            ("previous_assignee", "old-owner", "missing_handoff_date", HealthSeverity.WARNING),
-            ("status", Status.CLOSED, "missing_completion_date", HealthSeverity.WARNING),
+            (
+                "previous_assignee",
+                "old-owner",
+                "missing_handoff_date",
+                HealthSeverity.WARNING,
+            ),
+            (
+                "status",
+                Status.CLOSED,
+                "missing_completion_date",
+                HealthSeverity.WARNING,
+            ),
         ],
     )
     def test_scan_issue_with_problems(
-        self, scanner, mock_issue, field_to_set, field_value, issue_code, expected_severity
+        self,
+        scanner,
+        mock_issue,
+        field_to_set,
+        field_value,
+        issue_code,
+        expected_severity,
     ):
         """Test scanning issue with various problems."""
         # Reset mock for clean state
@@ -329,11 +354,9 @@ class TestEntityHealthScanner:
         elif field_to_set == "previous_assignee":
             mock_issue.previous_assignee = field_value
             mock_issue.handoff_date = None
-        
+
         report = scanner.scan_issue(mock_issue)
-        found_issue = next(
-            (i for i in report.issues if i.code == issue_code), None
-        )
+        found_issue = next((i for i in report.issues if i.code == issue_code), None)
         assert found_issue is not None
         assert found_issue.severity == expected_severity
 
@@ -419,11 +442,22 @@ class TestEntityHealthScanner:
         "field_to_set,field_value,issue_code,expected_severity",
         [
             ("description", "", "missing_description", HealthSeverity.WARNING),
-            ("status", Status.CLOSED, "inconsistent_completion", HealthSeverity.WARNING),
+            (
+                "status",
+                Status.CLOSED,
+                "inconsistent_completion",
+                HealthSeverity.WARNING,
+            ),
         ],
     )
     def test_scan_milestone_with_problems(
-        self, scanner, mock_milestone, field_to_set, field_value, issue_code, expected_severity
+        self,
+        scanner,
+        mock_milestone,
+        field_to_set,
+        field_value,
+        issue_code,
+        expected_severity,
     ):
         """Test scanning milestone with various problems."""
         if field_to_set == "description":
@@ -434,9 +468,7 @@ class TestEntityHealthScanner:
 
         report = scanner.scan_milestone(mock_milestone)
 
-        found_issue = next(
-            (i for i in report.issues if i.code == issue_code), None
-        )
+        found_issue = next((i for i in report.issues if i.code == issue_code), None)
         assert found_issue is not None
         assert found_issue.severity == expected_severity
 
@@ -482,9 +514,7 @@ class TestEntityHealthScanner:
 
         report = scanner.scan_project(mock_project)
 
-        found_issue = next(
-            (i for i in report.issues if i.code == issue_code), None
-        )
+        found_issue = next((i for i in report.issues if i.code == issue_code), None)
         assert found_issue is not None
         assert found_issue.severity == HealthSeverity.WARNING
 
@@ -496,7 +526,7 @@ class TestEntityHealthScanner:
     @patch("roadmap.core.services.entity_health_scanner.logger")
     def test_scan_all_with_core(self, mock_logger, scanner):
         """Test scan_all with initialized core."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issue_repository.list.return_value = []
         mock_core.milestone_repository.list.return_value = []
         mock_core.project_repository.list.return_value = []
@@ -512,7 +542,7 @@ class TestEntityHealthScanner:
         self, mock_logger, scanner, mock_issue, mock_milestone, mock_project
     ):
         """Test scan_all with multiple entities."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issue_repository.list.return_value = [mock_issue]
         mock_core.milestone_repository.list.return_value = [mock_milestone]
         mock_core.project_repository.list.return_value = [mock_project]
@@ -573,7 +603,9 @@ class TestEntityHealthScanner:
             ),
         ],
     )
-    def test_validate_comment_thread(self, scanner, comment_list, should_have_error, error_pattern):
+    def test_validate_comment_thread(
+        self, scanner, comment_list, should_have_error, error_pattern
+    ):
         """Test comment thread validation with various scenarios."""
         errors = EntityHealthScanner._validate_comment_thread(comment_list)
         if should_have_error:

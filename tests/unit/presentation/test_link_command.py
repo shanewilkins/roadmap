@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.issues.link import link_github_issue
+from tests.unit.domain.test_data_factory import TestDataFactory
 from tests.unit.shared.test_helpers import create_mock_issue
 
 
@@ -25,7 +26,7 @@ class TestLinkCommandBasic:
     @pytest.fixture
     def mock_ctx(self):
         """Create mock context with core."""
-        ctx = MagicMock()
+        ctx = TestDataFactory.create_mock_core(is_initialized=True)
         ctx.obj = {"core": MagicMock()}
         return ctx
 
@@ -66,7 +67,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_issue_not_found(self, runner):
         """Test linking when internal issue doesn't exist."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get_by_id.return_value = None
 
         result = runner.invoke(
@@ -79,7 +80,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_invalid_github_id(self, runner):
         """Test linking with invalid GitHub ID (negative)."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         # Use factory instead of inline MagicMock
         mock_issue = create_mock_issue(id="abc123")
         mock_core.issues.get_by_id.return_value = mock_issue
@@ -94,7 +95,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_already_linked_to_same(self, runner):
         """Test linking when issue is already linked to the same GitHub ID."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         # Use factory with github_issue set
         mock_issue = create_mock_issue(id="abc123", github_issue=456)
         mock_core.issues.get_by_id.return_value = mock_issue
@@ -112,7 +113,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_already_linked_to_different(self, runner):
         """Test linking when issue is already linked to a different GitHub ID."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issue = MagicMock()
         mock_issue.github_issue = 123  # Already linked to different ID
         mock_core.issues.get_by_id.return_value = mock_issue
@@ -127,7 +128,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_github_issue_not_found(self, runner):
         """Test linking when GitHub issue doesn't exist."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issue = MagicMock()
         mock_issue.github_issue = None
         mock_core.issues.get_by_id.return_value = mock_issue
@@ -160,7 +161,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_with_explicit_owner_repo(self, runner):
         """Test linking with explicit owner and repo options."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issue = MagicMock()
         mock_issue.id = "abc123"
         mock_issue.title = "Test Issue"
@@ -195,7 +196,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_github_error(self, runner):
         """Test handling of GitHub API errors."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issue = MagicMock()
         mock_issue.github_issue = None
         mock_core.issues.get_by_id.return_value = mock_issue
@@ -228,7 +229,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_missing_config(self, runner):
         """Test linking when GitHub config is not available."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issue = MagicMock()
         mock_issue.github_issue = None
         mock_core.issues.get_by_id.return_value = mock_issue
@@ -250,7 +251,7 @@ class TestLinkCommandBasic:
 
     def test_link_command_without_required_options(self, runner):
         """Test link command without required --github-id option."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         result = runner.invoke(
             link_github_issue,

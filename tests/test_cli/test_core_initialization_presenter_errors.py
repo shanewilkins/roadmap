@@ -6,9 +6,6 @@ click command behavior, and formatting validation.
 
 from unittest import mock
 
-import pytest
-import click
-
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
 )

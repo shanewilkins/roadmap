@@ -88,12 +88,17 @@ class TestGitHubIDTableFormatting:
         column_titles = [col.header for col in table.columns]
         assert "GitHub #" not in column_titles
 
-    @pytest.mark.parametrize("show_ids,has_github", [
-        (True, True),
-        (True, False),
-        (False, True),
-    ])
-    def test_add_row_variations(self, mock_issue_with_github, mock_issue_without_github, show_ids, has_github):
+    @pytest.mark.parametrize(
+        "show_ids,has_github",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+        ],
+    )
+    def test_add_row_variations(
+        self, mock_issue_with_github, mock_issue_without_github, show_ids, has_github
+    ):
         """Test add_row with various configurations."""
         formatter = IssueTableFormatter()
         formatter.show_github_ids = show_ids
@@ -113,7 +118,9 @@ class TestGitHubIDTableFormatting:
 
         assert len(table.rows) == 1
 
-    def test_multiple_issues_mixed_ids(self, mock_issue_with_github, mock_issue_without_github):
+    def test_multiple_issues_mixed_ids(
+        self, mock_issue_with_github, mock_issue_without_github
+    ):
         """Test formatting multiple issues with mixed GitHub ID presence."""
         formatter = IssueTableFormatter()
         formatter.show_github_ids = True
@@ -137,7 +144,9 @@ class TestGitHubIDTableDataConversion:
     """Test GitHub ID handling in table data conversion."""
 
     @pytest.mark.parametrize("show_github_ids", [True, False])
-    def test_issues_to_table_data_with_flag(self, mock_issue_with_github, show_github_ids):
+    def test_issues_to_table_data_with_flag(
+        self, mock_issue_with_github, show_github_ids
+    ):
         """Test issues_to_table_data respects show_github_ids flag."""
         issues = [mock_issue_with_github]
 

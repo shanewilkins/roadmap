@@ -12,6 +12,7 @@ from roadmap.infrastructure.github.setup import (
     GitHubTokenResolver,
     show_github_setup_instructions,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitHubTokenResolver:
@@ -269,7 +270,7 @@ class TestGitHubConfigManager:
     @pytest.fixture
     def mock_core(self, tmp_path):
         """Create mock RoadmapCore."""
-        core = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
         core.roadmap_dir = tmp_path / ".roadmap"
         core.roadmap_dir.mkdir(exist_ok=True)
         return core
@@ -353,7 +354,7 @@ class TestGitHubInitializationService:
     @pytest.fixture
     def mock_core(self, tmp_path):
         """Create mock RoadmapCore."""
-        core = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
         core.roadmap_dir = tmp_path / ".roadmap"
         core.roadmap_dir.mkdir(exist_ok=True)
         return core

@@ -6,6 +6,7 @@ import pytest
 
 from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
 from roadmap.core.services.sync_report import IssueChange
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitHubSyncOrchestrator:
@@ -14,10 +15,9 @@ class TestGitHubSyncOrchestrator:
     @pytest.fixture
     def mock_core(self):
         """Create mock RoadmapCore."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.github_service = MagicMock()
-        core.settings = MagicMock()
+        core = TestDataFactory.create_mock_core(is_initialized=True)
+        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
+        core.settings = TestDataFactory.create_mock_core(is_initialized=True)
 
         # Mock github_service's get_github_config to return proper values
         core.github_service.get_github_config.return_value = ("token", "owner", "repo")

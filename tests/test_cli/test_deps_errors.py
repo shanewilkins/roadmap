@@ -19,6 +19,7 @@ import click
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.issues.deps import add_dependency, deps
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestDepsGroupInitialization:
@@ -61,7 +62,7 @@ class TestAddDependencyCommand:
         mock_dep_issue.id = "456"
         mock_dep_issue.title = "Issue 456"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.get.side_effect = [mock_issue, mock_dep_issue]
         mock_core.issues.update.return_value = mock_issue
 
@@ -97,7 +98,7 @@ class TestAddDependencyCommand:
     def test_add_dependency_issue_not_found(self):
         """Test add dependency when issue doesn't exist."""
         runner = CliRunner()
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
         with patch(
@@ -122,7 +123,7 @@ class TestAddDependencyCommand:
         mock_issue.id = "123"
         mock_issue.depends_on = []
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
         with patch(
@@ -145,7 +146,7 @@ class TestAddDependencyCommand:
     def test_add_dependency_already_exists(self):
         """Test adding dependency that already exists."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Issue 123"
         mock_issue.depends_on = ["456"]
@@ -154,7 +155,7 @@ class TestAddDependencyCommand:
         mock_dep_issue.id = "456"
         mock_dep_issue.title = "Issue 456"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
         with patch(
@@ -176,7 +177,7 @@ class TestAddDependencyCommand:
     def test_add_dependency_with_empty_depends_on(self):
         """Test adding dependency when issue has no dependencies."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Issue 123"
         mock_issue.depends_on = None
@@ -185,7 +186,7 @@ class TestAddDependencyCommand:
         mock_dep_issue.id = "456"
         mock_dep_issue.title = "Issue 456"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = mock_issue
         ctx_obj = {"core": mock_core}
 
@@ -210,7 +211,7 @@ class TestAddDependencyCommand:
     def test_add_dependency_with_existing_list(self):
         """Test adding dependency when issue has existing dependencies."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Issue 123"
         mock_issue.depends_on = ["789"]
@@ -219,7 +220,7 @@ class TestAddDependencyCommand:
         mock_dep_issue.id = "456"
         mock_dep_issue.title = "Issue 456"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = mock_issue
         ctx_obj = {"core": mock_core}
 
@@ -252,7 +253,7 @@ class TestAddDependencyCommand:
         mock_dep_issue = Mock()
         mock_dep_issue.id = "456"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.side_effect = Exception("Update failed")
         ctx_obj = {"core": mock_core}
 
@@ -295,12 +296,12 @@ class TestAddDependencyValidation:
     def test_add_dependency_same_issue(self):
         """Test adding an issue as a dependency of itself."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Issue 123"
         mock_issue.depends_on = []
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = mock_issue
         ctx_obj = {"core": mock_core}
 
@@ -323,14 +324,14 @@ class TestAddDependencyValidation:
     def test_add_dependency_special_characters_in_id(self):
         """Test add dependency with special characters in issue ID."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "issue-#123"
         mock_issue.depends_on = []
 
         mock_dep_issue = Mock()
         mock_dep_issue.id = "issue-#456"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = mock_issue
         ctx_obj = {"core": mock_core}
 
@@ -352,14 +353,14 @@ class TestAddDependencyValidation:
         """Test add dependency with very long issue ID."""
         runner = CliRunner()
         long_id = "issue-" + "x" * 1000
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = long_id
         mock_issue.depends_on = []
 
         mock_dep_issue = Mock()
         mock_dep_issue.id = "456"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = mock_issue
         ctx_obj = {"core": mock_core}
 
@@ -389,7 +390,7 @@ class TestAddDependencyErrorHandling:
         mock_issue.title = "Issue 123"
         mock_issue.depends_on = []
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
         with patch(
@@ -440,7 +441,7 @@ class TestAddDependencyErrorHandling:
     def test_add_dependency_with_unicode_characters(self):
         """Test add dependency with Unicode characters in issue ID."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "issue-ñ-123"
         mock_issue.title = "Issue with ñ"
         mock_issue.depends_on = []
@@ -449,7 +450,7 @@ class TestAddDependencyErrorHandling:
         mock_dep_issue.id = "issue-é-456"
         mock_dep_issue.title = "Issue with é"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = mock_issue
         ctx_obj = {"core": mock_core}
 
@@ -474,7 +475,7 @@ class TestAddDependencyConsoleOutput:
     def test_add_dependency_success_output(self):
         """Test success message is displayed."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Task A"
         mock_issue.depends_on = []
@@ -483,7 +484,7 @@ class TestAddDependencyConsoleOutput:
         mock_dep_issue.id = "456"
         mock_dep_issue.title = "Task B"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.update.return_value = mock_issue
         ctx_obj = {"core": mock_core}
 
@@ -506,7 +507,7 @@ class TestAddDependencyConsoleOutput:
     def test_add_dependency_duplicate_warning_output(self):
         """Test warning message for duplicate dependency."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Task A"
         mock_issue.depends_on = ["456"]
@@ -515,7 +516,7 @@ class TestAddDependencyConsoleOutput:
         mock_dep_issue.id = "456"
         mock_dep_issue.title = "Task B"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
         with patch(
@@ -556,7 +557,7 @@ class TestDepsCommandIntegration:
     def test_add_dependency_with_multiple_sequential_additions(self):
         """Test adding multiple dependencies in sequence."""
         runner = CliRunner()
-        mock_issue = Mock()
+        mock_issue = TestDataFactory.create_mock_issue()
         mock_issue.id = "123"
         mock_issue.title = "Main Task"
         mock_issue.depends_on = []
@@ -569,7 +570,7 @@ class TestDepsCommandIntegration:
         mock_dep_issue_2.id = "789"
         mock_dep_issue_2.title = "Subtask 2"
 
-        mock_core = Mock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
         with patch(

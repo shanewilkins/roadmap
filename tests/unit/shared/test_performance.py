@@ -79,7 +79,7 @@ class TestTimedOperation:
             with pytest.raises(RuntimeError):
                 error_func()
             # Check that error was logged
-            assert mock_logger.error.called
+            mock_logger.error.assert_called_once()
 
     def test_operation_disables_metric_recording(self):
         """Test disabling metric recording."""
@@ -111,7 +111,7 @@ class TestTimedOperation:
             result = metric_func()
             assert result == "result"
             # Verify collector was called
-            assert mock_instance.record.called
+            mock_instance.record.assert_called_once()
 
     def test_operation_preserves_function_metadata(self):
         """Test that decorator preserves function metadata."""

@@ -6,6 +6,7 @@ from roadmap.core.services.git_hook_auto_sync_service import (
     GitHookAutoSyncConfig,
     GitHookAutoSyncService,
 )
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestGitHookAutoSyncEventHandling:
@@ -14,7 +15,7 @@ class TestGitHookAutoSyncEventHandling:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_disabled(self, mock_sync_service):
         """Test should_sync_on_event returns False when disabled."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         # Auto-sync is disabled by default
@@ -25,7 +26,7 @@ class TestGitHookAutoSyncEventHandling:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_enabled_all(self, mock_sync_service):
         """Test should_sync_on_event with all triggers enabled."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config = GitHookAutoSyncConfig(
@@ -43,7 +44,7 @@ class TestGitHookAutoSyncEventHandling:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_selective(self, mock_sync_service):
         """Test should_sync_on_event with selective triggers."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config = GitHookAutoSyncConfig(
@@ -61,7 +62,7 @@ class TestGitHookAutoSyncEventHandling:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_unknown_event(self, mock_sync_service):
         """Test should_sync_on_event with unknown event type."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config = GitHookAutoSyncConfig(auto_sync_enabled=True, sync_on_commit=True)
@@ -73,7 +74,7 @@ class TestGitHookAutoSyncEventHandling:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_auto_sync_disabled_overrides(self, mock_sync_service):
         """Test that auto_sync_enabled=False overrides specific triggers."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config = GitHookAutoSyncConfig(
@@ -96,7 +97,7 @@ class TestGitHookAutoSyncCommit:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_disabled(self, mock_sync_service):
         """Test auto_sync_on_commit when sync is disabled."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         # Default config has auto-sync disabled
@@ -106,7 +107,7 @@ class TestGitHookAutoSyncCommit:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_enabled_no_linked_issues(self, mock_sync_service):
         """Test auto_sync_on_commit with no linked issues."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
         service = GitHookAutoSyncService(mock_core)
 
@@ -120,7 +121,7 @@ class TestGitHookAutoSyncCommit:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_with_sha(self, mock_sync_service):
         """Test auto_sync_on_commit with commit SHA."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
         service = GitHookAutoSyncService(mock_core)
 
@@ -134,7 +135,7 @@ class TestGitHookAutoSyncCommit:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_confirm_parameter(self, mock_sync_service):
         """Test auto_sync_on_commit respects confirm parameter."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
         service = GitHookAutoSyncService(mock_core)
 
@@ -154,7 +155,7 @@ class TestGitHookAutoSyncCheckout:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_checkout_disabled(self, mock_sync_service):
         """Test auto_sync_on_checkout when disabled."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         result = service.auto_sync_on_checkout()
@@ -163,7 +164,7 @@ class TestGitHookAutoSyncCheckout:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_checkout_enabled(self, mock_sync_service):
         """Test auto_sync_on_checkout when enabled."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
         service = GitHookAutoSyncService(mock_core)
 
@@ -176,7 +177,7 @@ class TestGitHookAutoSyncCheckout:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_checkout_with_branch(self, mock_sync_service):
         """Test auto_sync_on_checkout with branch name."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
         service = GitHookAutoSyncService(mock_core)
 
@@ -193,7 +194,7 @@ class TestGitHookAutoSyncMerge:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_merge_disabled(self, mock_sync_service):
         """Test auto_sync_on_merge when disabled."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         result = service.auto_sync_on_merge()
@@ -202,7 +203,7 @@ class TestGitHookAutoSyncMerge:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_merge_enabled(self, mock_sync_service):
         """Test auto_sync_on_merge when enabled."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
         service = GitHookAutoSyncService(mock_core)
 
@@ -219,7 +220,7 @@ class TestGitHookAutoSyncFileOperations:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_load_config_from_file_not_exists(self, mock_sync_service, tmp_path):
         """Test loading config from non-existent file."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config_path = tmp_path / "nonexistent.json"
@@ -231,7 +232,7 @@ class TestGitHookAutoSyncFileOperations:
         """Test loading valid config from file."""
         import json
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config_path = tmp_path / "config.json"
@@ -259,7 +260,7 @@ class TestGitHookAutoSyncFileOperations:
         """Test loading config from file with no auto_sync section."""
         import json
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config_path = tmp_path / "config.json"
@@ -275,7 +276,7 @@ class TestGitHookAutoSyncFileOperations:
         """Test saving config to new file."""
         import json
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config = GitHookAutoSyncConfig(
@@ -299,7 +300,7 @@ class TestGitHookAutoSyncFileOperations:
         """Test saving config to existing file preserves other data."""
         import json
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config_path = tmp_path / "config.json"
@@ -325,7 +326,7 @@ class TestGitHookAutoSyncFileOperations:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_save_config_to_file_creates_parent_dirs(self, mock_sync_service, tmp_path):
         """Test saving config creates parent directories."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         config_path = tmp_path / "subdir" / "nested" / "config.json"
@@ -341,7 +342,7 @@ class TestGitHookAutoSyncFileOperations:
     def test_config_roundtrip_file_save_and_load(self, mock_sync_service, tmp_path):
         """Test config save and load operations complete successfully."""
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         # Set complex config
@@ -369,10 +370,12 @@ class TestGitHookAutoSyncFileOperations:
         assert load_result
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
-    def test_config_roundtrip_file_sync_flags_preserved(self, mock_sync_service, tmp_path):
+    def test_config_roundtrip_file_sync_flags_preserved(
+        self, mock_sync_service, tmp_path
+    ):
         """Test roundtrip preserves sync trigger flags."""
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         original_config = GitHookAutoSyncConfig(
@@ -400,10 +403,12 @@ class TestGitHookAutoSyncFileOperations:
         assert loaded_config.sync_on_merge == original_config.sync_on_merge
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
-    def test_config_roundtrip_file_behavior_flags_preserved(self, mock_sync_service, tmp_path):
+    def test_config_roundtrip_file_behavior_flags_preserved(
+        self, mock_sync_service, tmp_path
+    ):
         """Test roundtrip preserves confirmation and force behavior flags."""
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         service = GitHookAutoSyncService(mock_core)
 
         original_config = GitHookAutoSyncConfig(
@@ -436,7 +441,7 @@ class TestGitHookAutoSyncGetSyncStats:
     @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
     def test_get_sync_stats_no_issues(self, mock_sync_service):
         """Test getting sync stats with no issues."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
         mock_sync_service_instance = MagicMock()
         mock_sync_service.return_value = mock_sync_service_instance
@@ -457,7 +462,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         self, mock_sync_service, mock_gh_integration, mock_orchestrator
     ):
         """Test _perform_auto_sync when GitHub not configured."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
 
         mock_gh_service = MagicMock()
@@ -477,7 +482,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         self, mock_sync_service, mock_gh_integration, mock_orchestrator
     ):
         """Test _perform_auto_sync when no linked issues exist."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
 
         mock_gh_service = MagicMock()
@@ -505,7 +510,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         mock_issue.id = "issue-1"
         mock_issue.github_issue = "123"
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = [mock_issue]
 
         mock_gh_service = MagicMock()
@@ -539,7 +544,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         mock_issue.id = "issue-1"
         mock_issue.github_issue = "123"
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = [mock_issue]
 
         mock_gh_service = MagicMock()
@@ -562,7 +567,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         result = service._perform_auto_sync(event="commit", confirm=False)
 
         # Should attempt sync with force_local
-        assert not result is True or result  # Depends on implementation
+        assert result is not True or result  # Depends on implementation
 
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubSyncOrchestrator")
     @patch("roadmap.core.services.git_hook_auto_sync_service.GitHubIntegrationService")
@@ -571,7 +576,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         self, mock_sync_service, mock_gh_integration, mock_orchestrator
     ):
         """Test _perform_auto_sync handles exceptions gracefully."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.side_effect = Exception("Test error")
 
         mock_gh_service = MagicMock()
@@ -595,7 +600,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         self, mock_sync_service, mock_gh_integration, mock_orchestrator
     ):
         """Test _perform_auto_sync with different event types."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
 
         mock_gh_service = MagicMock()
@@ -620,7 +625,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         self, mock_sync_service, mock_gh_integration, mock_orchestrator
     ):
         """Test _perform_auto_sync with optional parameters."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = []
 
         mock_gh_service = MagicMock()
@@ -655,7 +660,7 @@ class TestGitHookAutoSyncPerformAutoSync:
         mock_issue2.id = "issue-2"
         mock_issue2.github_issue = None
 
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.all.return_value = [mock_issue1, mock_issue2]
         mock_sync_service_instance = MagicMock()
         mock_sync_service.return_value = mock_sync_service_instance

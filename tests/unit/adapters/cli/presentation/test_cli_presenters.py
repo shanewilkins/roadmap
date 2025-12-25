@@ -1,9 +1,7 @@
 """Tests for CLI presenters (IssuePresenter, MilestonePresenter, ProjectPresenter)."""
 
 import datetime
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from roadmap.adapters.cli.dtos import IssueDTO, MilestoneDTO, ProjectDTO
 from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
@@ -27,22 +25,24 @@ class TestIssuePresenter:
 
     def test_issue_presenter_render_with_full_issue_dto(self):
         """Test rendering a fully populated IssueDTO."""
-        issue_dto = IssueDTO.from_dict({
-            "id": "issue123",
-            "title": "Test Issue",
-            "priority": "high",
-            "status": "in-progress",
-            "issue_type": "feature",
-            "assignee": "Alice",
-            "milestone": "v1.0",
-            "estimated_hours": 5.0,
-            "progress_percentage": 50,
-            "created": datetime.datetime(2024, 1, 1, 10, 0),
-            "updated": datetime.datetime(2024, 1, 5, 15, 30),
-            "content": "## Description\nTest description\n\n## Acceptance Criteria\nShould work",
-            "labels": ["bug", "urgent"],
-            "github_issue": 123,
-        })
+        issue_dto = IssueDTO.from_dict(
+            {
+                "id": "issue123",
+                "title": "Test Issue",
+                "priority": "high",
+                "status": "in-progress",
+                "issue_type": "feature",
+                "assignee": "Alice",
+                "milestone": "v1.0",
+                "estimated_hours": 5.0,
+                "progress_percentage": 50,
+                "created": datetime.datetime(2024, 1, 1, 10, 0),
+                "updated": datetime.datetime(2024, 1, 5, 15, 30),
+                "content": "## Description\nTest description\n\n## Acceptance Criteria\nShould work",
+                "labels": ["bug", "urgent"],
+                "github_issue": 123,
+            }
+        )
 
         presenter = IssuePresenter()
         # Should not raise any exceptions
@@ -53,13 +53,15 @@ class TestIssuePresenter:
 
     def test_issue_presenter_render_with_minimal_issue_dto(self):
         """Test rendering a minimal IssueDTO."""
-        issue_dto = IssueDTO.from_dict({
-            "id": "issue456",
-            "title": "Minimal Issue",
-            "priority": "low",
-            "status": "todo",
-            "issue_type": "bug",
-        })
+        issue_dto = IssueDTO.from_dict(
+            {
+                "id": "issue456",
+                "title": "Minimal Issue",
+                "priority": "low",
+                "status": "todo",
+                "issue_type": "bug",
+            }
+        )
 
         presenter = IssuePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -68,13 +70,15 @@ class TestIssuePresenter:
 
     def test_issue_presenter_build_issue_header(self):
         """Test building issue header."""
-        issue_dto = IssueDTO.from_dict({
-            "id": "issue789",
-            "title": "Header Test",
-            "priority": "critical",
-            "status": "blocked",
-            "issue_type": "other",
-        })
+        issue_dto = IssueDTO.from_dict(
+            {
+                "id": "issue789",
+                "title": "Header Test",
+                "priority": "critical",
+                "status": "blocked",
+                "issue_type": "other",
+            }
+        )
 
         presenter = IssuePresenter()
         header = presenter._build_issue_header(issue_dto)
@@ -87,19 +91,21 @@ class TestIssuePresenter:
 
     def test_issue_presenter_build_metadata_table(self):
         """Test building metadata table."""
-        issue_dto = IssueDTO.from_dict({
-            "id": "issue001",
-            "title": "Metadata Test",
-            "priority": "high",
-            "status": "in-progress",
-            "issue_type": "feature",
-            "assignee": "Bob",
-            "milestone": "v2.0",
-            "created": datetime.datetime(2024, 1, 1),
-            "updated": datetime.datetime(2024, 1, 15),
-            "labels": ["frontend", "docs"],
-            "github_issue": 456,
-        })
+        issue_dto = IssueDTO.from_dict(
+            {
+                "id": "issue001",
+                "title": "Metadata Test",
+                "priority": "high",
+                "status": "in-progress",
+                "issue_type": "feature",
+                "assignee": "Bob",
+                "milestone": "v2.0",
+                "created": datetime.datetime(2024, 1, 1),
+                "updated": datetime.datetime(2024, 1, 15),
+                "labels": ["frontend", "docs"],
+                "github_issue": 456,
+            }
+        )
 
         presenter = IssuePresenter()
         table = presenter._build_metadata_table(issue_dto)
@@ -108,17 +114,19 @@ class TestIssuePresenter:
 
     def test_issue_presenter_build_timeline_table(self):
         """Test building timeline table."""
-        issue_dto = IssueDTO.from_dict({
-            "id": "issue002",
-            "title": "Timeline Test",
-            "priority": "medium",
-            "status": "review",
-            "issue_type": "feature",
-            "estimated_hours": 8.5,
-            "progress_percentage": 75,
-            "actual_end_date": datetime.datetime(2024, 1, 10),
-            "due_date": datetime.datetime(2024, 1, 20),
-        })
+        issue_dto = IssueDTO.from_dict(
+            {
+                "id": "issue002",
+                "title": "Timeline Test",
+                "priority": "medium",
+                "status": "review",
+                "issue_type": "feature",
+                "estimated_hours": 8.5,
+                "progress_percentage": 75,
+                "actual_end_date": datetime.datetime(2024, 1, 10),
+                "due_date": datetime.datetime(2024, 1, 20),
+            }
+        )
 
         presenter = IssuePresenter()
         timeline = presenter._build_timeline_table(issue_dto)
@@ -169,18 +177,20 @@ class TestMilestonePresenter:
 
     def test_milestone_presenter_render_with_full_milestone_dto(self):
         """Test rendering a fully populated MilestoneDTO."""
-        milestone_dto = MilestoneDTO.from_dict({
-            "id": "milestone123",
-            "name": "v1.0 Release",
-            "status": "in-progress",
-            "due_date": datetime.datetime(2024, 3, 1),
-            "description": "First major release",
-            "progress_percentage": 60,
-            "issue_count": 20,
-            "completed_count": 12,
-            "created": datetime.datetime(2024, 1, 1),
-            "updated": datetime.datetime(2024, 1, 15),
-        })
+        milestone_dto = MilestoneDTO.from_dict(
+            {
+                "id": "milestone123",
+                "name": "v1.0 Release",
+                "status": "in-progress",
+                "due_date": datetime.datetime(2024, 3, 1),
+                "description": "First major release",
+                "progress_percentage": 60,
+                "issue_count": 20,
+                "completed_count": 12,
+                "created": datetime.datetime(2024, 1, 1),
+                "updated": datetime.datetime(2024, 1, 15),
+            }
+        )
 
         presenter = MilestonePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -189,14 +199,16 @@ class TestMilestonePresenter:
 
     def test_milestone_presenter_render_with_minimal_milestone_dto(self):
         """Test rendering a minimal MilestoneDTO."""
-        milestone_dto = MilestoneDTO.from_dict({
-            "id": "milestone456",
-            "name": "v2.0",
-            "status": "todo",
-            "progress_percentage": 0,
-            "issue_count": 0,
-            "completed_count": 0,
-        })
+        milestone_dto = MilestoneDTO.from_dict(
+            {
+                "id": "milestone456",
+                "name": "v2.0",
+                "status": "todo",
+                "progress_percentage": 0,
+                "issue_count": 0,
+                "completed_count": 0,
+            }
+        )
 
         presenter = MilestonePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -205,11 +217,13 @@ class TestMilestonePresenter:
 
     def test_milestone_presenter_build_header(self):
         """Test building milestone header."""
-        milestone_dto = MilestoneDTO.from_dict({
-            "id": "milestone789",
-            "name": "Beta Release",
-            "status": "blocked",
-        })
+        milestone_dto = MilestoneDTO.from_dict(
+            {
+                "id": "milestone789",
+                "name": "Beta Release",
+                "status": "blocked",
+            }
+        )
 
         presenter = MilestonePresenter()
         header = presenter._build_milestone_header(milestone_dto)
@@ -220,18 +234,20 @@ class TestMilestonePresenter:
 
     def test_milestone_presenter_build_metadata_table(self):
         """Test building milestone metadata table."""
-        milestone_dto = MilestoneDTO.from_dict({
-            "id": "milestone001",
-            "name": "Q1 Goals",
-            "status": "in-progress",
-            "due_date": datetime.datetime(2024, 3, 31),
-            "description": "First quarter objectives",
-            "progress_percentage": 45,
-            "issue_count": 15,
-            "completed_count": 7,
-            "created": datetime.datetime(2024, 1, 1),
-            "updated": datetime.datetime(2024, 1, 20),
-        })
+        milestone_dto = MilestoneDTO.from_dict(
+            {
+                "id": "milestone001",
+                "name": "Q1 Goals",
+                "status": "in-progress",
+                "due_date": datetime.datetime(2024, 3, 31),
+                "description": "First quarter objectives",
+                "progress_percentage": 45,
+                "issue_count": 15,
+                "completed_count": 7,
+                "created": datetime.datetime(2024, 1, 1),
+                "updated": datetime.datetime(2024, 1, 20),
+            }
+        )
 
         presenter = MilestonePresenter()
         table = presenter._build_metadata_table(milestone_dto)
@@ -255,19 +271,21 @@ class TestProjectPresenter:
 
     def test_project_presenter_render_with_full_project_dto(self):
         """Test rendering a fully populated ProjectDTO."""
-        project_dto = ProjectDTO.from_dict({
-            "id": "project123",
-            "name": "Main App",
-            "status": "active",
-            "description": "Main application project",
-            "owner": "Team A",
-            "target_end_date": datetime.datetime(2024, 6, 30),
-            "actual_end_date": None,
-            "milestone_count": 5,
-            "issue_count": 45,
-            "created": datetime.datetime(2024, 1, 1),
-            "updated": datetime.datetime(2024, 1, 20),
-        })
+        project_dto = ProjectDTO.from_dict(
+            {
+                "id": "project123",
+                "name": "Main App",
+                "status": "active",
+                "description": "Main application project",
+                "owner": "Team A",
+                "target_end_date": datetime.datetime(2024, 6, 30),
+                "actual_end_date": None,
+                "milestone_count": 5,
+                "issue_count": 45,
+                "created": datetime.datetime(2024, 1, 1),
+                "updated": datetime.datetime(2024, 1, 20),
+            }
+        )
 
         presenter = ProjectPresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -276,13 +294,15 @@ class TestProjectPresenter:
 
     def test_project_presenter_render_with_minimal_project_dto(self):
         """Test rendering a minimal ProjectDTO."""
-        project_dto = ProjectDTO.from_dict({
-            "id": "project456",
-            "name": "Side Project",
-            "status": "paused",
-            "milestone_count": 0,
-            "issue_count": 0,
-        })
+        project_dto = ProjectDTO.from_dict(
+            {
+                "id": "project456",
+                "name": "Side Project",
+                "status": "paused",
+                "milestone_count": 0,
+                "issue_count": 0,
+            }
+        )
 
         presenter = ProjectPresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -291,11 +311,13 @@ class TestProjectPresenter:
 
     def test_project_presenter_build_header(self):
         """Test building project header."""
-        project_dto = ProjectDTO.from_dict({
-            "id": "project789",
-            "name": "Experimental Feature",
-            "status": "archived",
-        })
+        project_dto = ProjectDTO.from_dict(
+            {
+                "id": "project789",
+                "name": "Experimental Feature",
+                "status": "archived",
+            }
+        )
 
         presenter = ProjectPresenter()
         header = presenter._build_project_header(project_dto)
@@ -306,19 +328,21 @@ class TestProjectPresenter:
 
     def test_project_presenter_build_metadata_table(self):
         """Test building project metadata table."""
-        project_dto = ProjectDTO.from_dict({
-            "id": "project001",
-            "name": "Infrastructure",
-            "status": "in-progress",
-            "description": "Infrastructure improvements",
-            "owner": "DevOps Team",
-            "target_end_date": datetime.datetime(2024, 5, 31),
-            "actual_end_date": datetime.datetime(2024, 5, 28),
-            "milestone_count": 3,
-            "issue_count": 20,
-            "created": datetime.datetime(2023, 6, 1),
-            "updated": datetime.datetime(2024, 1, 15),
-        })
+        project_dto = ProjectDTO.from_dict(
+            {
+                "id": "project001",
+                "name": "Infrastructure",
+                "status": "in-progress",
+                "description": "Infrastructure improvements",
+                "owner": "DevOps Team",
+                "target_end_date": datetime.datetime(2024, 5, 31),
+                "actual_end_date": datetime.datetime(2024, 5, 28),
+                "milestone_count": 3,
+                "issue_count": 20,
+                "created": datetime.datetime(2023, 6, 1),
+                "updated": datetime.datetime(2024, 1, 15),
+            }
+        )
 
         presenter = ProjectPresenter()
         table = presenter._build_metadata_table(project_dto)

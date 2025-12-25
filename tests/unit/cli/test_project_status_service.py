@@ -17,6 +17,7 @@ from roadmap.adapters.cli.services.project_status_service import (
     StatusDataService,
 )
 from roadmap.core.domain import Status
+from tests.unit.domain.test_data_factory import TestDataFactory
 
 
 class TestStatusDataService:
@@ -24,7 +25,7 @@ class TestStatusDataService:
 
     def test_gather_status_data_empty(self):
         """Test gathering data when no issues or milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.list.return_value = []
         mock_core.milestones.list.return_value = []
 
@@ -38,7 +39,7 @@ class TestStatusDataService:
 
     def test_gather_status_data_with_issues(self):
         """Test gathering data with issues."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issues = [MagicMock(), MagicMock(), MagicMock()]
         mock_core.issues.list.return_value = mock_issues
         mock_core.milestones.list.return_value = []
@@ -52,7 +53,7 @@ class TestStatusDataService:
 
     def test_gather_status_data_with_milestones(self):
         """Test gathering data with milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_milestones = [MagicMock(), MagicMock()]
         mock_core.issues.list.return_value = []
         mock_core.milestones.list.return_value = mock_milestones
@@ -66,7 +67,7 @@ class TestStatusDataService:
 
     def test_gather_status_data_with_both(self):
         """Test gathering data with both issues and milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issues = [MagicMock(), MagicMock()]
         mock_milestones = [MagicMock()]
         mock_core.issues.list.return_value = mock_issues
@@ -80,7 +81,7 @@ class TestStatusDataService:
 
     def test_gather_status_data_handles_exception(self):
         """Test that exceptions are handled gracefully."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.issues.list.side_effect = Exception("Database error")
 
         result = StatusDataService.gather_status_data(mock_core)
@@ -95,7 +96,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_zero_total(self):
         """Test progress when milestone has no issues."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.db.get_milestone_progress.return_value = {"total": 0, "completed": 0}
 
         result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
@@ -106,7 +107,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_partial(self):
         """Test progress when milestone is partially completed."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.db.get_milestone_progress.return_value = {"total": 10, "completed": 3}
 
         result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
@@ -117,7 +118,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_complete(self):
         """Test progress when milestone is completed."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.db.get_milestone_progress.return_value = {"total": 5, "completed": 5}
 
         result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
@@ -128,7 +129,7 @@ class TestMilestoneProgressService:
 
     def test_get_all_milestones_progress(self):
         """Test getting progress for multiple milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         def progress_side_effect(name):
             if name == "v1.0":
@@ -157,7 +158,7 @@ class TestMilestoneProgressService:
 
     def test_get_milestone_progress_handles_exception(self):
         """Test that exceptions are handled gracefully."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.db.get_milestone_progress.side_effect = Exception("DB error")
 
         result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
@@ -268,7 +269,7 @@ class TestRoadmapSummaryService:
 
     def test_compute_roadmap_summary_empty(self):
         """Test summary for empty roadmap."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         result = RoadmapSummaryService.compute_roadmap_summary(mock_core, [], [])
 
@@ -283,7 +284,7 @@ class TestRoadmapSummaryService:
     )
     def test_compute_roadmap_summary_with_issues(self, mock_service_class):
         """Test summary with issues."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_service_class.get_all_milestones_progress.return_value = {}
 
         mock_issues = [
@@ -307,7 +308,7 @@ class TestRoadmapSummaryService:
     )
     def test_compute_roadmap_summary_with_milestones(self, mock_service_class):
         """Test summary with milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_service_class.get_all_milestones_progress.return_value = {
             "v1.0": {"total": 10, "completed": 10, "percentage": 100},
             "v2.0": {"total": 20, "completed": 15, "percentage": 75},
@@ -330,7 +331,7 @@ class TestRoadmapSummaryService:
     )
     def test_compute_roadmap_summary_full(self, mock_service_class):
         """Test full summary with issues and milestones."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_service_class.get_all_milestones_progress.return_value = {
             "v1.0": {"total": 10, "completed": 10, "percentage": 100},
         }
@@ -355,7 +356,7 @@ class TestRoadmapSummaryService:
 
     def test_compute_roadmap_summary_handles_exception(self):
         """Test that exceptions are handled gracefully."""
-        mock_core = MagicMock()
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_issues = [MagicMock(status=Status.TODO)]
         mock_milestones = []
 
