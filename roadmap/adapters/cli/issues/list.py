@@ -4,9 +4,10 @@ import click
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.dtos import IssueDTO
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.mappers import IssueMapper
+from roadmap.adapters.cli.services.export_manager import ExportManager
 from roadmap.common.cli_models import IssueListParams
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
@@ -69,7 +70,9 @@ def _validate_and_get_issues(
     )
 
     # Convert domain Issues to DTOs for CLI presentation
-    issue_dtos = [IssueMapper.domain_to_dto(issue) for issue in issues] if issues else []
+    issue_dtos = (
+        [IssueMapper.domain_to_dto(issue) for issue in issues] if issues else []
+    )
 
     return issue_dtos, filter_description
 
@@ -112,8 +115,9 @@ def _apply_additional_filters(
     """
     # Convert DTOs back to domain for filtering via service
     from roadmap.adapters.cli.mappers import IssueMapper
+
     domain_issues = [IssueMapper.dto_to_domain(dto) for dto in issues]
-    
+
     query_service = IssueQueryService(core)
     filtered_domain_issues, filter_description = query_service.apply_additional_filters(
         domain_issues,
@@ -124,9 +128,11 @@ def _apply_additional_filters(
         priority=priority,
         issue_type=issue_type,
     )
-    
+
     # Convert filtered domain issues back to DTOs
-    filtered_dtos = [IssueMapper.domain_to_dto(issue) for issue in filtered_domain_issues]
+    filtered_dtos = [
+        IssueMapper.domain_to_dto(issue) for issue in filtered_domain_issues
+    ]
     return filtered_dtos, filter_description
 
 
@@ -178,6 +184,12 @@ def _apply_additional_filters(
     is_flag=True,
     help="Display GitHub issue IDs for linked issues",
 )
+@click.option(
+    "--export",
+    "-e",
+    is_flag=True,
+    help="Export results to file (uses config defaults for format and location)",
+)
 @click.pass_context
 @with_output_support(
     available_columns=[
@@ -220,6 +232,7 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
     overdue: bool,
     verbose: bool,  # noqa: F841 - used by @verbose_output decorator
     show_github_ids: bool,
+    export: bool,
 ):
     """List all issues with various filtering options.
 
@@ -302,7 +315,16 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
         # Convert DTOs back to domain objects for table formatter
         # (formatters still work with domain models)
         domain_issues = [IssueMapper.dto_to_domain(dto) for dto in issues]
-        
+
+        # Handle export if requested
+        if export:
+            export_manager = ExportManager()
+            export_data = [dto.model_dump() for dto in issues]
+            content, export_path = export_manager.export_data(export_data, "issues")
+            _get_console().print(
+                f"✅ Exported {issue_count} issues to {export_path}", style="green"
+            )
+
         # Convert to TableData for structured output
         table_data = IssueTableFormatter.issues_to_table_data(
             domain_issues,
