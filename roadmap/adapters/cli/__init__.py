@@ -155,6 +155,7 @@ def register_commands():
 
     # Register command groups with lazy loading
     # Core v1.0 commands only
+    from roadmap.adapters.cli.analysis import analysis
     from roadmap.adapters.cli.comment import comment
     from roadmap.adapters.cli.config import config
     from roadmap.adapters.cli.data import data
@@ -165,6 +166,7 @@ def register_commands():
     # progress commands moved to future/ (post-v1.0)
     from roadmap.adapters.cli.projects import project
 
+    main.add_command(analysis)
     main.add_command(config)
     main.add_command(data)
     main.add_command(project)

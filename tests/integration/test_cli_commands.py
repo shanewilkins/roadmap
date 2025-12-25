@@ -93,30 +93,14 @@ def isolated_roadmap_with_issues(cli_runner):
             )
             if result.exit_code == 0:
                 # Parse the issue ID from the output
-                # First try to find issue_id= in the log lines
-                import re
+                from tests.fixtures.click_testing import ClickTestHelper
 
-                from tests.unit.shared.test_utils import strip_ansi
-
-                clean_output = strip_ansi(result.output)
-                issue_id = None
-
-                # Try to find issue_id= in the log lines
-                for line in clean_output.split("\n"):
-                    if "issue_id=" in line:
-                        match = re.search(r"issue_id=([^\s]+)", line)
-                        if match:
-                            issue_id = match.group(1)
-                            break
-
-                # Fallback: look for [xxx] pattern
-                if issue_id is None:
-                    match = re.search(r"\[([^\]]+)\]", result.output)
-                    if match:
-                        issue_id = match.group(1)
-
-                if issue_id:
+                try:
+                    issue_id = ClickTestHelper.extract_issue_id(result.output)
                     created_ids.append(issue_id)
+                except ValueError:
+                    # If extraction fails, continue without the ID
+                    pass
 
         yield cli_runner, temp_dir, created_ids
         # Cleanup happens here when context exits
@@ -208,8 +192,9 @@ class TestCLIStatus:
 class TestCLIHealth:
     """Test health command."""
 
-    def test_health_check(self, cli_runner):
+    def test_health_check(self, isolated_roadmap):
         """Test health check command."""
+        cli_runner, _ = isolated_roadmap
         result = cli_runner.invoke(main, ["health"])
 
         assert result.exit_code == 0

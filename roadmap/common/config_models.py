@@ -70,6 +70,10 @@ class BehaviorConfig(BaseModel):
         default=True,
         description="Show helpful tips in output",
     )
+    include_closed_in_critical_path: bool = Field(
+        default=False,
+        description="Include closed issues in critical path analysis by default",
+    )
 
     class Config:
         """Pydantic config."""

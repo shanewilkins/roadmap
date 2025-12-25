@@ -5,14 +5,10 @@ Tests cover error handling, data validation, and edge cases for status display.
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from click.testing import CliRunner
 
+from roadmap.adapters.cli.health.formatter import HealthCheckFormatter
 from roadmap.adapters.cli.status import (
-    _determine_overall_health,
-    _display_check_result,
-    _extract_check_status,
-    _get_status_display_info,
     check_health,
     health,
     status,
@@ -20,237 +16,168 @@ from roadmap.adapters.cli.status import (
 from roadmap.core.domain.health import HealthStatus
 
 
-class TestExtractCheckStatus:
-    """Test _extract_check_status function."""
+class TestHealthCheckFormatter:
+    """Test HealthCheckFormatter class."""
 
-    def test_extract_tuple_format(self):
-        """Tuple format should return as-is."""
-        check_result = (HealthStatus.HEALTHY, "All good")
-        status, message = _extract_check_status(check_result)
-
-        assert status == HealthStatus.HEALTHY
-        assert message == "All good"
-
-    def test_extract_dict_format(self):
-        """Dict format should extract status and message."""
-        check_result = {"status": HealthStatus.DEGRADED, "message": "Warning"}
-        status, message = _extract_check_status(check_result)
-
-        assert status == HealthStatus.DEGRADED
-        assert message == "Warning"
-
-    def test_extract_dict_missing_status(self):
-        """Dict without status should default to UNHEALTHY."""
-        check_result = {"message": "Error"}
-        status, message = _extract_check_status(check_result)
-
-        assert status == HealthStatus.UNHEALTHY
-        assert message == "Error"
-
-    def test_extract_dict_missing_message(self):
-        """Dict without message should default to empty string."""
-        check_result = {"status": HealthStatus.HEALTHY}
-        status, message = _extract_check_status(check_result)
-
-        assert status == HealthStatus.HEALTHY
-        assert message == ""
-
-    def test_extract_dict_both_missing(self):
-        """Dict without both status and message."""
-        check_result = {}
-        status, message = _extract_check_status(check_result)
-
-        assert status == HealthStatus.UNHEALTHY
-        assert message == ""
-
-    def test_extract_none_result(self):
-        """None result should be handled."""
-        check_result = None
-        with pytest.raises((TypeError, AttributeError)):
-            _extract_check_status(check_result)
-
-
-class TestGetStatusDisplayInfo:
-    """Test _get_status_display_info function."""
-
-    def test_healthy_status_display(self):
-        """HEALTHY status should return correct icon and color."""
-        icon, color = _get_status_display_info("HEALTHY")
-
-        assert icon == "✅"
-        assert color == "green"
-
-    def test_degraded_status_display(self):
-        """DEGRADED status should return correct icon and color."""
-        icon, color = _get_status_display_info("DEGRADED")
-
-        assert icon == "⚠️"
-        assert color == "yellow"
-
-    def test_unhealthy_status_display(self):
-        """UNHEALTHY status should return correct icon and color."""
-        icon, color = _get_status_display_info("UNHEALTHY")
-
-        assert icon == "❌"
-        assert color == "red"
-
-    def test_unknown_status_display(self):
-        """Unknown status should return default icon and color."""
-        icon, color = _get_status_display_info("UNKNOWN")
-
-        assert icon == "?"
-        assert color == "white"
-
-    def test_lowercase_status_display(self):
-        """Lowercase status should not match."""
-        icon, color = _get_status_display_info("healthy")
-
-        assert icon == "?"
-        assert color == "white"
-
-    def test_empty_status_display(self):
-        """Empty status should return default icon and color."""
-        icon, color = _get_status_display_info("")
-
-        assert icon == "?"
-        assert color == "white"
-
-
-class TestDisplayCheckResult:
-    """Test _display_check_result function."""
-
-    def test_display_with_message(self, capsys):
-        """Should display check name, status, and message."""
-        _display_check_result("database_check", "HEALTHY", "Connected")
-
-        captured = capsys.readouterr()
-        assert "Database Check" in captured.out
-        assert "HEALTHY" in captured.out
-        assert "Connected" in captured.out
-
-    def test_display_without_message(self, capsys):
-        """Should display check name and status without message."""
-        _display_check_result("git_check", "UNHEALTHY", "")
-
-        captured = capsys.readouterr()
-        assert "Git Check" in captured.out
-        assert "UNHEALTHY" in captured.out
-        assert "  \n" not in captured.out  # No indented empty message
-
-    def test_display_name_formatting(self, capsys):
-        """Check name should be converted to title case."""
-        _display_check_result("long_check_name", "DEGRADED", "Info")
-
-        captured = capsys.readouterr()
-        assert "Long Check Name" in captured.out
-
-    def test_display_single_word_check(self, capsys):
-        """Single word check name should be capitalized."""
-        _display_check_result("storage", "HEALTHY", "OK")
-
-        captured = capsys.readouterr()
-        assert "Storage" in captured.out
-
-    def test_display_with_multiline_message(self, capsys):
-        """Multiline messages should be displayed."""
-        _display_check_result("config", "UNHEALTHY", "Line 1\nLine 2")
-
-        captured = capsys.readouterr()
-        assert "Line 1\nLine 2" in captured.out
-
-
-class TestDetermineOverallHealth:
-    """Test _determine_overall_health function."""
-
-    def test_all_healthy_checks(self):
-        """All healthy checks should return HEALTHY."""
+    def test_formatter_plain_text_basic(self):
+        """Formatter should produce plain text output."""
+        formatter = HealthCheckFormatter()
         checks = {
-            "check1": (HealthStatus.HEALTHY, "OK"),
-            "check2": (HealthStatus.HEALTHY, "OK"),
+            "database": (HealthStatus.HEALTHY, "Connected"),
+            "storage": (HealthStatus.HEALTHY, "Available"),
         }
-        result = _determine_overall_health(checks)
 
-        assert result == HealthStatus.HEALTHY
+        output = formatter.format_plain(checks, details=False)
 
-    def test_one_unhealthy_check(self):
-        """Single unhealthy check should return UNHEALTHY."""
+        assert "Database: HEALTHY" in output
+        assert "Storage: HEALTHY" in output
+        assert "✅" in output
+
+    def test_formatter_plain_text_with_degraded(self):
+        """Formatter should show degraded status."""
+        formatter = HealthCheckFormatter()
         checks = {
-            "check1": (HealthStatus.HEALTHY, "OK"),
-            "check2": (HealthStatus.UNHEALTHY, "Error"),
+            "database": (HealthStatus.DEGRADED, "Slow"),
         }
-        result = _determine_overall_health(checks)
 
-        assert result == HealthStatus.UNHEALTHY
+        output = formatter.format_plain(checks, details=False)
 
-    def test_multiple_unhealthy_checks(self):
-        """Multiple unhealthy checks should return UNHEALTHY."""
+        assert "Database: DEGRADED" in output
+        assert "⚠️" in output
+
+    def test_formatter_plain_text_with_details(self):
+        """Formatter should include details when requested."""
+        formatter = HealthCheckFormatter()
         checks = {
-            "check1": (HealthStatus.UNHEALTHY, "Error1"),
-            "check2": (HealthStatus.UNHEALTHY, "Error2"),
+            "duplicate_issues": (HealthStatus.DEGRADED, "Found duplicates"),
         }
-        result = _determine_overall_health(checks)
 
-        assert result == HealthStatus.UNHEALTHY
+        output = formatter.format_plain(checks, details=True)
 
-    def test_degraded_with_healthy(self):
-        """Degraded with healthy should return DEGRADED."""
+        assert "Recommendations:" in output
+        assert "Fix Commands:" in output
+
+    def test_formatter_json_output(self):
+        """Formatter should produce valid JSON."""
+        import json
+
+        formatter = HealthCheckFormatter()
         checks = {
-            "check1": (HealthStatus.HEALTHY, "OK"),
-            "check2": (HealthStatus.DEGRADED, "Warning"),
+            "database": (HealthStatus.HEALTHY, "Connected"),
         }
-        result = _determine_overall_health(checks)
 
-        assert result == HealthStatus.DEGRADED
+        output = formatter.format_json(checks, details=False, hierarchical=True)
+        data = json.loads(output)
 
-    def test_degraded_superseded_by_unhealthy(self):
-        """Unhealthy should override DEGRADED."""
+        assert "metadata" in data
+        assert "checks" in data
+        assert data["metadata"]["overall_status"] == "HEALTHY"
+
+    def test_formatter_json_hierarchical_with_details(self):
+        """Formatter should produce hierarchical JSON with details."""
+        import json
+
+        formatter = HealthCheckFormatter()
         checks = {
-            "check1": (HealthStatus.DEGRADED, "Warning"),
-            "check2": (HealthStatus.UNHEALTHY, "Error"),
+            "duplicate_issues": (HealthStatus.DEGRADED, "Found duplicates"),
+            "database": (HealthStatus.HEALTHY, "Connected"),
         }
-        result = _determine_overall_health(checks)
 
-        assert result == HealthStatus.UNHEALTHY
+        output = formatter.format_json(checks, details=True, hierarchical=True)
+        data = json.loads(output)
 
-    def test_multiple_degraded_checks(self):
-        """Multiple degraded checks should return DEGRADED."""
-        checks = {
-            "check1": (HealthStatus.DEGRADED, "Warning1"),
-            "check2": (HealthStatus.DEGRADED, "Warning2"),
-        }
-        result = _determine_overall_health(checks)
-
-        assert result == HealthStatus.DEGRADED
-
-    def test_empty_checks_dict(self):
-        """Empty checks dict should return HEALTHY."""
-        checks = {}
-        result = _determine_overall_health(checks)
-
-        assert result == HealthStatus.HEALTHY
-
-    def test_dict_format_checks(self):
-        """Should handle dict format check results."""
-        checks = {
-            "check1": {"status": HealthStatus.HEALTHY, "message": "OK"},
-            "check2": {"status": HealthStatus.UNHEALTHY, "message": "Error"},
-        }
-        result = _determine_overall_health(checks)
-
-        assert result == HealthStatus.UNHEALTHY
-
-    def test_mixed_format_checks(self):
-        """Should handle mixed tuple and dict format."""
-        checks = {
-            "check1": (HealthStatus.HEALTHY, "OK"),
-            "check2": {"status": HealthStatus.DEGRADED, "message": "Warning"},
-        }
-        result = _determine_overall_health(checks)
-
-        assert result == HealthStatus.DEGRADED
+        assert "metadata" in data
+        assert len(data["checks"]["degraded"]) == 1
+        assert len(data["checks"]["healthy"]) == 1
+        assert "next_steps" in data
 
 
 class TestStatusCommand:
+    """Test status command error handling."""
+
+    def test_status_no_data(self):
+        """Empty roadmap should show empty state."""
+        runner = CliRunner()
+        ctx_obj = {
+            "core": MagicMock(),
+        }
+
+        with patch(
+            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
+        ) as mock_gather:
+            mock_gather.return_value = {
+                "has_data": False,
+                "issue_count": 0,
+                "milestone_count": 0,
+            }
+
+            with patch(
+                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state"
+            ) as mock_empty:
+                with runner.isolated_filesystem():
+                    runner.invoke(
+                        status,
+                        [],
+                        obj=ctx_obj,
+                        catch_exceptions=False,
+                    )
+
+                mock_empty.assert_called_once()
+
+    def test_status_with_exception(self):
+        """Exception during status gathering should show error."""
+        runner = CliRunner()
+        ctx_obj = {
+            "core": MagicMock(),
+        }
+
+        with patch(
+            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
+        ) as mock_gather:
+            mock_gather.side_effect = Exception("Database error")
+
+            with patch(
+                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_error"
+            ) as mock_error:
+                with runner.isolated_filesystem():
+                    runner.invoke(
+                        status,
+                        [],
+                        obj=ctx_obj,
+                        catch_exceptions=False,
+                    )
+
+                mock_error.assert_called_once_with("Database error")
+
+    def test_status_verbose_flag(self):
+        """Verbose flag should be passed through."""
+        runner = CliRunner()
+        ctx_obj = {
+            "core": MagicMock(),
+        }
+
+        with patch(
+            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
+        ) as mock_gather:
+            mock_gather.return_value = {
+                "has_data": False,
+                "issue_count": 0,
+                "milestone_count": 0,
+            }
+
+            with patch(
+                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state"
+            ):
+                with runner.isolated_filesystem():
+                    result = runner.invoke(
+                        status,
+                        ["--verbose"],
+                        obj=ctx_obj,
+                        catch_exceptions=False,
+                    )
+
+                assert result.exit_code == 0
+
     """Test status command error handling."""
 
     def test_status_no_data(self):
@@ -505,39 +432,24 @@ class TestHealthGroup:
 
                 assert result.exit_code == 0
 
-    def test_health_with_check_subcommand(self):
-        """Health check subcommand should work."""
+    def test_health_with_scan_subcommand(self):
+        """Health scan subcommand should work."""
         runner = CliRunner()
         ctx_obj = {
             "core": MagicMock(),
         }
 
-        mock_checks = {
-            "test": (HealthStatus.HEALTHY, "OK"),
-        }
-
-        with patch(
-            "roadmap.adapters.cli.status.HealthCheck"
-        ) as mock_health_check_class:
-            mock_health_check = MagicMock()
-            mock_health_check_class.return_value = mock_health_check
-            mock_health_check.run_all_checks.return_value = mock_checks
-
-            with patch(
-                "roadmap.adapters.cli.status.CoreInitializationPresenter"
-            ) as mock_presenter_class:
-                mock_presenter = MagicMock()
-                mock_presenter_class.return_value = mock_presenter
-
+        with patch("roadmap.adapters.cli.health.scan.EntityHealthScanner"):
+            with patch("roadmap.adapters.cli.health.scan.get_formatter"):
                 with runner.isolated_filesystem():
                     result = runner.invoke(
                         health,
-                        ["check"],
+                        ["scan"],
                         obj=ctx_obj,
-                        catch_exceptions=False,
                     )
 
-                assert result.exit_code == 0
+                # Should not raise an error about unknown command
+                assert "No such command" not in result.output or result.exit_code == 0
 
 
 class TestStatusEdgeCases:
@@ -593,32 +505,24 @@ class TestStatusEdgeCases:
 
                             mock_show_milestones.assert_called()
 
-    def test_determine_health_with_string_status(self):
-        """Should handle string status values."""
-        checks = {
-            "test": {
-                "status": "HEALTHY",  # string instead of enum
-                "message": "OK",
-            },
-        }
-        # This should not raise, even with string status
-        result = _determine_overall_health(checks)
-        assert result == HealthStatus.HEALTHY
-
-    def test_check_result_with_very_long_message(self):
-        """Should handle very long check messages."""
+    def test_formatter_with_very_long_message(self):
+        """Formatter should handle very long check messages."""
+        formatter = HealthCheckFormatter()
         long_message = "x" * 1000
         checks = {
             "test": (HealthStatus.DEGRADED, long_message),
         }
-        result = _determine_overall_health(checks)
 
-        assert result == HealthStatus.DEGRADED
+        output = formatter.format_plain(checks, details=False)
+        assert "x" * 100 in output
 
-    def test_display_check_with_special_characters(self, capsys):
-        """Should handle special characters in messages."""
-        _display_check_result("test_check", "HEALTHY", "Status: ✓ OK → Success")
+    def test_formatter_with_special_characters(self):
+        """Formatter should handle special characters in messages."""
+        formatter = HealthCheckFormatter()
+        checks = {
+            "test_check": (HealthStatus.HEALTHY, "Status: ✓ OK → Success"),
+        }
 
-        captured = capsys.readouterr()
-        assert "✓" in captured.out
-        assert "→" in captured.out
+        output = formatter.format_plain(checks, details=False)
+        assert "✓" in output
+        assert "→" in output

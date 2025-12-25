@@ -23,6 +23,7 @@ from functools import wraps
 
 import click
 
+from roadmap.adapters.cli.layout import SmartTableLayout
 from roadmap.common.cli_helpers import (
     ColumnSelector,
     FilterSpecParser,
@@ -30,7 +31,6 @@ from roadmap.common.cli_helpers import (
     SortSpecParser,
 )
 from roadmap.common.console import get_console
-from roadmap.common.output_formatter import OutputFormatter
 from roadmap.common.output_models import ColumnType, TableData
 
 
@@ -110,10 +110,11 @@ def with_output_support(
                     console.print(output)
                     return  # Don't return TableData, output already printed
                 elif format and format.lower() == "rich":
-                    # Render as Rich Table and print
-                    formatter = OutputFormatter(result)
+                    # Use smart responsive layout for 'rich' format
+                    layout = SmartTableLayout()
+                    renderable = layout.render(result)
                     console = get_console()
-                    console.print(formatter.to_rich())
+                    console.print(renderable)
                     return  # Rich was printed directly
                 else:
                     # Default: return TableData (backwards compat)

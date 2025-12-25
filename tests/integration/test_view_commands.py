@@ -11,6 +11,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
+from tests.common.cli_test_helpers import CLIOutputParser
 from tests.unit.shared.test_utils import strip_ansi
 
 
@@ -108,11 +109,36 @@ def roadmap_with_data(cli_runner):
         )
         assert result.exit_code == 0, f"Project creation failed: {result.output}"
 
-        # Extract project ID from list output since create doesn't output it
-        result = cli_runner.invoke(main, ["project", "list"])
-        match = re.search(r"(\w+)\s+test-project", result.output)
-        assert match, f"Could not find project ID in output: {result.output}"
-        project_id = match.group(1)
+        # Extract project ID using JSON format for robustness
+        result = cli_runner.invoke(main, ["project", "list", "--format", "json"])
+        assert result.exit_code == 0, f"Project list failed: {result.output}"
+
+        json_output = CLIOutputParser.extract_json(result.output)
+
+        # The JSON output is a TableData structure with "rows" containing the actual data
+        # Each row is a list matching the columns in order
+        rows = json_output.get("rows", [])
+        columns = json_output.get("columns", [])
+
+        # Find the column index for "title"
+        title_idx = None
+        id_idx = 0  # ID is typically the first column
+        for i, col in enumerate(columns):
+            if col.get("name") == "title":
+                title_idx = i
+            elif col.get("name") == "id":
+                id_idx = i
+
+        assert title_idx is not None, "Could not find 'title' column in project list"
+
+        # Find the row with title "test-project"
+        project_id = None
+        for row in rows:
+            if row[title_idx] == "test-project":
+                project_id = row[id_idx]
+                break
+
+        assert project_id, "Could not find project 'test-project' in JSON output"
 
         yield (
             cli_runner,

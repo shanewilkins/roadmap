@@ -4,14 +4,12 @@ Tests archive/restore functionality for issues, milestones, projects,
 and cleanup command for backup pruning.
 """
 
-import re
 from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
-from tests.unit.shared.test_utils import strip_ansi
 
 
 @pytest.fixture
@@ -91,28 +89,14 @@ def roadmap_with_issues_and_milestones(cli_runner):
                 ],
             )
             assert result.exit_code == 0, f"Issue creation failed: {result.output}"
-            # Find issue ID - look for issue_id= in the output
-            clean_output = strip_ansi(result.output)
-            issue_id = None
+            # Find issue ID
+            from tests.fixtures.click_testing import ClickTestHelper
 
-            # First try to find issue_id= in the log lines
-            for line in clean_output.split("\n"):
-                if "issue_id=" in line:
-                    match = re.search(r"issue_id=([^\s]+)", line)
-                    if match:
-                        issue_id = match.group(1)
-                        break
-
-            # Fallback: look for [xxx] in Created issue: line
-            if issue_id is None and "Created issue:" in clean_output:
-                created_part = clean_output.split("Created issue:")[-1].split("\n")[0]
-                match = re.search(r"\[([^\]]+)\]", created_part)
-                if match:
-                    issue_id = match.group(1)
+            issue_id = ClickTestHelper.extract_issue_id(result.output)
 
             assert (
                 issue_id is not None
-            ), f"Could not find issue ID in output: {clean_output}"
+            ), f"Could not find issue ID in output: {result.output}"
             issues.append({"id": issue_id, "title": title, "status": status})
 
             # Update status for done issue

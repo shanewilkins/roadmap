@@ -131,7 +131,153 @@ class ClickTestResult:
 
 
 class ClickTestHelper:
-    """Helper class for common Click testing patterns."""
+    """Helper class for common Click testing patterns.
+
+    Test framework layer - provides test-specific convenience methods that
+    delegate to CLIOutputParser for actual parsing. Handles JSON-first strategy
+    with regex fallback for legacy patterns.
+    """
+
+    @staticmethod
+    def extract_issue_id(output: str) -> str:
+        """Extract issue ID from CLI output.
+
+        Strategy: Try JSON first (--format json), fallback to legacy log/bracket patterns.
+
+        Args:
+            output: CLI output from issue creation or list command
+
+        Returns:
+            The issue ID
+
+        Raises:
+            ValueError: If no valid JSON found and no legacy pattern matched
+        """
+        from tests.common.cli_test_helpers import CLIOutputParser
+        from tests.unit.shared.test_utils import strip_ansi
+
+        # Strategy 1: Try JSON format (modern approach)
+        try:
+            json_output = CLIOutputParser.extract_json(output)
+            # Handle TableData structure from list commands
+            if isinstance(json_output, dict) and "rows" in json_output:
+                if json_output["rows"]:
+                    # For list commands, return first ID
+                    columns = json_output.get("columns", [])
+                    id_idx = next(
+                        (i for i, col in enumerate(columns) if col.get("name") == "id"),
+                        0,
+                    )
+                    return str(json_output["rows"][0][id_idx])
+            # Handle direct output (shouldn't normally happen but be defensive)
+            if isinstance(json_output, str):
+                return json_output
+
+            raise ValueError(f"Could not extract ID from JSON output: {json_output}")
+        except ValueError:
+            pass  # Try fallback patterns
+
+        # Strategy 2: Try legacy log format (issue_id=xxx)
+        clean_output = strip_ansi(output)
+        for line in clean_output.split("\n"):
+            if "issue_id=" in line:
+                match = re.search(r"issue_id=([^\s]+)", line)
+                if match:
+                    return match.group(1)
+
+        # Strategy 3: Try legacy bracket format [xxx]
+        match = re.search(r"\[([a-f0-9\-]+)\]", clean_output)
+        if match:
+            return match.group(1)
+
+        raise ValueError(
+            "Could not extract issue ID from output. "
+            "Expected --format json, or legacy issue_id= or [ID] patterns.\n"
+            f"Output was:\n{output}"
+        )
+
+    @staticmethod
+    def extract_project_id(output: str, project_name: str = None) -> str:
+        """Extract project ID from CLI output.
+
+        Strategy: Use JSON format from --format json with TableData structure.
+
+        Args:
+            output: CLI output from project list command
+            project_name: Name of project to search for (optional, uses first if None)
+
+        Returns:
+            The project ID
+
+        Raises:
+            ValueError: If JSON not found or project not found in list
+        """
+        from tests.common.cli_test_helpers import CLIOutputParser
+
+        json_output = CLIOutputParser.extract_json(output)
+
+        if project_name:
+            # Search for specific project by name
+            try:
+                project_id = CLIOutputParser.extract_from_tabledata(
+                    json_output,
+                    column_name="name",
+                    search_value=project_name,
+                    id_column="id",
+                )
+                return project_id
+            except ValueError as e:
+                # Re-raise with more context
+                raise ValueError(
+                    f"Project '{project_name}' not found in output.\n{str(e)}"
+                ) from e
+        else:
+            # Return first project ID
+            rows = json_output.get("rows", [])
+            if rows:
+                return str(rows[0][0])  # Assume ID is first column
+            raise ValueError(f"No projects found in output.\nOutput was:\n{output}")
+
+    @staticmethod
+    def extract_milestone_id(output: str, milestone_name: str = None) -> str:
+        """Extract milestone ID from CLI output.
+
+        Strategy: Use JSON format from --format json with TableData structure.
+
+        Args:
+            output: CLI output from milestone list command
+            milestone_name: Name of milestone to search for (optional, uses first if None)
+
+        Returns:
+            The milestone ID
+
+        Raises:
+            ValueError: If JSON not found or milestone not found in list
+        """
+        from tests.common.cli_test_helpers import CLIOutputParser
+
+        json_output = CLIOutputParser.extract_json(output)
+
+        if milestone_name:
+            # Search for specific milestone
+            try:
+                milestone_id = CLIOutputParser.extract_from_tabledata(
+                    json_output,
+                    column_name="name",
+                    search_value=milestone_name,
+                    id_column="id",
+                )
+                return milestone_id
+            except ValueError as e:
+                raise ValueError(
+                    f"Milestone '{milestone_name}' not found in output.\n{str(e)}"
+                ) from e
+        else:
+            # Return first milestone ID
+            rows = json_output.get("rows", [])
+            if rows:
+                return str(rows[0][0])  # Assume ID is first column
+            raise ValueError(f"No milestones found in output.\nOutput was:\n{output}")
 
     @staticmethod
     def create_id_extractor(pattern: str) -> Callable[[str], str | None]:

@@ -115,9 +115,6 @@ class CriticalPathCalculator:
             Dictionary mapping issue_id to PathNode
         """
         nodes = {}
-        issue_map = {issue.id: issue for issue in issues}
-
-        # Initialize nodes
         for issue in issues:
             duration = self._estimate_duration(issue)
             nodes[issue.id] = PathNode(
@@ -128,7 +125,6 @@ class CriticalPathCalculator:
             )
 
         # Calculate earliest start/end times using topological sort
-        visited = set()
         start_times = {}
         visiting = set()  # Track nodes currently being processed to detect cycles
 
@@ -213,7 +209,6 @@ class CriticalPathCalculator:
         critical_path = max(critical_paths, key=lambda p: len(p), default=[])
 
         # Mark critical nodes
-        critical_ids = set(node.issue_id for node in critical_path)
         for node in critical_path:
             node.is_critical = True
 
@@ -234,8 +229,14 @@ class CriticalPathCalculator:
         """
         path = []
         current_id = issue_id
+        visited = set()  # Track visited nodes to prevent infinite loops
 
         while current_id in nodes:
+            # Detect circular dependencies
+            if current_id in visited:
+                break
+
+            visited.add(current_id)
             path.append(nodes[current_id])
             dependencies = graph.get(current_id, [])
 
@@ -354,7 +355,7 @@ class CriticalPathCalculator:
                 blocked_issues.add(issue.id)
 
         return {
-            "critical": [id for id in critical_ids],
+            "critical": list(critical_ids),
             "blocking": list(blocking_issues),
             "blocked": list(blocked_issues),
             "independent": [

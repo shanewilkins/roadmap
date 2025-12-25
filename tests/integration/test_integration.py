@@ -5,7 +5,6 @@ These tests verify end-to-end workflows and cross-module integration.
 """
 
 import os
-import re
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -21,7 +20,6 @@ from tests.unit.shared.test_helpers import (
     assert_issue_created,
     assert_milestone_created,
 )
-from tests.unit.shared.test_utils import strip_ansi
 
 pytestmark = pytest.mark.filesystem
 
@@ -282,58 +280,18 @@ class TestEndToEndWorkflows:
         )
 
         # Create issues
+        from tests.fixtures.click_testing import ClickTestHelper
+
         result = runner.invoke(main, ["issue", "create", "Issue 1"])
-        issue1_id = None
-        clean_output = strip_ansi(result.output)
-        for line in clean_output.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue1_id = match.group(1)
-                    break
-        if issue1_id is None:
-            for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        issue1_id = match.group(1)
-                    break
+        issue1_id = ClickTestHelper.extract_issue_id(result.output)
         assert issue1_id is not None, "Failed to parse issue1_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Issue 2"])
-        issue2_id = None
-        clean_output = strip_ansi(result.output)
-        for line in clean_output.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue2_id = match.group(1)
-                    break
-        if issue2_id is None:
-            for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        issue2_id = match.group(1)
-                    break
+        issue2_id = ClickTestHelper.extract_issue_id(result.output)
         assert issue2_id is not None, "Failed to parse issue2_id from output"
 
         result = runner.invoke(main, ["issue", "create", "Backlog Issue"])
-        backlog_issue_id = None
-        clean_output = strip_ansi(result.output)
-        for line in clean_output.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    backlog_issue_id = match.group(1)
-                    break
-        if backlog_issue_id is None:
-            for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        backlog_issue_id = match.group(1)
-                    break
+        backlog_issue_id = ClickTestHelper.extract_issue_id(result.output)
         assert (
             backlog_issue_id is not None
         ), "Failed to parse backlog_issue_id from output"
@@ -495,23 +453,9 @@ class TestCrossModuleIntegration:
         )
 
         # Extract issue ID
-        issue_id = None
-        clean_output = strip_ansi(result.output)
-        # First try to find issue_id= in the log lines
-        for line in clean_output.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue_id = match.group(1)
-                    break
-        # Fallback: look for [xxx] in Created issue: line
-        if issue_id is None:
-            for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        issue_id = match.group(1)
-                    break
+        from tests.fixtures.click_testing import ClickTestHelper
+
+        issue_id = ClickTestHelper.extract_issue_id(result.output)
 
         # Update through CLI
         assert issue_id is not None, "Could not find issue ID in output"
@@ -572,19 +516,13 @@ class TestPerformanceAndStress:
             assert result.exit_code == 0
 
             # Extract issue ID from created output if possible, or from database as fallback
-            issue_id = None
-            clean_output = strip_ansi(result.output)
-            # Look for the "Created issue:" line specifically
-            for line in clean_output.split("\n"):
-                if "Created issue:" in line:
-                    # Extract the ID from brackets in the Created issue line
-                    match = re.search(r"\[([a-f0-9\-]+)\]", line)
-                    if match:
-                        issue_id = match.group(1)
-                        break
+            from tests.fixtures.click_testing import ClickTestHelper
 
-            # If extraction from output failed, get the latest issue from database
-            if not issue_id:
+            try:
+                issue_id = ClickTestHelper.extract_issue_id(result.output)
+            except ValueError:
+                # If extraction from output failed, get the latest issue from database
+                issue_id = None
                 core = RoadmapCore()
                 issues = core.issues.list()
                 if issues:
