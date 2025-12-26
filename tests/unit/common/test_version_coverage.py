@@ -9,19 +9,24 @@ from roadmap.version import SemanticVersion, VersionManager
 class TestSemanticVersion:
     """Test SemanticVersion class."""
 
-    def test_semantic_version_creation_simple(self):
-        """Test creating a SemanticVersion instance."""
-        version = SemanticVersion("1.2.3")
-        assert version.major == 1
-        assert version.minor == 2
-        assert version.patch == 3
-
-    def test_semantic_version_creation_with_v_prefix(self):
-        """Test creating SemanticVersion with v prefix."""
-        version = SemanticVersion("v1.2.3")
-        assert version.major == 1
-        assert version.minor == 2
-        assert version.patch == 3
+    @pytest.mark.parametrize(
+        "version_str,expected_major,expected_minor,expected_patch",
+        [
+            ("1.2.3", 1, 2, 3),
+            ("v1.2.3", 1, 2, 3),
+            ("0.0.0", 0, 0, 0),
+            ("999.999.999", 999, 999, 999),
+            ("  v1.2.3  ", 1, 2, 3),
+        ],
+    )
+    def test_semantic_version_creation(
+        self, version_str, expected_major, expected_minor, expected_patch
+    ):
+        """Test creating SemanticVersion with various inputs."""
+        version = SemanticVersion(version_str)
+        assert version.major == expected_major
+        assert version.minor == expected_minor
+        assert version.patch == expected_patch
 
     def test_semantic_version_string_representation(self):
         """Test string representation of SemanticVersion."""
@@ -38,79 +43,57 @@ class TestSemanticVersion:
         version = SemanticVersion("v1.2.3")
         assert "v1.2.3" in version.raw
 
-    def test_semantic_version_comparison_greater(self):
-        """Test version comparison - greater than."""
-        v1 = SemanticVersion("2.0.0")
-        v2 = SemanticVersion("1.9.9")
-        assert v1 > v2
+    @pytest.mark.parametrize(
+        "v1_str,v2_str,operator",
+        [
+            ("2.0.0", "1.9.9", "gt"),
+            ("1.0.0", "1.1.0", "lt"),
+            ("1.2.3", "1.2.3", "eq"),
+            ("1.2.3", "1.2.4", "ne"),
+            ("1.2.3", "1.2.3", "gte"),
+            ("1.2.2", "1.2.3", "lte"),
+        ],
+    )
+    def test_semantic_version_comparison(self, v1_str, v2_str, operator):
+        """Test version comparison operations."""
+        v1 = SemanticVersion(v1_str)
+        v2 = SemanticVersion(v2_str)
+        if operator == "gt":
+            assert v1 > v2
+        elif operator == "lt":
+            assert v1 < v2
+        elif operator == "eq":
+            assert v1 == v2
+        elif operator == "ne":
+            assert v1 != v2
+        elif operator == "gte":
+            assert v1 >= v2
+        elif operator == "lte":
+            assert v1 <= v2
 
-    def test_semantic_version_comparison_less(self):
-        """Test version comparison - less than."""
-        v1 = SemanticVersion("1.0.0")
-        v2 = SemanticVersion("1.1.0")
-        assert v1 < v2
-
-    def test_semantic_version_comparison_equal(self):
-        """Test version comparison - equal."""
-        v1 = SemanticVersion("1.2.3")
-        v2 = SemanticVersion("1.2.3")
-        assert v1 == v2
-
-    def test_semantic_version_comparison_not_equal(self):
-        """Test version comparison - not equal."""
-        v1 = SemanticVersion("1.2.3")
-        v2 = SemanticVersion("1.2.4")
-        assert v1 != v2
-
-    def test_semantic_version_comparison_greater_equal(self):
-        """Test version comparison - greater or equal."""
-        v1 = SemanticVersion("1.2.3")
-        v2 = SemanticVersion("1.2.3")
-        assert v1 >= v2
-
-    def test_semantic_version_comparison_less_equal(self):
-        """Test version comparison - less or equal."""
-        v1 = SemanticVersion("1.2.2")
-        v2 = SemanticVersion("1.2.3")
-        assert v1 <= v2
-
-    def test_semantic_version_bump_major(self):
-        """Test bumping major version."""
-        version = SemanticVersion("1.2.3")
-        new_version = version.bump_major()
-        assert new_version.major == 2
-        assert new_version.minor == 0
-        assert new_version.patch == 0
-
-    def test_semantic_version_bump_minor(self):
-        """Test bumping minor version."""
-        version = SemanticVersion("1.2.3")
-        new_version = version.bump_minor()
-        assert new_version.major == 1
-        assert new_version.minor == 3
-        assert new_version.patch == 0
-
-    def test_semantic_version_bump_patch(self):
-        """Test bumping patch version."""
-        version = SemanticVersion("1.2.3")
-        new_version = version.bump_patch()
-        assert new_version.major == 1
-        assert new_version.minor == 2
-        assert new_version.patch == 4
-
-    def test_semantic_version_is_valid_zero_version(self):
-        """Test 0.0.0 is valid version."""
-        version = SemanticVersion("0.0.0")
-        assert version.major == 0
-        assert version.minor == 0
-        assert version.patch == 0
-
-    def test_semantic_version_is_valid_large_numbers(self):
-        """Test version with large numbers."""
-        version = SemanticVersion("999.999.999")
-        assert version.major == 999
-        assert version.minor == 999
-        assert version.patch == 999
+    @pytest.mark.parametrize(
+        "version_str,bump_type,expected_major,expected_minor,expected_patch",
+        [
+            ("1.2.3", "major", 2, 0, 0),
+            ("1.2.3", "minor", 1, 3, 0),
+            ("1.2.3", "patch", 1, 2, 4),
+            ("0.0.0", "patch", 0, 0, 1),
+        ],
+    )
+    def test_semantic_version_bump(
+        self, version_str, bump_type, expected_major, expected_minor, expected_patch
+    ):
+        """Test bumping version numbers."""
+        version = SemanticVersion(version_str)
+        if bump_type == "major":
+            new_version = version.bump_major()
+        elif bump_type == "minor":
+            new_version = version.bump_minor()
+        elif bump_type == "patch":
+            new_version = version.bump_patch()
+        assert new_version.major == expected_major
+        assert new_version.minor == expected_minor
+        assert new_version.patch == expected_patch
 
     def test_semantic_version_invalid_format_missing_patch(self):
         """Test that invalid format raises ValueError."""
@@ -127,12 +110,19 @@ class TestSemanticVersion:
         with pytest.raises(ValueError):
             SemanticVersion("1.2.3.4")
 
-    def test_semantic_version_is_valid_check(self):
+    @pytest.mark.parametrize(
+        "version_str,should_be_valid",
+        [
+            ("1.2.3", True),
+            ("0.0.0", True),
+            ("1.2", False),
+            ("a.b.c", False),
+            ("1.2.3.4", False),
+        ],
+    )
+    def test_semantic_version_is_valid_check(self, version_str, should_be_valid):
         """Test is_valid_semantic_version static method."""
-        assert SemanticVersion.is_valid_semantic_version("1.2.3")
-        assert SemanticVersion.is_valid_semantic_version("0.0.0")
-        assert not SemanticVersion.is_valid_semantic_version("1.2")
-        assert not SemanticVersion.is_valid_semantic_version("a.b.c")
+        assert SemanticVersion.is_valid_semantic_version(version_str) == should_be_valid
 
 
 class TestVersionManager:
@@ -209,50 +199,26 @@ class TestVersionConstants:
 class TestVersionComparison:
     """Test version comparison operations."""
 
-    def test_compare_versions_ordering(self):
-        """Test ordering of multiple versions."""
-        v1 = SemanticVersion("0.1.0")
-        v2 = SemanticVersion("1.0.0")
-        v3 = SemanticVersion("2.0.0")
-
-        assert v1 < v2 < v3
-
-    def test_version_major_comparison(self):
-        """Test that major version takes precedence."""
-        v1 = SemanticVersion("1.9.9")
-        v2 = SemanticVersion("2.0.0")
-        assert v1 < v2
-
-    def test_version_minor_comparison(self):
-        """Test that minor version is compared when major equal."""
-        v1 = SemanticVersion("1.2.9")
-        v2 = SemanticVersion("1.3.0")
-        assert v1 < v2
-
-    def test_version_patch_comparison(self):
-        """Test that patch version is compared when major/minor equal."""
-        v1 = SemanticVersion("1.2.3")
-        v2 = SemanticVersion("1.2.4")
-        assert v1 < v2
+    @pytest.mark.parametrize(
+        "v1_str,v2_str,operator,description",
+        [
+            ("0.1.0", "1.0.0", "lt", "ordering_v1_v2"),
+            ("1.0.0", "2.0.0", "lt", "ordering_v2_v3"),
+            ("1.9.9", "2.0.0", "lt", "major_precedence"),
+            ("1.2.9", "1.3.0", "lt", "minor_precedence"),
+            ("1.2.3", "1.2.4", "lt", "patch_precedence"),
+        ],
+    )
+    def test_version_comparison_operations(self, v1_str, v2_str, operator, description):
+        """Test version comparison with various precedence rules."""
+        v1 = SemanticVersion(v1_str)
+        v2 = SemanticVersion(v2_str)
+        if operator == "lt":
+            assert v1 < v2
 
 
 class TestVersionEdgeCases:
     """Test edge cases in version handling."""
-
-    def test_version_with_leading_zeros_in_numbers(self):
-        """Test version parsing with numbers."""
-        version = SemanticVersion("1.2.3")
-        assert version.major == 1
-        assert version.minor == 2
-        assert version.patch == 3
-
-    def test_version_bump_from_zero(self):
-        """Test bumping versions starting from 0.0.0."""
-        v0 = SemanticVersion("0.0.0")
-        v1 = v0.bump_patch()
-        assert v1.major == 0
-        assert v1.minor == 0
-        assert v1.patch == 1
 
     def test_version_bump_chain(self):
         """Test chaining version bumps."""
@@ -264,18 +230,21 @@ class TestVersionEdgeCases:
         assert str(v2) == "1.0.1"
         assert str(v3) == "1.1.0"
 
-    def test_version_v_prefix_parsing(self):
-        """Test that v prefix is correctly handled."""
-        v_prefixed = SemanticVersion("v1.2.3")
-        non_prefixed = SemanticVersion("1.2.3")
-        assert v_prefixed == non_prefixed
-
-    def test_version_v_prefix_whitespace(self):
-        """Test version parsing with whitespace."""
-        version = SemanticVersion("  v1.2.3  ")
-        assert version.major == 1
-        assert version.minor == 2
-        assert version.patch == 3
+    @pytest.mark.parametrize(
+        "version_str,should_be_handled",
+        [
+            ("1.2.3", True),
+            ("v1.2.3", True),
+            ("  v1.2.3  ", True),
+            ("0.0.0", True),
+            ("0.0.1", True),
+        ],
+    )
+    def test_version_parsing_edge_cases(self, version_str, should_be_handled):
+        """Test version parsing with various edge cases."""
+        version = SemanticVersion(version_str)
+        assert version is not None
+        assert isinstance(version.major, int)
 
 
 class TestVersionIntegration:
