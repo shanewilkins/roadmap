@@ -1,5 +1,7 @@
 """Unit tests for formatters module."""
 
+import pytest
+
 from roadmap.shared.formatters.text.basic import (
     _format_table_simple,
     format_header,
@@ -11,36 +13,48 @@ from roadmap.shared.formatters.text.basic import (
 class TestFormatTable:
     """Test format_table function."""
 
-    def test_format_table_basic(self):
-        """Test basic table formatting."""
-        columns = ["Name", "Age"]
-        rows = [("Alice", 30), ("Bob", 25)]
-        result = format_table("People", columns, rows)
-        assert result is not None
-
-    def test_format_table_empty_rows(self):
-        """Test table formatting with empty rows."""
-        columns = ["Name", "Age"]
-        rows = []
-        result = format_table("Empty", columns, rows)
-        assert result is not None
-
-    def test_format_table_multiple_rows(self):
-        """Test table with multiple rows."""
-        columns = ["ID", "Status", "Title"]
-        rows = [
-            (1, "open", "First issue"),
-            (2, "closed", "Second issue"),
-            (3, "in-progress", "Third issue"),
-        ]
-        result = format_table("Issues", columns, rows)
-        assert result is not None
-
-    def test_format_table_with_numbers(self):
-        """Test table with numeric values."""
-        columns = ["Item", "Count", "Percentage"]
-        rows = [(("Completed", 45, 90.5), ("Pending", 5, 9.5))]
-        result = format_table("Stats", columns, rows)
+    @pytest.mark.parametrize(
+        "title,columns,rows,description",
+        [
+            (
+                "People",
+                ["Name", "Age"],
+                [("Alice", 30), ("Bob", 25)],
+                "basic",
+            ),
+            (
+                "Empty",
+                ["Name", "Age"],
+                [],
+                "empty_rows",
+            ),
+            (
+                "Issues",
+                ["ID", "Status", "Title"],
+                [
+                    (1, "open", "First issue"),
+                    (2, "closed", "Second issue"),
+                    (3, "in-progress", "Third issue"),
+                ],
+                "multiple_rows",
+            ),
+            (
+                "Stats",
+                ["Item", "Count", "Percentage"],
+                [(("Completed", 45, 90.5), ("Pending", 5, 9.5))],
+                "with_numbers",
+            ),
+            (
+                "Long",
+                ["Short", "Long"],
+                [("a", "b" * 50)],
+                "with_long_content",
+            ),
+        ],
+    )
+    def test_format_table(self, title, columns, rows, description):
+        """Test table formatting with various configurations."""
+        result = format_table(title, columns, rows)
         assert result is not None
 
     def test_format_table_simple_fallback(self):
@@ -51,80 +65,53 @@ class TestFormatTable:
         assert "Test" in result
         assert "A" in result
 
-    def test_format_table_with_long_content(self):
-        """Test table with long content."""
-        columns = ["Short", "Long"]
-        rows = [("a", "b" * 50)]
-        result = format_table("Long", columns, rows)
-        assert result is not None
-
 
 class TestFormatPanel:
     """Test format_panel function."""
 
-    def test_format_panel_basic(self):
-        """Test basic panel formatting."""
-        panel = format_panel("Test content")
+    @pytest.mark.parametrize(
+        "content,title,expand,description",
+        [
+            ("Test content", None, None, "basic"),
+            ("Content", "My Title", None, "with_title"),
+            ("Content", "Title", True, "expanded"),
+            ("Content", None, False, "not_expanded"),
+            ("", None, None, "empty_content"),
+        ],
+    )
+    def test_format_panel(self, content, title, expand, description):
+        """Test panel formatting with various configurations."""
+        if expand is None:
+            panel = format_panel(content, title=title)
+        else:
+            panel = format_panel(content, title=title, expand=expand)
         assert panel is not None
-
-    def test_format_panel_with_title(self):
-        """Test panel with title."""
-        panel = format_panel("Content", title="My Title")
-        assert panel is not None
-
-    def test_format_panel_expanded(self):
-        """Test expanded panel."""
-        panel = format_panel("Content", title="Title", expand=True)
-        assert panel is not None
-        assert panel.expand
-
-    def test_format_panel_not_expanded(self):
-        """Test non-expanded panel."""
-        panel = format_panel("Content", expand=False)
-        assert panel is not None
-        assert not panel.expand
-
-    def test_format_panel_empty_content(self):
-        """Test panel with empty content."""
-        panel = format_panel("")
-        assert panel is not None
+        if expand is not None:
+            assert panel.expand == expand
 
 
 class TestFormatHeader:
     """Test format_header function."""
 
-    def test_format_header_level_1(self):
-        """Test level 1 header formatting."""
-        header = format_header("Title", level=1)
+    @pytest.mark.parametrize(
+        "text,level,description",
+        [
+            ("Title", 1, "level_1"),
+            ("Subtitle", 2, "level_2"),
+            ("Small", 3, "level_3"),
+            ("Default", None, "default_level"),
+            ("", None, "empty_text"),
+            ("Title: Special (123) [Test]", None, "special_characters"),
+        ],
+    )
+    def test_format_header(self, text, level, description):
+        """Test header formatting with various levels and inputs."""
+        if level is None:
+            header = format_header(text)
+        else:
+            header = format_header(text, level=level)
         assert header is not None
-        assert header.style is not None
-
-    def test_format_header_level_2(self):
-        """Test level 2 header formatting."""
-        header = format_header("Subtitle", level=2)
-        assert header is not None
-        assert header.style is not None
-
-    def test_format_header_level_3(self):
-        """Test level 3 header formatting."""
-        header = format_header("Small", level=3)
-        assert header is not None
-        assert header.style is not None
-
-    def test_format_header_default_level(self):
-        """Test header with default level."""
-        header = format_header("Default")
-        assert header is not None
-
-    def test_format_header_empty_text(self):
-        """Test header with empty text."""
-        header = format_header("")
-        assert header is not None
-
-    def test_format_header_special_characters(self):
-        """Test header with special characters."""
-        header = format_header("Title: Special (123) [Test]")
-        assert header is not None
+        assert header.style is not None or text == ""
 
 
 class TestFormatterIntegration:
