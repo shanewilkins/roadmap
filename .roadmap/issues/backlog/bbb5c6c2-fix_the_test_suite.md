@@ -1,22 +1,22 @@
 ---
-id: 0b4a88eb
-title: 'Phase 1: Config System (User + Project)'
+id: bbb5c6c2
+title: fix_the_test_suite
 priority: critical
-status: todo
-issue_type: feature
-milestone: ''
+status: closed
+issue_type: other
+milestone: v080
 labels: []
 github_issue: null
-created: '2025-12-25T14:55:08.265846+00:00'
-updated: '2025-12-25T14:55:08.265851+00:00'
+created: '2025-12-23T22:08:47.964369+00:00'
+updated: '2025-12-25T19:51:02.296837+00:00'
 assignee: shanewilkins
-estimated_hours: null
+estimated_hours: 6.0
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Phase 1: Config System (User + Project)
+# fix_the_test_suite
 
 ## Description
 

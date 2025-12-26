@@ -124,3 +124,17 @@ class IssueCoordinator:
         return self._ops.batch_assign_to_milestone(
             issue_ids, milestone_name, preloaded_issues
         )
+
+    def get_similar_milestone_names(
+        self, milestone_name: str, max_results: int = 3
+    ) -> list[str]:
+        """Find milestone names similar to the given name.
+
+        Args:
+            milestone_name: The milestone name to find similar matches for
+            max_results: Maximum number of suggestions to return
+
+        Returns:
+            List of similar milestone names found
+        """
+        return self._ops.get_similar_milestone_names(milestone_name, max_results)

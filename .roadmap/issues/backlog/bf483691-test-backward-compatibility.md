@@ -4,7 +4,7 @@ title: Test backward compatibility
 priority: medium
 status: todo
 issue_type: other
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: 27
 created: '2025-10-12T11:36:21.441984+00:00'

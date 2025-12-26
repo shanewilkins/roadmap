@@ -4,7 +4,7 @@ title: test issue to validate sync
 priority: medium
 status: todo
 issue_type: other
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: 5
 created: '2025-10-11T20:01:37.243267+00:00'

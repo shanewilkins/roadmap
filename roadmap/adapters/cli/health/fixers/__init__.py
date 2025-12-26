@@ -6,4 +6,5 @@ Available fixers:
 - OrphanedIssuesFixer: Assign unassigned issues to Backlog
 - FolderStructureFixer: Move issues to correct milestone folders
 - CorruptedCommentsFixer: Sanitize malformed JSON comments
+- DataIntegrityFixer: Remove malformed issue files
 """

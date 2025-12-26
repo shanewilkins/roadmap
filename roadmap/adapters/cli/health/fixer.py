@@ -180,11 +180,23 @@ class HealthFixOrchestrator:
         from roadmap.adapters.cli.health.fixers.corrupted_comments_fixer import (
             CorruptedCommentsFixer,
         )
+        from roadmap.adapters.cli.health.fixers.data_integrity_fixer import (
+            DataIntegrityFixer,
+        )
         from roadmap.adapters.cli.health.fixers.duplicate_issues_fixer import (
             DuplicateIssuesFixer,
         )
         from roadmap.adapters.cli.health.fixers.folder_structure_fixer import (
             FolderStructureFixer,
+        )
+        from roadmap.adapters.cli.health.fixers.milestone_name_normalization_fixer import (
+            MilestoneNameNormalizationFixer,
+        )
+        from roadmap.adapters.cli.health.fixers.milestone_naming_compliance_fixer import (
+            MilestoneNamingComplianceFixer,
+        )
+        from roadmap.adapters.cli.health.fixers.milestone_validation_fixer import (
+            MilestoneValidationFixer,
         )
         from roadmap.adapters.cli.health.fixers.old_backups_fixer import (
             OldBackupsFixer,
@@ -199,6 +211,10 @@ class HealthFixOrchestrator:
             OrphanedIssuesFixer(self.core),
             FolderStructureFixer(self.core),
             CorruptedCommentsFixer(self.core),
+            DataIntegrityFixer(self.core),
+            MilestoneNameNormalizationFixer(self.core),
+            MilestoneNamingComplianceFixer(self.core),
+            MilestoneValidationFixer(self.core),
         ]
 
         for fixer in fixers:

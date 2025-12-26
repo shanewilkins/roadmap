@@ -4,11 +4,11 @@ title: Complete comprehensive API documentation and freeze API design
 priority: high
 status: closed
 issue_type: other
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: 20
 created: '2025-10-14T15:46:25.762446+00:00'
-updated: '2025-12-21T20:48:12.510012+00:00'
+updated: '2025-12-25T19:51:02.420683+00:00'
 assignee: shanewilkins
 estimated_hours: 40.0
 due_date: null

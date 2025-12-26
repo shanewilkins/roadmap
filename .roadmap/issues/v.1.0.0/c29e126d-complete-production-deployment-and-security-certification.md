@@ -4,7 +4,7 @@ title: Complete production deployment and security certification
 priority: high
 status: todo
 issue_type: other
-milestone: v.1.0.0
+milestone: v100
 labels: []
 github_issue: 21
 created: '2025-10-14T15:46:46.825403+00:00'

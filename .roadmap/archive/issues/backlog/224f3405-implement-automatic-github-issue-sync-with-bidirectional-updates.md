@@ -4,11 +4,11 @@ title: Implement automatic GitHub issue sync with bidirectional updates
 priority: medium
 status: closed
 issue_type: feature
-milestone: '0.9'
+milestone: backlog
 labels: []
 github_issue: null
 created: '2025-12-20T20:47:49.863886+00:00'
-updated: '2025-12-21T20:51:20.068496+00:00'
+updated: '2025-12-25T19:51:02.988571+00:00'
 assignee: shane
 estimated_hours: null
 due_date: null

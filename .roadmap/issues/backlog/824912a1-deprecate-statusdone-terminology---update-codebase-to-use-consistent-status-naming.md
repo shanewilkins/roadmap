@@ -5,11 +5,11 @@ title: Deprecate Status.DONE terminology - update codebase to use consistent sta
 priority: high
 status: closed
 issue_type: other
-milestone: v0.8.0
+milestone: v080
 labels: []
 github_issue: null
 created: '2025-12-21T21:33:17.836668+00:00'
-updated: '2025-12-23T15:25:01.590955+00:00'
+updated: '2025-12-25T19:51:02.748544+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

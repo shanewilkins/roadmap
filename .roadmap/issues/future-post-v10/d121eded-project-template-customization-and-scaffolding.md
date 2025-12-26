@@ -4,7 +4,7 @@ title: Project template customization and scaffolding
 priority: medium
 status: todo
 issue_type: other
-milestone: Future (Post-v1.0)
+milestone: future-post-v10
 labels: []
 github_issue: 35
 created: '2025-10-14T14:18:34.926585+00:00'

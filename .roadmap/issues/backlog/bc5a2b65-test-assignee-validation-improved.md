@@ -4,7 +4,7 @@ title: Test assignee validation improved
 priority: low
 status: todo
 issue_type: other
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: 34
 created: '2025-10-13T10:03:56.725073+00:00'

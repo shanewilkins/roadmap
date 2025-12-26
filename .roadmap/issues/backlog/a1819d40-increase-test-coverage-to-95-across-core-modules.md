@@ -1,23 +1,23 @@
 ---
-id: ab2ad1b4
-title: Cross-platform compatibility testing (macOS, Linux, Windows)
+id: a1819d40
+title: Increase test coverage to 95% across core modules
 priority: high
-status: todo
+status: closed
 issue_type: feature
-milestone: '0.9'
+milestone: v080
 labels:
-- testing,compatibility
+- testing,quality
 github_issue: null
-created: '2025-12-20T18:33:28.214417+00:00'
-updated: '2025-12-23T15:17:06.534813+00:00'
+created: '2025-12-20T18:33:26.293890+00:00'
+updated: '2025-12-25T19:51:02.502681+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-12-22T07:54:47.450881+00:00'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -27,7 +27,7 @@ completed_date: null
 comments: []
 ---
 
-# Cross-platform compatibility testing (macOS, Linux, Windows)
+# Increase test coverage to 95% across core modules
 
 ## Description
 

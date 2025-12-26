@@ -1,15 +1,15 @@
 ---
-id: 3e272c78
-title: Optimize CLI startup time and command execution speed
+id: ab2ad1b4
+title: Cross-platform compatibility testing (macOS, Linux, Windows)
 priority: high
 status: todo
 issue_type: feature
-milestone: '0.9'
+milestone: backlog
 labels:
-- performance,optimization
+- testing,compatibility
 github_issue: null
-created: '2025-12-20T18:33:30.145223+00:00'
-updated: '2025-12-23T15:17:05.060191+00:00'
+created: '2025-12-20T18:33:28.214417+00:00'
+updated: '2025-12-25T19:51:02.568130+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ completed_date: null
 comments: []
 ---
 
-# Optimize CLI startup time and command execution speed
+# Cross-platform compatibility testing (macOS, Linux, Windows)
 
 ## Description
 

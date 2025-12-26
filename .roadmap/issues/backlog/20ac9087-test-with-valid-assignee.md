@@ -4,7 +4,7 @@ title: Test with valid assignee
 priority: low
 status: todo
 issue_type: other
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: 36
 created: '2025-10-13T10:04:07.293002+00:00'

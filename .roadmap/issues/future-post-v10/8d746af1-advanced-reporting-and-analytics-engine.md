@@ -4,7 +4,7 @@ title: Advanced reporting and analytics engine
 priority: medium
 status: todo
 issue_type: other
-milestone: Future (Post-v1.0)
+milestone: future-post-v10
 labels: []
 github_issue: 28
 created: '2025-10-14T14:18:13.540775+00:00'

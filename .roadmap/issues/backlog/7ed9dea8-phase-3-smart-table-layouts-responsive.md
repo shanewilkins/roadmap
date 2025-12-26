@@ -4,11 +4,11 @@ title: 'Phase 3: Smart Table Layouts (Responsive)'
 priority: high
 status: todo
 issue_type: feature
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: null
 created: '2025-12-25T14:55:55.755344+00:00'
-updated: '2025-12-25T14:55:55.755349+00:00'
+updated: '2025-12-25T19:51:02.908470+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

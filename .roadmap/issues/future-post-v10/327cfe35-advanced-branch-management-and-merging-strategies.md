@@ -4,7 +4,7 @@ title: Advanced branch management and merging strategies
 priority: medium
 status: todo
 issue_type: other
-milestone: Future (Post-v1.0)
+milestone: future-post-v10
 labels: []
 github_issue: 29
 created: '2025-10-14T14:17:51.110415+00:00'

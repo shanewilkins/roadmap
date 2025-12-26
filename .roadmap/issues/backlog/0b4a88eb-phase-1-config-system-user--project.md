@@ -1,14 +1,14 @@
 ---
-id: be1245fc
-title: add_id_to_success_msg_after_issue_creation
-priority: medium
+id: 0b4a88eb
+title: 'Phase 1: Config System (User + Project)'
+priority: critical
 status: todo
-issue_type: other
-milestone: ''
+issue_type: feature
+milestone: backlog
 labels: []
 github_issue: null
-created: '2025-12-23T23:42:51.672668+00:00'
-updated: '2025-12-23T23:42:51.672671+00:00'
+created: '2025-12-25T14:55:08.265846+00:00'
+updated: '2025-12-25T19:51:02.336670+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# add_id_to_success_msg_after_issue_creation
+# Phase 1: Config System (User + Project)
 
 ## Description
 

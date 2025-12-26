@@ -1,23 +1,22 @@
 ---
-id: a1819d40
-title: Increase test coverage to 95% across core modules
-priority: high
-status: closed
-issue_type: feature
-milestone: v.0.8.0
-labels:
-- testing,quality
+id: be1245fc
+title: add_id_to_success_msg_after_issue_creation
+priority: medium
+status: todo
+issue_type: other
+milestone: backlog
+labels: []
 github_issue: null
-created: '2025-12-20T18:33:26.293890+00:00'
-updated: '2025-12-22T21:43:49.248298+00:00'
+created: '2025-12-23T23:42:51.672668+00:00'
+updated: '2025-12-25T19:51:03.028154+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-22T07:54:47.450881+00:00'
+actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -27,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Increase test coverage to 95% across core modules
+# add_id_to_success_msg_after_issue_creation
 
 ## Description
 

@@ -1,23 +1,22 @@
 ---
-id: ef9d7996
-title: Add description and comment history support to entities
+id: c30f9a12
+title: 'Phase 6: End-to-End Tests'
 priority: high
-status: closed
+status: todo
 issue_type: feature
-milestone: v.0.8.0
-labels:
-- feature,documentation
+milestone: backlog
+labels: []
 github_issue: null
-created: '2025-12-20T18:33:21.199800+00:00'
-updated: '2025-12-20T19:08:02.753452+00:00'
+created: '2025-12-25T14:55:48.000595+00:00'
+updated: '2025-12-25T19:51:02.868521+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-20T12:34:19.141754+00:00'
+actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -27,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Add description and comment history support to entities
+# Phase 6: End-to-End Tests
 
 ## Description
 

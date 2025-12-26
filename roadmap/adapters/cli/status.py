@@ -156,6 +156,9 @@ def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) 
             "orphaned_issues",
             "folder_structure",
             "corrupted_comments",
+            "milestone_name_normalization",
+            "milestone_naming_compliance",
+            "milestone_validation",
         ],
         case_sensitive=False,
     ),
@@ -165,8 +168,8 @@ def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) 
 @click.option(
     "--dry-run",
     is_flag=True,
-    default=True,
-    help="Preview changes without applying (default: enabled)",
+    default=False,
+    help="Preview changes without applying (default: disabled)",
 )
 @click.option(
     "--force",
@@ -186,13 +189,14 @@ def fix_health(
 ) -> None:
     """Apply automatic fixes for health issues.
 
-    By default, runs in dry-run mode to preview changes without applying them.
-    Use --no-dry-run to actually apply fixes (or just don't use --dry-run).
+    By default, applies safe fixes automatically. Use --dry-run to preview changes
+    without applying them.
 
     Examples:
+      roadmap health fix                        # Apply all safe fixes
+      roadmap health fix --fix-type old_backups # Apply backup cleanup
       roadmap health fix --dry-run              # Preview all fixes
       roadmap health fix --fix-type old_backups --dry-run  # Preview backups
-      roadmap health fix --fix-type old_backups            # Apply backup cleanup
       roadmap health fix --force                # Apply all fixes without prompts
     """
     log = logger.bind(operation="health_fix")

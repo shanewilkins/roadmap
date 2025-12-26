@@ -1,20 +1,21 @@
 ---
-id: bbb5c6c2
-title: fix_the_test_suite
-priority: critical
+id: ef9d7996
+title: Add description and comment history support to entities
+priority: high
 status: closed
-issue_type: other
-milestone: v.0.8.0
-labels: []
+issue_type: feature
+milestone: v080
+labels:
+- feature,documentation
 github_issue: null
-created: '2025-12-23T22:08:47.964369+00:00'
-updated: '2025-12-23T23:42:16.189505+00:00'
+created: '2025-12-20T18:33:21.199800+00:00'
+updated: '2025-12-25T19:51:02.482234+00:00'
 assignee: shanewilkins
-estimated_hours: 6.0
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-12-20T12:34:19.141754+00:00'
 actual_end_date: null
 progress_percentage: 100.0
 handoff_notes: null
@@ -26,7 +27,7 @@ completed_date: null
 comments: []
 ---
 
-# fix_the_test_suite
+# Add description and comment history support to entities
 
 ## Description
 

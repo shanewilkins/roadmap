@@ -4,7 +4,7 @@ title: Test sync validation fix without assignee
 priority: medium
 status: todo
 issue_type: other
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: 37
 created: '2025-10-14T16:35:14.078582+00:00'

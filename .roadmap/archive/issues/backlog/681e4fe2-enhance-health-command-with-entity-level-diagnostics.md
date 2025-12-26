@@ -4,11 +4,11 @@ title: Enhance health command with entity-level diagnostics
 priority: high
 status: closed
 issue_type: feature
-milestone: '0.8'
+milestone: backlog
 labels: []
 github_issue: null
 created: '2025-12-20T19:32:19.562077+00:00'
-updated: '2025-12-20T20:27:51.963471+00:00'
+updated: '2025-12-25T19:51:02.688469+00:00'
 assignee: shane
 estimated_hours: null
 due_date: null

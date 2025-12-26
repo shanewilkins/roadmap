@@ -1,15 +1,14 @@
 ---
-id: 99fc3ef6
-title: Create production deployment and operations guide
+id: da7e9f68
+title: 'Phase 5: Health Fix Command'
 priority: high
 status: todo
 issue_type: feature
-milestone: '0.9'
-labels:
-- documentation,deployment
+milestone: backlog
+labels: []
 github_issue: null
-created: '2025-12-20T18:33:29.195197+00:00'
-updated: '2025-12-23T15:17:03.898970+00:00'
+created: '2025-12-25T14:55:32.928132+00:00'
+updated: '2025-12-25T19:51:02.827775+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -27,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Create production deployment and operations guide
+# Phase 5: Health Fix Command
 
 ## Description
 

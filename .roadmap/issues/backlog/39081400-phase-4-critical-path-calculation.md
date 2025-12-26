@@ -1,14 +1,14 @@
 ---
-id: da7e9f68
-title: 'Phase 5: Health Fix Command'
+id: '39081400'
+title: 'Phase 4: Critical Path Calculation'
 priority: high
 status: todo
 issue_type: feature
-milestone: ''
+milestone: backlog
 labels: []
 github_issue: null
-created: '2025-12-25T14:55:32.928132+00:00'
-updated: '2025-12-25T14:55:32.928136+00:00'
+created: '2025-12-25T14:55:57.681537+00:00'
+updated: '2025-12-25T19:51:02.948408+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Phase 5: Health Fix Command
+# Phase 4: Critical Path Calculation
 
 ## Description
 

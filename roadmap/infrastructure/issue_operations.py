@@ -11,6 +11,7 @@ Responsibilities:
 - Issue movement between milestones
 """
 
+from difflib import get_close_matches
 from pathlib import Path
 
 from roadmap.adapters.persistence.parser import IssueParser
@@ -409,3 +410,29 @@ class IssueOperations:
             self._milestone_cache.clear()
 
         return successful, failed
+
+    def get_similar_milestone_names(
+        self, milestone_name: str, max_results: int = 3
+    ) -> list[str]:
+        """Find milestone names similar to the given name.
+
+        Useful for suggesting corrections when a user typos a milestone name.
+
+        Args:
+            milestone_name: The milestone name to find similar matches for
+            max_results: Maximum number of suggestions to return
+
+        Returns:
+            List of similar milestone names found
+        """
+        # Get all available milestone names
+        milestones_dir = self.issues_dir.parent / "milestones"
+        if not milestones_dir.exists():
+            return []
+
+        available_milestones = [f.stem for f in milestones_dir.glob("*.md")]
+
+        # Find close matches
+        return get_close_matches(
+            milestone_name, available_milestones, n=max_results, cutoff=0.6
+        )

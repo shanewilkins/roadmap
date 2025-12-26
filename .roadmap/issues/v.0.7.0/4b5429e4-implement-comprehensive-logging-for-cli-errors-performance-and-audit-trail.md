@@ -4,7 +4,7 @@ title: Implement comprehensive logging for CLI, errors, performance, and audit t
 priority: high
 status: closed
 issue_type: feature
-milestone: v.0.7.0
+milestone: v070
 labels: []
 github_issue: null
 created: '2025-11-25T20:27:37.972236+00:00'
