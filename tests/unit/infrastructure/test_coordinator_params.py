@@ -131,143 +131,232 @@ class TestIssueCreateParams:
 class TestIssueListParams:
     """Test IssueListParams dataclass."""
 
-    def test_create_with_defaults(self):
-        """Test creating IssueListParams with defaults."""
-        params = IssueListParams()
-        assert params.milestone is None
-        assert params.status is None
-        assert params.priority is None
-        assert params.issue_type is None
-        assert params.assignee is None
-
-    def test_create_with_filters(self):
-        """Test creating IssueListParams with filters."""
-        params = IssueListParams(
-            milestone="v1.0",
-            status="open",
-            priority=Priority.HIGH,
-            issue_type=IssueType.BUG,
-            assignee="john@example.com",
-        )
-        assert params.milestone == "v1.0"
-        assert params.status == "open"
-        assert params.priority == Priority.HIGH
-        assert params.issue_type == IssueType.BUG
-        assert params.assignee == "john@example.com"
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            # Defaults
+            (
+                {},
+                {
+                    "milestone": None,
+                    "status": None,
+                    "priority": None,
+                    "issue_type": None,
+                    "assignee": None,
+                },
+            ),
+            # All filters
+            (
+                {
+                    "milestone": "v1.0",
+                    "status": "open",
+                    "priority": Priority.HIGH,
+                    "issue_type": IssueType.BUG,
+                    "assignee": "john@example.com",
+                },
+                {
+                    "milestone": "v1.0",
+                    "status": "open",
+                    "priority": Priority.HIGH,
+                    "issue_type": IssueType.BUG,
+                    "assignee": "john@example.com",
+                },
+            ),
+        ],
+    )
+    def test_list_issue_params(self, kwargs, expected):
+        """Test IssueListParams with various filter combinations."""
+        params = IssueListParams(**kwargs)
+        for attr, expected_value in expected.items():
+            assert getattr(params, attr) == expected_value
 
 
 class TestIssueUpdateParams:
     """Test IssueUpdateParams dataclass."""
 
-    def test_create_with_defaults(self):
-        """Test creating IssueUpdateParams with defaults."""
-        params = IssueUpdateParams(issue_id="issue-1")
-        assert params.issue_id == "issue-1"
-        assert params.updates == {}
-
-    def test_create_with_updates(self):
-        """Test creating IssueUpdateParams with updates."""
-        updates = {"status": "done", "priority": Priority.LOW}
-        params = IssueUpdateParams(issue_id="issue-1", updates=updates)
-        assert params.issue_id == "issue-1"
-        assert params.updates == updates
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            # Defaults (only issue_id)
+            (
+                {"issue_id": "issue-1"},
+                {"issue_id": "issue-1", "updates": {}},
+            ),
+            # With updates
+            (
+                {
+                    "issue_id": "issue-1",
+                    "updates": {"status": "done", "priority": Priority.LOW},
+                },
+                {
+                    "issue_id": "issue-1",
+                    "updates": {"status": "done", "priority": Priority.LOW},
+                },
+            ),
+        ],
+    )
+    def test_update_issue_params(self, kwargs, expected):
+        """Test IssueUpdateParams with various update combinations."""
+        params = IssueUpdateParams(**kwargs)
+        for attr, expected_value in expected.items():
+            assert getattr(params, attr) == expected_value
 
 
 class TestMilestoneCreateParams:
     """Test MilestoneCreateParams dataclass."""
 
-    def test_create_with_defaults(self):
-        """Test creating MilestoneCreateParams with defaults."""
-        params = MilestoneCreateParams(name="v1.0")
-        assert params.name == "v1.0"
-        assert params.description == ""
-        assert params.due_date is None
-
-    def test_create_with_all_fields(self):
-        """Test creating MilestoneCreateParams with all fields."""
-        due_date = datetime(2025, 12, 31)
-        params = MilestoneCreateParams(
-            name="v1.0",
-            description="Release version 1.0",
-            due_date=due_date,
-        )
-        assert params.name == "v1.0"
-        assert params.description == "Release version 1.0"
-        assert params.due_date == due_date
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            # Defaults
+            (
+                {"name": "v1.0"},
+                {"name": "v1.0", "description": "", "due_date": None},
+            ),
+            # All fields
+            (
+                {
+                    "name": "v1.0",
+                    "description": "Release version 1.0",
+                    "due_date": datetime(2025, 12, 31),
+                },
+                {
+                    "name": "v1.0",
+                    "description": "Release version 1.0",
+                    "due_date": datetime(2025, 12, 31),
+                },
+            ),
+        ],
+    )
+    def test_create_milestone_params(self, kwargs, expected):
+        """Test MilestoneCreateParams with various field combinations."""
+        params = MilestoneCreateParams(**kwargs)
+        for attr, expected_value in expected.items():
+            assert getattr(params, attr) == expected_value
 
 
 class TestMilestoneUpdateParams:
     """Test MilestoneUpdateParams dataclass."""
 
-    def test_create_with_defaults(self):
-        """Test creating MilestoneUpdateParams with defaults."""
-        params = MilestoneUpdateParams(name="v1.0")
-        assert params.name == "v1.0"
-        assert params.description is None
-        assert params.due_date is None
-        assert not params.clear_due_date
-        assert params.status is None
-
-    def test_create_with_all_fields(self):
-        """Test creating MilestoneUpdateParams with all fields."""
-        due_date = datetime(2025, 12, 31)
-        params = MilestoneUpdateParams(
-            name="v1.0",
-            description="Updated description",
-            due_date=due_date,
-            clear_due_date=False,
-            status="completed",
-        )
-        assert params.name == "v1.0"
-        assert params.description == "Updated description"
-        assert params.due_date == due_date
-        assert not params.clear_due_date
-        assert params.status == "completed"
-
-    def test_clear_due_date(self):
-        """Test creating MilestoneUpdateParams with clear_due_date."""
-        params = MilestoneUpdateParams(
-            name="v1.0",
-            clear_due_date=True,
-        )
-        assert params.clear_due_date
-        assert params.due_date is None
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            # Defaults
+            (
+                {"name": "v1.0"},
+                {
+                    "name": "v1.0",
+                    "description": None,
+                    "due_date": None,
+                    "clear_due_date": False,
+                    "status": None,
+                },
+            ),
+            # All fields
+            (
+                {
+                    "name": "v1.0",
+                    "description": "Updated description",
+                    "due_date": datetime(2025, 12, 31),
+                    "clear_due_date": False,
+                    "status": "completed",
+                },
+                {
+                    "name": "v1.0",
+                    "description": "Updated description",
+                    "due_date": datetime(2025, 12, 31),
+                    "clear_due_date": False,
+                    "status": "completed",
+                },
+            ),
+            # Clear due date
+            (
+                {
+                    "name": "v1.0",
+                    "clear_due_date": True,
+                },
+                {
+                    "name": "v1.0",
+                    "clear_due_date": True,
+                    "due_date": None,
+                    "description": None,
+                    "status": None,
+                },
+            ),
+        ],
+    )
+    def test_update_milestone_params(self, kwargs, expected):
+        """Test MilestoneUpdateParams with various field combinations."""
+        params = MilestoneUpdateParams(**kwargs)
+        for attr, expected_value in expected.items():
+            assert getattr(params, attr) == expected_value
 
 
 class TestProjectCreateParams:
     """Test ProjectCreateParams dataclass."""
 
-    def test_create_with_defaults(self):
-        """Test creating ProjectCreateParams with defaults."""
-        params = ProjectCreateParams(name="My Project")
-        assert params.name == "My Project"
-        assert params.description == ""
-        assert params.milestones is None
-
-    def test_create_with_all_fields(self):
-        """Test creating ProjectCreateParams with all fields."""
-        params = ProjectCreateParams(
-            name="My Project",
-            description="Project description",
-            milestones=["v1.0", "v1.1"],
-        )
-        assert params.name == "My Project"
-        assert params.description == "Project description"
-        assert params.milestones == ["v1.0", "v1.1"]
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            # Defaults
+            (
+                {"name": "My Project"},
+                {"name": "My Project", "description": "", "milestones": None},
+            ),
+            # All fields
+            (
+                {
+                    "name": "My Project",
+                    "description": "Project description",
+                    "milestones": ["v1.0", "v1.1"],
+                },
+                {
+                    "name": "My Project",
+                    "description": "Project description",
+                    "milestones": ["v1.0", "v1.1"],
+                },
+            ),
+        ],
+    )
+    def test_create_project_params(self, kwargs, expected):
+        """Test ProjectCreateParams with various field combinations."""
+        params = ProjectCreateParams(**kwargs)
+        for attr, expected_value in expected.items():
+            assert getattr(params, attr) == expected_value
 
 
 class TestProjectUpdateParams:
     """Test ProjectUpdateParams dataclass."""
 
-    def test_create_with_defaults(self):
-        """Test creating ProjectUpdateParams with defaults."""
-        params = ProjectUpdateParams(project_id="proj-1")
-        assert params.project_id == "proj-1"
-        assert params.updates == {}
-
-    def test_create_with_updates(self):
-        """Test creating ProjectUpdateParams with updates."""
-        updates = {"name": "Updated Project", "description": "New description"}
-        params = ProjectUpdateParams(project_id="proj-1", updates=updates)
-        assert params.project_id == "proj-1"
-        assert params.updates == updates
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            # Defaults
+            (
+                {"project_id": "proj-1"},
+                {"project_id": "proj-1", "updates": {}},
+            ),
+            # With updates
+            (
+                {
+                    "project_id": "proj-1",
+                    "updates": {
+                        "name": "Updated Project",
+                        "description": "New description",
+                    },
+                },
+                {
+                    "project_id": "proj-1",
+                    "updates": {
+                        "name": "Updated Project",
+                        "description": "New description",
+                    },
+                },
+            ),
+        ],
+    )
+    def test_update_project_params(self, kwargs, expected):
+        """Test ProjectUpdateParams with various update combinations."""
+        params = ProjectUpdateParams(**kwargs)
+        for attr, expected_value in expected.items():
+            assert getattr(params, attr) == expected_value
