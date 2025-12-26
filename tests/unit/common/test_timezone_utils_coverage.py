@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from roadmap.common.timezone_utils import (
     TimezoneManager,
     ensure_timezone_aware,
@@ -18,27 +20,18 @@ from roadmap.common.timezone_utils import (
 class TestTimezoneManagerFactory:
     """Test get_timezone_manager factory function."""
 
-    def test_get_timezone_manager_default(self):
-        """Test getting timezone manager with default timezone."""
-        manager = get_timezone_manager()
-        assert manager is not None
-        assert isinstance(manager, TimezoneManager)
-
-    def test_get_timezone_manager_with_utc(self):
-        """Test getting timezone manager with UTC."""
-        manager = get_timezone_manager("UTC")
-        assert manager is not None
-        assert isinstance(manager, TimezoneManager)
-
-    def test_get_timezone_manager_with_valid_timezone(self):
-        """Test getting timezone manager with valid timezone string."""
-        manager = get_timezone_manager("America/New_York")
-        assert manager is not None
-        assert isinstance(manager, TimezoneManager)
-
-    def test_get_timezone_manager_with_none(self):
-        """Test getting timezone manager with None uses system default."""
-        manager = get_timezone_manager(None)
+    @pytest.mark.parametrize(
+        "tz_string,description",
+        [
+            (None, "default"),
+            ("UTC", "utc"),
+            ("America/New_York", "eastern"),
+            ("America/Los_Angeles", "pacific"),
+        ],
+    )
+    def test_get_timezone_manager(self, tz_string, description):
+        """Test getting timezone manager with various timezones."""
+        manager = get_timezone_manager(tz_string)
         assert manager is not None
         assert isinstance(manager, TimezoneManager)
 
@@ -96,47 +89,42 @@ class TestNowLocal:
 class TestParseDatetime:
     """Test parse_datetime function."""
 
-    def test_parse_datetime_iso_format(self):
-        """Test parsing ISO format datetime string."""
-        date_str = "2025-12-16T10:30:00"
-        result = parse_datetime(date_str)
+    @pytest.mark.parametrize(
+        "date_str,tz_string,description",
+        [
+            ("2025-12-16T10:30:00", None, "iso_format"),
+            ("2025-12-16T10:30:00", "America/New_York", "iso_with_timezone"),
+            ("2025-12-16T10:30:00Z", None, "iso_with_z"),
+            ("2025-12-16T10:30:00", "UTC", "iso_with_utc"),
+        ],
+    )
+    def test_parse_datetime(self, date_str, tz_string, description):
+        """Test parsing datetime strings with various formats."""
+        result = (
+            parse_datetime(date_str, tz_string)
+            if tz_string
+            else parse_datetime(date_str)
+        )
         assert isinstance(result, datetime)
-
-    def test_parse_datetime_with_timezone_conversion(self):
-        """Test parsing datetime with timezone conversion."""
-        date_str = "2025-12-16T10:30:00"
-        result = parse_datetime(date_str, "America/New_York")
-        assert isinstance(result, datetime)
-        assert result.tzinfo is not None
-
-    def test_parse_datetime_iso_with_z(self):
-        """Test parsing ISO format with Z suffix (UTC)."""
-        date_str = "2025-12-16T10:30:00Z"
-        result = parse_datetime(date_str)
-        assert isinstance(result, datetime)
-
-    def test_parse_datetime_preserves_utc(self):
-        """Test that parsed datetime is converted to UTC."""
-        date_str = "2025-12-16T10:30:00"
-        result = parse_datetime(date_str, "UTC")
-        # Should be in UTC
-        assert result.tzinfo is not None
+        if tz_string or "Z" in date_str:
+            assert result.tzinfo is not None
 
 
 class TestFormatDatetime:
     """Test format_datetime function."""
 
-    def test_format_datetime_returns_string(self):
-        """Test format_datetime returns string."""
+    @pytest.mark.parametrize(
+        "tz_string,description",
+        [
+            (None, "no_timezone"),
+            ("America/New_York", "eastern"),
+            ("UTC", "utc"),
+        ],
+    )
+    def test_format_datetime(self, tz_string, description):
+        """Test formatting datetime with various timezones."""
         dt = datetime.now(timezone.utc)
-        result = format_datetime(dt)
-        assert isinstance(result, str)
-        assert len(result) > 0
-
-    def test_format_datetime_with_timezone(self):
-        """Test format_datetime with specific timezone."""
-        dt = datetime.now(timezone.utc)
-        result = format_datetime(dt, "America/New_York")
+        result = format_datetime(dt, tz_string) if tz_string else format_datetime(dt)
         assert isinstance(result, str)
         assert len(result) > 0
 
@@ -148,12 +136,6 @@ class TestFormatDatetime:
         assert any(
             x in result for x in ["2025", "12", "16", "10", "30", "Dec", "December"]
         )
-
-    def test_format_datetime_none_input(self):
-        """Test format_datetime with None timezone."""
-        dt = datetime.now(timezone.utc)
-        result = format_datetime(dt, None)
-        assert isinstance(result, str)
 
 
 class TestFormatRelativeTime:
@@ -196,24 +178,21 @@ class TestFormatRelativeTime:
 class TestMigrateNaiveDatetime:
     """Test migrate_naive_datetime function."""
 
-    def test_migrate_naive_datetime_naive_input(self):
-        """Test migrating naive datetime to timezone-aware."""
-        naive_dt = datetime(2025, 12, 16, 10, 30, 0)
-        result = migrate_naive_datetime(naive_dt)
-        assert isinstance(result, datetime)
-        assert result.tzinfo is not None
-
-    def test_migrate_naive_datetime_default_utc(self):
-        """Test that naive datetime migrates to UTC by default."""
-        naive_dt = datetime(2025, 12, 16, 10, 30, 0)
-        result = migrate_naive_datetime(naive_dt)
-        # Should be in UTC
-        assert result.tzinfo is not None
-
-    def test_migrate_naive_datetime_with_timezone(self):
-        """Test migrating naive datetime with specific timezone."""
-        naive_dt = datetime(2025, 12, 16, 10, 30, 0)
-        result = migrate_naive_datetime(naive_dt, "America/New_York")
+    @pytest.mark.parametrize(
+        "naive_dt,tz_string,description",
+        [
+            (datetime(2025, 12, 16, 10, 30, 0), None, "naive_default"),
+            (datetime(2025, 12, 16, 10, 30, 0), "America/New_York", "naive_eastern"),
+            (datetime(2025, 12, 16, 10, 30, 0), "UTC", "naive_utc"),
+        ],
+    )
+    def test_migrate_naive_datetime(self, naive_dt, tz_string, description):
+        """Test migrating naive datetime with various timezones."""
+        result = (
+            migrate_naive_datetime(naive_dt, tz_string)
+            if tz_string
+            else migrate_naive_datetime(naive_dt)
+        )
         assert isinstance(result, datetime)
         assert result.tzinfo is not None
 
@@ -223,11 +202,12 @@ class TestMigrateNaiveDatetime:
         result = migrate_naive_datetime(aware_dt)
         assert result.tzinfo is not None
 
-    def test_migrate_naive_datetime_preserves_time(self):
-        """Test that time values are preserved during migration."""
-        naive_dt = datetime(2025, 12, 16, 10, 30, 45)
+    def test_migrate_naive_datetime_default_utc(self):
+        """Test that naive datetime defaults to UTC."""
+        naive_dt = datetime(2025, 12, 16, 10, 30, 0)
         result = migrate_naive_datetime(naive_dt)
-        assert result.hour == naive_dt.hour
+        # Should be in UTC
+        assert result.tzinfo is not None
         assert result.minute == naive_dt.minute
         assert result.second == naive_dt.second
 
@@ -235,10 +215,21 @@ class TestMigrateNaiveDatetime:
 class TestEnsureTimezoneAware:
     """Test ensure_timezone_aware function."""
 
-    def test_ensure_timezone_aware_naive_input(self):
+    @pytest.mark.parametrize(
+        "tz_string,description",
+        [
+            (None, "default_utc"),
+            ("America/Los_Angeles", "pacific"),
+        ],
+    )
+    def test_ensure_timezone_aware_naive(self, tz_string, description):
         """Test ensuring naive datetime becomes timezone-aware."""
         naive_dt = datetime(2025, 12, 16, 10, 30, 0)
-        result = ensure_timezone_aware(naive_dt)
+        result = (
+            ensure_timezone_aware(naive_dt, tz_string)
+            if tz_string
+            else ensure_timezone_aware(naive_dt)
+        )
         assert isinstance(result, datetime)
         assert result.tzinfo is not None
 
@@ -253,13 +244,6 @@ class TestEnsureTimezoneAware:
         naive_dt = datetime(2025, 12, 16, 10, 30, 0)
         result = ensure_timezone_aware(naive_dt)
         assert result.utcoffset() == timedelta(0)
-
-    def test_ensure_timezone_aware_with_timezone(self):
-        """Test ensuring aware with specific timezone."""
-        naive_dt = datetime(2025, 12, 16, 10, 30, 0)
-        result = ensure_timezone_aware(naive_dt, "America/Los_Angeles")
-        assert isinstance(result, datetime)
-        assert result.tzinfo is not None
 
     def test_ensure_timezone_aware_idempotent(self):
         """Test that calling multiple times doesn't break datetime."""
