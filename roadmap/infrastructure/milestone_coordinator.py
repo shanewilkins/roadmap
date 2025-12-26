@@ -41,11 +41,15 @@ class MilestoneCoordinator:
 
     # CRUD Operations
     def create(
-        self, name: str, description: str = "", due_date: datetime | None = None
+        self,
+        name: str,
+        description: str = "",
+        due_date: datetime | None = None,
+        status: str | None = None,
     ) -> Milestone:
         """Create a new milestone."""
         return self._ops.create_milestone(
-            name=name, description=description, due_date=due_date
+            name=name, description=description, due_date=due_date, status=status
         )
 
     def list(self) -> list[Milestone]:

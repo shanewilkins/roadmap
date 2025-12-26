@@ -131,6 +131,7 @@ class ProjectService:
         name: str,
         description: str = "",
         milestones: list | None = None,
+        status: str | None = None,
     ) -> Project:
         """Create a new project.
 
@@ -138,6 +139,7 @@ class ProjectService:
             name: Project name
             description: Project description
             milestones: List of associated milestone names
+            status: Project status (optional)
 
         Returns:
             Newly created Project object
@@ -147,12 +149,18 @@ class ProjectService:
             "creating_project_start",
             project_name=name,
             milestones_count=len(milestones or []),
+            status=status,
         )
+
+        # Map status string to ProjectStatus enum if provided
+
+        project_status = status if status else "planning"
 
         project = Project(
             name=name,
             description=description,
             milestones=milestones or [],
+            status=project_status,
             content=f"# {name}\n\n## Description\n\n{description}\n\n## Overview\n\n- Status: Not Started\n- Priority: Medium",
         )
 

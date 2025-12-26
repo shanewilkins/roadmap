@@ -58,6 +58,7 @@ class MilestoneService:
         name: str,
         description: str = "",
         due_date: datetime | None = None,
+        status: str | None = None,
     ) -> Milestone:
         """Create a new milestone.
 
@@ -65,20 +66,35 @@ class MilestoneService:
             name: Milestone name/title
             description: Milestone description
             due_date: Target completion date
+            status: Milestone status (optional, defaults to OPEN)
 
         Returns:
             Newly created Milestone object
         """
-        log_entry("create_milestone", name=name, has_due_date=due_date is not None)
+        log_entry(
+            "create_milestone",
+            name=name,
+            has_due_date=due_date is not None,
+            status=status,
+        )
         logger.info(
-            "creating_milestone", milestone_name=name, has_due_date=due_date is not None
+            "creating_milestone",
+            milestone_name=name,
+            has_due_date=due_date is not None,
+            status=status,
         )
         log_event("milestone_creation_started", milestone_name=name)
+
+        # Map status string to MilestoneStatus enum if provided
+        from roadmap.common.constants import MilestoneStatus
+
+        milestone_status = MilestoneStatus(status) if status else MilestoneStatus.OPEN
 
         milestone = Milestone(
             name=name,
             description=description,
             due_date=due_date,
+            status=milestone_status,
             content=f"# {name}\n\n## Description\n\n{description}\n\n## Goals\n\n- [ ] Goal 1\n- [ ] Goal 2\n- [ ] Goal 3",
         )
 

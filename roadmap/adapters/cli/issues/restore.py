@@ -1,261 +1,14 @@
 """Restore issue command - move archived issues back to active."""
 
-from pathlib import Path
+import click
 
-import click  # type: ignore[import-untyped]
-
-from roadmap.adapters.cli.archive_utils import handle_restore_parse_error
-from roadmap.adapters.cli.cli_confirmations import confirm_action
-from roadmap.adapters.cli.cli_error_handlers import (
-    handle_cli_error,
-)
 from roadmap.adapters.cli.helpers import require_initialized
-from roadmap.adapters.persistence.parser import IssueParser
+from roadmap.adapters.cli.issues.restore_class import IssueRestore
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,
     verbose_output,
 )
-from roadmap.shared.formatters.text.operations import format_operation_success
-
-console = get_console()
-
-
-def _validate_restore_arguments(issue_id, all):
-    """Validate restore command arguments."""
-    if not issue_id and not all:
-        console.print(
-            "❌ Error: Specify an issue ID or use --all",
-            style="bold red",
-        )
-        return False
-
-    if issue_id and all:
-        console.print(
-            "❌ Error: Cannot specify issue ID with --all",
-            style="bold red",
-        )
-        return False
-
-    return True
-
-
-def _check_archive_exists(archive_dir):
-    """Check if archive directory exists."""
-    if not archive_dir.exists():
-        console.print("📋 No archived issues found.", style="yellow")
-        return False
-    return True
-
-
-def _get_archived_issues(archive_dir):
-    """Get list of archived issues with metadata."""
-    archived_files = list(archive_dir.glob("*.md"))
-    if not archived_files:
-        console.print("📋 No archived issues to restore.", style="yellow")
-        return None
-
-    issues_info = []
-    for file_path in archived_files:
-        try:
-            issue = IssueParser.parse_issue_file(file_path)
-            issues_info.append((file_path, issue.id, issue.title))
-        except Exception as e:
-            handle_restore_parse_error(
-                error=e,
-                entity_type="issue",
-                entity_id=file_path.stem,
-                archive_dir=str(archive_dir),
-                console=console,
-            )
-            continue
-
-    return issues_info if issues_info else None
-
-
-def _find_archived_issue(archive_dir, issue_id):
-    """Find archived issue file by partial ID."""
-    for file_path in archive_dir.glob(f"{issue_id[:8]}*.md"):  # type: ignore[index]
-        return file_path
-    return None
-
-
-def _parse_and_validate_issue(archive_file):
-    """Parse archived issue and return parsed object."""
-    try:
-        return IssueParser.parse_issue_file(archive_file)  # type: ignore[arg-type]
-    except Exception as e:
-        handle_cli_error(
-            error=e,
-            operation="parse_archived_issue",
-            entity_type="issue",
-            entity_id=archive_file.stem,
-            context={},
-            fatal=False,
-        )
-        console.print(f"❌ Failed to parse archived issue: {e}", style="bold red")
-        return None
-
-
-def _check_not_in_active(active_dir, archive_file):
-    """Check that issue doesn't already exist in active."""
-    dest_file = active_dir / archive_file.name
-    return not dest_file.exists()
-
-
-def _confirm_restore_all(issues_info, status, force):
-    """Confirm restore of all issues."""
-    if force:
-        return True
-
-    console.print(
-        f"\n⚠️  About to restore {len(issues_info)} archived issue(s):",
-        style="bold yellow",
-    )
-    for _, id, title in issues_info:
-        console.print(f"  • {id[:8]} - {title}", style="cyan")
-    if status:
-        console.print(f"\n  Status will be set to: {status}", style="yellow")
-
-    return confirm_action("\nProceed with restore?", default=False)
-
-
-def _restore_issue_file(core, archive_file, active_dir, issue_id, status):
-    """Restore a single issue file."""
-    dest_file = active_dir / archive_file.name
-
-    if status:
-        archive_file.rename(dest_file)
-        core.issues.update(issue_id, status=status)
-    else:
-        archive_file.rename(dest_file)
-
-    try:
-        core.db.mark_issue_archived(issue_id, archived=False)
-    except Exception as e:
-        handle_cli_error(
-            error=e,
-            operation="mark_issue_restored",
-            entity_type="issue",
-            entity_id=issue_id,
-            context={"dest_file": str(dest_file)},
-            fatal=False,
-        )
-        console.print(
-            f"⚠️  Warning: Failed to mark issue {issue_id} as restored: {e}",
-            style="yellow",
-        )
-
-
-def _restore_multiple_issues(
-    core, archive_dir, active_dir, issues_info, status, dry_run, force
-):
-    """Restore multiple archived issues."""
-    if dry_run:
-        console.print(
-            f"\n🔍 [DRY RUN] Would restore {len(issues_info)} issue(s):\n",
-            style="bold blue",
-        )
-        for _, id, title in issues_info:
-            console.print(f"  • {id[:8]} - {title}", style="cyan")
-        if status:
-            console.print(f"\n  Status would be set to: {status}", style="cyan")
-        return True
-
-    if not _confirm_restore_all(issues_info, status, force):
-        return False
-
-    active_dir.mkdir(parents=True, exist_ok=True)
-    restored_count = 0
-
-    for file_path, id, _title in issues_info:
-        if file_path.exists():
-            dest_file = active_dir / file_path.name
-            if dest_file.exists():
-                console.print(
-                    f"⚠️  Skipping {id[:8]} - already exists in active issues",
-                    style="yellow",
-                )
-                continue
-
-            _restore_issue_file(core, file_path, active_dir, id, status)
-            restored_count += 1
-
-    console.print(
-        f"✅ Restored {restored_count} issue(s) to .roadmap/issues/",
-        style="bold green",
-    )
-    if status:
-        console.print(f"   Status set to: {status}", style="green")
-
-    return True
-
-
-def _restore_single_issue(
-    core, archive_dir, active_dir, issue_id, status, dry_run, force
-):
-    """Restore a single archived issue."""
-    archive_file = _find_archived_issue(archive_dir, issue_id)
-    if not archive_file:
-        console.print(
-            f"❌ Archived issue '{issue_id}' not found.",
-            style="bold red",
-        )
-        return False
-
-    issue = _parse_and_validate_issue(archive_file)
-    if not issue:
-        return False
-
-    if not _check_not_in_active(active_dir, archive_file):
-        console.print(
-            f"❌ Issue '{issue_id}' already exists in active issues.",
-            style="bold red",
-        )
-        return False
-
-    if dry_run:
-        console.print(
-            f"\n🔍 [DRY RUN] Would restore issue: {issue.id[:8]} - {issue.title}",
-            style="bold blue",
-        )
-        console.print(
-            f"  Source: .roadmap/archive/issues/{archive_file.name}",
-            style="cyan",
-        )
-        console.print(
-            f"  Destination: .roadmap/issues/{archive_file.name}",
-            style="cyan",
-        )
-        if status:
-            console.print(f"  Status would be set to: {status}", style="cyan")
-        return True
-
-    msg = f"Restore issue '{issue.id[:8]} - {issue.title}'?"
-    if status:
-        msg += f" (status will be set to '{status}')"
-
-    if not force and not confirm_action(msg, default=False):
-        return False
-
-    active_dir.mkdir(parents=True, exist_ok=True)
-    _restore_issue_file(core, archive_file, active_dir, issue.id, status)
-
-    extra_details = {}
-    if status:
-        extra_details["Status"] = status
-
-    lines = format_operation_success(
-        emoji="✅",
-        action="Restored",
-        entity_title=issue.title,
-        entity_id=issue.id,
-        extra_details=extra_details if extra_details else None,
-    )
-    for line in lines:
-        console.print(line, style="bold green" if "Restored" in line else "cyan")
-
-    return True
 
 
 @click.command()
@@ -312,43 +65,32 @@ def restore_issue(
         roadmap issue restore 8a00a17e --dry-run
     """
     core = ctx.obj["core"]
+    console = get_console()
 
-    if not _validate_restore_arguments(issue_id, all):
+    restore = IssueRestore(core, console)
+
+    if not issue_id and not all:
+        console.print(
+            "❌ Error: Specify an issue ID or use --all",
+            style="bold red",
+        )
+        ctx.exit(1)
+
+    if issue_id and all:
+        console.print(
+            "❌ Error: Cannot specify issue ID with --all",
+            style="bold red",
+        )
         ctx.exit(1)
 
     try:
-        roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "issues"
-        active_dir = roadmap_dir / "issues"
-
-        if not _check_archive_exists(archive_dir):
-            return
-
-        if all:
-            issues_info = _get_archived_issues(archive_dir)
-            if not issues_info:
-                return
-
-            _restore_multiple_issues(
-                core, archive_dir, active_dir, issues_info, status, dry_run, force
-            )
-        else:
-            _restore_single_issue(
-                core, archive_dir, active_dir, issue_id, status, dry_run, force
-            )
-
-    except Exception as e:
-        handle_cli_error(
-            error=e,
-            operation="restore_issue",
-            entity_type="issue",
-            entity_id=issue_id or "archive",
-            context={
-                "all": all,
-                "status": status,
-                "dry_run": dry_run,
-                "force": force,
-            },
-            fatal=True,
+        restore.execute(
+            entity_id=issue_id,
+            all=all,
+            status=status,
+            dry_run=dry_run,
+            force=force,
         )
+    except Exception as e:
+        console.print(f"❌ Restore operation failed: {str(e)}", style="bold red")
         ctx.exit(1)

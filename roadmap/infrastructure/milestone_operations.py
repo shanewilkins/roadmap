@@ -34,7 +34,11 @@ class MilestoneOperations:
 
     @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
     def create_milestone(
-        self, name: str, description: str = "", due_date: datetime | None = None
+        self,
+        name: str,
+        description: str = "",
+        due_date: datetime | None = None,
+        status: str | None = None,
     ) -> Milestone:
         """Create a new milestone.
 
@@ -42,6 +46,7 @@ class MilestoneOperations:
             name: Milestone name
             description: Milestone description (optional)
             due_date: Due date for the milestone (optional)
+            status: Milestone status (optional, defaults to OPEN)
 
         Returns:
             Created Milestone object
@@ -51,9 +56,10 @@ class MilestoneOperations:
             milestone_name=name,
             has_description=description is not None,
             has_due_date=due_date is not None,
+            status=status,
         )
         return self.milestone_service.create_milestone(
-            name=name, description=description, due_date=due_date
+            name=name, description=description, due_date=due_date, status=status
         )
 
     @safe_operation(OperationType.READ, "Milestone")

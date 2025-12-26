@@ -55,6 +55,7 @@ class IssueOperations:
         estimated_hours: float | None = None,
         depends_on: list[str] | None = None,
         blocks: list[str] | None = None,
+        status: str | None = None,
     ) -> Issue:
         """Create a new issue.
 
@@ -68,6 +69,7 @@ class IssueOperations:
             estimated_hours: Estimated hours to complete (optional)
             depends_on: List of issue IDs this depends on (optional)
             blocks: List of issue IDs this blocks (optional)
+            status: Issue status (optional, defaults to TODO)
 
         Returns:
             Created Issue object
@@ -87,6 +89,7 @@ class IssueOperations:
             estimate=estimated_hours,
             depends_on=depends_on or [],
             blocks=blocks or [],
+            status=status or "todo",
         )
 
         result = self.issue_service.create_issue(params)

@@ -1,182 +1,23 @@
 """Archive project command - move completed projects to archive."""
 
-from pathlib import Path
+import click
 
-import click  # type: ignore[import-not-found]
-
-from roadmap.adapters.cli.archive_utils import handle_archive_parse_error
-from roadmap.adapters.cli.cli_confirmations import (
-    confirm_action,
-)
-from roadmap.adapters.cli.cli_error_handlers import (
-    handle_cli_error,
-)
 from roadmap.adapters.cli.helpers import require_initialized
-from roadmap.adapters.persistence.parser import ProjectParser
+from roadmap.adapters.cli.projects.archive_class import ProjectArchive
 from roadmap.common.console import get_console
-from roadmap.common.file_utils import ensure_directory_exists
 from roadmap.infrastructure.logging import (
     log_command,
     verbose_output,
 )
 
-console = get_console()
-
-
-def _handle_list_archived_projects(archive_dir: Path):
-    """List all archived projects and return True if handled."""
-    if not archive_dir.exists():
-        console.print("📋 No archived projects.", style="yellow")
-        return True
-
-    archived_files = list(archive_dir.glob("*.md"))
-    if not archived_files:
-        console.print("📋 No archived projects.", style="yellow")
-        return True
-
-    console.print("\n📦 Archived Projects:\n", style="bold blue")
-    for file_path in archived_files:
-        try:
-            project = ProjectParser.parse_project_file(file_path)
-            console.print(f"  • {project.name} ({project.status})", style="cyan")
-        except Exception as e:
-            handle_archive_parse_error(
-                error=e,
-                entity_type="project",
-                entity_id=file_path.stem,
-                archive_dir=str(archive_dir),
-                console=console,
-                extra_context={"stage": "listing"},
-            )
-    return True
-
-
-def _find_project_file(roadmap_dir: Path, project_name: str) -> Path | None:
-    """Find project file by name, searching through all .md files."""
-    for md_file in (roadmap_dir / "projects").rglob("*.md"):
-        try:
-            project = ProjectParser.parse_project_file(md_file)
-            if project.name == project_name:
-                return md_file
-        except Exception as e:
-            handle_cli_error(
-                error=e,
-                operation="find_project_file",
-                entity_id=md_file.stem,
-                context={
-                    "roadmap_dir": str(roadmap_dir),
-                    "target_project": project_name,
-                },
-                fatal=False,
-            )
-            continue
-    return None
-
-
-def _print_dry_run_preview(project_name: str):
-    """Print preview of what would be archived."""
-    console.print(
-        f"\n🔍 [DRY RUN] Would archive project: {project_name}",
-        style="bold blue",
-    )
-    console.print(
-        f"  Source: .roadmap/projects/{project_name}.md",
-        style="cyan",
-    )
-    console.print(
-        f"  Destination: .roadmap/archive/projects/{project_name}.md",
-        style="cyan",
-    )
-
-
-def _confirm_archive(project_name: str, force: bool) -> bool:
-    """Get user confirmation to archive project."""
-    if force:
-        return True
-    return confirm_action(f"Archive project '{project_name}'?", default=False)
-
-
-def _perform_archive(
-    project_file: Path, archive_dir: Path, project_id: str, core
-) -> bool:
-    """Perform the archive operation. Returns True on success."""
-    archive_file = archive_dir / project_file.name
-    project_file.rename(archive_file)
-
-    # Mark as archived in database
-    try:
-        core.db.mark_project_archived(project_id, archived=True)
-    except Exception as e:
-        handle_cli_error(
-            error=e,
-            operation="mark_project_archived",
-            entity_type="project",
-            entity_id=project_id,
-            context={"archive_file": str(archive_file)},
-            fatal=False,
-        )
-        console.print(f"⚠️  Warning: Failed to mark in database: {e}", style="yellow")
-
-    return True
-
-
-def _check_roadmap_initialized(core) -> bool:
-    """Check if roadmap is initialized.
-
-    Args:
-        core: RoadmapCore instance
-
-    Returns:
-        True if initialized
-    """
-    if not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first.",
-            style="bold red",
-        )
-        return False
-    return True
-
-
-def _validate_and_get_project(core, project_name: str):
-    """Validate and retrieve project.
-
-    Args:
-        core: RoadmapCore instance
-        project_name: Project name
-
-    Returns:
-        Project object or None
-    """
-    project = core.projects.get(project_name)
-    if not project:
-        console.print(f"❌ Project '{project_name}' not found.", style="bold red")
-        return None
-    return project
-
-
-def _validate_project_file(roadmap_dir: Path, project_name: str):
-    """Validate project file exists.
-
-    Args:
-        roadmap_dir: Roadmap directory
-        project_name: Project name
-
-    Returns:
-        Project file path or None
-    """
-    project_file = _find_project_file(roadmap_dir, project_name)
-    if not project_file or not project_file.exists():
-        console.print(
-            f"❌ Project file not found for: {project_name}",
-            style="bold red",
-        )
-        return None
-    return project_file
-
 
 @click.command()
 @click.argument("project_name", required=False)
+@click.option(
+    "--all-closed",
+    is_flag=True,
+    help="Archive all closed projects",
+)
 @click.option(
     "--list",
     "list_archived",
@@ -200,12 +41,13 @@ def _validate_project_file(roadmap_dir: Path, project_name: str):
     help="Show detailed debug information",
 )
 @click.pass_context
-@require_initialized
 @verbose_output
 @log_command("project_archive", entity_type="project", track_duration=True)
+@require_initialized
 def archive_project(
     ctx: click.Context,
     project_name: str | None,
+    all_closed: bool,
     list_archived: bool,
     dry_run: bool,
     force: bool,
@@ -214,79 +56,68 @@ def archive_project(
     """Archive a project by moving it to .roadmap/archive/projects/.
 
     This is a non-destructive operation that preserves project data while
-    cleaning up the active workspace. Archived projects can be restored
-    if needed.
+    cleaning up the active workspace.
 
     Examples:
-        roadmap project archive "my-project"
+        roadmap project archive "Project Name"
+        roadmap project archive --all-closed
         roadmap project archive --list
-        roadmap project archive "my-project" --dry-run
     """
     core = ctx.obj["core"]
+    console = get_console()
 
-    # Handle --list option
+    archive = ProjectArchive(core, console)
+
     if list_archived:
+        from pathlib import Path
+
+        from roadmap.adapters.persistence.parser import ProjectParser
+
         roadmap_dir = Path.cwd() / ".roadmap"
         archive_dir = roadmap_dir / "archive" / "projects"
-        _handle_list_archived_projects(archive_dir)
+
+        if not archive_dir.exists():
+            console.print("📋 No archived projects.", style="yellow")
+            return
+
+        archived_files = list(archive_dir.glob("*.md"))
+        if not archived_files:
+            console.print("📋 No archived projects.", style="yellow")
+            return
+
+        console.print("\n📦 Archived Projects:\n", style="bold blue")
+        for file_path in sorted(archived_files):
+            try:
+                project = ProjectParser.parse_project_file(file_path)
+                console.print(f"  • {project.name} ({project.status})", style="cyan")
+            except Exception:
+                console.print(
+                    f"  • {file_path.name} (error reading file)", style="yellow"
+                )
         return
 
-    if not project_name:
+    # Validate arguments
+    if not project_name and not all_closed:
         console.print(
-            "❌ Error: Specify a project name or use --list",
+            "❌ Error: Specify a project name or use --all-closed",
             style="bold red",
         )
         ctx.exit(1)
 
-    # Type guard: ensure project_name is not None after check above
-    assert project_name is not None
+    if project_name and all_closed:
+        console.print(
+            "❌ Error: Specify only one of: project name or --all-closed",
+            style="bold red",
+        )
+        ctx.exit(1)
 
     try:
-        roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "projects"
-
-        # Validate project exists
-        project = _validate_and_get_project(core, project_name)
-        if not project:
-            ctx.exit(1)
-
-        if dry_run:
-            _print_dry_run_preview(project_name)
-            return
-
-        # Confirm
-        if not _confirm_archive(project_name, force):
-            return
-
-        # Perform archive
-        ensure_directory_exists(archive_dir)
-
-        # Validate project file exists
-        project_file = _validate_project_file(roadmap_dir, project_name)
-        if not project_file:
-            ctx.exit(1)
-
-        # Type guard: ensure project_file is not None after check above
-        assert project_file is not None
-
-        _perform_archive(project_file, archive_dir, project.id, core)
-
-        console.print(
-            f"\n✅ Archived project '{project_name}' to .roadmap/archive/projects/",
-            style="bold green",
+        archive.execute(
+            entity_id=project_name,
+            all_closed=all_closed,
+            dry_run=dry_run,
+            force=force,
         )
-
     except Exception as e:
-        handle_cli_error(
-            error=e,
-            operation="archive_project",
-            entity_type="project",
-            entity_id=project_name or "unknown",
-            context={
-                "force": force,
-                "dry_run": dry_run,
-                "stage": "archive_execution",
-            },
-            fatal=True,
-        )
+        console.print(f"❌ Archive operation failed: {str(e)}", style="bold red")
         ctx.exit(1)

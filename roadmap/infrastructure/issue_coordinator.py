@@ -41,6 +41,7 @@ class IssueCoordinator:
         estimated_hours: float | None = None,
         depends_on: list[str] | None = None,
         blocks: list[str] | None = None,
+        status: str | None = None,
     ) -> Issue:
         """Create a new issue."""
         return self._ops.create_issue(
@@ -53,6 +54,7 @@ class IssueCoordinator:
             estimated_hours=estimated_hours,
             depends_on=depends_on,
             blocks=blocks,
+            status=status,
         )
 
     def list(

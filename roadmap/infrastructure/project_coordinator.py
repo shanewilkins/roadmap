@@ -54,6 +54,7 @@ class ProjectCoordinator:
         name: str,
         description: str = "",
         milestones: list[str] | None = None,
+        status: str | None = None,
     ) -> Project:
         """Create a new project.
 
@@ -61,6 +62,7 @@ class ProjectCoordinator:
             name: Project name
             description: Project description
             milestones: List of milestone names (optional)
+            status: Project status (optional)
 
         Returns:
             Created Project object
@@ -69,6 +71,7 @@ class ProjectCoordinator:
             name=name,
             description=description,
             milestones=milestones or [],
+            status=status,
         )
 
     def save(self, project: Project) -> bool:

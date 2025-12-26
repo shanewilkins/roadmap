@@ -55,6 +55,7 @@ class ProjectOperations:
         name: str,
         description: str = "",
         milestones: list[str] | None = None,
+        status: str | None = None,
     ) -> Project:
         """Create a new project.
 
@@ -62,6 +63,7 @@ class ProjectOperations:
             name: Project name
             description: Project description
             milestones: List of milestone names (optional)
+            status: Project status (optional)
 
         Returns:
             Created Project object
@@ -71,11 +73,13 @@ class ProjectOperations:
             project_name=name,
             has_description=description is not None,
             milestone_count=len(milestones or []),
+            status=status,
         )
         return self.project_service.create_project(
             name=name,
             description=description,
             milestones=milestones or [],
+            status=status,
         )
 
     @safe_operation(OperationType.UPDATE, "Project")
