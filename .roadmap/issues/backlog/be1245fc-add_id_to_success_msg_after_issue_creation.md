@@ -2,13 +2,13 @@
 id: be1245fc
 title: add_id_to_success_msg_after_issue_creation
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: backlog
 labels: []
 github_issue: null
 created: '2025-12-23T23:42:51.672668+00:00'
-updated: '2025-12-25T19:51:03.028154+00:00'
+updated: '2025-12-26T15:48:26.694761+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -16,7 +16,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

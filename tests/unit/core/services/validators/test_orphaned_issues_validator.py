@@ -24,7 +24,7 @@ class TestOrphanedIssuesValidator:
     def test_scan_for_orphaned_issues_empty_list(self, mock_core):
         """Test scan with no issues."""
         with patch("roadmap.core.services.validators.orphaned_issues_validator.Path"):
-            mock_core.issue_service.list_issues.return_value = []
+            mock_core.issues.list.return_value = []
             result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
             assert result == []
 
@@ -38,6 +38,8 @@ class TestOrphanedIssuesValidator:
             mock_dir.resolve.return_value = mock_dir
             mock_path.return_value = mock_dir
 
+            mock_core.issues.list.return_value = []
+
             result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
             assert result == []
 
@@ -48,13 +50,15 @@ class TestOrphanedIssuesValidator:
             issue1.id = "ISSUE-1"
             issue1.title = "Test Issue 1"
             issue1.milestone = "Q1-2024"
+            issue1.status = "OPEN"
 
             issue2 = MagicMock()
             issue2.id = "ISSUE-2"
             issue2.title = "Test Issue 2"
             issue2.milestone = "Q2-2024"
+            issue2.status = "OPEN"
 
-            mock_core.issue_service.list_issues.return_value = [issue1, issue2]
+            mock_core.issues.list.return_value = [issue1, issue2]
 
             result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
             assert result == []
@@ -66,7 +70,6 @@ class TestOrphanedIssuesValidator:
         ) as mock_path:
             mock_dir = MagicMock()
             mock_dir.exists.return_value = True
-            mock_dir.__truediv__ = lambda self, x: MagicMock()
             mock_dir.resolve.return_value = mock_dir
             mock_path.return_value = mock_dir
 
@@ -74,12 +77,18 @@ class TestOrphanedIssuesValidator:
             issue.id = "ISSUE-1"
             issue.title = "Orphaned Issue"
             issue.milestone = None
-            mock_core.issue_service.list_issues.return_value = [issue]
+            issue.status = "OPEN"
+            mock_core.issues.list.return_value = [issue]
 
-            result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
-            assert len(result) == 1
-            assert result[0]["id"] == "ISSUE-1"
-            assert result[0]["title"] == "Orphaned Issue"
+            # Mock _find_issue_folder to return issues_dir (indicating orphan)
+            with patch(
+                "roadmap.core.services.validators.orphaned_issues_validator.OrphanedIssuesValidator._find_issue_folder",
+                return_value=mock_dir,
+            ):
+                result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
+                assert len(result) == 1
+                assert result[0]["id"] == "ISSUE-1"
+                assert result[0]["title"] == "Orphaned Issue"
 
     def test_scan_for_orphaned_issues_finds_orphans_with_empty_string(self, mock_core):
         """Test scan finds issues with empty string milestone."""
@@ -88,7 +97,6 @@ class TestOrphanedIssuesValidator:
         ) as mock_path:
             mock_dir = MagicMock()
             mock_dir.exists.return_value = True
-            mock_dir.__truediv__ = lambda self, x: MagicMock()
             mock_dir.resolve.return_value = mock_dir
             mock_path.return_value = mock_dir
 
@@ -96,11 +104,17 @@ class TestOrphanedIssuesValidator:
             issue.id = "ISSUE-2"
             issue.title = "Empty Milestone Issue"
             issue.milestone = ""
-            mock_core.issue_service.list_issues.return_value = [issue]
+            issue.status = "OPEN"
+            mock_core.issues.list.return_value = [issue]
 
-            result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
-            assert len(result) == 1
-            assert result[0]["id"] == "ISSUE-2"
+            # Mock _find_issue_folder to return issues_dir (indicating orphan)
+            with patch(
+                "roadmap.core.services.validators.orphaned_issues_validator.OrphanedIssuesValidator._find_issue_folder",
+                return_value=mock_dir,
+            ):
+                result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
+                assert len(result) == 1
+                assert result[0]["id"] == "ISSUE-2"
 
     def test_scan_for_orphaned_issues_mixed(self, mock_core):
         """Test scan with mix of orphaned and assigned issues."""
@@ -109,7 +123,6 @@ class TestOrphanedIssuesValidator:
         ) as mock_path:
             mock_dir = MagicMock()
             mock_dir.exists.return_value = True
-            mock_dir.__truediv__ = lambda self, x: MagicMock()
             mock_dir.resolve.return_value = mock_dir
             mock_path.return_value = mock_dir
 
@@ -119,18 +132,29 @@ class TestOrphanedIssuesValidator:
                 issue.id = f"ISSUE-{i}"
                 issue.title = f"Issue {i}"
                 issue.milestone = milestone
+                issue.status = "OPEN"
                 issues.append(issue)
 
-            mock_core.issue_service.list_issues.return_value = issues
+            mock_core.issues.list.return_value = issues
 
-            result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
-            assert len(result) == 2
-            assert result[0]["id"] == "ISSUE-2"
-            assert result[1]["id"] == "ISSUE-3"
+            # Mock _find_issue_folder to return issues_dir for ISSUE-2 and ISSUE-3
+            def mock_find_folder(issue_id, issues_dir, archive_dir):
+                if issue_id in ["ISSUE-2", "ISSUE-3"]:
+                    return issues_dir  # Orphaned
+                return None  # Not found (shouldn't be in results)
+
+            with patch(
+                "roadmap.core.services.validators.orphaned_issues_validator.OrphanedIssuesValidator._find_issue_folder",
+                side_effect=mock_find_folder,
+            ):
+                result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
+                assert len(result) == 2
+                assert result[0]["id"] == "ISSUE-2"
+                assert result[1]["id"] == "ISSUE-3"
 
     def test_scan_for_orphaned_issues_exception_handling(self, mock_core):
         """Test scan handles exceptions gracefully."""
-        mock_core.issue_service.list_issues.side_effect = Exception("DB Error")
+        mock_core.issues.list.side_effect = Exception("DB Error")
 
         result = OrphanedIssuesValidator.scan_for_orphaned_issues(mock_core)
         assert result == []
@@ -166,7 +190,7 @@ class TestOrphanedIssuesValidator:
             status, message = OrphanedIssuesValidator.check_orphaned_issues(mock_core)
             assert status == HealthStatus.DEGRADED
             assert "2 orphaned issue(s)" in message
-            assert "disconnected" in message.lower()
+            assert "wrong folder" in message.lower()
 
     def test_check_orphaned_issues_exception(self, mock_core):
         """Test check handles exceptions gracefully."""

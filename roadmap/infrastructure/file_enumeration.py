@@ -79,8 +79,8 @@ class FileEnumerationService:
             return []
 
         results = []
-        # Use glob instead of rglob to only search top-level, skip archive subdirectories
-        for file_path in directory.glob("*.md"):
+        # Use rglob to recursively search subdirectories (e.g., issues organized by milestone)
+        for file_path in directory.rglob("*.md"):
             # Filter backup files if requested
             if backup_filter and ".backup" in file_path.name:
                 continue

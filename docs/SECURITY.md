@@ -10,7 +10,7 @@ This document outlines the security policy for Roadmap CLI, including how to rep
 
 If you discover a security vulnerability in Roadmap CLI, please report it responsibly:
 
-1. **Email:** `security@roadmap-cli.dev`
+1. **Email:** `shane.wilkins@gmail.com`
    - Subject line: `SECURITY: [Brief Description]`
    - Include version number where vulnerability was discovered
    - Include detailed reproduction steps
@@ -21,28 +21,6 @@ If you discover a security vulnerability in Roadmap CLI, please report it respon
    - Embargoed disclosure timeline
    - CVE assignment coordination
 
-3. **HackerOne (if applicable):** [roadmap-cli on HackerOne](https://hackerone.com/roadmap-cli)
-
-### Disclosure Timeline
-
-- **Day 0:** Vulnerability reported
-- **Day 1:** Acknowledgment of receipt
-- **Day 7:** Initial assessment and timeline
-- **Day 30:** Target patch release date
-- **Day 90:** Public disclosure if patch available
-- **Day 90+:** Disclosure even if patch delayed (with justification)
-
-**For critical vulnerabilities (CVSS 9.0+):** Coordinated disclosure may be expedited to 48 hours.
-
-## Security Supported Versions
-
-| Version | Python | Status | Security Updates Until |
-|---------|--------|--------|------------------------|
-| 0.4.x   | 3.10+ | ✅ Active | June 2026 |
-| 0.3.x   | 3.9+ | ⚠️ Limited | December 2025 |
-| < 0.3 | Any | ❌ Unsupported | N/A |
-
-**Security Updates:** Only available for currently supported versions. We recommend keeping Roadmap CLI updated to the latest stable release.
 
 ## Known Security Practices
 
@@ -111,7 +89,7 @@ pip-audit --dev  # May show dev-only vulnerabilities
 - **Runtime Dependencies:** Carefully selected, regularly audited
 - **Dev Dependencies:** Not included in production installations
 - **Pinned Versions:** Specified in `pyproject.toml` for reproducibility
-- **Security Patches:** Applied within 7 days of disclosure
+
 
 ### Automatic Dependency Updates
 
@@ -133,13 +111,13 @@ GitHub Dependabot is configured to:
 
 - **Unit Tests:** 87% code coverage with security-focused tests
 - **Integration Tests:** Real-world scenario testing
-- **Penetration Tests:** Simulated attack scenarios
+
 
 ### Continuous Monitoring
 
 - **GitHub Security:** Dependency alerts enabled
 - **pip-audit:** Production CVE verification
-- **SAST Scanning:** Static Application Security Testing in CI/CD
+
 
 ## Security Hardening Checklist
 

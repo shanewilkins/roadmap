@@ -1,22 +1,22 @@
 ---
-id: 20ac9087
-title: Test with valid assignee
-priority: low
+id: be1245fc
+title: add_id_to_success_msg_after_issue_creation
+priority: medium
 status: closed
 issue_type: other
 milestone: backlog
 labels: []
-github_issue: 36
-created: '2025-10-13T10:04:07.293002+00:00'
-updated: '2025-12-26T15:47:41.245259+00:00'
-assignee: ''
-estimated_hours: 2.0
+github_issue: null
+created: '2025-12-23T23:42:51.672668+00:00'
+updated: '2025-12-26T15:48:26.694761+00:00'
+assignee: shanewilkins
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Test with valid assignee
+# add_id_to_success_msg_after_issue_creation
 
 ## Description
 
@@ -37,7 +37,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins
