@@ -16,11 +16,15 @@ class TestArchivableMilestonesValidator:
     """Test ArchivableMilestonesValidator."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock core with milestone service."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.milestone_service = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock core with milestone service.
+
+        Uses centralized mock_core_initialized and adds service-specific setup.
+        """
+        mock_core_initialized.milestone_service = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        return mock_core_initialized
 
     def test_scan_for_archivable_milestones_empty_list(self, mock_core):
         """Test scan with no milestones."""

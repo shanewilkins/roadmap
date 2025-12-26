@@ -10,12 +10,18 @@ class TestMilestoneServiceAssignment:
     """Test MilestoneService handling of issue assignments."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create a mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        core.milestones = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create a mock RoadmapCore with issues and milestones services.
+
+        Uses centralized mock_core_initialized and adds service-specific setup.
+        """
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        mock_core_initialized.milestones = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        return mock_core_initialized
 
     def test_assign_issue_to_milestone(self, mock_core):
         """Test assigning an issue to a milestone via service."""

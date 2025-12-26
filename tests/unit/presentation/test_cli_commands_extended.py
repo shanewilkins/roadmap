@@ -10,10 +10,7 @@ Refactoring improvements (Phase 1A):
 - Consolidated repeated assertions into parametrization
 """
 
-from unittest.mock import MagicMock
-
 import pytest
-from click.testing import CliRunner
 
 from roadmap.adapters.cli.comment.commands import (
     create_comment,
@@ -28,23 +25,6 @@ from roadmap.adapters.cli.git.commands import (
     setup_git,
 )
 from roadmap.adapters.cli.issues.sync import sync_github
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click CLI runner for testing."""
-    return CliRunner()
-
-
-@pytest.fixture
-def mock_core():
-    """Mock the core context object.
-
-    Note: This is a generic mock for commands that don't need real database state.
-    For tests requiring specific behavior, override or create specialized fixture.
-    """
-    return MagicMock()
-
 
 # Phase 1A: Parametrized Comment Tests (DRY reduction)
 # Consolidated 10 test methods → 4 parametrized tests

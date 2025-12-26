@@ -605,14 +605,6 @@ class TestSyncStatusCommand:
         pass  # Deferred - requires integration testing
 
 
-@pytest.fixture
-def cli_runner():
-    """Provide a Click CLI test runner."""
-    from click.testing import CliRunner
-
-    return CliRunner()
-
-
 def _build_stats_table(stats):
     """Helper to build stats table (wrapper for testing)."""
     return _build_aggregate_stats_table(stats)

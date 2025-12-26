@@ -1,7 +1,5 @@
 """Final targeted tests for core roadmap functionality - covering remaining uncovered lines."""
 
-import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -15,13 +13,6 @@ from roadmap.core.domain import (
 from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
-
-
-@pytest.fixture
-def temp_dir():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
 
 
 class TestRoadmapCoreUncoveredLines:

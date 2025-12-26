@@ -10,16 +10,9 @@ Note: These tests use mocked GitHub API responses and focus on
 the CLI integration paths rather than full database operations.
 """
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click CLI runner for testing."""
-    return CliRunner()
 
 
 def test_link_github_command_exists():

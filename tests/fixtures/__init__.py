@@ -19,6 +19,10 @@ from .assertions import (
     assert_cli,
     assert_file,
 )
+from .click_testing import (
+    cli_runner,
+    isolated_cli_runner,
+)
 from .github import (
     github_api_response,
     github_webhook_payload,
@@ -36,7 +40,11 @@ from .mocks import (
     fast_mock_core,
     lightweight_mock_core,
     mock_config,
+    mock_console,
     mock_core,
+    mock_core_initialized,
+    mock_core_simple,
+    mock_core_with_github,
     mock_issue,
     mock_milestone,
 )
@@ -62,6 +70,9 @@ __all__ = [
     "strip_ansi_fixture",
     "clean_output",
     "assert_output",
+    # Click testing fixtures
+    "cli_runner",
+    "isolated_cli_runner",
     # Workspace fixtures
     "isolate_roadmap_workspace",
     "roadmap_workspace",
@@ -70,7 +81,11 @@ __all__ = [
     "session_temp_workspace",
     # Mock fixtures
     "mock_core",
+    "mock_core_initialized",
+    "mock_core_simple",
+    "mock_core_with_github",
     "mock_config",
+    "mock_console",
     "mock_issue",
     "mock_milestone",
     "lightweight_mock_core",

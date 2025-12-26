@@ -14,17 +14,12 @@ class TestCorruptedCommentsFixer:
     """Test suite for CorruptedCommentsFixer."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Setup mock core with issue, milestone, and project services."""
-        core = MagicMock()
-        core.issues = MagicMock()
-        core.milestones = MagicMock()
-        core.projects = MagicMock()
-        return core
-
-    @pytest.fixture
     def fixer(self, mock_core):
-        """Create fixer instance."""
+        """Create fixer instance with mock_core.
+
+        Uses the mock_core fixture provided by the test so configuration
+        in test methods affects the fixer's core instance.
+        """
         return CorruptedCommentsFixer(mock_core)
 
     # ========== Property Tests ==========

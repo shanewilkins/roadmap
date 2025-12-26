@@ -306,11 +306,3 @@ class TestViewProjectCommand:
             view_result = cli_runner.invoke(main, ["project", "view", "test-project"])
             assert view_result.exit_code == 0
             assert "test-project" in view_result.output
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click CLI test runner."""
-    from click.testing import CliRunner
-
-    return CliRunner()

@@ -1,20 +1,20 @@
 """Tests for ProjectStatusService."""
 
-from unittest.mock import Mock
-
 import pytest
 
 from roadmap.core.services.project_status_service import ProjectStatusService
-from roadmap.infrastructure.core import RoadmapCore
 
 
 class TestProjectStatusService:
     """Test suite for ProjectStatusService."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create a mock RoadmapCore."""
-        return Mock(spec=RoadmapCore)
+    def mock_core(self, mock_core_simple):
+        """Create a mock RoadmapCore.
+
+        Uses centralized mock_core_simple fixture.
+        """
+        return mock_core_simple
 
     @pytest.fixture
     def service(self, mock_core):

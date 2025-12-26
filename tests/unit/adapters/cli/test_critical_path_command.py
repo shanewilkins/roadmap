@@ -15,13 +15,8 @@ from roadmap.core.services.critical_path_calculator import (
     PathNode,
 )
 
-
-@pytest.fixture
-def mock_core():
-    """Create a mock RoadmapCore."""
-    core = Mock()
-    core.is_initialized.return_value = True
-    return core
+# mock_core fixture provided by tests.fixtures.mocks module
+# No local override needed - uses centralized mock_core_simple
 
 
 @pytest.fixture

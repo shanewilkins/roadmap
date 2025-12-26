@@ -1,15 +1,6 @@
 """CLI tests for milestone close convenience command."""
 
-import pytest
-from click.testing import CliRunner
-
 from roadmap.adapters.cli import main
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click test runner."""
-    return CliRunner()
 
 
 class TestMilestoneClose:

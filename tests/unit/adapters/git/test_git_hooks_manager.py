@@ -8,14 +8,11 @@ from roadmap.adapters.git.git_hooks_manager import GitHookManager
 
 
 @pytest.fixture
-def mock_core():
-    """Create mock RoadmapCore."""
-    return MagicMock()
+def manager(mock_core_simple, tmp_path):
+    """Create GitHookManager instance with mocked git.
 
-
-@pytest.fixture
-def manager(mock_core, tmp_path):
-    """Create GitHookManager instance with mocked git."""
+    Uses centralized mock_core_simple fixture.
+    """
     with patch("roadmap.adapters.git.git_hooks_manager.GitIntegration") as mock_git:
         git_instance = MagicMock()
         mock_git.return_value = git_instance
@@ -27,7 +24,7 @@ def manager(mock_core, tmp_path):
 
         with patch("roadmap.adapters.git.git_hooks_manager.Path") as mock_path_class:
             mock_path_class.return_value = git_dir
-            manager = GitHookManager(mock_core)
+            manager = GitHookManager(mock_core_simple)
             manager.hooks_dir = git_dir
             return manager
 

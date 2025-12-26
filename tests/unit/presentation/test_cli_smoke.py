@@ -1,15 +1,8 @@
 """Smoke tests for CLI command availability and help output."""
 
 import pytest
-from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click test runner."""
-    return CliRunner()
 
 
 class TestCliSmoke:

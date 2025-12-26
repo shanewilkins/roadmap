@@ -40,11 +40,15 @@ class TestGitHubSyncOrchestratorEmptyIssues:
     """Test sync with empty or no linked issues."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues service.
+
+        Uses centralized mock_core_initialized and adds service.
+        """
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        return mock_core_initialized
 
     @pytest.fixture
     def orchestrator(self, mock_core):
@@ -73,11 +77,15 @@ class TestGitHubSyncOrchestratorConfigValidation:
     """Test GitHub config validation and error handling."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues service.
+
+        Uses centralized mock_core_initialized and adds service.
+        """
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        return mock_core_initialized
 
     @pytest.mark.parametrize(
         "config,issue_github_id,error_key,error_substring",
@@ -120,11 +128,23 @@ class TestGitHubSyncOrchestratorGitHubFetch:
     """Test GitHub issue fetching and error handling."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues service.
+
+
+
+
+
+        Uses centralized mock_core_initialized and adds service.
+
+
+        """
+
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+
+        return mock_core_initialized
 
     @pytest.fixture
     def orchestrator(self, mock_core):
@@ -200,11 +220,23 @@ class TestGitHubStatusMapping:
     """Test GitHub status mapping to local status."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues service.
+
+
+
+
+
+        Uses centralized mock_core_initialized and adds service.
+
+
+        """
+
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+
+        return mock_core_initialized
 
     @pytest.fixture
     def orchestrator(self, mock_core):
@@ -237,11 +269,23 @@ class TestGitHubSyncOrchestratorChangeDetection:
     """Test local and GitHub change detection."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues service.
+
+
+
+
+
+        Uses centralized mock_core_initialized and adds service.
+
+
+        """
+
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+
+        return mock_core_initialized
 
     @pytest.fixture
     def orchestrator(self, mock_core):
@@ -316,11 +360,23 @@ class TestGitHubSyncOrchestratorApplyChanges:
     """Test applying sync changes to issues."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues service.
+
+
+
+
+
+        Uses centralized mock_core_initialized and adds service.
+
+
+        """
+
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+
+        return mock_core_initialized
 
     @pytest.fixture
     def orchestrator(self, mock_core):
@@ -503,11 +559,23 @@ class TestGetLastSyncTime:
     """Test last sync time retrieval."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues service.
+
+
+
+
+
+        Uses centralized mock_core_initialized and adds service.
+
+
+        """
+
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+
+        return mock_core_initialized
 
     @pytest.fixture
     def orchestrator(self, mock_core):

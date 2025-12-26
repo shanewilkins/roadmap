@@ -28,34 +28,25 @@ class ConcreteRestore(BaseRestore):
 
 
 @pytest.fixture
-def mock_core():
-    """Create mock core context."""
-    return MagicMock()
+def restore_instance(mock_core_simple, mock_console):
+    """Create a ConcreteRestore instance for testing.
 
-
-@pytest.fixture
-def mock_console():
-    """Create mock console."""
-    return MagicMock()
-
-
-@pytest.fixture
-def restore_instance(mock_core, mock_console):
-    """Create a ConcreteRestore instance for testing."""
-    return ConcreteRestore(core=mock_core, console=mock_console)
+    Uses centralized mock_core_simple fixture.
+    """
+    return ConcreteRestore(core=mock_core_simple, console=mock_console)
 
 
 class TestBaseRestoreInitialization:
     """Test BaseRestore initialization."""
 
-    def test_initialization_with_console(self, mock_core, mock_console):
+    def test_initialization_with_console(self, mock_core_simple, mock_console):
         """Test restore instance initialization with console."""
-        restore = ConcreteRestore(core=mock_core, console=mock_console)
+        restore = ConcreteRestore(core=mock_core_simple, console=mock_console)
 
-        assert restore.core is mock_core
+        assert restore.core is mock_core_simple
         assert restore.console is mock_console
 
-    def test_initialization_without_console(self, mock_core):
+    def test_initialization_without_console(self, mock_core_simple):
         """Test restore instance initialization without console uses default."""
         with patch(
             "roadmap.adapters.cli.crud.base_restore.get_console"
@@ -63,9 +54,9 @@ class TestBaseRestoreInitialization:
             mock_default_console = MagicMock()
             mock_get_console.return_value = mock_default_console
 
-            restore = ConcreteRestore(core=mock_core)
+            restore = ConcreteRestore(core=mock_core_simple)
 
-            assert restore.core is mock_core
+            assert restore.core is mock_core_simple
             assert restore.console is mock_default_console
 
     def test_entity_type_accessible(self, restore_instance):

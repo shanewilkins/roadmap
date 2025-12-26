@@ -6,7 +6,6 @@ This allows ConfigLoader and YAML parsing to execute properly.
 
 import pytest
 import yaml
-from click.testing import CliRunner
 
 from roadmap.adapters.cli.config.commands import (
     _parse_config_value,
@@ -16,11 +15,6 @@ from roadmap.adapters.cli.config.commands import (
 
 class TestConfigViewIntegration:
     """Test config view command with real config files."""
-
-    @pytest.fixture
-    def cli_runner(self):
-        """Create Click CLI runner."""
-        return CliRunner()
 
     @pytest.fixture
     def temp_config_dir(self, tmp_path):
@@ -109,11 +103,6 @@ class TestConfigGetIntegration:
     """Test config get command with real config files."""
 
     @pytest.fixture
-    def cli_runner(self):
-        """Create Click CLI runner."""
-        return CliRunner()
-
-    @pytest.fixture
     def config_with_values(self, tmp_path):
         """Create config file with nested values."""
         config_dir = tmp_path / ".roadmap"
@@ -185,11 +174,6 @@ class TestConfigSetIntegration:
     """Test config set command with real config files."""
 
     @pytest.fixture
-    def cli_runner(self):
-        """Create Click CLI runner."""
-        return CliRunner()
-
-    @pytest.fixture
     def writable_config_dir(self, tmp_path):
         """Create writable config directory."""
         config_dir = tmp_path / ".roadmap"
@@ -235,11 +219,6 @@ class TestConfigSetIntegration:
 
 class TestConfigResetIntegration:
     """Test config reset command."""
-
-    @pytest.fixture
-    def cli_runner(self):
-        """Create Click CLI runner."""
-        return CliRunner()
 
     @pytest.fixture
     def config_with_file(self, tmp_path):
@@ -314,11 +293,6 @@ class TestParseConfigValue:
 
 class TestPrintConfigDict:
     """Test _print_config_dict helper function output."""
-
-    @pytest.fixture
-    def cli_runner(self):
-        """Create Click CLI runner."""
-        return CliRunner()
 
     def test_print_empty_dict(self, cli_runner):
         """Test printing empty config dict."""

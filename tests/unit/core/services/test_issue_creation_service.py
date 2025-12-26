@@ -14,12 +14,18 @@ class TestIssueCreationService:
     """Test IssueCreationService class."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.git = TestDataFactory.create_mock_core(is_initialized=True)
-        core.team = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with git and team services.
+
+        Uses centralized mock_core_initialized and adds service-specific setup.
+        """
+        mock_core_initialized.git = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        mock_core_initialized.team = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        return mock_core_initialized
 
     @pytest.fixture
     def service(self, mock_core):

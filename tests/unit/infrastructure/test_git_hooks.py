@@ -11,13 +11,8 @@ from roadmap.adapters.git.git import GitCommit
 from roadmap.adapters.git.git_hooks import GitHookManager, WorkflowAutomation
 from roadmap.core.domain import Issue, Status
 
-
-@pytest.fixture
-def mock_core():
-    """Create a mock RoadmapCore instance."""
-    core = Mock()
-    core.issues_dir = Path("/fake/issues")
-    return core
+# mock_core fixture provided by tests.fixtures.mocks module
+# Uses centralized mock_core_simple
 
 
 @pytest.fixture

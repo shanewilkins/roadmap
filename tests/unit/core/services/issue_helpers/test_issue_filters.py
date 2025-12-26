@@ -145,13 +145,15 @@ class TestIssueQueryService:
     """Tests for IssueQueryService."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = Mock()
-        core.team = Mock()
-        core.issues = Mock()
-        core.milestones = Mock()
-        return core
+    def mock_core(self, mock_core_simple):
+        """Create mock RoadmapCore with team, issues, milestones.
+
+        Uses centralized mock_core_simple fixture and adds services.
+        """
+        mock_core_simple.team = Mock()
+        mock_core_simple.issues = Mock()
+        mock_core_simple.milestones = Mock()
+        return mock_core_simple
 
     @pytest.fixture
     def service(self, mock_core):

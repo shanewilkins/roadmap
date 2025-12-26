@@ -12,12 +12,6 @@ from tests.unit.shared.test_helpers import assert_command_success
 
 
 @pytest.fixture
-def cli_runner():
-    """Create an isolated CLI runner for testing."""
-    return CliRunner()
-
-
-@pytest.fixture
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
     from roadmap.adapters.cli import main

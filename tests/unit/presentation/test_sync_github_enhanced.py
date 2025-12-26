@@ -7,21 +7,8 @@ from click.testing import CliRunner
 
 from roadmap.adapters.cli.issues.sync import sync_github
 
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click test runner."""
-    return CliRunner()
-
-
-@pytest.fixture
-def mock_core():
-    """Provide a mock core object."""
-    core = Mock()
-    core.issues = Mock()
-    core.root_path = "/test/roadmap"
-    core.github_service = Mock()
-    return core
+# mock_core fixture provided by tests.fixtures.mocks module
+# Uses centralized mock_core_simple
 
 
 @pytest.fixture

@@ -8,7 +8,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
 
@@ -18,12 +17,6 @@ def temp_repo_dir():
     """Create a temporary repository directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
-
-
-@pytest.fixture
-def cli_runner():
-    """Create a CLI runner for testing."""
-    return CliRunner()
 
 
 class TestInitProjectDetection:

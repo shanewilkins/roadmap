@@ -1,9 +1,7 @@
 """Comprehensive tests for core roadmap functionality - targeting 85%+ coverage."""
 
 import os
-import tempfile
 from datetime import datetime, timedelta
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -17,13 +15,6 @@ from roadmap.core.domain import (
 from roadmap.infrastructure.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
-
-
-@pytest.fixture
-def temp_dir():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
 
 
 class TestRoadmapCoreFindExisting:

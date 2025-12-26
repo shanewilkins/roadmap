@@ -20,10 +20,12 @@ class TestDataIntegrityValidatorService:
         return DataIntegrityValidatorService()
 
     @pytest.fixture
-    def mock_core(self):
-        """Create a mock core object."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        return core
+    def mock_core(self, mock_core_initialized):
+        """Create a mock core object.
+
+        Uses centralized mock_core_initialized fixture.
+        """
+        return mock_core_initialized
 
     def test_service_init(self, service):
         """Test service initialization."""

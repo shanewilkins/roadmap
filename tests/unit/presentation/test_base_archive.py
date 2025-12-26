@@ -28,34 +28,25 @@ class ConcreteArchive(BaseArchive):
 
 
 @pytest.fixture
-def mock_core():
-    """Create mock core context."""
-    return MagicMock()
+def archive_instance(mock_core_simple, mock_console):
+    """Create a ConcreteArchive instance for testing.
 
-
-@pytest.fixture
-def mock_console():
-    """Create mock console."""
-    return MagicMock()
-
-
-@pytest.fixture
-def archive_instance(mock_core, mock_console):
-    """Create a ConcreteArchive instance for testing."""
-    return ConcreteArchive(core=mock_core, console=mock_console)
+    Uses centralized mock_core_simple fixture.
+    """
+    return ConcreteArchive(core=mock_core_simple, console=mock_console)
 
 
 class TestBaseArchiveInitialization:
     """Test BaseArchive initialization."""
 
-    def test_initialization_with_console(self, mock_core, mock_console):
+    def test_initialization_with_console(self, mock_core_simple, mock_console):
         """Test archive instance initialization with console."""
-        archive = ConcreteArchive(core=mock_core, console=mock_console)
+        archive = ConcreteArchive(core=mock_core_simple, console=mock_console)
 
-        assert archive.core is mock_core
+        assert archive.core is mock_core_simple
         assert archive.console is mock_console
 
-    def test_initialization_without_console(self, mock_core):
+    def test_initialization_without_console(self, mock_core_simple):
         """Test archive instance initialization without console uses default."""
         with patch(
             "roadmap.adapters.cli.crud.base_archive.get_console"
@@ -63,9 +54,9 @@ class TestBaseArchiveInitialization:
             mock_default_console = MagicMock()
             mock_get_console.return_value = mock_default_console
 
-            archive = ConcreteArchive(core=mock_core)
+            archive = ConcreteArchive(core=mock_core_simple)
 
-            assert archive.core is mock_core
+            assert archive.core is mock_core_simple
             assert archive.console is mock_default_console
 
     def test_entity_type_accessible(self, archive_instance):

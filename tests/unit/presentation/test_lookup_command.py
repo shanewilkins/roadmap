@@ -5,25 +5,11 @@ Phase 1C refactoring: Using mock factories and CLI runner fixtures to reduce DRY
 
 from unittest.mock import Mock
 
-import pytest
-from click.testing import CliRunner
-
 from roadmap.adapters.cli.issues import issue
 from tests.unit.shared.test_helpers import create_mock_issue
 
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click test runner."""
-    return CliRunner()
-
-
-@pytest.fixture
-def mock_core():
-    """Provide a mock core object."""
-    core = Mock()
-    core.issues = Mock()
-    return core
+# mock_core fixture provided by tests.fixtures.mocks module
+# Uses centralized mock_core_simple
 
 
 def test_lookup_github_issue_success(cli_runner, mock_core):

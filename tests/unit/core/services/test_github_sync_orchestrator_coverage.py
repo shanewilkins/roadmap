@@ -13,16 +13,26 @@ class TestGitHubSyncOrchestrator:
     """Test GitHubSyncOrchestrator."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.issues = TestDataFactory.create_mock_core(is_initialized=True)
-        core.settings = TestDataFactory.create_mock_core(is_initialized=True)
+    def mock_core(self, mock_core_initialized):
+        """Create mock RoadmapCore with issues and settings.
+
+        Uses centralized mock_core_initialized and adds services.
+        """
+        mock_core_initialized.issues = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
+        mock_core_initialized.settings = TestDataFactory.create_mock_core(
+            is_initialized=True
+        )
 
         # Mock github_service's get_github_config to return proper values
-        core.github_service.get_github_config.return_value = ("token", "owner", "repo")
+        mock_core_initialized.github_service.get_github_config.return_value = (
+            "token",
+            "owner",
+            "repo",
+        )
 
-        return core
+        return mock_core_initialized
 
     @pytest.fixture
     def orchestrator(self, mock_core):

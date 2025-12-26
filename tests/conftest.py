@@ -20,6 +20,8 @@ from tests.fixtures import (
     assert_file,
     assert_output,
     clean_output,
+    # Click testing fixtures
+    cli_runner,
     cli_test_data,
     fast_mock_core,
     github_api_response,
@@ -29,8 +31,12 @@ from tests.fixtures import (
     isolate_roadmap_workspace,
     lightweight_mock_core,
     mock_config,
+    mock_console,
     # Mock fixtures
     mock_core,
+    mock_core_initialized,
+    mock_core_simple,
+    mock_core_with_github,
     mock_git_operations,
     mock_github_client,
     mock_issue,
@@ -61,6 +67,8 @@ __all__ = [
     "strip_ansi_fixture",
     "clean_output",
     "assert_output",
+    # Click testing fixtures
+    "cli_runner",
     # Workspace fixtures
     "isolate_roadmap_workspace",
     "roadmap_workspace",
@@ -69,6 +77,10 @@ __all__ = [
     "session_temp_workspace",
     # Mock fixtures
     "mock_core",
+    "mock_core_initialized",
+    "mock_core_simple",
+    "mock_core_with_github",
+    "mock_console",
     "mock_config",
     "mock_issue",
     "mock_milestone",

@@ -8,17 +8,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
 from tests.common.cli_test_helpers import CLIOutputParser
 from tests.unit.shared.test_utils import strip_ansi
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Click CLI runner for testing."""
-    return CliRunner()
 
 
 @pytest.fixture

@@ -1,12 +1,11 @@
 """Tests for HealthCheckService."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from roadmap.core.domain.health import HealthStatus
 from roadmap.core.services.health_check_service import HealthCheckService
-from roadmap.infrastructure.core import RoadmapCore
 from roadmap.infrastructure.health import HealthCheck
 
 
@@ -14,9 +13,12 @@ class TestHealthCheckService:
     """Test suite for HealthCheckService."""
 
     @pytest.fixture
-    def mock_core(self):
-        """Create a mock RoadmapCore."""
-        return Mock(spec=RoadmapCore)
+    def mock_core(self, mock_core_simple):
+        """Create a mock RoadmapCore.
+
+        Uses centralized mock_core_simple fixture.
+        """
+        return mock_core_simple
 
     @pytest.fixture
     def service(self, mock_core):

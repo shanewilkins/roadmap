@@ -2,16 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-from click.testing import CliRunner
-
 from roadmap.adapters.cli.git.commands import git
-
-
-@pytest.fixture
-def cli_runner():
-    """Create a Click CLI runner."""
-    return CliRunner()
 
 
 class TestGitCommandGroup:
