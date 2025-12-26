@@ -1,7 +1,10 @@
 # Pre-commit configuration for roadmap CLI
 # Run with: pre-commit run --all-files
 #
-# OPTIMIZED EXECUTION ORDER (Updated Dec 10, 2025)
+# NOTE: Tests are NOT run in pre-commit hooks - they run in CI/CD pipeline (.github/workflows/tests.yml)
+# This keeps pre-commit fast (~9 seconds) while ensuring full test coverage before merge.
+#
+# OPTIMIZED EXECUTION ORDER (Updated Dec 26, 2025)
 # Phase 1: FAIL FAST (< 1 sec) - Catch syntax errors immediately
 # Phase 2: MEDIUM CHECKS (1-2 sec) - Security and dead code
 # Phase 3: EXPENSIVE CHECKS (3-5 sec) - Analysis and type checking
