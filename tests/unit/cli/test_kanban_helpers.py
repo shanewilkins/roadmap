@@ -7,7 +7,7 @@ from typing import cast
 from unittest.mock import Mock, patch
 
 from roadmap.core.domain import Issue, Priority, Status
-from roadmap.shared.formatters import KanbanLayout, KanbanOrganizer
+from roadmap.shared.formatters.kanban import KanbanLayout, KanbanOrganizer
 
 
 class TestKanbanOrganizer:

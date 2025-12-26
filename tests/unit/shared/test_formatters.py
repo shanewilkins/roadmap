@@ -164,25 +164,25 @@ class TestFormatterModuleExports:
 
     def test_issue_exporter_available(self):
         """Test that IssueExporter is available in formatters."""
-        from roadmap.shared.formatters import IssueExporter
+        from roadmap.shared.formatters.export.issue_exporter import IssueExporter
 
         assert IssueExporter is not None
 
     def test_kanban_organizer_available(self):
         """Test that KanbanOrganizer is available in formatters."""
-        from roadmap.shared.formatters import KanbanOrganizer
+        from roadmap.shared.formatters.kanban import KanbanOrganizer
 
         assert KanbanOrganizer is not None
 
     def test_kanban_layout_available(self):
         """Test that KanbanLayout is available in formatters."""
-        from roadmap.shared.formatters import KanbanLayout
+        from roadmap.shared.formatters.kanban import KanbanLayout
 
         assert KanbanLayout is not None
 
     def test_table_formatters_available(self):
         """Test that table formatters are available."""
-        from roadmap.shared.formatters import (
+        from roadmap.shared.formatters.tables import (
             IssueTableFormatter,
             MilestoneTableFormatter,
             ProjectTableFormatter,
