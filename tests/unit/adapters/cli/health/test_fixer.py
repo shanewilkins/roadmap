@@ -1,6 +1,5 @@
 """Tests for health fix infrastructure and fixers."""
 
-import pytest
 
 from roadmap.adapters.cli.health.fixer import (
     FixResult,
@@ -74,12 +73,6 @@ class TestFixResult:
 
 class TestOldBackupsFixer:
     """Tests for OldBackupsFixer."""
-
-    def test_fixer_properties(self):
-        """Test that fixer has correct properties."""
-        # Note: In test environment, we may not have a real Core instance
-        # Skip if Core is not available
-        pytest.skip("Core instance not available in test environment")
 
     def test_safety_level_is_safe(self, core: RoadmapCore):
         """Test that OldBackupsFixer has SAFE safety level."""

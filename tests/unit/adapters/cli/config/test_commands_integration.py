@@ -4,7 +4,6 @@ Uses real config files instead of mocks to test actual code paths.
 This allows ConfigLoader and YAML parsing to execute properly.
 """
 
-
 import pytest
 import yaml
 from click.testing import CliRunner

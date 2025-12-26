@@ -1,6 +1,5 @@
 """Tests for OperationFormatter class."""
 
-
 from roadmap.shared.formatters.text.operations import OperationFormatter
 
 
