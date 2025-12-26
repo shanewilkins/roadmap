@@ -2,6 +2,8 @@
 
 from datetime import datetime
 
+import pytest
+
 from roadmap.core.domain import IssueType, Priority
 from roadmap.infrastructure.coordinator_params import (
     IssueCreateParams,
@@ -17,77 +19,113 @@ from roadmap.infrastructure.coordinator_params import (
 class TestIssueCreateParams:
     """Test IssueCreateParams dataclass."""
 
-    def test_create_with_defaults(self):
-        """Test creating IssueCreateParams with defaults - title and type."""
-        params = IssueCreateParams(title="Test Issue")
-        assert params.title == "Test Issue"
-        assert params.priority == Priority.MEDIUM
-        assert params.issue_type == IssueType.OTHER
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            # Default values
+            (
+                {"title": "Test Issue"},
+                {
+                    "title": "Test Issue",
+                    "priority": Priority.MEDIUM,
+                    "issue_type": IssueType.OTHER,
+                    "milestone": None,
+                    "labels": None,
+                    "assignee": None,
+                    "estimated_hours": None,
+                    "depends_on": None,
+                    "blocks": None,
+                },
+            ),
+            # All fields specified
+            (
+                {
+                    "title": "Test Issue",
+                    "priority": Priority.HIGH,
+                    "issue_type": IssueType.FEATURE,
+                    "milestone": "v1.0",
+                    "labels": ["bug", "urgent"],
+                    "assignee": "john@example.com",
+                    "estimated_hours": 5.5,
+                    "depends_on": ["issue-1"],
+                    "blocks": ["issue-2"],
+                },
+                {
+                    "title": "Test Issue",
+                    "priority": Priority.HIGH,
+                    "issue_type": IssueType.FEATURE,
+                    "milestone": "v1.0",
+                    "labels": ["bug", "urgent"],
+                    "assignee": "john@example.com",
+                    "estimated_hours": 5.5,
+                    "depends_on": ["issue-1"],
+                    "blocks": ["issue-2"],
+                },
+            ),
+            # Partial: milestone and labels
+            (
+                {
+                    "title": "Test Issue",
+                    "milestone": "v1.0",
+                    "labels": ["bug", "urgent"],
+                },
+                {
+                    "title": "Test Issue",
+                    "milestone": "v1.0",
+                    "labels": ["bug", "urgent"],
+                    "priority": Priority.MEDIUM,
+                    "issue_type": IssueType.OTHER,
+                },
+            ),
+            # Partial: assignee and time
+            (
+                {
+                    "title": "Test Issue",
+                    "assignee": "john@example.com",
+                    "estimated_hours": 5.5,
+                },
+                {
+                    "title": "Test Issue",
+                    "assignee": "john@example.com",
+                    "estimated_hours": 5.5,
+                    "priority": Priority.MEDIUM,
+                    "issue_type": IssueType.OTHER,
+                },
+            ),
+            # Partial: dependencies
+            (
+                {
+                    "title": "Test Issue",
+                    "depends_on": ["issue-1"],
+                    "blocks": ["issue-2"],
+                },
+                {
+                    "title": "Test Issue",
+                    "depends_on": ["issue-1"],
+                    "blocks": ["issue-2"],
+                    "priority": Priority.MEDIUM,
+                    "issue_type": IssueType.OTHER,
+                },
+            ),
+            # Priority variations
+            (
+                {"title": "Test Issue", "priority": Priority.CRITICAL},
+                {"title": "Test Issue", "priority": Priority.CRITICAL},
+            ),
+            # Issue type variations
+            (
+                {"title": "Test Issue", "issue_type": IssueType.BUG},
+                {"title": "Test Issue", "issue_type": IssueType.BUG},
+            ),
+        ],
+    )
+    def test_create_issue_params(self, kwargs, expected):
+        """Test IssueCreateParams with various field combinations (parameterized)."""
+        params = IssueCreateParams(**kwargs)
 
-    def test_create_with_defaults_milestone_and_labels(self):
-        """Test creating IssueCreateParams with defaults - milestone and labels."""
-        params = IssueCreateParams(title="Test Issue")
-        assert params.milestone is None
-        assert params.labels is None
-
-    def test_create_with_defaults_assignee_and_time(self):
-        """Test creating IssueCreateParams with defaults - assignee and time."""
-        params = IssueCreateParams(title="Test Issue")
-        assert params.assignee is None
-        assert params.estimated_hours is None
-
-    def test_create_with_defaults_dependencies(self):
-        """Test creating IssueCreateParams with defaults - dependencies."""
-        params = IssueCreateParams(title="Test Issue")
-        assert params.depends_on is None
-        assert params.blocks is None
-
-    def test_create_with_all_fields(self):
-        """Test creating IssueCreateParams with all fields."""
-        params = IssueCreateParams(
-            title="Test Issue",
-            priority=Priority.HIGH,
-            issue_type=IssueType.FEATURE,
-            milestone="v1.0",
-            labels=["bug", "urgent"],
-            assignee="john@example.com",
-            estimated_hours=5.5,
-            depends_on=["issue-1"],
-            blocks=["issue-2"],
-        )
-        assert params.title == "Test Issue"
-        assert params.priority == Priority.HIGH
-        assert params.issue_type == IssueType.FEATURE
-
-    def test_create_with_all_fields_milestone_and_labels(self):
-        """Test creating IssueCreateParams milestone and labels."""
-        params = IssueCreateParams(
-            title="Test Issue",
-            milestone="v1.0",
-            labels=["bug", "urgent"],
-        )
-        assert params.milestone == "v1.0"
-        assert params.labels == ["bug", "urgent"]
-
-    def test_create_with_all_fields_assignee_and_time(self):
-        """Test creating IssueCreateParams with assignee and estimated time."""
-        params = IssueCreateParams(
-            title="Test Issue",
-            assignee="john@example.com",
-            estimated_hours=5.5,
-        )
-        assert params.assignee == "john@example.com"
-        assert params.estimated_hours == 5.5
-
-    def test_create_with_all_fields_dependencies(self):
-        """Test creating IssueCreateParams with dependencies."""
-        params = IssueCreateParams(
-            title="Test Issue",
-            depends_on=["issue-1"],
-            blocks=["issue-2"],
-        )
-        assert params.depends_on == ["issue-1"]
-        assert params.blocks == ["issue-2"]
+        # Verify all expected attributes
+        for attr, expected_value in expected.items():
+            assert getattr(params, attr) == expected_value
 
 
 class TestIssueListParams:
