@@ -11,6 +11,26 @@ from roadmap.common.logging_utils import log_operation
 class TestLogOperation:
     """Tests for log_operation context manager."""
 
+    @pytest.mark.parametrize(
+        "level,should_call_debug,should_call_info,should_call_warning",
+        [
+            ("info", False, True, False),
+            ("debug", True, False, False),
+            ("warning", False, False, True),
+        ],
+    )
+    def test_log_operation_custom_levels(
+        self, level, should_call_debug, should_call_info, should_call_warning
+    ):
+        """Test log_operation with different log levels."""
+        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+            with log_operation("test_op", level=level):
+                pass
+
+            assert mock_logger.debug.called == should_call_debug
+            assert mock_logger.info.called == should_call_info
+            assert mock_logger.warning.called == should_call_warning
+
     def test_log_operation_basic(self):
         """Test basic log_operation context manager."""
         with patch("roadmap.common.logging_utils.logger") as mock_logger:
@@ -48,40 +68,18 @@ class TestLogOperation:
             assert mock_logger.info.called
 
     def test_log_operation_with_exception(self):
-        """Test log_operation logs exceptions."""
+        """Test log_operation logs exceptions and re-raises."""
+        test_error = ValueError("Test error")
+
         with patch("roadmap.common.logging_utils.logger") as mock_logger:
             mock_logger.info = MagicMock()
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError) as exc_info:
                 with log_operation("failing_operation"):
-                    raise ValueError("Test error")
+                    raise test_error
 
-            # Should log the error with the same level function (info in this case)
+            # Should log the error
             assert mock_logger.info.called
-
-    def test_log_operation_default_log_level(self):
-        """Test log_operation uses default log level."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
-            with log_operation("test"):
-                pass
-
-            # Default level is "info"
-            assert mock_logger.info.called
-
-    def test_log_operation_custom_log_level_debug(self):
-        """Test log_operation with debug level."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
-            with log_operation("debug_op", level="debug"):
-                pass
-
-            assert mock_logger.debug.called
-
-    def test_log_operation_custom_log_level_warning(self):
-        """Test log_operation with warning level."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
-            with log_operation("warn_op", level="warning"):
-                pass
-
-            assert mock_logger.warning.called
+            assert exc_info.value is test_error
 
     def test_log_operation_multiple_context_fields(self):
         """Test log_operation with multiple context fields."""
@@ -98,12 +96,19 @@ class TestLogOperation:
 
             assert mock_logger.info.called
 
-    def test_log_operation_empty_metrics(self):
-        """Test log_operation with no metrics added."""
+    @pytest.mark.parametrize(
+        "should_add_metrics",
+        [True, False],
+    )
+    def test_log_operation_metrics_handling(self, should_add_metrics):
+        """Test log_operation with and without metrics."""
         with patch("roadmap.common.logging_utils.logger") as mock_logger:
-            with log_operation("empty_op"):
-                # Don't add any metrics
-                pass
+            with log_operation("test_op") as metrics:
+                if should_add_metrics:
+                    metrics["count"] = 1
+                    assert "count" in metrics
+                else:
+                    assert isinstance(metrics, dict)
 
             assert mock_logger.info.called
 
@@ -154,8 +159,8 @@ class TestLogOperation:
             ("test3", "warning", {"id": 1, "status": "pending"}),
         ],
     )
-    def test_log_operation_parametrized(self, operation_name, level, context):
-        """Test log_operation with various parameters."""
+    def test_log_operation_parametrized_combo(self, operation_name, level, context):
+        """Test log_operation with various parameter combinations."""
         with patch("roadmap.common.logging_utils.logger"):
             with log_operation(operation_name, level=level, **context) as metrics:
                 assert isinstance(metrics, dict)
