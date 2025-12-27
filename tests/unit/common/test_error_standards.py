@@ -134,14 +134,16 @@ class TestSafeOperationDecorator:
         assert "Invalid field" in exc_info.value.domain_message
 
     @pytest.mark.parametrize(
-        "op_type,expected_error",
+        "op_type,expected_error,description",
         [
-            (OperationType.CREATE, CreateError),
-            (OperationType.UPDATE, UpdateError),
-            (OperationType.DELETE, DeleteError),
+            (OperationType.CREATE, CreateError, "create_error"),
+            (OperationType.UPDATE, UpdateError, "update_error"),
+            (OperationType.DELETE, DeleteError, "delete_error"),
         ],
     )
-    def test_safe_operation_converts_error_by_type(self, op_type, expected_error):
+    def test_safe_operation_error_conversion(
+        self, op_type, expected_error, description
+    ):
         """Test operations convert exceptions to operation-specific errors."""
 
         @safe_operation(op_type, "Issue")
@@ -213,25 +215,25 @@ class TestSafeOperationDecorator:
             fetch_data()
         assert call_count == 1
 
-    def test_safe_operation_captures_entity_id_from_first_arg(self):
-        """Test that entity_id is captured from first string argument."""
+    @pytest.mark.parametrize(
+        "entity_id,description",
+        [
+            ("ISSUE-123", "from_first_arg"),
+            ("ISSUE-456", "from_kwarg"),
+        ],
+    )
+    def test_safe_operation_captures_entity_id(self, entity_id, description):
+        """Test that entity_id is captured from arguments."""
 
         @safe_operation(OperationType.UPDATE, "Issue")
-        def update_issue(issue_id: str):
+        def update_issue(issue_id: str = None, **kwargs):
             raise RuntimeError("DB error")
 
         with pytest.raises(UpdateError):
-            update_issue("ISSUE-123")
-
-    def test_safe_operation_captures_entity_id_from_kwargs(self):
-        """Test that entity_id is captured from 'id' kwarg."""
-
-        @safe_operation(OperationType.UPDATE, "Issue")
-        def update_issue(id: str):
-            raise RuntimeError("DB error")
-
-        with pytest.raises(UpdateError):
-            update_issue(id="ISSUE-123")
+            if description == "from_first_arg":
+                update_issue(entity_id)
+            else:
+                update_issue(id=entity_id)
 
     def test_safe_operation_exponential_backoff(self):
         """Test that retry delay increases exponentially."""
@@ -384,46 +386,60 @@ class TestRecoveryAction:
             (ConnectionError("timeout"), True),
             (TimeoutError("timeout"), True),
             (ValueError("invalid"), False),
+            (RuntimeError("runtime"), False),
         ],
     )
     def test_is_retryable(self, error_instance, should_retry):
         """Test error classification for retry."""
         assert RecoveryAction.is_retryable(error_instance) == should_retry
 
-    def test_handle_missing_file_creates_file(self, tmp_path):
-        """Test that missing file handler creates default file."""
-        filepath = str(tmp_path / "test.txt")
-        success = RecoveryAction.handle_missing_file(filepath, create_default=True)
-        assert success
-        assert Path(filepath).exists()
+    @pytest.mark.parametrize(
+        "create_default,content",
+        [
+            (True, None),
+            (True, "test content"),
+            (False, None),
+        ],
+    )
+    def test_handle_missing_file_scenarios(self, tmp_path, create_default, content):
+        """Test missing file handling with various configuration options."""
+        filepath = str(tmp_path / f"test_{create_default}_{id(content)}.txt")
 
-    def test_handle_missing_file_with_content(self, tmp_path):
-        """Test that missing file handler can write content."""
-        filepath = str(tmp_path / "test.txt")
-        success = RecoveryAction.handle_missing_file(
-            filepath, create_default=True, content="test content"
-        )
-        assert success
-        assert Path(filepath).read_text() == "test content"
+        if content is not None:
+            success = RecoveryAction.handle_missing_file(
+                filepath, create_default=create_default, content=content
+            )
+            if create_default:
+                assert success
+                assert Path(filepath).exists()
+                assert Path(filepath).read_text() == content
+        else:
+            success = RecoveryAction.handle_missing_file(
+                filepath, create_default=create_default
+            )
+            if create_default:
+                assert success
+                assert Path(filepath).exists()
+            else:
+                assert not success
 
-    def test_handle_missing_file_skip_creation(self):
-        """Test that create_default=False skips file creation."""
-        result = RecoveryAction.handle_missing_file(
-            "/nonexistent", create_default=False
-        )
-        assert not result
+    @pytest.mark.parametrize(
+        "error_type,context,expected_content",
+        [
+            ("permission", "/path/to/file", "chmod"),
+            ("permission", "/path/to/file", "/path/to/file"),
+            ("connection", "GitHub API", "GitHub API"),
+            ("connection", "GitHub API", "network"),
+        ],
+    )
+    def test_error_recovery_messages(self, error_type, context, expected_content):
+        """Test error recovery suggestion messages."""
+        if error_type == "permission":
+            message = RecoveryAction.handle_permission_error(context)
+        else:
+            message = RecoveryAction.handle_connection_error(context)
 
-    def test_handle_permission_error_message(self):
-        """Test permission error suggestion."""
-        message = RecoveryAction.handle_permission_error("/path/to/file")
-        assert "chmod" in message
-        assert "/path/to/file" in message
-
-    def test_handle_connection_error_message(self):
-        """Test connection error suggestion."""
-        message = RecoveryAction.handle_connection_error("GitHub API")
-        assert "GitHub API" in message
-        assert "network" in message.lower()
+        assert expected_content.lower() in message.lower()
 
 
 class TestOperationType:
