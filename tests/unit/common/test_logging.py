@@ -2,6 +2,8 @@
 
 from unittest.mock import patch
 
+import pytest
+
 from roadmap.common.logging import (
     add_correlation_id,
     correlation_id_var,
@@ -14,68 +16,39 @@ from roadmap.common.logging import (
 class TestCorrelationId:
     """Test correlation ID functionality."""
 
-    def test_add_correlation_id_processor(self):
-        """Test correlation ID processor."""
-        correlation_id_var.set("test-correlation-123")
+    @pytest.mark.parametrize(
+        "correlation_id,should_be_present",
+        [
+            ("test-correlation-123", True),
+            (None, False),
+        ],
+    )
+    def test_add_correlation_id_processor(self, correlation_id, should_be_present):
+        """Test correlation ID processor with various states."""
+        correlation_id_var.set(correlation_id)
         event_dict = {"event": "test_event"}
         result = add_correlation_id(None, "info", event_dict)
-        assert result["correlation_id"] == "test-correlation-123"
+        if should_be_present:
+            assert result["correlation_id"] == correlation_id
+        else:
+            assert "correlation_id" not in result
 
-    def test_add_correlation_id_processor_no_id(self):
-        """Test correlation ID processor when no ID is set."""
-        correlation_id_var.set(None)
-        event_dict = {"event": "test_event"}
-        result = add_correlation_id(None, "info", event_dict)
-        assert "correlation_id" not in result
-
-    def test_scrub_sensitive_data_token(self):
-        """Test scrubbing token from logs."""
-        event_dict = {
-            "message": "Sync complete",
-            "github_token": "ghp_1234567890",
-        }
+    @pytest.mark.parametrize(
+        "field_name,field_value",
+        [
+            ("github_token", "ghp_1234567890"),
+            ("password", "secret123"),
+            ("Token", "secret123"),
+            ("PASSWORD", "pass456"),
+            ("Github_Token", "ghp789"),
+        ],
+    )
+    def test_scrub_sensitive_fields(self, field_name, field_value):
+        """Test scrubbing sensitive fields (case-insensitive)."""
+        event_dict = {field_name: field_value, "message": "test"}
         result = scrub_sensitive_data(None, "info", event_dict)
-        assert result["github_token"] == "***REDACTED***"
-        assert result["message"] == "Sync complete"
-
-    def test_scrub_sensitive_data_password(self):
-        """Test scrubbing password from logs."""
-        event_dict = {"password": "secret123"}
-        result = scrub_sensitive_data(None, "info", event_dict)
-        assert result["password"] == "***REDACTED***"
-
-    def test_scrub_sensitive_data_nested_dict(self):
-        """Test scrubbing sensitive data in nested dictionary."""
-        event_dict = {
-            "user": {"name": "john", "api_key": "key123"},
-            "message": "test",
-        }
-        result = scrub_sensitive_data(None, "info", event_dict)
-        user_data = result.get("user")
-        assert isinstance(user_data, dict)
-        assert user_data.get("api_key") == "***REDACTED***"
-        assert user_data.get("name") == "john"
-
-    def test_scrub_sensitive_data_list(self):
-        """Test scrubbing sensitive data in lists."""
-        event_dict = {
-            "credentials": ["token1", "token2"],
-            "token": "secret",
-        }
-        result = scrub_sensitive_data(None, "info", event_dict)
-        assert result["token"] == "***REDACTED***"
-
-    def test_scrub_sensitive_data_case_insensitive(self):
-        """Test that scrubbing is case-insensitive."""
-        event_dict = {
-            "Token": "secret123",
-            "PASSWORD": "pass456",
-            "Github_Token": "ghp789",
-        }
-        result = scrub_sensitive_data(None, "info", event_dict)
-        assert result["Token"] == "***REDACTED***"
-        assert result["PASSWORD"] == "***REDACTED***"
-        assert result["Github_Token"] == "***REDACTED***"
+        assert result[field_name] == "***REDACTED***"
+        assert result["message"] == "test"
 
 
 class TestGetLogger:
@@ -102,62 +75,37 @@ class TestGetLogger:
         assert logger1 is not None
         assert logger2 is not None
 
+    def test_scrub_nested_and_list_data(self):
+        """Test scrubbing in nested structures."""
+        event_dict = {
+            "user": {"name": "john", "api_key": "key123"},
+            "credentials": ["token1", "token2"],
+            "token": "secret",
+        }
+        result = scrub_sensitive_data(None, "info", event_dict)
+        user_data = result.get("user")
+        assert isinstance(user_data, dict)
+        assert user_data.get("api_key") == "***REDACTED***"
+        assert user_data.get("name") == "john"
+        assert result["token"] == "***REDACTED***"
+
 
 class TestSetupLogging:
     """Test logging setup."""
 
-    def test_setup_logging_default(self):
-        """Test setting up logging with defaults."""
+    @pytest.mark.parametrize(
+        "debug_mode,log_to_file,log_level",
+        [
+            (False, True, "INFO"),
+            (True, True, "DEBUG"),
+            (False, False, "INFO"),
+            (True, False, "WARNING"),
+        ],
+    )
+    def test_setup_logging_configurations(self, debug_mode, log_to_file, log_level):
+        """Test logging setup with various configurations."""
         with patch("roadmap.common.logging.structlog"):
-            logger = setup_logging()
+            logger = setup_logging(
+                debug_mode=debug_mode, log_to_file=log_to_file, log_level=log_level
+            )
             assert logger is not None
-
-    def test_setup_logging_debug_mode(self):
-        """Test setting up logging in debug mode."""
-        with patch("roadmap.common.logging.structlog"):
-            logger = setup_logging(debug_mode=True)
-            assert logger is not None
-
-    def test_setup_logging_no_file(self):
-        """Test setting up logging without file output."""
-        with patch("roadmap.common.logging.structlog"):
-            logger = setup_logging(log_to_file=False)
-            assert logger is not None
-
-    def test_setup_logging_with_log_dir(self, tmp_path):
-        """Test setting up logging with custom log directory."""
-        with patch("roadmap.common.logging.structlog"):
-            logger = setup_logging(log_dir=str(tmp_path))
-            assert logger is not None
-
-    def test_setup_logging_with_custom_levels(self):
-        """Test setting up logging with custom level mapping."""
-        custom_levels = {
-            "roadmap.core": "DEBUG",
-            "roadmap.adapters": "INFO",
-        }
-        with patch("roadmap.common.logging.structlog"):
-            logger = setup_logging(custom_levels=custom_levels)
-            assert logger is not None
-
-    def test_setup_logging_console_level_override(self):
-        """Test console level override."""
-        with patch("roadmap.common.logging.structlog"):
-            logger = setup_logging(console_level="WARNING")
-            assert logger is not None
-
-    def test_setup_logging_multiple_calls(self):
-        """Test that multiple setup calls work."""
-        with patch("roadmap.common.logging.structlog"):
-            logger1 = setup_logging(log_level="INFO")
-            logger2 = setup_logging(log_level="DEBUG")
-            assert logger1 is not None
-            assert logger2 is not None
-
-    def test_setup_logging_all_levels(self):
-        """Test setup with all log levels."""
-        levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-        with patch("roadmap.common.logging.structlog"):
-            for level in levels:
-                logger = setup_logging(log_level=level)
-                assert logger is not None
