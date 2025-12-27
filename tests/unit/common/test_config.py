@@ -3,6 +3,7 @@
 import tempfile
 from pathlib import Path
 
+import pytest
 import yaml
 
 from roadmap.common.config_loader import ConfigLoader
@@ -18,33 +19,49 @@ from roadmap.common.config_models import (
 class TestConfigModels:
     """Test configuration models."""
 
-    def test_output_config_defaults(self):
-        """Test OutputConfig default values."""
-        config = OutputConfig()
-        assert config.format == "rich"
-        assert config.columns == []
-        assert config.sort_by == ""
+    @pytest.mark.parametrize(
+        "model_class,expected_attrs",
+        [
+            ("output", {"format": "rich", "columns": [], "sort_by": ""}),
+            (
+                "export",
+                {
+                    "directory": ".roadmap/exports",
+                    "format": "json",
+                    "include_metadata": True,
+                    "auto_gitignore": True,
+                },
+            ),
+            (
+                "behavior",
+                {
+                    "auto_branch_on_start": False,
+                    "confirm_destructive": True,
+                    "show_tips": True,
+                },
+            ),
+            (
+                "git",
+                {
+                    "auto_commit": False,
+                    "commit_template": "roadmap: {operation} {entity_id}",
+                },
+            ),
+        ],
+    )
+    def test_config_models_defaults(self, model_class, expected_attrs):
+        """Test configuration model default values."""
+        if model_class == "output":
+            config = OutputConfig()
+        elif model_class == "export":
+            config = ExportConfig()
+        elif model_class == "behavior":
+            config = BehaviorConfig()
+        elif model_class == "git":
+            config = GitConfig()
 
-    def test_export_config_defaults(self):
-        """Test ExportConfig default values."""
-        config = ExportConfig()
-        assert config.directory == ".roadmap/exports"
-        assert config.format == "json"
-        assert config.include_metadata is True
-        assert config.auto_gitignore is True
-
-    def test_behavior_config_defaults(self):
-        """Test BehaviorConfig default values."""
-        config = BehaviorConfig()
-        assert config.auto_branch_on_start is False
-        assert config.confirm_destructive is True
-        assert config.show_tips is True
-
-    def test_git_config_defaults(self):
-        """Test GitConfig default values."""
-        config = GitConfig()
-        assert config.auto_commit is False
-        assert config.commit_template == "roadmap: {operation} {entity_id}"
+        for attr, expected_value in expected_attrs.items():
+            assert getattr(config, attr) == expected_value
 
     def test_roadmap_config_defaults(self):
         """Test RoadmapConfig default values."""
@@ -73,31 +90,31 @@ class TestConfigModels:
 class TestConfigLoader:
     """Test configuration loader."""
 
-    def test_get_user_config_path(self):
-        """Test getting user config path."""
-        path = ConfigLoader.get_user_config_path()
-        assert path == Path.home() / ".roadmap" / "config.yaml"
+    @pytest.mark.parametrize(
+        "config_type",
+        ["user", "project"],
+    )
+    def test_get_config_path(self, config_type):
+        """Test getting configuration paths."""
+        if config_type == "user":
+            path = ConfigLoader.get_user_config_path()
+            assert path == Path.home() / ".roadmap" / "config.yaml"
+        else:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                project_root = Path(tmpdir)
+                path = ConfigLoader.get_project_config_path(project_root)
+                assert path == project_root / ".roadmap" / "config.yaml"
 
-    def test_get_project_config_path(self):
-        """Test getting project config path."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_root = Path(tmpdir)
-            path = ConfigLoader.get_project_config_path(project_root)
-            assert path == project_root / ".roadmap" / "config.yaml"
-
-    def test_load_nonexistent_user_config(self):
-        """Test loading non-existent user config returns None."""
-        # Mock the path to non-existent location
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config = ConfigLoader._load_config_file(Path(tmpdir) / "nonexistent.yaml")
-            assert config is None
-
-    def test_load_valid_config_file(self):
-        """Test loading a valid config file."""
+    def test_load_config_file_scenarios(self):
+        """Test loading config files in various scenarios."""
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "config.yaml"
 
-            # Create a valid config file
+            # Test 1: Non-existent file returns None
+            config = ConfigLoader._load_config_file(config_path)
+            assert config is None
+
+            # Test 2: Valid config file
             config_data = {
                 "output": {"format": "plain"},
                 "export": {"directory": "/tmp/exports"},
@@ -105,7 +122,6 @@ class TestConfigLoader:
             with open(config_path, "w") as f:
                 yaml.dump(config_data, f)
 
-            # Load and verify
             config = ConfigLoader._load_config_file(config_path)
             assert config is not None
             assert config.output.format == "plain"
