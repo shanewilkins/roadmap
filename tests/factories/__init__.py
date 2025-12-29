@@ -16,10 +16,11 @@ Benefits:
     - Type-safe via static type hints
 """
 
-from .domain import IssueBuilder, MilestoneBuilder, ProjectBuilder
+from .domain import CommentBuilder, IssueBuilder, MilestoneBuilder, ProjectBuilder
 
 __all__ = [
     "IssueBuilder",
     "MilestoneBuilder",
     "ProjectBuilder",
+    "CommentBuilder",
 ]

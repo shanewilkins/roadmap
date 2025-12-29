@@ -14,7 +14,7 @@ from roadmap.common.constants import (
     RiskLevel,
     Status,
 )
-from roadmap.core.domain import Issue, Milestone, Project
+from roadmap.core.domain import Comment, Issue, Milestone, Project
 
 
 class IssueBuilder:
@@ -350,4 +350,88 @@ class ProjectBuilder:
         """Create a new builder with current state cloned."""
         new_builder = ProjectBuilder()
         new_builder._project = self._project.model_copy(deep=True)
+        return new_builder
+
+
+class CommentBuilder:
+    """Builder for creating Comment objects with fluent interface.
+
+    Example:
+        comment = (CommentBuilder()
+            .with_issue_id("ISSUE-1")
+            .with_author("jane.doe")
+            .with_body("This needs more details")
+            .build())
+    """
+
+    def __init__(self):
+        """Initialize builder with sensible defaults."""
+        now = datetime.now()
+        self._comment = Comment(
+            id=1,
+            issue_id="TEST-1",
+            author="test_user",
+            body="Test comment",
+            created_at=now,
+            updated_at=now,
+        )
+
+    def with_id(self, comment_id: int) -> "CommentBuilder":
+        """Set the comment ID."""
+        self._comment.id = comment_id
+        return self
+
+    def with_issue_id(self, issue_id: str) -> "CommentBuilder":
+        """Set the issue ID this comment belongs to."""
+        self._comment.issue_id = issue_id
+        return self
+
+    def with_author(self, author: str) -> "CommentBuilder":
+        """Set the comment author."""
+        self._comment.author = author
+        return self
+
+    def with_body(self, body: str) -> "CommentBuilder":
+        """Set the comment body (markdown)."""
+        self._comment.body = body
+        return self
+
+    def with_created_at(self, created_at: datetime) -> "CommentBuilder":
+        """Set the creation timestamp."""
+        self._comment.created_at = created_at
+        return self
+
+    def with_updated_at(self, updated_at: datetime) -> "CommentBuilder":
+        """Set the last update timestamp."""
+        self._comment.updated_at = updated_at
+        return self
+
+    def with_github_url(self, url: str | None) -> "CommentBuilder":
+        """Set the GitHub comment URL."""
+        self._comment.github_url = url
+        return self
+
+    def with_reply_to(self, comment_id: int | None) -> "CommentBuilder":
+        """Set the comment this is replying to (for threading)."""
+        self._comment.in_reply_to = comment_id
+        return self
+
+    def build(self) -> Comment:
+        """Build and return the Comment object."""
+        return self._comment
+
+    def clone(self) -> "CommentBuilder":
+        """Create a new builder with current state cloned."""
+        new_builder = CommentBuilder()
+        # Comments are dataclasses, so we can just create a new instance with same values
+        new_builder._comment = Comment(
+            id=self._comment.id,
+            issue_id=self._comment.issue_id,
+            author=self._comment.author,
+            body=self._comment.body,
+            created_at=self._comment.created_at,
+            updated_at=self._comment.updated_at,
+            github_url=self._comment.github_url,
+            in_reply_to=self._comment.in_reply_to,
+        )
         return new_builder
