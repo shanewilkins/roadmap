@@ -37,10 +37,9 @@ def data():
 )
 @click.option("--output", "-o", help="Output file path")
 @click.option("--filter", help="Filter criteria (simple key=value)")
-@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
 @verbose_output
-def export(ctx: click.Context, format: str, output: str, filter: str, verbose: bool):
+def export(ctx: click.Context, format: str, output: str, filter: str):
     """Export roadmap issues to JSON, CSV or Markdown.
 
     The --filter argument supports a simple key=value filter (e.g. assignee=alice).
@@ -139,10 +138,9 @@ def _export_and_write(issues, format_type: str, output_path: str):
     help="Report type",
 )
 @click.option("--output", "-o", help="Output file path")
-@click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
 @verbose_output
-def generate_report(ctx: click.Context, type: str, output: str, verbose: bool):
+def generate_report(ctx: click.Context, type: str, output: str):
     """Generate detailed reports and analytics."""
     console.print(f"📈 Generating {type} report...", style="bold blue")
     # Implementation would go here
