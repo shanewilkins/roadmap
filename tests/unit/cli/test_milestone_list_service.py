@@ -17,7 +17,7 @@ from roadmap.adapters.cli.services.milestone_list_service import (
     MilestoneProgressService,
     MilestoneTimeEstimateService,
 )
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestMilestoneFilterService:

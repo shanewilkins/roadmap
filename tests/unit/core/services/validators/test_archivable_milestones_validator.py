@@ -9,7 +9,7 @@ from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.validators.archivable_milestones_validator import (
     ArchivableMilestonesValidator,
 )
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestArchivableMilestonesValidator:

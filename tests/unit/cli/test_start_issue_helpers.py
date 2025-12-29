@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 from roadmap.core.domain import Status
 from roadmap.core.services import StartIssueService
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestStartDateParser:

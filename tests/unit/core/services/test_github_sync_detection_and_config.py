@@ -6,7 +6,7 @@ import pytest
 
 from roadmap.common.constants import Status
 from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestGitHubSyncOrchestratorConflictDetector:

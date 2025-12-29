@@ -11,7 +11,7 @@ from roadmap.infrastructure.github.setup import (
     GitHubInitializationService,
     show_github_setup_instructions,
 )
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestGitHubConfigManager:

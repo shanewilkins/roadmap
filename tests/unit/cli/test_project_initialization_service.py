@@ -19,7 +19,7 @@ from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectTemplateService,
 )
 from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestProjectDetectionService:

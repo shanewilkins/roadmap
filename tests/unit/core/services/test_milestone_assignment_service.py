@@ -3,7 +3,7 @@
 import pytest
 
 from tests.factories import IssueBuilder, MilestoneBuilder
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestMilestoneServiceAssignment:

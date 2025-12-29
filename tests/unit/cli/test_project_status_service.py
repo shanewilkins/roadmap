@@ -17,7 +17,7 @@ from roadmap.adapters.cli.services.project_status_service import (
     StatusDataService,
 )
 from roadmap.core.domain import Status
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestStatusDataService:

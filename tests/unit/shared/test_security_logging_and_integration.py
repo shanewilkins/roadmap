@@ -26,7 +26,7 @@ from roadmap.common.security import (
     validate_export_size,
     validate_path,
 )
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 pytestmark = pytest.mark.unit
 

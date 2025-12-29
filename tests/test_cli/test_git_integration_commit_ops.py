@@ -22,7 +22,7 @@ from roadmap.common.errors.exceptions import (
     UpdateError,
 )
 from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestLinkIssueToBranch:

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from roadmap.core.domain.health import HealthStatus
 from roadmap.infrastructure.health import HealthCheck
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestHealthCheck:

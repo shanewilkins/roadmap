@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from roadmap.adapters.cli.git.status_display import GitStatusDisplay
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestGitStatusDisplay:

@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 # ============================================================================
 # Core Object Factories for Unit Tests

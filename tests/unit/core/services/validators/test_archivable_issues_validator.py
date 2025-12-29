@@ -9,7 +9,7 @@ from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.validators.archivable_issues_validator import (
     ArchivableIssuesValidator,
 )
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestArchivableIssuesValidator:

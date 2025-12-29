@@ -6,7 +6,7 @@ from roadmap.core.services.git_hook_auto_sync_service import (
     GitHookAutoSyncConfig,
     GitHookAutoSyncService,
 )
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestGitHookAutoSyncEventHandling:

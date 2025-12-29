@@ -8,7 +8,7 @@ from roadmap.core.services.base_validator import HealthStatus
 from roadmap.core.services.validators.orphaned_issues_validator import (
     OrphanedIssuesValidator,
 )
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestOrphanedIssuesValidator:

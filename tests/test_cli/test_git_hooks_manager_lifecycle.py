@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 # ========== Unit Tests: Hook Installation ==========
 

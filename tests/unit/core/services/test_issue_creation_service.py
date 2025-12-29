@@ -7,7 +7,7 @@ import pytest
 
 from roadmap.common.constants import IssueType, Priority
 from roadmap.core.services.issue_creation_service import IssueCreationService
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestIssueCreationService:

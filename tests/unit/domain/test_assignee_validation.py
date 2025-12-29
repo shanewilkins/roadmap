@@ -7,7 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.domain.test_data_factory import TestDataFactory
+from tests.unit.domain.test_data_factory_generation import TestDataFactory
 from tests.unit.shared.test_helpers import assert_command_success
 
 
