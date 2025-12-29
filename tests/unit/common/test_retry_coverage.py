@@ -135,6 +135,8 @@ class TestRetryDecorator:
         result = func()
         assert result == "success"
         assert mock_func.call_count == 2
+
+    def test_retry_with_on_retry_callback(self):
         """Test retry with on_retry callback."""
         callback_mock = Mock()
         mock_func = Mock(side_effect=[ValueError("fail"), "success"])
@@ -157,9 +159,30 @@ class TestRetryDecorator:
         assert isinstance(args[0], ValueError)
         assert args[1] == 1  # First attempt number
 
-    def test_retry_callback_receives_correct_attempt_number(self):
-        """Test that retry callback receives correct attempt numbers."""
+    def test_retry_callback_scenarios(self):
+        """Test retry callback in various scenarios."""
+        # Test 1: Basic callback on retry
         callback_mock = Mock()
+        mock_func = Mock(side_effect=[ValueError("fail"), "success"])
+
+        @retry(
+            max_attempts=3,
+            delay=0.01,
+            exceptions=(ValueError,),
+            on_retry=callback_mock,
+        )
+        def func1():
+            return mock_func()
+
+        result = func1()
+        assert result == "success"
+        assert callback_mock.call_count == 1
+        args, _ = callback_mock.call_args
+        assert isinstance(args[0], ValueError)
+        assert args[1] == 1  # First attempt number
+
+        # Test 2: Callback receives correct attempt numbers
+        callback_mock2 = Mock()
         call_count = [0]
 
         def func_with_failures():
@@ -172,25 +195,20 @@ class TestRetryDecorator:
             max_attempts=5,
             delay=0.01,
             exceptions=(ValueError,),
-            on_retry=callback_mock,
+            on_retry=callback_mock2,
         )
-        def func():
+        def func2():
             return func_with_failures()
 
-        result = func()
+        result = func2()
         assert result == "success"
-
-        # Callback should be called 3 times (attempts 1, 2, 3)
-        assert callback_mock.call_count == 3
-
-        # Check attempt numbers
-        attempt_numbers = [call[0][1] for call in callback_mock.call_args_list]
+        assert callback_mock2.call_count == 3
+        attempt_numbers = [call[0][1] for call in callback_mock2.call_args_list]
         assert attempt_numbers == [1, 2, 3]
 
-    def test_retry_callback_error_is_logged(self):
-        """Test that callback errors are handled gracefully."""
-        callback_mock = Mock(side_effect=RuntimeError("callback failed"))
-        mock_func = Mock(side_effect=[ValueError("fail"), "success"])
+        # Test 3: Callback errors are handled gracefully
+        callback_mock3 = Mock(side_effect=RuntimeError("callback failed"))
+        mock_func3 = Mock(side_effect=[ValueError("fail"), "success"])
 
         with patch("roadmap.common.retry.logger"):
 
@@ -198,116 +216,115 @@ class TestRetryDecorator:
                 max_attempts=3,
                 delay=0.01,
                 exceptions=(ValueError,),
-                on_retry=callback_mock,
+                on_retry=callback_mock3,
             )
+            def func3():
+                return mock_func3()
+
+            result = func3()
+            assert result == "success"
+            assert callback_mock3.call_count == 1
+
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            ("metadata", None, None),
+            ("function_args", (1, 2), {"c": 3}),
+            ("exception_hierarchy", None, None),
+        ],
+    )
+    def test_retry_function_behavior(self, test_case):
+        """Test retry with function metadata, arguments, and exception hierarchy."""
+        if test_case == "metadata":
+
+            @retry(max_attempts=3, delay=0.01)
+            def my_function():
+                """My function docstring."""
+                return "result"
+
+            assert my_function.__name__ == "my_function"
+            assert (
+                my_function.__doc__ is not None
+                and "My function docstring" in my_function.__doc__
+            )
+        elif test_case == "function_args":
+            mock_func = Mock(side_effect=[ValueError("fail"), "success"])
+
+            @retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
+            def func(a, b, c=None):
+                mock_func()
+                return f"{a}-{b}-{c}"
+
+            result = func(1, 2, c=3)
+            assert result == "1-2-3"
+            assert mock_func.call_count == 2
+        elif test_case == "exception_hierarchy":
+
+            class CustomError(ValueError):
+                pass
+
+            mock_func = Mock(side_effect=[CustomError("custom"), "success"])
+
+            @retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
             def func():
                 return mock_func()
 
             result = func()
             assert result == "success"
-            assert callback_mock.call_count == 1
+            assert mock_func.call_count == 2
 
-    def test_retry_preserves_function_metadata(self):
-        """Test that retry decorator preserves function metadata."""
+    @pytest.mark.parametrize(
+        "max_attempts,return_value,should_fail",
+        [
+            (1, None, True),
+            (3, None, False),
+            (3, 42, False),
+        ],
+    )
+    def test_retry_edge_values(self, max_attempts, return_value, should_fail):
+        """Test retry with edge case values."""
+        if should_fail:
+            mock_func = Mock(side_effect=ValueError("fail"))
 
-        @retry(max_attempts=3, delay=0.01)
-        def my_function():
-            """My function docstring."""
-            return "result"
+            @retry(max_attempts=max_attempts, delay=0.01, exceptions=(ValueError,))
+            def func():
+                return mock_func()
 
-        assert my_function.__name__ == "my_function"
-        assert (
-            my_function.__doc__ is not None
-            and "My function docstring" in my_function.__doc__
-        )
+            with pytest.raises(ValueError):
+                func()
 
-    def test_retry_with_function_arguments(self):
-        """Test retry with positional and keyword arguments."""
-        mock_func = Mock(side_effect=[ValueError("fail"), "success"])
+            assert mock_func.call_count == max_attempts
+        else:
+            if return_value is None:
+                mock_func = Mock(return_value=None)
+            else:
+                mock_func = Mock(return_value=return_value)
 
-        @retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
-        def func(a, b, c=None):
-            mock_func()
-            return f"{a}-{b}-{c}"
+            @retry(max_attempts=max_attempts, delay=0.0, exceptions=(ValueError,))
+            def func():
+                return mock_func()
 
-        result = func(1, 2, c=3)
-        assert result == "1-2-3"
-        assert mock_func.call_count == 2
-
-    def test_retry_with_zero_delay(self):
-        """Test retry with zero delay."""
-        mock_func = Mock(side_effect=[ValueError("fail"), "success"])
-
-        @retry(max_attempts=3, delay=0.0, exceptions=(ValueError,))
-        def func():
-            return mock_func()
-
-        result = func()
-        assert result == "success"
-        assert mock_func.call_count == 2
-
-    def test_retry_with_large_backoff(self):
-        """Test retry with large backoff factor."""
-        mock_func = Mock(side_effect=[ValueError("fail"), "success"])
-
-        @retry(max_attempts=3, delay=0.01, backoff=10.0, exceptions=(ValueError,))
-        def func():
-            return mock_func()
-
-        result = func()
-        assert result == "success"
-        assert mock_func.call_count == 2
-
-    def test_retry_max_attempts_one(self):
-        """Test retry with max_attempts=1 (no retries)."""
-        mock_func = Mock(side_effect=ValueError("fail"))
-
-        @retry(max_attempts=1, delay=0.01, exceptions=(ValueError,))
-        def func():
-            return mock_func()
-
-        with pytest.raises(ValueError):
-            func()
-
-        assert mock_func.call_count == 1
-
-    def test_retry_returns_none(self):
-        """Test retry works with functions returning None."""
-        mock_func = Mock(return_value=None)
-
-        @retry(max_attempts=3, delay=0.01)
-        def func():
-            return mock_func()
-
-        result = func()
-        assert result is None
-        assert mock_func.call_count == 1
-
-    def test_retry_with_exception_hierarchy(self):
-        """Test retry catches exceptions from inheritance hierarchy."""
-
-        class CustomError(ValueError):
-            pass
-
-        mock_func = Mock(side_effect=[CustomError("custom"), "success"])
-
-        @retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
-        def func():
-            return mock_func()
-
-        result = func()
-        assert result == "success"
-        assert mock_func.call_count == 2
+            result = func()
+            assert result == return_value
+            assert mock_func.call_count == 1
 
 
 class TestRetryEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_retry_with_very_small_delay(self):
-        """Test retry with very small delay value."""
+    @pytest.mark.parametrize(
+        "delay,scenario",
+        [
+            (0.001, "very_small"),
+            (0.05, "small_with_backoff"),
+            (0.0, "zero_delay"),
+        ],
+    )
+    def test_retry_delay_scenarios(self, delay, scenario):
+        """Test retry with various delay scenarios."""
         mock_func = Mock(side_effect=[ValueError("fail"), "success"])
 
-        @retry(max_attempts=3, delay=0.001, exceptions=(ValueError,))
+        @retry(max_attempts=3, delay=delay, exceptions=(ValueError,))
         def func():
             return mock_func()
 
@@ -440,44 +457,32 @@ class TestAsyncRetry:
     """Test async retry decorator."""
 
     @pytest.mark.asyncio
-    async def test_async_retry_success_first_attempt(self):
-        """Test async retry succeeds on first attempt."""
-        async_mock = Mock(return_value="success")
-
-        @async_retry(max_attempts=3, delay=0.01)
-        async def func():
-            return async_mock()
-
-        result = await func()
-        assert result == "success"
-        assert async_mock.call_count == 1
-
-    @pytest.mark.asyncio
-    async def test_async_retry_with_failures(self):
-        """Test async retry after failures."""
-        async_mock = Mock(side_effect=[ValueError("fail"), "success"])
+    @pytest.mark.parametrize(
+        "side_effects,expected_calls,should_succeed",
+        [
+            (["success"], 1, True),
+            ([ValueError("fail"), "success"], 2, True),
+            ([ValueError("fail"), ValueError("fail"), ValueError("fail")], 3, False),
+        ],
+    )
+    async def test_async_retry_scenarios(
+        self, side_effects, expected_calls, should_succeed
+    ):
+        """Test async retry scenarios: success, with failures, exhaustion."""
+        async_mock = Mock(side_effect=side_effects)
 
         @async_retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
         async def func():
             return async_mock()
 
-        result = await func()
-        assert result == "success"
-        assert async_mock.call_count == 2
+        if should_succeed:
+            result = await func()
+            assert result == "success"
+        else:
+            with pytest.raises(ValueError):
+                await func()
 
-    @pytest.mark.asyncio
-    async def test_async_retry_exhausts_attempts(self):
-        """Test async retry raises when attempts exhausted."""
-        async_mock = Mock(side_effect=ValueError("persistent error"))
-
-        @async_retry(max_attempts=2, delay=0.01, exceptions=(ValueError,))
-        async def func():
-            return async_mock()
-
-        with pytest.raises(ValueError):
-            await func()
-
-        assert async_mock.call_count == 2
+        assert async_mock.call_count == expected_calls
 
     @pytest.mark.asyncio
     async def test_async_retry_exponential_backoff(self):
@@ -499,28 +504,28 @@ class TestAsyncRetry:
 class TestRetryConfig:
     """Test RetryConfig class."""
 
-    def test_retry_config_creation(self):
-        """Test RetryConfig initialization."""
+    @pytest.mark.parametrize(
+        "max_attempts,delay,backoff,exceptions,description",
+        [
+            (5, 2.0, 3.0, (ValueError, TypeError), "custom"),
+            (3, 1.0, 2.0, (Exception,), "defaults"),
+        ],
+    )
+    def test_retry_config_scenarios(
+        self, max_attempts, delay, backoff, exceptions, description
+    ):
+        """Test RetryConfig creation and properties."""
         config = RetryConfig(
-            max_attempts=5,
-            delay=2.0,
-            backoff=3.0,
-            exceptions=(ValueError, TypeError),
+            max_attempts=max_attempts,
+            delay=delay,
+            backoff=backoff,
+            exceptions=exceptions,
         )
 
-        assert config.max_attempts == 5
-        assert config.delay == 2.0
-        assert config.backoff == 3.0
-        assert config.exceptions == (ValueError, TypeError)
-
-    def test_retry_config_default_values(self):
-        """Test RetryConfig with default values."""
-        config = RetryConfig()
-
-        assert config.max_attempts == 3
-        assert config.delay == 1.0
-        assert config.backoff == 2.0
-        assert config.exceptions == (Exception,)
+        assert config.max_attempts == max_attempts
+        assert config.delay == delay
+        assert config.backoff == backoff
+        assert config.exceptions == exceptions
 
     def test_retry_config_as_decorator(self):
         """Test using RetryConfig as a decorator."""
@@ -551,21 +556,21 @@ class TestRetryConfig:
 class TestPredefinedRetryConfigs:
     """Test predefined retry configurations."""
 
-    def test_network_retry_config(self):
-        """Test NETWORK_RETRY configuration."""
-        assert NETWORK_RETRY.max_attempts == 5
-        assert NETWORK_RETRY.delay == 1.0
-        assert NETWORK_RETRY.backoff == 2.0
-        assert ConnectionError in NETWORK_RETRY.exceptions
-        assert TimeoutError in NETWORK_RETRY.exceptions
-
-    def test_api_retry_config(self):
-        """Test API_RETRY configuration."""
-        assert API_RETRY.max_attempts == 3
-        assert API_RETRY.delay == 0.5
-        assert API_RETRY.backoff == 1.5
-        assert ConnectionError in API_RETRY.exceptions
-        assert TimeoutError in API_RETRY.exceptions
+    @pytest.mark.parametrize(
+        "config_obj,expected_attempts,expected_delay,error_types",
+        [
+            (NETWORK_RETRY, 5, 1.0, [ConnectionError, TimeoutError]),
+            (API_RETRY, 3, 0.5, [ConnectionError, TimeoutError]),
+        ],
+    )
+    def test_predefined_config_properties(
+        self, config_obj, expected_attempts, expected_delay, error_types
+    ):
+        """Test predefined retry configuration properties."""
+        assert config_obj.max_attempts == expected_attempts
+        assert config_obj.delay == expected_delay
+        for error_type in error_types:
+            assert error_type in config_obj.exceptions
 
     def test_database_retry_config(self):
         """Test DATABASE_RETRY configuration."""
@@ -573,23 +578,18 @@ class TestPredefinedRetryConfigs:
         assert DATABASE_RETRY.delay == 0.1
         assert DATABASE_RETRY.backoff == 2.0
 
-    def test_network_retry_usage(self):
-        """Test using NETWORK_RETRY configuration."""
-        mock_func = Mock(side_effect=[ConnectionError("fail"), "success"])
+    @pytest.mark.parametrize(
+        "config_obj,exception_type",
+        [
+            (NETWORK_RETRY, ConnectionError),
+            (API_RETRY, TimeoutError),
+        ],
+    )
+    def test_retry_config_usage(self, config_obj, exception_type):
+        """Test using predefined retry configurations."""
+        mock_func = Mock(side_effect=[exception_type("fail"), "success"])
 
-        @NETWORK_RETRY
-        def func():
-            return mock_func()
-
-        result = func()
-        assert result == "success"
-        assert mock_func.call_count == 2
-
-    def test_api_retry_with_timeout(self):
-        """Test API_RETRY with timeout exception."""
-        mock_func = Mock(side_effect=[TimeoutError("timeout"), "success"])
-
-        @API_RETRY
+        @config_obj
         def func():
             return mock_func()
 
