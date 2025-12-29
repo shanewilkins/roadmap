@@ -293,6 +293,35 @@ class TestCLIIssueCreate:
         assert "title" in result.output.lower()
 
 
+class TestCLIHelpCommands:
+    """Test help functionality across CLI commands."""
+
+    @pytest.mark.parametrize(
+        "cmd_path,expected_keyword",
+        [
+            (["issue", "list", "--help"], "list"),
+            (["issue", "update", "--help"], "update"),
+            (["issue", "delete", "--help"], "delete"),
+            (["issue", "start", "--help"], "start"),
+            (["issue", "close", "--help"], "close"),
+            (["milestone", "create", "--help"], "create"),
+            (["milestone", "list", "--help"], "list"),
+            (["milestone", "assign", "--help"], "assign"),
+            (["milestone", "update", "--help"], "update"),
+            (["milestone", "close", "--help"], "close"),
+            (["milestone", "delete", "--help"], "delete"),
+            (["data", "export", "--help"], "export"),
+            (["git", "status", "--help"], "status"),
+            (["git", "branch", "--help"], "branch"),
+        ],
+    )
+    def test_command_help_output(self, cli_runner, cmd_path, expected_keyword):
+        """Test that commands produce valid help output."""
+        result = cli_runner.invoke(main, cmd_path)
+        assert result.exit_code == 0
+        assert expected_keyword in result.output.lower()
+
+
 class TestCLIIssueList:
     """Test issue list command."""
 
@@ -375,12 +404,6 @@ class TestCLIIssueUpdate:
             or "error" in result.output.lower()
         )
 
-    def test_update_issue_help(self, cli_runner):
-        """Test issue update help."""
-        result = cli_runner.invoke(main, ["issue", "update", "--help"])
-
-        assert result.exit_code == 0
-
 
 class TestCLIIssueDelete:
     """Test issue delete command."""
@@ -423,12 +446,6 @@ class TestCLIIssueDelete:
 
         # Should fail gracefully
         assert result.exit_code != 0 or "not found" in result.output.lower()
-
-    def test_delete_issue_help(self, cli_runner):
-        """Test issue delete help."""
-        result = cli_runner.invoke(main, ["issue", "delete", "--help"])
-
-        assert result.exit_code == 0
 
 
 class TestCLIIssueWorkflow:
@@ -496,18 +513,6 @@ class TestCLIIssueWorkflow:
         result = cli_runner.invoke(main, ["issue", "unblock", "1"])
 
         assert result.exit_code == 0 or "unblock" in result.output.lower()
-
-    def test_start_issue_help(self, cli_runner):
-        """Test start command help."""
-        result = cli_runner.invoke(main, ["issue", "start", "--help"])
-
-        assert result.exit_code == 0
-
-    def test_close_issue_help(self, cli_runner):
-        """Test close command help."""
-        result = cli_runner.invoke(main, ["issue", "close", "--help"])
-
-        assert result.exit_code == 0
 
 
 class TestCLIIssueHelp:
@@ -618,13 +623,6 @@ class TestCLIMilestoneCreate:
             "created" in result.output.lower() or "milestone" in result.output.lower()
         )
 
-    def test_create_milestone_help(self, cli_runner):
-        """Test milestone create help."""
-        result = cli_runner.invoke(main, ["milestone", "create", "--help"])
-
-        assert result.exit_code == 0
-        assert "create" in result.output.lower()
-
 
 class TestCLIMilestoneList:
     """Test milestone list command."""
@@ -647,12 +645,6 @@ class TestCLIMilestoneList:
 
         assert result.exit_code == 0
         # Should handle empty list gracefully
-
-    def test_list_milestones_help(self, cli_runner):
-        """Test milestone list help."""
-        result = cli_runner.invoke(main, ["milestone", "list", "--help"])
-
-        assert result.exit_code == 0
 
 
 class TestCLIMilestoneAssign:
@@ -693,12 +685,6 @@ class TestCLIMilestoneAssign:
         # Should either exit with error or show error message
         assert result.exit_code != 0 or "failed" in result.output.lower()
 
-    def test_assign_help(self, cli_runner):
-        """Test milestone assign help."""
-        result = cli_runner.invoke(main, ["milestone", "assign", "--help"])
-
-        assert result.exit_code == 0
-
 
 class TestCLIMilestoneUpdate:
     """Test milestone update command."""
@@ -730,12 +716,6 @@ class TestCLIMilestoneUpdate:
             or "error" in result.output.lower()
         )
 
-    def test_update_help(self, cli_runner):
-        """Test milestone update help."""
-        result = cli_runner.invoke(main, ["milestone", "update", "--help"])
-
-        assert result.exit_code == 0
-
 
 class TestCLIMilestoneClose:
     """Test milestone close command."""
@@ -766,12 +746,6 @@ class TestCLIMilestoneClose:
 
         # Should either exit with error or show error message
         assert result.exit_code != 0 or "failed" in result.output.lower()
-
-    def test_close_help(self, cli_runner):
-        """Test milestone close help."""
-        result = cli_runner.invoke(main, ["milestone", "close", "--help"])
-
-        assert result.exit_code == 0
 
 
 class TestCLIMilestoneDelete:
@@ -808,12 +782,6 @@ class TestCLIMilestoneDelete:
             or "not found" in result.output.lower()
             or "error" in result.output.lower()
         )
-
-    def test_delete_help(self, cli_runner):
-        """Test milestone delete help."""
-        result = cli_runner.invoke(main, ["milestone", "delete", "--help"])
-
-        assert result.exit_code == 0
 
 
 class TestCLIMilestoneHelp:
@@ -908,13 +876,6 @@ class TestCLIDataExport:
 
         # Command should succeed even if no matching data
         assert result.exit_code == 0
-
-    def test_export_help(self, cli_runner):
-        """Test data export help."""
-        result = cli_runner.invoke(main, ["data", "export", "--help"])
-
-        assert result.exit_code == 0
-        assert "export" in result.output.lower()
 
 
 class TestCLIDataGroup:
@@ -1023,19 +984,6 @@ class TestCLIGitIntegration:
             or "not found" in result.output.lower()
             or "failed" in result.output.lower()
         )
-
-    def test_git_branch_help(self, cli_runner):
-        """Test git branch help."""
-        result = cli_runner.invoke(main, ["git", "branch", "--help"])
-
-        assert result.exit_code == 0
-        assert "branch" in result.output.lower()
-
-    def test_git_status_help(self, cli_runner):
-        """Test git status help."""
-        result = cli_runner.invoke(main, ["git", "status", "--help"])
-
-        assert result.exit_code == 0
 
 
 class TestCLIGitGroup:
