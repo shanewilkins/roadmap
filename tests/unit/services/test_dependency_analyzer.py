@@ -1,10 +1,10 @@
 """Tests for DependencyAnalyzer service."""
 
-from roadmap.core.domain.issue import Issue
 from roadmap.core.services.dependency_analyzer import (
     DependencyAnalyzer,
     DependencyIssueType,
 )
+from tests.factories import IssueBuilder
 
 
 class TestDependencyAnalyzer:
@@ -18,11 +18,13 @@ class TestDependencyAnalyzer:
         blocks: list | None = None,
     ):
         """Helper to create Issue objects with sensible defaults."""
-        return Issue(
-            id=issue_id,
-            title=title or f"Issue {issue_id}",
-            depends_on=depends_on or [],
-            blocks=blocks or [],
+        return (
+            IssueBuilder()
+            .with_id(issue_id)
+            .with_title(title or f"Issue {issue_id}")
+            .with_dependencies(depends_on or [])
+            .with_blocked_issues(blocks or [])
+            .build()
         )
 
     def test_analyze_healthy_dependencies(self):
@@ -134,9 +136,15 @@ class TestDependencyAnalyzer:
     def test_missing_bidirectional_link_depends(self):
         """Test detection of missing bidirectional link (A depends on B, but B doesn't block A)."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=["2"], blocks=[]),
-            Issue(
-                id="2", title="Issue 2", depends_on=[], blocks=[]
+            (
+                IssueBuilder()
+                .with_id("1")
+                .with_title("Issue 1")
+                .with_dependencies(["2"])
+                .build()
+            ),
+            (
+                IssueBuilder().with_id("2").with_title("Issue 2").build()
             ),  # Doesn't list 1 as blocked
         ]
 
@@ -151,7 +159,13 @@ class TestDependencyAnalyzer:
     def test_missing_bidirectional_link_blocks(self):
         """Test detection of missing bidirectional link (A blocks B, but B doesn't depend on A)."""
         issues = [
-            Issue(id="1", title="Issue 1", depends_on=[], blocks=["2"]),
+            (
+                IssueBuilder()
+                .with_id("1")
+                .with_title("Issue 1")
+                .with_blocked_issues(["2"])
+                .build()
+            ),
             self.create_issue("2", depends_on=[], blocks=[]),  # Doesn't depend on 1
         ]
 

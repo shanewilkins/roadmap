@@ -12,6 +12,7 @@ from roadmap.core.services.issue_helpers.issue_filters import (
     IssueQueryService,
     WorkloadCalculator,
 )
+from tests.factories import IssueBuilder
 
 
 class TestIssueFilterValidator:
@@ -450,14 +451,24 @@ class TestWorkloadCalculator:
     def test_calculate_workload_multiple_issues(self):
         """Test calculating workload for multiple issues."""
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.TODO, estimated_hours=5.0),
-            Issue(
-                id="2",
-                title="Issue 2",
-                status=Status.IN_PROGRESS,
-                estimated_hours=10.0,
-            ),
-            Issue(id="3", title="Issue 3", status=Status.TODO, estimated_hours=3.0),
+            IssueBuilder()
+            .with_id("1")
+            .with_title("Issue 1")
+            .with_status(Status.TODO)
+            .with_estimated_hours(5.0)
+            .build(),
+            IssueBuilder()
+            .with_id("2")
+            .with_title("Issue 2")
+            .with_status(Status.IN_PROGRESS)
+            .with_estimated_hours(10.0)
+            .build(),
+            IssueBuilder()
+            .with_id("3")
+            .with_title("Issue 3")
+            .with_status(Status.TODO)
+            .with_estimated_hours(3.0)
+            .build(),
         ]
 
         result = WorkloadCalculator.calculate_workload(issues)
@@ -471,9 +482,24 @@ class TestWorkloadCalculator:
     def test_calculate_workload_missing_estimated_hours(self):
         """Test calculating workload when some issues lack estimates."""
         issues = [
-            Issue(id="1", title="Issue 1", status=Status.TODO, estimated_hours=5.0),
-            Issue(id="2", title="Issue 2", status=Status.TODO, estimated_hours=None),
-            Issue(id="3", title="Issue 3", status=Status.TODO, estimated_hours=3.0),
+            IssueBuilder()
+            .with_id("1")
+            .with_title("Issue 1")
+            .with_status(Status.TODO)
+            .with_estimated_hours(5.0)
+            .build(),
+            IssueBuilder()
+            .with_id("2")
+            .with_title("Issue 2")
+            .with_status(Status.TODO)
+            .with_estimated_hours(None)
+            .build(),
+            IssueBuilder()
+            .with_id("3")
+            .with_title("Issue 3")
+            .with_status(Status.TODO)
+            .with_estimated_hours(3.0)
+            .build(),
         ]
 
         result = WorkloadCalculator.calculate_workload(issues)

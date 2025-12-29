@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 from roadmap.core.domain import Issue, Priority, Status
 from roadmap.shared.formatters.kanban import KanbanLayout, KanbanOrganizer
+from tests.factories import IssueBuilder
 
 
 class TestKanbanOrganizer:
@@ -15,12 +16,12 @@ class TestKanbanOrganizer:
 
     def create_issue(self, status=Status.TODO, due_date=None, **kwargs):
         """Helper to create a test issue."""
-        issue = Mock(spec=Issue)
-        issue.status = status
-        issue.due_date = due_date
-        issue.title = kwargs.get("title", "Test Issue")
-        issue.priority = kwargs.get("priority", Priority.MEDIUM)
-        return issue
+        builder = IssueBuilder().with_status(status).with_due_date(due_date)
+        if "title" in kwargs:
+            builder = builder.with_title(kwargs["title"])
+        if "priority" in kwargs:
+            builder = builder.with_priority(kwargs["priority"])
+        return builder.build()
 
     def test_categorize_issues_empty_list(self):
         """categorize_issues should handle empty list."""
@@ -238,10 +239,7 @@ class TestKanbanLayout:
 
     def create_issue(self, title="Test Issue", priority=Priority.MEDIUM):
         """Helper to create a test issue."""
-        issue = Mock(spec=Issue)
-        issue.title = title
-        issue.priority = priority
-        return issue
+        return IssueBuilder().with_title(title).with_priority(priority).build()
 
     def test_calculate_column_width_default(self):
         """calculate_column_width should return reasonable default."""

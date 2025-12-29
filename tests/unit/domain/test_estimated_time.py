@@ -8,8 +8,9 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
-from roadmap.core.domain import Issue, Milestone, Status
+from roadmap.common.constants import Status
 from roadmap.infrastructure.core import RoadmapCore
+from tests.factories import IssueBuilder, MilestoneBuilder
 from tests.unit.shared.test_data_factory import TestDataFactory
 from tests.unit.shared.test_utils import strip_ansi
 
@@ -19,13 +20,13 @@ class TestEstimatedTimeModel:
 
     def test_issue_with_estimated_hours(self):
         """Test creating an issue with estimated hours."""
-        issue = Issue(title=TestDataFactory.message(), estimated_hours=8.5)
+        issue = IssueBuilder().with_estimated_hours(8.5).build()
         assert issue.estimated_hours == 8.5
         assert issue.estimated_time_display == "1.1d"
 
     def test_issue_without_estimated_hours(self):
         """Test creating an issue without estimated hours."""
-        issue = Issue(title=TestDataFactory.message())
+        issue = IssueBuilder().build()
         assert issue.estimated_hours is None
         assert issue.estimated_time_display == "Not estimated"
 
@@ -38,7 +39,7 @@ class TestEstimatedTimeModel:
         ],
     )
     def test_estimated_time_display_formats(self, estimated_hours, expected_display):
-        issue = Issue(title=TestDataFactory.message(), estimated_hours=estimated_hours)
+        issue = IssueBuilder().with_estimated_hours(estimated_hours).build()
         assert issue.estimated_time_display == expected_display
 
 
@@ -47,113 +48,86 @@ class TestMilestoneEstimatedTime:
 
     def test_milestone_total_estimated_hours(self):
         """Test milestone total estimated hours calculation."""
-        milestone = Milestone(name=TestDataFactory.milestone_id())
+        milestone = MilestoneBuilder().build()
         issues = [
-            Issue(
-                title=TestDataFactory.message(),
-                estimated_hours=4.0,
-                milestone=milestone.name,
-            ),
-            Issue(
-                title=TestDataFactory.message(),
-                estimated_hours=8.0,
-                milestone=milestone.name,
-            ),
-            Issue(
-                title=TestDataFactory.message(),
-                estimated_hours=None,
-                milestone=milestone.name,
-            ),  # No estimate
-            Issue(
-                title=TestDataFactory.message(),
-                estimated_hours=2.0,
-                milestone=TestDataFactory.milestone_id(variant="other"),
-            ),  # Different milestone
+            IssueBuilder()
+            .with_estimated_hours(4.0)
+            .with_milestone(milestone.name)
+            .build(),
+            IssueBuilder()
+            .with_estimated_hours(8.0)
+            .with_milestone(milestone.name)
+            .build(),
+            IssueBuilder()
+            .with_estimated_hours(None)
+            .with_milestone(milestone.name)
+            .build(),
+            IssueBuilder().with_estimated_hours(2.0).build(),
         ]
         total_hours = milestone.get_total_estimated_hours(issues)
         assert total_hours == 12.0
 
     def test_milestone_remaining_estimated_hours(self):
         """Test milestone remaining estimated hours calculation."""
-        milestone = Milestone(name=TestDataFactory.milestone_id())
+        milestone = MilestoneBuilder().build()
         issues = [
-            Issue(
-                title=TestDataFactory.message(),
-                estimated_hours=4.0,
-                milestone=milestone.name,
-                status=Status.CLOSED,
-            ),
-            Issue(
-                title=TestDataFactory.message(),
-                estimated_hours=8.0,
-                milestone=milestone.name,
-                status=Status.TODO,
-            ),
-            Issue(
-                title=TestDataFactory.message(),
-                estimated_hours=6.0,
-                milestone=milestone.name,
-                status=Status.IN_PROGRESS,
-            ),
+            IssueBuilder()
+            .with_estimated_hours(4.0)
+            .with_milestone(milestone.name)
+            .with_status(Status.CLOSED)
+            .build(),
+            IssueBuilder()
+            .with_estimated_hours(8.0)
+            .with_milestone(milestone.name)
+            .with_status(Status.TODO)
+            .build(),
+            IssueBuilder()
+            .with_estimated_hours(6.0)
+            .with_milestone(milestone.name)
+            .with_status(Status.IN_PROGRESS)
+            .build(),
         ]
         remaining_hours = milestone.get_remaining_estimated_hours(issues)
         assert remaining_hours == 14.0
 
-    @pytest.mark.parametrize(
-        "issues,expected_display",
-        [
-            # Test with no estimates
-            (
-                [
-                    Issue(
-                        title=TestDataFactory.message(),
-                        milestone=TestDataFactory.milestone_id(),
-                    ),
-                    Issue(
-                        title=TestDataFactory.message(),
-                        milestone=TestDataFactory.milestone_id(),
-                    ),
-                ],
-                "Not estimated",
-            ),
-            # Test with small estimate (hours)
-            (
-                [
-                    Issue(
-                        title=TestDataFactory.message(),
-                        estimated_hours=2.0,
-                        milestone=TestDataFactory.milestone_id(),
-                    ),
-                    Issue(
-                        title=TestDataFactory.message(),
-                        estimated_hours=3.0,
-                        milestone=TestDataFactory.milestone_id(),
-                    ),
-                ],
-                "5.0h",
-            ),
-            # Test with large estimate (days)
-            (
-                [
-                    Issue(
-                        title=TestDataFactory.message(),
-                        estimated_hours=8.0,
-                        milestone=TestDataFactory.milestone_id(),
-                    ),
-                    Issue(
-                        title=TestDataFactory.message(),
-                        estimated_hours=16.0,
-                        milestone=TestDataFactory.milestone_id(),
-                    ),
-                ],
-                "3.0d",
-            ),
-        ],
-    )
-    def test_milestone_estimated_time_display(self, issues, expected_display):
-        """Test milestone estimated time display formatting."""
-        milestone = Milestone(name=TestDataFactory.milestone_id())
-        assert milestone.get_estimated_time_display(issues) == expected_display
+    def test_milestone_estimated_time_display_no_estimate(self):
+        """Test milestone estimated time display with no estimates."""
+        milestone = MilestoneBuilder().build()
+        issues = [
+            IssueBuilder().with_milestone(milestone.name).build(),
+            IssueBuilder().with_milestone(milestone.name).build(),
+        ]
+        assert milestone.get_estimated_time_display(issues) == "Not estimated"
+
+    def test_milestone_estimated_time_display_hours(self):
+        """Test milestone estimated time display with hours."""
+        milestone = MilestoneBuilder().build()
+        issues = [
+            IssueBuilder()
+            .with_estimated_hours(2.0)
+            .with_milestone(milestone.name)
+            .build(),
+            IssueBuilder()
+            .with_estimated_hours(3.0)
+            .with_milestone(milestone.name)
+            .build(),
+        ]
+        assert milestone.get_estimated_time_display(issues) == "5.0h"
+
+    def test_milestone_estimated_time_display_days(self):
+        """Test milestone estimated time display with days."""
+        milestone = MilestoneBuilder().build()
+        issues = [
+            IssueBuilder()
+            .with_estimated_hours(8.0)
+            .with_milestone(milestone.name)
+            .build(),
+            IssueBuilder()
+            .with_estimated_hours(16.0)
+            .with_milestone(milestone.name)
+            .build(),
+        ]
+        assert milestone.get_estimated_time_display(issues) == "3.0d"
 
 
 class TestEstimatedTimeCLI:
@@ -414,7 +388,7 @@ class TestEstimatedTimeEdgeCases:
     )
     def test_estimated_time_edge_cases(self, estimated_hours, expected_display):
         """Test edge cases for estimated time functionality."""
-        issue = Issue(title=TestDataFactory.message(), estimated_hours=estimated_hours)
+        issue = IssueBuilder().with_estimated_hours(estimated_hours).build()
         display = issue.estimated_time_display
         if expected_display is str:
             # For negative, just check it returns a string

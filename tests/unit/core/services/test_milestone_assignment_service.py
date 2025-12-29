@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.core.domain import Issue, Milestone
+from tests.factories import IssueBuilder, MilestoneBuilder
 from tests.unit.domain.test_data_factory import TestDataFactory
 
 
@@ -26,8 +26,8 @@ class TestMilestoneServiceAssignment:
     def test_assign_issue_to_milestone(self, mock_core):
         """Test assigning an issue to a milestone via service."""
         # Arrange
-        issue = Issue(title="Test Issue", id="test-id-123")
-        milestone = Milestone(name="v1.0")
+        issue = IssueBuilder().with_id("test-id-123").with_title("Test Issue").build()
+        milestone = MilestoneBuilder().with_name("v1.0").build()
 
         mock_core.issues.get.return_value = issue
         mock_core.milestones.get.return_value = milestone
@@ -45,7 +45,13 @@ class TestMilestoneServiceAssignment:
     def test_milestone_issue_association(self, mock_core):
         """Test that issues are properly associated with milestones."""
         # Arrange
-        issue = Issue(title="Feature", id="issue-1", milestone="v1.0")
+        issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Feature")
+            .with_milestone("v1.0")
+            .build()
+        )
 
         mock_core.issues.get.return_value = issue
 
@@ -58,8 +64,8 @@ class TestMilestoneServiceAssignment:
     def test_get_milestone_issues(self, mock_core):
         """Test retrieving all issues for a milestone."""
         # Arrange
-        issue1 = Issue(title="Issue 1", milestone="v1.0")
-        issue2 = Issue(title="Issue 2", milestone="v1.0")
+        issue1 = IssueBuilder().with_title("Issue 1").with_milestone("v1.0").build()
+        issue2 = IssueBuilder().with_title("Issue 2").with_milestone("v1.0").build()
 
         mock_core.issues.list.return_value = [issue1, issue2]
 

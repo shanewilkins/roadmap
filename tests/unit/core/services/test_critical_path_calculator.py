@@ -4,11 +4,13 @@ from datetime import datetime
 
 import pytest
 
-from roadmap.core.domain.issue import Issue, Priority
+from roadmap.common.constants import Priority
+from roadmap.core.domain.issue import Issue
 from roadmap.core.services.critical_path_calculator import (
     CriticalPathCalculator,
     PathNode,
 )
+from tests.factories import IssueBuilder
 
 
 @pytest.fixture
@@ -20,29 +22,30 @@ def calculator():
 @pytest.fixture
 def simple_issues():
     """Create simple linear dependency chain."""
-    issue_a = Issue(
-        id="A",
-        title="Setup infrastructure",
-        priority=Priority.HIGH,
-        estimated_hours=8.0,
-        depends_on=[],
-        blocks=["B"],
+    issue_a = (
+        IssueBuilder()
+        .with_id("A")
+        .with_priority(Priority.HIGH)
+        .with_estimated_hours(8.0)
+        .with_blocked_issues(["B"])
+        .build()
     )
-    issue_b = Issue(
-        id="B",
-        title="Implement API",
-        priority=Priority.HIGH,
-        estimated_hours=16.0,
-        depends_on=["A"],
-        blocks=["C"],
+    issue_b = (
+        IssueBuilder()
+        .with_id("B")
+        .with_priority(Priority.HIGH)
+        .with_estimated_hours(16.0)
+        .with_dependencies(["A"])
+        .with_blocked_issues(["C"])
+        .build()
     )
-    issue_c = Issue(
-        id="C",
-        title="Write tests",
-        priority=Priority.MEDIUM,
-        estimated_hours=8.0,
-        depends_on=["B"],
-        blocks=[],
+    issue_c = (
+        IssueBuilder()
+        .with_id("C")
+        .with_priority(Priority.MEDIUM)
+        .with_estimated_hours(8.0)
+        .with_dependencies(["B"])
+        .build()
     )
     return [issue_a, issue_b, issue_c]
 
@@ -51,46 +54,37 @@ def simple_issues():
 def complex_issues():
     """Create complex dependency graph."""
     issues = [
-        Issue(
-            id="1",
-            title="Design",
-            priority=Priority.CRITICAL,
-            estimated_hours=4.0,
-            depends_on=[],
-            blocks=["2", "3"],
-        ),
-        Issue(
-            id="2",
-            title="Frontend",
-            priority=Priority.HIGH,
-            estimated_hours=16.0,
-            depends_on=["1"],
-            blocks=["5"],
-        ),
-        Issue(
-            id="3",
-            title="Backend",
-            priority=Priority.HIGH,
-            estimated_hours=24.0,
-            depends_on=["1"],
-            blocks=["5"],
-        ),
-        Issue(
-            id="4",
-            title="Documentation",
-            priority=Priority.LOW,
-            estimated_hours=8.0,
-            depends_on=[],
-            blocks=[],
-        ),
-        Issue(
-            id="5",
-            title="Integration",
-            priority=Priority.HIGH,
-            estimated_hours=8.0,
-            depends_on=["2", "3"],
-            blocks=[],
-        ),
+        IssueBuilder()
+        .with_id("1")
+        .with_priority(Priority.CRITICAL)
+        .with_estimated_hours(4.0)
+        .with_blocked_issues(["2", "3"])
+        .build(),
+        IssueBuilder()
+        .with_id("2")
+        .with_priority(Priority.HIGH)
+        .with_estimated_hours(16.0)
+        .with_dependencies(["1"])
+        .with_blocked_issues(["5"])
+        .build(),
+        IssueBuilder()
+        .with_id("3")
+        .with_priority(Priority.HIGH)
+        .with_estimated_hours(24.0)
+        .with_dependencies(["1"])
+        .with_blocked_issues(["5"])
+        .build(),
+        IssueBuilder()
+        .with_id("4")
+        .with_priority(Priority.LOW)
+        .with_estimated_hours(8.0)
+        .build(),
+        IssueBuilder()
+        .with_id("5")
+        .with_priority(Priority.HIGH)
+        .with_estimated_hours(8.0)
+        .with_dependencies(["2", "3"])
+        .build(),
     ]
     return issues
 
@@ -111,27 +105,27 @@ class TestCriticalPathCalculator:
 
     def test_estimate_duration_hours(self, calculator):
         """Test parsing hours estimate."""
-        issue = Issue(id="1", title="Test", estimated_hours=8.0)
+        issue = IssueBuilder().with_id("1").with_estimated_hours(8.0).build()
         assert calculator._estimate_duration(issue) == 8.0
 
     def test_estimate_duration_days(self, calculator):
         """Test parsing days estimate."""
-        issue = Issue(id="1", title="Test", estimated_hours=16.0)
+        issue = IssueBuilder().with_id("1").with_estimated_hours(16.0).build()
         assert calculator._estimate_duration(issue) == 16.0
 
     def test_estimate_duration_weeks(self, calculator):
         """Test parsing weeks estimate."""
-        issue = Issue(id="1", title="Test", estimated_hours=40.0)
+        issue = IssueBuilder().with_id("1").with_estimated_hours(40.0).build()
         assert calculator._estimate_duration(issue) == 40.0
 
     def test_estimate_duration_default(self, calculator):
         """Test default estimate when not provided."""
-        issue = Issue(id="1", title="Test")
+        issue = IssueBuilder().with_id("1").build()
         assert calculator._estimate_duration(issue) == 4.0
 
     def test_estimate_duration_invalid(self, calculator):
         """Test invalid estimate falls back to default."""
-        issue = Issue(id="1", title="Test", estimated_hours=None)
+        issue = IssueBuilder().with_id("1").with_estimated_hours(None).build()
         assert calculator._estimate_duration(issue) == 4.0
 
     def test_simple_linear_dependency(self, calculator, simple_issues):
@@ -250,20 +244,8 @@ class TestCriticalPathCalculator:
     def test_multiple_root_issues(self, calculator):
         """Test handling multiple independent root issues."""
         issues = [
-            Issue(
-                id="root1",
-                title="Task 1",
-                estimated_hours=4.0,
-                depends_on=[],
-                blocks=[],
-            ),
-            Issue(
-                id="root2",
-                title="Task 2",
-                estimated_hours=4.0,
-                depends_on=[],
-                blocks=[],
-            ),
+            IssueBuilder().with_id("root1").with_estimated_hours(4.0).build(),
+            IssueBuilder().with_id("root2").with_estimated_hours(4.0).build(),
         ]
         result = calculator.calculate_critical_path(issues)
 
@@ -272,20 +254,16 @@ class TestCriticalPathCalculator:
     def test_circular_dependency_handling(self, calculator):
         """Test handling of circular dependencies (should not crash)."""
         issues = [
-            Issue(
-                id="A",
-                title="Task A",
-                estimated_hours=4.0,
-                depends_on=["B"],
-                blocks=[],
-            ),
-            Issue(
-                id="B",
-                title="Task B",
-                estimated_hours=4.0,
-                depends_on=["A"],
-                blocks=[],
-            ),
+            IssueBuilder()
+            .with_id("A")
+            .with_estimated_hours(4.0)
+            .with_dependencies(["B"])
+            .build(),
+            IssueBuilder()
+            .with_id("B")
+            .with_estimated_hours(4.0)
+            .with_dependencies(["A"])
+            .build(),
         ]
         # Should not crash, may not find valid path
         result = calculator.calculate_critical_path(issues)

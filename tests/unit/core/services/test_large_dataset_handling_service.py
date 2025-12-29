@@ -1,6 +1,7 @@
 """Tests for handling large datasets - tests service logic, not CLI output parsing."""
 
-from roadmap.core.domain import Issue, Milestone, Priority, Status
+from roadmap.core.domain import Issue, Priority, Status
+from tests.factories import IssueBuilder, MilestoneBuilder
 
 
 class TestLargeDatasetHandling:
@@ -13,7 +14,12 @@ class TestLargeDatasetHandling:
 
         for i in range(num_issues):
             priority = [Priority.LOW, Priority.MEDIUM, Priority.HIGH][i % 3]
-            issue = Issue(title=f"Issue {i+1}", priority=priority)
+            issue = (
+                IssueBuilder()
+                .with_title(f"Issue {i+1}")
+                .with_priority(priority)
+                .build()
+            )
             issues.append(issue)
 
         # Verify all created
@@ -34,16 +40,21 @@ class TestLargeDatasetHandling:
         num_milestones = 10
 
         # Create milestones
-        milestones = [Milestone(name=f"Milestone {i+1}") for i in range(num_milestones)]
+        milestones = [
+            MilestoneBuilder().with_name(f"Milestone {i+1}").build()
+            for i in range(num_milestones)
+        ]
 
         # Create issues and assign to milestones
         issues = []
         for i in range(num_issues):
             milestone_name = milestones[i % len(milestones)].name
-            issue = Issue(
-                title=f"Issue {i+1}",
-                milestone=milestone_name,
-                priority=[Priority.LOW, Priority.MEDIUM, Priority.HIGH][i % 3],
+            issue = (
+                IssueBuilder()
+                .with_title(f"Issue {i+1}")
+                .with_milestone(milestone_name)
+                .with_priority([Priority.LOW, Priority.MEDIUM, Priority.HIGH][i % 3])
+                .build()
             )
             issues.append(issue)
 
