@@ -13,133 +13,69 @@ from roadmap.adapters.persistence.sync_orchestrator import SyncOrchestrator
 class TestSyncOrchestratorInitialization:
     """Test SyncOrchestrator initialization."""
 
-    def test_initialization(self):
-        """Test orchestrator initializes correctly."""
-        mock_get_conn = mock.MagicMock()
-        mock_transaction = mock.MagicMock()
+    import pytest
 
-        orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-
-        assert orchestrator._get_connection == mock_get_conn
-        assert orchestrator._transaction == mock_transaction
-
-    def test_initialization_with_callables(self):
-        """Test initialization stores callable references."""
-
-        def get_connection():
-            return mock.MagicMock()
-
-        def transaction_context():
-            pass
-
-        orchestrator = SyncOrchestrator(get_connection, transaction_context)
-
-        assert callable(orchestrator._get_connection)
-        assert callable(orchestrator._transaction)
+    @pytest.mark.parametrize(
+        "get_conn,trans,expected_callable",
+        [
+            (mock.MagicMock(), mock.MagicMock(), False),
+            (lambda: mock.MagicMock(), lambda: None, True),
+        ],
+    )
+    def test_initialization_param(self, get_conn, trans, expected_callable):
+        orchestrator = SyncOrchestrator(get_conn, trans)
+        if expected_callable:
+            assert callable(orchestrator._get_connection)
+            assert callable(orchestrator._transaction)
+        else:
+            assert orchestrator._get_connection == get_conn
+            assert orchestrator._transaction == trans
 
 
 class TestHasFileChanged:
     """Test _has_file_changed method."""
 
-    def test_file_not_exists(self):
-        """Test when file doesn't exist."""
+    import pytest
+
+    @pytest.mark.parametrize(
+        "desc,setup_fn,expected",
+        [
+            ("file_not_exists", lambda: (False, None, None, None), True),
+            ("file_never_synced", lambda: (True, None, None, None), True),
+            ("file_hash_matches", lambda: (True, "abc123", "abc123", None), False),
+            ("file_hash_differs", lambda: (True, "old_hash", "new_hash", None), True),
+            (
+                "file_check_error",
+                lambda: (True, None, None, Exception("DB error")),
+                True,
+            ),
+        ],
+    )
+    def test_has_file_changed_param(self, desc, setup_fn, expected):
+        file_exists, stored_hash, calc_hash, error = setup_fn()
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
-
+        if error:
+            mock_get_conn.side_effect = error
+        else:
+            mock_conn = mock.MagicMock()
+            if stored_hash is not None:
+                mock_conn.execute.return_value.fetchone.return_value = (stored_hash,)
+            else:
+                mock_conn.execute.return_value.fetchone.return_value = None
+            mock_get_conn.return_value = mock_conn
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-
         mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = False
-
-        result = orchestrator._has_file_changed(mock_file)
-
-        assert result is True
-
-    def test_file_never_synced(self):
-        """Test when file has never been synced."""
-        mock_get_conn = mock.MagicMock()
-        mock_conn = mock.MagicMock()
-        mock_get_conn.return_value = mock_conn
-        mock_conn.execute.return_value.fetchone.return_value = None
-
-        mock_transaction = mock.MagicMock()
-
-        orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-
-        with mock.patch.object(
-            orchestrator._parser, "calculate_file_hash"
-        ) as mock_hash:
-            mock_hash.return_value = "abc123"
+        mock_file.exists.return_value = file_exists
+        if calc_hash is not None or stored_hash is not None:
+            with mock.patch.object(
+                orchestrator._parser, "calculate_file_hash"
+            ) as mock_hash:
+                mock_hash.return_value = calc_hash or stored_hash
+                result = orchestrator._has_file_changed(mock_file)
+        else:
             result = orchestrator._has_file_changed(mock_file)
-
-        assert result is True
-
-    def test_file_hash_matches(self):
-        """Test when file hash hasn't changed."""
-        mock_get_conn = mock.MagicMock()
-        mock_conn = mock.MagicMock()
-        mock_get_conn.return_value = mock_conn
-
-        test_hash = "abc123"
-        mock_conn.execute.return_value.fetchone.return_value = (test_hash,)
-
-        mock_transaction = mock.MagicMock()
-
-        orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-
-        with mock.patch.object(
-            orchestrator._parser, "calculate_file_hash"
-        ) as mock_hash:
-            mock_hash.return_value = test_hash
-            result = orchestrator._has_file_changed(mock_file)
-
-        assert result is False
-
-    def test_file_hash_differs(self):
-        """Test when file hash has changed."""
-        mock_get_conn = mock.MagicMock()
-        mock_conn = mock.MagicMock()
-        mock_get_conn.return_value = mock_conn
-
-        mock_conn.execute.return_value.fetchone.return_value = ("old_hash",)
-
-        mock_transaction = mock.MagicMock()
-
-        orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-
-        with mock.patch.object(
-            orchestrator._parser, "calculate_file_hash"
-        ) as mock_hash:
-            mock_hash.return_value = "new_hash"
-            result = orchestrator._has_file_changed(mock_file)
-
-        assert result is True
-
-    def test_file_check_error(self):
-        """Test error handling in file change check."""
-        mock_get_conn = mock.MagicMock()
-        mock_get_conn.side_effect = Exception("DB error")
-
-        mock_transaction = mock.MagicMock()
-
-        orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-
-        result = orchestrator._has_file_changed(mock_file)
-
-        # Should default to True on error
-        assert result is True
+        assert result is expected
 
 
 class TestSyncFileByType:
