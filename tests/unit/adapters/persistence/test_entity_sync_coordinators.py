@@ -209,45 +209,50 @@ class TestIssueSyncCoordinator:
 
         return IssueSyncCoordinator(lambda: MagicMock(), trans_ctx)
 
-    def test_extract_issue_id_from_data(self, coordinator):
-        """Test extracting issue ID from data."""
-        issue_data = {"id": "ISSUE-123"}
-        result = coordinator._extract_issue_id(issue_data, Path("file.md"))
-        assert result == "ISSUE-123"
+    @pytest.mark.parametrize(
+        "data,file_path,expected_id,expected_in_data",
+        [
+            ({"id": "ISSUE-123"}, Path("file.md"), "ISSUE-123", True),
+            ({}, Path("issue-456.md"), "456", True),
+            ({}, Path("ISSUE-789.md"), "ISSUE-789", True),
+        ],
+    )
+    def test_extract_issue_id(
+        self, coordinator, data, file_path, expected_id, expected_in_data
+    ):
+        """Test extracting issue ID from data or filename."""
+        result = coordinator._extract_issue_id(data, file_path)
+        assert result == expected_id
+        if expected_in_data:
+            assert data["id"] == expected_id
 
-    def test_extract_issue_id_from_filename_issue_prefix(self, coordinator):
-        """Test extracting issue ID from filename with 'issue-' prefix."""
-        issue_data = {}
-        result = coordinator._extract_issue_id(issue_data, Path("issue-456.md"))
-        assert result == "456"
-        assert issue_data["id"] == "456"
+    @pytest.mark.parametrize(
+        "data,expected_project_id,should_set_in_data",
+        [
+            ({"project_id": "proj-123"}, "proj-123", False),
+            ({}, "default-proj", True),
+        ],
+    )
+    def test_handle_project_id(
+        self,
+        coordinator,
+        mock_transaction,
+        data,
+        expected_project_id,
+        should_set_in_data,
+    ):
+        """Test getting project ID from issue data or default."""
+        if not data.get("project_id"):
+            mock_conn = MagicMock()
+            mock_conn.execute.return_value.fetchone.return_value = (
+                expected_project_id,
+            )
+            mock_transaction.__enter__.return_value = mock_conn
 
-    def test_extract_issue_id_from_filename_stem(self, coordinator):
-        """Test extracting issue ID from filename stem."""
-        issue_data = {}
-        result = coordinator._extract_issue_id(issue_data, Path("ISSUE-789.md"))
-        assert result == "ISSUE-789"
-        assert issue_data["id"] == "ISSUE-789"
-
-    def test_handle_project_id_from_data(self, coordinator):
-        """Test getting project ID from issue data."""
-        issue_data = {"project_id": "proj-123"}
-        result = coordinator._handle_project_id(issue_data, "issue-1")
-        assert result == "proj-123"
-
-    def test_handle_project_id_default(self, coordinator, mock_transaction):
-        """Test getting default project ID when not in data."""
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value.fetchone.return_value = ("default-proj",)
-        mock_transaction.__enter__.return_value = mock_conn
-
-        issue_data = {}
-        result = coordinator._handle_project_id(issue_data, "issue-1")
-        assert result == "default-proj"
-        assert issue_data["project_id"] == "default-proj"
-
-    def test_handle_project_id_none(self, coordinator, mock_transaction):
-        """Test when no project ID is available."""
+        result = coordinator._handle_project_id(data, "issue-1")
+        assert result == expected_project_id
+        if should_set_in_data:
+            assert data["project_id"] == expected_project_id
         mock_conn = MagicMock()
         mock_conn.execute.return_value.fetchone.return_value = None
         mock_transaction.__enter__.return_value = mock_conn

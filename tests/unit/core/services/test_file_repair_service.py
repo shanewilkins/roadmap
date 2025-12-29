@@ -6,6 +6,8 @@ Tests cover YAML parsing, git data normalization, and file repair operations.
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from roadmap.core.services.file_repair_service import (
     FileRepairResult,
     FileRepairService,
@@ -21,39 +23,45 @@ class TestFileRepairResult:
         assert result.fixed_files == []
         assert result.errors == []
 
-    def test_add_fixed(self):
-        """Test recording fixed file."""
+    @pytest.mark.parametrize(
+        "files_to_add,expected_count,expected_contains",
+        [
+            (["issues/issue-123.md"], 1, "issues/issue-123.md"),
+            (
+                ["issues/issue-123.md", "issues/issue-456.md", "issues/issue-789.md"],
+                3,
+                "issues/issue-456.md",
+            ),
+        ],
+    )
+    def test_add_fixed(self, files_to_add, expected_count, expected_contains):
+        """Test recording fixed files."""
         result = FileRepairResult()
-        result.add_fixed("issues/issue-123.md")
+        for file in files_to_add:
+            result.add_fixed(file)
 
-        assert len(result.fixed_files) == 1
-        assert result.fixed_files[0] == "issues/issue-123.md"
+        assert len(result.fixed_files) == expected_count
+        assert expected_contains in result.fixed_files
 
-    def test_add_fixed_multiple(self):
-        """Test recording multiple fixed files."""
+    @pytest.mark.parametrize(
+        "files_to_add,expected_count,expected_contains",
+        [
+            (["issues/issue-bad.md"], 1, "issues/issue-bad.md"),
+            (
+                ["issues/issue-bad1.md", "issues/issue-bad2.md"],
+                2,
+                "issues/issue-bad1.md",
+            ),
+        ],
+    )
+    def test_add_error(self, files_to_add, expected_count, expected_contains):
+        """Test recording error files."""
         result = FileRepairResult()
-        result.add_fixed("issues/issue-123.md")
-        result.add_fixed("issues/issue-456.md")
-        result.add_fixed("issues/issue-789.md")
+        for file in files_to_add:
+            result.add_error(file)
 
-        assert len(result.fixed_files) == 3
-        assert "issues/issue-456.md" in result.fixed_files
-
-    def test_add_error(self):
-        """Test recording error file."""
-        result = FileRepairResult()
-        result.add_error("issues/issue-bad.md")
-
-        assert len(result.errors) == 1
-        assert result.errors[0] == "issues/issue-bad.md"
-
-    def test_add_error_multiple(self):
-        """Test recording multiple error files."""
-        result = FileRepairResult()
-        result.add_error("issues/issue-bad1.md")
-        result.add_error("issues/issue-bad2.md")
-
-        assert len(result.errors) == 2
+        assert len(result.errors) == expected_count
+        assert expected_contains in result.errors
 
     def test_fixed_and_errors_separate(self):
         """Test that fixed and error lists are separate."""
@@ -272,15 +280,6 @@ git_commits:
   - abc123
 git_branches:
   - name: main
----
-# Content here
-"""
-        expected_content = """---
-title: Test Issue
-git_commits:
-- hash: abc123
-git_branches:
-- main
 ---
 # Content here
 """

@@ -117,18 +117,27 @@ class TestTrackOperationTime:
 class TestTrackDatabaseOperation:
     """Test track_database_operation context manager."""
 
+    @pytest.mark.parametrize(
+        "operation,entity_type",
+        [
+            ("create", "issue"),
+            ("read", "issue"),
+            ("update", "milestone"),
+            ("delete", "project"),
+        ],
+    )
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_track_database_operation_basic(self, mock_logger):
-        """Test basic database operation tracking."""
-        with track_database_operation("create", "issue") as result:
+    def test_track_database_operation_basic(self, mock_logger, operation, entity_type):
+        """Test database operation tracking with various operations and entities."""
+        with track_database_operation(operation, entity_type) as result:
             pass
 
         assert "duration_ms" in result
         assert not result["exceeded_threshold"]
         mock_logger.debug.assert_called_once()
         call_args = mock_logger.debug.call_args
-        assert call_args[1]["operation"] == "create"
-        assert call_args[1]["entity_type"] == "issue"
+        assert call_args[1]["operation"] == operation
+        assert call_args[1]["entity_type"] == entity_type
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
     def test_track_database_operation_with_entity_id(self, mock_logger):
@@ -154,19 +163,6 @@ class TestTrackDatabaseOperation:
         call_args = mock_logger.warning.call_args
         assert call_args[1]["operation"] == "update"
         assert call_args[1]["entity_type"] == "milestone"
-
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_track_database_operation_types(self, mock_logger):
-        """Test tracking different database operation types."""
-        operations = ["create", "read", "update", "delete"]
-
-        for op in operations:
-            mock_logger.reset_mock()
-            with track_database_operation(op, "project"):
-                pass
-
-            call_args = mock_logger.debug.call_args
-            assert call_args[1]["operation"] == op
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
     def test_track_database_operation_custom_threshold(self, mock_logger):
@@ -198,36 +194,26 @@ class TestTrackDatabaseOperation:
 class TestTrackFileOperation:
     """Test track_file_operation context manager."""
 
+    @pytest.mark.parametrize(
+        "operation,file_path",
+        [
+            ("read", "/path/to/file.md"),
+            ("write", "/path/to/output.md"),
+            ("sync", "/path/to/sync.md"),
+        ],
+    )
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_track_file_operation_basic(self, mock_logger):
-        """Test basic file operation tracking."""
-        with track_file_operation("read", "/path/to/file.md") as result:
+    def test_track_file_operation(self, mock_logger, operation, file_path):
+        """Test file operation tracking with different operations."""
+        with track_file_operation(operation, file_path) as result:
             pass
 
         assert "duration_ms" in result
         assert not result["exceeded_threshold"]
         mock_logger.debug.assert_called_once()
         call_args = mock_logger.debug.call_args
-        assert call_args[1]["operation"] == "read"
-        assert call_args[1]["file_path"] == "/path/to/file.md"
-
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_track_file_operation_write(self, mock_logger):
-        """Test file write operation tracking."""
-        with track_file_operation("write", "/path/to/output.md"):
-            pass
-
-        call_args = mock_logger.debug.call_args
-        assert call_args[1]["operation"] == "write"
-
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_track_file_operation_sync(self, mock_logger):
-        """Test file sync operation tracking."""
-        with track_file_operation("sync", "/path/to/sync.md"):
-            pass
-
-        call_args = mock_logger.debug.call_args
-        assert call_args[1]["operation"] == "sync"
+        assert call_args[1]["operation"] == operation
+        assert call_args[1]["file_path"] == file_path
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
     def test_track_file_operation_slow_warning(self, mock_logger):
