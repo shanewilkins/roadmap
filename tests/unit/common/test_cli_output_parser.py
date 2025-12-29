@@ -205,18 +205,18 @@ class TestClickTestHelperExtractIds:
         assert result == "123"
 
     @pytest.mark.parametrize(
-        "entity_type,output_content",
+        "entity_type,output_content,error_substring",
         [
-            ("issue", "No issue ID here"),
-            ("project", "No project found"),
-            ("milestone", "No milestone here"),
+            ("issue", "No issue ID here", "Could not extract"),
+            ("project", '{"columns": []}', "not found"),
+            ("milestone", '{"columns": []}', "not found"),
         ],
     )
-    def test_extract_id_not_found(self, entity_type, output_content):
+    def test_extract_id_not_found(self, entity_type, output_content, error_substring):
         """Test error when entity ID not found."""
         from tests.fixtures.click_testing import ClickTestHelper
 
-        with pytest.raises(ValueError, match="Could not extract|not found"):
+        with pytest.raises(ValueError, match=error_substring):
             if entity_type == "issue":
                 ClickTestHelper.extract_issue_id(output_content)
             elif entity_type == "project":
