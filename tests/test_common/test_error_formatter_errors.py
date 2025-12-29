@@ -25,138 +25,87 @@ from roadmap.common.errors.exceptions import RoadmapException
 class TestFormatErrorMessage(unittest.TestCase):
     """Test format_error_message function."""
 
-    def test_format_error_with_roadmap_exception_rich_mode(self):
-        """RoadmapException should use user_message in rich mode."""
-        exc = RoadmapException(
-            domain_message="Technical error",
-            user_message="User-friendly error",
-        )
+    import pytest
 
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
+    @pytest.mark.parametrize(
+        "exc,plain_mode,expected",
+        [
+            (
+                RoadmapException(
+                    domain_message="Technical error", user_message="User-friendly error"
+                ),
+                False,
+                "❌ User-friendly error",
+            ),
+            (
+                RoadmapException(
+                    domain_message="Technical error", user_message="User-friendly error"
+                ),
+                True,
+                "[ERROR] User-friendly error",
+            ),
+            (ValueError("Something went wrong"), False, "❌ Something went wrong"),
+            (ValueError("Something went wrong"), True, "[ERROR] Something went wrong"),
+            (
+                RoadmapException(
+                    domain_message="Technical error", user_message="Default message"
+                ),
+                False,
+                "❌ Default message",
+            ),
+            (
+                RoadmapException(
+                    domain_message="Technical error",
+                    user_message="Line 1\nLine 2\nLine 3",
+                ),
+                False,
+                "❌ Line 1\nLine 2\nLine 3",
+            ),
+            (
+                RoadmapException(
+                    domain_message="Technical",
+                    user_message="Error with special chars: @#$%^&*()",
+                ),
+                False,
+                "❌ Error with special chars: @#$%^&*()",
+            ),
+            (
+                RoadmapException(
+                    domain_message="Technical",
+                    user_message="Error with unicode: 你好世界 🚀",
+                ),
+                False,
+                "❌ Error with unicode: 你好世界 🚀",
+            ),
+            (
+                RuntimeError("Runtime error occurred"),
+                False,
+                "❌ Runtime error occurred",
+            ),
+            (TypeError("Type mismatch error"), False, "❌ Type mismatch error"),
+            (
+                RoadmapException(
+                    domain_message="Technical", user_message="{}".format("A" * 500)
+                ),
+                False,
+                "❌ {}".format("A" * 500),
+            ),
+            (
+                RoadmapException(
+                    domain_message="Technical implementation",
+                    user_message="User-visible error",
+                ),
+                False,
+                "❌ User-visible error",
+            ),
+        ],
+    )
+    def test_format_error_param(self, exc, plain_mode, expected):
+        with patch(
+            "roadmap.common.error_formatter.is_plain_mode", return_value=plain_mode
+        ):
             result = format_error_message(exc)
-
-        assert result == "❌ User-friendly error"
-
-    def test_format_error_with_roadmap_exception_plain_mode(self):
-        """RoadmapException should use user_message in plain mode."""
-        exc = RoadmapException(
-            domain_message="Technical error",
-            user_message="User-friendly error",
-        )
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=True):
-            result = format_error_message(exc)
-
-        assert result == "[ERROR] User-friendly error"
-
-    def test_format_error_with_generic_exception_rich_mode(self):
-        """Generic exception should use str() in rich mode."""
-        exc = ValueError("Something went wrong")
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ Something went wrong"
-
-    def test_format_error_with_generic_exception_plain_mode(self):
-        """Generic exception should use str() in plain mode."""
-        exc = ValueError("Something went wrong")
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=True):
-            result = format_error_message(exc)
-
-        assert result == "[ERROR] Something went wrong"
-
-    def test_format_error_with_empty_user_message(self):
-        """RoadmapException with empty user_message should still format."""
-        exc = RoadmapException(
-            domain_message="Technical error",
-            user_message="Default message",  # RoadmapException doesn't allow empty
-        )
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ Default message"
-
-    def test_format_error_with_multiline_message(self):
-        """Multiline exception messages should be preserved."""
-        exc = RoadmapException(
-            domain_message="Technical error",
-            user_message="Line 1\nLine 2\nLine 3",
-        )
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ Line 1\nLine 2\nLine 3"
-
-    def test_format_error_with_special_characters(self):
-        """Special characters should be preserved in error messages."""
-        exc = RoadmapException(
-            domain_message="Technical",
-            user_message="Error with special chars: @#$%^&*()",
-        )
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ Error with special chars: @#$%^&*()"
-
-    def test_format_error_with_unicode_characters(self):
-        """Unicode characters should be preserved in error messages."""
-        exc = RoadmapException(
-            domain_message="Technical",
-            user_message="Error with unicode: 你好世界 🚀",
-        )
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ Error with unicode: 你好世界 🚀"
-
-    def test_format_error_with_runtime_error(self):
-        """RuntimeError should be formatted correctly."""
-        exc = RuntimeError("Runtime error occurred")
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ Runtime error occurred"
-
-    def test_format_error_with_type_error(self):
-        """TypeError should be formatted correctly."""
-        exc = TypeError("Type mismatch error")
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ Type mismatch error"
-
-    def test_format_error_with_long_message(self):
-        """Long error messages should be preserved."""
-        long_message = "A" * 500
-        exc = RoadmapException(
-            domain_message="Technical",
-            user_message=long_message,
-        )
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ " + long_message
-
-    def test_format_error_with_different_messages(self):
-        """RoadmapException with different user/domain messages should use user message."""
-        exc = RoadmapException(
-            domain_message="Technical implementation",
-            user_message="User-visible error",
-        )
-
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_error_message(exc)
-
-        assert result == "❌ User-visible error"
+        assert result == expected
 
 
 class TestFormatWarningMessage(unittest.TestCase):
