@@ -14,72 +14,65 @@ from roadmap.common.metrics import (
 class TestOperationMetric:
     """Tests for OperationMetric dataclass."""
 
-    def test_create_successful_metric(self):
-        """Test creating a metric for successful operation."""
+    @pytest.mark.parametrize(
+        "operation,duration_ms,success,error",
+        [
+            ("save_file", 125.5, True, None),
+            ("api_call", 500.0, False, "Connection timeout"),
+            ("db_query", 50.0, True, None),
+        ],
+    )
+    def test_operation_metric_creation(self, operation, duration_ms, success, error):
+        """Test creating metrics for various operations."""
         metric = OperationMetric(
-            operation="save_file",
-            duration_ms=125.5,
-            success=True,
+            operation=operation,
+            duration_ms=duration_ms,
+            success=success,
+            error=error,
         )
-        assert metric.operation == "save_file"
-        assert metric.duration_ms == 125.5
-        assert metric.success
-        assert metric.error is None
+        assert metric.operation == operation
+        assert metric.duration_ms == duration_ms
+        assert metric.success == success
+        assert metric.error == error
 
-    def test_create_failed_metric(self):
-        """Test creating a metric for failed operation."""
-        metric = OperationMetric(
-            operation="api_call",
-            duration_ms=500.0,
-            success=False,
-            error="Connection timeout",
-        )
-        assert metric.operation == "api_call"
-        assert not metric.success
-        assert metric.error == "Connection timeout"
+    @pytest.mark.parametrize(
+        "has_custom_timestamp,has_metadata",
+        [
+            (False, False),
+            (True, False),
+            (False, True),
+        ],
+    )
+    def test_metric_timestamp_and_metadata(self, has_custom_timestamp, has_metadata):
+        """Test timestamp and metadata handling."""
+        custom_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        metadata = {"user_id": "123", "retry_count": 2}
 
-    def test_default_timestamp(self):
-        """Test that timestamp defaults to current UTC time."""
+        kwargs = {
+            "operation": "test",
+            "duration_ms": 1.0,
+            "success": True,
+        }
+
+        if has_custom_timestamp:
+            kwargs["timestamp"] = custom_time
+
+        if has_metadata:
+            kwargs["metadata"] = metadata
+
         before = datetime.now(timezone.utc)
-        metric = OperationMetric(
-            operation="test",
-            duration_ms=1.0,
-            success=True,
-        )
+        metric = OperationMetric(**kwargs)
         after = datetime.now(timezone.utc)
 
-        assert before <= metric.timestamp <= after
+        if has_custom_timestamp:
+            assert metric.timestamp == custom_time
+        else:
+            assert before <= metric.timestamp <= after
 
-    def test_custom_timestamp(self):
-        """Test setting custom timestamp."""
-        custom_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        metric = OperationMetric(
-            operation="test",
-            duration_ms=1.0,
-            success=True,
-            timestamp=custom_time,
-        )
-        assert metric.timestamp == custom_time
-
-    def test_metadata_field(self):
-        """Test metadata field."""
-        metadata = {"user_id": "123", "retry_count": 2}
-        metric = OperationMetric(
-            operation="test",
-            duration_ms=1.0,
-            success=True,
-            metadata=metadata,
-        )
-        assert metric.metadata == metadata
-
-    def test_empty_metadata_by_default(self):
-        """Test metadata is empty dict by default."""
-        metric = OperationMetric(
-            operation="test",
-            duration_ms=1.0,
-            success=True,
-        )
-        assert metric.metadata == {}
+        if has_metadata:
+            assert metric.metadata == metadata
+        else:
+            assert metric.metadata == {}
 
 
 class TestMetricsCollector:
