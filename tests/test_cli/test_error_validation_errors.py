@@ -122,42 +122,75 @@ class TestValidationErrorInitialization:
 class TestStateErrorInitialization:
     """Test StateError initialization and state tracking."""
 
-    def test_initialization_with_message_only(self):
-        """Test StateError with just message."""
-        error = StateError("Invalid operation for current state")
-        assert str(error) == "Invalid operation for current state"
-        assert error.current_state is None
+    @pytest.mark.parametrize(
+        "message,current_state,severity,extra_context,expected_state,expected_severity,context_has_state",
+        [
+            (
+                "Invalid operation for current state",
+                None,
+                ErrorSeverity.MEDIUM,
+                {},
+                None,
+                ErrorSeverity.MEDIUM,
+                False,
+            ),
+            (
+                "Cannot transition",
+                "closed",
+                ErrorSeverity.MEDIUM,
+                {},
+                "closed",
+                ErrorSeverity.MEDIUM,
+                True,
+            ),
+            (
+                "Critical state violation",
+                "invalid",
+                ErrorSeverity.HIGH,
+                {},
+                "invalid",
+                ErrorSeverity.HIGH,
+                True,
+            ),
+            (
+                "Cannot close",
+                "archived",
+                ErrorSeverity.MEDIUM,
+                {"expected_state": "open", "transition": "close"},
+                "archived",
+                ErrorSeverity.MEDIUM,
+                True,
+            ),
+        ],
+    )
+    def test_state_error_initialization(
+        self,
+        message,
+        current_state,
+        severity,
+        extra_context,
+        expected_state,
+        expected_severity,
+        context_has_state,
+    ):
+        """Test StateError initialization with various parameters."""
+        kwargs = {"current_state": current_state, "severity": severity}
+        if extra_context:
+            kwargs["context"] = extra_context
+        error = StateError(message, **kwargs)
+        assert str(error) == message
+        assert error.current_state == expected_state
+        assert error.severity == expected_severity
         assert error.category == ErrorCategory.VALIDATION
+        if context_has_state:
+            assert error.context["current_state"] == expected_state
+        else:
+            assert "current_state" not in error.context
+        if extra_context:
+            for key, value in extra_context.items():
+                assert error.context[key] == value
 
-    def test_initialization_with_current_state(self):
-        """Test StateError with current_state parameter."""
-        error = StateError("Cannot transition", current_state="closed")
-        assert error.current_state == "closed"
-        assert error.context["current_state"] == "closed"
-
-    def test_initialization_with_severity(self):
-        """Test StateError with custom severity."""
-        error = StateError(
-            "Critical state violation",
-            current_state="invalid",
-            severity=ErrorSeverity.HIGH,
-        )
-        assert error.severity == ErrorSeverity.HIGH
-        assert error.current_state == "invalid"
-
-    def test_initialization_with_context(self):
-        """Test StateError with additional context."""
-        extra_context = {"expected_state": "open", "transition": "close"}
-        error = StateError(
-            "Cannot close",
-            current_state="archived",
-            context=extra_context,
-        )
-        assert error.context["expected_state"] == "open"
-        assert error.context["transition"] == "close"
-        assert error.context["current_state"] == "archived"
-
-    def test_initialization_with_cause(self):
+    def test_state_error_with_cause(self):
         """Test StateError with cause exception."""
         original_error = RuntimeError("State violation")
         error = StateError("Operation failed", cause=original_error)
@@ -172,48 +205,66 @@ class TestStateErrorInitialization:
 class TestIssueNotFoundErrorInitialization:
     """Test IssueNotFoundError initialization and issue tracking."""
 
-    def test_initialization_with_message_only(self):
-        """Test IssueNotFoundError with just message."""
-        error = IssueNotFoundError("Issue does not exist")
-        assert str(error) == "Issue does not exist"
-        assert error.issue_id is None
+    @pytest.mark.parametrize(
+        "message,issue_id,severity,extra_context,expected_id,context_has_id",
+        [
+            ("Issue does not exist", None, ErrorSeverity.MEDIUM, {}, None, False),
+            (
+                "Issue not found",
+                "ISSUE-123",
+                ErrorSeverity.MEDIUM,
+                {},
+                "ISSUE-123",
+                True,
+            ),
+            ("Issue not found", "456", ErrorSeverity.MEDIUM, {}, "456", True),
+            (
+                "Critical issue missing",
+                "CRIT-001",
+                ErrorSeverity.HIGH,
+                {},
+                "CRIT-001",
+                True,
+            ),
+            (
+                "Not found",
+                "ISSUE-999",
+                ErrorSeverity.MEDIUM,
+                {"searched_in": "database", "timestamp": "2024-01-01"},
+                "ISSUE-999",
+                True,
+            ),
+            (
+                "Not found",
+                "ISSUE-123-DRAFT",
+                ErrorSeverity.MEDIUM,
+                {},
+                "ISSUE-123-DRAFT",
+                True,
+            ),
+        ],
+    )
+    def test_issue_not_found_error_initialization(
+        self, message, issue_id, severity, extra_context, expected_id, context_has_id
+    ):
+        """Test IssueNotFoundError initialization with various parameters."""
+        kwargs = {"issue_id": issue_id, "severity": severity}
+        if extra_context:
+            kwargs["context"] = extra_context
+        error = IssueNotFoundError(message, **kwargs)
+        assert str(error) == message
+        assert error.issue_id == expected_id
+        assert error.severity == severity
         assert error.category == ErrorCategory.VALIDATION
+        if context_has_id:
+            assert error.context["issue_id"] == expected_id
+        else:
+            assert "issue_id" not in error.context
+        if extra_context:
+            for key, value in extra_context.items():
+                assert error.context[key] == value
 
-    def test_initialization_with_issue_id(self):
-        """Test IssueNotFoundError with issue_id parameter."""
-        error = IssueNotFoundError("Issue not found", issue_id="ISSUE-123")
-        assert error.issue_id == "ISSUE-123"
-        assert error.context["issue_id"] == "ISSUE-123"
-
-    def test_initialization_with_numeric_issue_id(self):
-        """Test IssueNotFoundError with numeric issue ID."""
-        error = IssueNotFoundError("Issue not found", issue_id="456")
-        assert error.issue_id == "456"
-        assert error.context["issue_id"] == "456"
-
-    def test_initialization_with_severity(self):
-        """Test IssueNotFoundError with custom severity."""
-        error = IssueNotFoundError(
-            "Critical issue missing",
-            issue_id="CRIT-001",
-            severity=ErrorSeverity.HIGH,
-        )
-        assert error.severity == ErrorSeverity.HIGH
-        assert error.issue_id == "CRIT-001"
-
-    def test_initialization_with_context(self):
-        """Test IssueNotFoundError with additional context."""
-        extra_context = {"searched_in": "database", "timestamp": "2024-01-01"}
-        error = IssueNotFoundError(
-            "Not found",
-            issue_id="ISSUE-999",
-            context=extra_context,
-        )
-        assert error.context["searched_in"] == "database"
-        assert error.context["timestamp"] == "2024-01-01"
-        assert error.context["issue_id"] == "ISSUE-999"
-
-    def test_initialization_with_cause(self):
+    def test_issue_not_found_error_with_cause(self):
         """Test IssueNotFoundError with cause exception."""
         original_error = LookupError("Database lookup failed")
         error = IssueNotFoundError("Issue not found", cause=original_error)
@@ -224,60 +275,83 @@ class TestIssueNotFoundErrorInitialization:
         error = IssueNotFoundError("Not found", issue_id=None)
         assert "issue_id" not in error.context
 
-    def test_issue_id_with_special_characters(self):
-        """Test IssueNotFoundError with special characters in ID."""
-        error = IssueNotFoundError("Not found", issue_id="ISSUE-123-DRAFT")
-        assert error.issue_id == "ISSUE-123-DRAFT"
-        assert error.context["issue_id"] == "ISSUE-123-DRAFT"
-
 
 class TestMilestoneNotFoundErrorInitialization:
     """Test MilestoneNotFoundError initialization and milestone tracking."""
 
-    def test_initialization_with_message_only(self):
-        """Test MilestoneNotFoundError with just message."""
-        error = MilestoneNotFoundError("Milestone does not exist")
-        assert str(error) == "Milestone does not exist"
-        assert error.milestone_name is None
+    @pytest.mark.parametrize(
+        "message,milestone_name,severity,extra_context,expected_name,context_has_name",
+        [
+            ("Milestone does not exist", None, ErrorSeverity.MEDIUM, {}, None, False),
+            (
+                "Milestone not found",
+                "Sprint 1",
+                ErrorSeverity.MEDIUM,
+                {},
+                "Sprint 1",
+                True,
+            ),
+            (
+                "Not found",
+                "Q4 2024 - Final Release",
+                ErrorSeverity.MEDIUM,
+                {},
+                "Q4 2024 - Final Release",
+                True,
+            ),
+            (
+                "Critical milestone missing",
+                "Release 1.0",
+                ErrorSeverity.HIGH,
+                {},
+                "Release 1.0",
+                True,
+            ),
+            (
+                "Milestone missing",
+                "Q1 Planning",
+                ErrorSeverity.MEDIUM,
+                {"project": "roadmap", "season": "Q1"},
+                "Q1 Planning",
+                True,
+            ),
+            (
+                "Not found",
+                "Sprint #1 (Alpha) [URGENT]",
+                ErrorSeverity.MEDIUM,
+                {},
+                "Sprint #1 (Alpha) [URGENT]",
+                True,
+            ),
+        ],
+    )
+    def test_milestone_not_found_error_initialization(
+        self,
+        message,
+        milestone_name,
+        severity,
+        extra_context,
+        expected_name,
+        context_has_name,
+    ):
+        """Test MilestoneNotFoundError initialization with various parameters."""
+        kwargs = {"milestone_name": milestone_name, "severity": severity}
+        if extra_context:
+            kwargs["context"] = extra_context
+        error = MilestoneNotFoundError(message, **kwargs)
+        assert str(error) == message
+        assert error.milestone_name == expected_name
+        assert error.severity == severity
         assert error.category == ErrorCategory.VALIDATION
+        if context_has_name:
+            assert error.context["milestone"] == expected_name
+        else:
+            assert "milestone" not in error.context
+        if extra_context:
+            for key, value in extra_context.items():
+                assert error.context[key] == value
 
-    def test_initialization_with_milestone_name(self):
-        """Test MilestoneNotFoundError with milestone_name parameter."""
-        error = MilestoneNotFoundError("Milestone not found", milestone_name="Sprint 1")
-        assert error.milestone_name == "Sprint 1"
-        assert error.context["milestone"] == "Sprint 1"
-
-    def test_initialization_with_complex_milestone_name(self):
-        """Test MilestoneNotFoundError with complex milestone names."""
-        error = MilestoneNotFoundError(
-            "Not found", milestone_name="Q4 2024 - Final Release"
-        )
-        assert error.milestone_name == "Q4 2024 - Final Release"
-        assert error.context["milestone"] == "Q4 2024 - Final Release"
-
-    def test_initialization_with_severity(self):
-        """Test MilestoneNotFoundError with custom severity."""
-        error = MilestoneNotFoundError(
-            "Critical milestone missing",
-            milestone_name="Release 1.0",
-            severity=ErrorSeverity.HIGH,
-        )
-        assert error.severity == ErrorSeverity.HIGH
-        assert error.milestone_name == "Release 1.0"
-
-    def test_initialization_with_context(self):
-        """Test MilestoneNotFoundError with additional context."""
-        extra_context = {"project": "roadmap", "season": "Q1"}
-        error = MilestoneNotFoundError(
-            "Milestone missing",
-            milestone_name="Q1 Planning",
-            context=extra_context,
-        )
-        assert error.context["project"] == "roadmap"
-        assert error.context["season"] == "Q1"
-        assert error.context["milestone"] == "Q1 Planning"
-
-    def test_initialization_with_cause(self):
+    def test_milestone_not_found_error_with_cause(self):
         """Test MilestoneNotFoundError with cause exception."""
         original_error = KeyError("Key not found")
         error = MilestoneNotFoundError("Not found", cause=original_error)
@@ -287,14 +361,6 @@ class TestMilestoneNotFoundErrorInitialization:
         """Test that None milestone_name is not added to context."""
         error = MilestoneNotFoundError("Not found", milestone_name=None)
         assert "milestone" not in error.context
-
-    def test_milestone_name_with_special_characters(self):
-        """Test MilestoneNotFoundError with special characters."""
-        error = MilestoneNotFoundError(
-            "Not found", milestone_name="Sprint #1 (Alpha) [URGENT]"
-        )
-        assert error.milestone_name == "Sprint #1 (Alpha) [URGENT]"
-        assert error.context["milestone"] == "Sprint #1 (Alpha) [URGENT]"
 
 
 class TestValidationErrorEdgeCases:
