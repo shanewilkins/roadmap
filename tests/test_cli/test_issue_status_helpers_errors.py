@@ -19,38 +19,50 @@ from roadmap.core.domain import Status
 class TestStatusChangeConfig:
     """Test StatusChangeConfig dataclass."""
 
-    def test_config_initialization(self):
-        """Test StatusChangeConfig initializes correctly."""
+    import pytest
+
+    @pytest.mark.parametrize(
+        "status,emoji,title_verb,title_style,status_display,pre_check,expected_pre_check",
+        [
+            (Status.BLOCKED, "🚫", "Blocked", "bold red", "🚫 Blocked", None, None),
+            (
+                Status.CLOSED,
+                "✅",
+                "Closed",
+                "bold green",
+                "✅ Closed",
+                lambda issue: (True, None),
+                (True, None),
+            ),
+        ],
+    )
+    def test_config_init_param(
+        self,
+        status,
+        emoji,
+        title_verb,
+        title_style,
+        status_display,
+        pre_check,
+        expected_pre_check,
+    ):
         config = StatusChangeConfig(
-            status=Status.BLOCKED,
-            emoji="🚫",
-            title_verb="Blocked",
-            title_style="bold red",
-            status_display="🚫 Blocked",
+            status=status,
+            emoji=emoji,
+            title_verb=title_verb,
+            title_style=title_style,
+            status_display=status_display,
+            pre_check=pre_check,
         )
-        assert config.status == Status.BLOCKED
-        assert config.emoji == "🚫"
-        assert config.title_verb == "Blocked"
-        assert config.title_style == "bold red"
-        assert config.status_display == "🚫 Blocked"
-        assert config.pre_check is None
-
-    def test_config_with_pre_check(self):
-        """Test StatusChangeConfig with pre_check function."""
-
-        def check_fn(issue):
-            return True, None
-
-        config = StatusChangeConfig(
-            status=Status.CLOSED,
-            emoji="✅",
-            title_verb="Closed",
-            title_style="bold green",
-            status_display="✅ Closed",
-            pre_check=check_fn,
-        )
-        assert config.pre_check is not None
-        assert config.pre_check({}) == (True, None)
+        assert config.status == status
+        assert config.emoji == emoji
+        assert config.title_verb == title_verb
+        assert config.title_style == title_style
+        assert config.status_display == status_display
+        if pre_check:
+            assert config.pre_check({}) == expected_pre_check
+        else:
+            assert config.pre_check is None
 
 
 class TestApplyStatusChangeSuccess:
@@ -76,9 +88,7 @@ class TestApplyStatusChangeSuccess:
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
-            with mock.patch(
-                "roadmap.adapters.cli.issues.issue_status_helpers.console"
-            ) as mock_console:
+            with mock.patch("roadmap.adapters.cli.issues.issue_status_helpers.console"):
                 apply_status_change(mock_core, "ISSUE-1", config)
 
                 # Verify update was called
