@@ -415,8 +415,14 @@ class TestBlockedStatus:
         assert Status.REVIEW in statuses
         assert Status.CLOSED in statuses
 
-    def test_github_client_blocked_status_to_labels(self):
-        """Test that GitHub client converts blocked status to labels."""
+    @pytest.mark.parametrize(
+        "status,expected_labels",
+        [
+            ("blocked", ["status:blocked"]),
+        ],
+    )
+    def test_github_client_status_conversion(self, status, expected_labels):
+        """Test that GitHub client converts status to labels and back."""
         from unittest.mock import patch
 
         from roadmap.adapters.github.github import GitHubClient
@@ -426,22 +432,13 @@ class TestBlockedStatus:
             client = GitHubClient(token="fake-token", owner="test", repo="test")
 
             # Test status to labels
-            labels = client.status_to_labels(Status.BLOCKED)
-            assert labels == ["status:blocked"]
-
-    def test_github_client_blocked_labels_to_status(self):
-        """Test that GitHub client converts blocked labels to status."""
-        from unittest.mock import patch
-
-        from roadmap.adapters.github.github import GitHubClient
-        from roadmap.core.domain import Status
-
-        with patch("roadmap.adapters.github.github.GitHubClient._check_repository"):
-            client = GitHubClient(token="fake-token", owner="test", repo="test")
+            status_enum = getattr(Status, status.upper())
+            labels = client.status_to_labels(status_enum)
+            assert labels == expected_labels
 
             # Test labels to status
-            status = client.labels_to_status(["status:blocked"])
-            assert status == Status.BLOCKED
+            converted_status = client.labels_to_status(expected_labels)
+            assert converted_status == status_enum
 
     def test_blocked_status_label_setup(self):
         """Test that blocked status label is included in default setup."""
