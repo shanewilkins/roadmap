@@ -51,69 +51,35 @@ class TestGitHubTokenResolver:
         token = resolver.get_existing_token()
         assert token is None
 
-    def test_resolve_token_cli_provided(self):
-        """Test resolving token when CLI token is provided."""
+    @pytest.mark.parametrize(
+        "cli_token,env_dict,existing_token,interactive,yes,expected_token",
+        [
+            ("ghp_cli_token", {}, None, False, False, "ghp_cli_token"),
+            (
+                None,
+                {"ROADMAP_GITHUB_TOKEN": "ghp_env_token"},
+                None,
+                False,
+                False,
+                "ghp_env_token",
+            ),
+            (None, {}, "ghp_existing_token", False, True, "ghp_existing_token"),
+        ],
+    )
+    def test_resolve_token_sources(
+        self, cli_token, env_dict, existing_token, interactive, yes, expected_token
+    ):
+        """Test resolving token from various sources with priority."""
         resolver = GitHubTokenResolver()
-        token, should_continue = resolver.resolve_token(
-            cli_token="ghp_cli_token",
-            interactive=False,
-            yes=False,
-            existing_token=None,
-        )
-        assert token == "ghp_cli_token"
-        assert should_continue
-
-    def test_resolve_token_env_variable(self):
-        """Test resolving token from environment variable."""
-        resolver = GitHubTokenResolver()
-        with patch.dict(os.environ, {"ROADMAP_GITHUB_TOKEN": "ghp_env_token"}):
+        with patch.dict(os.environ, env_dict, clear=False):
             token, should_continue = resolver.resolve_token(
-                cli_token=None,
-                interactive=False,
-                yes=False,
-                existing_token=None,
+                cli_token=cli_token,
+                interactive=interactive,
+                yes=yes,
+                existing_token=existing_token,
             )
-            assert token == "ghp_env_token"
+            assert token == expected_token
             assert should_continue
-
-    def test_resolve_token_existing_with_yes(self):
-        """Test resolving token when using existing token with yes flag."""
-        resolver = GitHubTokenResolver()
-        token, should_continue = resolver.resolve_token(
-            cli_token=None,
-            interactive=False,
-            yes=True,
-            existing_token="ghp_existing_token",
-        )
-        assert token == "ghp_existing_token"
-        assert should_continue
-
-    def test_resolve_token_existing_with_confirm(self):
-        """Test resolving token when user confirms existing token."""
-        resolver = GitHubTokenResolver()
-        with patch("click.confirm", return_value=True):
-            token, should_continue = resolver.resolve_token(
-                cli_token=None,
-                interactive=True,
-                yes=False,
-                existing_token="ghp_existing_token",
-            )
-            assert token == "ghp_existing_token"
-            assert should_continue
-
-    def test_resolve_token_existing_with_reject(self):
-        """Test resolving token when user rejects existing token."""
-        resolver = GitHubTokenResolver()
-        with patch("click.confirm", return_value=False):
-            with patch("click.prompt", return_value="ghp_new_token"):
-                token, should_continue = resolver.resolve_token(
-                    cli_token=None,
-                    interactive=True,
-                    yes=False,
-                    existing_token="ghp_existing_token",
-                )
-                assert token == "ghp_new_token"
-                assert should_continue
 
     def test_resolve_token_interactive_prompt(self):
         """Test resolving token via interactive prompt."""
@@ -128,6 +94,29 @@ class TestGitHubTokenResolver:
             assert token == "ghp_prompted_token"
             assert should_continue
 
+    @pytest.mark.parametrize(
+        "user_confirms,existing_token,expected_token",
+        [
+            (True, "ghp_existing_token", "ghp_existing_token"),
+            (False, "ghp_existing_token", "ghp_new_token"),
+        ],
+    )
+    def test_resolve_token_existing_with_user_action(
+        self, user_confirms, existing_token, expected_token
+    ):
+        """Test resolving token when user confirms or rejects existing token."""
+        resolver = GitHubTokenResolver()
+        with patch("click.confirm", return_value=user_confirms):
+            with patch("click.prompt", return_value="ghp_new_token"):
+                token, should_continue = resolver.resolve_token(
+                    cli_token=None,
+                    interactive=True,
+                    yes=False,
+                    existing_token=existing_token,
+                )
+                assert token == expected_token
+                assert should_continue
+
     def test_resolve_token_non_interactive_no_token(self):
         """Test resolving token in non-interactive mode without token."""
         resolver = GitHubTokenResolver()
@@ -140,29 +129,28 @@ class TestGitHubTokenResolver:
         assert token is None
         assert not should_continue
 
-    def test_resolve_token_priority_cli_over_env(self):
-        """Test that CLI token takes priority over environment."""
+    @pytest.mark.parametrize(
+        "cli_token,env_dict,expected_priority",
+        [
+            (
+                "ghp_cli_token",
+                {"ROADMAP_GITHUB_TOKEN": "ghp_env_token"},
+                "ghp_cli_token",
+            ),
+            (None, {"ROADMAP_GITHUB_TOKEN": "ghp_env_token"}, "ghp_env_token"),
+        ],
+    )
+    def test_resolve_token_priority_order(self, cli_token, env_dict, expected_priority):
+        """Test token resolution priority: CLI > Environment > Existing."""
         resolver = GitHubTokenResolver()
-        with patch.dict(os.environ, {"ROADMAP_GITHUB_TOKEN": "ghp_env_token"}):
+        with patch.dict(os.environ, env_dict, clear=False):
             token, should_continue = resolver.resolve_token(
-                cli_token="ghp_cli_token",
-                interactive=False,
-                yes=False,
-                existing_token=None,
-            )
-            assert token == "ghp_cli_token"
-
-    def test_resolve_token_priority_env_over_existing(self):
-        """Test that environment token takes priority over existing."""
-        resolver = GitHubTokenResolver()
-        with patch.dict(os.environ, {"ROADMAP_GITHUB_TOKEN": "ghp_env_token"}):
-            token, should_continue = resolver.resolve_token(
-                cli_token=None,
+                cli_token=cli_token,
                 interactive=False,
                 yes=False,
                 existing_token="ghp_existing_token",
             )
-            assert token == "ghp_env_token"
+            assert token == expected_priority
 
 
 class TestGitHubSetupValidator:
@@ -183,66 +171,121 @@ class TestGitHubSetupValidator:
         validator = GitHubSetupValidator(mock_client)
         assert validator.client == mock_client
 
-    def test_validate_authentication_success(self, validator, mock_client):
-        """Test successful authentication validation."""
+    @pytest.mark.parametrize(
+        "mock_response_data,should_succeed,expected_result",
+        [
+            ({"login": "testuser"}, True, "testuser"),
+            ({"login": "anotheruser"}, True, "anotheruser"),
+        ],
+    )
+    def test_validate_authentication_success(
+        self,
+        validator,
+        mock_client,
+        mock_response_data,
+        should_succeed,
+        expected_result,
+    ):
+        """Test successful authentication validation with different usernames."""
         mock_response = MagicMock()
-        mock_response.json.return_value = {"login": "testuser"}
+        mock_response.json.return_value = mock_response_data
         mock_client._make_request.return_value = mock_response
 
-        success, username = validator.validate_authentication()
+        success, result = validator.validate_authentication()
 
-        assert success
-        assert username == "testuser"
+        assert success == should_succeed
+        assert result == expected_result
         mock_client._make_request.assert_called_once_with("GET", "/user")
 
-    def test_validate_authentication_failure(self, validator, mock_client):
-        """Test failed authentication validation."""
-        mock_client._make_request.side_effect = Exception("Invalid token")
+    @pytest.mark.parametrize(
+        "error_message",
+        [
+            "Invalid token",
+            "Unauthorized",
+            "Token expired",
+            "Rate limit exceeded",
+        ],
+    )
+    def test_validate_authentication_failure(
+        self, validator, mock_client, error_message
+    ):
+        """Test failed authentication validation with different error types."""
+        mock_client._make_request.side_effect = Exception(error_message)
 
         success, error = validator.validate_authentication()
 
         assert not success
-        assert "Invalid token" in error
+        assert error_message in error
 
-    def test_validate_repository_access_success(self, validator, mock_client):
-        """Test successful repository access validation."""
+    @pytest.mark.parametrize(
+        "repo_path,permissions,should_succeed,has_error",
+        [
+            ("user/repo", {"admin": True}, True, False),
+            ("owner/project", {"admin": False, "push": True}, True, False),
+            ("org/tool", {"push": True, "pull": True}, True, False),
+        ],
+    )
+    def test_validate_repository_access_success(
+        self, validator, mock_client, repo_path, permissions, should_succeed, has_error
+    ):
+        """Test successful repository access validation with different permission levels."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "full_name": "user/repo",
-            "permissions": {"admin": True},
+            "full_name": repo_path,
+            "permissions": permissions,
         }
         mock_client._make_request.return_value = mock_response
         mock_client.test_repository_access.return_value = {
-            "full_name": "user/repo",
-            "permissions": {"admin": True},
+            "full_name": repo_path,
+            "permissions": permissions,
         }
 
-        success, repo_info = validator.validate_repository_access("user/repo")
+        success, repo_info = validator.validate_repository_access(repo_path)
 
-        assert success
-        assert repo_info["full_name"] == "user/repo"
-        mock_client.set_repository.assert_called_once_with("user", "repo")
+        assert success == should_succeed
+        assert repo_info["full_name"] == repo_path
+        mock_client.set_repository.assert_called_once()
 
-    def test_validate_repository_access_failure(self, validator, mock_client):
-        """Test failed repository access validation."""
-        mock_client.set_repository.side_effect = Exception("Invalid repository")
+    @pytest.mark.parametrize(
+        "repo_path,error_type",
+        [
+            ("invalid/repo", "Invalid repository"),
+            ("user/nonexistent", "Repository not found"),
+            ("", "Empty repository name"),
+        ],
+    )
+    def test_validate_repository_access_failure(
+        self, validator, mock_client, repo_path, error_type
+    ):
+        """Test failed repository access validation with different error scenarios."""
+        mock_client.set_repository.side_effect = Exception(error_type)
 
-        success, error_info = validator.validate_repository_access("invalid/repo")
+        success, error_info = validator.validate_repository_access(repo_path)
 
         assert not success
         assert "error" in error_info
 
-    def test_validate_repository_access_read_only(self, validator, mock_client):
-        """Test repository with read-only access."""
+    @pytest.mark.parametrize(
+        "permissions_dict",
+        [
+            {"pull": True},
+            {"pull": True, "push": False},
+            {"pull": True, "push": True, "admin": False},
+        ],
+    )
+    def test_validate_repository_access_various_permissions(
+        self, validator, mock_client, permissions_dict
+    ):
+        """Test repository with various permission levels."""
         mock_client.test_repository_access.return_value = {
             "full_name": "user/repo",
-            "permissions": {"pull": True},
+            "permissions": permissions_dict,
         }
 
         success, repo_info = validator.validate_repository_access("user/repo")
 
         assert success
-        assert repo_info["permissions"]["pull"]
+        assert repo_info["permissions"] == permissions_dict
 
     def test_test_api_access_success(self, validator, mock_client):
         """Test successful API access test."""

@@ -110,194 +110,78 @@ def test_format_error_param(exc, plain_mode, expected):
     assert result == expected
 
 
-class TestFormatWarningMessage(unittest.TestCase):
-    """Test format_warning_message function."""
-
-    def test_format_warning_rich_mode(self):
-        """Warning message in rich mode should use emoji."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_warning_message("Be careful")
-
-        assert result == "⚠️  Be careful"
-
-    def test_format_warning_plain_mode(self):
-        """Warning message in plain mode should use [WARN] tag."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=True):
-            result = format_warning_message("Be careful")
-
-        assert result == "[WARN] Be careful"
-
-    def test_format_warning_empty_message(self):
-        """Empty warning message should still format."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_warning_message("")
-
-        assert result == "⚠️  "
-
-    def test_format_warning_with_multiline(self):
-        """Multiline warning messages should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_warning_message("Line 1\nLine 2")
-
-        assert result == "⚠️  Line 1\nLine 2"
-
-    def test_format_warning_with_special_characters(self):
-        """Special characters should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_warning_message("Warning: test@example.com")
-
-        assert result == "⚠️  Warning: test@example.com"
-
-    def test_format_warning_with_unicode(self):
-        """Unicode should be preserved in warning messages."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_warning_message("警告: 注意 ⚡")
-
-        assert result == "⚠️  警告: 注意 ⚡"
-
-    def test_format_warning_with_long_message(self):
-        """Long warning messages should be preserved."""
-        long_message = "B" * 500
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_warning_message(long_message)
-
-        assert result == "⚠️  " + long_message
-
-    def test_format_warning_with_quotes(self):
-        """Quotes should be preserved in warning messages."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_warning_message('Warning: "quoted text"')
-
-        assert result == '⚠️  Warning: "quoted text"'
+@pytest.mark.parametrize(
+    "message,plain_mode,expected",
+    [
+        ("Be careful", False, "⚠️  Be careful"),
+        ("Be careful", True, "[WARN] Be careful"),
+        ("", False, "⚠️  "),
+        ("", True, "[WARN] "),
+        ("Line 1\nLine 2", False, "⚠️  Line 1\nLine 2"),
+        ("Line 1\nLine 2", True, "[WARN] Line 1\nLine 2"),
+        ("Warning: test@example.com", False, "⚠️  Warning: test@example.com"),
+        ("警告: 注意 ⚡", False, "⚠️  警告: 注意 ⚡"),
+        pytest.param("B" * 500, False, "⚠️  " + "B" * 500, id="warning-long-plain"),
+        pytest.param(
+            'Warning: "quoted text"',
+            False,
+            '⚠️  Warning: "quoted text"',
+            id="warning-quotes",
+        ),
+    ],
+)
+def test_format_warning_message_param(message, plain_mode, expected):
+    with patch("roadmap.common.error_formatter.is_plain_mode", return_value=plain_mode):
+        result = format_warning_message(message)
+    assert result == expected
 
 
-class TestFormatInfoMessage(unittest.TestCase):
-    """Test format_info_message function."""
-
-    def test_format_info_rich_mode(self):
-        """Info message in rich mode should use emoji."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message("Just so you know")
-
-        assert result == "ℹ️  Just so you know"
-
-    def test_format_info_plain_mode(self):
-        """Info message in plain mode should use [INFO] tag."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=True):
-            result = format_info_message("Just a heads up")
-
-        assert result == "[INFO] Just a heads up"
-
-    def test_format_info_with_multiline(self):
-        """Multiline info messages should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message("First\nSecond\nThird")
-
-        assert result == "ℹ️  First\nSecond\nThird"
-
-    def test_format_info_with_special_characters(self):
-        """Special characters should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message("Info: user@domain.com (verified)")
-
-        assert result == "ℹ️  Info: user@domain.com (verified)"
-
-    def test_format_info_with_unicode(self):
-        """Unicode should be preserved in info messages."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message("信息: 处理完成 ✓")
-
-        assert result == "ℹ️  信息: 处理完成 ✓"
-
-    def test_format_info_with_long_message(self):
-        """Long info messages should be preserved."""
-        long_message = "C" * 500
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message(long_message)
-
-        assert result == "ℹ️  " + long_message
-
-    def test_format_info_with_paths(self):
-        """File paths should be preserved in info messages."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message("Saved to /path/to/file.txt")
-
-        assert result == "ℹ️  Saved to /path/to/file.txt"
-
-    def test_format_info_with_urls(self):
-        """URLs should be preserved in info messages."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message("More info at https://example.com/help")
-
-        assert result == "ℹ️  More info at https://example.com/help"
+@pytest.mark.parametrize(
+    "message,plain_mode,expected",
+    [
+        ("Just so you know", False, "ℹ️  Just so you know"),
+        ("Just a heads up", True, "[INFO] Just a heads up"),
+        ("First\nSecond\nThird", False, "ℹ️  First\nSecond\nThird"),
+        (
+            "Info: user@domain.com (verified)",
+            False,
+            "ℹ️  Info: user@domain.com (verified)",
+        ),
+        ("信息: 处理完成 ✓", False, "ℹ️  信息: 处理完成 ✓"),
+        pytest.param("C" * 500, False, "ℹ️  " + "C" * 500, id="info-long-plain"),
+        ("Saved to /path/to/file.txt", False, "ℹ️  Saved to /path/to/file.txt"),
+        (
+            "More info at https://example.com/help",
+            False,
+            "ℹ️  More info at https://example.com/help",
+        ),
+    ],
+)
+def test_format_info_message_param(message, plain_mode, expected):
+    with patch("roadmap.common.error_formatter.is_plain_mode", return_value=plain_mode):
+        result = format_info_message(message)
+    assert result == expected
 
 
-class TestFormatSuccessMessage(unittest.TestCase):
-    """Test format_success_message function."""
-
-    def test_format_success_rich_mode(self):
-        """Success message in rich mode should use emoji."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message("All done!")
-
-        assert result == "✅ All done!"
-
-    def test_format_success_plain_mode(self):
-        """Success message in plain mode should use [OK] tag."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=True):
-            result = format_success_message("All done!")
-
-        assert result == "[OK] All done!"
-
-    def test_format_success_empty_message(self):
-        """Empty success message should still format."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message("")
-
-        assert result == "✅ "
-
-    def test_format_success_with_multiline(self):
-        """Multiline success messages should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message("Complete\nVerified\nReady")
-
-        assert result == "✅ Complete\nVerified\nReady"
-
-    def test_format_success_with_special_characters(self):
-        """Special characters should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message("Processed 100% of items")
-
-        assert result == "✅ Processed 100% of items"
-
-    def test_format_success_with_unicode(self):
-        """Unicode should be preserved in success messages."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message("成功: 任务完成 🎉")
-
-        assert result == "✅ 成功: 任务完成 🎉"
-
-    def test_format_success_with_long_message(self):
-        """Long success messages should be preserved."""
-        long_message = "D" * 500
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message(long_message)
-
-        assert result == "✅ " + long_message
-
-    def test_format_success_with_counts(self):
-        """Messages with counts should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message("Created 42 items")
-
-        assert result == "✅ Created 42 items"
-
-    def test_format_success_with_ids(self):
-        """Messages with IDs should be preserved."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_success_message("Issue #12345 resolved")
-
-        assert result == "✅ Issue #12345 resolved"
+@pytest.mark.parametrize(
+    "message,plain_mode,expected",
+    [
+        ("All done!", False, "✅ All done!"),
+        ("All done!", True, "[OK] All done!"),
+        ("", False, "✅ "),
+        ("", True, "[OK] "),
+        ("Complete\nVerified\nReady", False, "✅ Complete\nVerified\nReady"),
+        ("Processed 100% of items", False, "✅ Processed 100% of items"),
+        ("成功: 任务完成 🎉", False, "✅ 成功: 任务完成 🎉"),
+        pytest.param("D" * 500, False, "✅ " + "D" * 500, id="success-long-plain"),
+        ("Created 42 items", False, "✅ Created 42 items"),
+        ("Issue #12345 resolved", False, "✅ Issue #12345 resolved"),
+    ],
+)
+def test_format_success_message_param(message, plain_mode, expected):
+    with patch("roadmap.common.error_formatter.is_plain_mode", return_value=plain_mode):
+        result = format_success_message(message)
+    assert result == expected
 
 
 class TestPlainModeDetection(unittest.TestCase):
