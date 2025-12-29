@@ -19,7 +19,7 @@ class MockIssue:
         priority=None,
         status=None,
         progress_display="0%",
-        assignee="John Doe",
+        assignee: str | None = "John Doe",
         estimated_time_display="0h",
         milestone_name="v1.0",
         is_backlog=False,

@@ -25,6 +25,7 @@ from roadmap.adapters.cli.git.commands import (
     setup_git,
 )
 from roadmap.adapters.cli.issues.sync import sync_github
+from tests.unit.shared.test_data_factory import TestDataFactory
 
 # Phase 1A: Parametrized Comment Tests (DRY reduction)
 # Consolidated 10 test methods → 4 parametrized tests
@@ -35,12 +36,31 @@ from roadmap.adapters.cli.issues.sync import sync_github
 @pytest.mark.parametrize(
     "target,message,options,expected_exit",
     [
-        ("issue-123", "This is a test comment", [], [0, 1, 2]),
-        ("milestone-456", "Comment on milestone", ["--type", "milestone"], [0, 1, 2]),
-        ("issue-123", "", [], [0, 1, 2]),  # empty message
+        (
+            TestDataFactory.issue_id(),
+            TestDataFactory.message(),
+            [],
+            TestDataFactory.exit_codes(),
+        ),
+        (
+            TestDataFactory.milestone_id(),
+            TestDataFactory.message(),
+            TestDataFactory.options("milestone"),
+            TestDataFactory.exit_codes(),
+        ),
+        (
+            TestDataFactory.issue_id(),
+            "",
+            [],
+            TestDataFactory.exit_codes(),
+        ),  # empty message
         pytest.param(
-            "issue-123", "x" * 10000, [], [0, 1], id="long_message"
-        ),  # very long message
+            TestDataFactory.issue_id(),
+            TestDataFactory.message(length=10000),
+            [],
+            [0, 1],
+            id="long_message",
+        ),
     ],
 )
 def test_create_comment(cli_runner, mock_core, target, message, options, expected_exit):
@@ -63,9 +83,9 @@ def test_create_comment(cli_runner, mock_core, target, message, options, expecte
 @pytest.mark.parametrize(
     "target,options,expected_exit",
     [
-        ("issue-123", [], [0, 1, 2]),
-        ("milestone-456", ["--type", "milestone"], [0, 1]),
-        ("", [], [0, 1, 2]),  # invalid target
+        (TestDataFactory.issue_id(), [], TestDataFactory.exit_codes()),
+        (TestDataFactory.milestone_id(), TestDataFactory.options("milestone"), [0, 1]),
+        ("", [], TestDataFactory.exit_codes()),  # invalid target
     ],
 )
 def test_list_comments(cli_runner, mock_core, target, options, expected_exit):
@@ -86,8 +106,12 @@ def test_list_comments(cli_runner, mock_core, target, options, expected_exit):
 @pytest.mark.parametrize(
     "comment_id,text,expected_exit",
     [
-        ("comment-789", "Updated comment text", [0, 1, 2]),
-        ("comment-789", "Same text", [0, 1]),  # no change
+        (
+            TestDataFactory.comment_id(),
+            TestDataFactory.message(),
+            TestDataFactory.exit_codes(),
+        ),
+        (TestDataFactory.comment_id(), "Same text", [0, 1]),  # no change
     ],
 )
 def test_edit_comment(cli_runner, mock_core, comment_id, text, expected_exit):
@@ -106,14 +130,11 @@ def test_edit_comment(cli_runner, mock_core, comment_id, text, expected_exit):
 
 
 def test_delete_comment(cli_runner, mock_core):
-    """Test successful comment deletion.
-
-    Phase 1A optimization:
-    - Removed nested isolated_filesystem() (unnecessary with mock)
-    - Reduced from 10 lines → 6 lines
-    """
-    result = cli_runner.invoke(delete_comment, ["comment-789"], obj=mock_core)
-    assert result.exit_code in [0, 1, 2]
+    """Test successful comment deletion."""
+    result = cli_runner.invoke(
+        delete_comment, [TestDataFactory.comment_id()], obj=mock_core
+    )
+    assert result.exit_code in TestDataFactory.exit_codes()
 
 
 # Phase 1A: Parametrized Sync Tests (DRY reduction)
@@ -124,11 +145,11 @@ def test_delete_comment(cli_runner, mock_core):
 @pytest.mark.parametrize(
     "args,expected_exit",
     [
-        (["issue-123"], [0, 1, 2]),  # single issue
-        (["--all"], [0, 1, 2]),  # all issues
-        (["--milestone", "v1.0"], [0, 1, 2]),  # by milestone
-        (["--status", "open"], [0, 1, 2]),  # by status
-        ([], [0, 1, 2]),  # no arguments
+        ([TestDataFactory.issue_id()], TestDataFactory.exit_codes()),  # single issue
+        (["--all"], TestDataFactory.exit_codes()),  # all issues
+        (["--milestone", "v1.0"], TestDataFactory.exit_codes()),  # by milestone
+        (["--status", "open"], TestDataFactory.exit_codes()),  # by status
+        ([], TestDataFactory.exit_codes()),  # no arguments
     ],
 )
 def test_sync_github_targets(cli_runner, mock_core, args, expected_exit):
@@ -147,14 +168,17 @@ def test_sync_github_targets(cli_runner, mock_core, args, expected_exit):
 @pytest.mark.parametrize(
     "args,expected_exit",
     [
-        (["issue-123", "--dry-run"], [0, 1, 2]),
-        (["issue-123", "--verbose"], [0, 1, 2]),
-        (["issue-123", "--force-local"], [0, 1, 2]),
-        (["issue-123", "--force-github"], [0, 1, 2]),
-        (["issue-123", "--validate-only"], [0, 1, 2]),
-        (["issue-123", "--auto-confirm"], [0, 1, 2]),
-        (["--all", "--dry-run"], [0, 1, 2]),
-        (["issue-123", "--force-local", "--force-github"], [0, 1, 2]),  # conflicting
+        ([TestDataFactory.issue_id(), "--dry-run"], TestDataFactory.exit_codes()),
+        ([TestDataFactory.issue_id(), "--verbose"], TestDataFactory.exit_codes()),
+        ([TestDataFactory.issue_id(), "--force-local"], TestDataFactory.exit_codes()),
+        ([TestDataFactory.issue_id(), "--force-github"], TestDataFactory.exit_codes()),
+        ([TestDataFactory.issue_id(), "--validate-only"], TestDataFactory.exit_codes()),
+        ([TestDataFactory.issue_id(), "--auto-confirm"], TestDataFactory.exit_codes()),
+        (["--all", "--dry-run"], TestDataFactory.exit_codes()),
+        (
+            [TestDataFactory.issue_id(), "--force-local", "--force-github"],
+            TestDataFactory.exit_codes(),
+        ),  # conflicting
     ],
 )
 def test_sync_github_options(cli_runner, mock_core, args, expected_exit):

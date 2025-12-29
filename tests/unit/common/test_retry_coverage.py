@@ -251,11 +251,11 @@ class TestRetryDecorator:
             mock_func = Mock(side_effect=[ValueError("fail"), "success"])
 
             @retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
-            def func(a, b, c=None):
+            def func_with_args(a, b, c=None):
                 mock_func()
                 return f"{a}-{b}-{c}"
 
-            result = func(1, 2, c=3)
+            result = func_with_args(1, 2, c=3)
             assert result == "1-2-3"
             assert mock_func.call_count == 2
         elif test_case == "exception_hierarchy":

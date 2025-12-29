@@ -134,6 +134,7 @@ class TestValidateWithFeedback:
         long_name = "a" * 101
         valid, error = MilestoneNamingValidator.validate_with_feedback(long_name)
         assert valid is False
+        assert error is not None
         assert "100 characters" in error
 
     def test_invalid_characters(self):
@@ -158,12 +159,14 @@ class TestValidateWithFeedback:
         """Test that names with spaces suggest safe alternative."""
         valid, error = MilestoneNamingValidator.validate_with_feedback("sprint 1")
         assert valid is False
+        assert error is not None
         assert "sprint-1" in error
 
     def test_name_with_uppercase_suggests_safe_name(self):
         """Test that uppercase names suggest safe alternative."""
         valid, error = MilestoneNamingValidator.validate_with_feedback("Sprint-1")
         assert valid is False
+        assert error is not None
         assert "sprint-1" in error
 
 

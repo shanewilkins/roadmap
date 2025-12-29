@@ -55,7 +55,7 @@ class TestIssueExporter:
                 mock_formatter_instance.to_json.return_value = '{"test": "data"}'
                 mock_formatter.return_value = mock_formatter_instance
 
-                result = IssueExporter.export(issues, "json")
+                result = IssueExporter.export(issues, "json")  # type: ignore
 
                 assert result == '{"test": "data"}'
                 mock_formatter_instance.to_json.assert_called_once()
@@ -74,7 +74,7 @@ class TestIssueExporter:
                 mock_formatter_instance.to_csv.return_value = "id,title\nISSUE-001,Test"
                 mock_formatter.return_value = mock_formatter_instance
 
-                result = IssueExporter.export(issues, "csv")
+                result = IssueExporter.export(issues, "csv")  # type: ignore
 
                 assert "id,title" in result
 
@@ -92,7 +92,7 @@ class TestIssueExporter:
                 mock_formatter_instance.to_markdown.return_value = "| Test |"
                 mock_formatter.return_value = mock_formatter_instance
 
-                result = IssueExporter.export(issues, "markdown")
+                result = IssueExporter.export(issues, "markdown")  # type: ignore
 
                 assert "Test" in result
 
@@ -107,7 +107,7 @@ class TestIssueExporter:
                 "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
             ):
                 with pytest.raises(ValueError):
-                    IssueExporter.export(issues, "invalid")
+                    IssueExporter.export(issues, "invalid")  # type: ignore
 
     def test_export_with_custom_title(self):
         """Test export with custom title."""
@@ -123,7 +123,7 @@ class TestIssueExporter:
                 mock_formatter_instance.to_json.return_value = "{}"
                 mock_formatter.return_value = mock_formatter_instance
 
-                IssueExporter.export(issues, "json", title="Custom Title")
+                IssueExporter.export(issues, "json", title="Custom Title")  # type: ignore
 
                 # Check that issues_to_table_data was called with title
                 mock_table_data.assert_called_once()
@@ -137,7 +137,7 @@ class TestIssueExporter:
         def serializer(i):
             return {"id": i.id, "title": i.title}
 
-        result = IssueExporter.to_json(issues, serializer)
+        result = IssueExporter.to_json(issues, serializer)  # type: ignore
 
         # Result should be valid JSON
         data = json.loads(result)
@@ -161,7 +161,7 @@ class TestIssueExporter:
                 "updated": "2024-01-02",
             }
 
-        result = IssueExporter.to_csv(issues, serializer)
+        result = IssueExporter.to_csv(issues, serializer)  # type: ignore
 
         # Check that CSV has header
         assert "id" in result
@@ -172,7 +172,7 @@ class TestIssueExporter:
         """Test legacy Markdown export."""
         issues = [MockIssue()]
 
-        result = IssueExporter.to_markdown(issues)
+        result = IssueExporter.to_markdown(issues)  # type: ignore
 
         # Should contain table format
         assert "|" in result
@@ -212,7 +212,7 @@ class TestIssueExporter:
     def test_to_markdown_with_status_value(self):
         """Test Markdown export handles status enum values."""
         issue = MockIssue()
-        result = IssueExporter.to_markdown([issue])
+        result = IssueExporter.to_markdown([issue])  # type: ignore
 
         # Status should be included
         assert "ISSUE-001" in result
@@ -229,7 +229,7 @@ class TestIssueExporter:
         issue.estimated_time_display = None
 
         # Should handle missing attributes
-        result = IssueExporter.to_markdown([issue])
+        result = IssueExporter.to_markdown([issue])  # type: ignore
 
         assert "ISSUE-001" in result
 
@@ -250,7 +250,7 @@ class TestIssueExporter:
                 mock_formatter_instance.to_markdown.return_value = "markdown"
                 mock_formatter.return_value = mock_formatter_instance
 
-                result = IssueExporter.export(issues, format_type)
+                result = IssueExporter.export(issues, format_type)  # type: ignore
 
                 assert result is not None
 
@@ -272,7 +272,7 @@ class TestIssueExporter:
                 mock_formatter_instance.to_json.return_value = "{}"
                 mock_formatter.return_value = mock_formatter_instance
 
-                result = IssueExporter.export(issues, "json")
+                result = IssueExporter.export(issues, "json")  # type: ignore
 
                 assert result == "{}"
 
@@ -287,7 +287,7 @@ class TestIssueExporter:
                 "status": "open",
             }
 
-        result = IssueExporter.to_json([issue], serializer)
+        result = IssueExporter.to_json([issue], serializer)  # type: ignore
         data = json.loads(result)
 
         assert data[0]["id"] == "ISSUE-001"
@@ -301,7 +301,7 @@ class TestIssueExporter:
         def serializer(i):
             return {"id": i.id}  # Missing other fields
 
-        result = IssueExporter.to_csv([issue], serializer)
+        result = IssueExporter.to_csv([issue], serializer)  # type: ignore
 
         # Should have header and at least one row
         lines = result.split("\n")
@@ -318,7 +318,7 @@ class TestIssueExporter:
                 "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
             ):
                 try:
-                    IssueExporter.export(issues, "json")
+                    IssueExporter.export(issues, "json")  # type: ignore
                 except Exception:  # noqa: BLE001
                     pass
 

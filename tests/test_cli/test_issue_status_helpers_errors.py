@@ -60,6 +60,7 @@ class TestStatusChangeConfig:
         assert config.title_style == title_style
         assert config.status_display == status_display
         if pre_check:
+            assert config.pre_check is not None
             assert config.pre_check({}) == expected_pre_check
         else:
             assert config.pre_check is None

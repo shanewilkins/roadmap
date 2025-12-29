@@ -272,7 +272,7 @@ class TestGitHubConflictDetector:
             last_sync = base_time - timedelta(hours=1)
 
         issue = Issue(id="test", title="Test")
-        issue.updated = issue_updated
+        issue.updated = issue_updated  # type: ignore
 
         result = detector._is_local_modified_after_sync(issue, last_sync)
 

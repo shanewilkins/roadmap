@@ -226,7 +226,7 @@ class TestSafeOperationDecorator:
         """Test that entity_id is captured from arguments."""
 
         @safe_operation(OperationType.UPDATE, "Issue")
-        def update_issue(issue_id: str = None, **kwargs):
+        def update_issue(issue_id: str | None = None, **kwargs):
             raise RuntimeError("DB error")
 
         with pytest.raises(UpdateError):

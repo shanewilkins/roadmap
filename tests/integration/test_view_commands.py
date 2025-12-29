@@ -110,6 +110,11 @@ def roadmap_with_data(cli_runner):
 
         # The JSON output is a TableData structure with "rows" containing the actual data
         # Each row is a list matching the columns in order
+        if isinstance(json_output, list):
+            # If it's a list, we can't extract rows/columns like this
+            # This is likely an error in the test or output format
+            pytest.fail(f"Expected dict but got list from JSON output: {json_output}")
+
         rows = json_output.get("rows", [])
         columns = json_output.get("columns", [])
 
@@ -146,6 +151,8 @@ def roadmap_with_data(cli_runner):
 
 class TestIssueViewCommand:
     """Test the 'roadmap issue view' command."""
+
+    # Use TestDataFactory for all test data in this class
 
     def test_issue_view_displays_basic_info(self, roadmap_with_data):
         """Test that issue view displays basic issue information."""
@@ -200,6 +207,8 @@ class TestIssueViewCommand:
 class TestMilestoneViewCommand:
     """Test the 'roadmap milestone view' command."""
 
+    # Use TestDataFactory for all test data in this class
+
     def test_milestone_view_displays_basic_info(self, roadmap_with_data):
         """Test that milestone view displays basic milestone information."""
         cli_runner, temp_dir, data = roadmap_with_data
@@ -250,6 +259,8 @@ class TestMilestoneViewCommand:
 
 class TestProjectViewCommand:
     """Test the 'roadmap project view' command."""
+
+    # Use TestDataFactory for all test data in this class
 
     def test_project_view_displays_basic_info(self, roadmap_with_data):
         """Test that project view displays basic project information."""

@@ -21,98 +21,46 @@ from roadmap.adapters.persistence.sync_orchestrator import SyncOrchestrator
 class TestFileChangeDetection:
     """Test file change detection with various error conditions."""
 
-    def test_file_changed_returns_true_when_file_missing(self):
-        """Test that missing file is treated as changed."""
-        mock_get_connection = Mock()
-        mock_transaction = Mock()
+    import pytest
 
-        orchestrator = SyncOrchestrator(mock_get_connection, mock_transaction)
-
-        # Non-existent file
-        result = orchestrator._has_file_changed(Path("/nonexistent/file.md"))
-
-        assert result is True
-
-    def test_file_changed_returns_true_when_no_sync_record(self, tmp_path):
-        """Test that file with no sync record is marked as changed."""
+    @pytest.mark.parametrize(
+        "file_exists, stored_hash, calc_hash, db_error, expected",
+        [
+            (False, None, None, None, True),  # file missing
+            (True, None, None, None, True),  # no sync record
+            (True, "abc123", "abc123", None, True),  # hash matches
+            (True, "hash_old", "hash_new", None, True),  # hash mismatch
+            (True, None, None, Exception("DB error"), True),  # db error
+        ],
+    )
+    def test_file_changed_param(
+        self, tmp_path, file_exists, stored_hash, calc_hash, db_error, expected
+    ):
         test_file = tmp_path / "test.md"
-        test_file.write_text("content")
-
+        if file_exists:
+            test_file.write_text("content")
         mock_conn = Mock()
-        mock_conn.execute.return_value.fetchone.return_value = None
+        if db_error:
+            mock_conn.execute.side_effect = db_error
+        else:
+            if stored_hash is not None:
+                mock_conn.execute.return_value.fetchone.return_value = (stored_hash,)
+            else:
+                mock_conn.execute.return_value.fetchone.return_value = None
         mock_get_connection = Mock(return_value=mock_conn)
         mock_transaction = Mock()
-
         orchestrator = SyncOrchestrator(mock_get_connection, mock_transaction)
-
-        result = orchestrator._has_file_changed(test_file)
-
-        assert result is True
-
-    def test_file_changed_returns_false_when_hash_matches(self, tmp_path):
-        """Test that unchanged file returns False."""
-        test_file = tmp_path / "test.md"
-        test_file.write_text("content")
-
-        mock_conn = Mock()
-
-        # Mock the hash to match
-        with patch(
-            "roadmap.adapters.persistence.sync_orchestrator.FileParser"
-        ) as mock_parser_class:
-            mock_parser = Mock()
-            mock_parser.calculate_file_hash.return_value = "abc123"
-            mock_parser_class.return_value = mock_parser
-
-            mock_conn.execute.return_value.fetchone.return_value = ("abc123",)
-            mock_get_connection = Mock(return_value=mock_conn)
-            mock_transaction = Mock()
-
-            orchestrator = SyncOrchestrator(mock_get_connection, mock_transaction)
-
+        if calc_hash is not None or stored_hash is not None:
+            with patch(
+                "roadmap.adapters.persistence.sync_orchestrator.FileParser"
+            ) as mock_parser_class:
+                mock_parser = Mock()
+                mock_parser.calculate_file_hash.return_value = calc_hash or stored_hash
+                mock_parser_class.return_value = mock_parser
+                result = orchestrator._has_file_changed(test_file)
+        else:
             result = orchestrator._has_file_changed(test_file)
-
-            assert result is False
-
-    def test_file_changed_returns_true_when_hash_mismatch(self, tmp_path):
-        """Test that changed file returns True."""
-        test_file = tmp_path / "test.md"
-        test_file.write_text("content")
-
-        with patch(
-            "roadmap.adapters.persistence.sync_orchestrator.FileParser"
-        ) as mock_parser_class:
-            mock_parser = Mock()
-            mock_parser.calculate_file_hash.return_value = "hash_new"
-            mock_parser_class.return_value = mock_parser
-
-            mock_conn = Mock()
-            mock_conn.execute.return_value.fetchone.return_value = ("hash_old",)
-            mock_get_connection = Mock(return_value=mock_conn)
-            mock_transaction = Mock()
-
-            orchestrator = SyncOrchestrator(mock_get_connection, mock_transaction)
-
-            result = orchestrator._has_file_changed(test_file)
-
-            assert result is True
-
-    def test_file_changed_handles_database_error(self, tmp_path):
-        """Test that database errors are handled gracefully."""
-        test_file = tmp_path / "test.md"
-        test_file.write_text("content")
-
-        mock_conn = Mock()
-        mock_conn.execute.side_effect = Exception("DB error")
-        mock_get_connection = Mock(return_value=mock_conn)
-        mock_transaction = Mock()
-
-        orchestrator = SyncOrchestrator(mock_get_connection, mock_transaction)
-
-        # Should return True on error (treat as changed)
-        result = orchestrator._has_file_changed(test_file)
-
-        assert result is True
+        assert result == expected
 
 
 # ========== Unit Tests: File Type Sync Dispatch ==========

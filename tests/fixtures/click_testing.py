@@ -197,7 +197,7 @@ class ClickTestHelper:
         )
 
     @staticmethod
-    def extract_project_id(output: str, project_name: str = None) -> str:
+    def extract_project_id(output: str, project_name: str | None = None) -> str:
         """Extract project ID from CLI output.
 
         Strategy: Use JSON format from --format json with TableData structure.
@@ -220,7 +220,7 @@ class ClickTestHelper:
             # Search for specific project by name
             try:
                 project_id = CLIOutputParser.extract_from_tabledata(
-                    json_output,
+                    json_output,  # type: ignore
                     column_name="name",
                     search_value=project_name,
                     id_column="id",
@@ -233,13 +233,14 @@ class ClickTestHelper:
                 ) from e
         else:
             # Return first project ID
-            rows = json_output.get("rows", [])
-            if rows:
-                return str(rows[0][0])  # Assume ID is first column
+            if isinstance(json_output, dict):
+                rows = json_output.get("rows", [])
+                if rows:
+                    return str(rows[0][0])  # Assume ID is first column
             raise ValueError(f"No projects found in output.\nOutput was:\n{output}")
 
     @staticmethod
-    def extract_milestone_id(output: str, milestone_name: str = None) -> str:
+    def extract_milestone_id(output: str, milestone_name: str | None = None) -> str:
         """Extract milestone ID from CLI output.
 
         Strategy: Use JSON format from --format json with TableData structure.
@@ -262,7 +263,7 @@ class ClickTestHelper:
             # Search for specific milestone
             try:
                 milestone_id = CLIOutputParser.extract_from_tabledata(
-                    json_output,
+                    json_output,  # type: ignore
                     column_name="name",
                     search_value=milestone_name,
                     id_column="id",
@@ -274,9 +275,10 @@ class ClickTestHelper:
                 ) from e
         else:
             # Return first milestone ID
-            rows = json_output.get("rows", [])
-            if rows:
-                return str(rows[0][0])  # Assume ID is first column
+            if isinstance(json_output, dict):
+                rows = json_output.get("rows", [])
+                if rows:
+                    return str(rows[0][0])  # Assume ID is first column
             raise ValueError(f"No milestones found in output.\nOutput was:\n{output}")
 
     @staticmethod

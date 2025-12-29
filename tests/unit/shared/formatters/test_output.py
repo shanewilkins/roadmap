@@ -14,8 +14,13 @@ class TestOutputFormatter:
 
     def create_table_data(self, rows=None):
         """Create sample TableData for testing."""
+        from tests.unit.shared.test_data_factory import TestDataFactory
+
         if rows is None:
-            rows = [["ID-1", "Task 1", "Open"], ["ID-2", "Task 2", "Closed"]]
+            rows = [
+                [TestDataFactory.issue_id(), TestDataFactory.message(), "Open"],
+                [TestDataFactory.issue_id(), TestDataFactory.message(), "Closed"],
+            ]
 
         columns = [
             ColumnDef(

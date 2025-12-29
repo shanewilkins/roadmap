@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.adapters.persistence.parser import MilestoneParser
-from roadmap.common.constants import MilestoneStatus
+from roadmap.common.constants import MilestoneStatus, ProjectStatus
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.common.logging_utils import (
@@ -154,7 +154,8 @@ class ProjectService:
 
         # Map status string to ProjectStatus enum if provided
 
-        project_status = status if status else "planning"
+        status_str = status if status else "planning"
+        project_status = ProjectStatus(status_str)
 
         project = Project(
             name=name,

@@ -12,7 +12,7 @@ console = get_console()
 def _serialize_issue(issue: Issue) -> dict:
     """Convert an Issue model to a JSON-serializable dict."""
     # Use pydantic's dict but convert datetimes to isoformat strings
-    d = issue.dict()
+    d = issue.model_dump()
     for k, v in d.items():
         if hasattr(v, "isoformat"):
             try:

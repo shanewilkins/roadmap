@@ -22,7 +22,7 @@ class MockEntity:
         self.id = entity_id
         self.name = name
         self.title = f"Test {name}"
-        self.milestone = "v1.0"
+        self.milestone: str | None = "v1.0"
         self.status = Mock(value=status)
 
 
@@ -88,6 +88,7 @@ class TestIssueArchive:
         is_valid, error = self.archive.validate_entity_before_archive(entity)
 
         assert is_valid is False
+        assert error is not None
         assert "not closed" in error
 
 
@@ -221,7 +222,7 @@ class TestBaseArchiveTemplateMethod:
     def test_base_archive_requires_get_entities_to_archive(self):
         """Test BaseArchive requires subclass to implement get_entities_to_archive."""
         with pytest.raises(TypeError):
-            BaseArchive(Mock())  # noqa: F841
+            BaseArchive(Mock())  # type: ignore  # noqa: F841
 
 
 class TestBaseRestoreTemplateMethod:
@@ -230,4 +231,4 @@ class TestBaseRestoreTemplateMethod:
     def test_base_restore_requires_get_archived_files_to_restore(self):
         """Test BaseRestore requires subclass to implement get_archived_files_to_restore."""
         with pytest.raises(TypeError):
-            BaseRestore(Mock())  # noqa: F841
+            BaseRestore(Mock())  # type: ignore  # noqa: F841

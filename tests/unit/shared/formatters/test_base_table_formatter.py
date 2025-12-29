@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.common.output_models import TableData
+from roadmap.common.output_models import ColumnDef, ColumnType, TableData
 from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 
 
@@ -35,7 +35,9 @@ class ConcreteTableFormatter(BaseTableFormatter):
             title=title,
             description=description,
             rows=[[str(item)] for item in items],
-            columns=["Data"],
+            columns=[
+                ColumnDef(name="data", display_name="Data", type=ColumnType.STRING)
+            ],
         )
 
 
@@ -139,7 +141,7 @@ class TestBaseTableFormatter:
             class IncompleteFormatter(BaseTableFormatter):
                 pass
 
-            IncompleteFormatter()
+            IncompleteFormatter()  # type: ignore
 
     def test_add_row_is_abstract(self):
         """Test that add_row must be implemented."""
@@ -153,9 +155,9 @@ class TestBaseTableFormatter:
                     return "test"
 
                 def items_to_table_data(self, items, title="", description=""):
-                    return TableData()
+                    return TableData(columns=[], rows=[])
 
-            MissingAddRow()
+            MissingAddRow()  # type: ignore
 
     def test_get_filter_description_is_abstract(self):
         """Test that get_filter_description must be implemented."""
@@ -169,9 +171,9 @@ class TestBaseTableFormatter:
                     pass
 
                 def items_to_table_data(self, items, title="", description=""):
-                    return TableData()
+                    return TableData(columns=[], rows=[])
 
-            MissingFilterDesc()
+            MissingFilterDesc()  # type: ignore
 
     def test_items_to_table_data_is_abstract(self):
         """Test that items_to_table_data must be implemented."""
@@ -187,7 +189,7 @@ class TestBaseTableFormatter:
                 def get_filter_description(self, items):
                     return "test"
 
-            MissingTableData()
+            MissingTableData()  # type: ignore
 
     @pytest.mark.parametrize(
         "item_count",

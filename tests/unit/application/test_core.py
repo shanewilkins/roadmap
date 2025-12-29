@@ -6,6 +6,7 @@ import pytest
 
 from roadmap.core.domain import MilestoneStatus, Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.application.test_data_factory import TestDataFactory
 
 
 class TestRoadmapCore:
@@ -364,10 +365,12 @@ class TestRoadmapCore:
         core.initialize()
 
         # Create milestone
-        core.milestones.create("test-milestone", "Test milestone")
+        milestone_name = TestDataFactory.milestone_id()
+        milestone_desc = TestDataFactory.message()
+        core.milestones.create(milestone_name, milestone_desc)
 
         # Get progress
-        progress = core.milestones.get_progress("test-milestone")
+        progress = core.milestones.get_progress(milestone_name)
 
         assert progress["total"] == 0
         assert progress["completed"] == 0

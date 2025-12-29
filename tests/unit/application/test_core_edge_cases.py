@@ -7,6 +7,7 @@ import pytest
 
 from roadmap.core.domain import Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
+from tests.unit.shared.test_data_factory import TestDataFactory
 
 
 @pytest.fixture
@@ -156,10 +157,11 @@ This issue is missing the title field.
 
     def test_move_nonexistent_issue_to_milestone(self, initialized_core):
         """Test moving non-existent issue to milestone."""
-        initialized_core.milestones.create("Test Milestone", "Test description")
-
+        milestone_name = TestDataFactory.milestone_id()
+        milestone_desc = TestDataFactory.message()
+        initialized_core.milestones.create(milestone_name, milestone_desc)
         result = initialized_core.issues.move_to_milestone(
-            "nonexistent-id", "Test Milestone"
+            TestDataFactory.issue_id(), milestone_name
         )
         assert not result
 

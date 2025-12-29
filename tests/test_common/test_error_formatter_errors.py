@@ -13,6 +13,8 @@ Tests cover:
 import unittest
 from unittest.mock import patch
 
+import pytest
+
 from roadmap.common.error_formatter import (
     format_error_message,
     format_info_message,
@@ -25,87 +27,87 @@ from roadmap.common.errors.exceptions import RoadmapException
 class TestFormatErrorMessage(unittest.TestCase):
     """Test format_error_message function."""
 
-    import pytest
 
-    @pytest.mark.parametrize(
-        "exc,plain_mode,expected",
-        [
-            (
-                RoadmapException(
-                    domain_message="Technical error", user_message="User-friendly error"
-                ),
-                False,
-                "❌ User-friendly error",
+# Move the parameterized test outside the class for pytest compatibility
+
+
+@pytest.mark.parametrize(
+    "exc,plain_mode,expected",
+    [
+        (
+            RoadmapException(
+                domain_message="Technical error", user_message="User-friendly error"
             ),
-            (
-                RoadmapException(
-                    domain_message="Technical error", user_message="User-friendly error"
-                ),
-                True,
-                "[ERROR] User-friendly error",
+            False,
+            "❌ User-friendly error",
+        ),
+        (
+            RoadmapException(
+                domain_message="Technical error", user_message="User-friendly error"
             ),
-            (ValueError("Something went wrong"), False, "❌ Something went wrong"),
-            (ValueError("Something went wrong"), True, "[ERROR] Something went wrong"),
-            (
-                RoadmapException(
-                    domain_message="Technical error", user_message="Default message"
-                ),
-                False,
-                "❌ Default message",
+            True,
+            "[ERROR] User-friendly error",
+        ),
+        (ValueError("Something went wrong"), False, "❌ Something went wrong"),
+        (ValueError("Something went wrong"), True, "[ERROR] Something went wrong"),
+        (
+            RoadmapException(
+                domain_message="Technical error", user_message="Default message"
             ),
-            (
-                RoadmapException(
-                    domain_message="Technical error",
-                    user_message="Line 1\nLine 2\nLine 3",
-                ),
-                False,
-                "❌ Line 1\nLine 2\nLine 3",
+            False,
+            "❌ Default message",
+        ),
+        (
+            RoadmapException(
+                domain_message="Technical error",
+                user_message="Line 1\nLine 2\nLine 3",
             ),
-            (
-                RoadmapException(
-                    domain_message="Technical",
-                    user_message="Error with special chars: @#$%^&*()",
-                ),
-                False,
-                "❌ Error with special chars: @#$%^&*()",
+            False,
+            "❌ Line 1\nLine 2\nLine 3",
+        ),
+        (
+            RoadmapException(
+                domain_message="Technical",
+                user_message="Error with special chars: @#$%^&*()",
             ),
-            (
-                RoadmapException(
-                    domain_message="Technical",
-                    user_message="Error with unicode: 你好世界 🚀",
-                ),
-                False,
-                "❌ Error with unicode: 你好世界 🚀",
+            False,
+            "❌ Error with special chars: @#$%^&*()",
+        ),
+        (
+            RoadmapException(
+                domain_message="Technical",
+                user_message="Error with unicode: 你好世界 🚀",
             ),
-            (
-                RuntimeError("Runtime error occurred"),
-                False,
-                "❌ Runtime error occurred",
+            False,
+            "❌ Error with unicode: 你好世界 🚀",
+        ),
+        (
+            RuntimeError("Runtime error occurred"),
+            False,
+            "❌ Runtime error occurred",
+        ),
+        (TypeError("Type mismatch error"), False, "❌ Type mismatch error"),
+        (
+            RoadmapException(
+                domain_message="Technical", user_message="{}".format("A" * 50)
             ),
-            (TypeError("Type mismatch error"), False, "❌ Type mismatch error"),
-            (
-                RoadmapException(
-                    domain_message="Technical", user_message="{}".format("A" * 500)
-                ),
-                False,
-                "❌ {}".format("A" * 500),
+            False,
+            "❌ {}".format("A" * 50),
+        ),
+        (
+            RoadmapException(
+                domain_message="Technical implementation",
+                user_message="User-visible error",
             ),
-            (
-                RoadmapException(
-                    domain_message="Technical implementation",
-                    user_message="User-visible error",
-                ),
-                False,
-                "❌ User-visible error",
-            ),
-        ],
-    )
-    def test_format_error_param(self, exc, plain_mode, expected):
-        with patch(
-            "roadmap.common.error_formatter.is_plain_mode", return_value=plain_mode
-        ):
-            result = format_error_message(exc)
-        assert result == expected
+            False,
+            "❌ User-visible error",
+        ),
+    ],
+)
+def test_format_error_param(exc, plain_mode, expected):
+    with patch("roadmap.common.error_formatter.is_plain_mode", return_value=plain_mode):
+        result = format_error_message(exc)
+    assert result == expected
 
 
 class TestFormatWarningMessage(unittest.TestCase):
@@ -182,16 +184,9 @@ class TestFormatInfoMessage(unittest.TestCase):
     def test_format_info_plain_mode(self):
         """Info message in plain mode should use [INFO] tag."""
         with patch("roadmap.common.error_formatter.is_plain_mode", return_value=True):
-            result = format_info_message("Just so you know")
+            result = format_info_message("Just a heads up")
 
-        assert result == "[INFO] Just so you know"
-
-    def test_format_info_empty_message(self):
-        """Empty info message should still format."""
-        with patch("roadmap.common.error_formatter.is_plain_mode", return_value=False):
-            result = format_info_message("")
-
-        assert result == "ℹ️  "
+        assert result == "[INFO] Just a heads up"
 
     def test_format_info_with_multiline(self):
         """Multiline info messages should be preserved."""

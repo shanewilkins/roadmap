@@ -18,6 +18,21 @@ class TestDataFactory:
     """Factory for generating consistent test data across test suites."""
 
     @staticmethod
+    def issue_id() -> str:
+        """Return a unique or generic issue ID for tests."""
+        return "ISSUE-123"
+
+    @staticmethod
+    def milestone_id() -> str:
+        """Return a unique or generic milestone ID for tests."""
+        return "MILESTONE-1"
+
+    @staticmethod
+    def message() -> str:
+        """Return a generic message or title for tests."""
+        return "Test message"
+
+    @staticmethod
     def create_mock_core(**kwargs) -> Mock:
         """Create a standardized mock RoadmapCore instance.
 
@@ -64,13 +79,13 @@ class TestDataFactory:
         """
         issue = Mock(spec=Issue)
 
-        # Set up default properties
-        issue.id = kwargs.get("id", 1)
-        issue.title = kwargs.get("title", "Test Issue")
-        issue.description = kwargs.get("description", "Test description")
+        # Set up default properties using TestDataFactory
+        issue.id = kwargs.get("id", TestDataFactory.issue_id())
+        issue.title = kwargs.get("title", TestDataFactory.message())
+        issue.description = kwargs.get("description", TestDataFactory.message())
         issue.status = kwargs.get("status", "open")
         issue.priority = kwargs.get("priority", "medium")
-        issue.labels = kwargs.get("labels", ["test"])
+        issue.labels = kwargs.get("labels", [TestDataFactory.message()])
         issue.assignee = kwargs.get("assignee", None)
         issue.milestone_id = kwargs.get("milestone_id", None)
         issue.estimated_hours = kwargs.get("estimated_hours", None)
@@ -92,9 +107,9 @@ class TestDataFactory:
         """
         milestone = Mock(spec=Milestone)
 
-        milestone.id = kwargs.get("id", 1)
-        milestone.title = kwargs.get("title", "Test Milestone")
-        milestone.description = kwargs.get("description", "Test milestone description")
+        milestone.id = kwargs.get("id", TestDataFactory.milestone_id())
+        milestone.title = kwargs.get("title", TestDataFactory.message())
+        milestone.description = kwargs.get("description", TestDataFactory.message())
         milestone.due_date = kwargs.get("due_date", None)
         milestone.status = kwargs.get("status", "active")
         milestone.created_at = kwargs.get("created_at", datetime.now(timezone.utc))

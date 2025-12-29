@@ -2,6 +2,7 @@
 
 import csv
 import json
+from collections.abc import Sequence
 from io import StringIO
 
 from roadmap.core.domain import Issue
@@ -32,7 +33,7 @@ class IssueExporter:
     ]
 
     @staticmethod
-    def export(issues: list[Issue], format_type: str, title: str = "Issues") -> str:
+    def export(issues: Sequence[Issue], format_type: str, title: str = "Issues") -> str:
         """
         Export issues using the unified OutputFormatter.
 
@@ -47,7 +48,7 @@ class IssueExporter:
         Returns:
             Formatted string ready for output
         """
-        table_data = IssueTableFormatter.issues_to_table_data(issues, title=title)
+        table_data = IssueTableFormatter.issues_to_table_data(issues, title=title)  # type: ignore
         formatter = OutputFormatter(table_data)
 
         if format_type == "json":
@@ -62,13 +63,13 @@ class IssueExporter:
             )
 
     @staticmethod
-    def to_json(issues: list[Issue], serializer_func) -> str:
+    def to_json(issues: Sequence[Issue], serializer_func) -> str:
         """Legacy JSON export with custom serializer (for backward compatibility)."""
         payload = [serializer_func(i) for i in issues]
         return json.dumps(payload, indent=2)
 
     @classmethod
-    def to_csv(cls, issues: list[Issue], serializer_func) -> str:
+    def to_csv(cls, issues: Sequence[Issue], serializer_func) -> str:
         """Legacy CSV export with custom serializer (for backward compatibility)."""
         buf = StringIO()
         writer = csv.DictWriter(buf, fieldnames=cls.CSV_FIELDS)
@@ -79,7 +80,7 @@ class IssueExporter:
         return buf.getvalue()
 
     @staticmethod
-    def to_markdown(issues: list[Issue]) -> str:
+    def to_markdown(issues: Sequence[Issue]) -> str:
         """Legacy Markdown export (for backward compatibility)."""
         lines = [
             "| id | title | status | assignee | milestone | estimated |",

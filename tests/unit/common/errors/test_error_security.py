@@ -27,10 +27,14 @@ class TestParseError:
 
     def test_parse_error_with_file_path_string(self):
         """Test ParseError with string file path."""
-        error = ParseError("Unexpected token", file_path=".roadmap/issues/test.md")
+        from pathlib import Path
+
+        error = ParseError(
+            "Unexpected token", file_path=Path(".roadmap/issues/test.md")
+        )
 
         assert error.message == "Unexpected token"
-        assert error.file_path == ".roadmap/issues/test.md"
+        assert error.file_path == Path(".roadmap/issues/test.md")
         assert "file_path" in error.context
         assert error.context["file_path"] == ".roadmap/issues/test.md"
 
