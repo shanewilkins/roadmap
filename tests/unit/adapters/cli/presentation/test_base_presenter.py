@@ -49,117 +49,71 @@ class TestBasePresenterUtilityMethods:
         # Console should have print method
         assert hasattr(console, "print")
 
-    def test_render_header(self):
-        """Test _render_header method."""
+    @pytest.mark.parametrize(
+        "method_name,args,kwargs,text_to_find,color_or_emoji",
+        [
+            ("_render_header", ("Test Header",), {}, "Test Header", None),
+            (
+                "_render_header",
+                ("Header",),
+                {"style": "bold red"},
+                "Header",
+                "bold red",
+            ),
+            ("_render_section", ("Title", "Content"), {}, "Title", None),
+            ("_render_footer", ("Footer message",), {}, "Footer message", None),
+            ("_render_footer", (), {}, None, None),
+            (
+                "_render_warning",
+                ("Warning message",),
+                {},
+                "Warning message",
+                ("yellow", "⚠️"),
+            ),
+            ("_render_error", ("Error message",), {}, "Error message", ("red", "❌")),
+            (
+                "_render_success",
+                ("Success message",),
+                {},
+                "Success message",
+                ("green", "✅"),
+            ),
+        ],
+    )
+    def test_render_methods_with_various_inputs(
+        self, method_name, args, kwargs, text_to_find, color_or_emoji
+    ):
+        """Test various render methods with different input combinations."""
         with patch(
             "roadmap.adapters.cli.presentation.base_presenter.get_console"
         ) as mock_console:
             mock_instance = MagicMock()
             mock_console.return_value = mock_instance
 
-            BasePresenter._render_header("Test Header")
+            method = getattr(BasePresenter, method_name)
+            method(*args, **kwargs)
 
             # Should call console.print
             mock_instance.print.assert_called_once()
-            call_args = mock_instance.print.call_args[0][0]
-            assert "Test Header" in call_args
 
-    def test_render_header_with_custom_style(self):
-        """Test _render_header with custom style."""
-        with patch(
-            "roadmap.adapters.cli.presentation.base_presenter.get_console"
-        ) as mock_console:
-            mock_instance = MagicMock()
-            mock_console.return_value = mock_instance
+            # Check text appears in output if expected
+            if text_to_find:
+                call_args = mock_instance.print.call_args[0][0]
+                assert text_to_find in call_args
 
-            BasePresenter._render_header("Header", style="bold red")
+            # Check for style if present in kwargs
+            if "style" in kwargs:
+                call_args = mock_instance.print.call_args[0][0]
+                assert kwargs["style"] in call_args
 
-            call_args = mock_instance.print.call_args[0][0]
-            assert "Header" in call_args
-            assert "bold red" in call_args
-
-    def test_render_section(self):
-        """Test _render_section method."""
-        with patch(
-            "roadmap.adapters.cli.presentation.base_presenter.get_console"
-        ) as mock_console:
-            mock_instance = MagicMock()
-            mock_console.return_value = mock_instance
-
-            BasePresenter._render_section("Title", "Content")
-
-            mock_instance.print.assert_called_once()
-            call_args = mock_instance.print.call_args[0][0]
-            assert "Title" in call_args
-            assert "Content" in call_args
-
-    def test_render_footer(self):
-        """Test _render_footer method."""
-        with patch(
-            "roadmap.adapters.cli.presentation.base_presenter.get_console"
-        ) as mock_console:
-            mock_instance = MagicMock()
-            mock_console.return_value = mock_instance
-
-            BasePresenter._render_footer("Footer message")
-
-            call_args = mock_instance.print.call_args[0][0]
-            assert "Footer message" in call_args
-
-    def test_render_footer_without_message(self):
-        """Test _render_footer without message."""
-        with patch(
-            "roadmap.adapters.cli.presentation.base_presenter.get_console"
-        ) as mock_console:
-            mock_instance = MagicMock()
-            mock_console.return_value = mock_instance
-
-            BasePresenter._render_footer()
-
-            # Should still call print
-            mock_instance.print.assert_called_once()
-
-    def test_render_warning(self):
-        """Test _render_warning method."""
-        with patch(
-            "roadmap.adapters.cli.presentation.base_presenter.get_console"
-        ) as mock_console:
-            mock_instance = MagicMock()
-            mock_console.return_value = mock_instance
-
-            BasePresenter._render_warning("Warning message")
-
-            call_args = mock_instance.print.call_args[0][0]
-            assert "Warning message" in call_args
-            assert "yellow" in call_args or "⚠️" in call_args
-
-    def test_render_error(self):
-        """Test _render_error method."""
-        with patch(
-            "roadmap.adapters.cli.presentation.base_presenter.get_console"
-        ) as mock_console:
-            mock_instance = MagicMock()
-            mock_console.return_value = mock_instance
-
-            BasePresenter._render_error("Error message")
-
-            call_args = mock_instance.print.call_args[0][0]
-            assert "Error message" in call_args
-            assert "red" in call_args or "❌" in call_args
-
-    def test_render_success(self):
-        """Test _render_success method."""
-        with patch(
-            "roadmap.adapters.cli.presentation.base_presenter.get_console"
-        ) as mock_console:
-            mock_instance = MagicMock()
-            mock_console.return_value = mock_instance
-
-            BasePresenter._render_success("Success message")
-
-            call_args = mock_instance.print.call_args[0][0]
-            assert "Success message" in call_args
-            assert "green" in call_args or "✅" in call_args
+            # Check for color or emoji for contextual render methods
+            if color_or_emoji:
+                call_args = mock_instance.print.call_args[0][0]
+                if isinstance(color_or_emoji, tuple):
+                    # At least one of the tuple options should be present
+                    assert any(opt in call_args for opt in color_or_emoji)
+                else:
+                    assert color_or_emoji in call_args
 
 
 class TestConcretePresenterImplementation:

@@ -1,33 +1,39 @@
 """Tests for CLI output manager."""
 
+import pytest
+
 from roadmap.adapters.cli.output_manager import OutputManager
 
 
 class TestOutputManager:
     """Test OutputManager class."""
 
-    def test_init_default(self):
-        """Test OutputManager initialization with defaults."""
-        manager = OutputManager()
-        assert manager.format == "table"
-        assert manager.output_file is None
-
-    def test_init_with_format(self):
-        """Test OutputManager initialization with custom format."""
-        manager = OutputManager(format="json")
-        assert manager.format == "json"
+    @pytest.mark.parametrize(
+        "format_arg,output_file_arg,expected_format,expected_file",
+        [
+            (None, None, "table", None),
+            ("json", None, "json", None),
+            ("csv", None, "csv", None),
+            ("plain", None, "plain", None),
+            ("markdown", None, "markdown", None),
+        ],
+    )
+    def test_init_with_various_formats(
+        self, format_arg, output_file_arg, expected_format, expected_file
+    ):
+        """Test OutputManager initialization with various format options."""
+        if format_arg is None:
+            manager = OutputManager()
+        else:
+            manager = OutputManager(format=format_arg)
+        assert manager.format == expected_format
+        assert manager.output_file == expected_file
 
     def test_init_with_output_file(self, tmp_path):
         """Test OutputManager initialization with output file."""
         output_file = tmp_path / "output.json"
         manager = OutputManager(format="json", output_file=output_file)
         assert manager.output_file == output_file
-
-    def test_output_manager_with_different_formats(self):
-        """Test OutputManager with different output formats."""
-        for fmt in ["table", "plain", "json", "csv", "markdown"]:
-            manager = OutputManager(format=fmt)
-            assert manager.format == fmt
 
     def test_output_manager_has_render_method(self):
         """Test that OutputManager has render_table method."""

@@ -2,6 +2,8 @@
 
 from unittest.mock import Mock, patch
 
+import pytest
+
 from roadmap.core.services.assignee_validation_service import (
     AssigneeValidationResult,
     AssigneeValidationStrategy,
@@ -16,83 +18,79 @@ from roadmap.infrastructure.github_validator import (
 class TestAssigneeValidationResult:
     """Test the validation result data class."""
 
-    def test_valid_result(self):
-        """Test creating a valid result."""
+    @pytest.mark.parametrize(
+        "is_valid,message,canonical_id",
+        [
+            (True, "", "test_user"),
+            (False, "User not found", ""),
+        ],
+    )
+    def test_validation_result_creation(self, is_valid, message, canonical_id):
+        """Test creating validation results with various states."""
         result = AssigneeValidationResult(
-            is_valid=True, message="", canonical_id="test_user"
+            is_valid=is_valid, message=message, canonical_id=canonical_id
         )
 
-        assert result.is_valid
-        assert result.message == ""
-        assert result.canonical_id == "test_user"
-
-    def test_invalid_result(self):
-        """Test creating an invalid result."""
-        result = AssigneeValidationResult(
-            is_valid=False, message="User not found", canonical_id=""
-        )
-
-        assert not result.is_valid
-        assert result.message == "User not found"
-        assert result.canonical_id == ""
+        assert result.is_valid == is_valid
+        assert result.message == message
+        assert result.canonical_id == canonical_id
 
 
 class TestLocalValidator:
     """Test local validation rules."""
 
-    def test_valid_local_assignee(self):
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "john_doe",
+            "alice-smith",
+            "bob123",
+        ],
+    )
+    def test_valid_local_assignee(self, name):
         """Test valid local assignee names."""
         validator = LocalValidator()
 
-        result = validator.validate("john_doe")
+        result = validator.validate(name)
         assert result.is_valid
-        assert result.canonical_id == "john_doe"
+        assert result.canonical_id == name
 
-        result = validator.validate("alice-smith")
-        assert result.is_valid
-
-        result = validator.validate("bob123")
-        assert result.is_valid
-
-    def test_invalid_local_assignee_too_short(self):
-        """Test assignee name too short."""
+    @pytest.mark.parametrize(
+        "invalid_name",
+        [
+            "a",
+            "user<test>",
+            "user{test}",
+            "user[test]",
+            "user(test)",
+        ],
+    )
+    def test_invalid_local_assignee(self, invalid_name):
+        """Test invalid assignee names with various issues."""
         validator = LocalValidator()
 
-        result = validator.validate("a")
+        result = validator.validate(invalid_name)
         assert not result.is_valid
         assert "not a valid assignee name" in result.message
-
-    def test_invalid_local_assignee_special_chars(self):
-        """Test assignee with invalid special characters."""
-        validator = LocalValidator()
-
-        invalid_names = ["user<test>", "user{test}", "user[test]", "user(test)"]
-        for name in invalid_names:
-            result = validator.validate(name)
-            assert not result.is_valid
-            assert "not a valid assignee name" in result.message
 
 
 class TestGitHubValidator:
     """Test GitHub validation."""
 
-    def test_cached_member_hit(self):
-        """Test validation with cached member."""
-        cached_members = {"alice", "bob", "charlie"}
+    @pytest.mark.parametrize(
+        "cached_members,test_name",
+        [
+            ({"alice", "bob", "charlie"}, "alice"),
+            (["alice", "bob", "charlie"], "bob"),
+        ],
+    )
+    def test_cached_member_validation(self, cached_members, test_name):
+        """Test validation with cached members."""
         validator = GitHubValidator("token", "owner", "repo", cached_members)
 
-        result = validator.validate("alice")
+        result = validator.validate(test_name)
         assert result.is_valid
-        assert result.canonical_id == "alice"
-
-    def test_cached_member_list(self):
-        """Test validation with cached member list."""
-        cached_members = ["alice", "bob", "charlie"]
-        validator = GitHubValidator("token", "owner", "repo", cached_members)
-
-        result = validator.validate("bob")
-        assert result.is_valid
-        assert result.canonical_id == "bob"
+        assert result.canonical_id == test_name
 
     def test_api_validation_success(self):
         """Test successful API validation."""
