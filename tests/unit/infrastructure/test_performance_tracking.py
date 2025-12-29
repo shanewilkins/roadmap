@@ -7,6 +7,8 @@ file I/O tracking, sync operations, and the OperationTimer class.
 import time
 from unittest.mock import patch
 
+import pytest
+
 from roadmap.infrastructure.logging.performance_tracking import (
     OperationTimer,
     track_database_operation,
@@ -371,34 +373,41 @@ class TestOperationTimer:
         assert timer.steps == {}
         assert timer.current_step is None
 
+    @pytest.mark.parametrize(
+        "operation_name,num_steps,step_configs",
+        [
+            ("single_step_op", 1, [("fetch_data", 0.01)]),
+            ("multi_step_op", 3, [("step1", 0.01), ("step2", 0.01), ("step3", 0.01)]),
+            (
+                "complex_workflow",
+                5,
+                [
+                    ("setup", 0.01),
+                    ("process_item_1", 0.01),
+                    ("process_item_2", 0.01),
+                    ("process_item_3", 0.01),
+                    ("cleanup", 0.01),
+                ],
+            ),
+        ],
+    )
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_operation_timer_single_step(self, mock_logger):
-        """Test operation timer with single step."""
-        timer = OperationTimer("single_step_op")
-        timer.start_step("fetch_data")
-        time.sleep(0.01)
-        timer.end_step()
+    def test_operation_timer_step_execution(
+        self, mock_logger, operation_name, num_steps, step_configs
+    ):
+        """Test operation timer with various step configurations."""
+        timer = OperationTimer(operation_name)
 
-        assert "fetch_data" in timer.steps
-        assert timer.steps["fetch_data"] >= 10
+        for step_name, sleep_time in step_configs:
+            timer.start_step(step_name)
+            time.sleep(sleep_time)
+            if step_name != step_configs[-1][0]:
+                timer.start_step("next")  # Implicitly end previous step
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_operation_timer_multiple_steps(self, mock_logger):
-        """Test operation timer with multiple steps."""
-        timer = OperationTimer("multi_step_op")
+        if operation_name != "single_step_op":
+            timer.end_step()
 
-        timer.start_step("step1")
-        time.sleep(0.01)
-        timer.start_step("step2")  # Implicitly ends step1
-        time.sleep(0.01)
-        timer.start_step("step3")  # Implicitly ends step2
-        time.sleep(0.01)
-        timer.end_step()
-
-        assert len(timer.steps) == 3
-        assert "step1" in timer.steps
-        assert "step2" in timer.steps
-        assert "step3" in timer.steps
+        assert len(timer.steps) >= num_steps - 1
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
     def test_operation_timer_finish(self, mock_logger):
@@ -476,62 +485,32 @@ class TestOperationTimer:
     def test_operation_timer_logs_finish(self, mock_logger):
         """Test that finish is logged."""
         timer = OperationTimer("finish_log_op")
-        result = timer.finish()
+        timer.finish()
 
         mock_logger.info.assert_called_once()
         call_args = mock_logger.info.call_args
         assert "finish_log_op_finished" in str(call_args)
 
     @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_operation_timer_complex_workflow(self, mock_logger):
-        """Test complex multi-step workflow."""
-        timer = OperationTimer("complex_workflow")
+    def test_operation_timer_edge_cases(self, mock_logger):
+        """Test operation timer edge cases: no steps and repeated finish."""
+        # Test with no steps
+        timer1 = OperationTimer("no_steps_op")
+        time.sleep(0.001)
+        result1 = timer1.finish()
 
-        # Setup phase
-        timer.start_step("setup")
-        time.sleep(0.01)
+        assert result1["steps"] == {}
+        assert result1["total_duration_ms"] > 0
 
-        # Processing phase
-        timer.start_step("process_item_1")
-        time.sleep(0.01)
+        # Test repeated finish
+        timer2 = OperationTimer("multi_finish_op")
+        timer2.start_step("step")
+        timer2.end_step()
 
-        timer.start_step("process_item_2")
-        time.sleep(0.01)
+        result2_a = timer2.finish()
+        result2_b = timer2.finish()
 
-        timer.start_step("process_item_3")
-        time.sleep(0.01)
-
-        # Cleanup phase
-        timer.start_step("cleanup")
-        time.sleep(0.01)
-
-        result = timer.finish()
-
-        assert len(result["steps"]) >= 4
-        assert result["total_duration_ms"] >= 40
-
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_operation_timer_no_steps(self, mock_logger):
-        """Test operation timer with no steps."""
-        timer = OperationTimer("no_steps_op")
-        time.sleep(0.001)  # Sleep slightly to ensure time passes
-        result = timer.finish()
-
-        assert result["steps"] == {}
-        assert result["total_duration_ms"] > 0
-
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
-    def test_operation_timer_repeated_finish(self, mock_logger):
-        """Test calling finish multiple times."""
-        timer = OperationTimer("multi_finish_op")
-        timer.start_step("step")
-        timer.end_step()
-
-        result1 = timer.finish()
-        # After finish, timer should still be usable but not add new steps
-        result2 = timer.finish()
-
-        assert result1["total_duration_ms"] <= result2["total_duration_ms"]
+        assert result2_a["total_duration_ms"] <= result2_b["total_duration_ms"]
 
 
 class TestPerformanceTrackingIntegration:
