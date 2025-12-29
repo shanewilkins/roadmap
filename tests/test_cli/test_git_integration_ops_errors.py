@@ -29,36 +29,23 @@ from tests.unit.domain.test_data_factory import TestDataFactory
 class TestGitIntegrationOpsInitialization:
     """Test GitIntegrationOps initialization and dependency injection."""
 
-    def test_init_with_valid_dependencies(self):
-        """Test successful initialization with valid git and core."""
-        mock_git = Mock()
-        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
-
-        ops = GitIntegrationOps(mock_git, mock_core)
-
-        assert ops.git == mock_git
-        assert ops.core == mock_core
-
-    def test_init_with_none_git(self):
-        """Test initialization with None git (fails at usage)."""
-        ops = GitIntegrationOps(
-            None,  # type: ignore[arg-type]
-            TestDataFactory.create_mock_core(is_initialized=True),
-        )
-        assert ops.git is None
-
-    def test_init_with_none_core(self):
-        """Test initialization with None core (fails at usage)."""
-        ops = GitIntegrationOps(Mock(), None)  # type: ignore
-        assert ops.core is None
+    @pytest.mark.parametrize(
+        "git,core,expected_git,expected_core",
+        [
+            (Mock(), TestDataFactory.create_mock_core(is_initialized=True), True, True),
+            (None, TestDataFactory.create_mock_core(is_initialized=True), False, True),
+            (Mock(), None, True, False),
+        ],
+    )
+    def test_init_various(self, git, core, expected_git, expected_core):
+        ops = GitIntegrationOps(git, core)
+        assert (ops.git is not None) == expected_git
+        assert (ops.core is not None) == expected_core
 
     def test_init_preserves_references(self):
-        """Test initialization stores exact references."""
         mock_git = Mock()
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
-
         ops = GitIntegrationOps(mock_git, mock_core)
-
         assert ops.git is mock_git
         assert ops.core is mock_core
 
