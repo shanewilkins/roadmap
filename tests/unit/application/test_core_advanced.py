@@ -478,8 +478,17 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         core.initialize()
         return core
 
-    def test_update_issue_with_various_fields(self, core):
-        """Test updating issues - basic fields."""
+    @pytest.mark.parametrize(
+        "assertion_type",
+        [
+            "basic",
+            "status_assignee",
+            "metrics",
+            "milestone",
+        ],
+    )
+    def test_update_issue_with_various_fields(self, core, assertion_type):
+        """Test updating issues with various field combinations."""
         # Create issue
         issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
@@ -496,68 +505,19 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         )
 
         assert updated_issue is not None
-        assert updated_issue.title == "Updated Title"
-        assert updated_issue.priority == Priority.HIGH
 
-    def test_update_issue_with_various_fields_status(self, core):
-        """Test updating issues - status and assignee."""
-        # Create issue
-        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
-
-        # Update various fields
-        updated_issue = core.issues.update(
-            issue.id,
-            title="Updated Title",
-            priority=Priority.HIGH,
-            status=Status.IN_PROGRESS,
-            assignee="alice@example.com",
-            estimated_hours=5.5,
-            labels=["bug", "urgent"],
-            milestone="Test Milestone",
-        )
-
-        assert updated_issue.status == Status.IN_PROGRESS
-        assert updated_issue.assignee == "alice@example.com"
-
-    def test_update_issue_with_various_fields_metrics(self, core):
-        """Test updating issues - estimated hours and labels."""
-        # Create issue
-        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
-
-        # Update various fields
-        updated_issue = core.issues.update(
-            issue.id,
-            title="Updated Title",
-            priority=Priority.HIGH,
-            status=Status.IN_PROGRESS,
-            assignee="alice@example.com",
-            estimated_hours=5.5,
-            labels=["bug", "urgent"],
-            milestone="Test Milestone",
-        )
-
-        assert updated_issue.estimated_hours == 5.5
-        assert "bug" in updated_issue.labels
-        assert "urgent" in updated_issue.labels
-
-    def test_update_issue_with_various_fields_milestone(self, core):
-        """Test updating issues - milestone."""
-        # Create issue
-        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
-
-        # Update various fields
-        updated_issue = core.issues.update(
-            issue.id,
-            title="Updated Title",
-            priority=Priority.HIGH,
-            status=Status.IN_PROGRESS,
-            assignee="alice@example.com",
-            estimated_hours=5.5,
-            labels=["bug", "urgent"],
-            milestone="Test Milestone",
-        )
-
-        assert updated_issue.milestone == "Test Milestone"
+        if assertion_type == "basic":
+            assert updated_issue.title == "Updated Title"
+            assert updated_issue.priority == Priority.HIGH
+        elif assertion_type == "status_assignee":
+            assert updated_issue.status == Status.IN_PROGRESS
+            assert updated_issue.assignee == "alice@example.com"
+        elif assertion_type == "metrics":
+            assert updated_issue.estimated_hours == 5.5
+            assert "bug" in updated_issue.labels
+            assert "urgent" in updated_issue.labels
+        elif assertion_type == "milestone":
+            assert updated_issue.milestone == "Test Milestone"
 
     def test_update_issue_invalid_priority(self, core):
         """Test updating issue with invalid priority."""
@@ -568,50 +528,53 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         # The update might fail or handle the invalid value - either is acceptable
         # As long as it doesn't crash the application
 
-    def test_delete_issue_with_file_error(self, core):
-        """Test issue deletion with file system errors."""
-        issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
+    @pytest.mark.parametrize(
+        "operation,entity_type",
+        [
+            ("delete_issue", "issue"),
+            ("delete_milestone", "milestone"),
+        ],
+    )
+    def test_delete_with_file_error(self, core, operation, entity_type):
+        """Test deletion operations with file system errors."""
+        if entity_type == "issue":
+            entity = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
+            entity_id = entity.id
+        else:
+            core.milestones.create("Test Milestone", "Description")
+            entity_id = "Test Milestone"
 
         # Mock file operations to raise exception
         with patch("pathlib.Path.unlink") as mock_unlink:
             mock_unlink.side_effect = PermissionError("Cannot delete file")
 
-            result = core.issues.delete(issue.id)
+            if entity_type == "issue":
+                result = core.issues.delete(entity_id)
+            else:
+                result = core.milestones.delete(entity_id)
+
             # Should handle error gracefully
             assert not result
 
-    def test_delete_milestone_with_file_error(self, core):
-        """Test milestone deletion with file system errors."""
-        core.milestones.create("Test Milestone", "Description")
-
-        # Mock file operations to raise exception
-        with patch("pathlib.Path.unlink") as mock_unlink:
-            mock_unlink.side_effect = PermissionError("Cannot delete file")
-
-            result = core.milestones.delete("Test Milestone")
-            # Should handle error gracefully
-            assert not result
-
-    def test_list_issues_with_corrupted_files(self, core):
-        """Test issue listing with corrupted issue files."""
-        # Create a corrupted issue file directly
-        corrupted_file = core.issues_dir / "corrupted_issue.md"
-        corrupted_file.write_text("Invalid content without proper frontmatter")
-
-        # Should handle corruption gracefully
-        issues = core.issues.list()
-        # Should return empty list or valid issues only, not crash
-        assert isinstance(issues, list)
-
-    def test_list_milestones_with_parser_errors(self, core):
-        """Test milestone listing with parser errors."""
-        # Create corrupted milestone file
-        corrupted_file = core.milestones_dir / "corrupted.md"
-        corrupted_file.write_text("---\nincomplete frontmatter")
-
-        # Should handle gracefully
-        milestones = core.milestones.list()
-        assert isinstance(milestones, list)
+    @pytest.mark.parametrize(
+        "operation,entity_type",
+        [
+            ("list_issues", "issue"),
+            ("list_milestones", "milestone"),
+        ],
+    )
+    def test_list_with_corrupted_files(self, core, operation, entity_type):
+        """Test listing operations with corrupted files."""
+        if entity_type == "issue":
+            corrupted_file = core.issues_dir / "corrupted_issue.md"
+            corrupted_file.write_text("Invalid content without proper frontmatter")
+            issues = core.issues.list()
+            assert isinstance(issues, list)
+        else:
+            corrupted_file = core.milestones_dir / "corrupted.md"
+            corrupted_file.write_text("---\nincomplete frontmatter")
+            milestones = core.milestones.list()
+            assert isinstance(milestones, list)
 
     def test_operations_with_permission_errors(self, core):
         """Test operations with file permission errors."""
