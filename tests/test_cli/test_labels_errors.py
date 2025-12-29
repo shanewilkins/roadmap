@@ -35,78 +35,75 @@ def label_handler(mock_session):
 class TestLabelHandlerRepositoryValidation:
     """Test repository validation in LabelHandler."""
 
-    def test_create_label_without_repository(self):
-        """Test create_label with None repository."""
+    import pytest
+
+    @pytest.mark.parametrize(
+        "method, args, kwargs",
+        [
+            ("create_label", ("test-label", "FF0000"), {}),
+            ("get_labels", (), {}),
+        ],
+    )
+    def test_label_handler_repository_validation_param(self, method, args, kwargs):
         session = Mock(spec=requests.Session)
         handler = LabelHandler(session=session, owner=None, repo=None)
-
         with pytest.raises(GitHubAPIError):
-            handler.create_label("test-label", "FF0000")
-
-    def test_get_labels_without_repository(self):
-        """Test get_labels with None repository."""
-        session = Mock(spec=requests.Session)
-        handler = LabelHandler(session=session, owner=None, repo=None)
-
-        with pytest.raises(GitHubAPIError):
-            handler.get_labels()
+            getattr(handler, method)(*args, **kwargs)
 
 
 class TestLabelHandlerAPIErrors:
     """Test API error handling in LabelHandler."""
 
-    def test_create_label_with_hash_prefix(self, label_handler, mock_session):
-        """Test create_label strips # from color."""
-        mock_response = Mock()
-        mock_response.json.return_value = {"name": "test", "color": "FF0000"}
-        mock_session.request.return_value = mock_response
-
-        with patch.object(label_handler, "_make_request") as mock_request:
-            mock_request.return_value = mock_response
-            result = label_handler.create_label("test-label", "#FF0000")
-            assert result["name"] == "test"
-
-    def test_update_label_with_hash_in_color(self, label_handler):
-        """Test update_label strips # from color."""
+    @pytest.mark.parametrize(
+        "method, args, kwargs, response_json, expected_name",
+        [
+            (
+                "create_label",
+                ("test-label", "#FF0000"),
+                {},
+                {"name": "test", "color": "FF0000"},
+                "test",
+            ),
+            (
+                "update_label",
+                ("old-label",),
+                {"color": "#FF0000"},
+                {"name": "updated", "color": "FF0000"},
+                "updated",
+            ),
+            (
+                "update_label",
+                ("old-label",),
+                {
+                    "new_name": "new-label",
+                    "color": "FF0000",
+                    "description": "Updated description",
+                },
+                {
+                    "name": "new-label",
+                    "color": "FF0000",
+                    "description": "Updated description",
+                },
+                "new-label",
+            ),
+            (
+                "update_label",
+                ("label",),
+                {"new_name": None, "color": None, "description": None},
+                {"name": "unchanged"},
+                "unchanged",
+            ),
+        ],
+    )
+    def test_label_handler_api_errors_param(
+        self, label_handler, method, args, kwargs, response_json, expected_name
+    ):
         with patch.object(label_handler, "_make_request") as mock_request:
             mock_response = Mock()
-            mock_response.json.return_value = {"name": "updated", "color": "FF0000"}
+            mock_response.json.return_value = response_json
             mock_request.return_value = mock_response
-
-            result = label_handler.update_label("old-label", color="#FF0000")
-            assert result["name"] == "updated"
-
-    def test_update_label_with_all_parameters(self, label_handler):
-        """Test update_label with all optional parameters."""
-        with patch.object(label_handler, "_make_request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "name": "new-label",
-                "color": "FF0000",
-                "description": "Updated description",
-            }
-            mock_request.return_value = mock_response
-
-            result = label_handler.update_label(
-                "old-label",
-                new_name="new-label",
-                color="FF0000",
-                description="Updated description",
-            )
-
-            assert result["name"] == "new-label"
-
-    def test_update_label_with_none_parameters(self, label_handler):
-        """Test update_label with only None parameters."""
-        with patch.object(label_handler, "_make_request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {"name": "unchanged"}
-            mock_request.return_value = mock_response
-
-            handler_result = label_handler.update_label(
-                "label", new_name=None, color=None, description=None
-            )
-            assert handler_result["name"] == "unchanged"
+            result = getattr(label_handler, method)(*args, **kwargs)
+            assert result["name"] == expected_name
 
 
 class TestLabelConversion:
