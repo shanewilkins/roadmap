@@ -102,33 +102,48 @@ def isolated_roadmap_with_issues(cli_runner):
 class TestCLIInit:
     """Test init command."""
 
+    import pytest
+
     @pytest.mark.parametrize(
-        "options",
+        "cmd,check",
         [
-            (["--project-name", "Test Project"]),
-            (["--project-name", "Test", "--description", "Test project"]),
-        ],
-    )
-    def test_init(self, cli_runner, options):
-        """Test initializing roadmap with various options."""
-        with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(
-                main,
-                ["init"] + options + ["--non-interactive", "--skip-github"],
-            )
-
-            assert result.exit_code == 0
-            assert ".roadmap" in os.listdir(".")
-            assert (
-                "initialized" in result.output.lower()
-                or "success" in result.output.lower()
-            )
-
-    def test_init_creates_database(self, cli_runner):
-        """Test that init creates the database file."""
-        with cli_runner.isolated_filesystem():
-            cli_runner.invoke(
-                main,
+            (
+                [
+                    "init",
+                    "--project-name",
+                    "Test Project",
+                    "--non-interactive",
+                    "--skip-github",
+                ],
+                lambda result: (
+                    result.exit_code == 0
+                    and ".roadmap" in os.listdir(".")
+                    and (
+                        "initialized" in result.output.lower()
+                        or "success" in result.output.lower()
+                    )
+                ),
+            ),
+            (
+                [
+                    "init",
+                    "--project-name",
+                    "Test",
+                    "--description",
+                    "Test project",
+                    "--non-interactive",
+                    "--skip-github",
+                ],
+                lambda result: (
+                    result.exit_code == 0
+                    and ".roadmap" in os.listdir(".")
+                    and (
+                        "initialized" in result.output.lower()
+                        or "success" in result.output.lower()
+                    )
+                ),
+            ),
+            (
                 [
                     "init",
                     "--project-name",
@@ -136,73 +151,104 @@ class TestCLIInit:
                     "--non-interactive",
                     "--skip-github",
                 ],
-            )
-
-            roadmap_dir = Path(".roadmap")
-            assert roadmap_dir.exists()
-            # Database should be created in db/ folder
-            db_files = list((roadmap_dir / "db").glob("*.db"))
-            assert len(db_files) > 0
-
-    def test_init_help(self, cli_runner):
-        """Test init help command."""
-        result = cli_runner.invoke(main, ["init", "--help"])
-
-        assert result.exit_code == 0
-        assert "init" in result.output.lower()
-        assert "project" in result.output.lower()
+                lambda result: (
+                    Path(".roadmap").exists()
+                    and len(list((Path(".roadmap") / "db").glob("*.db"))) > 0
+                ),
+            ),
+            (
+                ["init", "--help"],
+                lambda result: (
+                    result.exit_code == 0
+                    and "init" in result.output.lower()
+                    and "project" in result.output.lower()
+                ),
+            ),
+        ],
+    )
+    def test_init_variants(self, cli_runner, cmd, check):
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(main, cmd)
+            assert check(result)
 
 
 class TestCLIStatus:
     """Test status command."""
 
-    def test_status_without_init(self, cli_runner):
-        """Test status command before initialization."""
-        with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["status"])
+    import pytest
 
-            # Should handle gracefully - either show not initialized or exit with error
-            assert "not initialized" in result.output.lower() or result.exit_code != 0
-
-    def test_status_after_init(self, isolated_roadmap):
-        """Test status command after initialization."""
-        cli_runner, temp_dir = isolated_roadmap
-
-        result = cli_runner.invoke(main, ["status"])
-
-        assert result.exit_code == 0
-        # Status should show roadmap status and issue/milestone info
-        assert "roadmap" in result.output.lower() or "status" in result.output.lower()
-
-    def test_status_help(self, cli_runner):
-        """Test status help command."""
-        result = cli_runner.invoke(main, ["status", "--help"])
-
-        assert result.exit_code == 0
-        assert "status" in result.output.lower()
+    @pytest.mark.parametrize(
+        "cmd,env,check",
+        [
+            (
+                ["status"],
+                "no_init",
+                lambda result: (
+                    "not initialized" in result.output.lower() or result.exit_code != 0
+                ),
+            ),
+            (
+                ["status"],
+                "init",
+                lambda result: (
+                    result.exit_code == 0
+                    and (
+                        "roadmap" in result.output.lower()
+                        or "status" in result.output.lower()
+                    )
+                ),
+            ),
+            (
+                ["status", "--help"],
+                "no_init",
+                lambda result: (
+                    result.exit_code == 0 and "status" in result.output.lower()
+                ),
+            ),
+        ],
+    )
+    def test_status_variants(self, cli_runner, isolated_roadmap, cmd, env, check):
+        if env == "no_init":
+            with cli_runner.isolated_filesystem():
+                result = cli_runner.invoke(main, cmd)
+                assert check(result)
+        else:
+            cli_runner2, temp_dir = isolated_roadmap
+            result = cli_runner2.invoke(main, cmd)
+            assert check(result)
 
 
 class TestCLIHealth:
     """Test health command."""
 
-    def test_health_check(self, isolated_roadmap):
-        """Test health check command."""
-        cli_runner, _ = isolated_roadmap
-        result = cli_runner.invoke(main, ["health"])
+    import pytest
 
-        assert result.exit_code == 0
-        # Health should report status
-        assert (
-            "health" in result.output.lower()
-            or "status" in result.output.lower()
-            or "ok" in result.output.lower()
-        )
-
-    def test_health_help(self, cli_runner):
-        """Test health help command."""
-        result = cli_runner.invoke(main, ["health", "--help"])
-
-        assert result.exit_code == 0
+    @pytest.mark.parametrize(
+        "cmd,env,check",
+        [
+            (
+                ["health"],
+                "init",
+                lambda result: (
+                    result.exit_code == 0
+                    and (
+                        "health" in result.output.lower()
+                        or "status" in result.output.lower()
+                        or "ok" in result.output.lower()
+                    )
+                ),
+            ),
+            (["health", "--help"], "no_init", lambda result: (result.exit_code == 0)),
+        ],
+    )
+    def test_health_variants(self, cli_runner, isolated_roadmap, cmd, env, check):
+        if env == "no_init":
+            result = cli_runner.invoke(main, cmd)
+            assert check(result)
+        else:
+            cli_runner2, _ = isolated_roadmap
+            result = cli_runner2.invoke(main, cmd)
+            assert check(result)
 
 
 class TestCLIIssueCreate:

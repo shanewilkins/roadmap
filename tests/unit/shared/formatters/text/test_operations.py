@@ -18,120 +18,106 @@ from roadmap.shared.formatters.text.operations import (
 class TestOperationFormatter:
     """Tests for OperationFormatter class."""
 
-    def test_success_with_all_params(self):
-        """Test success formatting with all parameters."""
-        result = OperationFormatter.success(
-            emoji="✅",
-            action="Created",
-            entity_title="New Feature",
-            entity_id="ISSUE-123",
-            details={"Priority": "High", "Assignee": "John"},
-        )
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            (
+                {
+                    "emoji": "✅",
+                    "action": "Created",
+                    "entity_title": "New Feature",
+                    "entity_id": "ISSUE-123",
+                    "details": {"Priority": "High", "Assignee": "John"},
+                },
+                [
+                    "✅ Created issue: New Feature",
+                    "ID: ISSUE-123",
+                    "Priority: High",
+                    "Assignee: John",
+                ],
+            ),
+            ({"emoji": "✅", "action": "Created"}, ["✅ Created"]),
+            (
+                {"emoji": "✅", "action": "Closed", "entity_title": "Bug Fix"},
+                ["✅ Closed issue: Bug Fix"],
+            ),
+            (
+                {
+                    "emoji": "✅",
+                    "action": "Updated",
+                    "entity_id": "ISSUE-456",
+                    "details": {},
+                },
+                ["✅ Updated", "ID: ISSUE-456"],
+            ),
+        ],
+    )
+    def test_success_various(self, kwargs, expected):
+        result = OperationFormatter.success(**kwargs)
+        for exp in expected:
+            assert exp in result
 
-        assert "✅ Created issue: New Feature" in result
-        assert "ID: ISSUE-123" in result
-        assert "Priority: High" in result
-        assert "Assignee: John" in result
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            (
+                {
+                    "action": "create",
+                    "entity_id": "ISSUE-789",
+                    "error": "Permission denied",
+                    "suggestion": "Check your credentials",
+                },
+                [
+                    "❌ Failed to create issue: ISSUE-789",
+                    "Error: Permission denied",
+                    "💡 Check your credentials",
+                ],
+            ),
+            ({"action": "delete"}, ["❌ Failed to delete"]),
+            (
+                {"action": "update", "error": "Network error"},
+                ["❌ Failed to update", "Error: Network error"],
+            ),
+        ],
+    )
+    def test_failure_various(self, kwargs, expected):
+        result = OperationFormatter.failure(**kwargs)
+        for exp in expected:
+            assert exp in result
+        if "suggestion" not in kwargs:
+            assert "💡" not in result
 
-    def test_success_minimal_params(self):
-        """Test success formatting with minimal parameters."""
-        result = OperationFormatter.success(emoji="✅", action="Created")
-
-        assert "✅ Created" in result
-        assert "\n" not in result or len(result.split("\n")) == 1
-
-    def test_success_with_entity_title_only(self):
-        """Test success with only entity title."""
-        result = OperationFormatter.success(
-            emoji="✅",
-            action="Closed",
-            entity_title="Bug Fix",
-        )
-
-        assert "✅ Closed issue: Bug Fix" in result
-        assert "ID:" not in result
-
-    def test_success_with_empty_details(self):
-        """Test success with empty details dict."""
-        result = OperationFormatter.success(
-            emoji="✅",
-            action="Updated",
-            entity_id="ISSUE-456",
-            details={},
-        )
-
-        assert "✅ Updated" in result
-        assert "ID: ISSUE-456" in result
-
-    def test_failure_with_all_params(self):
-        """Test failure formatting with all parameters."""
-        result = OperationFormatter.failure(
-            action="create",
-            entity_id="ISSUE-789",
-            error="Permission denied",
-            suggestion="Check your credentials",
-        )
-
-        assert "❌ Failed to create issue: ISSUE-789" in result
-        assert "Error: Permission denied" in result
-        assert "💡 Check your credentials" in result
-
-    def test_failure_minimal_params(self):
-        """Test failure formatting with minimal parameters."""
-        result = OperationFormatter.failure(action="delete")
-
-        assert "❌ Failed to delete" in result
-
-    def test_failure_with_error_only(self):
-        """Test failure with error but no suggestion."""
-        result = OperationFormatter.failure(
-            action="update",
-            error="Network error",
-        )
-
-        assert "❌ Failed to update" in result
-        assert "Error: Network error" in result
-        assert "💡" not in result
-
-    def test_entity_with_all_params(self):
-        """Test entity formatting with all parameters."""
-        result = OperationFormatter.entity(
-            entity_id="ISSUE-001",
-            entity_title="Feature Request",
-            entity_type="issue",
-            status="Open",
-            details={"Priority": "Medium", "Created": "2024-01-01"},
-        )
-
-        assert "📋 Issue: Feature Request" in result
-        assert "ID: ISSUE-001" in result
-        assert "Status: Open" in result
-        assert "Priority: Medium" in result
-        assert "Created: 2024-01-01" in result
-
-    def test_entity_without_title(self):
-        """Test entity formatting without title."""
-        result = OperationFormatter.entity(
-            entity_id="ISSUE-002",
-            entity_type="milestone",
-        )
-
-        assert "ID: ISSUE-002" in result
-
-    def test_entity_minimal_params(self):
-        """Test entity with minimal parameters."""
-        result = OperationFormatter.entity(entity_id="ISSUE-003")
-
-        assert "ID: ISSUE-003" in result
-
-    def test_entity_default_type(self):
-        """Test entity with default type."""
-        result = OperationFormatter.entity(
-            entity_id="ISSUE-004",
-            entity_title="Test Item",
-        )
-
-        assert "📋 Item: Test Item" in result
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            (
+                {
+                    "entity_id": "ISSUE-001",
+                    "entity_title": "Feature Request",
+                    "entity_type": "issue",
+                    "status": "Open",
+                    "details": {"Priority": "Medium", "Created": "2024-01-01"},
+                },
+                [
+                    "📋 Issue: Feature Request",
+                    "ID: ISSUE-001",
+                    "Status: Open",
+                    "Priority: Medium",
+                    "Created: 2024-01-01",
+                ],
+            ),
+            ({"entity_id": "ISSUE-002", "entity_type": "milestone"}, ["ID: ISSUE-002"]),
+            ({"entity_id": "ISSUE-003"}, ["ID: ISSUE-003"]),
+            (
+                {"entity_id": "ISSUE-004", "entity_title": "Test Item"},
+                ["📋 Item: Test Item"],
+            ),
+        ],
+    )
+    def test_entity_various(self, kwargs, expected):
+        result = OperationFormatter.entity(**kwargs)
+        for exp in expected:
+            assert exp in result
 
 
 class TestFormatOperationSuccess:

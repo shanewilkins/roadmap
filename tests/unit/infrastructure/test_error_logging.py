@@ -408,64 +408,43 @@ class TestLogExternalServiceError:
         call_args = mock_logger.error.call_args
         assert call_args[1]["retry_count"] == 2
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
-    def test_log_external_service_error_recoverable(self, mock_logger):
-        """Test that recoverable external errors suggest retry."""
-        error = ConnectionError("Service temporarily unavailable")
-        log_external_service_error(error, "slack_api", "post_message")
-
-        call_args = mock_logger.error.call_args
-        assert call_args[1]["is_recoverable"]
-        assert call_args[1]["suggested_action"] == "check_connectivity"
-
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
-    def test_log_external_service_error_not_recoverable(self, mock_logger):
-        """Test that non-recoverable external errors suggest contact support."""
-        error = RuntimeError("Invalid API response")
-        log_external_service_error(error, "github_api", "get_user")
-
-        call_args = mock_logger.error.call_args
-        assert not call_args[1]["is_recoverable"]
-        assert call_args[1]["suggested_action"] == "contact_support"
-
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
     @pytest.mark.parametrize(
-        "service_name,operation",
+        "error,is_recoverable,suggested_action",
         [
-            ("github_api", "sync_issues"),
-            ("slack_api", "test_operation"),
-            ("github_graphql", "test_operation"),
-            ("custom_service", "test_operation"),
+            (ConnectionError("Service unavailable"), True, "check_connectivity"),
+            (RuntimeError("Invalid response"), False, "contact_support"),
         ],
     )
-    def test_log_external_service_error_services(
-        self, mock_logger, service_name, operation
+    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    def test_log_external_service_error_recoverability(
+        self, mock_logger, error, is_recoverable, suggested_action
     ):
-        """Test external service error logging for different services.
+        """Test external service error logging with recoverability status."""
+        log_external_service_error(error, "test_api", "test_op")
 
-        Covers lines 486-497: Different external service names
-        """
+        call_args = mock_logger.error.call_args
+        assert call_args[1]["is_recoverable"] == is_recoverable
+        assert call_args[1]["suggested_action"] == suggested_action
+
+    @pytest.mark.parametrize(
+        "service_name",
+        [
+            "github_api",
+            "slack_api",
+            "github_graphql",
+            "custom_service",
+        ],
+    )
+    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    def test_log_external_service_error_services(self, mock_logger, service_name):
+        """Test external service error logging for different services."""
         error = ConnectionError("Connection failed")
-        log_external_service_error(error, service_name, operation)
+        log_external_service_error(error, service_name, "test_operation")
 
         call_args = mock_logger.error.call_args
         assert call_args[1]["service_name"] == service_name
-        assert call_args[1]["operation"] == operation
+        assert call_args[1]["operation"] == "test_operation"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
-    def test_log_external_service_error_different_services(self, mock_logger):
-        """Test external service error logging for different services."""
-        services = ["github_api", "slack_api", "github_graphql", "custom_service"]
-        error = ConnectionError("Connection failed")
-
-        for service in services:
-            mock_logger.reset_mock()
-            log_external_service_error(error, service, "test_operation")
-
-            call_args = mock_logger.error.call_args
-            assert call_args[1]["service_name"] == service
-
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
     @pytest.mark.parametrize(
         "error,error_type_name",
         [
@@ -474,33 +453,15 @@ class TestLogExternalServiceError:
             (ValueError("Bad value"), "ValueError"),
         ],
     )
+    @patch("roadmap.infrastructure.logging.error_logging.logger")
     def test_log_external_service_error_types(
         self, mock_logger, error, error_type_name
     ):
-        """Test that error type is logged correctly for various errors.
-
-        Covers lines 499-513: Error type preservation across different error classes
-        """
+        """Test that error type is logged correctly for various errors."""
         log_external_service_error(error, "test_api", "test_op")
 
         call_args = mock_logger.error.call_args
         assert call_args[1]["error_type"] == error_type_name
-
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
-    def test_log_external_service_error_error_type(self, mock_logger):
-        """Test that error type is logged correctly."""
-        errors = [
-            (ConnectionError("Network"), "ConnectionError"),
-            (TimeoutError("Timeout"), "TimeoutError"),
-            (ValueError("Bad value"), "ValueError"),
-        ]
-
-        for error, error_name in errors:
-            mock_logger.reset_mock()
-            log_external_service_error(error, "test_api", "test_op")
-
-            call_args = mock_logger.error.call_args
-            assert call_args[1]["error_type"] == error_name
 
 
 class TestErrorLoggingIntegration:

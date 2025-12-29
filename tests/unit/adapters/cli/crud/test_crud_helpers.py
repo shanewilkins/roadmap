@@ -19,20 +19,19 @@ from roadmap.adapters.cli.crud.crud_helpers import (
 class TestEntityTypeEnum:
     """Test EntityType enum."""
 
-    def test_entity_type_issue(self):
-        """Test ISSUE entity type."""
-        assert EntityType.ISSUE == "issue"
-        assert EntityType.ISSUE.value == "issue"
+    import pytest
 
-    def test_entity_type_milestone(self):
-        """Test MILESTONE entity type."""
-        assert EntityType.MILESTONE == "milestone"
-        assert EntityType.MILESTONE.value == "milestone"
-
-    def test_entity_type_project(self):
-        """Test PROJECT entity type."""
-        assert EntityType.PROJECT == "project"
-        assert EntityType.PROJECT.value == "project"
+    @pytest.mark.parametrize(
+        "etype,expected",
+        [
+            (EntityType.ISSUE, "issue"),
+            (EntityType.MILESTONE, "milestone"),
+            (EntityType.PROJECT, "project"),
+        ],
+    )
+    def test_entity_type_values(self, etype, expected):
+        assert etype == expected
+        assert etype.value == expected
 
 
 class TestCRUDOperationEnum:
@@ -47,165 +46,98 @@ class TestCRUDOperationEnum:
 class TestFormatEntityTitle:
     """Test format_entity_title function."""
 
-    def test_format_issue_title(self):
-        """Test formatting issue title."""
-        issue = MagicMock()
-        issue.title = "Test Issue Title"
+    import pytest
 
-        result = format_entity_title(EntityType.ISSUE, issue)
-
-        assert result == "Test Issue Title"
-
-    def test_format_milestone_name(self):
-        """Test formatting milestone name."""
-        milestone = MagicMock()
-        milestone.name = "v1.0.0"
-
-        result = format_entity_title(EntityType.MILESTONE, milestone)
-
-        assert result == "v1.0.0"
-
-    def test_format_project_name(self):
-        """Test formatting project name."""
-        project = MagicMock()
-        project.name = "My Project"
-
-        result = format_entity_title(EntityType.PROJECT, project)
-
-        assert result == "My Project"
+    @pytest.mark.parametrize(
+        "etype,attr,value,expected",
+        [
+            (EntityType.ISSUE, "title", "Test Issue Title", "Test Issue Title"),
+            (EntityType.MILESTONE, "name", "v1.0.0", "v1.0.0"),
+            (EntityType.PROJECT, "name", "My Project", "My Project"),
+        ],
+    )
+    def test_format_entity_title(self, etype, attr, value, expected):
+        entity = MagicMock()
+        setattr(entity, attr, value)
+        result = format_entity_title(etype, entity)
+        assert result == expected
 
     def test_format_fallback_entity(self):
-        """Test formatting fallback case."""
         entity = MagicMock()
         entity.id = "test-id"
-
-        # Test with a valid entity type that might not be specially handled
+        # fallback: should return entity.title if present
+        entity.title = "fallback-title"
         result = format_entity_title(EntityType.ISSUE, entity)
-
         assert result == entity.title
 
 
 class TestFormatEntityId:
     """Test format_entity_id function."""
 
-    def test_format_entity_with_id(self):
-        """Test formatting entity with id attribute."""
-        entity = MagicMock()
-        entity.id = "ISSUE-123"
+    import pytest
 
-        result = format_entity_id(EntityType.ISSUE, entity)
-
-        assert result == "ISSUE-123"
-
-    def test_format_entity_without_id(self):
-        """Test formatting entity without id attribute."""
-        entity = "some_string"
-
-        result = format_entity_id(EntityType.ISSUE, entity)
-
-        assert result == "some_string"
-
-    def test_format_entity_id_milestone(self):
-        """Test formatting milestone ID."""
-        milestone = MagicMock()
-        milestone.id = "v1.0.0"
-
-        result = format_entity_id(EntityType.MILESTONE, milestone)
-
-        assert result == "v1.0.0"
+    @pytest.mark.parametrize(
+        "etype,entity,expected",
+        [
+            (EntityType.ISSUE, MagicMock(id="ISSUE-123"), "ISSUE-123"),
+            (EntityType.ISSUE, "some_string", "some_string"),
+            (EntityType.MILESTONE, MagicMock(id="v1.0.0"), "v1.0.0"),
+        ],
+    )
+    def test_format_entity_id(self, etype, entity, expected):
+        result = format_entity_id(etype, entity)
+        assert result == expected
 
 
 class TestValidateEntityExists:
     """Test validate_entity_exists function."""
 
-    def test_validate_issue_exists(self):
-        """Test validation of existing issue."""
+    import pytest
+
+    @pytest.mark.parametrize(
+        "etype,exists_return,entity_id,should_exist,should_error,expected_call_attr",
+        [
+            (EntityType.ISSUE, True, "ISSUE-1", True, False, "issues"),
+            (EntityType.ISSUE, False, "ISSUE-999", False, True, "issues"),
+            (EntityType.MILESTONE, True, "v1.0.0", True, False, "milestones"),
+            (EntityType.MILESTONE, False, "v2.0.0", False, True, "milestones"),
+            (EntityType.PROJECT, True, "proj-1", True, False, "projects"),
+            (EntityType.PROJECT, False, "proj-999", False, True, "projects"),
+        ],
+    )
+    def test_validate_entity_exists(
+        self,
+        etype,
+        exists_return,
+        entity_id,
+        should_exist,
+        should_error,
+        expected_call_attr,
+    ):
         core = MagicMock()
-        issue = MagicMock()
-        core.issues.get.return_value = issue
-
-        exists, error = validate_entity_exists(core, EntityType.ISSUE, "ISSUE-1")
-
-        assert exists is True
-        assert error is None
-        core.issues.get.assert_called_once_with("ISSUE-1")
-
-    def test_validate_issue_not_exists(self):
-        """Test validation of non-existent issue."""
-        core = MagicMock()
-        core.issues.get.return_value = None
-
-        exists, error = validate_entity_exists(core, EntityType.ISSUE, "ISSUE-999")
-
-        assert exists is False
-        assert error is not None
-        assert "not found" in error.lower()
-
-    def test_validate_milestone_exists(self):
-        """Test validation of existing milestone."""
-        core = MagicMock()
-        milestone = MagicMock()
-        core.milestones.get.return_value = milestone
-
-        exists, error = validate_entity_exists(core, EntityType.MILESTONE, "v1.0.0")
-
-        assert exists is True
-        assert error is None
-        core.milestones.get.assert_called_once_with("v1.0.0")
-
-    def test_validate_milestone_not_exists(self):
-        """Test validation of non-existent milestone."""
-        core = MagicMock()
-        core.milestones.get.return_value = None
-
-        exists, error = validate_entity_exists(core, EntityType.MILESTONE, "v2.0.0")
-
-        assert exists is False
-        assert error is not None
-        assert "not found" in error.lower()
-
-    def test_validate_project_exists(self):
-        """Test validation of existing project."""
-        core = MagicMock()
-        project = MagicMock()
-        core.projects.get.return_value = project
-
-        exists, error = validate_entity_exists(core, EntityType.PROJECT, "proj-1")
-
-        assert exists is True
-        assert error is None
-        core.projects.get.assert_called_once_with("proj-1")
-
-    def test_validate_project_not_exists(self):
-        """Test validation of non-existent project."""
-        core = MagicMock()
-        core.projects.get.return_value = None
-
-        exists, error = validate_entity_exists(core, EntityType.PROJECT, "proj-999")
-
-        assert exists is False
-        assert error is not None
-        assert "not found" in error.lower()
+        entity_mock = MagicMock() if exists_return else None
+        getattr(core, expected_call_attr).get.return_value = entity_mock
+        exists, error = validate_entity_exists(core, etype, entity_id)
+        assert exists is should_exist
+        if should_error:
+            assert error is not None
+            assert "not found" in error.lower()
+        else:
+            assert error is None
+        getattr(core, expected_call_attr).get.assert_called_once_with(entity_id)
 
     def test_validate_unknown_entity_type(self):
-        """Test validation with invalid entity type."""
         core = MagicMock()
-
-        # When called with an invalid EntityType, function returns error
         invalid_entity = "unknown"  # type: ignore
         exists, error = validate_entity_exists(core, invalid_entity, "id")  # type: ignore
-
         assert exists is False
         assert error is not None
         assert "Unknown entity type" in error or "Unknown" in error
 
     def test_validate_exception_handling(self):
-        """Test validation handles exceptions."""
         core = MagicMock()
         core.issues.get.side_effect = Exception("Database error")
-
         exists, error = validate_entity_exists(core, EntityType.ISSUE, "ISSUE-1")
-
         assert exists is False
         assert error is not None
         assert "Error" in error or "error" in error

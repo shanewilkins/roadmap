@@ -18,79 +18,105 @@ from roadmap.common.errors.error_validation import (
 class TestValidationErrorInitialization:
     """Test ValidationError initialization and parameter handling."""
 
-    def test_initialization_with_message_only(self):
-        """Test ValidationError with just message."""
-        error = ValidationError("Invalid email format")
-        assert str(error) == "Invalid email format"
-        assert error.field is None
-        assert error.value is None
-        assert error.category == ErrorCategory.VALIDATION
-        assert error.severity == ErrorSeverity.MEDIUM
+    import pytest
 
-    def test_initialization_with_field(self):
-        """Test ValidationError with field parameter."""
-        error = ValidationError("Invalid value", field="email")
-        assert error.field == "email"
-        assert error.context["field"] == "email"
-
-    def test_initialization_with_value(self):
-        """Test ValidationError with value parameter."""
-        error = ValidationError("Invalid value", value="not-an-email")
-        assert error.value == "not-an-email"
-        assert "not-an-email" in error.context["value"]
-
-    def test_initialization_with_field_and_value(self):
-        """Test ValidationError with both field and value."""
-        error = ValidationError(
-            "Invalid email", field="email_address", value="invalid@"
+    @pytest.mark.parametrize(
+        "kwargs,expected",
+        [
+            (
+                {"message": "Invalid email format"},
+                {
+                    "str": "Invalid email format",
+                    "field": None,
+                    "value": None,
+                    "category": ErrorCategory.VALIDATION,
+                    "severity": ErrorSeverity.MEDIUM,
+                },
+            ),
+            (
+                {"message": "Invalid value", "field": "email"},
+                {"field": "email", "context_field": "email"},
+            ),
+            (
+                {"message": "Invalid value", "value": "not-an-email"},
+                {"value": "not-an-email", "context_value": "not-an-email"},
+            ),
+            (
+                {
+                    "message": "Invalid email",
+                    "field": "email_address",
+                    "value": "invalid@",
+                },
+                {
+                    "field": "email_address",
+                    "value": "invalid@",
+                    "context_field": "email_address",
+                    "context_value": "invalid@",
+                },
+            ),
+            (
+                {
+                    "message": "Critical validation failure",
+                    "severity": ErrorSeverity.HIGH,
+                    "field": "critical_field",
+                },
+                {"severity": ErrorSeverity.HIGH},
+            ),
+            (
+                {
+                    "message": "Validation failed",
+                    "field": "username",
+                    "context": {"source": "user_input", "attempt": 3},
+                },
+                {
+                    "context_source": "user_input",
+                    "context_attempt": 3,
+                    "context_field": "username",
+                },
+            ),
+            (
+                {"message": "Validation failed", "cause": ValueError("Original error")},
+                {"cause_type": ValueError},
+            ),
+            ({"message": "Invalid number", "value": 12345}, {"context_value": "12345"}),
+            ({"message": "Validation failed", "value": None}, {"context_value": None}),
+            ({"message": "Validation failed", "field": None}, {"context_field": None}),
+        ],
+    )
+    def test_validation_error_init_parametrized(self, kwargs, expected):
+        error = (
+            ValidationError(**{k: v for k, v in kwargs.items() if k != "message"})
+            if "message" not in kwargs
+            else ValidationError(
+                kwargs["message"], **{k: v for k, v in kwargs.items() if k != "message"}
+            )
         )
-        assert error.field == "email_address"
-        assert error.value == "invalid@"
-        assert error.context["field"] == "email_address"
-        assert "invalid@" in error.context["value"]
-
-    def test_initialization_with_custom_severity(self):
-        """Test ValidationError with custom severity level."""
-        error = ValidationError(
-            "Critical validation failure",
-            severity=ErrorSeverity.HIGH,
-            field="critical_field",
-        )
-        assert error.severity == ErrorSeverity.HIGH
-
-    def test_initialization_with_context(self):
-        """Test ValidationError with additional context."""
-        extra_context = {"source": "user_input", "attempt": 3}
-        error = ValidationError(
-            "Validation failed",
-            field="username",
-            context=extra_context,
-        )
-        assert error.context["source"] == "user_input"
-        assert error.context["attempt"] == 3
-        assert error.context["field"] == "username"
-
-    def test_initialization_with_cause(self):
-        """Test ValidationError with cause exception."""
-        original_error = ValueError("Original error")
-        error = ValidationError("Validation failed", cause=original_error)
-        assert error.cause == original_error
-
-    def test_value_conversion_to_string(self):
-        """Test that non-string values are converted to string."""
-        error = ValidationError("Invalid number", value=12345)
-        assert isinstance(error.context["value"], str)
-        assert error.context["value"] == "12345"
-
-    def test_value_none_not_stored_in_context(self):
-        """Test that None value is not added to context."""
-        error = ValidationError("Validation failed", value=None)
-        assert "value" not in error.context
-
-    def test_field_none_not_stored_in_context(self):
-        """Test that None field is not added to context."""
-        error = ValidationError("Validation failed", field=None)
-        assert "field" not in error.context
+        if "str" in expected:
+            assert str(error) == expected["str"]
+        if "field" in expected:
+            assert error.field == expected["field"]
+        if "value" in expected:
+            assert error.value == expected["value"]
+        if "category" in expected:
+            assert error.category == expected["category"]
+        if "severity" in expected:
+            assert error.severity == expected["severity"]
+        if "context_field" in expected:
+            if expected["context_field"] is None:
+                assert "field" not in error.context
+            else:
+                assert error.context["field"] == expected["context_field"]
+        if "context_value" in expected:
+            if expected["context_value"] is None:
+                assert "value" not in error.context
+            else:
+                assert expected["context_value"] in error.context["value"]
+        if "context_source" in expected:
+            assert error.context["source"] == expected["context_source"]
+        if "context_attempt" in expected:
+            assert error.context["attempt"] == expected["context_attempt"]
+        if "cause_type" in expected:
+            assert isinstance(error.cause, expected["cause_type"])
 
 
 class TestStateErrorInitialization:
