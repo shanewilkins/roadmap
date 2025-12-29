@@ -19,58 +19,60 @@ from roadmap.common.retry import (
 class TestRetryDecorator:
     """Test the retry decorator."""
 
-    def test_retry_success_on_first_attempt(self):
-        """Test successful function call on first attempt."""
-        mock_func = Mock(return_value="success")
-
-        @retry(max_attempts=3, delay=0.01)
-        def func():
-            return mock_func()
-
-        result = func()
-        assert result == "success"
-        assert mock_func.call_count == 1
-
-    def test_retry_success_after_failures(self):
-        """Test successful call after retries."""
+    @pytest.mark.parametrize(
+        "side_effects,max_attempts,expected_calls,should_succeed",
+        [
+            (["success"], 3, 1, True),
+            ([ValueError("fail"), ValueError("fail"), "success"], 5, 3, True),
+            ([ValueError("fail"), ValueError("fail"), ValueError("fail")], 3, 3, False),
+        ],
+    )
+    def test_retry_basic_scenarios(
+        self, side_effects, max_attempts, expected_calls, should_succeed
+    ):
+        """Test basic retry scenarios: first attempt, after failures, exhaustion."""
         mock_func = Mock(
-            side_effect=[ValueError("fail"), ValueError("fail"), "success"]
+            side_effect=side_effects if isinstance(side_effects, list) else side_effects
         )
 
-        @retry(max_attempts=5, delay=0.01, exceptions=(ValueError,))
+        @retry(max_attempts=max_attempts, delay=0.01, exceptions=(ValueError,))
         def func():
             return mock_func()
 
-        result = func()
-        assert result == "success"
-        assert mock_func.call_count == 3
+        if should_succeed:
+            result = func()
+            assert result == "success"
+        else:
+            with pytest.raises(ValueError):
+                func()
 
-    def test_retry_exhausts_attempts(self):
-        """Test that retry raises when max attempts exceeded."""
-        mock_func = Mock(side_effect=ValueError("persistent error"))
+        assert mock_func.call_count == expected_calls
 
-        @retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
-        def func():
-            return mock_func()
-
-        with pytest.raises(ValueError):
-            func()
-
-        assert mock_func.call_count == 3
-
-    def test_retry_with_specific_exception(self):
+    @pytest.mark.parametrize(
+        "exception_type,should_retry",
+        [
+            (ValueError, True),
+            (TypeError, False),
+        ],
+    )
+    def test_retry_exception_filtering(self, exception_type, should_retry):
         """Test retry only catches specified exceptions."""
-        mock_func = Mock(side_effect=TypeError("type error"))
+        mock_func = Mock(side_effect=exception_type("error"))
 
         @retry(max_attempts=3, delay=0.01, exceptions=(ValueError,))
         def func():
             return mock_func()
 
-        with pytest.raises(TypeError):
-            func()
-
-        # Should fail on first attempt because TypeError is not caught
-        assert mock_func.call_count == 1
+        if should_retry:
+            # ValueError should be caught and exhausted
+            with pytest.raises(ValueError):
+                func()
+            assert mock_func.call_count == 3
+        else:
+            # TypeError should not be caught
+            with pytest.raises(TypeError):
+                func()
+            assert mock_func.call_count == 1
 
     def test_retry_with_multiple_exceptions(self):
         """Test retry with multiple exception types."""
@@ -114,7 +116,25 @@ class TestRetryDecorator:
         assert delay2 > delay1  # Second delay larger than first
         assert delay3 > delay2  # Third delay larger than second
 
-    def test_retry_with_on_retry_callback(self):
+    @pytest.mark.parametrize(
+        "delay,backoff,description",
+        [
+            (0.05, 2.0, "exponential"),
+            (0.01, 10.0, "large_backoff"),
+            (0.0, 1.0, "zero_delay"),
+        ],
+    )
+    def test_retry_delay_configurations(self, delay, backoff, description):
+        """Test retry with various delay configurations."""
+        mock_func = Mock(side_effect=[ValueError("fail"), "success"])
+
+        @retry(max_attempts=3, delay=delay, backoff=backoff, exceptions=(ValueError,))
+        def func():
+            return mock_func()
+
+        result = func()
+        assert result == "success"
+        assert mock_func.call_count == 2
         """Test retry with on_retry callback."""
         callback_mock = Mock()
         mock_func = Mock(side_effect=[ValueError("fail"), "success"])
