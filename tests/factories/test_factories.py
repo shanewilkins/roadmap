@@ -6,6 +6,8 @@ interface works correctly.
 
 from datetime import datetime, timedelta
 
+import pytest
+
 from roadmap.common.constants import (
     IssueType,
     MilestoneStatus,
@@ -54,28 +56,37 @@ class TestIssueBuilder:
         issue = IssueBuilder().with_title("Fix critical bug").build()
         assert issue.title == "Fix critical bug"
 
-    def test_builder_with_all_priority_levels(self):
-        """Test setting all priority levels."""
-        for priority in [
+    @pytest.mark.parametrize(
+        "priority",
+        [
             Priority.LOW,
             Priority.MEDIUM,
             Priority.HIGH,
             Priority.CRITICAL,
-        ]:
-            issue = IssueBuilder().with_priority(priority).build()
-            assert issue.priority == priority
+        ],
+    )
+    def test_builder_with_priority_levels(self, priority):
+        """Test setting all priority levels."""
+        issue = IssueBuilder().with_priority(priority).build()
+        assert issue.priority == priority
 
-    def test_builder_with_all_statuses(self):
+    @pytest.mark.parametrize(
+        "status",
+        [Status.TODO, Status.IN_PROGRESS, Status.BLOCKED, Status.CLOSED],
+    )
+    def test_builder_with_statuses(self, status):
         """Test setting all issue statuses."""
-        for status in [Status.TODO, Status.IN_PROGRESS, Status.BLOCKED, Status.CLOSED]:
-            issue = IssueBuilder().with_status(status).build()
-            assert issue.status == status
+        issue = IssueBuilder().with_status(status).build()
+        assert issue.status == status
 
-    def test_builder_with_all_types(self):
+    @pytest.mark.parametrize(
+        "issue_type",
+        [IssueType.FEATURE, IssueType.BUG, IssueType.OTHER],
+    )
+    def test_builder_with_types(self, issue_type):
         """Test setting all issue types."""
-        for issue_type in [IssueType.FEATURE, IssueType.BUG, IssueType.OTHER]:
-            issue = IssueBuilder().with_type(issue_type).build()
-            assert issue.issue_type == issue_type
+        issue = IssueBuilder().with_type(issue_type).build()
+        assert issue.issue_type == issue_type
 
     def test_builder_with_milestone(self):
         """Test setting milestone."""
@@ -219,11 +230,14 @@ class TestMilestoneBuilder:
         milestone = MilestoneBuilder().with_description("Major update").build()
         assert milestone.description == "Major update"
 
-    def test_builder_with_all_statuses(self):
+    @pytest.mark.parametrize(
+        "status",
+        [MilestoneStatus.OPEN, MilestoneStatus.CLOSED],
+    )
+    def test_builder_with_milestone_statuses(self, status):
         """Test setting all milestone statuses."""
-        for status in [MilestoneStatus.OPEN, MilestoneStatus.CLOSED]:
-            milestone = MilestoneBuilder().with_status(status).build()
-            assert milestone.status == status
+        milestone = MilestoneBuilder().with_status(status).build()
+        assert milestone.status == status
 
     def test_builder_with_due_date(self):
         """Test setting due date."""

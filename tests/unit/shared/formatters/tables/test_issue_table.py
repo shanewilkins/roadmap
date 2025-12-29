@@ -97,25 +97,20 @@ class TestIssueTableFormatter:
         table = formatter.create_table()
         assert hasattr(table, "columns")
 
-    def test_add_row_with_critical_priority(self, formatter, sample_issue):
-        """Test adding row with critical priority."""
+    @pytest.mark.parametrize(
+        "priority",
+        [
+            Priority.CRITICAL,
+            Priority.HIGH,
+            Priority.MEDIUM,
+            Priority.LOW,
+        ],
+    )
+    def test_add_row_with_various_priorities(self, formatter, sample_issue, priority):
+        """Test adding row with various priority levels."""
         table = formatter.create_table()
-        critical_issue = MockIssue(priority=Priority.CRITICAL)
-        formatter.add_row(table, critical_issue)
-        assert len(table.rows) == 1
-
-    def test_add_row_with_high_priority(self, formatter, sample_issue):
-        """Test adding row with high priority."""
-        table = formatter.create_table()
-        high_priority = MockIssue(priority=Priority.HIGH)
-        formatter.add_row(table, high_priority)
-        assert len(table.rows) == 1
-
-    def test_add_row_with_low_priority(self, formatter, sample_issue):
-        """Test adding row with low priority."""
-        table = formatter.create_table()
-        low_priority = MockIssue(priority=Priority.LOW)
-        formatter.add_row(table, low_priority)
+        issue = MockIssue(priority=priority)
+        formatter.add_row(table, issue)
         assert len(table.rows) == 1
 
     def test_add_row_without_assignee(self, formatter):
