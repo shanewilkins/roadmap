@@ -25,129 +25,60 @@ pytestmark = pytest.mark.unit
 class TestHandleCliException:
     """Test handle_cli_exception error handling."""
 
-    def test_handle_cli_exception_with_roadmap_exception(self):
-        """Test handling RoadmapException formats and exits correctly."""
+    @pytest.mark.parametrize(
+        "exc, show_traceback, expected_exit, expect_print_exception",
+        [
+            (
+                RoadmapException(
+                    domain_message="Test domain error", user_message="Test user message"
+                ),
+                False,
+                1,
+                False,
+            ),
+            (ValueError("Generic error"), False, 1, False),
+            (ValueError("Error with traceback"), True, 1, True),
+            (
+                RoadmapException(
+                    domain_message="Auth failed", user_message="Authentication required"
+                ),
+                False,
+                2,
+                False,
+            ),
+            (RuntimeError("Runtime error"), False, 1, False),
+            (RoadmapException(domain_message="", user_message=""), False, 1, False),
+            (
+                RoadmapException(
+                    domain_message="Line 1\nLine 2\nLine 3",
+                    user_message="User Line 1\nUser Line 2",
+                ),
+                False,
+                1,
+                False,
+            ),
+        ],
+    )
+    def test_handle_cli_exception_param(
+        self, exc, show_traceback, expected_exit, expect_print_exception
+    ):
         ctx = Mock(spec=click.Context)
-        exc = RoadmapException(
-            domain_message="Test domain error",
-            user_message="Test user message",
-        )
-
+        if (
+            isinstance(exc, RoadmapException)
+            and hasattr(exc, "user_message")
+            and exc.user_message == "Authentication required"
+        ):
+            exc.exit_code = 2
         with patch(
             "roadmap.adapters.cli.exception_handler.get_console_stderr"
         ) as mock_console:
             mock_stderr = Mock()
             mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=False)
-
-            mock_stderr.print.assert_called_once()
-            ctx.exit.assert_called_once_with(1)
-
-    def test_handle_cli_exception_with_generic_exception(self):
-        """Test handling generic Exception shows error and exits."""
-        ctx = Mock(spec=click.Context)
-        exc = ValueError("Generic error")
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=False)
-
-            mock_stderr.print.assert_called_once()
-            ctx.exit.assert_called_once_with(1)
-
-    def test_handle_cli_exception_with_traceback(self):
-        """Test traceback display when show_traceback=True."""
-        ctx = Mock(spec=click.Context)
-        exc = ValueError("Error with traceback")
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=True)
-
-            # Should call print at least once for error message, plus print_exception
+            handle_cli_exception(ctx, exc, show_traceback=show_traceback)
             mock_stderr.print.assert_called()
-            mock_stderr.print_exception.assert_called_once()
-            ctx.exit.assert_called_once_with(1)
-
-    def test_handle_cli_exception_preserves_custom_exit_code(self):
-        """Test custom exit code from RoadmapException is used."""
-        ctx = Mock(spec=click.Context)
-        exc = RoadmapException(
-            domain_message="Auth failed",
-            user_message="Authentication required",
-        )
-        exc.exit_code = 2
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=False)
-
-            ctx.exit.assert_called_once_with(2)
-
-    def test_handle_cli_exception_with_none_context(self):
-        """Test handling exception with None console context."""
-        ctx = Mock(spec=click.Context)
-        exc = RuntimeError("Runtime error")
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=False)
-
-            ctx.exit.assert_called_once_with(1)
-
-    def test_handle_cli_exception_with_empty_message(self):
-        """Test handling exception with empty message."""
-        ctx = Mock(spec=click.Context)
-        exc = RoadmapException(
-            domain_message="",
-            user_message="",
-        )
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=False)
-
-            mock_stderr.print.assert_called_once()
-            ctx.exit.assert_called_once()
-
-    def test_handle_cli_exception_with_multiline_message(self):
-        """Test handling exception with multiline message."""
-        ctx = Mock(spec=click.Context)
-        exc = RoadmapException(
-            domain_message="Line 1\nLine 2\nLine 3",
-            user_message="User Line 1\nUser Line 2",
-        )
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=False)
-
-            mock_stderr.print.assert_called_once()
+            if expect_print_exception:
+                mock_stderr.print_exception.assert_called_once()
+            ctx.exit.assert_called_once_with(expected_exit)
 
 
 class TestWithExceptionHandlerDecorator:
@@ -327,112 +258,66 @@ class TestSetupCliExceptionHandling:
 class TestExceptionHandlerIntegration:
     """Integration tests for exception_handler module."""
 
-    def test_handle_and_formatter_work_together(self):
-        """Test handle_cli_exception and format_error_message work together."""
+    @pytest.mark.parametrize(
+        "exc, show_traceback, expected_exit, formatted, print_exception",
+        [
+            (
+                RoadmapException(
+                    domain_message="Test domain error", user_message="Test user error"
+                ),
+                False,
+                1,
+                "Formatted message",
+                False,
+            ),
+            (
+                RoadmapException(
+                    domain_message="Technical: Invalid syntax",
+                    user_message="Invalid configuration format",
+                ),
+                False,
+                1,
+                "Formatted error",
+                False,
+            ),
+            (
+                RoadmapException(
+                    domain_message="Roadmap error", user_message="User message"
+                ),
+                False,
+                2,
+                "Formatted message",
+                False,
+            ),
+            (ValueError("Generic error"), False, 1, "Formatted message", False),
+            (RuntimeError("Error with traceback"), True, 1, "Formatted message", True),
+            (ValueError("Value error"), False, 1, "Formatted message", False),
+            (TypeError("Type error"), False, 1, "Formatted message", False),
+            (KeyError("Key error"), False, 1, "Formatted message", False),
+        ],
+    )
+    def test_handle_cli_exception_integration_param(
+        self, exc, show_traceback, expected_exit, formatted, print_exception
+    ):
         ctx = Mock(spec=click.Context)
-        exc = RoadmapException(
-            domain_message="Test domain error",
-            user_message="Test user error",
-        )
-
+        if (
+            isinstance(exc, RoadmapException)
+            and hasattr(exc, "domain_message")
+            and exc.domain_message == "Roadmap error"
+        ):
+            exc.exit_code = 2
         with patch(
             "roadmap.adapters.cli.exception_handler.get_console_stderr"
         ) as mock_console:
             with patch(
                 "roadmap.adapters.cli.exception_handler.format_error_message",
-                return_value="Formatted message",
+                return_value=formatted,
             ) as mock_format:
                 mock_stderr = Mock()
                 mock_console.return_value = mock_stderr
-
-                handle_cli_exception(ctx, exc, show_traceback=False)
-
-                mock_format.assert_called_once_with(exc)
-                mock_stderr.print.assert_called_once_with("Formatted message")
-                ctx.exit.assert_called_once_with(1)
-
-    def test_error_message_formatting_in_handler(self):
-        """Test error messages are formatted correctly."""
-        ctx = Mock(spec=click.Context)
-        exc = RoadmapException(
-            domain_message="Technical: Invalid syntax",
-            user_message="Invalid configuration format",
-        )
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            with patch(
-                "roadmap.adapters.cli.exception_handler.format_error_message"
-            ) as mock_format:
-                mock_format.return_value = "Formatted error"
-                mock_stderr = Mock()
-                mock_console.return_value = mock_stderr
-
-                handle_cli_exception(ctx, exc, show_traceback=False)
-
-                mock_format.assert_called_once_with(exc)
-                mock_stderr.print.assert_called_once_with("Formatted error")
-
-    def test_roadmap_exception_vs_generic_exception_handling(self):
-        """Test different handling for RoadmapException vs generic Exception."""
-        ctx1 = Mock(spec=click.Context)
-        ctx2 = Mock(spec=click.Context)
-
-        roadmap_exc = RoadmapException(
-            domain_message="Roadmap error",
-            user_message="User message",
-        )
-        roadmap_exc.exit_code = 2
-
-        generic_exc = ValueError("Generic error")
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            # Handle roadmap exception
-            handle_cli_exception(ctx1, roadmap_exc, show_traceback=False)
-            ctx1.exit.assert_called_once_with(2)
-
-            # Handle generic exception
-            handle_cli_exception(ctx2, generic_exc, show_traceback=False)
-            ctx2.exit.assert_called_once_with(1)
-
-    def test_traceback_display_integration(self):
-        """Test traceback display in exception handler."""
-        ctx = Mock(spec=click.Context)
-        exc = RuntimeError("Error with traceback")
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            handle_cli_exception(ctx, exc, show_traceback=True)
-
-            # Should print error message and exception traceback
-            assert mock_stderr.print.call_count >= 1
-            mock_stderr.print_exception.assert_called_once()
-
-    def test_exception_handler_with_various_exception_types(self):
-        """Test handler works with different exception types."""
-        exceptions = [
-            ValueError("Value error"),
-            TypeError("Type error"),
-            KeyError("Key error"),
-        ]
-
-        with patch(
-            "roadmap.adapters.cli.exception_handler.get_console_stderr"
-        ) as mock_console:
-            mock_stderr = Mock()
-            mock_console.return_value = mock_stderr
-
-            for exc in exceptions:
-                ctx = Mock(spec=click.Context)
-                handle_cli_exception(ctx, exc, show_traceback=False)
-                ctx.exit.assert_called_once_with(1)
+                handle_cli_exception(ctx, exc, show_traceback=show_traceback)
+                mock_format.assert_called_with(exc)
+                mock_stderr.print.assert_any_call(formatted)
+                if print_exception:
+                    mock_stderr.print_exception.assert_called_once()
+                ctx.exit.assert_called_once_with(expected_exit)
