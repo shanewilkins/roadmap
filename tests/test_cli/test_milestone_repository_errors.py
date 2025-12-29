@@ -26,36 +26,23 @@ from roadmap.common.errors.exceptions import CreateError, UpdateError
 class TestMilestoneRepositoryInitialization:
     """Test repository initialization and dependency injection."""
 
-    def test_init_with_valid_dependencies(self):
-        """Test successful initialization with valid connection and transaction methods."""
-        mock_get_connection = Mock()
-        mock_transaction = Mock()
-
-        repo = MilestoneRepository(mock_get_connection, mock_transaction)
-
-        assert repo._get_connection == mock_get_connection
-        assert repo._transaction == mock_transaction
-
-    def test_init_with_none_connection_callable(self):
-        """Test initialization allows None as connection (fails at usage, not init)."""
-        # Initialization doesn't validate - failure happens when methods are called
-        repo = MilestoneRepository(None, Mock())
-        assert repo._get_connection is None
-
-    def test_init_with_none_transaction_callable(self):
-        """Test initialization allows None as transaction (fails at usage, not init)."""
-        # Initialization doesn't validate - failure happens when methods are called
-        repo = MilestoneRepository(Mock(), None)
-        assert repo._transaction is None
+    @pytest.mark.parametrize(
+        "get_conn,trans,expected_conn,expected_trans",
+        [
+            (Mock(), Mock(), True, True),
+            (None, Mock(), False, True),
+            (Mock(), None, True, False),
+        ],
+    )
+    def test_init_various(self, get_conn, trans, expected_conn, expected_trans):
+        repo = MilestoneRepository(get_conn, trans)
+        assert (repo._get_connection is not None) == expected_conn
+        assert (repo._transaction is not None) == expected_trans
 
     def test_init_preserves_callable_references(self):
-        """Test initialization stores exact references without modification."""
         mock_get_connection = Mock(return_value="connection")
         mock_transaction = Mock()
-
         repo = MilestoneRepository(mock_get_connection, mock_transaction)
-
-        # Verify exact references are stored
         assert repo._get_connection is mock_get_connection
         assert repo._transaction is mock_transaction
 
