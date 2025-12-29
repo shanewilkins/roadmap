@@ -95,88 +95,82 @@ class TestHealthCheckFormatter:
 class TestStatusCommand:
     """Test status command error handling."""
 
-    def test_status_no_data(self):
-        """Empty roadmap should show empty state."""
-        runner = CliRunner()
-        ctx_obj = {
-            "core": MagicMock(),
-        }
+    import pytest
 
+    @pytest.mark.parametrize(
+        "mock_gather_return, mock_gather_side_effect, cli_args, presenter_patch, presenter_method, presenter_arg, expected_exit",
+        [
+            # No data, should call show_empty_state
+            (
+                {"has_data": False, "issue_count": 0, "milestone_count": 0},
+                None,
+                [],
+                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state",
+                "show_empty_state",
+                None,
+                None,
+            ),
+            # Exception, should call show_error
+            (
+                None,
+                Exception("Database error"),
+                [],
+                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_error",
+                "show_error",
+                "Database error",
+                None,
+            ),
+            # Verbose flag, should exit 0
+            (
+                {"has_data": False, "issue_count": 0, "milestone_count": 0},
+                None,
+                ["--verbose"],
+                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state",
+                None,
+                None,
+                0,
+            ),
+        ],
+    )
+    def test_status_param(
+        self,
+        mock_gather_return,
+        mock_gather_side_effect,
+        cli_args,
+        presenter_patch,
+        presenter_method,
+        presenter_arg,
+        expected_exit,
+    ):
+        runner = CliRunner()
+        ctx_obj = {"core": MagicMock()}
         with patch(
             "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
         ) as mock_gather:
-            mock_gather.return_value = {
-                "has_data": False,
-                "issue_count": 0,
-                "milestone_count": 0,
-            }
-
-            with patch(
-                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state"
-            ) as mock_empty:
-                with runner.isolated_filesystem():
-                    runner.invoke(
-                        status,
-                        [],
-                        obj=ctx_obj,
-                        catch_exceptions=False,
-                    )
-
-                mock_empty.assert_called_once()
-
-    def test_status_with_exception(self):
-        """Exception during status gathering should show error."""
-        runner = CliRunner()
-        ctx_obj = {
-            "core": MagicMock(),
-        }
-
-        with patch(
-            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
-        ) as mock_gather:
-            mock_gather.side_effect = Exception("Database error")
-
-            with patch(
-                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_error"
-            ) as mock_error:
-                with runner.isolated_filesystem():
-                    runner.invoke(
-                        status,
-                        [],
-                        obj=ctx_obj,
-                        catch_exceptions=False,
-                    )
-
-                mock_error.assert_called_once_with("Database error")
-
-    def test_status_verbose_flag(self):
-        """Verbose flag should be passed through."""
-        runner = CliRunner()
-        ctx_obj = {
-            "core": MagicMock(),
-        }
-
-        with patch(
-            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
-        ) as mock_gather:
-            mock_gather.return_value = {
-                "has_data": False,
-                "issue_count": 0,
-                "milestone_count": 0,
-            }
-
-            with patch(
-                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state"
-            ):
+            if mock_gather_side_effect:
+                mock_gather.side_effect = mock_gather_side_effect
+            else:
+                mock_gather.return_value = mock_gather_return
+            if presenter_patch:
+                with patch(presenter_patch) as mock_presenter:
+                    with runner.isolated_filesystem():
+                        result = runner.invoke(
+                            status, cli_args, obj=ctx_obj, catch_exceptions=False
+                        )
+                    if presenter_method:
+                        if presenter_arg is not None:
+                            mock_presenter.assert_called_once_with(presenter_arg)
+                        else:
+                            mock_presenter.assert_called_once()
+                    if expected_exit is not None:
+                        assert result.exit_code == expected_exit
+            else:
                 with runner.isolated_filesystem():
                     result = runner.invoke(
-                        status,
-                        ["--verbose"],
-                        obj=ctx_obj,
-                        catch_exceptions=False,
+                        status, cli_args, obj=ctx_obj, catch_exceptions=False
                     )
-
-                assert result.exit_code == 0
+                if expected_exit is not None:
+                    assert result.exit_code == expected_exit
 
     """Test status command error handling."""
 
