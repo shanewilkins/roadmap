@@ -198,13 +198,23 @@ class TestGitStatusDisplay:
         assert any("Status: in-progress" in c for c in calls)
         assert any("Priority: high" in c for c in calls)
 
-    def test_show_linked_issue_details_critical_priority(self, display, console):
-        """_show_linked_issue_details should use red for critical priority."""
+    @pytest.mark.parametrize(
+        "priority,priority_title,expected_style",
+        [
+            ("critical", "Critical Bug", "red"),
+            ("medium", "Feature Request", "yellow"),
+        ],
+    )
+    def test_show_linked_issue_details_priority_styling(
+        self, display, console, priority, priority_title, expected_style
+    ):
+        """_show_linked_issue_details should use correct style for priority levels."""
+        status = "blocked" if priority == "critical" else "todo"
         linked_issue = {
-            "id": "ISS-999",
-            "title": "Critical Bug",
-            "status": "blocked",
-            "priority": "critical",
+            "id": "ISS-999" if priority == "critical" else "ISS-100",
+            "title": priority_title,
+            "status": status,
+            "priority": priority,
         }
 
         display._show_linked_issue_details(linked_issue)
@@ -213,24 +223,9 @@ class TestGitStatusDisplay:
         assert console.print.call_count == 5
         calls = console.print.call_args_list
 
-        # Check that critical priority call uses red style
+        # Check that priority call uses correct style
         priority_call = next(c for c in calls if "Priority:" in c[0][0])
-        assert priority_call[1].get("style") == "red"
-
-    def test_show_linked_issue_details_non_critical_priority(self, display, console):
-        """_show_linked_issue_details should use yellow for non-critical priority."""
-        linked_issue = {
-            "id": "ISS-100",
-            "title": "Feature Request",
-            "status": "todo",
-            "priority": "medium",
-        }
-
-        display._show_linked_issue_details(linked_issue)
-
-        calls = console.print.call_args_list
-        priority_call = next(c for c in calls if "Priority:" in c[0][0])
-        assert priority_call[1].get("style") == "yellow"
+        assert priority_call[1].get("style") == expected_style
 
     def test_show_branch_issue_links_empty(self, display, console):
         """show_branch_issue_links should handle empty branch_issues."""

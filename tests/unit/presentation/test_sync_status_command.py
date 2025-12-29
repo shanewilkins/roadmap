@@ -65,51 +65,30 @@ class TestFormatTimestamp:
 class TestBuildSyncStatusHeader:
     """Test sync status header building."""
 
-    def test_build_header_with_success_status(self):
-        """Test building header with successful sync status."""
-        issue = Mock(id="123", title="Test Issue")
+    @pytest.mark.parametrize(
+        "status,sync_time,issue_id,issue_title",
+        [
+            ("success", "2025-12-23T20:30:00Z", "123", "Test Issue"),
+            ("error", "2025-12-23T20:30:00Z", "456", "Error Issue"),
+            ("conflict", "2025-12-23T20:30:00Z", "789", "Conflict Issue"),
+            ("never", None, "999", "Never Synced"),
+        ],
+    )
+    def test_build_header_with_various_statuses(
+        self, status, sync_time, issue_id, issue_title
+    ):
+        """Test building header with various sync statuses."""
+        issue = Mock(id=issue_id, title=issue_title)
         metadata = Mock(
-            last_sync_status="success",
-            last_sync_time="2025-12-23T20:30:00Z",
+            last_sync_status=status,
+            last_sync_time=sync_time,
         )
 
         header = _build_sync_status_header(issue, metadata)
         assert header is not None
-        # Header should contain issue ID and title
-        assert str(header).find("#") >= 0
-
-    def test_build_header_with_error_status(self):
-        """Test building header with error sync status."""
-        issue = Mock(id="456", title="Error Issue")
-        metadata = Mock(
-            last_sync_status="error",
-            last_sync_time="2025-12-23T20:30:00Z",
-        )
-
-        header = _build_sync_status_header(issue, metadata)
-        assert header is not None
-
-    def test_build_header_with_conflict_status(self):
-        """Test building header with conflict sync status."""
-        issue = Mock(id="789", title="Conflict Issue")
-        metadata = Mock(
-            last_sync_status="conflict",
-            last_sync_time="2025-12-23T20:30:00Z",
-        )
-
-        header = _build_sync_status_header(issue, metadata)
-        assert header is not None
-
-    def test_build_header_with_never_synced_status(self):
-        """Test building header when issue never synced."""
-        issue = Mock(id="999", title="Never Synced")
-        metadata = Mock(
-            last_sync_status="never",
-            last_sync_time=None,
-        )
-
-        header = _build_sync_status_header(issue, metadata)
-        assert header is not None
+        # Header should contain issue ID for non-null titles
+        if sync_time:
+            assert str(header).find("#") >= 0
 
     def test_build_header_with_no_sync_time(self):
         """Test building header with no sync time."""
