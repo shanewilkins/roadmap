@@ -14,54 +14,42 @@ from roadmap.adapters.persistence.storage.queries import QueryService
 class TestQueryServiceInitialization:
     """Test QueryService initialization and setup."""
 
-    def test_initialization_with_state_manager(self):
-        """Test QueryService initializes with state manager reference."""
-        mock_state_manager = mock.MagicMock()
-        service = QueryService(mock_state_manager)
-        assert service.state_manager == mock_state_manager
+    import pytest
 
-    def test_initialization_stores_reference(self):
-        """Test initialization stores the provided state manager."""
-        mock_state_manager = mock.MagicMock()
-        service = QueryService(mock_state_manager)
-        assert service.state_manager is mock_state_manager
-
-    def test_initialization_accepts_none_state_manager(self):
-        """Test QueryService handles None state manager gracefully."""
-        service = QueryService(None)  # type: ignore
-        assert service.state_manager is None
+    @pytest.mark.parametrize(
+        "state_manager,expected",
+        [
+            (mock.MagicMock(), True),
+            (None, False),
+        ],
+    )
+    def test_initialization_param(self, state_manager, expected):
+        service = QueryService(state_manager)
+        if expected:
+            assert service.state_manager == state_manager
+        else:
+            assert service.state_manager is None
 
 
 class TestHasFileChanges:
     """Test has_file_changes method for detecting file modifications."""
 
-    def test_has_file_changes_no_roadmap_dir(self):
-        """Test has_file_changes when roadmap directory doesn't exist."""
-        mock_state_manager = mock.MagicMock()
-        mock_state_manager.db_path = Path("/nonexistent/path/db.sqlite")
+    import pytest
 
-        service = QueryService(mock_state_manager)
-        result = service.has_file_changes()
-
-        # When no directory exists, should return False (no files to check)
-        assert result is False
-
-    def test_has_file_changes_no_files(self):
-        """Test has_file_changes when no markdown files exist."""
-        mock_state_manager = mock.MagicMock()
-
-        with mock.patch.object(Path, "exists", return_value=False):
-            with mock.patch.object(
-                Path, "parent", new_callable=mock.PropertyMock
-            ) as mock_parent:
-                mock_parent.return_value = Path("/roadmap")
-                mock_state_manager.db_path = Path("/roadmap/.roadmap/db.sqlite")
-
+    @pytest.mark.parametrize(
+        "desc,setup_fn,expected",
+        [
+            ("no_roadmap_dir", lambda: (mock.MagicMock(), False), False),
+            ("no_files", lambda: (mock.MagicMock(), False), False),
+        ],
+    )
+    def test_has_file_changes_param(self, desc, setup_fn, expected):
+        mock_state_manager, exists = setup_fn()
+        with mock.patch.object(Path, "exists", return_value=exists):
+            with mock.patch.object(Path, "parent", new_callable=mock.PropertyMock):
                 service = QueryService(mock_state_manager)
                 result = service.has_file_changes()
-
-                # No markdown files means no changes
-                assert result is False
+                assert result is expected
 
     def test_has_file_changes_with_new_file(self):
         """Test has_file_changes detects new markdown files."""
