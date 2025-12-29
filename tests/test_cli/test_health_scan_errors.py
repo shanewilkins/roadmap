@@ -24,81 +24,48 @@ from roadmap.adapters.cli.health.scan import (
 class TestExitCodeDetermination:
     """Test exit code logic based on health status."""
 
-    def test_returns_zero_when_all_healthy(self):
-        """Test that exit code 0 is returned when all entities are healthy."""
-        mock_report1 = Mock()
-        mock_report1.is_healthy = True
-        mock_report1.is_degraded = False
+    import pytest
 
-        mock_report2 = Mock()
-        mock_report2.is_healthy = True
-        mock_report2.is_degraded = False
-
-        entity_reports = [mock_report1, mock_report2]
-
-        exit_code = _determine_exit_code(entity_reports, None)
-
-        assert exit_code == 0
-
-    def test_returns_two_when_unhealthy_entities_present(self):
-        """Test that exit code 2 is returned when unhealthy entities found."""
-        mock_report1 = Mock()
-        mock_report1.is_healthy = False
-        mock_report1.is_degraded = False
-
-        mock_report2 = Mock()
-        mock_report2.is_healthy = True
-        mock_report2.is_degraded = False
-
-        entity_reports = [mock_report1, mock_report2]
-
-        exit_code = _determine_exit_code(entity_reports, None)
-
-        assert exit_code == 2
-
-    def test_returns_one_when_degraded_entities_present(self):
-        """Test that exit code 1 is returned when degraded entities found."""
-        mock_report1 = Mock()
-        mock_report1.is_healthy = True
-        mock_report1.is_degraded = True
-
-        entity_reports = [mock_report1]
-
-        exit_code = _determine_exit_code(entity_reports, None)
-
-        assert exit_code == 1
-
-    def test_returns_two_when_dependency_analysis_unhealthy(self):
-        """Test that exit code 2 is returned when dependencies are unhealthy."""
-        mock_report = Mock()
-        mock_report.is_healthy = True
-        mock_report.is_degraded = False
-
-        mock_deps = Mock()
-        mock_deps.is_healthy = False
-        mock_deps.warning_count = 0
-
-        entity_reports = [mock_report]
-
-        exit_code = _determine_exit_code(entity_reports, mock_deps)
-
-        assert exit_code == 2
-
-    def test_returns_one_when_dependency_analysis_has_warnings(self):
-        """Test that exit code 1 is returned when dependencies have warnings."""
-        mock_report = Mock()
-        mock_report.is_healthy = True
-        mock_report.is_degraded = False
-
-        mock_deps = Mock()
-        mock_deps.is_healthy = True
-        mock_deps.warning_count = 5
-
-        entity_reports = [mock_report]
-
-        exit_code = _determine_exit_code(entity_reports, mock_deps)
-
-        assert exit_code == 1
+    @pytest.mark.parametrize(
+        "entity_reports,deps,expected",
+        [
+            # All healthy
+            (
+                [
+                    Mock(is_healthy=True, is_degraded=False),
+                    Mock(is_healthy=True, is_degraded=False),
+                ],
+                None,
+                0,
+            ),
+            # Unhealthy present
+            (
+                [
+                    Mock(is_healthy=False, is_degraded=False),
+                    Mock(is_healthy=True, is_degraded=False),
+                ],
+                None,
+                2,
+            ),
+            # Degraded present
+            ([Mock(is_healthy=True, is_degraded=True)], None, 1),
+            # Dependency unhealthy
+            (
+                [Mock(is_healthy=True, is_degraded=False)],
+                Mock(is_healthy=False, warning_count=0),
+                2,
+            ),
+            # Dependency warnings
+            (
+                [Mock(is_healthy=True, is_degraded=False)],
+                Mock(is_healthy=True, warning_count=5),
+                1,
+            ),
+        ],
+    )
+    def test_exit_code_param(self, entity_reports, deps, expected):
+        exit_code = _determine_exit_code(entity_reports, deps)
+        assert exit_code == expected
 
 
 # ========== Unit Tests: Grouping Strategy ==========
