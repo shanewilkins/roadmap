@@ -531,8 +531,18 @@ class TestMilestoneRepositoryUpdate:
 class TestMilestoneRepositoryMarkArchived:
     """Test milestone archive operations with error scenarios."""
 
-    def test_mark_archived_true(self):
-        """Test marking milestone as archived."""
+    @pytest.mark.parametrize(
+        "archived_flag,expected_sql_value,pass_flag",
+        [
+            (True, "archived = 1", True),
+            (False, "archived = 0", False),
+        ],
+    )
+    def test_mark_archived_variants(self, archived_flag, expected_sql_value, pass_flag):
+        """Test marking milestone as archived/unarchived.
+
+        Tests both archived=True and archived=False scenarios.
+        """
         mock_get_connection = Mock()
         mock_transaction = Mock()
         mock_conn = MagicMock()
@@ -542,29 +552,12 @@ class TestMilestoneRepositoryMarkArchived:
 
         repo = MilestoneRepository(mock_get_connection, mock_transaction)
 
-        result = repo.mark_archived("m1", archived=True)
+        result = repo.mark_archived("m1", archived=archived_flag)
 
         assert result is True
         mock_conn.execute.assert_called_once()
         call_args = mock_conn.execute.call_args[0]
-        assert "archived = 1" in call_args[0]
-
-    def test_mark_archived_false(self):
-        """Test marking milestone as unarchived."""
-        mock_get_connection = Mock()
-        mock_transaction = Mock()
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value.rowcount = 1
-        mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_transaction.return_value.__exit__ = Mock(return_value=False)
-
-        repo = MilestoneRepository(mock_get_connection, mock_transaction)
-
-        result = repo.mark_archived("m1", archived=False)
-
-        assert result is True
-        call_args = mock_conn.execute.call_args[0]
-        assert "archived = 0" in call_args[0]
+        assert expected_sql_value in call_args[0]
 
     def test_mark_archived_default_true(self):
         """Test mark_archived defaults to True when not specified."""
