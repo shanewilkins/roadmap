@@ -134,32 +134,29 @@ class TestCreateSecureFile:
         else:
             assert test_path.read_text() == expected_content
 
-    def test_create_secure_file_basic(self, temp_dir):
-        """Test basic secure file creation."""
-        test_path = temp_dir / "test_file.txt"
+    @pytest.mark.parametrize(
+        "permissions,scenario",
+        [
+            (None, "basic"),
+            (0o644, "custom"),
+        ],
+    )
+    def test_create_secure_file_permissions(self, temp_dir, permissions, scenario):
+        """Test secure file creation with various permission modes."""
+        test_path = temp_dir / f"perm_{scenario}.txt"
 
-        with create_secure_file(test_path, "w") as f:
-            f.write("test content")
-            assert f.writable()
+        if permissions is None:
+            with create_secure_file(test_path, "w") as f:
+                f.write("content")
+            expected_perms = 0o600
+        else:
+            with create_secure_file(test_path, "w", permissions=permissions) as f:
+                f.write("content")
+            expected_perms = permissions
 
-        # Verify file exists and has correct permissions
-        assert test_path.exists()
-        assert test_path.read_text() == "test content"
-
-        # Check permissions (owner read/write only)
-        permissions = test_path.stat().st_mode & 0o777
-        assert permissions == 0o600
-
-    def test_create_secure_file_custom_permissions(self, temp_dir):
-        """Test secure file creation with custom permissions."""
-        test_path = temp_dir / "custom_perm.txt"
-
-        with create_secure_file(test_path, "w", permissions=0o644) as f:
-            f.write("content")
-
-        # Check custom permissions
-        permissions = test_path.stat().st_mode & 0o777
-        assert permissions == 0o644
+        # Check permissions
+        actual_perms = test_path.stat().st_mode & 0o777
+        assert actual_perms == expected_perms
 
     def test_create_secure_file_creates_parent_dirs(self, temp_dir):
         """Test that parent directories are created automatically."""
@@ -286,24 +283,24 @@ class TestValidatePath:
         result = validate_path("subdir/file.txt", base_dir)
         assert result.name == "file.txt"
 
-    def test_validate_path_directory_traversal_blocked(self, temp_dir):
-        """Test that directory traversal attempts are blocked."""
-        base_dir = temp_dir
-
-        # Test various traversal attempts
-        traversal_paths = [
+    @pytest.mark.parametrize(
+        "bad_path",
+        [
             "../../../etc/passwd",
             "subdir/../../../etc/passwd",
             "subdir/../../parent_file.txt",
             Path("../outside.txt"),
-        ]
+        ],
+    )
+    def test_validate_path_directory_traversal_blocked(self, temp_dir, bad_path):
+        """Test that directory traversal attempts are blocked."""
+        base_dir = temp_dir
 
-        for bad_path in traversal_paths:
-            with pytest.raises(
-                PathValidationError,
-                match="outside allowed directory|directory traversal",
-            ):
-                validate_path(bad_path, base_dir)
+        with pytest.raises(
+            PathValidationError,
+            match="outside allowed directory|directory traversal",
+        ):
+            validate_path(bad_path, base_dir)
 
     def test_validate_path_absolute_not_allowed(self):
         """Test that absolute paths are rejected when not allowed."""
@@ -335,24 +332,23 @@ class TestValidatePath:
         with pytest.raises(PathValidationError, match="directory traversal"):
             validate_path("../dangerous/path.txt")
 
-    def test_validate_path_dangerous_components(self):
+    @pytest.mark.parametrize(
+        "dangerous_path",
+        [
+            "subdir/../file.txt",  # Contains .. - should be blocked by traversal check
+            "./file.txt",  # Contains . - may be blocked
+            "~/file.txt",  # Contains ~ - may be blocked
+        ],
+    )
+    def test_validate_path_dangerous_components(self, temp_dir, dangerous_path):
         """Test that paths with dangerous components are blocked."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            base_dir = Path(temp_dir)
+        base_dir = temp_dir
 
-            # These should be blocked due to dangerous components or directory traversal
-            dangerous_paths = [
-                "subdir/../file.txt",  # Contains .. - should be blocked by traversal check
-                "./file.txt",  # Contains . - may be blocked
-                "~/file.txt",  # Contains ~ - may be blocked
-            ]
-
-            for dangerous_path in dangerous_paths:
-                with pytest.raises(
-                    PathValidationError,
-                    match="dangerous components|outside allowed directory",
-                ):
-                    validate_path(dangerous_path, base_dir)
+        with pytest.raises(
+            PathValidationError,
+            match="dangerous components|outside allowed directory",
+        ):
+            validate_path(dangerous_path, base_dir)
 
     def test_validate_path_string_input(self):
         """Test path validation with string input."""
@@ -369,8 +365,19 @@ class TestValidatePath:
                 assert result.name == "safe_file.txt"
 
     @patch("roadmap.common.security.path_validation.log_security_event")
-    def test_validate_path_logging_success(self, mock_log):
-        """Test successful path validation logging."""
+    def test_validate_path_logging_scenarios(self, mock_log):
+        """Test path validation logging for success and failure scenarios."""
+        # Test failure logging
+        with pytest.raises(PathValidationError):
+            validate_path("../bad_path.txt", "/tmp")
+
+        # Check that failure was logged
+        failure_logged = any(
+            call[0][0] == "path_validation_failed" for call in mock_log.call_args_list
+        )
+        assert failure_logged
+
+        # Test success logging
         with tempfile.TemporaryDirectory() as temp_dir:
             base_dir = Path(temp_dir)
             test_path = "safe_path.txt"
@@ -385,28 +392,17 @@ class TestValidatePath:
             original_dir = os.getcwd()
             try:
                 os.chdir(temp_dir)
+                mock_log.reset_mock()
                 validate_path(test_path, base_dir)
 
                 # Check that success was logged
                 mock_log.assert_called()
+                success_logged = any(
+                    call[0][0] == "path_validated" for call in mock_log.call_args_list
+                )
+                assert success_logged
             finally:
                 os.chdir(original_dir)
-            success_logged = any(
-                call[0][0] == "path_validated" for call in mock_log.call_args_list
-            )
-            assert success_logged
-
-    @patch("roadmap.common.security.path_validation.log_security_event")
-    def test_validate_path_logging_failure(self, mock_log):
-        """Test failed path validation logging."""
-        with pytest.raises(PathValidationError):
-            validate_path("../bad_path.txt", "/tmp")
-
-        # Check that failure was logged
-        failure_logged = any(
-            call[0][0] == "path_validation_failed" for call in mock_log.call_args_list
-        )
-        assert failure_logged
 
 
 class TestSanitizeFilename:
@@ -436,24 +432,20 @@ class TestSanitizeFilename:
         result = sanitize_filename(input_name)
         assert result == expected
 
-    def test_sanitize_filename_basic(self):
-        """Test basic filename sanitization."""
-        result = sanitize_filename("normal_file.txt")
-        assert result == "normal_file.txt"
-
-    def test_sanitize_filename_directory_traversal(self):
-        """Test sanitization of directory traversal attempts."""
-        traversal_attempts = [
+    @pytest.mark.parametrize(
+        "dangerous_input",
+        [
             "../file.txt",
             "file/../other.txt",
             "..file.txt",
             "file..txt",
-        ]
-
-        for attempt in traversal_attempts:
-            result = sanitize_filename(attempt)
-            assert ".." not in result
-            assert "_" in result or result == "safe_filename"
+        ],
+    )
+    def test_sanitize_filename_directory_traversal(self, dangerous_input):
+        """Test sanitization of directory traversal attempts."""
+        result = sanitize_filename(dangerous_input)
+        assert ".." not in result
+        assert "_" in result or result == "safe_filename"
 
     def test_sanitize_filename_max_length(self):
         """Test filename length truncation."""
@@ -468,16 +460,18 @@ class TestSanitizeFilename:
         with pytest.raises(SecurityError, match="Filename cannot be empty"):
             sanitize_filename("")
 
-    def test_sanitize_filename_only_dangerous(self):
+    @pytest.mark.parametrize(
+        "dangerous_chars_input,expected",
+        [
+            (".", "safe_filename"),
+            ("..", "_"),
+            ("...", "_"),
+        ],
+    )
+    def test_sanitize_filename_only_dangerous(self, dangerous_chars_input, expected):
         """Test filename with only dangerous characters."""
-        result = sanitize_filename("...")
-        assert result == "_"
-
-        result = sanitize_filename("..")
-        assert result == "_"
-
-        result = sanitize_filename(".")
-        assert result == "safe_filename"
+        result = sanitize_filename(dangerous_chars_input)
+        assert result == expected
 
     def test_sanitize_filename_null_bytes(self):
         """Test handling of null bytes."""
