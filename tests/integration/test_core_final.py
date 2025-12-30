@@ -245,12 +245,28 @@ class TestRoadmapCoreUncoveredLines:
         assert isinstance(error, str)
 
     def test_issue_operations_not_initialized(self, temp_dir):
-        """Test issue operations when roadmap is not initialized."""
+        """Test issue operations when roadmap is not initialized.
+
+        Note: This test is sensitive to cache state from other tests. We clear
+        the IssueService class cache to avoid flakiness in parallel execution.
+        """
+        # Clear any cached state from previous tests
+        from roadmap.core.services.issue_service import IssueService
+
+        IssueService._list_issues_cache.clear()
+
         # Verify that operations work on uninitialized roadmap (facade handles gracefully)
-        core = RoadmapCore(root_path=temp_dir)
-        # Should not raise error, operations should fail gracefully
-        result = core.issues.list()
-        assert result == []
+        # Use absolute path to avoid cwd race conditions in parallel test execution
+        import os
+
+        original_cwd = os.getcwd()
+        try:
+            core = RoadmapCore(root_path=temp_dir.absolute())
+            # Should not raise error, operations should fail gracefully
+            result = core.issues.list()
+            assert result == []
+        finally:
+            os.chdir(original_cwd)
 
     def test_create_issue_failed_return(self, core):
         """Test create_issue_with_git_branch when issue creation fails."""
