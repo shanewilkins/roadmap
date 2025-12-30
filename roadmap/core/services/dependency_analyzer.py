@@ -13,6 +13,10 @@ from enum import Enum
 
 from roadmap.common.logging import get_logger
 from roadmap.core.domain.issue import Issue
+from roadmap.infrastructure.logging.error_logging import (
+    log_error_with_context,
+)
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -101,6 +105,7 @@ class DependencyAnalyzer:
         self._issue_map: dict[str, Issue] = {}
         self._analyzed = False
 
+    @traced("analyze_dependencies")
     def analyze(self, issues: list[Issue]) -> DependencyAnalysisResult:
         """Analyze all dependencies in the issue set.
 
@@ -110,22 +115,33 @@ class DependencyAnalyzer:
         Returns:
             DependencyAnalysisResult with all problems found
         """
-        self._issue_map = {issue.id: issue for issue in issues}
-        self._analyzed = True
+        try:
+            self._issue_map = {issue.id: issue for issue in issues}
+            self._analyzed = True
 
-        result = DependencyAnalysisResult(
-            total_issues=len(issues),
-            issues_with_dependencies=sum(1 for i in issues if i.depends_on or i.blocks),
-            issues_with_problems=0,
-        )
+            result = DependencyAnalysisResult(
+                total_issues=len(issues),
+                issues_with_dependencies=sum(
+                    1 for i in issues if i.depends_on or i.blocks
+                ),
+                issues_with_problems=0,
+            )
 
-        # Check all issues
-        for issue in issues:
-            self._check_issue_dependencies(issue, result)
+            # Check all issues
+            for issue in issues:
+                self._check_issue_dependencies(issue, result)
 
-        result.issues_with_problems = len({p.issue_id for p in result.problems})
+            result.issues_with_problems = len({p.issue_id for p in result.problems})
 
-        return result
+            return result
+        except Exception as e:
+            log_error_with_context(
+                e,
+                operation="analyze_dependencies",
+                entity_type="Issue",
+                additional_context={"total_issues": len(issues)},
+            )
+            raise
 
     def _check_issue_dependencies(self, issue: Issue, result: DependencyAnalysisResult):
         """Check dependencies for a single issue."""
@@ -307,6 +323,7 @@ class DependencyAnalyzer:
 
         return max_depth
 
+    @traced("get_issues_affecting")
     def get_issues_affecting(self, issue_id: str) -> list[str]:
         """Get all issues that this one affects through dependency chain.
 

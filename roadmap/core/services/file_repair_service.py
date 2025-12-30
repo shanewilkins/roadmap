@@ -6,6 +6,10 @@ from typing import Any
 import yaml
 
 from roadmap.common.logging import get_logger
+from roadmap.infrastructure.logging.error_logging import (
+    log_error_with_context,
+)
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -29,6 +33,7 @@ class FileRepairResult:
 class FileRepairService:
     """Repairs common malformed YAML issues in issue files."""
 
+    @traced("repair_files")
     def repair_files(
         self, issues_dir: Path, malformed_files: list[str], dry_run: bool = False
     ) -> FileRepairResult:
@@ -82,12 +87,33 @@ class FileRepairService:
                 fixed_content = f"---\n{fixed_frontmatter}---\n{markdown_content}"
 
                 if not dry_run:
-                    file_path.write_text(fixed_content, encoding="utf-8")
+                    try:
+                        file_path.write_text(fixed_content, encoding="utf-8")
+                    except Exception as write_error:
+                        log_error_with_context(
+                            write_error,
+                            operation="write_repaired_file",
+                            entity_type="File",
+                            entity_id=file_rel,
+                        )
+                        result.add_error(file_rel)
+                        logger.warning(
+                            "Failed to write repaired file",
+                            file=file_rel,
+                            error=str(write_error),
+                        )
+                        continue
 
                 result.add_fixed(file_rel)
                 logger.info("Fixed malformed file", file=file_rel)
 
             except Exception as e:
+                log_error_with_context(
+                    e,
+                    operation="repair_file",
+                    entity_type="File",
+                    entity_id=file_rel,
+                )
                 result.add_error(file_rel)
                 logger.warning("Failed to fix file", file=file_rel, error=str(e))
 

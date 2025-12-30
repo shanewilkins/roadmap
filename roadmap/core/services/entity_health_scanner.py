@@ -14,6 +14,7 @@ from roadmap.core.domain.comment import Comment
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -114,6 +115,7 @@ class EntityHealthScanner:
         self.core = core
         self._entity_cache: dict[str, Any] = {}  # Cache of entity_id -> entity
 
+    @traced("scan_issue")
     def scan_issue(self, issue: Issue) -> EntityHealthReport:
         """Scan a single issue for health problems.
 
@@ -153,6 +155,7 @@ class EntityHealthScanner:
 
         return report
 
+    @traced("scan_milestone")
     def scan_milestone(self, milestone: Milestone) -> EntityHealthReport:
         """Scan a single milestone for health problems.
 
@@ -214,6 +217,7 @@ class EntityHealthScanner:
 
         return report
 
+    @traced("scan_project")
     def scan_project(self, project: Project) -> EntityHealthReport:
         """Scan a single project for health problems.
 

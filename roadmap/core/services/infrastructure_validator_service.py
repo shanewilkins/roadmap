@@ -19,6 +19,10 @@ from roadmap.core.services.base_validator import BaseValidator, HealthStatus
 from roadmap.core.services.validators.health_status_utils import (
     get_overall_status,
 )
+from roadmap.infrastructure.logging.error_logging import (
+    log_error_with_context,
+)
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -270,6 +274,7 @@ class InfrastructureValidator:
         # Instance creation is kept for potential future stateful functionality.
         pass
 
+    @traced("run_all_infrastructure_checks")
     def run_all_infrastructure_checks(self) -> dict[str, tuple[str, str]]:
         """Run all infrastructure validators.
 
@@ -288,6 +293,11 @@ class InfrastructureValidator:
 
             return checks
         except Exception as e:
+            log_error_with_context(
+                e,
+                operation="run_all_infrastructure_checks",
+                entity_type="Infrastructure",
+            )
             logger.error(
                 "infrastructure_validation_failed",
                 error=str(e),
@@ -299,6 +309,7 @@ class InfrastructureValidator:
                 )
             }
 
+    @traced("get_overall_status")
     def get_overall_status(self, checks: dict) -> str:
         """Get overall status from all checks.
 
