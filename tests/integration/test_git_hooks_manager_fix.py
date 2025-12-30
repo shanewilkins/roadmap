@@ -54,13 +54,6 @@ class TestGitHooksIntegration:
             finally:
                 os.chdir(original_cwd)
 
-    @pytest.mark.skip(
-        reason="Hook handler execution requires full git and roadmap setup"
-    )
-    def test_hook_handler_execution_with_real_git_repo(self):
-        """Test hook handler execution in a real git repository."""
-        pass
-
     def test_all_hooks_install_without_errors(self):
         """Test that all hook types can be installed without errors."""
         with tempfile.TemporaryDirectory() as temp_dir:

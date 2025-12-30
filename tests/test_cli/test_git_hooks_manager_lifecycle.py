@@ -311,22 +311,4 @@ class TestHookConfiguration:
 # ========== Unit Tests: Post-Commit Handler ==========
 
 
-class TestContextManagement:
-    """Test branch context management."""
-
-    @pytest.mark.skip(
-        reason="_set_branch_context method not implemented in GitHookManager"
-    )
-    def test_set_branch_context_creates_json_file(self, tmp_path, monkeypatch):
-        """Test _set_branch_context creates context file."""
-        pass
-
-    @pytest.mark.skip(
-        reason="_set_branch_context method not implemented in GitHookManager"
-    )
-    def test_set_branch_context_catches_write_error(self):
-        """Test _set_branch_context handles write errors gracefully."""
-        pass
-
-
 pytestmark = pytest.mark.unit
