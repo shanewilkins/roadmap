@@ -191,7 +191,7 @@ roadmap today --filter priority=critical
 | **Notion** | SaaS | Cloud | Note-taking | Structured workflows |
 | **Roadmap** | CLI | Git + YAML | Small teams, developers | Enterprise RBAC, web UI (coming v2.0) |
 
-See [FAQ.md](docs/FAQ.md) for deeper comparisons.
+See [FAQ.md](docs/user-guide/FAQ.md) for deeper comparisons.
 
 ## Real-World Example
 
