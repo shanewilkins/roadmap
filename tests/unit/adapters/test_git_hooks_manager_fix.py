@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
+from roadmap.adapters.git.hook_script_generator import HookContentGenerator
 from roadmap.infrastructure.core import RoadmapCore
 
 
@@ -14,12 +15,9 @@ class TestGitHooksManagerFix:
 
     def test_hook_content_generation(self):
         """Test that hook content is properly formatted bash/python."""
-        mock_core = MagicMock(spec=RoadmapCore)
-        manager = GitHookManager(mock_core)
-
         # Test all hook types
         for hook_name in ["post-commit", "pre-push", "post-merge", "post-checkout"]:
-            content = manager._get_hook_content(hook_name)
+            content = HookContentGenerator.generate(hook_name)
 
             # Verify it's a bash script
             assert content.startswith("#!/bin/bash")
@@ -43,11 +41,8 @@ class TestGitHooksManagerFix:
 
     def test_hook_content_has_proper_python_syntax(self):
         """Test that the Python code inside the hook script is syntactically valid."""
-        mock_core = MagicMock(spec=RoadmapCore)
-        manager = GitHookManager(mock_core)
-
         for hook_name in ["post-commit", "pre-push", "post-merge", "post-checkout"]:
-            content = manager._get_hook_content(hook_name)
+            content = HookContentGenerator.generate(hook_name)
 
             # Extract the Python part between the heredocs
             start_marker = "PYTHON_HOOK_EOF'"
@@ -82,51 +77,47 @@ class TestGitHooksManagerFix:
                 getattr(manager, method_name)
             ), f"Not callable: {method_name}"
 
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    @patch("pathlib.Path.write_text")
-    @patch("pathlib.Path.chmod")
-    def test_hook_installation_creates_files(
-        self, mock_chmod, mock_write, mock_mkdir, mock_exists
-    ):
+    def test_hook_installation_creates_files(self):
         """Test that installing hooks creates the hook files with correct permissions."""
-        mock_exists.return_value = True
-
-        # Create a mock RoadmapCore for the constructor
+        # Test that HookInstaller is called correctly
         mock_core = MagicMock(spec=RoadmapCore)
 
-        with patch.object(GitHookManager, "__init__", lambda x, y: None):
+        with patch(
+            "roadmap.adapters.git.git_hooks_manager.GitIntegration"
+        ) as mock_git_class:
+            mock_git = MagicMock()
+            mock_git.is_git_repository.return_value = True
+            mock_git_class.return_value = mock_git
+
             manager = GitHookManager(mock_core)
             manager.hooks_dir = Path(".git/hooks")
-            manager.core = mock_core
 
-            # Mock the parent class initialization
-            manager.git_integration = MagicMock()
-            manager.git_integration.is_git_repository.return_value = True
+            with patch(
+                "roadmap.adapters.git.git_hooks_manager.HookInstaller"
+            ) as mock_installer_class:
+                mock_installer = MagicMock()
+                mock_installer.install.return_value = True
+                mock_installer_class.return_value = mock_installer
 
-            # Test installing a single hook
-            manager._install_hook("post-commit")
+                # Test installing hooks
+                result = manager.install_hooks(["post-commit"])
 
-            # Verify write_text was called
-            assert mock_write.called, "Hook file should be written"
-
-            # Verify chmod was called with executable permissions (0o755)
-            assert mock_chmod.called, "Hook file should be made executable"
-            chmod_args = mock_chmod.call_args[0]
-            assert (
-                chmod_args[0] == 0o755
-            ), "Hook should have executable permission (0o755)"
+                # Verify HookInstaller was created with correct hooks_dir
+                mock_installer_class.assert_called_once_with(manager.hooks_dir)
+                # Verify install was called with correct hooks
+                mock_installer.install.assert_called_once_with(["post-commit"])
+                # Verify successful result
+                assert result is True
 
     def test_hook_script_error_handling(self):
         """Test that hook scripts handle errors silently."""
-        mock_core = MagicMock(spec=RoadmapCore)
-        manager = GitHookManager(mock_core)
+        # Test all hook types
+        for hook_name in ["post-commit", "pre-push", "post-merge", "post-checkout"]:
+            content = HookContentGenerator.generate(hook_name)
 
-        content = manager._get_hook_content("post-commit")
-
-        # Verify exception handling exists (accepts both "except Exception:" and "except Exception as e:")
-        assert "except Exception" in content
-        assert "pass" in content  # Silent fail
+            # Verify exception handling exists
+            assert "except Exception" in content
+            assert "pass" in content  # Silent fail
 
     def test_handler_methods_dont_raise(self):
         """Test that handler methods don't raise exceptions even with mock core."""
