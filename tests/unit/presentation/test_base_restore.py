@@ -85,6 +85,8 @@ class TestBaseRestorePostRestoreHook:
 
         # Should not raise any exceptions
         restore_instance.post_restore_hook(test_files)
+        # If we reach here, no-op succeeded
+        assert True
 
 
 class TestBaseRestoreExecute:

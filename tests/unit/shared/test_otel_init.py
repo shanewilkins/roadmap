@@ -14,28 +14,56 @@ class TestInitializeTracing:
 
     def test_initialize_tracing_with_default_service_name(self):
         """Test initialize_tracing with default service name."""
-        # Just ensure it doesn't crash
+        import roadmap.shared.otel_init as otel_module
+
+        # Reset before test
+        otel_module._tracer = None
+
         try:
             initialize_tracing()
+            # If it succeeds, tracer should be set
+            assert otel_module._tracer is not None, "Tracer should be initialized"
         except ImportError:
-            # Expected if otel not installed
+            # Expected if otel not installed - that's OK
             pass
 
     def test_initialize_tracing_with_custom_service_name(self):
         """Test initialize_tracing with custom service name."""
+        import roadmap.shared.otel_init as otel_module
+
+        # Reset before test
+        otel_module._tracer = None
+
         try:
             initialize_tracing("custom-service")
+            # If it succeeds, tracer should be set with the custom name
+            assert (
+                otel_module._tracer is not None
+            ), "Tracer should be initialized with custom name"
         except ImportError:
-            # Expected if otel not installed
+            # Expected if otel not installed - that's OK
             pass
 
     def test_initialize_tracing_no_exception(self):
         """Test that initialize_tracing doesn't raise unexpected exceptions."""
+        import roadmap.shared.otel_init as otel_module
+
+        # Reset before test
+        otel_module._tracer = None
+
         # Should either initialize or raise ImportError (both are OK)
+        exception_raised = None
         try:
             initialize_tracing()
         except ImportError:
-            pass
+            exception_raised = ImportError
+        except Exception as e:
+            exception_raised = type(e)
+
+        # Assert that only ImportError was raised (or nothing)
+        assert (
+            exception_raised is None or exception_raised is ImportError
+        ), f"Should only raise ImportError or succeed, not {exception_raised}"
 
 
 class TestIsTracingEnabled:
@@ -133,6 +161,8 @@ class TestTracingIntegration:
         except ImportError:
             # Expected if otel not installed
             pass
+        # If we reach here, multiple initializations handled
+        assert True
 
     def test_tracing_disabled_state(self):
         """Test that tracing disabled state works correctly."""

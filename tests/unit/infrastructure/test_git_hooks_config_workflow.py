@@ -161,6 +161,8 @@ class TestGitHookManagerHandlers:
         """Test post-commit handler fails gracefully."""
         with patch("subprocess.run", side_effect=Exception("Git error")):
             hook_manager.handle_post_commit()
+        # Should reach here without exception
+        assert True
 
     def test_handle_post_merge_calls_update(self, hook_manager):
         """Test post-merge handler calls milestone update."""

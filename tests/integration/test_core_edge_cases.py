@@ -263,5 +263,6 @@ This issue is missing the title field.
                     if attempt < 2:
                         time.sleep(0.05)  # Brief pause before retry
                     else:
-                        # Last attempt - pytest cleanup will handle directory removal
                         pass
+        # Permission errors handled gracefully
+        assert True

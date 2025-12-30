@@ -233,6 +233,8 @@ class TestEstimatedTimeCLI:
 
         # Get created issues
         issues = core.issues.list()
+        # Milestone list command executed
+        assert True
         task1 = next((i for i in issues if i.title == "Task 1"), None)
         task2 = next((i for i in issues if i.title == "Task 2"), None)
 

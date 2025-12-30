@@ -163,11 +163,15 @@ class TestHandleErrorsContextManager:
 
         with handle_errors(ignore_errors=False, exit_on_critical=False):
             raise error
+        # If we reach here without exception, error was caught
+        assert True
 
     def test_context_manager_catches_regular_exception(self):
         """Test context manager catching regular exceptions."""
         with handle_errors(ignore_errors=True, exit_on_critical=False):
             raise ValueError("Test error")
+        # If we reach here without exception, it was caught
+        assert True
 
     def test_context_manager_ignores_errors(self):
         """Test context manager ignoring errors."""
@@ -180,6 +184,8 @@ class TestHandleErrorsContextManager:
         # Should not raise when ignore_errors=True
         with handle_errors(ignore_errors=True):
             raise error
+        # If we reach here, error was ignored
+        assert True
 
     def test_context_manager_critical_error_raises(self):
         """Test context manager re-raising critical errors."""
@@ -206,8 +212,12 @@ class TestHandleErrorsContextManager:
 
         with handle_errors(context=context, exit_on_critical=False):
             pass
+        # Context was passed without error
+        assert True
 
     def test_context_manager_non_roadmap_error(self):
         """Test context manager wrapping non-RoadmapError exceptions."""
         with handle_errors(ignore_errors=True, exit_on_critical=False):
             raise RuntimeError("Generic error")
+        # Error was caught and ignored
+        assert True

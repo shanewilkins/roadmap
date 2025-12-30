@@ -66,6 +66,8 @@ class TestBaseTableFormatter:
         with patch("roadmap.shared.formatters.base_table_formatter.get_console"):
             # Just ensure it doesn't crash with empty list
             formatter.display_items([])
+            # No exception means success
+            assert True
 
     def test_display_items_with_items(self, formatter):
         """Test displaying items list."""

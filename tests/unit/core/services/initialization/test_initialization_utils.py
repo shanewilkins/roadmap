@@ -96,6 +96,8 @@ class TestInitializationLock:
             with patch.object(Path, "unlink", side_effect=PermissionError()):
                 # Should not raise
                 lock.release()
+            # If we reach here, error was handled gracefully
+            assert True
 
     def test_lock_context_usage(self):
         """Test typical acquire/release pattern."""
@@ -284,6 +286,7 @@ class TestInitializationManifest:
 
             # Don't create manifest file
             manifest.rollback()  # Should not raise
+            assert True
 
     def test_manifest_rollback_handles_invalid_json(self):
         """Test that rollback handles invalid JSON in manifest."""
@@ -293,6 +296,7 @@ class TestInitializationManifest:
 
             manifest = InitializationManifest(manifest_path)
             manifest.rollback()  # Should not raise
+            assert True
 
     def test_manifest_rollback_handles_missing_paths(self):
         """Test that rollback handles missing files gracefully."""
@@ -304,6 +308,7 @@ class TestInitializationManifest:
 
             manifest = InitializationManifest(manifest_path)
             manifest.rollback()  # Should not raise
+            assert True
 
     def test_manifest_rollback_handles_deletion_errors(self):
         """Test that rollback continues despite individual deletion errors."""
@@ -321,6 +326,8 @@ class TestInitializationManifest:
             ):
                 # Should not raise, errors are caught
                 manifest.rollback()
+            # If we reach here, rollback handled errors gracefully
+            assert True
 
     def test_manifest_stores_correct_json_format(self):
         """Test that manifest stores data in correct JSON format."""

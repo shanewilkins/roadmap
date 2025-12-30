@@ -77,6 +77,8 @@ class TestSessionCache:
 
         # Should not raise
         cache.invalidate("nonexistent")
+        # Verify cache is still empty and accessible
+        assert cache.get("nonexistent") is None
 
     def test_get_stats_empty(self):
         """Test stats for empty cache."""

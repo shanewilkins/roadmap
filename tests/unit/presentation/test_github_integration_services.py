@@ -215,7 +215,9 @@ class TestConflictDetector:
                 with patch.object(
                     detector, "_parse_github_timestamp", return_value=datetime.now()
                 ):
-                    detector.detect_conflicts(issue, 123)
+                    result = detector.detect_conflicts(issue, 123)
+                    # Verify conflict detection was performed
+                    assert result is not None
 
     def test_conflict_detector_summary(self):
         """Test conflict summary generation."""

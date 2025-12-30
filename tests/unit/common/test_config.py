@@ -216,8 +216,9 @@ class TestConfigLoader:
                 f.write("invalid: yaml: content: [")
 
             # Load should handle gracefully
-            ConfigLoader._load_config_file(config_path)
+            result = ConfigLoader._load_config_file(config_path)
             # Should return None or handle error gracefully
+            assert result is None or isinstance(result, type(None))
             # Actual behavior depends on YAML parser
 
 

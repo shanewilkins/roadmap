@@ -59,12 +59,14 @@ class TestSecurityExceptions:
 
     def test_security_error_inheritance(self):
         """Test that PathValidationError inherits from SecurityError."""
+        caught = False
         try:
             raise PathValidationError("Test")
         except SecurityError:
-            pass  # Should catch as SecurityError
+            caught = True  # Should catch as SecurityError
         except Exception:
             pytest.fail("PathValidationError should inherit from SecurityError")
+        assert caught, "PathValidationError should have been caught as SecurityError"
 
 
 class TestValidatePath:

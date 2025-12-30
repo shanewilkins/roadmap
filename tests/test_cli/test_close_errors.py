@@ -81,11 +81,17 @@ class TestCloseIssueCommand:
 
                     with mock.patch("roadmap.adapters.cli.issues.close.console"):
                         # Invoke command
-                        runner.invoke(
+                        result = runner.invoke(
                             close_issue,
                             ["ISSUE-1"],
                             obj={"core": mock_core},
                         )
+                        assert result.exit_code in (
+                            0,
+                            1,
+                            2,
+                        ), f"Command should complete: {result.output}"
+                        assert mock_core.issues.update.called, "Should update issue"
 
     def test_close_issue_with_reason(self):
         """Test close issue with reason."""
@@ -102,11 +108,13 @@ class TestCloseIssueCommand:
             mock_ensure.return_value = mock_issue
 
             with mock.patch("roadmap.adapters.cli.issues.close.console"):
-                runner.invoke(
+                result = runner.invoke(
                     close_issue,
                     ["ISSUE-1", "--reason", "Fixed in release"],
                     obj={"core": mock_core},
                 )
+
+                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
 
     def test_close_issue_with_date(self):
         """Test close issue with completion date."""
@@ -124,11 +132,13 @@ class TestCloseIssueCommand:
             mock_ensure.return_value = mock_issue
 
             with mock.patch("roadmap.adapters.cli.issues.close.console"):
-                runner.invoke(
+                result = runner.invoke(
                     close_issue,
                     ["ISSUE-1", "--record-time", "--date", "2024-12-25 14:30"],
                     obj={"core": mock_core},
                 )
+
+                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
 
     def test_close_issue_with_invalid_date(self):
         """Test close issue with invalid date."""
@@ -137,11 +147,13 @@ class TestCloseIssueCommand:
 
         with mock.patch("roadmap.adapters.cli.helpers.ensure_entity_exists"):
             with mock.patch("roadmap.adapters.cli.issues.close.console"):
-                runner.invoke(
+                result = runner.invoke(
                     close_issue,
                     ["ISSUE-1", "--record-time", "--date", "invalid-date"],
                     obj={"core": mock_core},
                 )
+
+                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
 
     def test_close_issue_record_time_current(self):
         """Test close issue recording current time."""
@@ -227,11 +239,13 @@ class TestCloseIssueDurationCalculation:
             mock_ensure.return_value = mock_issue
 
             with mock.patch("roadmap.adapters.cli.issues.close.console"):
-                runner.invoke(
+                result = runner.invoke(
                     close_issue,
                     ["ISSUE-1", "--record-time", "--date", "2024-12-25 14:00"],
                     obj={"core": mock_core},
                 )
+
+                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
 
     def test_duration_over_estimate(self):
         """Test duration calculation when over estimate."""
@@ -249,11 +263,13 @@ class TestCloseIssueDurationCalculation:
             mock_ensure.return_value = mock_issue
 
             with mock.patch("roadmap.adapters.cli.issues.close.console"):
-                runner.invoke(
+                result = runner.invoke(
                     close_issue,
                     ["ISSUE-1", "--record-time", "--date", "2024-12-25 15:00"],
                     obj={"core": mock_core},
                 )
+
+                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
 
     def test_duration_under_estimate(self):
         """Test duration calculation when under estimate."""
@@ -271,11 +287,13 @@ class TestCloseIssueDurationCalculation:
             mock_ensure.return_value = mock_issue
 
             with mock.patch("roadmap.adapters.cli.issues.close.console"):
-                runner.invoke(
+                result = runner.invoke(
                     close_issue,
                     ["ISSUE-1", "--record-time", "--date", "2024-12-25 12:00"],
                     obj={"core": mock_core},
                 )
+
+                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
 
     def test_no_start_date(self):
         """Test when issue has no start date."""

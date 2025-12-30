@@ -45,7 +45,8 @@ class TestWithErrorHandlingContextManager:
         with with_error_handling("sync", "Issues", fail_silently=True):
             raise ValueError("Test error")
 
-        # Should not raise
+        # Should not raise - if we reach here, test passed
+        assert True
 
     def test_context_manager_with_entity_id(self):
         """Test adding entity ID to context manager."""

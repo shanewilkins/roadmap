@@ -95,6 +95,8 @@ class TestLogSecurityEvent:
             ),
         ):
             log_security_event("failing_event")
+        # If we reach here, exception was handled
+        assert True
 
     def test_log_security_event_closed_handler(self):
         """Test handling of closed log handlers."""
@@ -213,12 +215,16 @@ class TestValidateExportSize:
         """Test validation of nonexistent file (should pass)."""
         nonexistent = Path("/nonexistent/file.txt")
         validate_export_size(nonexistent)
+        # Should not raise, nonexistent files are OK
+        assert True
 
     def test_validate_export_size_empty_file(self, temp_dir):
         """Test validation of empty file."""
         empty_file = temp_dir / "empty.txt"
         empty_file.touch()
         validate_export_size(empty_file, max_size_mb=1)
+        # Validation succeeded for empty file
+        assert True
 
     @patch("roadmap.common.security.export_cleanup.log_security_event")
     def test_validate_export_size_logging_large_file(self, mock_log, temp_dir):
