@@ -281,6 +281,43 @@ v.1.0.0 targets individual developers and small teams. Enterprise features can f
 
 Once users depend on v.1.0.0 for production roadmaps, breaking changes become migration burdens. Semantic versioning prevents surprises.
 
+### What access model for v.1.0.0? (Issue #5)
+
+**Decision:** Write access required for v.1.0.0. All team members (devs and PMs) edit the same repo with full write permissions.
+
+**Rationale:**
+1. v.1.0.0 targets small technical teams where write-access trust isn't a blocker
+2. Simplifies permission model—no need for role-based access yet
+3. Git's native permission model (branch protection rules) handles governance if needed
+4. Enables direct file editing + CLI both working seamlessly
+
+**v.1.1+ Enhancement (Deferred):**
+- Read-only mode for viewing via separate branch/fork
+- Role-based access: PMs have full write, devs can only update assigned issues
+- Team-level permissions (invite/remove team members)
+
+### How to handle historical tracking of status changes? (Issue #8)
+
+**Decision:** Defer persistent history to v.1.1, but lay foundation in v.1.0.0 via timestamp-based snapshots.
+
+**v.1.0.0 Implementation:**
+1. All status changes are timestamped in metadata (already done)
+2. Document snapshot workflow for PMs: `roadmap list --format=json > snapshots/$(date +%Y-%m-%d).json`
+3. Users can commit snapshots folder to git history, then `git log snapshots/` for historical view
+4. Document cron job example: auto-capture daily status snapshots for trend analysis
+
+**Benefits:**
+- Zero additional complexity in v.1.0.0
+- Foundation exists (timestamps + export formats)
+- Users can build their own history solutions immediately
+- No dependency on external databases or new storage layers
+
+**v.1.1+ Enhancement (Deferred):**
+- `roadmap history issue-id` command shows all status changes with timestamps
+- Optional `--archive-snapshots` flag auto-backs up daily status to `.roadmap/history` folder
+- Query snapshots across time: `roadmap history --from=2025-01-01 --to=2025-02-01`
+- Enable trend analysis: "How many issues per week?", "Team velocity tracking"
+
 ### Why a 5-day hardening period before release?
 
 Production releases need buffer time for UAT, edge case testing, and validation. Don't rush to release.
