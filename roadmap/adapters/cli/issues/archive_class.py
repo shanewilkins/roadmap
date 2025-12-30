@@ -231,6 +231,4 @@ class IssueArchive(BaseArchive):
                 )
 
         # Clear the list cache after archiving to ensure archived issues don't appear in list output
-        from roadmap.core.services.issue_service import IssueService
-
-        IssueService._list_issues_cache.clear()
+        self.core.issues._ops.issue_service._list_issues_cache.clear()

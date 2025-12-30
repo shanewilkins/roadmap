@@ -36,9 +36,8 @@ logger = get_logger(__name__)
 class IssueService:
     """Service for managing issues."""
 
-    # Cache for list_issues results (TTL: 60 seconds)
-    _list_issues_cache = SessionCache()
-    _cache_ttl = 60  # TTL in seconds
+    # Cache TTL in seconds
+    _cache_ttl = 60
 
     def __init__(self, repository: IssueRepository):
         """Initialize issue service.
@@ -47,6 +46,8 @@ class IssueService:
             repository: IssueRepository implementation for data persistence
         """
         self.repository = repository
+        # Cache for list_issues results (instance-level to avoid test pollution)
+        self._list_issues_cache = SessionCache()
 
     @traced("create_issue")
     @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)

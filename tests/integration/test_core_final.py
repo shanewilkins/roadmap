@@ -247,16 +247,9 @@ class TestRoadmapCoreUncoveredLines:
     def test_issue_operations_not_initialized(self, temp_dir):
         """Test issue operations when roadmap is not initialized.
 
-        Note: This test is sensitive to cache state from other tests. We clear
-        the IssueService class cache to avoid flakiness in parallel execution.
+        Each RoadmapCore instance now has its own cache, so no state
+        pollution from other tests.
         """
-        # Clear any cached state from previous tests
-        from roadmap.core.services.issue_service import IssueService
-
-        IssueService._list_issues_cache.clear()
-
-        # Verify that operations work on uninitialized roadmap (facade handles gracefully)
-        # Use absolute path to avoid cwd race conditions in parallel test execution
         import os
 
         original_cwd = os.getcwd()
