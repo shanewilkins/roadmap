@@ -277,6 +277,6 @@ See [Contributing Guide](../CONTRIBUTING.md) (coming in v1.0).
 
 ## Questions?
 
-- See [FAQ.md](FAQ.md) for common questions
+- See [FAQ.md](../user-guide/FAQ.md) for common questions
 - File an issue on GitHub for feature requests
 - Join our community discussions

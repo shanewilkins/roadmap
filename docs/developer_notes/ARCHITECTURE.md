@@ -403,6 +403,6 @@ roadmap cleanup --restore
 
 ## Next Steps
 
-- **[Quick Start](QUICK_START.md)** - Get running in 5 minutes
-- **[Workflows](WORKFLOWS.md)** - Real-world usage patterns
-- **[FAQ](FAQ.md)** - Common questions
+- **[Quick Start](../user-guide/QUICK_START.md)** - Get running in 5 minutes
+- **[Workflows](../user-guide/WORKFLOWS.md)** - Real-world usage patterns
+- **[FAQ](../user-guide/FAQ.md)** - Common questions

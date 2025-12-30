@@ -351,7 +351,7 @@ Or just restore from backup in `.roadmap/.backups/`.
 
 ### Q: What's planned for future releases?
 
-**A:** See [FUTURE_FEATURES.md](FUTURE_FEATURES.md) for the full roadmap. Highlights:
+**A:** See [FUTURE_FEATURES.md](../developer_notes/FUTURE_FEATURES.md) for the full roadmap. Highlights:
 
 - **v1.1**: Historical tracking, trends, analytics
 - **v1.2**: Enterprise RBAC, team management
@@ -363,5 +363,5 @@ Or just restore from backup in `.roadmap/.backups/`.
 
 - Check [QUICK_START.md](QUICK_START.md) for getting started
 - See [WORKFLOWS.md](WORKFLOWS.md) for real-world patterns
-- Read [ARCHITECTURE.md](ARCHITECTURE.md) for technical details
+- Read [ARCHITECTURE.md](../developer_notes/ARCHITECTURE.md) for technical details
 - File an issue on GitHub

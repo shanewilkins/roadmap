@@ -166,19 +166,19 @@ roadmap today                   # Your task list
 roadmap today --filter priority=critical
 ```
 
-**→ Next steps:** Read [Quick Start Guide](docs/QUICK_START.md) for more examples.
+**→ Next steps:** Read [Quick Start Guide](docs/user-guide/QUICK_START.md) for more examples.
 
 ## Documentation
 
 | Guide | For | Time |
 |-------|-----|------|
-| **[Quick Start](docs/QUICK_START.md)** | New users | 5 min |
-| **[Workflows](docs/WORKFLOWS.md)** | Real-world patterns | 10 min |
-| **[FAQ](docs/FAQ.md)** | Questions & comparisons | 15 min |
-| **[Architecture](docs/ARCHITECTURE.md)** | Technical details | 20 min |
-| **[Installation](docs/INSTALLATION.md)** | Setup & troubleshooting | varies |
+| **[Quick Start](docs/user-guide/QUICK_START.md)** | New users | 5 min |
+| **[Workflows](docs/user-guide/WORKFLOWS.md)** | Real-world patterns | 10 min |
+| **[FAQ](docs/user-guide/FAQ.md)** | Questions & comparisons | 15 min |
+| **[Architecture](docs/developer_notes/ARCHITECTURE.md)** | Technical details | 20 min |
+| **[Installation](docs/user-guide/INSTALLATION.md)** | Setup & troubleshooting | varies |
 | **[Security](docs/SECURITY.md)** | Privacy & safety | 10 min |
-| **[Future Features](docs/FUTURE_FEATURES.md)** | Roadmap (v1.1+) | 5 min |
+| **[Future Features](docs/developer_notes/FUTURE_FEATURES.md)** | Roadmap (v1.1+) | 5 min |
 
 ## Compare to Other Tools
 
@@ -228,7 +228,7 @@ roadmap sync github             # PR gets linked to issue
 roadmap analysis velocity sprint-12    # How many issues completed?
 ```
 
-See [Workflows.md](docs/WORKFLOWS.md) for more patterns.
+See [Workflows.md](docs/user-guide/WORKFLOWS.md) for more patterns.
 
 ## Integrations
 
@@ -251,7 +251,7 @@ See [Workflows.md](docs/WORKFLOWS.md) for more patterns.
 - Grafana (stream metrics)
 - Slack (notify on updates)
 
-See [Workflows.md](docs/WORKFLOWS.md#Automating) for integration examples.
+See [Workflows.md](docs/user-guide/WORKFLOWS.md#Automating) for integration examples.
 
 ## Philosophy
 
@@ -264,9 +264,9 @@ See [Workflows.md](docs/WORKFLOWS.md#Automating) for integration examples.
 
 ## Getting Help
 
-- **Questions?** See [FAQ.md](docs/FAQ.md)
-- **Getting started?** See [Quick Start](docs/QUICK_START.md)
-- **Ideas?** See [Future Features](docs/FUTURE_FEATURES.md)
+- **Questions?** See [FAQ.md](docs/user-guide/FAQ.md)
+- **Getting started?** See [Quick Start](docs/user-guide/QUICK_START.md)
+- **Ideas?** See [Future Features](docs/developer_notes/FUTURE_FEATURES.md)
 - **Bugs?** [Report on GitHub](https://github.com/shanemiller/roadmap/issues)
 - **Contributing?** [Join us!](CONTRIBUTING.md) (coming soon)
 
@@ -276,4 +276,4 @@ See [Workflows.md](docs/WORKFLOWS.md#Automating) for integration examples.
 
 ---
 
-**Ready to stop duplicating your work?** [Get started in 5 minutes →](docs/QUICK_START.md)
+**Ready to stop duplicating your work?** [Get started in 5 minutes →](docs/user-guide/QUICK_START.md)

@@ -132,7 +132,7 @@ roadmap sync push --issues
 ## Next Steps
 
 - **[Full Workflows Guide](WORKFLOWS.md)** - Team collaboration patterns
-- **[Architecture Guide](ARCHITECTURE.md)** - Understanding the file structure
+- **[Architecture Guide](../developer_notes/ARCHITECTURE.md)** - Understanding the file structure
 - **[FAQ](FAQ.md)** - Common questions
 - **[Installation Guide](INSTALLATION.md)** - Advanced setup options
 

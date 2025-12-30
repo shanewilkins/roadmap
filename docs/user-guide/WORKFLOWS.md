@@ -269,6 +269,6 @@ jobs:
 
 ## Next Steps
 
-- **[Architecture Guide](ARCHITECTURE.md)** - Understand the file structure
+- **[Architecture Guide](../developer_notes/ARCHITECTURE.md)** - Understand the file structure
 - **[FAQ](FAQ.md)** - Common questions about workflows
 - **[Quick Start](QUICK_START.md)** - Get running in 5 minutes
