@@ -2,6 +2,12 @@
 
 from typing import Any, Protocol
 
+from roadmap.infrastructure.logging.error_logging import (
+    log_error_with_context,
+    log_validation_error,
+)
+from roadmap.shared.instrumentation import traced
+
 
 class AssigneeValidationResult:
     """Result of assignee validation."""
@@ -74,6 +80,7 @@ class IdentitySystemValidator:
 class LocalValidator:
     """Validates assignees using basic local rules."""
 
+    @traced("validate_assignee_local")
     def validate(self, assignee: str) -> AssigneeValidationResult:
         """Validate assignee using basic local rules.
 
@@ -87,6 +94,13 @@ class LocalValidator:
         if len(assignee) >= 2 and not any(char in assignee for char in "<>{}[]()"):
             return AssigneeValidationResult(is_valid=True, canonical_id=assignee)
         else:
+            error = ValueError(f"'{assignee}' is not a valid assignee name")
+            log_validation_error(
+                error,
+                entity_type="Assignee",
+                field_name="assignee",
+                proposed_value=assignee,
+            )
             return AssigneeValidationResult(
                 is_valid=False, message=f"'{assignee}' is not a valid assignee name"
             )
@@ -168,6 +182,7 @@ class AssigneeValidationStrategy:
 
         return None
 
+    @traced("validate_assignee_strategy")
     def validate(self, assignee: str) -> tuple[bool, str, str]:
         """Validate assignee using appropriate strategy.
 
@@ -177,36 +192,60 @@ class AssigneeValidationStrategy:
         Returns:
             Tuple of (is_valid, error_message, canonical_id)
         """
-        # Check for empty assignee
-        empty_result = self._validate_empty(assignee)
-        if empty_result is not None:
-            return empty_result
+        try:
+            # Check for empty assignee
+            empty_result = self._validate_empty(assignee)
+            if empty_result is not None:
+                is_valid, message, _ = empty_result
+                if not is_valid:
+                    log_validation_error(
+                        ValueError(message),
+                        entity_type="Assignee",
+                        field_name="assignee",
+                        proposed_value=assignee,
+                    )
+                return empty_result
 
-        assignee = assignee.strip()
+            assignee = assignee.strip()
 
-        # Try identity system first
-        identity_result = self.identity_validator.validate(assignee)
-        identity_valid = self._try_identity_validation(assignee)
-        if identity_valid is not None:
-            return identity_valid
+            # Try identity system first
+            identity_result = self.identity_validator.validate(assignee)
+            identity_valid = self._try_identity_validation(assignee)
+            if identity_valid is not None:
+                return identity_valid
 
-        # Handle identity unavailable case
-        identity_unavailable_result = self._try_identity_unavailable_path(
-            assignee, identity_result
-        )
-        if identity_unavailable_result is not None:
-            return identity_unavailable_result
+            # Handle identity unavailable case
+            identity_unavailable_result = self._try_identity_unavailable_path(
+                assignee, identity_result
+            )
+            if identity_unavailable_result is not None:
+                return identity_unavailable_result
 
-        # Identity system is available but validation failed
-        validation_mode = identity_result.canonical_id or "local-only"
+            # Identity system is available but validation failed
+            validation_mode = identity_result.canonical_id or "local-only"
 
-        # Try fallback validation paths
-        fallback_result = self._try_identity_failed_path(assignee, validation_mode)
-        if fallback_result is not None:
-            return fallback_result
+            # Try fallback validation paths
+            fallback_result = self._try_identity_failed_path(assignee, validation_mode)
+            if fallback_result is not None:
+                return fallback_result
 
-        # No fallback available, return identity system result
-        return False, identity_result.message, ""
+            # No fallback available, return identity system result
+            if not identity_result.is_valid:
+                log_validation_error(
+                    ValueError(identity_result.message),
+                    entity_type="Assignee",
+                    field_name="assignee",
+                    proposed_value=assignee,
+                )
+            return False, identity_result.message, ""
+        except Exception as e:
+            log_error_with_context(
+                e,
+                operation="validate_assignee",
+                entity_type="Assignee",
+                additional_context={"assignee": assignee},
+            )
+            raise
 
     def _should_use_github_validation(self, validation_mode: str) -> bool:
         """Check if GitHub validation should be attempted.
@@ -245,6 +284,7 @@ class AssigneeValidationStrategy:
 
         return False
 
+    @traced("validate_assignee_github")
     def _validate_with_github(self, assignee: str) -> AssigneeValidationResult:
         """Validate using GitHub.
 

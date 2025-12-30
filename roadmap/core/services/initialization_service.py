@@ -14,6 +14,10 @@ from roadmap.core.services.initialization import (
 )
 from roadmap.core.services.project_init.detection import ProjectDetectionService
 from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.logging.error_logging import (
+    log_error_with_context,
+)
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -30,6 +34,7 @@ class ProjectInitializationService:
         self.core = core
         self.workflow = InitializationWorkflow(core)
 
+    @traced("validate_prerequisites")
     def validate_prerequisites(self, force: bool = False) -> tuple[bool, str]:
         """Validate initialization prerequisites.
 
@@ -49,6 +54,7 @@ class ProjectInitializationService:
         )
         return is_valid, error_msg or ""
 
+    @traced("handle_force_reinitialization")
     def handle_force_reinitialization(self) -> bool:
         """Handle force re-initialization when roadmap already exists.
 
@@ -58,9 +64,15 @@ class ProjectInitializationService:
         try:
             return self.workflow.cleanup_existing()
         except Exception as e:
+            log_error_with_context(
+                e,
+                operation="cleanup_existing",
+                entity_type="Roadmap",
+            )
             logger.error("Failed to cleanup existing roadmap", error=str(e))
             return False
 
+    @traced("detect_existing_projects")
     def detect_existing_projects(self) -> list[dict[str, Any]]:
         """Detect existing projects in the roadmap.
 
@@ -70,6 +82,7 @@ class ProjectInitializationService:
         projects_dir = self.core.roadmap_dir / "projects"
         return ProjectDetectionService.detect_existing_projects(projects_dir)
 
+    @traced("validate_finalization")
     def validate_finalization(self, project_info: dict[str, Any] | None = None) -> bool:
         """Validate the initialized roadmap and finalize.
 
@@ -84,5 +97,11 @@ class ProjectInitializationService:
                 self.core, self.core.roadmap_dir.name, project_info
             )
         except Exception as e:
+            log_error_with_context(
+                e,
+                operation="post_init_validate",
+                entity_type="Roadmap",
+                additional_context={"project_info": project_info},
+            )
             logger.error("Validation failed", error=str(e))
             return False

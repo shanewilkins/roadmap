@@ -5,6 +5,10 @@ from datetime import datetime
 
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.core.domain import Comment
+from roadmap.infrastructure.logging.error_logging import (
+    log_validation_error,
+)
+from roadmap.shared.instrumentation import traced
 
 
 class CommentService:
@@ -21,6 +25,7 @@ class CommentService:
         return int(str(uid.int)[:15])
 
     @staticmethod
+    @traced("create_comment")
     def create_comment(
         author: str,
         body: str,
@@ -43,16 +48,30 @@ class CommentService:
         """
         # Validate inputs
         if not author or not author.strip():
-            raise ValidationError(
+            error = ValidationError(
                 domain_message="Comment author cannot be empty",
                 user_message="Comment author cannot be empty",
             )
+            log_validation_error(
+                error,
+                entity_type="Comment",
+                field_name="author",
+                proposed_value=author,
+            )
+            raise error
 
         if not body or not body.strip():
-            raise ValidationError(
+            error = ValidationError(
                 domain_message="Comment body cannot be empty",
                 user_message="Comment body cannot be empty",
             )
+            log_validation_error(
+                error,
+                entity_type="Comment",
+                field_name="body",
+                proposed_value=body,
+            )
+            raise error
 
         now = datetime.now()
 
@@ -67,6 +86,7 @@ class CommentService:
         )
 
     @staticmethod
+    @traced("validate_comment_thread")
     def validate_comment_thread(comments: list[Comment]) -> list[str]:
         """Validate comment threads for errors.
 
@@ -148,6 +168,7 @@ class CommentService:
         return errors
 
     @staticmethod
+    @traced("build_comment_threads")
     def build_comment_threads(
         comments: list[Comment],
     ) -> dict[int | None, list[Comment]]:
@@ -176,6 +197,7 @@ class CommentService:
         return threads
 
     @staticmethod
+    @traced("format_comment_for_display")
     def format_comment_for_display(comment: Comment, indent: int = 0) -> str:
         """Format a comment for CLI display.
 

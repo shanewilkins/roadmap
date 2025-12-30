@@ -20,6 +20,10 @@ from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models import IssueCreateServiceParams, IssueUpdateServiceParams
 from roadmap.core.repositories import IssueRepository
+from roadmap.infrastructure.logging.error_logging import (
+    log_database_error,
+    log_error_with_context,
+)
 from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
@@ -102,7 +106,16 @@ class IssueService:
         )
 
         # Persist using repository abstraction
-        self.repository.save(issue)
+        try:
+            self.repository.save(issue)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="create",
+                entity_type="Issue",
+                entity_id=issue.id,
+            )
+            raise
 
         # Invalidate cache after successful creation
         self._list_issues_cache.clear()
@@ -242,17 +255,40 @@ class IssueService:
             return cached
 
         # Get issues from repository
-        issues = self.repository.list()
+        try:
+            issues = self.repository.list()
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="list",
+                entity_type="Issue",
+            )
+            logger.warning("returning_empty_issue_list_due_to_error")
+            return []
+
         log_metric("issues_enumerated", len(issues))
 
         # Apply filters
-        filtered_issues = [
-            issue
-            for issue in issues
-            if self._matches_all_filters(
-                issue, milestone, status, priority, issue_type, assignee
+        try:
+            filtered_issues = [
+                issue
+                for issue in issues
+                if self._matches_all_filters(
+                    issue, milestone, status, priority, issue_type, assignee
+                )
+            ]
+        except Exception as e:
+            log_error_with_context(
+                e,
+                operation="filter_issues",
+                entity_type="Issue",
+                additional_context={
+                    "milestone": milestone,
+                    "status": status,
+                    "priority": priority,
+                },
             )
-        ]
+            return issues  # Return unfiltered list as fallback
 
         # Sort by priority then by creation date
         sorted_issues = self._sort_issues_by_priority_and_date(filtered_issues)
@@ -280,7 +316,16 @@ class IssueService:
         """
         log_entry("get_issue", issue_id=issue_id)
         # Get issue from repository
-        issue = self.repository.get(issue_id)
+        try:
+            issue = self.repository.get(issue_id)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="read",
+                entity_type="Issue",
+                entity_id=issue_id,
+            )
+            return None
 
         if issue and hasattr(issue, "file_path"):
             # Store the original file path so updates preserve the location
@@ -382,7 +427,17 @@ class IssueService:
         issue.updated = now_utc()
 
         # Save updated issue through repository
-        self.repository.save(issue)
+        try:
+            self.repository.save(issue)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="update",
+                entity_type="Issue",
+                entity_id=params.issue_id,
+            )
+            raise
+
         log_event("issue_saved", issue_id=params.issue_id)
 
         # Invalidate cache after successful update
@@ -406,7 +461,16 @@ class IssueService:
         log_entry("delete_issue", issue_id=issue_id)
         logger.info("deleting_issue", issue_id=issue_id)
         # Delete issue through repository
-        deleted = self.repository.delete(issue_id)
+        try:
+            deleted = self.repository.delete(issue_id)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="delete",
+                entity_type="Issue",
+                entity_id=issue_id,
+            )
+            raise
 
         if deleted:
             log_event("issue_deleted", issue_id=issue_id)

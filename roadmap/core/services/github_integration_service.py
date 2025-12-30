@@ -17,6 +17,11 @@ from roadmap.common.errors import (
 )
 from roadmap.common.errors.error_standards import OperationType, safe_operation
 from roadmap.common.logging import get_logger
+from roadmap.infrastructure.logging.error_logging import (
+    log_error_with_context,
+    log_external_service_error,
+    log_validation_error,
+)
 from roadmap.infrastructure.security.credentials import get_credential_manager
 from roadmap.shared.instrumentation import traced
 
@@ -62,6 +67,12 @@ class GitHubIntegrationService:
             )
 
             if not owner or not repo:
+                log_validation_error(
+                    ValueError("Missing GitHub owner or repo in config"),
+                    entity_type="GitHubConfig",
+                    field_name="owner_or_repo",
+                    proposed_value={"owner": owner, "repo": repo},
+                )
                 return None, None, None
 
             # Get token from credentials manager or environment
@@ -74,6 +85,12 @@ class GitHubIntegrationService:
             return token, owner, repo
 
         except Exception as e:
+            log_error_with_context(
+                e,
+                operation="get_github_config",
+                entity_type="GitHubAPI",
+                include_traceback=False,
+            )
             logger.debug("github_config_retrieval_failed", error=str(e))
             return None, None, None
 
@@ -93,11 +110,24 @@ class GitHubIntegrationService:
                 return []
 
             # Get team members
-            client = GitHubClient(token=token, owner=owner, repo=repo)
-            members = client.get_team_members()  # type: ignore[attr-defined]
-            logger.debug("team_members_retrieved", count=len(members))
-            return members
+            try:
+                client = GitHubClient(token=token, owner=owner, repo=repo)
+                members = client.get_team_members()  # type: ignore[attr-defined]
+                logger.debug("team_members_retrieved", count=len(members))
+                return members
+            except Exception as api_error:
+                log_external_service_error(
+                    api_error,
+                    service_name="GitHub",
+                    operation="get_team_members",
+                )
+                return []
         except Exception as e:
+            log_error_with_context(
+                e,
+                operation="get_team_members",
+                entity_type="GitHubAPI",
+            )
             logger.debug("team_members_retrieval_failed", error=str(e))
             # Return empty list if GitHub is not configured or accessible
             return []

@@ -11,6 +11,11 @@ from typing import Any
 from roadmap.adapters.github.github import GitHubClient
 from roadmap.adapters.github.handlers.base import GitHubAPIError
 from roadmap.common.logging import get_logger
+from roadmap.infrastructure.logging.error_logging import (
+    log_external_service_error,
+    log_validation_error,
+)
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -41,6 +46,7 @@ class GitHubIssueClient:
             )
         logger.debug("github_issue_client_initialized")
 
+    @traced("fetch_issue")
     def fetch_issue(self, owner: str, repo: str, issue_number: int) -> dict[str, Any]:
         """Fetch a GitHub issue by number.
 
@@ -76,12 +82,24 @@ class GitHubIssueClient:
             logger.debug("github_issue_fetched_successfully", number=issue_number)
             return issue_data
         except ValueError as e:
+            log_validation_error(
+                e,
+                entity_type="GitHubIssue",
+                field_name="issue_number",
+                proposed_value=issue_number,
+            )
             logger.warning("invalid_github_issue_number", error=str(e))
             raise
         except GitHubAPIError as e:
+            log_external_service_error(
+                e,
+                service_name="GitHub",
+                operation="fetch_issue",
+            )
             logger.warning("github_issue_fetch_failed", error=str(e))
             raise
 
+    @traced("validate_token")
     def validate_token(self) -> tuple[bool, str]:
         """Validate GitHub token by making a test API call.
 
@@ -100,13 +118,25 @@ class GitHubIssueClient:
             if is_valid:
                 logger.debug("github_token_validated", message=message)
             else:
+                log_validation_error(
+                    ValueError("GitHub token validation failed"),
+                    entity_type="GitHubToken",
+                    field_name="token",
+                    proposed_value="***",
+                )
                 logger.warning("github_token_validation_failed", message=message)
 
             return is_valid, message
         except GitHubAPIError as e:
+            log_external_service_error(
+                e,
+                service_name="GitHub",
+                operation="validate_token",
+            )
             logger.warning("github_token_validation_error", error=str(e))
             return False, str(e)
 
+    @traced("issue_exists")
     def issue_exists(self, owner: str, repo: str, issue_number: int) -> bool:
         """Check if a GitHub issue exists.
 
@@ -129,6 +159,7 @@ class GitHubIssueClient:
             logger.debug("github_issue_does_not_exist", number=issue_number)
             return False
 
+    @traced("get_issue_diff")
     def get_issue_diff(
         self,
         owner: str,

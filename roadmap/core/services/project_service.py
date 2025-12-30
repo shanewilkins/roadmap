@@ -26,6 +26,9 @@ from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.project import Project
 from roadmap.core.repositories import ProjectRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
+from roadmap.infrastructure.logging.error_logging import (
+    log_database_error,
+)
 from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
@@ -56,7 +59,16 @@ class ProjectService:
         start_time = time.time()
         logger.debug("listing_projects_start")
 
-        projects = self.repository.list()
+        try:
+            projects = self.repository.list()
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="list",
+                entity_type="Project",
+            )
+            logger.warning("returning_empty_project_list_due_to_error")
+            return []
 
         elapsed = time.time() - start_time
 
@@ -83,7 +95,17 @@ class ProjectService:
         start_time = time.time()
         logger.debug("get_project_start", project_id=project_id)
 
-        result = self.repository.get(project_id)
+        try:
+            result = self.repository.get(project_id)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="read",
+                entity_type="Project",
+                entity_id=project_id,
+            )
+            return None
+
         elapsed = time.time() - start_time
 
         if result:
@@ -118,7 +140,17 @@ class ProjectService:
         )
 
         project.updated = now_utc()
-        self.repository.save(project)
+        try:
+            self.repository.save(project)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="update",
+                entity_type="Project",
+                entity_id=project.id,
+            )
+            raise
+
         elapsed = time.time() - start_time
         log_event("project_saved", project_id=project.id)
         logger.info(

@@ -25,6 +25,10 @@ from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.repositories import IssueRepository, MilestoneRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
+from roadmap.infrastructure.logging.error_logging import (
+    log_database_error,
+    log_error_with_context,
+)
 from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
@@ -101,7 +105,16 @@ class MilestoneService:
         )
 
         # Persist using repository abstraction
-        self.repository.save(milestone)
+        try:
+            self.repository.save(milestone)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="create",
+                entity_type="Milestone",
+                entity_id=name,
+            )
+            raise
 
         log_event("milestone_created", milestone_name=milestone.name)
         log_exit("create_milestone", milestone_name=milestone.name)
@@ -118,11 +131,29 @@ class MilestoneService:
             List of Milestone objects sorted by due date then name
         """
         log_entry("list_milestones", status_filter=status)
-        milestones = self.repository.list()
+        try:
+            milestones = self.repository.list()
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="list",
+                entity_type="Milestone",
+            )
+            logger.warning("returning_empty_milestone_list_due_to_error")
+            return []
 
         # Filter by status if provided
         if status:
-            milestones = [m for m in milestones if m.status == status]
+            try:
+                milestones = [m for m in milestones if m.status == status]
+            except Exception as e:
+                log_error_with_context(
+                    e,
+                    operation="filter_milestones",
+                    entity_type="Milestone",
+                    additional_context={"status_filter": status},
+                )
+                return []
 
         log_metric("milestones_enumerated", len(milestones))
 
