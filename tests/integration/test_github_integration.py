@@ -103,13 +103,16 @@ def test_workflow_isolation():
     """Test that GitHub operations don't interfere with regular issue operations."""
     runner = CliRunner()
     with runner.isolated_filesystem():
-        # Initialize
-        runner.invoke(
+        # Initialize without GitHub - this verifies basic CLI works
+        result = runner.invoke(
             main,
             ["init", "--project-name", "Test", "--non-interactive", "--skip-github"],
         )
-        # May fail for other reasons, but we just need to check if init attempts to work
-        # The key is that we can attempt the workflow
+        # Verify init completed (exit code 0 means success)
+        # Exit code 2 means already initialized, which is also fine
+        assert result.exit_code in [0, 2], f"init should complete: {result.output}"
+        # Verify something happened (either success or indication it already exists)
+        assert "Roadmap" in result.output or result.exit_code == 2
 
 
 def test_sync_command_requires_github_config():
