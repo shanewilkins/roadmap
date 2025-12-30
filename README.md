@@ -177,7 +177,7 @@ roadmap today --filter priority=critical
 | **[FAQ](docs/user-guide/FAQ.md)** | Questions & comparisons | 15 min |
 | **[Architecture](docs/developer_notes/ARCHITECTURE.md)** | Technical details | 20 min |
 | **[Installation](docs/user-guide/INSTALLATION.md)** | Setup & troubleshooting | varies |
-| **[Security](docs/SECURITY.md)** | Privacy & safety | 10 min |
+| **[Security](docs/developer_notes/SECURITY.md)** | Privacy & safety | 10 min |
 | **[Future Features](docs/developer_notes/FUTURE_FEATURES.md)** | Roadmap (v1.1+) | 5 min |
 
 ## Compare to Other Tools
