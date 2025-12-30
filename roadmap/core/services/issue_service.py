@@ -18,7 +18,11 @@ from roadmap.common.logging import get_logger
 from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_metric
 from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue
-from roadmap.core.models import IssueCreateServiceParams, IssueUpdateServiceParams
+from roadmap.core.models import (
+    NOT_PROVIDED,
+    IssueCreateServiceParams,
+    IssueUpdateServiceParams,
+)
 from roadmap.core.repositories import IssueRepository
 from roadmap.infrastructure.logging.error_logging import (
     log_database_error,
@@ -96,7 +100,7 @@ class IssueService:
             title=params.title,
             priority=priority,
             issue_type=issue_type,
-            milestone=params.milestone or "",
+            milestone=params.milestone,
             labels=params.labels or [],
             assignee=params.assignee,
             estimated_hours=params.estimate,
@@ -382,14 +386,14 @@ class IssueService:
             log_exit("update_issue", success=False)
             return None
 
-        # Update fields if provided
-        if params.title is not None:
+        # Update fields if provided (not NOT_PROVIDED)
+        if params.title is not NOT_PROVIDED:
             issue.title = params.title
             log_event("issue_field_updated", issue_id=params.issue_id, field="title")
-        if params.status is not None:
+        if params.status is not NOT_PROVIDED:
             issue.status = Status(params.status)
             log_event("issue_field_updated", issue_id=params.issue_id, field="status")
-        if params.priority is not None:
+        if params.priority is not NOT_PROVIDED:
             try:
                 priority = (
                     Priority[params.priority.upper()]
@@ -406,20 +410,20 @@ class IssueService:
                 priority = issue.priority
             issue.priority = priority
             log_event("issue_field_updated", issue_id=params.issue_id, field="priority")
-        if params.assignee is not None:
+        if params.assignee is not NOT_PROVIDED:
             issue.assignee = params.assignee
             log_event("issue_field_updated", issue_id=params.issue_id, field="assignee")
-        if params.milestone is not None:
+        if params.milestone is not NOT_PROVIDED:
             issue.milestone = params.milestone
             log_event(
                 "issue_field_updated", issue_id=params.issue_id, field="milestone"
             )
-        if params.description is not None:
+        if params.description is not NOT_PROVIDED:
             issue.content = params.description
             log_event(
                 "issue_field_updated", issue_id=params.issue_id, field="description"
             )
-        if params.estimate is not None:
+        if params.estimate is not NOT_PROVIDED:
             issue.estimated_hours = params.estimate
             log_event("issue_field_updated", issue_id=params.issue_id, field="estimate")
 

@@ -5,6 +5,7 @@ using YAML file storage, maintaining backward compatibility with existing
 file-based storage while decoupling services from implementation details.
 """
 
+import shutil
 from pathlib import Path
 
 from roadmap.adapters.persistence.parser import (
@@ -13,6 +14,7 @@ from roadmap.adapters.persistence.parser import (
     ProjectParser,
 )
 from roadmap.adapters.persistence.storage import StateManager
+from roadmap.common.logging import get_logger
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
@@ -23,9 +25,37 @@ from roadmap.core.repositories import (
 )
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
 
+logger = get_logger(__name__)
+
 
 class YAMLIssueRepository(IssueRepository):
-    """Issue repository using YAML file storage."""
+    """Issue repository using YAML file storage.
+
+    This repository implements a file-based storage system with the following
+    organizational contract:
+
+    **File Organization by Milestone:**
+    - Issues with no milestone → `.roadmap/issues/backlog/`
+    - Issues with milestone "M1" → `.roadmap/issues/M1/`
+    - Archived issues with no milestone → `.roadmap/archive/issues/backlog/`
+    - Archived issues with milestone "M1" → `.roadmap/archive/issues/M1/`
+
+    **Duplicate Prevention:**
+    - save() method cleans up stale copies in other directories before writing
+    - update() with milestone change uses atomic file moves
+    - Only one file per issue exists at any time
+
+    **Key Invariants:**
+    - Each issue has exactly one file in the filesystem
+    - File location matches issue.milestone value
+    - issue.file_path always points to actual file location
+    - No orphaned copies left in subdirectories after moves
+
+    **Error Handling:**
+    - If cleanup fails, logs warning but continues (fail-open)
+    - If save fails, raises exception (fail-safe)
+    - Atomic rename ensures consistency
+    """
 
     def __init__(self, db: StateManager, issues_dir: Path):
         """Initialize issue repository.
@@ -84,32 +114,233 @@ class YAMLIssueRepository(IssueRepository):
     def save(self, issue: Issue) -> None:
         """Save/create an issue.
 
+        Ensures single file location by cleaning up any stale copies in other directories.
+        This prevents duplicate files when issues are moved between milestones or when
+        the issue filename changes (e.g., due to title updates).
+
         Args:
             issue: Issue object to save
         """
-        issue_path = self.issues_dir / issue.filename
-        IssueParser.save_issue_file(issue, issue_path)
+        # Determine target directory based on milestone
+        if issue.milestone and issue.milestone != "backlog":
+            # Save to milestone-specific directory
+            target_dir = self.issues_dir / issue.milestone
+        else:
+            # Save to backlog directory for unassigned issues
+            target_dir = self.issues_dir / "backlog"
+
+        # Create directory if it doesn't exist
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        # Check if file exists in other locations and remove it
+        # This handles issue moves between milestones
+        issue_path_target = target_dir / issue.filename
+        stale_files_removed = 0
+
+        # Search for any existing files with this issue ID but different filenames
+        # This handles the case where the title (and thus filename) has changed
+        issue_id_prefix = issue.id
+        for subdir in self.issues_dir.glob("*"):
+            if subdir.is_dir():
+                # Look for files matching this issue ID
+                for existing_file in subdir.glob(f"{issue_id_prefix}-*.md"):
+                    # Skip the target file we're about to create
+                    if existing_file != issue_path_target:
+                        try:
+                            existing_file.unlink()
+                            stale_files_removed += 1
+                            logger.debug(
+                                "removed_stale_issue_file_by_id",
+                                issue_id=issue.id,
+                                old_filename=existing_file.name,
+                                removed_path=str(existing_file),
+                                target_path=str(issue_path_target),
+                            )
+                        except (OSError, PermissionError) as e:
+                            logger.warning(
+                                "failed_to_remove_stale_issue_file_by_id",
+                                issue_id=issue.id,
+                                old_filename=existing_file.name,
+                                path=str(existing_file),
+                                error=str(e),
+                            )
+
+        # Also check in root for backward compatibility
+        root_files = list(self.issues_dir.glob(f"{issue_id_prefix}-*.md"))
+        for root_path in root_files:
+            if root_path != issue_path_target:
+                try:
+                    root_path.unlink()
+                    stale_files_removed += 1
+                    logger.debug(
+                        "removed_stale_issue_file_from_root",
+                        issue_id=issue.id,
+                        old_filename=root_path.name,
+                        removed_path=str(root_path),
+                        target_path=str(issue_path_target),
+                    )
+                except (OSError, PermissionError) as e:
+                    logger.warning(
+                        "failed_to_remove_stale_issue_file_from_root",
+                        issue_id=issue.id,
+                        old_filename=root_path.name,
+                        path=str(root_path),
+                        error=str(e),
+                    )
+
+        # Save file to proper location
+        IssueParser.save_issue_file(issue, issue_path_target)
+        logger.debug(
+            "issue_saved",
+            issue_id=issue.id,
+            filename=issue.filename,
+            milestone=issue.milestone,
+            target_directory=str(target_dir),
+            stale_files_removed=stale_files_removed,
+        )
+
+        # Set the file_path on the issue object so it reflects the saved location
+        issue.file_path = str(issue_path_target)
 
     def update(self, issue_id: str, updates: dict) -> Issue | None:
         """Update specific fields of an issue.
 
+        When milestone changes, moves file to appropriate directory and removes
+        any stale copies from other locations. For non-milestone updates, saves
+        to current file location without moving.
+
         Args:
             issue_id: Issue identifier
-            updates: Dictionary of field updates
+            updates: Dictionary of field updates (may include milestone to trigger move)
 
         Returns:
             Updated Issue object if found, None otherwise
         """
         issue = self.get(issue_id)
         if not issue:
+            logger.debug("issue_not_found_for_update", issue_id=issue_id)
             return None
+
+        # Track old milestone and filename to handle file moves and renames
+        old_milestone = issue.milestone
+        old_filename = issue.filename  # Capture before title/other changes
+        logger.debug(
+            "updating_issue",
+            issue_id=issue_id,
+            old_milestone=old_milestone,
+            old_filename=old_filename,
+            update_fields=list(updates.keys()),
+        )
 
         # Update fields
         for key, value in updates.items():
             if hasattr(issue, key):
                 setattr(issue, key, value)
 
-        # Save back
+        # If milestone changed, move the file from old location to new location
+        if "milestone" in updates and old_milestone != issue.milestone:
+            # Determine old location
+            if old_milestone and old_milestone != "backlog":
+                old_path = self.issues_dir / old_milestone / issue.filename
+            else:
+                old_path = self.issues_dir / "backlog" / issue.filename
+
+            # Determine new location
+            if issue.milestone and issue.milestone != "backlog":
+                new_path = self.issues_dir / issue.milestone / issue.filename
+            else:
+                new_path = self.issues_dir / "backlog" / issue.filename
+
+            # Create new directory if needed
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Move the file if it exists at old location
+            if old_path.exists():
+                try:
+                    shutil.move(str(old_path), str(new_path))
+                except (OSError, PermissionError):
+                    # If move fails, just save to new location
+                    IssueParser.save_issue_file(issue, new_path)
+            else:
+                # If file doesn't exist at old location, just save to new location
+                IssueParser.save_issue_file(issue, new_path)
+
+            # Clean up any other copies that might exist in other directories
+            # This handles migration from old file locations
+            for subdir in self.issues_dir.glob("*"):
+                if subdir.is_dir() and subdir != new_path.parent:
+                    stale_path = subdir / issue.filename
+                    if stale_path.exists():
+                        try:
+                            stale_path.unlink()
+                        except (OSError, PermissionError):
+                            pass
+
+            # Set the file_path on the issue object so it reflects the new location
+            issue.file_path = str(new_path)
+            logger.info(
+                "issue_milestone_updated",
+                issue_id=issue_id,
+                old_milestone=old_milestone,
+                new_milestone=issue.milestone,
+                old_path=str(old_path) if old_path.exists() else None,
+                new_path=str(new_path),
+            )
+            return issue
+
+        # For non-milestone updates, handle filename changes (e.g., when title is updated)
+        logger.debug(
+            "issue_field_updated_without_milestone_change",
+            issue_id=issue_id,
+            old_filename=old_filename,
+            new_filename=issue.filename,
+            update_fields=list(updates.keys()),
+        )
+
+        # Determine the current directory
+        if issue.milestone and issue.milestone != "backlog":
+            target_dir = self.issues_dir / issue.milestone
+        else:
+            target_dir = self.issues_dir / "backlog"
+
+        # If filename changed (e.g., due to title change), clean up the old file
+        if old_filename != issue.filename:
+            old_file_path = target_dir / old_filename
+            if old_file_path.exists():
+                try:
+                    old_file_path.unlink()
+                    logger.debug(
+                        "removed_old_filename_after_update",
+                        issue_id=issue_id,
+                        old_filename=old_filename,
+                        removed_path=str(old_file_path),
+                    )
+                except (OSError, PermissionError) as e:
+                    logger.warning(
+                        "failed_to_remove_old_filename_after_update",
+                        issue_id=issue_id,
+                        old_filename=old_filename,
+                        path=str(old_file_path),
+                        error=str(e),
+                    )
+
+            # Also check in other directories for the old file (in case of a race condition)
+            for subdir in self.issues_dir.glob("*"):
+                if subdir.is_dir():
+                    stale_path = subdir / old_filename
+                    if stale_path.exists():
+                        try:
+                            stale_path.unlink()
+                            logger.debug(
+                                "removed_stale_old_filename_after_update",
+                                issue_id=issue_id,
+                                old_filename=old_filename,
+                                removed_path=str(stale_path),
+                            )
+                        except (OSError, PermissionError):
+                            pass
+
+        # Save the updated issue with its new filename
         self.save(issue)
         return issue
 
@@ -126,7 +357,12 @@ class YAMLIssueRepository(IssueRepository):
         if not issue:
             return False
 
-        issue_path = self.issues_dir / issue.filename
+        # Determine where file is located based on milestone
+        if issue.milestone and issue.milestone != "backlog":
+            issue_path = self.issues_dir / issue.milestone / issue.filename
+        else:
+            issue_path = self.issues_dir / "backlog" / issue.filename
+
         if issue_path.exists():
             try:
                 issue_path.unlink()
@@ -137,7 +373,26 @@ class YAMLIssueRepository(IssueRepository):
 
 
 class YAMLMilestoneRepository(MilestoneRepository):
-    """Milestone repository using YAML file storage."""
+    """Milestone repository using YAML file storage.
+
+    This repository stores milestone files in a flat structure:
+
+    **File Organization:**
+    - All milestones stored in `.roadmap/milestones/`
+    - Each milestone is one markdown file
+    - No subdirectories (unlike issues)
+    - Archived milestones → `.roadmap/archive/milestones/`
+
+    **Relationship to Issues:**
+    - Milestone names are used as directory names in `.roadmap/issues/{milestone_name}`
+    - Deleting milestone doesn't delete associated issues (only the milestone metadata)
+    - Issues maintain reference to milestone by name
+
+    **Update Behavior:**
+    - Updates do NOT move files
+    - All updates saved to same file location
+    - No stale file cleanup needed (flat structure)
+    """
 
     def __init__(self, db: StateManager, milestones_dir: Path):
         """Initialize milestone repository.
@@ -248,7 +503,24 @@ class YAMLMilestoneRepository(MilestoneRepository):
 
 
 class YAMLProjectRepository(ProjectRepository):
-    """Project repository using YAML file storage."""
+    """Project repository using YAML file storage.
+
+    This repository stores project files in a flat structure:
+
+    **File Organization:**
+    - All projects stored in `.roadmap/projects/`
+    - Each project is one markdown file
+    - No subdirectories
+    - Archived projects → `.roadmap/archive/projects/`
+
+    **Update Behavior:**
+    - Updates do NOT move files
+    - All updates saved to same file location
+    - No stale file cleanup needed (flat structure)
+
+    **Note:** Projects are distinct from issues and milestones. They can reference
+    milestones but don't affect the issue file organization.
+    """
 
     def __init__(self, db: StateManager, projects_dir: Path):
         """Initialize project repository.

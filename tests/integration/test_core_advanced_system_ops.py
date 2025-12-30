@@ -1,5 +1,6 @@
 """Additional comprehensive tests for core roadmap functionality - targeting remaining uncovered areas."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -297,8 +298,8 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         assert issue1.filename != issue2.filename
         assert issue1.id != issue2.id
 
-        # Both files should exist
-        file1 = core.issues_dir / issue1.filename
-        file2 = core.issues_dir / issue2.filename
+        # Both files should exist at their file_path locations
+        file1 = Path(issue1.file_path)
+        file2 = Path(issue2.file_path)
         assert file1.exists()
         assert file2.exists()

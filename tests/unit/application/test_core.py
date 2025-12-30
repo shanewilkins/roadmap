@@ -125,8 +125,8 @@ class TestRoadmapCore:
         assert issue.labels == ["bug", "urgent"]
         assert len(issue.id) == 8  # UUID prefix
 
-        # Check file was created
-        issue_file = core.issues_dir / issue.filename
+        # Check file was created in the milestone directory
+        issue_file = core.issues_dir / "v1.0" / issue.filename
         assert issue_file.exists()
 
     def test_list_issues_empty(self, core):
@@ -229,7 +229,8 @@ class TestRoadmapCore:
         core.initialize()
 
         issue = core.issues.create("Test Issue")
-        issue_file = core.issues_dir / issue.filename
+        # Issues without milestone go to backlog
+        issue_file = core.issues_dir / "backlog" / issue.filename
 
         assert issue_file.exists()
 

@@ -3,9 +3,7 @@
 This command is syntactic sugar for: roadmap issue update <ID> --status closed
 """
 
-import shutil
 from datetime import datetime
-from pathlib import Path
 
 import click
 
@@ -111,33 +109,6 @@ def close_issue(
             updated_issue = core.issues.update(issue_id, **update_kwargs)
 
         if updated_issue:
-            # Move issue file to archive directory
-            try:
-                # Build source and target paths
-                issues_dir = Path(".roadmap/issues").resolve()
-                archive_dir = Path(".roadmap/archive/issues/closed").resolve()
-
-                # Create archive directory if it doesn't exist
-                archive_dir.mkdir(parents=True, exist_ok=True)
-
-                # Find the issue file in the backlog (or issues root if flat structure)
-                issue_filename = updated_issue.filename
-                source_path = issues_dir / "backlog" / issue_filename
-
-                # If not in backlog, check if it's in issues root
-                if not source_path.exists():
-                    source_path = issues_dir / issue_filename
-
-                # Move to archive if file exists
-                if source_path.exists():
-                    target_path = archive_dir / issue_filename
-                    shutil.move(str(source_path), str(target_path))
-            except Exception as archive_error:
-                # Log archive error but don't fail the operation
-                console.print(
-                    f"⚠️  Warning: Could not move issue file to archive: {archive_error}",
-                    style="yellow",
-                )
             # Build extra details
             extra_details = {
                 "Status": "Closed",

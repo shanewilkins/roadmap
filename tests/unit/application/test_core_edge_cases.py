@@ -1,6 +1,7 @@
 """Tests for core edge cases and error handling."""
 
 import os
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -237,7 +238,8 @@ This issue is missing the title field.
 
         # Create an issue
         issue = initialized_core.issues.create("Test Issue")
-        issue_file = initialized_core.issues_dir / issue.filename
+        # Use the actual file_path from the issue, not issue.filename
+        issue_file = Path(issue.file_path)
 
         try:
             # Make the file read-only

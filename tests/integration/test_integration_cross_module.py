@@ -72,7 +72,8 @@ class TestCrossModuleIntegration:
         # Verify files exist in the expected structure
         assert os.path.exists(".roadmap")
         assert os.path.exists(".roadmap/issues")
-        issue_files = list(Path(".roadmap/issues").glob("*.md"))
+        # Use recursive glob to find issue files in subdirectories (backlog, milestone dirs, etc.)
+        issue_files = list(Path(".roadmap/issues").glob("**/*.md"))
         assert len(issue_files) == 1
 
     def test_cli_core_parser_integration(self, temp_workspace):

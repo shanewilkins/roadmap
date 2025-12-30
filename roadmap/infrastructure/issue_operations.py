@@ -148,21 +148,34 @@ class IssueOperations:
         Returns:
             Updated Issue object if found, None otherwise
         """
-        params = IssueUpdateServiceParams(
-            issue_id=issue_id,
-            title=updates.get("title"),
-            priority=updates.get("priority").value
-            if isinstance(updates.get("priority"), Priority)
-            else updates.get("priority"),
-            status=updates.get("status").value
-            if isinstance(updates.get("status"), Status)
-            else updates.get("status"),
-            assignee=updates.get("assignee"),
-            milestone=updates.get("milestone"),
-            description=updates.get("description"),
-            estimate=updates.get("estimate"),
-            reason=updates.get("reason"),
-        )
+
+        # Build params, only including fields that were explicitly provided
+        params_dict = {"issue_id": issue_id}
+
+        if "title" in updates:
+            params_dict["title"] = updates["title"]
+        if "priority" in updates:
+            priority = updates["priority"]
+            params_dict["priority"] = (
+                priority.value if isinstance(priority, Priority) else priority
+            )
+        if "status" in updates:
+            status = updates["status"]
+            params_dict["status"] = (
+                status.value if isinstance(status, Status) else status
+            )
+        if "assignee" in updates:
+            params_dict["assignee"] = updates["assignee"]
+        if "milestone" in updates:
+            params_dict["milestone"] = updates["milestone"]  # Can be None!
+        if "description" in updates:
+            params_dict["description"] = updates["description"]
+        if "estimate" in updates:
+            params_dict["estimate"] = updates["estimate"]
+        if "reason" in updates:
+            params_dict["reason"] = updates["reason"]
+
+        params = IssueUpdateServiceParams(**params_dict)
         result = self.issue_service.update_issue(params)
 
         # Apply any additional fields that weren't in the service params
@@ -186,10 +199,16 @@ class IssueOperations:
                 if field not in handled_fields and hasattr(result, field):
                     setattr(result, field, value)
 
-            # Save the updated issue
-            if result.file_path:
+            # Only save additional fields if milestone wasn't updated
+            # (milestone updates are handled by the repository's save() method)
+            if result.file_path and "milestone" not in updates:
                 issue_path = Path(result.file_path)
                 IssueParser.save_issue_file(result, issue_path)
+            elif "milestone" in updates and result.file_path:
+                # If milestone was updated, still need to save any additional fields
+                # The repository should have updated the file path, but if it didn't
+                # we need to handle that case
+                pass
 
         # Invalidate milestone cache after update
         if result is not None:
@@ -237,19 +256,8 @@ class IssueOperations:
         if not milestone_file.exists():
             return False
 
-        # Set the milestone
-        issue.milestone = milestone_name
-        issue.updated = now_utc()
-
-        # Use the file_path if available (preserves original location)
-        if hasattr(issue, "file_path") and issue.file_path:
-            issue_path = Path(issue.file_path)
-        else:
-            issue_path = self.issues_dir / issue.filename
-
-        IssueParser.save_issue_file(issue, issue_path)
-
-        return True
+        # Use the repository's update method which handles file movement correctly
+        return self.update_issue(issue_id, milestone=milestone_name) is not None
 
     def get_backlog_issues(self) -> list[Issue]:
         """Get all issues not assigned to any milestone (backlog).
@@ -333,18 +341,13 @@ class IssueOperations:
             if not milestone_file.exists():
                 return False
 
-        # Update issue milestone
-        issue.milestone = milestone_name
-        issue.updated = now_utc()
-
-        # Save updated issue
-        issue_path = self.issues_dir / issue.filename
-        IssueParser.save_issue_file(issue, issue_path)
+        # Update issue milestone using the repository method which handles file movement
+        updated_issue = self.update_issue(issue_id, milestone=milestone_name)
 
         # Invalidate milestone cache after moving
         self._milestone_cache.clear()
 
-        return True
+        return updated_issue is not None
 
     def batch_assign_to_milestone(
         self,

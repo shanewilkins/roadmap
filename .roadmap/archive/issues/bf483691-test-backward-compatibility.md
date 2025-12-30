@@ -2,13 +2,13 @@
 id: bf483691
 title: Test backward compatibility
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: backlog
 labels: []
 github_issue: 27
 created: '2025-10-12T11:36:21.441984+00:00'
-updated: '2025-11-16T13:41:23.305564'
+updated: '2025-12-30T16:45:32.746246+00:00'
 assignee: ''
 estimated_hours: null
 due_date: null
@@ -23,6 +23,7 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: null
+comments: []
 ---
 
 # Test backward compatibility

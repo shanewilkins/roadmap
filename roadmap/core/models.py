@@ -14,6 +14,17 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 
+# Sentinel value to distinguish "not provided" from "None"
+class _NotProvided:
+    """Sentinel value indicating a field was not provided in an update."""
+
+    def __repr__(self):
+        return "<NOT_PROVIDED>"
+
+
+NOT_PROVIDED = _NotProvided()
+
+
 @dataclass
 class IssueCreateServiceParams:
     """Parameters for creating an issue (service layer)."""
@@ -36,14 +47,14 @@ class IssueUpdateServiceParams:
     """Parameters for updating an issue (service layer)."""
 
     issue_id: str
-    title: str | None = None
-    priority: str | None = None
-    status: str | None = None
-    assignee: str | None = None
-    milestone: str | None = None
-    description: str | None = None
-    estimate: float | None = None
-    reason: str | None = None
+    title: str | None | _NotProvided = NOT_PROVIDED
+    priority: str | None | _NotProvided = NOT_PROVIDED
+    status: str | None | _NotProvided = NOT_PROVIDED
+    assignee: str | None | _NotProvided = NOT_PROVIDED
+    milestone: str | None | _NotProvided = NOT_PROVIDED
+    description: str | None | _NotProvided = NOT_PROVIDED
+    estimate: float | None | _NotProvided = NOT_PROVIDED
+    reason: str | None | _NotProvided = NOT_PROVIDED
 
 
 @dataclass
