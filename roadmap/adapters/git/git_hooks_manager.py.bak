@@ -1,5 +1,7 @@
 """Git hook installation and management for roadmap integration."""
 
+import json
+import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -10,8 +12,6 @@ from roadmap.core.domain import MilestoneStatus, Status
 from roadmap.infrastructure.core import RoadmapCore
 
 from .git import GitCommit, GitIntegration
-from .hook_installer import HookInstaller
-from .hook_registry import HookRegistry, HookStatus
 
 
 class GitHookManager:
@@ -23,7 +23,6 @@ class GitHookManager:
         self.hooks_dir = (
             Path(".git/hooks") if self.git_integration.is_git_repository() else None
         )
-        self.hook_installer = HookInstaller(self.hooks_dir)
 
     def install_hooks(self, hooks: list[str] | None = None) -> bool:
         """Install roadmap Git hooks.
@@ -34,18 +33,40 @@ class GitHookManager:
         Returns:
             True if hooks were installed successfully.
         """
-        return self.hook_installer.install(hooks)
+        if not self.hooks_dir or not self.hooks_dir.exists():
+            return False
 
-    def uninstall_hooks(self, hooks: list[str] | None = None) -> bool:
-        """Remove roadmap Git hooks.
+        available_hooks = ["post-commit", "pre-push", "post-merge", "post-checkout"]
 
-        Args:
-            hooks: List of hook names to uninstall. If None, uninstalls all.
+        hooks_to_install = hooks or available_hooks
 
-        Returns:
-            True if hooks were uninstalled successfully.
-        """
-        return self.hook_installer.uninstall(hooks)
+        try:
+            for hook_name in hooks_to_install:
+                if hook_name in available_hooks:
+                    self._install_hook(hook_name)
+            return True
+        except Exception as e:
+            print(f"Error installing hooks: {e}")
+            return False
+
+    def uninstall_hooks(self) -> bool:
+        """Remove all roadmap Git hooks."""
+        if not self.hooks_dir:
+            return False
+
+        hook_names = ["post-commit", "pre-push", "post-merge", "post-checkout"]
+
+        try:
+            for hook_name in hook_names:
+                hook_file = self.hooks_dir / hook_name
+                if hook_file.exists():
+                    # Check if it's our hook before removing
+                    content = hook_file.read_text()
+                    if "roadmap-hook" in content:
+                        hook_file.unlink()
+            return True
+        except Exception:
+            return False
 
     def get_hooks_status(self) -> dict[str, dict[str, Any]]:
         """Get the status of all installed roadmap hooks.
@@ -56,27 +77,101 @@ class GitHookManager:
         if not self.hooks_dir or not self.hooks_dir.exists():
             return {}
 
+        hook_names = ["post-commit", "pre-push", "post-merge", "post-checkout"]
         status = {}
-        for hook_name in HookRegistry.get_available_hooks():
+
+        for hook_name in hook_names:
             hook_file = self.hooks_dir / hook_name
-            status[hook_name] = HookStatus.get_status_dict(hook_name, hook_file)
+            hook_status = {
+                "installed": False,
+                "is_roadmap_hook": False,
+                "executable": False,
+                "file_exists": hook_file.exists(),
+                "file_path": str(hook_file) if hook_file.exists() else None,
+            }
+
+            if hook_file.exists():
+                hook_status["installed"] = True
+                try:
+                    content = hook_file.read_text()
+                    hook_status["is_roadmap_hook"] = "roadmap-hook" in content
+                    hook_status["executable"] = bool(hook_file.stat().st_mode & 0o111)
+                except Exception:
+                    pass
+
+            status[hook_name] = hook_status
 
         return status
 
-    def get_hook_config(self) -> dict[str, Any]:
+    def get_hook_config(self) -> dict[str, Any] | None:
         """Get the current hook configuration.
 
         Returns:
-            Dictionary with hook configuration settings.
+            Dictionary with hook configuration settings or None if not available.
         """
-        return {
+        config = {
             "hooks_directory": str(self.hooks_dir) if self.hooks_dir else None,
             "repository_root": str(Path.cwd()),
             "git_repository": self.git_integration.is_git_repository(),
-            "available_hooks": HookRegistry.get_available_hooks(),
+            "available_hooks": [
+                "post-commit",
+                "pre-push",
+                "post-merge",
+                "post-checkout",
+            ],
             "core_initialized": self.core is not None,
-            "hooks_status": self.get_hooks_status(),
         }
+
+        # Add status for each hook
+        config["hooks_status"] = self.get_hooks_status()
+
+        return config
+
+    def _install_hook(self, hook_name: str):
+        """Install a specific Git hook."""
+        if self.hooks_dir is None:
+            return False
+        hook_file = self.hooks_dir / hook_name
+
+        # Create hook script content
+        hook_content = self._get_hook_content(hook_name)
+
+        # Write hook file
+        hook_file.write_text(hook_content)
+        hook_file.chmod(0o755)  # Make executable
+
+    def _get_hook_content(self, hook_name: str) -> str:
+        """Get the content for a specific hook."""
+        python_exec = shutil.which("python") or shutil.which("python3")
+        handler_name = hook_name.replace("-", "_")
+
+        base_script = f"""#!/bin/bash
+# roadmap-hook: {hook_name}
+# Auto-generated Git hook for roadmap integration
+
+# Get the directory of this script
+HOOK_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+REPO_ROOT="$(cd "$HOOK_DIR/../.." && pwd)"
+
+# Change to repository root
+cd "$REPO_ROOT"
+
+# Execute roadmap hook handler
+{python_exec} << 'PYTHON_HOOK_EOF'
+import sys
+sys.path.insert(0, '.')
+try:
+    from roadmap.adapters.git.git_hooks_manager import GitHookManager
+    from roadmap.infrastructure.core import RoadmapCore
+    core = RoadmapCore()
+    hook_manager = GitHookManager(core)
+    getattr(hook_manager, "{handler_name}")()
+except Exception as e:
+    # Silent fail to avoid breaking Git operations
+    pass
+PYTHON_HOOK_EOF
+"""
+        return base_script
 
     def handle_post_commit(self):
         """Handle post-commit hook - log commit info and trigger auto-sync.
@@ -94,7 +189,16 @@ class GitHookManager:
                 return
 
             # Log the commit for basic tracking
-            self._log_hook_activity("Commit", latest_commit_sha[:7])
+            log_file = Path(".git/roadmap-hooks.log")
+            timestamp = datetime.now().isoformat()
+            log_entry = f"{timestamp} - Commit: {latest_commit_sha[:7]}\n"
+
+            # Append to log file if it exists
+            try:
+                with open(log_file, "a") as f:
+                    f.write(log_entry)
+            except Exception:
+                pass  # Silent fail for logging
 
             # Trigger auto-sync if enabled
             self._trigger_auto_sync_on_commit(latest_commit_sha)
@@ -122,7 +226,15 @@ class GitHookManager:
                 return
 
             # Log the branch checkout for basic tracking
-            self._log_hook_activity("Checkout", branch_name)
+            log_file = Path(".git/roadmap-hooks.log")
+            timestamp = datetime.now().isoformat()
+            log_entry = f"{timestamp} - Checkout: {branch_name}\n"
+
+            try:
+                with open(log_file, "a") as f:
+                    f.write(log_entry)
+            except Exception:
+                pass  # Silent fail for logging
 
             # Trigger auto-sync if enabled
             self._trigger_auto_sync_on_checkout(branch_name)
@@ -150,7 +262,15 @@ class GitHookManager:
                 return
 
             # Log the push for basic tracking
-            self._log_hook_activity("Push", current_branch)
+            log_file = Path(".git/roadmap-hooks.log")
+            timestamp = datetime.now().isoformat()
+            log_entry = f"{timestamp} - Push: {current_branch}\n"
+
+            try:
+                with open(log_file, "a") as f:
+                    f.write(log_entry)
+            except Exception:
+                pass  # Silent fail for logging
 
             # Note: We don't auto-sync on pre-push to avoid blocking the push
             # Users can manually sync before pushing if desired
@@ -181,25 +301,8 @@ class GitHookManager:
         except Exception:
             pass
 
-    def _log_hook_activity(self, activity_type: str, activity_detail: str) -> None:
-        """Log hook activity to .git/roadmap-hooks.log.
-
-        Args:
-            activity_type: Type of activity (Commit, Checkout, Push, etc)
-            activity_detail: Details of the activity
-        """
-        try:
-            log_file = Path(".git/roadmap-hooks.log")
-            timestamp = datetime.now().isoformat()
-            log_entry = f"{timestamp} - {activity_type}: {activity_detail}\n"
-
-            with open(log_file, "a") as f:
-                f.write(log_entry)
-        except Exception:
-            pass  # Silent fail for logging
-
     def _update_issue_from_commit(
-        self, issue_id: str, commit: GitCommit, progress: float | None = None
+        self, issue_id: str, commit: GitCommit, progress: float | None
     ):
         """Update an issue based on commit information."""
         try:
@@ -364,6 +467,8 @@ class GitHookManager:
             commit_sha: Git commit SHA for logging
         """
         try:
+            from pathlib import Path
+
             from roadmap.core.services.git_hook_auto_sync_service import (
                 GitHookAutoSyncService,
             )
@@ -395,6 +500,8 @@ class GitHookManager:
             branch: Branch name for logging
         """
         try:
+            from pathlib import Path
+
             from roadmap.core.services.git_hook_auto_sync_service import (
                 GitHookAutoSyncService,
             )
@@ -426,6 +533,8 @@ class GitHookManager:
             commit_sha: Merge commit SHA for logging
         """
         try:
+            from pathlib import Path
+
             from roadmap.core.services.git_hook_auto_sync_service import (
                 GitHookAutoSyncService,
             )
@@ -448,4 +557,18 @@ class GitHookManager:
 
         except Exception:
             # Silent fail to avoid breaking Git operations
+            pass
+
+    def _set_branch_context(self, branch_name: str, issue_id: str):
+        """Set branch context for CLI commands."""
+        try:
+            context_file = Path(".roadmap_branch_context.json")
+            context = {
+                "branch": branch_name,
+                "issue_id": issue_id,
+                "timestamp": datetime.now().isoformat(),
+            }
+            context_file.write_text(json.dumps(context, indent=2))
+
+        except Exception:
             pass

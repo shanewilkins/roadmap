@@ -26,6 +26,7 @@ from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.project import Project
 from roadmap.core.repositories import ProjectRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -45,6 +46,7 @@ class ProjectService:
         self.repository = repository
         self.milestones_dir = milestones_dir
 
+    @traced("list_projects")
     def list_projects(self) -> list[Project]:
         """List all projects.
 
@@ -68,6 +70,7 @@ class ProjectService:
 
         return projects
 
+    @traced("get_project")
     def get_project(self, project_id: str) -> Project | None:
         """Get a specific project by ID.
 
@@ -126,6 +129,7 @@ class ProjectService:
         return True
 
     @safe_operation(OperationType.CREATE, "Project", include_traceback=True)
+    @traced("create_project")
     def create_project(
         self,
         name: str,
@@ -179,6 +183,7 @@ class ProjectService:
         return project
 
     @safe_operation(OperationType.UPDATE, "Project")
+    @traced("update_project")
     def update_project(self, project_id: str, **updates) -> Project | None:
         """Update a project.
 

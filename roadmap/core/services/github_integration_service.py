@@ -18,6 +18,7 @@ from roadmap.common.errors import (
 from roadmap.common.errors.error_standards import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.infrastructure.security.credentials import get_credential_manager
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -38,6 +39,7 @@ class GitHubIntegrationService:
         self._cache_timestamp: datetime | None = None
         self._last_canonical_assignee: str | None = None
 
+    @traced("get_github_config")
     @safe_operation(OperationType.READ, "GitHubAPI", retryable=True)
     def get_github_config(self) -> tuple[str | None, str | None, str | None]:
         """Get GitHub configuration from config file and credentials.
@@ -76,6 +78,7 @@ class GitHubIntegrationService:
             return None, None, None
 
     @safe_operation(OperationType.READ, "GitHubAPI", retryable=True)
+    @traced("get_team_members")
     def get_team_members(self) -> list[str]:
         """Get team members from GitHub repository.
 
@@ -100,6 +103,7 @@ class GitHubIntegrationService:
             return []
 
     @safe_operation(OperationType.READ, "GitHubUser", retryable=True)
+    @traced("get_current_user")
     def get_current_user(self, config_file: Path | None = None) -> str | None:
         """Get the current user from config.
 
@@ -151,6 +155,7 @@ class GitHubIntegrationService:
         return team_members
 
     @safe_operation(OperationType.READ, "Assignee", retryable=True)
+    @traced("validate_assignee")
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:
         """Validate an assignee using the identity management system.
 
@@ -278,6 +283,7 @@ class GitHubIntegrationService:
             logger.warning("assignee_validation_unavailable", error=str(fallback_error))
             return True, warning_msg
 
+    @traced("get_canonical_assignee")
     def get_canonical_assignee(self, assignee: str) -> str:
         """Get the canonical form of an assignee name.
 

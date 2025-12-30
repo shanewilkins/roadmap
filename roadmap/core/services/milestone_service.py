@@ -25,6 +25,7 @@ from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.repositories import IssueRepository, MilestoneRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -53,6 +54,7 @@ class MilestoneService:
         self.milestones_dir = milestones_dir
 
     @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
+    @traced("create_milestone")
     def create_milestone(
         self,
         name: str,
@@ -105,6 +107,7 @@ class MilestoneService:
         log_exit("create_milestone", milestone_name=milestone.name)
         return milestone
 
+    @traced("list_milestones")
     def list_milestones(self, status: MilestoneStatus | None = None) -> list[Milestone]:
         """List all milestones with optional status filter.
 
@@ -136,6 +139,7 @@ class MilestoneService:
         log_exit("list_milestones", milestone_count=len(milestones))
         return milestones
 
+    @traced("get_milestone")
     def get_milestone(self, name: str) -> Milestone | None:
         """Get a specific milestone by name.
 
@@ -157,6 +161,7 @@ class MilestoneService:
         return milestone
 
     @safe_operation(OperationType.UPDATE, "Milestone")
+    @traced("update_milestone")
     def update_milestone(
         self,
         name: str,
@@ -230,6 +235,7 @@ class MilestoneService:
         return milestone
 
     @safe_operation(OperationType.DELETE, "Milestone", include_traceback=True)
+    @traced("delete_milestone")
     def delete_milestone(self, name: str) -> bool:
         """Delete a milestone and unassign all issues from it.
 
@@ -294,6 +300,7 @@ class MilestoneService:
         log_exit("delete_milestone", success=False)
         return False
 
+    @traced("get_milestone_progress")
     def get_milestone_progress(self, milestone_name: str) -> dict[str, Any]:
         """Get progress statistics for a milestone.
 

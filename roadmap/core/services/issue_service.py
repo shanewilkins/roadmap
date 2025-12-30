@@ -20,6 +20,7 @@ from roadmap.common.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models import IssueCreateServiceParams, IssueUpdateServiceParams
 from roadmap.core.repositories import IssueRepository
+from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 
@@ -39,6 +40,7 @@ class IssueService:
         """
         self.repository = repository
 
+    @traced("create_issue")
     @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
     def create_issue(self, params: IssueCreateServiceParams) -> Issue:
         """Create a new issue with provided metadata.
@@ -202,6 +204,7 @@ class IssueService:
         issues.sort(key=lambda x: (priority_order.get(x.priority, 999), x.created))
         return issues
 
+    @traced("list_issues")
     def list_issues(
         self,
         milestone: str | None = None,
@@ -261,6 +264,7 @@ class IssueService:
         log_exit("list_issues", issue_count=len(sorted_issues))
         return sorted_issues
 
+    @traced("get_issue")
     def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID.
 
@@ -289,6 +293,7 @@ class IssueService:
         return issue
 
     @safe_operation(OperationType.UPDATE, "Issue")
+    @traced("update_issue")
     def update_issue(self, params: IssueUpdateServiceParams) -> Issue | None:
         """Update an existing issue with new field values.
 
@@ -388,6 +393,7 @@ class IssueService:
         return issue
 
     @safe_operation(OperationType.DELETE, "Issue", include_traceback=True)
+    @traced("delete_issue")
     def delete_issue(self, issue_id: str) -> bool:
         """Delete an issue.
 

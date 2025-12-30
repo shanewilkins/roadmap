@@ -1,22 +1,22 @@
 ---
-id: da7e9f68
-title: 'Phase 5: Health Fix Command'
-priority: high
+id: '23834865'
+title: Test assignee validation
+priority: low
 status: closed
-issue_type: feature
+issue_type: other
 milestone: backlog
 labels: []
-github_issue: null
-created: '2025-12-25T14:55:32.928132+00:00'
-updated: '2025-12-30T16:02:46.962889+00:00'
-assignee: shanewilkins
-estimated_hours: null
+github_issue: 33
+created: '2025-10-13T10:00:30.998967+00:00'
+updated: '2025-12-30T16:01:03.925863+00:00'
+assignee: ''
+estimated_hours: 2.0
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Phase 5: Health Fix Command
+# Test assignee validation
 
 ## Description
 
@@ -37,3 +37,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

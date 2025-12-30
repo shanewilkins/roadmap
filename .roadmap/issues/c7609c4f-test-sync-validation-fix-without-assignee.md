@@ -1,22 +1,22 @@
 ---
-id: da7e9f68
-title: 'Phase 5: Health Fix Command'
-priority: high
+id: c7609c4f
+title: Test sync validation fix without assignee
+priority: medium
 status: closed
-issue_type: feature
+issue_type: other
 milestone: backlog
 labels: []
-github_issue: null
-created: '2025-12-25T14:55:32.928132+00:00'
-updated: '2025-12-30T16:02:46.962889+00:00'
-assignee: shanewilkins
+github_issue: 37
+created: '2025-10-14T16:35:14.078582+00:00'
+updated: '2025-12-30T16:01:25.589332+00:00'
+assignee: ''
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Phase 5: Health Fix Command
+# Test sync validation fix without assignee
 
 ## Description
 
