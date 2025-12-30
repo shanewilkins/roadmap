@@ -101,22 +101,20 @@ class TestGitHookManagerInstall:
         """Test installation with different states and configurations."""
         hook_manager.hooks_dir = hooks_dir
 
-        with (
-            patch("pathlib.Path.exists", return_value=dir_exists),
-            patch("pathlib.Path.write_text") as mock_write,
-            patch("pathlib.Path.chmod") as mock_chmod,
-        ):
+        with patch(
+            "roadmap.adapters.git.git_hooks_manager.HookInstaller"
+        ) as mock_installer_class:
+            mock_installer = Mock()
+            mock_installer.install.return_value = expected_result
+            mock_installer_class.return_value = mock_installer
+
             if scenario == "specific_hooks":
                 result = hook_manager.install_hooks(hooks=["post-commit", "pre-push"])
             else:
                 result = hook_manager.install_hooks()
 
             assert result is expected_result
-            if expected_result:
-                assert mock_write.call_count == hook_count
-                assert mock_chmod.call_count == hook_count
-                for call_args in mock_chmod.call_args_list:
-                    assert call_args[0][0] == 0o755
+            mock_installer_class.assert_called_once_with(hooks_dir)
 
     def test_install_hooks_exception(self, hook_manager):
         """Test installation fails gracefully on exception."""

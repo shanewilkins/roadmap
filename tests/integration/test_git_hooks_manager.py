@@ -107,8 +107,9 @@ class TestGitHookManager:
         """Test hook script content generation."""
         _, core = temp_git_repo
 
-        hook_manager = GitHookManager(core)
-        content = hook_manager._get_hook_content("post-commit")
+        from roadmap.adapters.git.hook_script_generator import HookContentGenerator
+
+        content = HookContentGenerator.generate("post-commit")
 
         assert "#!/bin/bash" in content
         assert "roadmap-hook: post-commit" in content

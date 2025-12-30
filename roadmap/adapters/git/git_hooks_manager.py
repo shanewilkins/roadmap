@@ -23,7 +23,6 @@ class GitHookManager:
         self.hooks_dir = (
             Path(".git/hooks") if self.git_integration.is_git_repository() else None
         )
-        self.hook_installer = HookInstaller(self.hooks_dir)
 
     def install_hooks(self, hooks: list[str] | None = None) -> bool:
         """Install roadmap Git hooks.
@@ -34,7 +33,8 @@ class GitHookManager:
         Returns:
             True if hooks were installed successfully.
         """
-        return self.hook_installer.install(hooks)
+        installer = HookInstaller(self.hooks_dir)
+        return installer.install(hooks)
 
     def uninstall_hooks(self, hooks: list[str] | None = None) -> bool:
         """Remove roadmap Git hooks.
@@ -45,7 +45,8 @@ class GitHookManager:
         Returns:
             True if hooks were uninstalled successfully.
         """
-        return self.hook_installer.uninstall(hooks)
+        installer = HookInstaller(self.hooks_dir)
+        return installer.uninstall(hooks)
 
     def get_hooks_status(self) -> dict[str, dict[str, Any]]:
         """Get the status of all installed roadmap hooks.
