@@ -146,6 +146,8 @@ class TestEndToEndWorkflows:
         assert_command_success(result)
 
         # Verify assignments via database
+        # Clear the list cache to ensure we get fresh data after CLI operations
+        core.issues._ops.issue_service._list_issues_cache.clear()
         for issue in core.issues.list():
             assert issue.milestone is not None
 

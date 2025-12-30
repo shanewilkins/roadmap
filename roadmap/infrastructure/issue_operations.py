@@ -30,9 +30,8 @@ from roadmap.core.services import IssueService
 class IssueOperations:
     """Manager for issue-related operations."""
 
-    # Cache for get_issues_by_milestone results (TTL: 60 seconds)
-    _milestone_cache = SessionCache()
-    _cache_ttl = 60  # TTL in seconds
+    # Cache TTL in seconds
+    _cache_ttl = 60
 
     def __init__(self, issue_service: IssueService, issues_dir: Path):
         """Initialize issue operations manager.
@@ -43,6 +42,8 @@ class IssueOperations:
         """
         self.issue_service = issue_service
         self.issues_dir = issues_dir
+        # Cache for get_issues_by_milestone results (instance-level to avoid test pollution)
+        self._milestone_cache = SessionCache()
 
     def create_issue(
         self,
