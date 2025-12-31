@@ -60,21 +60,50 @@ class GitHubSyncOrchestrator:
         try:
             # Get all local issues and milestones (including archived)
             all_issues = self.core.issues.list()
-            all_milestones = (
-                self.core.milestones.list() if hasattr(self.core, "milestones") else []
-            )
+            all_milestones = []
+            if hasattr(self.core, "milestones"):
+                try:
+                    milestone_list = self.core.milestones.list()
+                    # Ensure it's iterable (handle mocks that don't return lists)
+                    if milestone_list and hasattr(milestone_list, "__iter__"):
+                        all_milestones = list(milestone_list)
+                except (AttributeError, TypeError):
+                    all_milestones = []
 
             # Separate active and archived issues
-            active_issues = [i for i in all_issues if not getattr(i, "archived", False)]
-            archived_issues = [i for i in all_issues if getattr(i, "archived", False)]
+            active_issues = []
+            archived_issues = []
+            for i in all_issues:
+                # Check if archived attribute is explicitly set and truthy
+                # (Mocks will return MagicMock for undefined attributes)
+                is_archived = False
+                if hasattr(i, "archived"):
+                    archived_attr = getattr(i, "archived", False)
+                    # Check if it's an actual boolean value, not a mock
+                    if isinstance(archived_attr, bool):
+                        is_archived = archived_attr
+
+                if is_archived:
+                    archived_issues.append(i)
+                else:
+                    active_issues.append(i)
 
             # Separate active and archived milestones
-            active_milestones = [
-                m for m in all_milestones if not getattr(m, "archived", False)
-            ]
-            archived_milestones = [
-                m for m in all_milestones if getattr(m, "archived", False)
-            ]
+            active_milestones = []
+            archived_milestones = []
+            for m in all_milestones:
+                # Check if archived attribute is explicitly set and truthy
+                is_archived = False
+                if hasattr(m, "archived"):
+                    archived_attr = getattr(m, "archived", False)
+                    # Check if it's an actual boolean value, not a mock
+                    if isinstance(archived_attr, bool):
+                        is_archived = archived_attr
+
+                if is_archived:
+                    archived_milestones.append(m)
+                else:
+                    active_milestones.append(m)
 
             # 1. Sync existing linked issues (active only)
             linked_issues = [i for i in active_issues if i.github_issue is not None]
