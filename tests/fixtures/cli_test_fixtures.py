@@ -72,7 +72,6 @@ def temp_roadmap_with_config(cli_runner):
   email: alice@team.com
 github:
   enabled: true
-  token_source: env
 """
         )
 
