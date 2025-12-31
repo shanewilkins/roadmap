@@ -134,18 +134,25 @@ def temp_workspace():
         old_cwd = Path.cwd()
         os.chdir(tmpdir)
 
-        # Initialize basic roadmap structure
-        roadmap_dir = Path(tmpdir) / ".roadmap"
-        roadmap_dir.mkdir(exist_ok=True)
-        (roadmap_dir / "issues").mkdir(exist_ok=True)
-        (roadmap_dir / "milestones").mkdir(exist_ok=True)
+        # Use the CLI runner to properly initialize the workspace
+        from click.testing import CliRunner
 
-        # Create basic config
-        config_file = roadmap_dir / "config.yaml"
-        config_file.write_text("""# Test Configuration
-project_name: "Test Project"
-version: "1.0.0"
-""")
+        from roadmap.adapters.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                "init",
+                "--project-name",
+                "Test Project",
+                "--non-interactive",
+                "--skip-github",
+            ],
+        )
+
+        if result.exit_code != 0:
+            raise RuntimeError(f"Failed to initialize temp_workspace: {result.output}")
 
         try:
             yield Path(tmpdir)
