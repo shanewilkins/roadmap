@@ -6,11 +6,11 @@ assignment filtering, and time-based calculations.
 """
 
 import re
-from pathlib import Path
 
 import pytest
 
 from roadmap.adapters.cli import main
+from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
 @pytest.fixture
@@ -18,39 +18,22 @@ def roadmap_with_multiple_milestones(cli_runner):
     """Create roadmap with multiple milestones and various issues.
 
     Yields:
-        tuple: (cli_runner, temp_dir_path)
+        tuple: (cli_runner, roadmap_core)
     """
     with cli_runner.isolated_filesystem():
-        temp_dir = Path.cwd()
-
-        # Initialize roadmap
-        result = cli_runner.invoke(
-            main,
-            [
-                "init",
-                "--project-name",
-                "Test Project",
-                "--non-interactive",
-                "--skip-github",
-            ],
-        )
-        assert result.exit_code == 0
+        core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create multiple milestones with different due dates
-        milestones = [
-            ("v0.9", "Past milestone"),  # Older
-            ("v1.0", "Current upcoming"),  # Next
-            ("v1.1", "Future milestone"),  # Later
-        ]
-
-        for name, desc in milestones:
-            result = cli_runner.invoke(
-                main,
-                ["milestone", "create", name, "--description", desc],
+        for name, desc in [
+            ("v0.9", "Past milestone"),
+            ("v1.0", "Current upcoming"),
+            ("v1.1", "Future milestone"),
+        ]:
+            IntegrationTestBase.create_milestone(
+                cli_runner, name=name, description=desc
             )
-            assert result.exit_code == 0
 
-        yield cli_runner, temp_dir
+        yield cli_runner, core
 
 
 @pytest.fixture
@@ -58,33 +41,16 @@ def roadmap_with_various_issues(cli_runner):
     """Create roadmap with issues at various priority and status levels.
 
     Yields:
-        tuple: (cli_runner, temp_dir_path)
+        tuple: (cli_runner, roadmap_core)
     """
     with cli_runner.isolated_filesystem():
-        temp_dir = Path.cwd()
-
-        # Initialize
-        result = cli_runner.invoke(
-            main,
-            [
-                "init",
-                "--project-name",
-                "Test Project",
-                "--non-interactive",
-                "--skip-github",
-            ],
-        )
-        assert result.exit_code == 0
+        core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create milestone
-        result = cli_runner.invoke(
-            main,
-            ["milestone", "create", "v1.0"],
-        )
-        assert result.exit_code == 0
+        IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
 
         # Create issues with various priorities and assignments
-        issues = [
+        for title, priority, assignee, issue_type in [
             ("In Progress Task", "high", "testuser", "feature"),
             ("Blocked Task", "high", "testuser", "feature"),
             ("Critical TODO", "critical", "testuser", "feature"),
@@ -92,27 +58,17 @@ def roadmap_with_various_issues(cli_runner):
             ("Medium Priority TODO", "medium", "testuser", "other"),
             ("Other User Task", "high", "otheruser", "feature"),
             ("Unassigned Task", "high", None, "feature"),
-        ]
+        ]:
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title=title,
+                issue_type=issue_type,
+                priority=priority,
+                milestone="v1.0",
+                assignee=assignee,
+            )
 
-        for title, priority, assignee, issue_type in issues:
-            cmd = [
-                "issue",
-                "create",
-                title,
-                "--type",
-                issue_type,
-                "--priority",
-                priority,
-                "--milestone",
-                "v1.0",
-            ]
-            if assignee:
-                cmd.extend(["--assignee", assignee])
-
-            result = cli_runner.invoke(main, cmd)
-            assert result.exit_code == 0
-
-        yield cli_runner, temp_dir
+        yield cli_runner, core
 
 
 class TestTodayCommandBasic:
@@ -128,7 +84,7 @@ class TestTodayCommandBasic:
 
     def test_today_command_runs_successfully(self, roadmap_with_various_issues):
         """Test that today command executes without errors."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -142,7 +98,7 @@ class TestTodayCommandBasic:
 
     def test_today_displays_milestone_info(self, roadmap_with_various_issues):
         """Test that today command displays milestone information."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -160,7 +116,7 @@ class TestTodayCommandFiltering:
 
     def test_today_filters_by_assignee(self, roadmap_with_various_issues):
         """Test that today shows assigned issues appropriately."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -174,23 +130,16 @@ class TestTodayCommandFiltering:
 
     def test_today_filters_by_milestone(self, roadmap_with_multiple_milestones):
         """Test that today shows only upcoming milestone issues."""
-        cli_runner, temp_dir = roadmap_with_multiple_milestones
+        cli_runner, core = roadmap_with_multiple_milestones
 
         # Create issue in each milestone assigned to testuser
         for milestone_name in ["v0.9", "v1.0", "v1.1"]:
-            result = cli_runner.invoke(
-                main,
-                [
-                    "issue",
-                    "create",
-                    f"Task in {milestone_name}",
-                    "--milestone",
-                    milestone_name,
-                    "--assignee",
-                    "testuser",
-                ],
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title=f"Task in {milestone_name}",
+                milestone=milestone_name,
+                assignee="testuser",
             )
-            assert result.exit_code == 0
 
         result = cli_runner.invoke(
             main,
@@ -205,7 +154,7 @@ class TestTodayCommandFiltering:
 
     def test_today_shows_in_progress_issues(self, roadmap_with_various_issues):
         """Test that today command handles in-progress issues."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -219,7 +168,7 @@ class TestTodayCommandFiltering:
 
     def test_today_shows_blocked_issues(self, roadmap_with_various_issues):
         """Test that blocked issues are identified."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -241,7 +190,7 @@ class TestTodayCommandPriorities:
 
     def test_today_emphasizes_high_priority(self, roadmap_with_various_issues):
         """Test that high priority tasks are highlighted."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -260,7 +209,7 @@ class TestTodayCommandPriorities:
 
     def test_today_categorizes_by_priority(self, roadmap_with_various_issues):
         """Test that issues are properly categorized by priority."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -278,7 +227,7 @@ class TestTodayCommandErrorHandling:
 
     def test_today_with_no_user_configured(self, roadmap_with_various_issues):
         """Test today command fails gracefully with no user."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         # Don't set ROADMAP_USER and no user in config
         result = cli_runner.invoke(main, ["today"])
@@ -320,7 +269,7 @@ class TestTodayCommandErrorHandling:
 
     def test_today_with_no_assigned_issues(self, roadmap_with_various_issues):
         """Test today command when user has no assigned issues."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -381,7 +330,7 @@ class TestTodayCommandVerboseMode:
 
     def test_today_verbose_flag(self, roadmap_with_various_issues):
         """Test that verbose flag is accepted."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -395,7 +344,7 @@ class TestTodayCommandVerboseMode:
 
     def test_today_verbose_produces_more_output(self, roadmap_with_various_issues):
         """Test that verbose mode may produce more detailed output."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         # Regular output
         result_normal = cli_runner.invoke(
@@ -422,7 +371,7 @@ class TestTodayCommandOutput:
 
     def test_today_shows_user_name(self, roadmap_with_various_issues):
         """Test that current user is shown in output."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -436,7 +385,7 @@ class TestTodayCommandOutput:
 
     def test_today_shows_numeric_summary(self, roadmap_with_various_issues):
         """Test that summary includes numeric information."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,
@@ -450,7 +399,7 @@ class TestTodayCommandOutput:
 
     def test_today_output_is_readable(self, roadmap_with_various_issues):
         """Test that output has reasonable formatting."""
-        cli_runner, temp_dir = roadmap_with_various_issues
+        cli_runner, core = roadmap_with_various_issues
 
         result = cli_runner.invoke(
             main,

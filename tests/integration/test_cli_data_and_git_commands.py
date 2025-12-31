@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.adapters.cli import main
+from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
 @pytest.fixture
@@ -17,26 +18,12 @@ def isolated_roadmap(cli_runner):
     """Create an isolated roadmap environment with initialized database.
 
     Yields:
-        tuple: (cli_runner, temp_dir_path)
+        tuple: (cli_runner, roadmap_core)
     """
     with cli_runner.isolated_filesystem():
-        temp_dir = Path.cwd()
+        core = IntegrationTestBase.init_roadmap(cli_runner)
 
-        # Initialize a roadmap in this directory
-        result = cli_runner.invoke(
-            main,
-            [
-                "init",
-                "--project-name",
-                "Test Project",
-                "--non-interactive",
-                "--skip-github",
-            ],
-        )
-
-        assert result.exit_code == 0, f"Init failed: {result.output}"
-
-        yield cli_runner, temp_dir
+        yield cli_runner, core
         # Cleanup happens here when context exits
 
 
@@ -45,57 +32,20 @@ def isolated_roadmap_with_issues(cli_runner):
     """Create an isolated roadmap with sample issues.
 
     Yields:
-        tuple: (cli_runner, temp_dir_path, created_issue_ids)
+        tuple: (cli_runner, roadmap_core)
     """
     with cli_runner.isolated_filesystem():
-        temp_dir = Path.cwd()
-
-        # Initialize a roadmap in this directory
-        result = cli_runner.invoke(
-            main,
-            [
-                "init",
-                "--project-name",
-                "Test Project",
-                "--non-interactive",
-                "--skip-github",
-            ],
-        )
-        assert result.exit_code == 0, f"Init failed: {result.output}"
+        core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create a few test issues
-        issues = [
-            {"title": "Fix bug in parser", "type": "bug", "priority": "high"},
-            {"title": "Add new feature", "type": "feature", "priority": "medium"},
-            {"title": "Update documentation", "type": "other", "priority": "low"},
-        ]
+        for title, priority in [
+            ("Fix bug in parser", "high"),
+            ("Add new feature", "medium"),
+            ("Update documentation", "low"),
+        ]:
+            IntegrationTestBase.create_issue(cli_runner, title=title, priority=priority)
 
-        created_ids = []
-        for issue in issues:
-            result = cli_runner.invoke(
-                main,
-                [
-                    "issue",
-                    "create",
-                    issue["title"],  # TITLE is positional argument
-                    "--type",
-                    issue["type"],
-                    "--priority",
-                    issue["priority"],
-                ],
-            )
-            if result.exit_code == 0:
-                # Parse the issue ID from the output
-                from tests.fixtures.click_testing import ClickTestHelper
-
-                try:
-                    issue_id = ClickTestHelper.extract_issue_id(result.output)
-                    created_ids.append(issue_id)
-                except ValueError:
-                    # If extraction fails, continue without the ID
-                    pass
-
-        yield cli_runner, temp_dir, created_ids
+        yield cli_runner, core
         # Cleanup happens here when context exits
 
 
@@ -112,9 +62,9 @@ class TestCLIDataExport:
     )
     def test_export_formats(self, isolated_roadmap_with_issues, format_type, extension):
         """Test exporting data in various formats."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+        cli_runner, core = isolated_roadmap_with_issues
 
-        output_file = temp_dir / f"export{extension}"
+        output_file = Path.cwd() / f"export{extension}"
         result = cli_runner.invoke(
             main,
             ["data", "export", "--format", format_type, "-o", str(output_file)],
@@ -128,7 +78,7 @@ class TestCLIDataExport:
 
     def test_export_without_output_file(self, isolated_roadmap_with_issues):
         """Test export outputs to stdout when no file specified."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+        cli_runner, core = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(
             main,
@@ -141,9 +91,9 @@ class TestCLIDataExport:
 
     def test_export_with_filter(self, isolated_roadmap_with_issues):
         """Test export with filter option."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+        cli_runner, core = isolated_roadmap_with_issues
 
-        output_file = temp_dir / "filtered.json"
+        output_file = Path.cwd() / "filtered.json"
         result = cli_runner.invoke(
             main,
             [
@@ -179,11 +129,12 @@ class TestCLIGitIntegration:
     @pytest.fixture
     def isolated_git_repo(self, isolated_roadmap_with_issues):
         """Create an isolated roadmap with git repo."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+        cli_runner, core = isolated_roadmap_with_issues
 
         # Initialize git repo
         import subprocess
 
+        temp_dir = Path.cwd()
         subprocess.run(["git", "init"], cwd=temp_dir, check=True, capture_output=True)
         subprocess.run(
             ["git", "config", "user.email", "test@example.com"],
@@ -222,7 +173,7 @@ class TestCLIGitIntegration:
 
     def test_git_status_without_repo(self, isolated_roadmap_with_issues):
         """Test git status without git repo."""
-        cli_runner, temp_dir, _issue_ids = isolated_roadmap_with_issues
+        cli_runner, core = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["git", "status"])
 

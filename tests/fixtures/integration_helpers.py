@@ -116,7 +116,12 @@ class IntegrationTestBase:
         cli_runner: CliRunner,
         title: str,
         description: str = "",
+        issue_type: str | None = None,
         priority: str | None = None,
+        labels: str | None = None,
+        estimate: float | None = None,
+        depends_on: list[str] | None = None,
+        blocks: list[str] | None = None,
         milestone: str | None = None,
         assignee: str | None = None,
     ) -> dict[str, Any]:
@@ -126,7 +131,12 @@ class IntegrationTestBase:
             cli_runner: Click CliRunner instance
             title: Issue title
             description: Optional description
+            issue_type: Optional issue type (feature, bug, other)
             priority: Optional priority (critical, high, medium, low)
+            labels: Optional labels (comma-separated)
+            estimate: Optional estimated hours
+            depends_on: Optional list of issue IDs this depends on
+            blocks: Optional list of issue IDs this blocks
             milestone: Optional milestone name
             assignee: Optional assignee
 
@@ -139,8 +149,20 @@ class IntegrationTestBase:
         cmd = ["issue", "create", title]
         if description:
             cmd.extend(["--description", description])
+        if issue_type:
+            cmd.extend(["--type", issue_type])
         if priority:
             cmd.extend(["--priority", priority])
+        if labels:
+            cmd.extend(["--labels", labels])
+        if estimate is not None:
+            cmd.extend(["--estimate", str(estimate)])
+        if depends_on:
+            for dep_id in depends_on:
+                cmd.extend(["--depends-on", dep_id])
+        if blocks:
+            for block_id in blocks:
+                cmd.extend(["--blocks", block_id])
         if milestone:
             cmd.extend(["--milestone", milestone])
         if assignee:
@@ -160,7 +182,12 @@ class IntegrationTestBase:
         return {
             "title": title,
             "description": description,
+            "issue_type": issue_type,
             "priority": priority,
+            "labels": labels,
+            "estimate": estimate,
+            "depends_on": depends_on,
+            "blocks": blocks,
             "milestone": milestone,
             "assignee": assignee,
         }
