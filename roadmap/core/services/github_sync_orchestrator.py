@@ -250,7 +250,7 @@ class GitHubSyncOrchestrator:
             return None
 
     def _apply_local_changes(self, change: IssueChange) -> None:
-        """Apply local changes to an issue from GitHub.
+        """Apply local changes to GitHub issue.
 
         Args:
             change: IssueChange with detected changes
@@ -260,35 +260,59 @@ class GitHubSyncOrchestrator:
 
         try:
             issue = self.core.issues.get(change.issue_id)
-            if not issue:
+            if not issue or not issue.github_issue:
                 return
 
-            # Apply status change
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                return
+
+            github_issue_number = (
+                int(issue.github_issue)
+                if isinstance(issue.github_issue, str)
+                else issue.github_issue
+            )
+
+            # Get GitHub handler for API operations
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.issues import IssueHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+            handler = IssueHandler(session, owner, repo)
+
+            # Prepare GitHub update
+            update_data = {}
+
+            # Apply status change to GitHub
             if "status" in change.local_changes:
                 new_status = change.local_changes["status"].split(" -> ")[1]
-                # Map string to Status enum
-                from roadmap.common.constants import Status
+                # Map local status to GitHub state (done -> closed, others -> open)
+                github_state = "closed" if new_status == "done" else "open"
+                update_data["state"] = github_state
 
-                try:
-                    issue.status = Status(new_status)
-                except (ValueError, KeyError):
-                    pass
-
-            # Apply title change
+            # Apply title change to GitHub
             if "title" in change.local_changes:
-                issue.title = change.local_changes["title"].split(" -> ")[1]
+                new_title = change.local_changes["title"].split(" -> ")[1]
+                update_data["title"] = new_title
 
-            # Apply description change
+            # Apply description/body change to GitHub
             if "description" in change.local_changes:
-                # Just mark as synced, actual content would be updated via GitHub client
-                pass
+                new_desc = change.local_changes["description"].split(" -> ")[1]
+                update_data["body"] = new_desc
 
-            # Persist the changes
-            self.core.issues.update(
-                issue_id=issue.id,
-                title=issue.title,
-                status=issue.status,
-            )
+            # Push changes to GitHub
+            if update_data:
+                handler.update_issue(github_issue_number, **update_data)
 
             # Record successful sync in metadata
             self.metadata_service.record_sync(
@@ -303,7 +327,7 @@ class GitHubSyncOrchestrator:
                     issue, success=False, error_message=str(e)
                 )
             # Log but don't fail entire sync
-            print(f"Failed to apply local changes to {change.issue_id}: {e}")
+            print(f"Failed to apply local changes to GitHub for {change.issue_id}: {e}")
 
     def _apply_github_changes(self, change: IssueChange) -> None:
         """Apply GitHub changes to local issue.
