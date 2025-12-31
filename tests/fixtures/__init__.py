@@ -30,6 +30,7 @@ from .github import (
     patch_github_integration,
     webhook_signature_creator,
 )
+from .integration_helpers import IntegrationTestBase
 from .io import (
     assert_output,
     clean_output,
@@ -110,4 +111,6 @@ __all__ = [
     "assert_file",
     "CLIAssertion",
     "FileAssertion",
+    # Integration test helpers
+    "IntegrationTestBase",
 ]

@@ -93,6 +93,77 @@ class CLIAssertion:
         """
         CLIAssertion.exit_code(result, expected_code, message or "Command should fail")
 
+    @staticmethod
+    def success_with_context(result: Any, context: str = "") -> None:
+        """Assert that command succeeded with detailed error context if it fails.
+
+        Provides comprehensive error information including output, exception,
+        and optional context to help debug test failures.
+
+        Args:
+            result: Click CliRunner result
+            context: Optional context description (e.g., "Issue creation", "Milestone update")
+
+        Raises:
+            AssertionError: If command failed, with detailed error information
+        """
+        if result.exit_code == 0:
+            return
+
+        error_msg = []
+        if context:
+            error_msg.append(f"Context: {context}")
+        error_msg.append(f"Exit code: {result.exit_code}")
+        error_msg.append(f"Output:\n{result.output}")
+        if result.exception:
+            import traceback
+
+            error_msg.append(f"Exception: {result.exception}")
+            error_msg.append(
+                f"Traceback:\n{''.join(traceback.format_exception(type(result.exception), result.exception, result.exception.__traceback__))}"
+            )
+
+        raise AssertionError("\n".join(error_msg))
+
+    @staticmethod
+    def exit_code_with_output(
+        result: Any, expected: int, show_output: bool = True, context: str = ""
+    ) -> None:
+        """Assert exit code with optional full output display.
+
+        Useful for debugging: if the assertion fails, you get complete output
+        and exception information.
+
+        Args:
+            result: Click CliRunner result
+            expected: Expected exit code
+            show_output: If True, include full output in error (default: True)
+            context: Optional context description
+
+        Raises:
+            AssertionError: If exit code doesn't match, with comprehensive context
+        """
+        if result.exit_code == expected:
+            return
+
+        error_msg = []
+        if context:
+            error_msg.append(f"Context: {context}")
+        error_msg.append(f"Expected exit code {expected}, got {result.exit_code}")
+        if show_output:
+            error_msg.append(f"Output:\n{result.output}")
+        if result.exception:
+            import traceback
+
+            error_msg.append(
+                f"Exception: {type(result.exception).__name__}: {result.exception}"
+            )
+            error_msg.append(
+                f"Traceback:\n{''.join(traceback.format_exception(type(result.exception), result.exception, result.exception.__traceback__))}"
+            )
+
+        raise AssertionError("\n".join(error_msg))
+
 
 class FileAssertion:
     """Helper class for making filesystem assertions in tests."""
