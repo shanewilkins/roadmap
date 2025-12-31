@@ -27,7 +27,16 @@ def _parse_project_metadata(file_path):
         import yaml
 
         yaml_content = content[3:yaml_end]
-        return yaml.safe_load(yaml_content)
+        metadata = yaml.safe_load(yaml_content)
+
+        # Add ID from frontmatter if present, or extract from filename
+        if metadata and not metadata.get("id"):
+            # Extract ID from filename (format: {id}-{name}.md)
+            filename_stem = file_path.stem
+            if "-" in filename_stem:
+                metadata["id"] = filename_stem.split("-", 1)[0]
+
+        return metadata
     except Exception:
         return None
 
@@ -137,7 +146,7 @@ def list_projects(
     owner: str | None,
     priority: str | None,
     overdue: bool,
-    verbose: bool,
+    verbose: bool,  # noqa: F841 - Used by @verbose_output decorator
 ):
     """List all projects with optional filtering.
 

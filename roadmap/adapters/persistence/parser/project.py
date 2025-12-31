@@ -19,9 +19,17 @@ class ProjectParser:
         """Parse a project file and return a Project instance."""
         frontmatter, content = FrontmatterParser.parse_file(file_path)
 
+        # Extract ID from frontmatter, or from filename if not present
+        project_id = frontmatter.get("id", "")
+        if not project_id:
+            # Extract ID from filename (format: {id}-{name}.md)
+            filename_stem = file_path.stem
+            if "-" in filename_stem:
+                project_id = filename_stem.split("-", 1)[0]
+
         # Convert frontmatter to Project model
         project = Project(
-            id=frontmatter.get("id", ""),
+            id=project_id,
             name=frontmatter.get("name", ""),
             description=frontmatter.get("description", ""),
             status=ProjectStatus(frontmatter.get("status", "planning")),
