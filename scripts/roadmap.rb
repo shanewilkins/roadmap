@@ -10,8 +10,8 @@
 class Roadmap < Formula
   desc "Enterprise-grade CLI tool for project roadmap management with GitHub integration"
   homepage "https://github.com/shanewilkins/roadmap"
-  url "https://files.pythonhosted.org/packages/source/r/roadmap/roadmap-1.0.0.tar.gz"
-  sha256 "PLACEHOLDER"  # Replace with actual SHA256 from PyPI release
+  url "https://files.pythonhosted.org/packages/source/r/roadmap_cli/roadmap_cli-1.0.0.tar.gz"
+  sha256 "1526652af159fce98b68fb45aa9eb2f48f52fdc174e26afdfbec36f8091eeab3"
   license "MIT"
 
   depends_on "python@3.12"
