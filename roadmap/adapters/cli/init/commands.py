@@ -430,6 +430,19 @@ def init(
         if not validation_ok:
             presenter.present_initialization_warning("Some validation checks failed")
 
+        # Show completion message with next steps
+        presenter.present_initialization_complete(created_new=should_create_structure)
+
+        # If we joined existing projects (not created), show them
+        if project_info and project_info.get("action") == "joined":
+            # Try to get all project names for the user's reference
+            all_projects = ProjectDetectionService.detect_existing_projects(
+                custom_core.projects_dir
+            )
+            if all_projects:
+                project_names = [p.get("name", "Unknown") for p in all_projects]
+                presenter.present_existing_projects_info(project_names)
+
     except Exception as e:
         log.error("init_failed", error=str(e))
         presenter.present_initialization_failed(str(e))

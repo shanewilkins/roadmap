@@ -233,3 +233,45 @@ class CoreInitializationPresenter:
     def present_success(self, message: str) -> None:
         """Show generic success message."""
         click.secho(f"✅ {message}", fg="green", bold=True)
+
+    def present_initialization_complete(self, created_new: bool) -> None:
+        """Show initialization completion with next steps.
+
+        Args:
+            created_new: Whether a new roadmap was created or existing was joined
+        """
+        click.echo()
+        if created_new:
+            click.secho("✅ Roadmap initialized successfully!", fg="green", bold=True)
+            click.echo("   📁 Data stored in: .roadmap/")
+        else:
+            click.secho("✅ Initialization complete!", fg="green", bold=True)
+
+        click.echo()
+        click.echo("Next steps:")
+        click.echo('   • roadmap issue create "Your first task"')
+        click.echo('   • roadmap milestone create "v1.0"')
+        click.echo("   • roadmap list")
+        click.echo()
+
+    def present_existing_projects_info(self, project_names: list) -> None:
+        """Show info about existing projects found.
+
+        Args:
+            project_names: List of project names that were found
+        """
+        click.echo()
+        if len(project_names) == 1:
+            click.secho(
+                f"ℹ️  Found existing project: {project_names[0]}",
+                fg="cyan",
+            )
+        else:
+            projects_str = ", ".join(project_names[:3])
+            if len(project_names) > 3:
+                projects_str += f", +{len(project_names) - 3} more"
+            click.secho(
+                f"ℹ️  Found {len(project_names)} projects: {projects_str}",
+                fg="cyan",
+            )
+        click.secho("   Run 'roadmap project list' to see all", fg="white")

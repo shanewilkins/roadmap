@@ -3,9 +3,7 @@
 import re
 from pathlib import Path
 
-# Backward compatibility: roadmap.cli -> roadmap.adapters.cli
-from roadmap.adapters import cli  # noqa: F401
-
+# Define version BEFORE importing cli modules (they import __version__ from here)
 # Read version from pyproject.toml to keep a single source of truth
 _pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
 if _pyproject_path.exists():
@@ -18,6 +16,9 @@ if _pyproject_path.exists():
             __version__ = "0.0.0"
 else:
     __version__ = "0.0.0"
+
+# Now import cli (which will import __version__ from this module)
+from roadmap.adapters import cli  # noqa: F401, E402
 
 # Legacy exports - use layer-specific imports instead
 # from roadmap.core.domain import Issue, Milestone
