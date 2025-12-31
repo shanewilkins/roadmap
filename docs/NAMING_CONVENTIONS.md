@@ -7,11 +7,11 @@ This document defines the naming conventions for milestones in the Roadmap proje
 ## Problem: Why Naming Conventions Matter
 
 The roadmap system stores:
-1. **Milestone display names** - Used by humans (e.g., "v.0.8.0", "Sprint 1")
-2. **Safe milestone filenames** - Used by the filesystem (e.g., "v080", "sprint-1")
+1. **Milestone display names** - Used by humans (e.g., "v0-8-0", "Sprint 1")
+2. **Safe milestone filenames** - Used by the filesystem (e.g., "v0-8-0", "sprint-1")
 
 **The Problem:** When display names don't follow a consistent pattern, they get converted to different safe names, causing:
-- Issues assigned to "v.0.8.0" but file is "v080.md" → **CLI lookup fails**
+- Issues assigned to "v.0.8.0" but file is "v0-8-0.md" → **CLI lookup fails**
 - Issues with "Future (Post-v1.0)" but folder is "future-post-v10" → **Mismatches**
 - Multiple display names for same version → **Confusion**
 
@@ -28,15 +28,15 @@ This means:
 
 ### 1. Version Releases
 
-**Pattern:** `v{major}{minor}{patch}` (no dots)
+**Pattern:** `v{major}-{minor}-{patch}` (hyphens, no ambiguity)
 
 **Examples:**
-- ✅ `v070` (for v0.7.0 release)
-- ✅ `v080` (for v0.8.0 release)
-- ✅ `v100` (for v1.0.0 release)
-- ✅ `v200` (for v2.0.0 release)
+- ✅ `v0-7-0` (for v0.7.0 release)
+- ✅ `v0-8-0` (for v0.8.0 release)
+- ✅ `v1-0-0` (for v1.0.0 release)
+- ✅ `v2-0-0` (for v2.0.0 release)
 
-**Why:** Filesystem names can't contain dots in this context. This is clear and unambiguous.
+**Why:** Hyphens are filesystem-safe and unambiguous. `v100` could mean v1.0.0 or v10.0, so we use `v1-0-0` instead.
 
 ### 2. Sprint-Based Development
 
@@ -105,10 +105,10 @@ This means:
 
 | Display Name | Should Be | Action |
 |---|---|---|
-| `v.0.7.0` | `v070` | Update issue metadata |
-| `v.0.8.0` | `v080` | Update issue metadata |
-| `v.0.9.0` | `v090` | Update issue metadata |
-| `v.1.0.0` | `v100` | Update issue metadata |
+| `v.0.7.0` | `v0-7-0` | Update issue metadata |
+| `v.0.8.0` | `v0-8-0` | Update issue metadata |
+| `v.0.9.0` | `v0-9-0` | Update issue metadata |
+| `v.1.0.0` | `v1-0-0` | Update issue metadata |
 | `Future (Post-v1.0)` | `future-post-v10` | Update issue metadata |
 | `Development` | `backlog` | Update issue metadata |
 | (empty string) | `backlog` | Update issue metadata |
@@ -143,12 +143,12 @@ When creating a new milestone, use the `roadmap milestone create` command. It wi
 
 Example:
 ```bash
-roadmap milestone create "v0.8.0" --description "Version 0.8.0 release"
+roadmap milestone create "v0-8-0" --description "Version 0.8.0 release"
 ```
 
 The system will:
-- Use `v0.8.0` as the display name
-- Create file as `v080.md`
+- Use `v0-8-0` as the display name
+- Create file as `v0-8-0.md`
 - Warn if names don't match these conventions
 
 ## Questions?
@@ -161,11 +161,11 @@ If you have questions about milestone naming, check:
 ## Current Compliant Milestones
 
 - ✅ `backlog` - Unscheduled work
-- ✅ `v070` - Version 0.7.0
-- ✅ `v080` - Version 0.8.0
-- ✅ `v090` - Version 0.9.0
-- ✅ `v100` - Version 1.0.0
-- ✅ `future-post-v10` - Future work beyond v1.0
+- ✅ `v0-7-0` - Version 0.7.0
+- ✅ `v0-8-0` - Version 0.8.0
+- ✅ `v0-9-0` - Version 0.9.0
+- ✅ `v1-0-0` - Version 1.0.0
+- ✅ `future-post-v1-0` - Future work beyond v1.0
 
 ---
 

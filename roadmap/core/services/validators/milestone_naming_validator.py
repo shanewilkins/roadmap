@@ -12,7 +12,7 @@ class MilestoneNamingValidator:
     - Allowed characters: alphanumeric, hyphens, underscores
     - Must start with alphanumeric
     - Recommended patterns:
-      - Versions: v0.7.0, v0.8.0, v1.0.0 (no conversion needed)
+      - Versions: v0-7-0, v0-8-0, v1-0-0 (hyphens, unambiguous)
       - Sprints: sprint-1, sprint-q1-2025
       - Phases: phase-1, phase-beta
       - Releases: release-dec-2025, release-2025-q1
@@ -20,7 +20,8 @@ class MilestoneNamingValidator:
     """
 
     # Pattern: alphanumeric, hyphens, underscores. Can contain dots only in version pattern
-    # Examples: v0.7.0, v080, sprint-1, phase-beta, backlog
+    # Examples: v0-7-0, sprint-1, phase-beta, backlog
+    # Note: v070, v080, v100 are deprecated due to ambiguity (v100 = v1.0.0 or v10.0?)
     VALID_PATTERN = re.compile(
         r"^[a-zA-Z0-9][a-zA-Z0-9._\-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$"
     )
@@ -91,7 +92,7 @@ class MilestoneNamingValidator:
                 "Milestone name must contain only alphanumeric characters, "
                 "hyphens, underscores, and dots. "
                 f"Got: '{name}'. "
-                "Examples: v0.7.0, sprint-1, phase-beta, backlog"
+                "Examples: v0-7-0, v1-0-0, sprint-1, phase-beta, backlog"
             )
 
         if "--" in name or "__" in name:

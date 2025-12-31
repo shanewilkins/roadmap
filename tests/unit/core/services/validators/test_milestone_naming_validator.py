@@ -16,10 +16,11 @@ class TestIsValidName:
     @pytest.mark.parametrize(
         "name,expected",
         [
-            # Valid version patterns
-            ("v070", True),
-            ("v080", True),
-            ("v100", True),
+            # Valid version patterns (hyphen-separated for unambiguity)
+            ("v0-7-0", True),
+            ("v0-8-0", True),
+            ("v1-0-0", True),
+            # Legacy dot patterns still valid but not recommended
             ("v0.7.0", True),
             ("v0.8.0", True),
             # Valid sprint patterns
@@ -35,7 +36,7 @@ class TestIsValidName:
             ("release-2025-q2", True),
             # Valid special collections
             ("backlog", True),
-            ("future-post-v10", True),
+            ("future-post-v1-0", True),
             ("experimental", True),
             # Single character
             ("a", True),
@@ -78,17 +79,21 @@ class TestGetSafeName:
     @pytest.mark.parametrize(
         "input_name,expected_safe",
         [
-            # Already safe names
-            ("v070", "v070"),
+            # Already safe names (new hyphenated pattern)
+            ("v0-7-0", "v0-7-0"),
+            ("v0-8-0", "v0-8-0"),
+            ("v1-0-0", "v1-0-0"),
             ("sprint-1", "sprint-1"),
             ("phase-beta", "phase-beta"),
+            # Legacy patterns with dots (still supported)
+            ("v0.7.0", "v0.7.0"),
             # Names with spaces (removed, not replaced)
             ("sprint 1", "sprint1"),
             ("release dec 2025", "releasedec2025"),
             # Mixed case (lowercased)
             ("Sprint-1", "sprint-1"),
             ("PHASE-BETA", "phase-beta"),
-            ("V070", "v070"),
+            ("V0-7-0", "v0-7-0"),
             # Names with special chars (removed)
             ("sprint#1", "sprint1"),
             ("phase@beta", "phasebeta"),
@@ -107,7 +112,7 @@ class TestValidateWithFeedback:
 
     def test_valid_version_name(self):
         """Test valid version milestone."""
-        valid, error = MilestoneNamingValidator.validate_with_feedback("v080")
+        valid, error = MilestoneNamingValidator.validate_with_feedback("v0-8-0")
         assert valid is True
         assert error is None
 
