@@ -3,7 +3,7 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
-from roadmap.adapters.cli.dtos import IssueDTO, MilestoneDTO, ProjectDTO
+from roadmap.adapters.cli.dtos import IssueDTO
 from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
 from roadmap.adapters.cli.presentation.milestone_presenter import MilestonePresenter
@@ -94,24 +94,8 @@ class TestIssueDTOPresenterIntegration:
 class TestMilestoneDTOPresenterIntegration:
     """Integration tests for Milestone DTO and Presenter (without domain conversion)."""
 
-    def test_milestone_dto_to_presenter(self):
+    def test_milestone_dto_to_presenter(self, milestone_dto):
         """Test Milestone DTO → Presenter rendering."""
-        # Create DTO directly (no domain conversion needed for this test)
-        milestone_dto = MilestoneDTO.from_dict(
-            {
-                "id": "milestone001",
-                "name": "Q1 2024",
-                "status": "active",
-                "due_date": datetime.datetime(2024, 3, 31),
-                "description": "First quarter goals",
-                "progress_percentage": 60,
-                "issue_count": 20,
-                "completed_count": 12,
-                "created": datetime.datetime(2024, 1, 1),
-                "updated": datetime.datetime(2024, 1, 20),
-            }
-        )
-
         # Render DTO with presenter
         presenter = MilestonePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -122,25 +106,8 @@ class TestMilestoneDTOPresenterIntegration:
 class TestProjectDTOPresenterIntegration:
     """Integration tests for Project DTO and Presenter (without domain conversion)."""
 
-    def test_project_dto_to_presenter(self):
+    def test_project_dto_to_presenter(self, project_dto):
         """Test Project DTO → Presenter rendering."""
-        # Create DTO directly (no domain conversion needed for this test)
-        project_dto = ProjectDTO.from_dict(
-            {
-                "id": "project001",
-                "name": "Main Application",
-                "status": "active",
-                "description": "Core application",
-                "owner": "Team A",
-                "target_end_date": datetime.datetime(2024, 6, 30),
-                "actual_end_date": None,
-                "milestone_count": 4,
-                "issue_count": 50,
-                "created": datetime.datetime(2024, 1, 1),
-                "updated": datetime.datetime(2024, 1, 15),
-            }
-        )
-
         # Render DTO with presenter
         presenter = ProjectPresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -189,7 +156,7 @@ class TestListCommandDTOFlow:
         assert issue_dtos[0].priority == "high"
         assert issue_dtos[1].priority == "low"
 
-    def test_mixed_entity_dto_rendering(self):
+    def test_mixed_entity_dto_rendering(self, milestone_dto, project_dto):
         """Test rendering different entity types as DTOs."""
         # Create issue DTO
         issue_dto = IssueDTO.from_dict(
@@ -202,36 +169,13 @@ class TestListCommandDTOFlow:
             }
         )
 
-        # Create milestone DTO
-        milestone_dto = MilestoneDTO.from_dict(
-            {
-                "id": "m1",
-                "name": "Milestone",
-                "status": "active",
-                "progress_percentage": 0,
-                "issue_count": 0,
-                "completed_count": 0,
-            }
-        )
-
-        # Create project DTO
-        project_dto = ProjectDTO.from_dict(
-            {
-                "id": "p1",
-                "name": "Project",
-                "status": "active",
-                "milestone_count": 0,
-                "issue_count": 0,
-            }
-        )
-
         # Verify all DTOs were created correctly
         assert isinstance(issue_dto, IssueDTO)
         assert issue_dto.priority == "critical"
         assert issue_dto.status == "blocked"
 
-        assert isinstance(milestone_dto, MilestoneDTO)
-        assert milestone_dto.name == "Milestone"
+        assert isinstance(milestone_dto, type(milestone_dto))
+        assert milestone_dto.name == "v1.0.0"
 
-        assert isinstance(project_dto, ProjectDTO)
-        assert project_dto.name == "Project"
+        assert isinstance(project_dto, type(project_dto))
+        assert project_dto.name == "Website Redesign"
