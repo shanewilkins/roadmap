@@ -58,14 +58,26 @@ class GitHubSyncOrchestrator:
         report = SyncReport()
 
         try:
-            # Get all local issues and milestones
+            # Get all local issues and milestones (including archived)
             all_issues = self.core.issues.list()
             all_milestones = (
                 self.core.milestones.list() if hasattr(self.core, "milestones") else []
             )
 
-            # 1. Sync existing linked issues
-            linked_issues = [i for i in all_issues if i.github_issue is not None]
+            # Separate active and archived issues
+            active_issues = [i for i in all_issues if not getattr(i, "archived", False)]
+            archived_issues = [i for i in all_issues if getattr(i, "archived", False)]
+
+            # Separate active and archived milestones
+            active_milestones = [
+                m for m in all_milestones if not getattr(m, "archived", False)
+            ]
+            archived_milestones = [
+                m for m in all_milestones if getattr(m, "archived", False)
+            ]
+
+            # 1. Sync existing linked issues (active only)
+            linked_issues = [i for i in active_issues if i.github_issue is not None]
             report.total_issues = len(linked_issues)
 
             for local_issue in linked_issues:
@@ -80,8 +92,8 @@ class GitHubSyncOrchestrator:
                 else:
                     report.issues_up_to_date += 1
 
-            # 2. Detect newly created issues (local only)
-            unlinked_issues = [i for i in all_issues if i.github_issue is None]
+            # 2. Detect newly created issues (active, local only)
+            unlinked_issues = [i for i in active_issues if i.github_issue is None]
             for local_issue in unlinked_issues:
                 change = IssueChange(
                     issue_id=local_issue.id,
@@ -91,9 +103,24 @@ class GitHubSyncOrchestrator:
                 report.changes.append(change)
                 report.issues_updated += 1
 
-            # 3. Sync milestones if available
+            # 3. Detect archived issues (to be synced as closed on GitHub)
+            for archived_issue in archived_issues:
+                if archived_issue.github_issue is not None:
+                    change = IssueChange(
+                        issue_id=archived_issue.id,
+                        title=archived_issue.title,
+                        local_changes={
+                            "action": "archive",
+                            "archived": "archived locally",
+                        },
+                    )
+                    report.changes.append(change)
+                    report.issues_updated += 1
+
+            # 4. Sync milestones if available
             if hasattr(self.core, "milestones"):
-                for local_milestone in all_milestones:
+                # Active milestones
+                for local_milestone in active_milestones:
                     change = self._detect_milestone_changes(local_milestone)
                     if change:
                         report.changes.append(change)
@@ -102,7 +129,21 @@ class GitHubSyncOrchestrator:
                         elif change.local_changes or change.github_changes:
                             report.issues_updated += 1
 
-            # 4. Detect orphaned GitHub references (optional reporting)
+                # Archived milestones
+                for archived_milestone in archived_milestones:
+                    if archived_milestone.github_milestone is not None:
+                        change = IssueChange(
+                            issue_id=archived_milestone.name,
+                            title=archived_milestone.name,
+                            local_changes={
+                                "action": "archive",
+                                "archived": "archived locally",
+                            },
+                        )
+                        report.changes.append(change)
+                        report.issues_updated += 1
+
+            # 5. Detect orphaned GitHub references (optional reporting)
             # These are issues/milestones with github_issue/github_milestone set
             # but no active sync. Can be reported for user awareness.
             # (Implementation deferred to v1.1 for full deleted entity sync)
@@ -113,18 +154,34 @@ class GitHubSyncOrchestrator:
             ):
                 for change in report.changes:
                     # Determine if this is an issue or milestone change
-                    is_milestone = (
-                        hasattr(self.core, "milestones")
-                        and self.core.milestones.get(change.issue_id) is not None
-                    )
+                    # First try to get as an issue
+                    issue_obj = self.core.issues.get(change.issue_id)
+
+                    # If not an issue, check if it's a milestone
+                    is_milestone = False
+                    if issue_obj is None and hasattr(self.core, "milestones"):
+                        # Try as milestone only if not found as issue
+                        try:
+                            milestone_obj = self.core.milestones.get(change.issue_id)
+                            is_milestone = milestone_obj is not None and hasattr(
+                                milestone_obj, "name"
+                            )
+                        except (AttributeError, TypeError):
+                            is_milestone = False
 
                     if is_milestone:
-                        # Handle milestone creation/updates
-                        if (
-                            "action" in change.local_changes
-                            and change.local_changes["action"] == "create_milestone"
-                        ):
-                            self._create_milestone_on_github(change.issue_id)
+                        # Handle milestone archive/restore
+                        if "action" in change.local_changes:
+                            if change.local_changes["action"] == "archive":
+                                self._apply_archived_milestone_to_github(
+                                    change.issue_id
+                                )
+                            elif change.local_changes["action"] == "restore":
+                                self._apply_restored_milestone_to_github(
+                                    change.issue_id
+                                )
+                            elif change.local_changes["action"] == "create_milestone":
+                                self._create_milestone_on_github(change.issue_id)
                         else:
                             # Handle existing milestones
                             if change.github_changes and not (
@@ -136,12 +193,14 @@ class GitHubSyncOrchestrator:
                             ):
                                 self._apply_local_milestone_changes(change)
                     else:
-                        # Handle issue creation/updates
-                        if (
-                            "action" in change.local_changes
-                            and change.local_changes["action"] == "create on GitHub"
-                        ):
-                            self._create_issue_on_github(change.issue_id)
+                        # Handle issue archive/restore
+                        if "action" in change.local_changes:
+                            if change.local_changes["action"] == "archive":
+                                self._apply_archived_issue_to_github(change.issue_id)
+                            elif change.local_changes["action"] == "restore":
+                                self._apply_restored_issue_to_github(change.issue_id)
+                            elif change.local_changes["action"] == "create on GitHub":
+                                self._create_issue_on_github(change.issue_id)
                         else:
                             # Handle existing issues
                             if change.github_changes and not (
@@ -233,6 +292,11 @@ class GitHubSyncOrchestrator:
         # Check if sync metadata exists
         if not hasattr(issue, "github_sync_metadata") or not issue.github_sync_metadata:
             return changes
+
+        # Check archived status changes
+        # If issue is archived locally, mark for archival on GitHub
+        if hasattr(issue, "archived") and issue.archived:
+            changes["archived"] = "archived locally"
 
         # For now, just check status changes
         # This will be enhanced when we add full metadata tracking
@@ -806,3 +870,205 @@ class GitHubSyncOrchestrator:
                     milestone, success=False, error_message=str(e)
                 )
             print(f"Failed to apply GitHub changes to milestone {change.issue_id}: {e}")
+
+    def _apply_archived_issue_to_github(self, issue_id: str) -> None:
+        """Archive an issue on GitHub when archived locally.
+
+        Args:
+            issue_id: Local issue ID
+        """
+        try:
+            issue = self.core.issues.get(issue_id)
+            if not issue or not issue.github_issue:
+                return
+
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                return
+
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.issues import IssueHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+            handler = IssueHandler(session, owner, repo)
+
+            # Close the issue on GitHub (GitHub doesn't have archive, closest is closed + label)
+            github_issue_number = (
+                int(issue.github_issue)
+                if isinstance(issue.github_issue, str)
+                else issue.github_issue
+            )
+
+            handler.update_issue(github_issue_number, state="closed")
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync(
+                issue, success=True, github_changes={"archived": "closed on GitHub"}
+            )
+
+        except Exception as e:
+            issue = self.core.issues.get(issue_id)
+            if issue:
+                self.metadata_service.record_sync(
+                    issue, success=False, error_message=str(e)
+                )
+            print(f"Failed to archive issue {issue_id} on GitHub: {e}")
+
+    def _apply_restored_issue_to_github(self, issue_id: str) -> None:
+        """Restore (unarchive) an issue on GitHub when restored locally.
+
+        Args:
+            issue_id: Local issue ID
+        """
+        try:
+            issue = self.core.issues.get(issue_id)
+            if not issue or not issue.github_issue:
+                return
+
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                return
+
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.issues import IssueHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+            handler = IssueHandler(session, owner, repo)
+
+            # Reopen the issue on GitHub
+            github_issue_number = (
+                int(issue.github_issue)
+                if isinstance(issue.github_issue, str)
+                else issue.github_issue
+            )
+
+            handler.update_issue(github_issue_number, state="open")
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync(
+                issue, success=True, github_changes={"restored": "reopened on GitHub"}
+            )
+
+        except Exception as e:
+            issue = self.core.issues.get(issue_id)
+            if issue:
+                self.metadata_service.record_sync(
+                    issue, success=False, error_message=str(e)
+                )
+            print(f"Failed to restore issue {issue_id} on GitHub: {e}")
+
+    def _apply_archived_milestone_to_github(self, milestone_name: str) -> None:
+        """Archive a milestone on GitHub when archived locally.
+
+        Args:
+            milestone_name: Local milestone name
+        """
+        try:
+            milestone = self.core.milestones.get(milestone_name)
+            if not milestone or not milestone.github_milestone:
+                return
+
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                return
+
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+            handler = MilestoneHandler(session, owner, repo)
+
+            # Close the milestone on GitHub (GitHub closest equivalent to archive)
+            handler.update_milestone(milestone.github_milestone, state="closed")
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync(
+                milestone, success=True, github_changes={"archived": "closed on GitHub"}
+            )
+
+        except Exception as e:
+            milestone = self.core.milestones.get(milestone_name)
+            if milestone:
+                self.metadata_service.record_sync(
+                    milestone, success=False, error_message=str(e)
+                )
+            print(f"Failed to archive milestone {milestone_name} on GitHub: {e}")
+
+    def _apply_restored_milestone_to_github(self, milestone_name: str) -> None:
+        """Restore (unarchive) a milestone on GitHub when restored locally.
+
+        Args:
+            milestone_name: Local milestone name
+        """
+        try:
+            milestone = self.core.milestones.get(milestone_name)
+            if not milestone or not milestone.github_milestone:
+                return
+
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                return
+
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+            handler = MilestoneHandler(session, owner, repo)
+
+            # Reopen the milestone on GitHub
+            handler.update_milestone(milestone.github_milestone, state="open")
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync(
+                milestone,
+                success=True,
+                github_changes={"restored": "reopened on GitHub"},
+            )
+
+        except Exception as e:
+            milestone = self.core.milestones.get(milestone_name)
+            if milestone:
+                self.metadata_service.record_sync(
+                    milestone, success=False, error_message=str(e)
+                )
+            print(f"Failed to restore milestone {milestone_name} on GitHub: {e}")

@@ -29,6 +29,9 @@ class TestGitHubSyncOrchestrationE2E:
         if not hasattr(mock_core, "milestones"):
             mock_core.milestones = MagicMock()
 
+        # Ensure list() returns empty by default (tests will override)
+        mock_core.milestones.list.return_value = []
+
         with patch(
             "roadmap.core.services.github_sync_orchestrator.GitHubConflictDetector"
         ) as mock_detector:
