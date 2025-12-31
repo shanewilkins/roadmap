@@ -33,6 +33,8 @@ from .cli_test_fixtures import (
 )
 from .click_testing import (
     cli_runner as click_cli_runner,
+)
+from .click_testing import (
     isolated_cli_runner,
 )
 from .data_factories import (
