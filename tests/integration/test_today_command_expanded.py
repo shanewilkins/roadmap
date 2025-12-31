@@ -7,68 +7,8 @@ assignment filtering, and time-based calculations.
 
 import re
 
-import pytest
-
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
-
-
-@pytest.fixture
-def roadmap_with_multiple_milestones(cli_runner):
-    """Create roadmap with multiple milestones and various issues.
-
-    Yields:
-        tuple: (cli_runner, roadmap_core)
-    """
-    with cli_runner.isolated_filesystem():
-        core = IntegrationTestBase.init_roadmap(cli_runner)
-
-        # Create multiple milestones with different due dates
-        for name, desc in [
-            ("v0.9", "Past milestone"),
-            ("v1.0", "Current upcoming"),
-            ("v1.1", "Future milestone"),
-        ]:
-            IntegrationTestBase.create_milestone(
-                cli_runner, name=name, description=desc
-            )
-
-        yield cli_runner, core
-
-
-@pytest.fixture
-def roadmap_with_various_issues(cli_runner):
-    """Create roadmap with issues at various priority and status levels.
-
-    Yields:
-        tuple: (cli_runner, roadmap_core)
-    """
-    with cli_runner.isolated_filesystem():
-        core = IntegrationTestBase.init_roadmap(cli_runner)
-
-        # Create milestone
-        IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
-
-        # Create issues with various priorities and assignments
-        for title, priority, assignee, issue_type in [
-            ("In Progress Task", "high", "testuser", "feature"),
-            ("Blocked Task", "high", "testuser", "feature"),
-            ("Critical TODO", "critical", "testuser", "feature"),
-            ("High Priority TODO", "high", "testuser", "bug"),
-            ("Medium Priority TODO", "medium", "testuser", "other"),
-            ("Other User Task", "high", "otheruser", "feature"),
-            ("Unassigned Task", "high", None, "feature"),
-        ]:
-            IntegrationTestBase.create_issue(
-                cli_runner,
-                title=title,
-                issue_type=issue_type,
-                priority=priority,
-                milestone="v1.0",
-                assignee=assignee,
-            )
-
-        yield cli_runner, core
 
 
 class TestTodayCommandBasic:
@@ -82,162 +22,277 @@ class TestTodayCommandBasic:
             assert result.exit_code != 0
             assert "not initialized" in result.output.lower()
 
-    def test_today_command_runs_successfully(self, roadmap_with_various_issues):
+    def test_today_command_runs_successfully(self, cli_runner):
         """Test that today command executes without errors."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            catch_exceptions=False,
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
 
-        assert result.exit_code == 0
-        assert result.output
+            # Create issues
+            for title, priority, assignee, issue_type in [
+                ("In Progress Task", "high", "testuser", "feature"),
+                ("Blocked Task", "high", "testuser", "feature"),
+                ("Critical TODO", "critical", "testuser", "feature"),
+                ("High Priority TODO", "high", "testuser", "bug"),
+                ("Medium Priority TODO", "medium", "testuser", "other"),
+                ("Other User Task", "high", "otheruser", "feature"),
+                ("Unassigned Task", "high", None, "feature"),
+            ]:
+                IntegrationTestBase.create_issue(
+                    cli_runner,
+                    title=title,
+                    issue_type=issue_type,
+                    priority=priority,
+                    milestone="v1.0",
+                    assignee=assignee,
+                )
 
-    def test_today_displays_milestone_info(self, roadmap_with_various_issues):
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                catch_exceptions=False,
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert result.output
+
+    def test_today_displays_milestone_info(self, cli_runner):
         """Test that today command displays milestone information."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
 
-        assert result.exit_code == 0
-        # Should show milestone info (v1.0 or "Milestone" in output)
-        assert "v1.0" in result.output or "Milestone" in result.output
+            # Create issue
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Test Task",
+                assignee="testuser",
+                milestone="v1.0",
+            )
+
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert "v1.0" in result.output or "Milestone" in result.output
 
 
 class TestTodayCommandFiltering:
     """Test filtering and categorization logic."""
 
-    def test_today_filters_by_assignee(self, roadmap_with_various_issues):
+    def test_today_filters_by_assignee(self, cli_runner):
         """Test that today shows assigned issues appropriately."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
 
-        assert result.exit_code == 0
-        # Should show valid output
-        assert len(result.output) > 0
+            for title, priority, assignee in [
+                ("Task 1", "high", "testuser"),
+                ("Task 2", "medium", "otheruser"),
+            ]:
+                IntegrationTestBase.create_issue(
+                    cli_runner,
+                    title=title,
+                    priority=priority,
+                    milestone="v1.0",
+                    assignee=assignee,
+                )
 
-    def test_today_filters_by_milestone(self, roadmap_with_multiple_milestones):
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert len(result.output) > 0
+
+    def test_today_filters_by_milestone(self, cli_runner):
         """Test that today shows only upcoming milestone issues."""
-        cli_runner, core = roadmap_with_multiple_milestones
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        # Create issue in each milestone assigned to testuser
-        for milestone_name in ["v0.9", "v1.0", "v1.1"]:
+            # Create milestones
+            for name, desc in [
+                ("v0.9", "Past milestone"),
+                ("v1.0", "Current upcoming"),
+                ("v1.1", "Future milestone"),
+            ]:
+                IntegrationTestBase.create_milestone(
+                    cli_runner, name=name, description=desc
+                )
+
+            # Create issue in each milestone assigned to testuser
+            for milestone_name in ["v0.9", "v1.0", "v1.1"]:
+                IntegrationTestBase.create_issue(
+                    cli_runner,
+                    title=f"Task in {milestone_name}",
+                    milestone=milestone_name,
+                    assignee="testuser",
+                )
+
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert "Task in" in result.output or "upcoming" in result.output.lower()
+
+    def test_today_shows_in_progress_issues(self, cli_runner):
+        """Test that today command handles in-progress issues."""
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
+
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
             IntegrationTestBase.create_issue(
                 cli_runner,
-                title=f"Task in {milestone_name}",
-                milestone=milestone_name,
+                title="In Progress Task",
+                milestone="v1.0",
                 assignee="testuser",
             )
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
 
-        assert result.exit_code == 0
-        # Should focus on upcoming milestone (v1.0 or similar)
-        # Exact output depends on due date logic
-        assert "Task in" in result.output or "upcoming" in result.output.lower()
+            assert result.exit_code == 0
+            assert len(result.output) > 0
 
-    def test_today_shows_in_progress_issues(self, roadmap_with_various_issues):
-        """Test that today command handles in-progress issues."""
-        cli_runner, core = roadmap_with_various_issues
-
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
-
-        assert result.exit_code == 0
-        # Should produce valid output
-        assert len(result.output) > 0
-
-    def test_today_shows_blocked_issues(self, roadmap_with_various_issues):
+    def test_today_shows_blocked_issues(self, cli_runner):
         """Test that blocked issues are identified."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Blocked Task",
+                milestone="v1.0",
+                assignee="testuser",
+            )
 
-        assert result.exit_code == 0
-        # Should mention blocked or show blocked issue details
-        assert (
-            "Blocked" in result.output
-            or "blocked" in result.output.lower()
-            or result.exit_code == 0
-        )
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert (
+                "Blocked" in result.output
+                or "blocked" in result.output.lower()
+                or result.exit_code == 0
+            )
 
 
 class TestTodayCommandPriorities:
     """Test priority handling in today command."""
 
-    def test_today_emphasizes_high_priority(self, roadmap_with_various_issues):
+    def test_today_emphasizes_high_priority(self, cli_runner):
         """Test that high priority tasks are highlighted."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
 
-        assert result.exit_code == 0
-        # Should mention priority or show prioritized issues
-        assert (
-            "Critical" in result.output
-            or "High" in result.output
-            or "priority" in result.output.lower()
-            or len(result.output) > 50  # Has substantial content
-        )
+            for title, priority in [
+                ("Critical TODO", "critical"),
+                ("High Priority TODO", "high"),
+                ("Medium Priority TODO", "medium"),
+            ]:
+                IntegrationTestBase.create_issue(
+                    cli_runner,
+                    title=title,
+                    priority=priority,
+                    milestone="v1.0",
+                    assignee="testuser",
+                )
 
-    def test_today_categorizes_by_priority(self, roadmap_with_various_issues):
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert (
+                "Critical" in result.output
+                or "High" in result.output
+                or "priority" in result.output.lower()
+                or len(result.output) > 50
+            )
+
+    def test_today_categorizes_by_priority(self, cli_runner):
         """Test that issues are properly categorized by priority."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
 
-        assert result.exit_code == 0
-        # Output should have structure for different priorities
-        assert len(result.output) > 0
+            for title, priority in [
+                ("High Priority", "high"),
+                ("Low Priority", "low"),
+            ]:
+                IntegrationTestBase.create_issue(
+                    cli_runner,
+                    title=title,
+                    priority=priority,
+                    milestone="v1.0",
+                    assignee="testuser",
+                )
+
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert len(result.output) > 0
 
 
 class TestTodayCommandErrorHandling:
     """Test error handling and edge cases."""
 
-    def test_today_with_no_user_configured(self, roadmap_with_various_issues):
+    def test_today_with_no_user_configured(self, cli_runner):
         """Test today command fails gracefully with no user."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        # Don't set ROADMAP_USER and no user in config
-        result = cli_runner.invoke(main, ["today"])
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Test Task",
+                milestone="v1.0",
+                assignee="testuser",
+            )
 
-        # Should fail or show helpful message
-        assert (
-            result.exit_code != 0
-            or "user" in result.output.lower()
-            or "configure" in result.output.lower()
-        )
+            # Don't set ROADMAP_USER and no user in config
+            result = cli_runner.invoke(main, ["today"])
+
+            # Should fail or show helpful message
+            assert (
+                result.exit_code != 0
+                or "user" in result.output.lower()
+                or "configure" in result.output.lower()
+            )
 
     def test_today_with_empty_roadmap(self, cli_runner):
         """Test today command with no milestones or issues."""
@@ -267,24 +322,34 @@ class TestTodayCommandErrorHandling:
                 or "milestone" in result.output.lower()
             )
 
-    def test_today_with_no_assigned_issues(self, roadmap_with_various_issues):
+    def test_today_with_no_assigned_issues(self, cli_runner):
         """Test today command when user has no assigned issues."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "unassigneduser"},
-        )
+            # Create milestone and issues assigned to different user
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Other User Task",
+                milestone="v1.0",
+                assignee="otheruser",
+            )
 
-        assert result.exit_code == 0
-        # Should show empty state or friendly message
-        assert (
-            "no" in result.output.lower()
-            or "none" in result.output.lower()
-            or "empty" in result.output.lower()
-            or len(result.output) > 0
-        )
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "unassigneduser"},
+            )
+
+            assert result.exit_code == 0
+            # Should show empty state or friendly message
+            assert (
+                "no" in result.output.lower()
+                or "none" in result.output.lower()
+                or "empty" in result.output.lower()
+                or len(result.output) > 0
+            )
 
     def test_today_with_only_future_milestones(self, cli_runner):
         """Test today command when milestones are all in the future."""
@@ -328,93 +393,143 @@ class TestTodayCommandErrorHandling:
 class TestTodayCommandVerboseMode:
     """Test verbose output option."""
 
-    def test_today_verbose_flag(self, roadmap_with_various_issues):
+    def test_today_verbose_flag(self, cli_runner):
         """Test that verbose flag is accepted."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today", "--verbose"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Task 1",
+                milestone="v1.0",
+                assignee="testuser",
+            )
 
-        assert result.exit_code == 0
-        # Verbose should produce output
-        assert result.output
+            result = cli_runner.invoke(
+                main,
+                ["today", "--verbose"],
+                env={"ROADMAP_USER": "testuser"},
+            )
 
-    def test_today_verbose_produces_more_output(self, roadmap_with_various_issues):
+            assert result.exit_code == 0
+            assert result.output
+
+    def test_today_verbose_produces_more_output(self, cli_runner):
         """Test that verbose mode may produce more detailed output."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        # Regular output
-        result_normal = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Task 1",
+                milestone="v1.0",
+                assignee="testuser",
+            )
 
-        # Verbose output
-        result_verbose = cli_runner.invoke(
-            main,
-            ["today", "--verbose"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Regular output
+            result_normal = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
 
-        assert result_normal.exit_code == 0
-        assert result_verbose.exit_code == 0
-        # Verbose should at least produce valid output
-        assert len(result_verbose.output) > 0
+            # Verbose output
+            result_verbose = cli_runner.invoke(
+                main,
+                ["today", "--verbose"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result_normal.exit_code == 0
+            assert result_verbose.exit_code == 0
+            assert len(result_verbose.output) > 0
 
 
 class TestTodayCommandOutput:
     """Test output formatting and content."""
 
-    def test_today_shows_user_name(self, roadmap_with_various_issues):
+    def test_today_shows_user_name(self, cli_runner):
         """Test that current user is shown in output."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Task 1",
+                milestone="v1.0",
+                assignee="testuser",
+            )
 
-        assert result.exit_code == 0
-        # Output should reference the user
-        assert "testuser" in result.output or "user" in result.output.lower()
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
 
-    def test_today_shows_numeric_summary(self, roadmap_with_various_issues):
+            assert result.exit_code == 0
+            assert "testuser" in result.output or "user" in result.output.lower()
+
+    def test_today_shows_numeric_summary(self, cli_runner):
         """Test that summary includes numeric information."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Task 1",
+                milestone="v1.0",
+                assignee="testuser",
+            )
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Task 2",
+                milestone="v1.0",
+                assignee="testuser",
+            )
 
-        assert result.exit_code == 0
-        # Should show counts or statistics
-        assert re.search(r"\d+", result.output)
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
 
-    def test_today_output_is_readable(self, roadmap_with_various_issues):
+            assert result.exit_code == 0
+            assert re.search(r"\d+", result.output)
+
+    def test_today_output_is_readable(self, cli_runner):
         """Test that output has reasonable formatting."""
-        cli_runner, core = roadmap_with_various_issues
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
 
-        result = cli_runner.invoke(
-            main,
-            ["today"],
-            env={"ROADMAP_USER": "testuser"},
-        )
+            # Create milestone and issues
+            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_issue(
+                cli_runner,
+                title="Task 1",
+                milestone="v1.0",
+                assignee="testuser",
+            )
 
-        assert result.exit_code == 0
-        # Output should be non-empty
-        assert len(result.output) > 0
-        # Should contain some text indicators
-        assert any(
-            keyword in result.output.lower()
-            for keyword in ["task", "issue", "milestone", "progress", "summary"]
-        )
+            result = cli_runner.invoke(
+                main,
+                ["today"],
+                env={"ROADMAP_USER": "testuser"},
+            )
+
+            assert result.exit_code == 0
+            assert len(result.output) > 0
+            assert any(
+                keyword in result.output.lower()
+                for keyword in ["task", "issue", "milestone", "progress", "summary"]
+            )
 
 
 class TestTodayCommandMultipleScenarios:
