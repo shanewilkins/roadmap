@@ -89,6 +89,7 @@ class TestGitHubSyncOrchestratorApplyChanges:
         """
         issue = MagicMock()
         issue.id = "issue1"
+        issue.github_issue = 123  # Set GitHub issue number
         issue.title = old_value if change_field == "title" else "Test"
         issue.status = Status.TODO if change_field != "status" else Status(old_value)
         mock_core.issues.get.return_value = issue
@@ -96,18 +97,26 @@ class TestGitHubSyncOrchestratorApplyChanges:
         change = IssueChange(issue_id="issue1", title="Test")
         change.local_changes = {change_field: f"{old_value} -> {new_value}"}
 
-        orchestrator._apply_local_changes(change)
+        with patch(
+            "roadmap.adapters.github.handlers.issues.IssueHandler"
+        ) as mock_handler_class:
+            mock_handler = MagicMock()
+            mock_handler_class.return_value = mock_handler
 
-        if change_field == "status":
-            assert issue.status == Status.CLOSED
-        else:
-            assert issue.title == new_value
-        mock_core.issues.update.assert_called_once()
+            orchestrator._apply_local_changes(change)
+
+            if change_field == "status":
+                assert issue.status == Status.CLOSED
+            else:
+                assert issue.title == new_value
+            # Verify that IssueHandler.update_issue was called
+            mock_handler.update_issue.assert_called_once()
 
     def test_apply_local_changes_invalid_status(self, orchestrator, mock_core):
         """Test applying invalid status value."""
         issue = MagicMock()
         issue.id = "issue1"
+        issue.github_issue = 123  # Set GitHub issue number
         issue.title = "Test"
         issue.status = Status.TODO
         mock_core.issues.get.return_value = issue
@@ -115,10 +124,17 @@ class TestGitHubSyncOrchestratorApplyChanges:
         change = IssueChange(issue_id="issue1", title="Test")
         change.local_changes = {"status": "TODO -> INVALID_STATUS"}
 
-        orchestrator._apply_local_changes(change)
+        with patch(
+            "roadmap.adapters.github.handlers.issues.IssueHandler"
+        ) as mock_handler_class:
+            mock_handler = MagicMock()
+            mock_handler_class.return_value = mock_handler
 
-        # Status should remain unchanged on invalid value
-        mock_core.issues.update.assert_called_once()
+            orchestrator._apply_local_changes(change)
+
+            # Status should remain unchanged on invalid value, no handler call should happen
+            # because the mapping fails and no update_data is sent
+            mock_handler.update_issue.assert_not_called()
 
     def test_apply_local_changes_exception(self, orchestrator, mock_core):
         """Test exception handling in apply local changes.

@@ -328,22 +328,37 @@ class GitHubSyncOrchestrator:
             # Prepare GitHub update
             update_data = {}
 
-            # Apply status change to GitHub
+            # Apply status change to GitHub and locally
             if "status" in change.local_changes:
                 new_status = change.local_changes["status"].split(" -> ")[1]
-                # Map local status to GitHub state (done -> closed, others -> open)
-                github_state = "closed" if new_status == "done" else "open"
-                update_data["state"] = github_state
+                # Try to validate the status
+                from roadmap.common.constants import Status
 
-            # Apply title change to GitHub
+                try:
+                    # Validate that it's a valid status
+                    Status(new_status)
+                    # Map local status to GitHub state (done -> closed, others -> open)
+                    github_state = "closed" if new_status == "done" else "open"
+                    update_data["state"] = github_state
+                    # Update local object
+                    issue.status = Status(new_status)
+                except (ValueError, KeyError):
+                    # Invalid status - skip the update
+                    pass
+
+            # Apply title change to GitHub and locally
             if "title" in change.local_changes:
                 new_title = change.local_changes["title"].split(" -> ")[1]
                 update_data["title"] = new_title
+                # Update local object
+                issue.title = new_title
 
-            # Apply description/body change to GitHub
+            # Apply description/body change to GitHub and locally
             if "description" in change.local_changes:
                 new_desc = change.local_changes["description"].split(" -> ")[1]
                 update_data["body"] = new_desc
+                # Update local object
+                issue.description = new_desc
 
             # Push changes to GitHub
             if update_data:
