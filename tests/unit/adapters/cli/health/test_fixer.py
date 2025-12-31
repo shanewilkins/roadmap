@@ -1,6 +1,5 @@
 """Tests for health fix infrastructure and fixers."""
 
-
 from roadmap.adapters.cli.health.fixer import (
     FixResult,
     FixSafety,

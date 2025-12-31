@@ -8,14 +8,15 @@ Tests enhanced init messaging:
 - Team onboarding messaging
 """
 
-
 from roadmap.adapters.cli.core import init
 
 
 class TestInitMessagingPhase3:
     """Test Phase 3: Enhanced init messaging and UX."""
 
-    def test_init_messaging_joined_existing_projects(self, temp_roadmap_with_projects, cli_runner):
+    def test_init_messaging_joined_existing_projects(
+        self, temp_roadmap_with_projects, cli_runner
+    ):
         """Test messaging when joining existing projects shows project details."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
         # Run init with --yes to avoid prompts
@@ -24,7 +25,9 @@ class TestInitMessagingPhase3:
         # Verify init completes successfully
         assert result.exit_code == 0
         # Verify the output shows initialization
-        assert "roadmap" in result.output.lower() or "structure" in result.output.lower()
+        assert (
+            "roadmap" in result.output.lower() or "structure" in result.output.lower()
+        )
 
     def test_init_messaging_created_new_project(self, cli_runner):
         """Test messaging when creating a new project."""
@@ -39,7 +42,9 @@ class TestInitMessagingPhase3:
             assert result.exit_code == 0
             assert "roadmap" in result.output.lower()
 
-    def test_init_messaging_multiple_projects(self, temp_roadmap_with_projects, cli_runner):
+    def test_init_messaging_multiple_projects(
+        self, temp_roadmap_with_projects, cli_runner
+    ):
         """Test messaging displays multiple projects when joining."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
         # Run init
@@ -49,7 +54,9 @@ class TestInitMessagingPhase3:
         assert result.exit_code == 0
         assert len(result.output) > 0
 
-    def test_init_config_local_hint_for_new_team_members(self, temp_roadmap_with_config, cli_runner):
+    def test_init_config_local_hint_for_new_team_members(
+        self, temp_roadmap_with_config, cli_runner
+    ):
         """Test that init shows hint about config.local for team members."""
         roadmap_dir, config_file = temp_roadmap_with_config
         # Run init (Bob joining)
@@ -90,7 +97,9 @@ class TestInitConfigLocalMessaging:
                 or "initialized" in result.output.lower()
             )
 
-    def test_init_shows_team_config_pattern_when_joining(self, temp_roadmap_team_scenario, cli_runner):
+    def test_init_shows_team_config_pattern_when_joining(
+        self, temp_roadmap_team_scenario, cli_runner
+    ):
         """Test messaging shows team config pattern when joining existing project."""
         roadmap_dir, projects_dir, config_file = temp_roadmap_team_scenario
         # Run init (Bob joining)
@@ -109,7 +118,9 @@ class TestInitConfigLocalMessaging:
 class TestInitContextDetectionMessaging:
     """Test messaging improvements for context detection."""
 
-    def test_init_shows_git_repo_context_when_detected(self, temp_roadmap_with_git_context, cli_runner):
+    def test_init_shows_git_repo_context_when_detected(
+        self, temp_roadmap_with_git_context, cli_runner
+    ):
         """Test that init shows detected git repository in output."""
         result = cli_runner.invoke(
             init,
@@ -124,8 +135,7 @@ class TestInitContextDetectionMessaging:
         # Context detection should work - init should succeed in a git repo
         # Just verify that initialization completes successfully
         assert (
-            "roadmap" in result.output.lower()
-            or "structure" in result.output.lower()
+            "roadmap" in result.output.lower() or "structure" in result.output.lower()
         )
 
     def test_init_context_shows_directory_info(self, cli_runner):
@@ -149,7 +159,9 @@ class TestInitContextDetectionMessaging:
 class TestInitSuccessSummary:
     """Test the init success summary messaging."""
 
-    def test_init_shows_success_summary_with_projects(self, temp_roadmap_with_projects, cli_runner):
+    def test_init_shows_success_summary_with_projects(
+        self, temp_roadmap_with_projects, cli_runner
+    ):
         """Test that successful init shows comprehensive summary."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
         result = cli_runner.invoke(init, ["--yes", "--skip-github"])
@@ -192,7 +204,9 @@ class TestTeamOnboardingUXFlow:
             output_lower = result.output.lower()
             assert "created" in output_lower or "project" in output_lower
 
-    def test_bob_init_flow_joins_existing_project(self, temp_roadmap_with_projects, cli_runner):
+    def test_bob_init_flow_joins_existing_project(
+        self, temp_roadmap_with_projects, cli_runner
+    ):
         """Test Bob's init flow: joins Alice's existing project."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
         # Bob runs init

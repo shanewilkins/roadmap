@@ -1,6 +1,5 @@
 """Tests for entity health scanner service."""
 
-
 import pytest
 
 from roadmap.core.services.entity_health_scanner import (
