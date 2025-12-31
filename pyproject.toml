@@ -10,7 +10,7 @@
 # ============================================================================
 name = "roadmap"
 
-version = "0.6.0"
+version = "1.0.0"
 
 description = "Enterprise-grade command line tool for project roadmap management with GitHub integration, data visualization, and advanced analytics"
 authors = ["Roadmap CLI Team <contact@roadmap-cli.com>"]
