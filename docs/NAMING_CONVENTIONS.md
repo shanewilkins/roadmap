@@ -7,10 +7,12 @@ This document defines the naming conventions for milestones in the Roadmap proje
 ## Problem: Why Naming Conventions Matter
 
 The roadmap system stores:
+
 1. **Milestone display names** - Used by humans (e.g., "v0-8-0", "Sprint 1")
 2. **Safe milestone filenames** - Used by the filesystem (e.g., "v0-8-0", "sprint-1")
 
 **The Problem:** When display names don't follow a consistent pattern, they get converted to different safe names, causing:
+
 - Issues assigned to "v.0.8.0" but file is "v0-8-0.md" → **CLI lookup fails**
 - Issues with "Future (Post-v1.0)" but folder is "future-post-v10" → **Mismatches**
 - Multiple display names for same version → **Confusion**
@@ -20,6 +22,7 @@ The roadmap system stores:
 **The Rule:** Use the safe name directly as the display name.
 
 This means:
+
 - **NO conversion needed** (display name = filesystem name)
 - **NO confusion** (what you see is what you get)
 - **NO lookup failures** (names always match)
@@ -31,6 +34,7 @@ This means:
 **Pattern:** `v{major}-{minor}-{patch}` (hyphens, no ambiguity)
 
 **Examples:**
+
 - ✅ `v0-7-0` (for v0.7.0 release)
 - ✅ `v0-8-0` (for v0.8.0 release)
 - ✅ `v1-0-0` (for v1.0.0 release)
@@ -43,6 +47,7 @@ This means:
 **Pattern:** `sprint-{identifier}` (lowercase, hyphen-separated)
 
 **Examples:**
+
 - ✅ `sprint-1` (first sprint)
 - ✅ `sprint-q1-2025` (Q1 2025 sprint)
 - ✅ `sprint-january` (named sprint)
@@ -54,6 +59,7 @@ This means:
 **Pattern:** `phase-{identifier}` (lowercase, hyphen-separated)
 
 **Examples:**
+
 - ✅ `phase-alpha`
 - ✅ `phase-beta`
 - ✅ `phase-1`
@@ -64,6 +70,7 @@ This means:
 **Pattern:** `release-{identifier}` (lowercase, hyphen-separated)
 
 **Examples:**
+
 - ✅ `release-dec-2025` (specific month)
 - ✅ `release-2025-q2` (specific quarter)
 - ✅ `release-holiday` (named release)
@@ -73,6 +80,7 @@ This means:
 **Pattern:** `{descriptor}` (lowercase, hyphen-separated)
 
 **Examples:**
+
 - ✅ `backlog` (unscheduled work)
 - ✅ `future-post-v1-0` (far future work)
 - ✅ `experimental` (experimental features)
@@ -81,11 +89,13 @@ This means:
 ## Character Rules
 
 ### Allowed Characters
+
 - **Alphanumeric:** a-z, A-Z, 0-9
 - **Separators:** hyphens (`-`), underscores (`_`), dots (`.`) - but use sparingly
 - **Length:** 1-100 characters
 
 ### Forbidden Characters
+
 - ❌ Spaces (use hyphens instead)
 - ❌ Parentheses (e.g., "Future (Post-v1.0)")
 - ❌ Dots (except in version patterns like "v1.0.0" in display names, but NOT in filenames)
@@ -93,6 +103,7 @@ This means:
 - ❌ Special symbols (@, #, $, %, &, etc.)
 
 ### Invalid Examples
+
 - ❌ `v.0.8.0` (dots in filename)
 - ❌ `Future (Post-v1.0)` (parentheses)
 - ❌ `Q1/2025` (forward slash)
@@ -104,7 +115,7 @@ This means:
 ### If You See Display Names Like...
 
 | Display Name | Should Be | Action |
-|---|---|---|
+| --- | --- | --- |
 | `v.0.7.0` | `v0-7-0` | Update issue metadata |
 | `v.0.8.0` | `v0-8-0` | Update issue metadata |
 | `v.0.9.0` | `v0-9-0` | Update issue metadata |
@@ -114,6 +125,7 @@ This means:
 | (empty string) | `backlog` | Update issue metadata |
 
 ### Automated Fix
+
 Run the health check to automatically convert all non-compliant names:
 
 ```bash
@@ -121,6 +133,7 @@ roadmap health fix --fix-type milestone_naming_compliance
 ```
 
 This will:
+
 1. **Scan** all issues for non-compliant milestone names
 2. **Convert** display names to safe equivalents
 3. **Update** issue metadata automatically
@@ -147,6 +160,7 @@ roadmap milestone create "v0-8-0" --description "Version 0.8.0 release"
 ```
 
 The system will:
+
 - Use `v0-8-0` as the display name
 - Create file as `v0-8-0.md`
 - Warn if names don't match these conventions
@@ -154,6 +168,7 @@ The system will:
 ## Questions?
 
 If you have questions about milestone naming, check:
+
 - `.roadmap/milestones/` - See actual milestone file names
 - `roadmap milestone list` - See all current milestones
 - `.roadmap/issues/` - See issue organizations by milestone

@@ -30,7 +30,7 @@ roadmap --version
 Roadmap follows a **Git-like model:**
 
 | Aspect | Model |
-|--------|-------|
+| --- | --- |
 | **Install** | Once per machine (like `git`) |
 | **Store** | Per-repository in `.roadmap/` folder |
 | **Share** | Commit `.roadmap/` to git (like code) |
@@ -149,6 +149,27 @@ roadmap issue list --format json
 roadmap issue list --format csv
 ```
 
+## Add Comments to Issues (1 minute)
+
+```bash
+# Add a comment to an issue
+roadmap issue comment add issue-id "Great progress on this!"
+
+# Add a comment with a custom author
+roadmap issue comment add issue-id "Looking good!" --author john
+
+# Reply to a specific comment (threaded discussion)
+roadmap issue comment add issue-id "I agree!" --reply-to 12345
+
+# View all comments on an issue
+roadmap issue comment list issue-id
+
+# View comments in JSON format
+roadmap issue comment list issue-id --format json
+```
+
+Comments support markdown and threading, making it easy to have discussions right in your issues without leaving the terminal.
+
 ## Commit and Track Status
 
 Once you've created issues, **status updates happen automatically when you commit:**
@@ -193,6 +214,11 @@ roadmap issue list              # View all issues
 roadmap issue create "Title"    # Create issue
 roadmap issue update id --status done  # Update status
 roadmap issue show id           # View issue details
+
+# Comments
+roadmap issue comment add id "Your comment"      # Add a comment
+roadmap issue comment add id "Reply" --reply-to 123  # Reply to comment
+roadmap issue comment list id                    # View comments on issue
 
 # Milestones
 roadmap milestone list          # View all milestones

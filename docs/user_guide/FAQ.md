@@ -19,12 +19,14 @@ It's the same philosophy that makes Infrastructure-as-Code (Terraform, CloudForm
 **A:** For small-to-medium teams, yes. For large enterprises, maybe not.
 
 **Where Roadmap shines:**
+
 - Teams with <50 people
 - Developers who want to avoid the Jira overhead
 - Teams already using git for everything
 - Projects where the PM is technical enough to use CLI
 
 **Where Jira still might win:**
+
 - Enterprise with 500+ people needing complex workflows
 - Teams with non-technical PMs who need a GUI
 - Organizations with compliance/audit requirements
@@ -62,6 +64,7 @@ Future versions could add a web UI for non-technical stakeholders.
 ### Q: Do I need GitHub integration?
 
 **A:** No, it's optional. You can:
+
 - Use Roadmap standalone (local issues only)
 - Sync with GitHub (two-way sync of issues)
 - Just use git commits to auto-update status
@@ -76,7 +79,7 @@ Choose what fits your workflow.
 
 **A:** In the `.roadmap/` folder in your git repo. Example structure:
 
-```
+```text
 .roadmap/
   config.yaml         # Roadmap configuration
   roadmap.md          # Main roadmap document
@@ -120,6 +123,7 @@ We need OAuth2 support for GitHub and Google.
 ### Q: Can I migrate from Jira to Roadmap?
 
 **A:** In v1.0, you'd need to:
+
 1. Export from Jira as JSON/CSV
 2. Write a script to convert to Roadmap format
 3. Commit to your repo
@@ -140,6 +144,7 @@ git push
 ```
 
 For v1.1+, we're considering:
+
 - Optimistic locking (prevent overwrites)
 - Conflict auto-resolution (merge friendly changes)
 - Change notifications
@@ -149,7 +154,7 @@ For v1.1+, we're considering:
 **A:** Good question. GitHub issues are great, but:
 
 | Feature | GitHub Issues | Roadmap |
-|---------|---------------|---------|
+| --- | --- | --- |
 | **Offline** | No | Yes |
 | **In your editor** | No | Yes |
 | **Version controlled** | Yes (in GitHub) | Yes (in git) |
@@ -212,7 +217,7 @@ Custom statuses coming in v1.1.
 **A:**
 
 | Feature | Linear | Roadmap |
-|---------|--------|---------|
+| --- | --- | --- |
 | **Web UI** | Beautiful | Not yet |
 | **Team visibility** | Excellent | Via exports/json |
 | **Cost** | $10-20/seat/month | Free |
@@ -256,6 +261,7 @@ Use Trello if you like dragging cards. Use Roadmap if you like CLIs and git.
 3. **Access control** - GitHub team permissions
 
 For v1.1, we're considering:
+
 - Read-only roles for stakeholders
 - Approval workflows for status changes
 

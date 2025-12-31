@@ -7,6 +7,7 @@ What we're planning for Roadmap (the tool's roadmap).
 **Release Date:** Early 2025
 
 ✅ **In v1.0:**
+
 - CLI-first interface with 15+ commands
 - Issue, milestone, and project management
 - Four output formats (rich, JSON, CSV, plain)
@@ -18,6 +19,7 @@ What we're planning for Roadmap (the tool's roadmap).
 - YAML/Markdown data format
 
 ❌ **Not in v1.0:**
+
 - Web UI
 - PR/MR auto-sync
 - Historical tracking
@@ -33,6 +35,7 @@ What we're planning for Roadmap (the tool's roadmap).
 ### Planned Features
 
 #### Historical Tracking
+
 ```bash
 roadmap history issue-id               # Show all status changes
 roadmap history issue-id --from 2025-01-01 --to 2025-02-01
@@ -40,12 +43,14 @@ roadmap history milestone-id           # Milestone progress over time
 ```
 
 **Implementation:**
+
 - Timestamp all status changes (already done)
 - Add `roadmap history` command
 - Query snapshots across time
 - Show who changed what and when
 
 #### Trends & Velocity
+
 ```bash
 roadmap analytics velocity            # Team velocity (issues per week)
 roadmap analytics burndown milestone-id
@@ -53,6 +58,7 @@ roadmap analytics cycle-time          # How long issues take (avg)
 ```
 
 **Implementation:**
+
 - Analyze snapshot history
 - Calculate metrics
 - Output as JSON/CSV for graphing
@@ -64,6 +70,7 @@ roadmap snapshot list                 # View all snapshots
 ```
 
 **Implementation:**
+
 - Auto-save daily status to `.roadmap/.snapshots/`
 - Optional: Cron job for automation
 - Git history = trend tracking
@@ -95,6 +102,7 @@ roadmap team alice --role dev         # Assign role
 - API auth for GitHub/GitLab sync
 
 #### Team Permissions
+
 - PMs: Create issues, assign to team, move milestones
 - Devs: Update own issues, commit-based status changes
 - Viewers: Read-only export (CLI or web)
@@ -115,7 +123,8 @@ roadmap team add alice --team platform --team web
 ### Planned Features
 
 #### REST API
-```
+
+```bash
 GET /api/issues                       # List issues
 POST /api/issues                      # Create issue
 PATCH /api/issues/{id}                # Update issue
@@ -134,16 +143,19 @@ webhooks:
 ```
 
 **Use cases:**
+
 - Slack notifications
 - Custom automation
 - CI/CD triggers
 
 #### SDKs
+
 - Python SDK for scripting
 - JavaScript SDK for tooling
 - Go SDK for deployment automation
 
 #### Third-Party Integrations
+
 - Slack: Status updates, notifications
 - Discord: Daily summary posts
 - Datadog: Ingest metrics
@@ -158,6 +170,7 @@ webhooks:
 ### Planned Features
 
 #### Web UI
+
 - Interactive dashboard
 - Drag-and-drop Kanban board
 - Gantt charts
@@ -165,16 +178,19 @@ webhooks:
 - Team insights
 
 #### Real-Time Collaboration
+
 - WebSocket sync
 - Live presence (who's viewing what)
 - Concurrent editing with conflict resolution
 
 #### Mobile Apps
+
 - iOS app for status updates
 - Android app for notifications
 - Offline support
 
 #### AI/ML Integration
+
 - Predictive analytics
   - "This issue will take ~3 days"
   - "You're at risk of missing deadline"
@@ -191,6 +207,7 @@ webhooks:
 ### Things We're **Not** Planning (Yet)
 
 #### Advanced Project Management
+
 - Kanban boards (v2.0)
 - Gantt charts (v2.0)
 - Time tracking (maybe v1.3)
@@ -198,16 +215,19 @@ webhooks:
 - Capacity planning (v1.2+)
 
 #### Workflow Customization
+
 - Custom issue statuses (v1.1)
 - Custom fields (v1.1)
 - Custom workflows (v2.0)
 
 #### Scale Features
+
 - Multi-organization support (v1.2+)
 - Workspace management (v2.0)
 - Subscription tiers (if SaaS)
 
 #### Things We'll Probably Never Do
+
 - Microsoft Outlook integration
 - Salesforce integration
 - Enterprise licensing
@@ -242,7 +262,7 @@ See [Contributing Guide](../CONTRIBUTING.md) (coming in v1.0).
 ## Timeline & Versioning
 
 | Version | Timeline | Theme |
-|---------|----------|-------|
+| --- | --- | --- |
 | **v1.0** | Early 2025 | Stability & Foundation |
 | **v1.1** | Q2 2025 | Analytics & Insights |
 | **v1.2** | Q3 2025 | Team Management |

@@ -4,7 +4,7 @@ Provides Pydantic models for user-level and project-level configuration
 with validation and sensible defaults.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OutputConfig(BaseModel):
@@ -22,11 +22,7 @@ class OutputConfig(BaseModel):
         default="",
         description="Default sort specification (e.g., 'status:asc')",
     )
-
-    class Config:
-        """Pydantic config."""
-
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class ExportConfig(BaseModel):
@@ -48,11 +44,7 @@ class ExportConfig(BaseModel):
         default=True,
         description="Automatically add exports directory to .gitignore",
     )
-
-    class Config:
-        """Pydantic config."""
-
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class BehaviorConfig(BaseModel):
@@ -78,11 +70,7 @@ class BehaviorConfig(BaseModel):
         default=None,
         description="Default project ID to use when creating milestones (auto-detected during init)",
     )
-
-    class Config:
-        """Pydantic config."""
-
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class GitConfig(BaseModel):
@@ -96,11 +84,7 @@ class GitConfig(BaseModel):
         default="roadmap: {operation} {entity_id}",
         description="Template for auto-generated commit messages",
     )
-
-    class Config:
-        """Pydantic config."""
-
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class RoadmapConfig(BaseModel):
@@ -110,11 +94,7 @@ class RoadmapConfig(BaseModel):
     export: ExportConfig = Field(default_factory=ExportConfig)
     behavior: BehaviorConfig = Field(default_factory=BehaviorConfig)
     git: GitConfig = Field(default_factory=GitConfig)
-
-    class Config:
-        """Pydantic config."""
-
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
     def merge(self, other: "RoadmapConfig") -> "RoadmapConfig":
         """Merge another config into this one (other takes precedence).

@@ -5,6 +5,7 @@ Exports traces to local Jaeger agent on UDP port 6831.
 """
 
 import logging
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,12 @@ def initialize_tracing(service_name: str = "roadmap-cli") -> None:
     global _tracer
 
     try:
-        from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+        # Suppress deprecation warning for JaegerExporter
+        # This is development/tracing code and the deprecated exporter is stable
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 

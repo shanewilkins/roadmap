@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 
-class TestLogCapture:
+class LogCapture:
     """Capture and analyze logs during test execution."""
 
     def __init__(self, caplog: Any):
@@ -130,7 +130,7 @@ class TestLogCapture:
         return "\n".join(summary)
 
 
-class TestContextLogger:
+class ContextLogger:
     """Contextual logging for understanding test flow."""
 
     def __init__(self, caplog: Any, test_name: str = ""):
@@ -158,7 +158,7 @@ class TestContextLogger:
         # In practice, we'd use a proper logging call
         print(f"\n→ {message}")
 
-    def context(self, operation: str) -> "TestContextLogger._ContextManager":
+    def context(self, operation: str) -> "ContextLogger._ContextManager":
         """Create a context manager for an operation.
 
         Args:
@@ -194,20 +194,20 @@ class TestContextLogger:
 
 
 @pytest.fixture
-def test_log_capture(caplog: Any) -> TestLogCapture:
+def test_log_capture(caplog: Any) -> LogCapture:
     """Provide test log capture to tests.
 
     Args:
         caplog: pytest caplog fixture
 
     Returns:
-        TestLogCapture instance
+        LogCapture instance
     """
-    return TestLogCapture(caplog)
+    return LogCapture(caplog)
 
 
 @pytest.fixture
-def test_context_logger(caplog: Any, request: Any) -> TestContextLogger:
+def test_context_logger(caplog: Any, request: Any) -> ContextLogger:
     """Provide test context logger to tests.
 
     Args:
@@ -215,6 +215,6 @@ def test_context_logger(caplog: Any, request: Any) -> TestContextLogger:
         request: pytest request fixture
 
     Returns:
-        TestContextLogger instance
+        ContextLogger instance
     """
-    return TestContextLogger(caplog, test_name=request.node.name)
+    return ContextLogger(caplog, test_name=request.node.name)

@@ -7,6 +7,7 @@ It separates database infrastructure concerns from the state management layer.
 import sqlite3
 import threading
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 
 from roadmap.common.logging import get_logger
@@ -50,6 +51,12 @@ class DatabaseManager:
                 timeout=30.0,
                 isolation_level=None,  # Autocommit mode
             )
+            # Register datetime adapter for Python 3.12+
+            sqlite3.register_adapter(datetime, lambda dt: dt.isoformat())
+            sqlite3.register_converter(
+                "TIMESTAMP", lambda val: datetime.fromisoformat(val.decode())
+            )
+
             # Enable foreign keys and WAL mode for better performance
             self._local.connection.execute("PRAGMA foreign_keys = ON")
             self._local.connection.execute("PRAGMA journal_mode = WAL")

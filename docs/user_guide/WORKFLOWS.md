@@ -103,6 +103,28 @@ roadmap issue list --filter milestone="Sprint 1"
 # Shows: issue-1 (done), issue-2 (todo), issue-3 (in-progress)
 ```
 
+### Team Discussion & Feedback (Async)
+
+```bash
+# Alice leaves feedback on Bob's work
+roadmap issue comment add issue-2 "Great implementation! One question: did you consider the edge case for null names?"
+
+# Bob replies to specific comment
+roadmap issue comment list issue-2  # View the comment first to get ID
+roadmap issue comment add issue-2 "Good catch! I'll handle that in a follow-up." --reply-to 101
+
+# PM asks for status update
+roadmap issue comment add issue-1 "Is this blocking the frontend work? Let me know if you need help!"
+
+# View all discussion on an issue
+roadmap issue comment list issue-2 --format json  # For automation
+
+# Comments persist in git, full history is visible
+git log -p .roadmap/issues/  # See every comment added
+```
+
+This keeps discussions in context without switching to Slack, email, or GitHub.
+
 ### PM Tracks Progress (Midweek)
 
 ```bash
