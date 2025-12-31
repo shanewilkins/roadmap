@@ -212,41 +212,136 @@ class TestCriticalPathCommand:
             # When core is None, the command will print an error message
             assert "initialized" in result.output.lower() or result.exit_code == 0
 
+    def test_command_handles_query_service_error(self):
+        """Test graceful error handling when query service fails."""
+        runner = CliRunner()
+
+        mock_core = Mock()
+        mock_core.is_initialized.return_value = True
+
+        with patch("roadmap.adapters.cli.analysis.commands._get_core") as mock_get_core:
+            mock_get_core.return_value = mock_core
+
+            with patch(
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.side_effect = Exception(
+                    "Database connection error"
+                )
+
+                result = runner.invoke(critical_path, [])
+                # Command should handle error gracefully and return
+                assert result.exit_code == 0
+
+    def test_command_handles_calculator_error(self, sample_issues):
+        """Test graceful error handling when calculator fails."""
+        runner = CliRunner()
+
+        mock_core = Mock()
+        mock_core.is_initialized.return_value = True
+
+        with patch("roadmap.adapters.cli.analysis.commands._get_core") as mock_get_core:
+            mock_get_core.return_value = mock_core
+
+            with patch(
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = (sample_issues[:3], "")
+
+                with patch(
+                    "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
+                ) as mock_calc_class:
+                    mock_calc = Mock()
+                    mock_calc_class.return_value = mock_calc
+                    mock_calc.calculate_critical_path.side_effect = Exception(
+                        "Circular dependency detected"
+                    )
+
+                    result = runner.invoke(critical_path, [])
+                    # Command should handle error gracefully
+                    assert result.exit_code == 0
+
+    def test_command_handles_export_file_error(self, sample_issues, tmp_path):
+        """Test graceful error handling when export file write fails."""
+        runner = CliRunner()
+
+        mock_core = Mock()
+        mock_core.is_initialized.return_value = True
+
+        with patch("roadmap.adapters.cli.analysis.commands._get_core") as mock_get_core:
+            mock_get_core.return_value = mock_core
+
+            with patch(
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = (sample_issues[:3], "")
+
+                with patch(
+                    "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
+                ) as mock_calc_class:
+                    mock_calc = Mock()
+                    mock_calc_class.return_value = mock_calc
+                    mock_calc.calculate_critical_path.return_value = CriticalPathResult(
+                        critical_path=[],
+                        total_duration=0.0,
+                        critical_issue_ids=[],
+                        blocking_issues={},
+                    )
+
+                    # Use a path that will fail to write
+                    bad_path = "/root/cannot_write_here/file.json"
+
+                    result = runner.invoke(
+                        critical_path,
+                        ["--export", "json", "--output", bad_path],
+                    )
+                    # Command should handle error gracefully
+                    assert result.exit_code == 0
+
     def test_command_filters_closed_by_default(self, sample_issues):
         """Test that closed issues are filtered out by default."""
         runner = CliRunner()
 
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.issue_manager.get_all_issues.return_value = sample_issues
-        mock_core.config_manager.get_config.return_value = Mock(
-            behavior=Mock(include_closed_in_critical_path=False)
-        )
 
         with patch("roadmap.adapters.cli.analysis.commands._get_core") as mock_get_core:
             mock_get_core.return_value = mock_core
 
             with patch(
-                "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
-            ) as mock_calc_class:
-                mock_calc = Mock()
-                mock_calc_class.return_value = mock_calc
-                mock_calc.calculate_critical_path.return_value = CriticalPathResult(
-                    critical_path=[],
-                    total_duration=0.0,
-                    critical_issue_ids=[],
-                    blocking_issues={},
-                )
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = (sample_issues, "")
 
-                runner.invoke(critical_path, [])
+                with patch(
+                    "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
+                ) as mock_calc_class:
+                    mock_calc = Mock()
+                    mock_calc_class.return_value = mock_calc
+                    mock_calc.calculate_critical_path.return_value = CriticalPathResult(
+                        critical_path=[],
+                        total_duration=0.0,
+                        critical_issue_ids=[],
+                        blocking_issues={},
+                    )
 
-                # Get the issues passed to calculator
-                call_args = mock_calc.calculate_critical_path.call_args
-                passed_issues = call_args[0][0]
+                    runner.invoke(critical_path, [])
 
-                # Should not include closed issue (GH-4)
-                assert len(passed_issues) == 3
-                assert all(i.status != Status.CLOSED for i in passed_issues)
+                    # Get the issues passed to calculator
+                    call_args = mock_calc.calculate_critical_path.call_args
+                    passed_issues = call_args[0][0]
+
+                    # Should not include closed issue (GH-4)
+                    assert len(passed_issues) == 3
+                    assert all(i.status != Status.CLOSED for i in passed_issues)
 
     def test_command_includes_closed_with_flag(self, sample_issues):
         """Test that closed issues are included with --include-closed flag."""
@@ -254,34 +349,58 @@ class TestCriticalPathCommand:
 
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.issue_manager.get_all_issues.return_value = sample_issues
-        mock_core.config_manager.get_config.return_value = Mock(
-            behavior=Mock(include_closed_in_critical_path=False)
-        )
 
         with patch("roadmap.adapters.cli.analysis.commands._get_core") as mock_get_core:
             mock_get_core.return_value = mock_core
 
             with patch(
-                "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
-            ) as mock_calc_class:
-                mock_calc = Mock()
-                mock_calc_class.return_value = mock_calc
-                mock_calc.calculate_critical_path.return_value = CriticalPathResult(
-                    critical_path=[],
-                    total_duration=0.0,
-                    critical_issue_ids=[],
-                    blocking_issues={},
-                )
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = (sample_issues, "")
 
-                runner.invoke(critical_path, ["--include-closed"])
+                with patch(
+                    "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
+                ) as mock_calc_class:
+                    mock_calc = Mock()
+                    mock_calc_class.return_value = mock_calc
+                    mock_calc.calculate_critical_path.return_value = CriticalPathResult(
+                        critical_path=[],
+                        total_duration=0.0,
+                        critical_issue_ids=[],
+                        blocking_issues={},
+                    )
 
-                # Get the issues passed to calculator
-                call_args = mock_calc.calculate_critical_path.call_args
-                passed_issues = call_args[0][0]
+                    runner.invoke(critical_path, ["--include-closed"])
 
-                # Should include closed issue
-                assert len(passed_issues) == 4
+                    # Get the issues passed to calculator
+                    call_args = mock_calc.calculate_critical_path.call_args
+                    passed_issues = call_args[0][0]
+
+                    # Should include closed issue
+                    assert len(passed_issues) == 4
+
+    def test_command_no_issues_to_analyze(self):
+        """Test handling when no issues match the criteria."""
+        runner = CliRunner()
+
+        mock_core = Mock()
+        mock_core.is_initialized.return_value = True
+
+        with patch("roadmap.adapters.cli.analysis.commands._get_core") as mock_get_core:
+            mock_get_core.return_value = mock_core
+
+            with patch(
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = ([], "")
+
+                result = runner.invoke(critical_path, [])
+                # Command should complete successfully when no issues
+                assert result.exit_code == 0
 
     def test_command_filters_by_milestone(self):
         """Test filtering by milestone."""
@@ -309,33 +428,38 @@ class TestCriticalPathCommand:
 
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.issue_manager.get_all_issues.return_value = sample_with_milestone
-        mock_core.config_manager.get_config.return_value = Mock(
-            behavior=Mock(include_closed_in_critical_path=False)
-        )
 
         with patch("roadmap.adapters.cli.analysis.commands._get_core") as mock_get_core:
             mock_get_core.return_value = mock_core
 
             with patch(
-                "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
-            ) as mock_calc_class:
-                mock_calc = Mock()
-                mock_calc_class.return_value = mock_calc
-                mock_calc.calculate_critical_path.return_value = CriticalPathResult(
-                    critical_path=[],
-                    total_duration=0.0,
-                    critical_issue_ids=[],
-                    blocking_issues={},
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = (
+                    [sample_with_milestone[0]],
+                    "",
                 )
 
-                runner.invoke(critical_path, ["--milestone", "v1.0"])
+                with patch(
+                    "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
+                ) as mock_calc_class:
+                    mock_calc = Mock()
+                    mock_calc_class.return_value = mock_calc
+                    mock_calc.calculate_critical_path.return_value = CriticalPathResult(
+                        critical_path=[],
+                        total_duration=0.0,
+                        critical_issue_ids=[],
+                        blocking_issues={},
+                    )
 
-                call_args = mock_calc.calculate_critical_path.call_args
-                passed_issues = call_args[0][0]
+                    runner.invoke(critical_path, ["--milestone", "v1.0"])
 
-                assert len(passed_issues) == 1
-                assert passed_issues[0].milestone == "v1.0"
+                    # Verify milestone filter was passed to query service
+                    mock_query.get_filtered_issues.assert_called_once_with(
+                        milestone="v1.0"
+                    )
 
     def test_command_export_json(self, sample_issues, tmp_path):
         """Test exporting to JSON."""
@@ -343,10 +467,6 @@ class TestCriticalPathCommand:
 
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.issue_manager.get_all_issues.return_value = sample_issues
-        mock_core.config_manager.get_config.return_value = Mock(
-            behavior=Mock(include_closed_in_critical_path=False)
-        )
 
         output_file = tmp_path / "critical_path.json"
 
@@ -354,34 +474,41 @@ class TestCriticalPathCommand:
             mock_get_core.return_value = mock_core
 
             with patch(
-                "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
-            ) as mock_calc_class:
-                mock_calc = Mock()
-                mock_calc_class.return_value = mock_calc
-                result = CriticalPathResult(
-                    critical_path=[
-                        PathNode(
-                            issue_id="GH-1",
-                            issue_title="Task 1",
-                            duration_hours=8.0,
-                            is_critical=True,
-                        )
-                    ],
-                    total_duration=8.0,
-                    critical_issue_ids=["GH-1"],
-                    blocking_issues={},
-                )
-                mock_calc.calculate_critical_path.return_value = result
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = (sample_issues[:3], "")
 
-                runner.invoke(
-                    critical_path,
-                    ["--export", "json", "--output", str(output_file)],
-                )
+                with patch(
+                    "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
+                ) as mock_calc_class:
+                    mock_calc = Mock()
+                    mock_calc_class.return_value = mock_calc
+                    result = CriticalPathResult(
+                        critical_path=[
+                            PathNode(
+                                issue_id="GH-1",
+                                issue_title="Task 1",
+                                duration_hours=8.0,
+                                is_critical=True,
+                            )
+                        ],
+                        total_duration=8.0,
+                        critical_issue_ids=["GH-1"],
+                        blocking_issues={},
+                    )
+                    mock_calc.calculate_critical_path.return_value = result
 
-                assert output_file.exists()
-                data = json.loads(output_file.read_text())
-                assert "critical_path" in data
-                assert "summary" in data
+                    runner.invoke(
+                        critical_path,
+                        ["--export", "json", "--output", str(output_file)],
+                    )
+
+                    assert output_file.exists()
+                    data = json.loads(output_file.read_text())
+                    assert "critical_path" in data
+                    assert "summary" in data
 
     def test_command_export_csv(self, sample_issues, tmp_path):
         """Test exporting to CSV."""
@@ -389,10 +516,6 @@ class TestCriticalPathCommand:
 
         mock_core = Mock()
         mock_core.is_initialized.return_value = True
-        mock_core.issue_manager.get_all_issues.return_value = sample_issues
-        mock_core.config_manager.get_config.return_value = Mock(
-            behavior=Mock(include_closed_in_critical_path=False)
-        )
 
         output_file = tmp_path / "critical_path.csv"
 
@@ -400,24 +523,31 @@ class TestCriticalPathCommand:
             mock_get_core.return_value = mock_core
 
             with patch(
-                "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
-            ) as mock_calc_class:
-                mock_calc = Mock()
-                mock_calc_class.return_value = mock_calc
-                result = CriticalPathResult(
-                    critical_path=[],
-                    total_duration=0.0,
-                    critical_issue_ids=[],
-                    blocking_issues={},
-                )
-                mock_calc.calculate_critical_path.return_value = result
+                "roadmap.adapters.cli.analysis.commands.IssueQueryService"
+            ) as mock_query_class:
+                mock_query = Mock()
+                mock_query_class.return_value = mock_query
+                mock_query.get_filtered_issues.return_value = (sample_issues[:3], "")
 
-                runner.invoke(
-                    critical_path,
-                    ["--export", "csv", "--output", str(output_file)],
-                )
+                with patch(
+                    "roadmap.adapters.cli.analysis.commands.CriticalPathCalculator"
+                ) as mock_calc_class:
+                    mock_calc = Mock()
+                    mock_calc_class.return_value = mock_calc
+                    result = CriticalPathResult(
+                        critical_path=[],
+                        total_duration=0.0,
+                        critical_issue_ids=[],
+                        blocking_issues={},
+                    )
+                    mock_calc.calculate_critical_path.return_value = result
 
-                assert output_file.exists()
-                content = output_file.read_text()
-                assert "issue_id" in content
-                assert "title" in content
+                    runner.invoke(
+                        critical_path,
+                        ["--export", "csv", "--output", str(output_file)],
+                    )
+
+                    assert output_file.exists()
+                    content = output_file.read_text()
+                    assert "issue_id" in content
+                    assert "title" in content
