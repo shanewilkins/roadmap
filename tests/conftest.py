@@ -20,8 +20,10 @@ from tests.fixtures import (
     assert_file,
     assert_output,
     clean_output,
-    # Click testing fixtures
+    # CLI test fixtures
     cli_runner,
+    cli_runner_with_init,
+    # Click testing fixtures
     cli_test_data,
     effort_data,
     fast_mock_core,
@@ -71,6 +73,11 @@ from tests.fixtures import (
     # IO fixtures
     strip_ansi_fixture,
     temp_dir,
+    temp_roadmap_dir,
+    temp_roadmap_team_scenario,
+    temp_roadmap_with_config,
+    temp_roadmap_with_git_context,
+    temp_roadmap_with_projects,
     temp_workspace,
     webhook_signature_creator,
 )
@@ -86,6 +93,12 @@ __all__ = [
     "assert_output",
     # Click testing fixtures
     "cli_runner",
+    "cli_runner_with_init",
+    "temp_roadmap_dir",
+    "temp_roadmap_with_projects",
+    "temp_roadmap_with_config",
+    "temp_roadmap_with_git_context",
+    "temp_roadmap_team_scenario",
     # Workspace fixtures
     "isolate_roadmap_workspace",
     "roadmap_workspace",

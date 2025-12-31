@@ -22,8 +22,17 @@ from .assertions import (
     assert_cli,
     assert_file,
 )
-from .click_testing import (
+from .cli_test_fixtures import (
     cli_runner,
+    cli_runner_with_init,
+    temp_roadmap_dir,
+    temp_roadmap_team_scenario,
+    temp_roadmap_with_config,
+    temp_roadmap_with_git_context,
+    temp_roadmap_with_projects,
+)
+from .click_testing import (
+    cli_runner as click_cli_runner,
     isolated_cli_runner,
 )
 from .data_factories import (
@@ -101,7 +110,14 @@ __all__ = [
     "assert_output",
     # Click testing fixtures
     "cli_runner",
+    "cli_runner_with_init",
+    "temp_roadmap_dir",
+    "temp_roadmap_with_projects",
+    "temp_roadmap_with_config",
+    "temp_roadmap_with_git_context",
+    "temp_roadmap_team_scenario",
     "isolated_cli_runner",
+    "click_cli_runner",
     # Workspace fixtures
     "isolate_roadmap_workspace",
     "roadmap_workspace",
