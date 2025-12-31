@@ -3,7 +3,9 @@
 Tests cover error handling, boundary conditions, and edge cases.
 """
 
+import os
 import tempfile
+import time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -172,19 +174,20 @@ class TestBackupValidatorSizeCalculation:
             assert len(result["files_to_delete"]) == 1
             assert result["total_size_bytes"] == len(content.encode())
 
-    @pytest.mark.skipif(
-        True,  # File system ordering is not guaranteed across platforms/versions
-        reason="File ordering is non-deterministic on some systems (Python 3.11/Ubuntu)",
-    )
+    @pytest.mark.skipif(False, reason="")
     def test_size_calculation_multiple_files(self):
         """Total size should sum all deleted files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
+            base_time = time.time()
 
             sizes = [100, 200, 300, 400]
             for i, size in enumerate(sizes):
                 backup_file = backups_dir / f"issue_123_v{i}.backup.md"
                 backup_file.write_text("x" * size)
+                # Set deterministic mtime (older files have earlier times)
+                mtime = base_time + i
+                os.utime(backup_file, (mtime, mtime))
 
             result = BackupValidator.scan_for_old_backups(backups_dir, keep=2)
 
@@ -424,21 +427,22 @@ class TestBackupValidatorDataIntegrity:
                 assert "path" in deleted_file
                 assert isinstance(deleted_file["path"], Path)
 
-    @pytest.mark.skipif(
-        True,  # File system ordering is not guaranteed across platforms/versions
-        reason="Backup deletion order depends on mtime/filesystem ordering (Python 3.11/Ubuntu)",
-    )
+    @pytest.mark.skipif(False, reason="")
     def test_newest_files_kept_not_deleted(self):
         """Newest files (by mtime) should be kept, oldest deleted."""
         with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
+            base_time = time.time()
 
-            # Create with sequential mtime
+            # Create with deterministic mtime ordering
             file_objects = []
             for i in range(5):
                 backup_file = backups_dir / f"issue_123_v{i}.backup.md"
                 backup_file.write_text(f"content{i}")
                 file_objects.append(backup_file)
+                # Set deterministic mtime (older files have earlier times)
+                mtime = base_time + i
+                os.utime(backup_file, (mtime, mtime))
 
             result = BackupValidator.scan_for_old_backups(backups_dir, keep=2)
 
