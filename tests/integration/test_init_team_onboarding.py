@@ -4,27 +4,17 @@ Tests the Option A architecture where projects are committed team artifacts
 that new team members join rather than creating new projects locally.
 """
 
-import tempfile
 from pathlib import Path
 
-import pytest
-
 from roadmap.adapters.cli import main
-
-
-@pytest.fixture
-def temp_repo_dir():
-    """Create a temporary repository directory."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield Path(tmpdir)
 
 
 class TestInitProjectDetection:
     """Test project detection during initialization."""
 
-    def test_init_creates_new_project_in_empty_roadmap(self, cli_runner, temp_repo_dir):
+    def test_init_creates_new_project_in_empty_roadmap(self, cli_runner):
         """Test that init creates a new project when .roadmap/projects is empty."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initialize roadmap
             result = cli_runner.invoke(
                 main, ["init", "--project-name", "Test Project", "--yes"]
@@ -39,9 +29,9 @@ class TestInitProjectDetection:
             project_files = list(projects_dir.glob("*.md"))
             assert len(project_files) >= 1
 
-    def test_init_joins_existing_project_on_rerun(self, cli_runner, temp_repo_dir):
+    def test_init_joins_existing_project_on_rerun(self, cli_runner):
         """Test that re-running init joins existing project instead of creating new one."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # First init: create project
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Alice's Project", "--yes"]
@@ -67,9 +57,9 @@ class TestInitProjectDetection:
             # Verify it's the same project
             assert first_project_id == second_project_id
 
-    def test_init_preserves_existing_milestones_issues(self, cli_runner, temp_repo_dir):
+    def test_init_preserves_existing_milestones_issues(self, cli_runner):
         """Test that init preserves existing milestones and issues."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initial setup
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Team Project", "--yes"]
@@ -102,9 +92,9 @@ class TestInitProjectDetection:
             assert len(milestones_before) == len(milestones_after)
             assert len(issues_before) == len(issues_after)
 
-    def test_init_with_skip_project_flag(self, cli_runner, temp_repo_dir):
+    def test_init_with_skip_project_flag(self, cli_runner):
         """Test that --skip-project prevents project creation."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ["init", "--skip-project", "--yes"])
 
             assert result.exit_code == 0
@@ -115,9 +105,9 @@ class TestInitProjectDetection:
                 project_files = list(projects_dir.glob("*.md"))
                 assert len(project_files) == 0
 
-    def test_init_shows_multiple_projects_when_present(self, cli_runner, temp_repo_dir):
+    def test_init_shows_multiple_projects_when_present(self, cli_runner):
         """Test that init shows all existing projects when there are multiple."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initial setup
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Project A", "--yes"]
@@ -140,9 +130,9 @@ class TestInitProjectDetection:
                 result2 = cli_runner.invoke(main, ["init", "--yes"])
                 assert result2.exit_code == 0
 
-    def test_init_force_recreates_roadmap(self, cli_runner, temp_repo_dir):
+    def test_init_force_recreates_roadmap(self, cli_runner):
         """Test that --force flag recreates roadmap from scratch."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initial setup
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Original Project", "--yes"]
@@ -163,9 +153,9 @@ class TestInitProjectDetection:
             new_files = list(projects_dir.glob("*.md"))
             assert len(new_files) >= 1
 
-    def test_init_dry_run_shows_detection(self, cli_runner, temp_repo_dir):
+    def test_init_dry_run_shows_detection(self, cli_runner):
         """Test that dry-run mode shows what would happen."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initial setup
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Test", "--yes"]
@@ -180,9 +170,9 @@ class TestInitProjectDetection:
 class TestProjectFileHandling:
     """Test handling of project files during init."""
 
-    def test_project_file_preserved_on_reinit(self, cli_runner, temp_repo_dir):
+    def test_project_file_preserved_on_reinit(self, cli_runner):
         """Test that existing project files are preserved across reinits."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initial setup
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Preserved Project", "--yes"]
@@ -206,9 +196,9 @@ class TestProjectFileHandling:
             # Content should be same (no modification)
             assert "Preserved Project" in new_content
 
-    def test_project_parsing_errors_handled_gracefully(self, cli_runner, temp_repo_dir):
+    def test_project_parsing_errors_handled_gracefully(self, cli_runner):
         """Test that corrupted project files don't crash init."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initial setup
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Test", "--yes"]
@@ -225,9 +215,9 @@ class TestProjectFileHandling:
             assert result2.exit_code == 0
             # Should not crash, but may show warning about corrupted file
 
-    def test_empty_projects_directory_treated_as_fresh(self, cli_runner, temp_repo_dir):
+    def test_empty_projects_directory_treated_as_fresh(self, cli_runner):
         """Test that empty .roadmap/projects directory triggers new project creation."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Create empty roadmap structure
             projects_dir = Path(".roadmap/projects")
             projects_dir.mkdir(parents=True, exist_ok=True)
@@ -246,7 +236,7 @@ class TestProjectFileHandling:
 class TestTeamOnboardingScenarios:
     """Test realistic team onboarding scenarios."""
 
-    def test_alice_creates_project_bob_joins(self, cli_runner, temp_repo_dir):
+    def test_alice_creates_project_bob_joins(self, cli_runner):
         """Test the Alice creates, Bob joins scenario.
 
         Scenario:
@@ -255,7 +245,7 @@ class TestTeamOnboardingScenarios:
         3. Bob clones repo
         4. Bob runs init (should join Alice's project, not create new one)
         """
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Step 1: Alice initializes
             alice_result = cli_runner.invoke(
                 main, ["init", "--project-name", "Alice's Project", "--yes"]
@@ -284,9 +274,9 @@ class TestTeamOnboardingScenarios:
             # Both should have same project ID
             assert alice_project_id == bob_project_id
 
-    def test_multiple_projects_in_monorepo(self, cli_runner, temp_repo_dir):
+    def test_multiple_projects_in_monorepo(self, cli_runner):
         """Test handling multiple projects in a single repository."""
-        with cli_runner.isolated_filesystem(temp_dir=temp_repo_dir):
+        with cli_runner.isolated_filesystem():
             # Initialize roadmap
             result1 = cli_runner.invoke(
                 main, ["init", "--project-name", "Project A", "--yes"]
