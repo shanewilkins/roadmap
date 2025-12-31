@@ -8,7 +8,7 @@
 # DEVELOPMENT INSTALLATION: poetry install
 #   Includes testing, linting, and documentation tools
 # ============================================================================
-name = "roadmap"
+name = "roadmap-cli"
 
 version = "1.0.0"
 
