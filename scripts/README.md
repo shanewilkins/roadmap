@@ -1,6 +1,6 @@
 # Roadmap Scripts
 
-Utility scripts for development and analysis.
+Utility scripts and installation formulas for development and distribution.
 
 ## Scripts
 
@@ -18,6 +18,27 @@ Measures and profiles performance of the roadmap CLI. Generates baseline metrics
 poetry run python scripts/baseline_profiler.py
 ```
 
+## Distribution
+
+### `roadmap.rb` - Homebrew Formula
+Homebrew installation formula for macOS users.
+
+**Before using:** Update the SHA256 hash in the formula with the actual hash from the PyPI release.
+
+```bash
+# One-time installation
+brew install --formula scripts/roadmap.rb
+
+# Or create a custom tap for distribution
+# (Tap setup instructions in INSTALLATION.md)
+```
+
+To generate the correct SHA256:
+```bash
+# After uploading to PyPI, download and hash the tarball
+curl -L https://files.pythonhosted.org/packages/source/r/roadmap/roadmap-1.0.0.tar.gz | sha256sum
+```
+
 ---
 
-Both scripts are development utilities and are not part of the production package.
+All scripts are development utilities and are not part of the production package.
