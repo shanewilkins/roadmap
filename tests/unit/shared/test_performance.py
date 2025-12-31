@@ -149,8 +149,9 @@ class TestTimedOperation:
             # Check that timing was logged
             call_args = mock_logger.info.call_args_list[0]
             duration_ms = call_args[1].get("duration_ms", 0)
-            # Should be roughly 10ms (allow wider variance for CI environments)
-            assert 5 < duration_ms < 200
+            # Verify the decorator actually measured time (>= sleep duration)
+            # We don't assert an upper bound since CI performance is variable
+            assert duration_ms >= 10  # At least the 10ms sleep
 
 
 class TestMetricsCollection:
