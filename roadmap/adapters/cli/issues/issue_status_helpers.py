@@ -19,7 +19,7 @@ from roadmap.shared.formatters.text.operations import (
 )
 
 if TYPE_CHECKING:
-    from roadmap.core.application import Core
+    from roadmap.core.application import Core  # noqa: F401
 
 console = get_console()
 

@@ -57,10 +57,10 @@ repos:
 
   # Run dead code detection (vulture)
   - repo: https://github.com/jendrikseipp/vulture
-    rev: v2.11
+    rev: v2.14
     hooks:
       - id: vulture
-        args: ['--min-confidence=80', '--exclude=tests', '--ignore-names=exc_*,method_name,Core']
+        args: ['--min-confidence=80', '--exclude=tests']
         pass_filenames: true
         types: [python]
 
