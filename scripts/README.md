@@ -23,20 +23,45 @@ poetry run python scripts/baseline_profiler.py
 ### `roadmap.rb` - Homebrew Formula
 Homebrew installation formula for macOS users.
 
-**Before using:** Update the SHA256 hash in the formula with the actual hash from the PyPI release.
-
+**For Local Development:**
 ```bash
-# One-time installation
 brew install --formula scripts/roadmap.rb
-
-# Or create a custom tap for distribution
-# (Tap setup instructions in INSTALLATION.md)
 ```
 
-To generate the correct SHA256:
+**For Public Distribution (Homebrew Tap):**
+
+Create a custom Homebrew tap repository:
+
 ```bash
-# After uploading to PyPI, download and hash the tarball
-curl -L https://files.pythonhosted.org/packages/source/r/roadmap/roadmap-1.0.0.tar.gz | sha256sum
+# Create a new GitHub repo: homebrew-roadmap
+git clone https://github.com/shanewilkins/homebrew-roadmap.git
+cd homebrew-roadmap
+
+# Copy the formula
+mkdir -p Formula
+cp ../roadmap/scripts/roadmap.rb Formula/
+
+git add Formula/roadmap.rb
+git commit -m "Add roadmap formula"
+git push origin main
+```
+
+Then users can install with:
+
+```bash
+# Add the tap (one-time)
+brew tap shanewilkins/roadmap
+
+# Install
+brew install roadmap
+
+# Update later
+brew upgrade roadmap
+```
+
+**Current SHA256 (v1.0.0):**
+```
+1526652af159fce98b68fb45aa9eb2f48f52fdc174e26afdfbec36f8091eeab3
 ```
 
 ---
