@@ -185,7 +185,7 @@ class OperationTimer:
         logger.debug("operation_started", operation=self.operation_name)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, _exc_type, exc_val, _exc_tb) -> None:
         """Stop the timer and record metrics."""
         self.end_time = time.perf_counter()
         assert self.start_time is not None

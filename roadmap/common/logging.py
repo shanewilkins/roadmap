@@ -33,7 +33,7 @@ SENSITIVE_KEYS = {
 }
 
 
-def add_correlation_id(logger, method_name, event_dict):
+def add_correlation_id(logger, _method_name, event_dict):
     """Structlog processor to add correlation ID to all log entries."""
     cid = correlation_id_var.get()
     if cid:
@@ -41,7 +41,7 @@ def add_correlation_id(logger, method_name, event_dict):
     return event_dict
 
 
-def scrub_sensitive_data(logger, method_name, event_dict):
+def scrub_sensitive_data(logger, _method_name, event_dict):
     """Structlog processor to remove sensitive data from logs."""
 
     def scrub_value(key, value):
