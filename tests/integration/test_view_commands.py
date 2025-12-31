@@ -5,13 +5,12 @@ Tests the detailed view commands that display formatted information about indivi
 
 import re
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import pytest
 
 from roadmap.adapters.cli import main
 from tests.common.cli_test_helpers import CLIOutputParser
-from tests.unit.shared.test_utils import strip_ansi
+from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
 @pytest.fixture
@@ -19,75 +18,32 @@ def roadmap_with_data(cli_runner):
     """Create an isolated roadmap with issues, milestones, and projects.
 
     Yields:
-        tuple: (cli_runner, temp_dir_path, data_dict)
+        tuple: (cli_runner, data_dict)
     """
     with cli_runner.isolated_filesystem():
-        temp_dir = Path.cwd()
-
-        # Initialize a roadmap
-        result = cli_runner.invoke(
-            main,
-            [
-                "init",
-                "--project-name",
-                "Test Project",
-                "--non-interactive",
-                "--skip-github",
-            ],
-        )
-        assert result.exit_code == 0, f"Init failed: {result.output}"
+        core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create a milestone
-        result = cli_runner.invoke(
-            main,
-            [
-                "milestone",
-                "create",
-                "v1.0.0",
-                "--description",
-                "First release",
-                "--due-date",
-                (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
-            ],
+        IntegrationTestBase.create_milestone(
+            cli_runner,
+            name="v1.0.0",
+            description="First release",
+            due_date=(datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
         )
-        assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
 
         # Create an issue
-        result = cli_runner.invoke(
-            main,
-            [
-                "issue",
-                "create",
-                "Test issue for viewing",
-                "--type",
-                "feature",
-                "--priority",
-                "high",
-                "--milestone",
-                "v1.0.0",
-            ],
+        IntegrationTestBase.create_issue(
+            cli_runner,
+            title="Test issue for viewing",
+            issue_type="feature",
+            priority="high",
+            milestone="v1.0.0",
         )
-        assert result.exit_code == 0, f"Issue creation failed: {result.output}"
 
-        # Extract issue ID from create output
-        clean_output = strip_ansi(result.output)
-        issue_id = None
-
-        # First try to find issue_id= in the log lines
-        for line in clean_output.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue_id = match.group(1)
-                    break
-
-        # Fallback: look for [xxx] pattern
-        if issue_id is None:
-            match = re.search(r"\[([^\]]+)\]", clean_output)
-            if match:
-                issue_id = match.group(1)
-
-        assert issue_id, f"Could not find issue ID in output: {result.output}"
+        # Get the first issue ID from core
+        issues = core.issues.list()
+        issue_id = issues[0].id if issues else None
+        assert issue_id, "Could not create issue"
 
         # Create a project
         result = cli_runner.invoke(
@@ -140,7 +96,6 @@ def roadmap_with_data(cli_runner):
 
         yield (
             cli_runner,
-            temp_dir,
             {
                 "issue_id": issue_id,
                 "milestone_name": "v1.0.0",
@@ -156,7 +111,7 @@ class TestIssueViewCommand:
 
     def test_issue_view_displays_basic_info(self, roadmap_with_data):
         """Test that issue view displays basic issue information."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["issue", "view", data["issue_id"]], catch_exceptions=False
@@ -169,7 +124,7 @@ class TestIssueViewCommand:
 
     def test_issue_view_displays_milestone(self, roadmap_with_data):
         """Test that issue view displays associated milestone."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["issue", "view", data["issue_id"]], catch_exceptions=False
@@ -180,7 +135,7 @@ class TestIssueViewCommand:
 
     def test_issue_view_displays_type(self, roadmap_with_data):
         """Test that issue view displays the type."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["issue", "view", data["issue_id"]], catch_exceptions=False
@@ -191,7 +146,7 @@ class TestIssueViewCommand:
 
     def test_issue_view_nonexistent_issue(self, roadmap_with_data):
         """Test viewing a non-existent issue."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["issue", "view", "00000000-0000-0000-0000-000000000000"]
@@ -211,7 +166,7 @@ class TestMilestoneViewCommand:
 
     def test_milestone_view_displays_basic_info(self, roadmap_with_data):
         """Test that milestone view displays basic milestone information."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["milestone", "view", data["milestone_name"]], catch_exceptions=False
@@ -223,7 +178,7 @@ class TestMilestoneViewCommand:
 
     def test_milestone_view_displays_progress(self, roadmap_with_data):
         """Test that milestone view displays progress information."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["milestone", "view", data["milestone_name"]], catch_exceptions=False
@@ -235,7 +190,7 @@ class TestMilestoneViewCommand:
 
     def test_milestone_view_displays_issues(self, roadmap_with_data):
         """Test that milestone view displays associated issues."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["milestone", "view", data["milestone_name"]], catch_exceptions=False
@@ -246,7 +201,7 @@ class TestMilestoneViewCommand:
 
     def test_milestone_view_nonexistent_milestone(self, roadmap_with_data):
         """Test viewing a non-existent milestone."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(main, ["milestone", "view", "v99.99.99"])
 
@@ -264,7 +219,7 @@ class TestProjectViewCommand:
 
     def test_project_view_displays_basic_info(self, roadmap_with_data):
         """Test that project view displays basic project information."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["project", "view", data["project_id"]], catch_exceptions=False
@@ -278,7 +233,7 @@ class TestProjectViewCommand:
 
     def test_project_view_displays_description(self, roadmap_with_data):
         """Test that project view displays the description."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(
             main, ["project", "view", data["project_id"]], catch_exceptions=False
@@ -289,7 +244,7 @@ class TestProjectViewCommand:
 
     def test_project_view_nonexistent_project(self, roadmap_with_data):
         """Test viewing a non-existent project."""
-        cli_runner, temp_dir, data = roadmap_with_data
+        cli_runner, data = roadmap_with_data
 
         result = cli_runner.invoke(main, ["project", "view", "nonexistent-project"])
 

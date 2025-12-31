@@ -4,11 +4,11 @@ Tests the overdue filtering functionality for issues, milestones, and projects.
 """
 
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import pytest
 
 from roadmap.adapters.cli import main
+from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
 @pytest.fixture
@@ -16,106 +16,56 @@ def roadmap_with_overdue_items(cli_runner):
     """Create an isolated roadmap with overdue and on-time items.
 
     Yields:
-        tuple: (cli_runner, temp_dir_path)
+        tuple: (cli_runner, roadmap_core)
     """
     with cli_runner.isolated_filesystem():
-        temp_dir = Path.cwd()
-
-        # Initialize a roadmap
-        result = cli_runner.invoke(
-            main,
-            [
-                "init",
-                "--project-name",
-                "Test Project",
-                "--non-interactive",
-                "--skip-github",
-            ],
-        )
-        assert result.exit_code == 0, f"Init failed: {result.output}"
+        core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create an overdue milestone
         overdue_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
-        result = cli_runner.invoke(
-            main,
-            [
-                "milestone",
-                "create",
-                "overdue-milestone",
-                "--description",
-                "This is overdue",
-                "--due-date",
-                overdue_date,
-            ],
+        IntegrationTestBase.create_milestone(
+            cli_runner,
+            name="overdue-milestone",
+            description="This is overdue",
+            due_date=overdue_date,
         )
-        assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
 
         # Create a future milestone
         future_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
-        result = cli_runner.invoke(
-            main,
-            [
-                "milestone",
-                "create",
-                "future-milestone",
-                "--description",
-                "This is in the future",
-                "--due-date",
-                future_date,
-            ],
+        IntegrationTestBase.create_milestone(
+            cli_runner,
+            name="future-milestone",
+            description="This is in the future",
+            due_date=future_date,
         )
-        assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
 
         # Create an overdue issue (set estimate as proxy for due date)
-        result = cli_runner.invoke(
-            main,
-            [
-                "issue",
-                "create",
-                "Overdue issue",
-                "--type",
-                "bug",
-                "--priority",
-                "high",
-                "--estimate",
-                "8",
-            ],
+        IntegrationTestBase.create_issue(
+            cli_runner,
+            title="Overdue issue",
+            issue_type="bug",
+            priority="high",
+            estimate=8,
         )
-        assert result.exit_code == 0, f"Issue creation failed: {result.output}"
 
         # Create a future issue
-        result = cli_runner.invoke(
-            main,
-            [
-                "issue",
-                "create",
-                "Future issue",
-                "--type",
-                "feature",
-                "--priority",
-                "medium",
-                "--estimate",
-                "4",
-            ],
+        IntegrationTestBase.create_issue(
+            cli_runner,
+            title="Future issue",
+            issue_type="feature",
+            priority="medium",
+            estimate=4,
         )
-        assert result.exit_code == 0, f"Issue creation failed: {result.output}"
 
         # Create an issue with no due date
-        result = cli_runner.invoke(
-            main,
-            [
-                "issue",
-                "create",
-                "No due date issue",
-                "--type",
-                "other",
-                "--priority",
-                "low",
-            ],
+        IntegrationTestBase.create_issue(
+            cli_runner,
+            title="No due date issue",
+            issue_type="other",
+            priority="low",
         )
-        assert result.exit_code == 0, f"Issue creation failed: {result.output}"
 
-        yield cli_runner, temp_dir
+        yield cli_runner, core
 
 
 class TestOverdueIssueFiltering:
@@ -123,7 +73,7 @@ class TestOverdueIssueFiltering:
 
     def test_issue_list_overdue_flag_works(self, roadmap_with_overdue_items):
         """Test that --overdue flag is accepted and executes."""
-        cli_runner, temp_dir = roadmap_with_overdue_items
+        cli_runner, core = roadmap_with_overdue_items
 
         result = cli_runner.invoke(
             main, ["issue", "list", "--overdue"], catch_exceptions=False
@@ -135,7 +85,7 @@ class TestOverdueIssueFiltering:
 
     def test_issue_list_without_overdue_shows_all(self, roadmap_with_overdue_items):
         """Test that without --overdue flag, all issues are shown."""
-        cli_runner, temp_dir = roadmap_with_overdue_items
+        cli_runner, core = roadmap_with_overdue_items
 
         result = cli_runner.invoke(main, ["issue", "list"], catch_exceptions=False)
 
@@ -146,7 +96,7 @@ class TestOverdueIssueFiltering:
 
     def test_issue_list_overdue_with_other_filters(self, roadmap_with_overdue_items):
         """Test that --overdue can be combined with other filters."""
-        cli_runner, temp_dir = roadmap_with_overdue_items
+        cli_runner, core = roadmap_with_overdue_items
 
         result = cli_runner.invoke(
             main,
@@ -163,7 +113,7 @@ class TestOverdueMilestoneFiltering:
 
     def test_milestone_list_overdue_flag_works(self, roadmap_with_overdue_items):
         """Test that --overdue flag is accepted and executes."""
-        cli_runner, temp_dir = roadmap_with_overdue_items
+        cli_runner, core = roadmap_with_overdue_items
 
         result = cli_runner.invoke(
             main, ["milestone", "list", "--overdue"], catch_exceptions=False
@@ -177,7 +127,7 @@ class TestOverdueMilestoneFiltering:
 
     def test_milestone_list_without_overdue_shows_all(self, roadmap_with_overdue_items):
         """Test that without --overdue flag, all milestones are shown."""
-        cli_runner, temp_dir = roadmap_with_overdue_items
+        cli_runner, core = roadmap_with_overdue_items
 
         result = cli_runner.invoke(main, ["milestone", "list"], catch_exceptions=False)
 
@@ -188,7 +138,7 @@ class TestOverdueMilestoneFiltering:
 
     def test_milestone_overdue_only_includes_open(self, roadmap_with_overdue_items):
         """Test that --overdue only includes open milestones, not completed ones."""
-        cli_runner, temp_dir = roadmap_with_overdue_items
+        cli_runner, core = roadmap_with_overdue_items
 
         # Try to close the overdue milestone
         close_result = cli_runner.invoke(
