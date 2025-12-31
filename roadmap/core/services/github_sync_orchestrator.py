@@ -102,27 +102,56 @@ class GitHubSyncOrchestrator:
                         elif change.local_changes or change.github_changes:
                             report.issues_updated += 1
 
+            # 4. Detect orphaned GitHub references (optional reporting)
+            # These are issues/milestones with github_issue/github_milestone set
+            # but no active sync. Can be reported for user awareness.
+            # (Implementation deferred to v1.1 for full deleted entity sync)
+
             # Apply changes if not dry-run
             if not dry_run and (
                 force_local or force_github or not report.has_conflicts()
             ):
                 for change in report.changes:
-                    # Handle issue creation
-                    if (
-                        "action" in change.local_changes
-                        and change.local_changes["action"] == "create on GitHub"
-                    ):
-                        self._create_issue_on_github(change.issue_id)
+                    # Determine if this is an issue or milestone change
+                    is_milestone = (
+                        hasattr(self.core, "milestones")
+                        and self.core.milestones.get(change.issue_id) is not None
+                    )
+
+                    if is_milestone:
+                        # Handle milestone creation/updates
+                        if (
+                            "action" in change.local_changes
+                            and change.local_changes["action"] == "create_milestone"
+                        ):
+                            self._create_milestone_on_github(change.issue_id)
+                        else:
+                            # Handle existing milestones
+                            if change.github_changes and not (
+                                change.has_conflict and force_local
+                            ):
+                                self._apply_github_milestone_changes(change)
+                            if change.local_changes and not (
+                                change.has_conflict and force_github
+                            ):
+                                self._apply_local_milestone_changes(change)
                     else:
-                        # Handle existing issues
-                        if change.github_changes and not (
-                            change.has_conflict and force_local
+                        # Handle issue creation/updates
+                        if (
+                            "action" in change.local_changes
+                            and change.local_changes["action"] == "create on GitHub"
                         ):
-                            self._apply_github_changes(change)
-                        if change.local_changes and not (
-                            change.has_conflict and force_github
-                        ):
-                            self._apply_local_changes(change)
+                            self._create_issue_on_github(change.issue_id)
+                        else:
+                            # Handle existing issues
+                            if change.github_changes and not (
+                                change.has_conflict and force_local
+                            ):
+                                self._apply_github_changes(change)
+                            if change.local_changes and not (
+                                change.has_conflict and force_github
+                            ):
+                                self._apply_local_changes(change)
 
         except Exception as e:
             report.error = str(e)
@@ -444,7 +473,7 @@ class GitHubSyncOrchestrator:
         Returns:
             IssueChange with detected changes or None
         """
-        if not hasattr(local_milestone, "github_milestone"):
+        if not hasattr(local_milestone, "name"):
             return None
 
         change = IssueChange(
@@ -460,12 +489,56 @@ class GitHubSyncOrchestrator:
                 return None
 
             # If milestone not yet linked to GitHub, mark for creation
-            if not local_milestone.github_milestone:
-                change.local_changes = {"action": "create milestone on GitHub"}
+            if not hasattr(local_milestone, "github_milestone") or (
+                not local_milestone.github_milestone
+            ):
+                change.local_changes = {"action": "create_milestone"}
                 return change
 
-            # TODO: Fetch milestone from GitHub and detect changes
-            # For now, return None if already linked (no detection yet)
+            # Milestone exists on GitHub - detect local changes
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+            handler = MilestoneHandler(session, owner, repo)
+
+            # Fetch milestone from GitHub
+            gh_milestone = handler.get_milestone(local_milestone.github_milestone)
+
+            # Compare fields to detect changes
+            changes = {}
+
+            if local_milestone.name != gh_milestone.get("title"):
+                changes["title"] = (
+                    f"{gh_milestone.get('title')} -> {local_milestone.name}"
+                )
+
+            if local_milestone.description != gh_milestone.get("description", ""):
+                changes["description"] = (
+                    f"{gh_milestone.get('description', '')} -> "
+                    f"{local_milestone.description}"
+                )
+
+            # Map local status to GitHub state
+            local_state = (
+                "closed" if local_milestone.status.value == "closed" else "open"
+            )
+            gh_state = gh_milestone.get("state", "open")
+            if local_state != gh_state:
+                changes["status"] = f"{gh_state} -> {local_state}"
+
+            if changes:
+                change.local_changes = changes
+                return change
+
             return None
 
         except Exception:
@@ -538,3 +611,198 @@ class GitHubSyncOrchestrator:
         """
         status_value = status.value if hasattr(status, "value") else str(status)
         return [f"status:{status_value}"]
+
+    def _create_milestone_on_github(self, milestone_name: str) -> None:
+        """Create a new milestone on GitHub from local milestone.
+
+        Args:
+            milestone_name: Local milestone name
+        """
+        try:
+            milestone = self.core.milestones.get(milestone_name)
+            if not milestone:
+                return
+
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                return
+
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+            handler = MilestoneHandler(session, owner, repo)
+
+            # Create milestone on GitHub
+            github_milestone = handler.create_milestone(
+                title=milestone.name,
+                description=milestone.description,
+                due_date=milestone.due_date,
+                state="closed" if milestone.status.value == "closed" else "open",
+            )
+
+            # Link the local milestone to the GitHub milestone
+            milestone.github_milestone = github_milestone.get("number")
+            self.core.milestones.update(milestone)
+
+            # Record sync
+            self.metadata_service.record_sync(
+                milestone, success=True, github_changes={"action": "created on GitHub"}
+            )
+
+        except Exception as e:
+            print(f"Failed to create milestone {milestone_name} on GitHub: {e}")
+
+    def _apply_local_milestone_changes(self, change: IssueChange) -> None:
+        """Apply local milestone changes to GitHub.
+
+        Args:
+            change: IssueChange with detected changes
+        """
+        if not change.local_changes:
+            return
+
+        try:
+            milestone = self.core.milestones.get(change.issue_id)
+            if not milestone:
+                return
+
+            # Handle milestone creation
+            if change.local_changes.get("action") == "create_milestone":
+                self._create_milestone_on_github(change.issue_id)
+                return
+
+            # Handle milestone updates
+            if not milestone.github_milestone:
+                return
+
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                return
+
+            from requests import Session
+
+            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
+
+            session = Session()
+            session.headers.update(
+                {
+                    "Authorization": f"token {self.config.get('token')}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+            handler = MilestoneHandler(session, owner, repo)
+
+            # Prepare milestone update
+            update_data = {}
+
+            # Apply title change
+            if "title" in change.local_changes:
+                new_title = change.local_changes["title"].split(" -> ")[1]
+                update_data["title"] = new_title
+                milestone.name = new_title
+
+            # Apply description change
+            if "description" in change.local_changes:
+                new_desc = change.local_changes["description"].split(" -> ")[1]
+                update_data["description"] = new_desc
+                milestone.description = new_desc
+
+            # Apply status change
+            if "status" in change.local_changes:
+                new_status = change.local_changes["status"].split(" -> ")[1]
+                github_state = "closed" if new_status == "closed" else "open"
+                update_data["state"] = github_state
+                # Update local milestone status
+                from roadmap.common.constants import MilestoneStatus
+
+                try:
+                    milestone.status = MilestoneStatus(new_status)
+                except (ValueError, KeyError):
+                    pass
+
+            # Push changes to GitHub
+            if update_data:
+                handler.update_milestone(milestone.github_milestone, **update_data)
+
+            # Persist the changes
+            self.core.milestones.update(milestone)
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync(
+                milestone, success=True, github_changes=change.local_changes
+            )
+
+        except Exception as e:
+            milestone = self.core.milestones.get(change.issue_id)
+            if milestone:
+                self.metadata_service.record_sync(
+                    milestone, success=False, error_message=str(e)
+                )
+            print(
+                f"Failed to apply local changes to GitHub for milestone "
+                f"{change.issue_id}: {e}"
+            )
+
+    def _apply_github_milestone_changes(self, change: IssueChange) -> None:
+        """Apply GitHub milestone changes locally.
+
+        Args:
+            change: IssueChange with detected changes from GitHub
+        """
+        if not change.github_changes:
+            return
+
+        try:
+            milestone = self.core.milestones.get(change.issue_id)
+            if not milestone:
+                return
+
+            # Apply title change from GitHub
+            if "title" in change.github_changes:
+                new_title = change.github_changes["title"].split(" -> ")[1]
+                milestone.name = new_title
+
+            # Apply description change from GitHub
+            if "description" in change.github_changes:
+                new_desc = change.github_changes["description"].split(" -> ")[1]
+                milestone.description = new_desc
+
+            # Apply status change from GitHub
+            if "status" in change.github_changes:
+                new_status = change.github_changes["status"].split(" -> ")[1]
+                from roadmap.common.constants import MilestoneStatus
+
+                try:
+                    milestone.status = MilestoneStatus(new_status)
+                except (ValueError, KeyError):
+                    pass
+
+            # Persist the changes
+            self.core.milestones.update(milestone)
+
+            # Record successful sync in metadata
+            self.metadata_service.record_sync(
+                milestone, success=True, local_changes=change.github_changes
+            )
+
+        except Exception as e:
+            milestone = self.core.milestones.get(change.issue_id)
+            if milestone:
+                self.metadata_service.record_sync(
+                    milestone, success=False, error_message=str(e)
+                )
+            print(f"Failed to apply GitHub changes to milestone {change.issue_id}: {e}")
