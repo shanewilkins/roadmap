@@ -74,6 +74,10 @@ class BehaviorConfig(BaseModel):
         default=False,
         description="Include closed issues in critical path analysis by default",
     )
+    default_project_id: str | None = Field(
+        default=None,
+        description="Default project ID to use when creating milestones (auto-detected during init)",
+    )
 
     class Config:
         """Pydantic config."""

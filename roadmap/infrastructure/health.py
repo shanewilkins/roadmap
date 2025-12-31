@@ -320,6 +320,38 @@ class HealthCheck:
         status_str, message = OrphanedIssuesValidator.check_orphaned_issues(core)
         return HealthStatus(status_str), message
 
+    @staticmethod
+    def check_orphaned_milestones(core) -> tuple[HealthStatus, str]:
+        """Check for milestones not assigned to any project.
+
+        Delegates to DataIntegrityValidatorService.
+
+        Returns:
+            Tuple of (DEGRADED status, informational message) if milestones found
+        """
+        from roadmap.core.services.data_integrity_validator_service import (
+            OrphanedMilestonesValidator,
+        )
+
+        status_str, message = OrphanedMilestonesValidator.perform_check()
+        return HealthStatus(status_str), message
+
+    @staticmethod
+    def check_duplicate_milestones(core) -> tuple[HealthStatus, str]:
+        """Check for duplicate milestones (by file and name).
+
+        Delegates to DataIntegrityValidatorService.
+
+        Returns:
+            Tuple of (DEGRADED status, informational message) if duplicates found
+        """
+        from roadmap.core.services.data_integrity_validator_service import (
+            DuplicateMilestonesValidator,
+        )
+
+        status_str, message = DuplicateMilestonesValidator.perform_check()
+        return HealthStatus(status_str), message
+
     @classmethod
     def run_all_checks(cls, core) -> dict[str, tuple[HealthStatus, str]]:
         """Run all health checks and return results.
@@ -340,9 +372,11 @@ class HealthCheck:
             "git_repository": cls.check_git_repository(),
             "database_integrity": cls.check_database_integrity(),
             "duplicate_issues": cls.check_duplicate_issues(core),
+            "duplicate_milestones": cls.check_duplicate_milestones(core),
             "folder_structure": cls.check_folder_structure(core),
             "data_integrity": cls.check_data_integrity(),
             "orphaned_issues": cls.check_orphaned_issues(core),
+            "orphaned_milestones": cls.check_orphaned_milestones(core),
             "old_backups": cls.check_old_backups(),
             "archivable_issues": cls.check_archivable_issues(core),
             "archivable_milestones": cls.check_archivable_milestones(core),

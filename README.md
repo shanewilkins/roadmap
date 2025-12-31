@@ -193,6 +193,54 @@ roadmap today --filter priority=critical
 
 See [FAQ.md](docs/user_guide/FAQ.md) for deeper comparisons.
 
+## Scope & Limitations
+
+### What Roadmap Does Well
+
+**Single Repository:**
+- Track issues, milestones, and roadmaps within one repo
+- Organize work by priority, assignment, and status
+- Integrate with git commits via auto-sync
+- Export to multiple formats for reporting
+- Work offline, sync when ready
+
+**Small Teams (1-8 people):**
+- Everyone has read/write access to the repo
+- Git-based synchronization (no merge conflicts on simple status changes)
+- All changes are tracked and auditable via git history
+- CLI-first workflow matches developer preferences
+
+### What Roadmap Doesn't Do
+
+**Multiple Repositories:**
+- This tool is repo-scoped by design (each repo gets its own `.roadmap` directory)
+- If you manage multiple related projects across repos, use:
+  - GitHub Projects (free, integrated with repos)
+  - Jira or Linear (enterprise, for complex coordination)
+  - Your own meta-layer (if you need something custom)
+- Each repo runs independently; there's no built-in cross-repo aggregation
+
+**Enterprise Features:**
+- Complex RBAC (role-based access control)
+- Multiple teams with separate permissions
+- Audit logging and compliance reporting
+- Web UI and mobile access
+- SaaS infrastructure
+
+For these, use Jira, Linear, or GitHub Enterprise.
+
+**Why This Scope?**
+
+Roadmap intentionally stays small because:
+1. **It solves the actual problem** for solo devs and small teams (duplicate data entry)
+2. **Larger teams benefit from better tools** (Jira, Linear) that solve different problems
+3. **Git as the sync layer** works at scale up to ~5 projects per person
+4. **Simplicity is a feature** — less code = fewer bugs = easier to fork/modify
+
+### Future-Proofing
+
+The schema includes optional `repo_url` (on projects) and `project_id` (on milestones) fields for future tooling that might aggregate across repos. These fields are unused today but allow extensions without breaking existing data.
+
 ## Real-World Example
 
 ### Solo Developer

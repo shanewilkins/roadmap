@@ -33,6 +33,9 @@ class Milestone(BaseModel):
     created: datetime = Field(default_factory=now_utc)
     updated: datetime = Field(default_factory=now_utc)
     content: str = ""  # Markdown content
+    project_id: str | None = (
+        None  # Project this milestone belongs to (for relationship tracking)
+    )
 
     # Automatic progress tracking fields
     calculated_progress: float | None = None  # Auto-calculated from issues

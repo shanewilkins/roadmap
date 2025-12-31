@@ -29,6 +29,9 @@ class Project(BaseModel):
     estimated_hours: float | None = None
     actual_hours: float | None = None
     content: str = ""  # Markdown content
+    repo_url: str | None = (
+        None  # URL to the repository (for context/future cross-repo tooling)
+    )
 
     # Automatic progress tracking fields
     calculated_progress: float | None = None  # Auto-calculated from milestones

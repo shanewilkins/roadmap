@@ -46,11 +46,18 @@ class MilestoneCoordinator:
         description: str = "",
         due_date: datetime | None = None,
         status: str | None = None,
+        project_id: str | None = None,
     ) -> Milestone:
         """Create a new milestone."""
-        return self._ops.create_milestone(
+        milestone = self._ops.create_milestone(
             name=name, description=description, due_date=due_date, status=status
         )
+
+        # Assign to project if provided
+        if project_id:
+            milestone.project_id = project_id
+
+        return milestone
 
     def list(self) -> list[Milestone]:
         """List all milestones."""

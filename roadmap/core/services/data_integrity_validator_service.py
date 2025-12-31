@@ -12,8 +12,13 @@ from roadmap.core.services.validators import (
     BackupValidator,
     DataIntegrityValidator,
     DuplicateIssuesValidator,
+    DuplicateMilestonesValidator,
     FolderStructureValidator,
     OrphanedIssuesValidator,
+    OrphanedMilestonesValidator,
+)
+from roadmap.core.services.validators import (
+    __all__ as _validators_all,
 )
 from roadmap.core.services.validators.health_status_utils import (
     get_overall_status,
@@ -22,8 +27,6 @@ from roadmap.core.services.validators.health_status_utils import (
 logger = get_logger(__name__)
 
 # Re-export validators for backward compatibility - use same list as validators module
-from roadmap.core.services.validators import __all__ as _validators_all
-
 __all__ = ["DataIntegrityValidatorService"] + _validators_all
 
 
@@ -46,6 +49,9 @@ class DataIntegrityValidatorService:
 
         try:
             checks["duplicate_issues"] = DuplicateIssuesValidator.perform_check()
+            checks["duplicate_milestones"] = (
+                DuplicateMilestonesValidator.perform_check()
+            )
             checks["folder_structure"] = FolderStructureValidator.perform_check()
             checks["old_backups"] = BackupValidator.check_old_backups()
             checks["archivable_issues"] = (
@@ -58,6 +64,7 @@ class DataIntegrityValidatorService:
             checks["orphaned_issues"] = OrphanedIssuesValidator.check_orphaned_issues(
                 core
             )
+            checks["orphaned_milestones"] = OrphanedMilestonesValidator.perform_check()
 
             return checks
         except Exception as e:

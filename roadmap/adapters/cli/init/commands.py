@@ -386,6 +386,16 @@ def init(
             params.interactive,
         )
 
+        # Save default project ID if created
+        if project_info and project_info.get("action") == "created":
+            from roadmap.common.config_manager import ConfigManager
+
+            config_manager = ConfigManager(custom_core.config_file)
+            config = config_manager.load()
+            config.behavior.default_project_id = project_info.get("id")
+            config_manager.save(config)
+            log.info("default_project_set", project_id=project_info.get("id"))
+
         # Show project summary
         if project_info:
             if project_info.get("action") == "created":

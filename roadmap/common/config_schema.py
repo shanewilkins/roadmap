@@ -81,11 +81,25 @@ class DisplayConfig:
 
 
 @dataclass
+class BehaviorConfig:
+    """Application behavior preferences.
+
+    User-specific behavior settings for CLI operations.
+    """
+
+    auto_branch_on_start: bool = False
+    confirm_destructive: bool = True
+    show_tips: bool = True
+    include_closed_in_critical_path: bool = False
+    default_project_id: str | None = None
+
+
+@dataclass
 class RoadmapConfig:
     """Complete roadmap configuration - LOCAL ONLY, NEVER commit to version control.
 
     This is the root configuration object stored in .roadmap/config.yaml.
-    It aggregates user, paths, GitHub, and display settings.
+    It aggregates user, paths, GitHub, display, and behavior settings.
 
     SECURITY REMINDER:
     - This entire config object is user-specific and must not be shared
@@ -98,6 +112,7 @@ class RoadmapConfig:
     paths: PathsConfig = field(default_factory=PathsConfig)
     github: GitHubConfig = field(default_factory=GitHubConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
+    behavior: BehaviorConfig = field(default_factory=BehaviorConfig)
 
     def to_dict(self):
         """Convert to dictionary for YAML serialization."""
@@ -118,7 +133,12 @@ class RoadmapConfig:
         display_data = data.get("display", {}) or {}
         display = DisplayConfig(**display_data)
 
+        behavior_data = data.get("behavior", {}) or {}
+        behavior = BehaviorConfig(**behavior_data)
+
         if not user:
             raise ValueError("User configuration is required")
 
-        return RoadmapConfig(user=user, paths=paths, github=github, display=display)
+        return RoadmapConfig(
+            user=user, paths=paths, github=github, display=display, behavior=behavior
+        )
