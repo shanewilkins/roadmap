@@ -4,6 +4,7 @@ description: Long-term enhancements and advanced features planned for versions a
   v1.0. Includes enterprise features, analytics, and advanced tooling.
 due_date: '2026-06-30T00:00:00'
 status: open
+project_id: 8df8c61f
 github_milestone: null
 created: '2025-12-04T17:37:39.401299'
 updated: '2025-12-04T17:37:39.401302'
