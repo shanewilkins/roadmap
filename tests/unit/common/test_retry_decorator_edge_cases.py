@@ -1,6 +1,5 @@
 """Test coverage for retry module."""
 
-import time
 from unittest.mock import Mock, patch
 
 import pytest
@@ -88,35 +87,39 @@ class TestRetryDecorator:
 
     def test_retry_exponential_backoff(self):
         """Test that exponential backoff increases delays."""
-        start_times = []
+        sleep_times = []
 
-        @retry(max_attempts=4, delay=0.05, backoff=2.0, exceptions=(ValueError,))
-        def func():
-            start_times.append(time.time())
-            if len(start_times) < 4:
-                raise ValueError("fail")
-            return "success"
+        # Mock time.sleep to capture sleep durations
+        def mock_sleep(duration):
+            sleep_times.append(duration)
 
-        result = func()
-        assert result == "success"
-        assert len(start_times) == 4
+        with patch("time.sleep", side_effect=mock_sleep):
+            call_count = [0]
 
-        # Check that delays are increasing (approximately exponential)
-        delay1 = start_times[1] - start_times[0]
-        delay2 = start_times[2] - start_times[1]
-        delay3 = start_times[3] - start_times[2]
+            @retry(max_attempts=4, delay=0.05, backoff=2.0, exceptions=(ValueError,))
+            def func():
+                call_count[0] += 1
+                if call_count[0] < 4:
+                    raise ValueError("fail")
+                return "success"
 
-        # Delays should be roughly: 0.05, 0.1, 0.2
-        # But be lenient with timing - just verify the trend exists
-        # and that total time is reasonable
-        # Note: On fast systems (Python 3.13) or under load, timing can vary
-        total_delay = delay1 + delay2 + delay3
+            result = func()
+            assert result == "success"
+            assert call_count[0] == 4
 
-        # Just verify we're sleeping (not zero delays)
-        # and that delays are increasing in trend
-        assert total_delay > 0.05  # At least some delay occurred
-        assert delay2 >= delay1 * 0.8  # Allow 20% tolerance for system variance
-        assert delay3 >= delay2 * 0.8  # Allow 20% tolerance for system variance
+        # Verify we captured the sleep calls (3 retries = 3 sleeps)
+        assert len(sleep_times) == 3
+
+        # Verify exponential backoff: 0.05, 0.1, 0.2
+        assert (
+            abs(sleep_times[0] - 0.05) < 0.001
+        ), f"First sleep should be ~0.05, got {sleep_times[0]}"
+        assert (
+            abs(sleep_times[1] - 0.1) < 0.001
+        ), f"Second sleep should be ~0.1, got {sleep_times[1]}"
+        assert (
+            abs(sleep_times[2] - 0.2) < 0.001
+        ), f"Third sleep should be ~0.2, got {sleep_times[2]}"
 
     @pytest.mark.parametrize(
         "delay,backoff,description",

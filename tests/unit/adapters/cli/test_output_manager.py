@@ -40,3 +40,56 @@ class TestOutputManager:
         manager = OutputManager()
         assert hasattr(manager, "render_table")
         assert callable(manager.render_table)
+
+    def test_render_table_format(self):
+        """Test rendering data as table."""
+        manager = OutputManager(format="table")
+        data = [
+            {"id": "1", "name": "Item 1"},
+            {"id": "2", "name": "Item 2"},
+        ]
+
+        result = manager.render_table(data)
+
+        assert result is not None
+
+    def test_render_json_format(self):
+        """Test rendering data as JSON."""
+        manager = OutputManager(format="json")
+        data = [
+            {"id": "1", "name": "Item 1"},
+            {"id": "2", "name": "Item 2"},
+        ]
+
+        result = manager.render_table(data)
+
+        assert result is not None
+
+    def test_render_empty_data(self):
+        """Test rendering empty data."""
+        manager = OutputManager(format="table")
+        data = []
+
+        result = manager.render_table(data)
+
+        assert result is not None
+
+    def test_render_single_item(self):
+        """Test rendering single item."""
+        manager = OutputManager(format="table")
+        data = [{"id": "1", "name": "Item 1"}]
+
+        result = manager.render_table(data)
+
+        assert result is not None
+
+    def test_print_output(self):
+        """Test printing output."""
+        manager = OutputManager(format="table")
+        data = [
+            {"id": "1", "name": "Item 1"},
+            {"id": "2", "name": "Item 2"},
+        ]
+
+        # Should not raise
+        manager.print(data)
