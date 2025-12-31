@@ -1,8 +1,0 @@
-# Roadmap local data (generated exports, backups, logs, temp files)
-.roadmap/artifacts/
-.roadmap/backups/
-.roadmap/logs/
-.roadmap/*.tmp
-.roadmap/*.lock
-
-.roadmap/config.yaml  # Local user configuration (not to be shared)
