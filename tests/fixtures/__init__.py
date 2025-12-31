@@ -7,6 +7,9 @@ This package organizes test fixtures into logical modules:
   - performance.py: Performance-optimized fixtures
   - github.py: GitHub integration fixtures
   - assertions.py: Assertion helpers
+  - integration_helpers.py: Integration test utilities
+  - data_factories.py: Data factories for test scenarios
+  - test_logging.py: Logging helpers for tests
   - conftest.py: Main fixture entry point with setup functions
 
 All fixtures are automatically available to tests via pytest's plugin system.
@@ -22,6 +25,12 @@ from .assertions import (
 from .click_testing import (
     cli_runner,
     isolated_cli_runner,
+)
+from .data_factories import (
+    ComplexWorkflowFactory,
+    IssueScenarioFactory,
+    MilestoneScenarioFactory,
+    TestDataBuilder,
 )
 from .github import (
     github_api_response,
@@ -113,4 +122,9 @@ __all__ = [
     "FileAssertion",
     # Integration test helpers
     "IntegrationTestBase",
+    # Data factories
+    "MilestoneScenarioFactory",
+    "IssueScenarioFactory",
+    "ComplexWorkflowFactory",
+    "TestDataBuilder",
 ]
