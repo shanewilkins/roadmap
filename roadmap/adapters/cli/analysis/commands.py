@@ -7,6 +7,7 @@ import click
 
 from roadmap.common.console import get_console
 from roadmap.core.services.critical_path_calculator import CriticalPathCalculator
+from roadmap.core.services.issue_helpers.issue_filters import IssueQueryService
 from roadmap.infrastructure.logging import verbose_output
 
 console = get_console()
@@ -27,7 +28,7 @@ def analysis():
 @click.option(
     "--include-closed",
     is_flag=True,
-    help="Include closed issues in analysis (configurable via config.behavior.include_closed_in_critical_path)",
+    help="Include closed issues in analysis",
 )
 @click.option(
     "--export",
@@ -63,27 +64,18 @@ def critical_path(
         )
         return
 
-    # Get configuration
-    config = core.config_manager.get_config()
-    include_closed_default = (
-        config.behavior.include_closed_in_critical_path
-        if hasattr(config, "behavior")
-        else False
-    )
-    include_closed_flag = include_closed or include_closed_default
-
-    # Load issues
-    issues = core.issue_manager.get_all_issues()
-
-    # Filter by milestone if specified
+    # Load issues using query service
+    query_service = IssueQueryService(core)
     if milestone:
-        issues = [i for i in issues if i.milestone == milestone]
+        issues_domain, _ = query_service.get_filtered_issues(milestone=milestone)
+    else:
+        issues_domain, _ = query_service.get_filtered_issues()
 
     # Filter closed issues unless explicitly included
-    if not include_closed_flag:
-        issues = [i for i in issues if i.status != "closed"]
+    if not include_closed:
+        issues_domain = [i for i in issues_domain if i.status != "closed"]
 
-    if not issues:
+    if not issues_domain:
         console.print(
             f"ℹ️  No active issues to analyze.{f' In milestone: {milestone}' if milestone else ''}",
             style="yellow",
@@ -92,11 +84,11 @@ def critical_path(
 
     # Calculate critical path
     calculator = CriticalPathCalculator()
-    result = calculator.calculate_critical_path(issues)
+    result = calculator.calculate_critical_path(issues_domain)
 
     # Output results
     if export:
-        _export_critical_path(result, issues, export, output)
+        _export_critical_path(result, issues_domain, export, output)
     else:
         _display_critical_path(result, milestone)
 
