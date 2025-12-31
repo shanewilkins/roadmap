@@ -25,6 +25,50 @@ pip install roadmap
 roadmap --version
 ```
 
+## How Roadmap Works (Architecture)
+
+Roadmap follows a **Git-like model:**
+
+| Aspect | Model |
+|--------|-------|
+| **Install** | Once per machine (like `git`) |
+| **Store** | Per-repository in `.roadmap/` folder |
+| **Share** | Commit `.roadmap/` to git (like code) |
+| **Sync** | `git push/pull` keeps everyone in sync |
+
+**Why this design?**
+- ✅ **Offline-first:** Clone the repo, work offline, push changes
+- ✅ **No server:** No subscriptions, no cloud dependency
+- ✅ **Git history:** See who changed what with `git blame`
+- ✅ **Team collaboration:** Just commit and push like code
+
+**Example workflow (3 teammates):**
+```bash
+# Alice installs once
+pip install roadmap
+
+# In any project, Alice creates the roadmap
+cd my-project
+roadmap init
+git add .roadmap/
+git commit -m "Initialize project roadmap"
+git push
+
+# Bob and Carol pull the repo
+git pull
+# .roadmap/ is now on their machines (no install needed!)
+
+# Bob creates an issue
+roadmap issue create "Fix login bug"
+git add .roadmap/
+git commit -m "Add issue: Fix login bug"
+git push
+
+# Carol pulls and sees Bob's issue
+git pull
+roadmap issue list  # Shows Bob's issue
+```
+
 ## Initialize Your Project
 
 ```bash
@@ -35,6 +79,11 @@ roadmap init
 # .roadmap/                 - Your project management data
 # .roadmap/roadmap.md       - Main roadmap file
 # .roadmap/config.yaml      - Configuration
+#
+# ⚠️  Commit this to git so teammates can access it:
+# git add .roadmap/
+# git commit -m "Initialize project roadmap"
+# git push
 ```
 
 ## Your First Issue (1 minute)

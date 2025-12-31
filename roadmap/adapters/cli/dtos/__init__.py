@@ -10,7 +10,6 @@ DTOs decouple the CLI presentation layer from domain models, enabling:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -66,6 +65,7 @@ class IssueDTO(BaseDTO):
     content: str | None = None
     labels: list[str] = field(default_factory=list)
     github_issue: str | None = None
+    comments: list["CommentDTO"] = field(default_factory=list)
 
 
 @dataclass
@@ -124,8 +124,30 @@ class ProjectDTO(BaseDTO):
     updated: datetime | None = None
 
 
+@dataclass
+class CommentDTO(BaseDTO):
+    """CLI-level comment representation.
+
+    Attributes:
+        id: Unique comment identifier
+        author: Comment author name/username
+        body: Comment content (markdown)
+        created_at: When comment was created
+        updated_at: Last update time
+        in_reply_to: Optional comment ID this is a reply to
+    """
+
+    id: int
+    author: str
+    body: str
+    created_at: datetime
+    updated_at: datetime
+    in_reply_to: int | None = None
+
+
 __all__ = [
     "BaseDTO",
+    "CommentDTO",
     "IssueDTO",
     "MilestoneDTO",
     "ProjectDTO",

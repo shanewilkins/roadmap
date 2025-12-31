@@ -76,6 +76,16 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
         }.get(item.priority, "white")
 
         # Build row cells
+        comment_count = 0
+        if hasattr(item, "comments") and item.comments:
+            try:
+                comment_count = len(item.comments)
+            except TypeError:
+                # Handle Mock objects or other non-sequence types
+                comment_count = 0
+
+        comment_display = f"💬 {comment_count}" if comment_count > 0 else "-"
+
         cells = [
             item.id,
             item.title,
@@ -94,6 +104,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
                 style="green" if item.estimated_hours else "dim",
             ),
             Text(item.milestone_name, style="dim" if item.is_backlog else "blue"),
+            Text(comment_display, style="cyan" if comment_count > 0 else "dim"),
         ]
 
         # Add GitHub ID if showing them
@@ -162,6 +173,16 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
 
         rows = []
         for item in items:
+            comment_count = 0
+            if hasattr(item, "comments") and item.comments:
+                try:
+                    comment_count = len(item.comments)
+                except TypeError:
+                    # Handle Mock objects or other non-sequence types
+                    comment_count = 0
+
+            comment_display = f"💬 {comment_count}" if comment_count > 0 else ""
+
             rows.append(
                 [
                     item.id,
@@ -172,6 +193,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
                     item.assignee or "Unassigned",
                     item.estimated_time_display,
                     item.milestone_name,
+                    comment_display,
                 ]
             )
 

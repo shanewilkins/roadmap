@@ -5,7 +5,7 @@ and DTOs (CLI presentation representation). They ensure DTOs don't leak domain
 implementation details.
 """
 
-from roadmap.adapters.cli.dtos import IssueDTO, MilestoneDTO, ProjectDTO
+from roadmap.adapters.cli.dtos import CommentDTO, IssueDTO, MilestoneDTO, ProjectDTO
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
@@ -26,6 +26,21 @@ class IssueMapper:
         Returns:
             IssueDTO instance ready for CLI display
         """
+        # Convert comments to DTOs
+        comments = []
+        if hasattr(issue, "comments") and issue.comments:
+            comments = [
+                CommentDTO(
+                    id=comment.id,
+                    author=comment.author,
+                    body=comment.body,
+                    created_at=comment.created_at,
+                    updated_at=comment.updated_at,
+                    in_reply_to=comment.in_reply_to,
+                )
+                for comment in issue.comments
+            ]
+
         return IssueDTO(
             id=issue.id,
             title=issue.title,
@@ -43,6 +58,7 @@ class IssueMapper:
             content=issue.content,
             labels=issue.labels.copy() if issue.labels else [],
             github_issue=str(issue.github_issue) if issue.github_issue else None,
+            comments=comments,
         )
 
     @staticmethod

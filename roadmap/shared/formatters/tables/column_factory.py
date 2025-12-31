@@ -239,6 +239,26 @@ def create_due_date_column(width: int = 12) -> ColumnDef:
     )
 
 
+def create_comment_count_column(width: int = 9) -> ColumnDef:
+    """Create a Comments column definition.
+
+    Args:
+        width: Column width (default: 9)
+
+    Returns:
+        ColumnDef object for Comments column
+    """
+    return ColumnDef(
+        name="comment_count",
+        display_name="Comments",
+        type=ColumnType.STRING,
+        width=width,
+        display_style="dim",
+        sortable=True,
+        filterable=False,
+    )
+
+
 def create_issue_columns() -> list[ColumnDef]:
     """Create all columns for an issue table.
 
@@ -254,6 +274,7 @@ def create_issue_columns() -> list[ColumnDef]:
         create_assignee_column(),
         create_estimate_column(),
         create_milestone_column(),
+        create_comment_count_column(),
     ]
 
 

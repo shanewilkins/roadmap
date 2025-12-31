@@ -41,7 +41,9 @@ class TestIssueTableFormatter:
         assert table_data is not None
         assert table_data.title == "Test Issues"
         assert len(table_data.rows) == 1
-        assert len(table_data.columns) == 8  # 8 columns defined
+        assert (
+            len(table_data.columns) == 9
+        )  # 9 columns defined (including comment_count)
 
     def test_issues_to_table_data_with_multiple_issues(self):
         """Test converting multiple issues to TableData."""

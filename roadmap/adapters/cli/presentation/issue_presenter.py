@@ -70,6 +70,17 @@ class IssuePresenter(BasePresenter):
                 )
             )
 
+        # Display comments if any
+        if issue_dto.comments:
+            comments_text = self._build_comments_text(issue_dto.comments)
+            self._get_console().print(
+                Panel(
+                    comments_text,
+                    title=f"💬 Comments ({len(issue_dto.comments)})",
+                    border_style="cyan",
+                )
+            )
+
     def _build_issue_header(self, issue_dto: IssueDTO) -> Text:
         """Build header text with issue title and metadata.
 
@@ -206,3 +217,43 @@ class IssuePresenter(BasePresenter):
         acceptance = "\n".join(acceptance_lines).strip()
 
         return description, acceptance
+
+    def _build_comments_text(self, comments: list) -> Text:
+        """Build formatted text for displaying comments.
+
+        Args:
+            comments: List of CommentDTO objects
+
+        Returns:
+            Rich Text object with formatted comments
+        """
+        from rich.table import Table
+
+        # Create a table for comments
+        table = Table(show_header=False, box=None, padding=(1, 0))
+        table.add_column("Comments", style="white")
+
+        for comment in comments:
+            comment_text = Text()
+            # Author and timestamp
+            author_line = Text()
+            author_line.append(f"@{comment.author}", style="bold magenta")
+            author_line.append(
+                f" · {comment.created_at.strftime('%Y-%m-%d %H:%M')}", style="dim"
+            )
+            if comment.in_reply_to:
+                author_line.append(
+                    f" (in reply to #{comment.in_reply_to})", style="dim italic"
+                )
+            comment_text.append(author_line)
+            comment_text.append("\n")
+
+            # Comment body (using markdown if possible)
+            comment_text.append(comment.body, style="white")
+
+            table.add_row(comment_text)
+            # Add separator between comments
+            if comment != comments[-1]:
+                table.add_row(Text("─" * 60, style="dim"))
+
+        return table
