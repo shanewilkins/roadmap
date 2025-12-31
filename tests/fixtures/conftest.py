@@ -7,6 +7,7 @@ This module imports fixtures from specialized modules for better organization:
 - performance.py: Performance-optimized fixtures
 - github.py: GitHub integration fixtures
 - assertions.py: Assertion helpers
+- presenter_and_dto_fixtures.py: Presenter and DTO fixtures
 
 All fixtures are automatically available to all tests through pytest's
 fixture discovery mechanism.
@@ -48,6 +49,25 @@ from .performance import (
     selective_git_mock,
     session_mock_github_client,
     shared_git_repo,
+)
+from .presenter_and_dto_fixtures import (
+    effort_data,
+    large_effort_data,
+    milestone_description_content,
+    milestone_dto,
+    milestone_dto_minimal,
+    milestone_dto_overdue,
+    milestone_with_all_components,
+    mock_closed_issue,
+    mock_in_progress_issue,
+    mock_issues,
+    mock_issues_with_third,
+    progress_data,
+    project_description_content,
+    project_dto,
+    project_dto_minimal,
+    project_dto_with_large_effort,
+    project_with_all_components,
 )
 from .workspace import (
     isolate_roadmap_workspace,
@@ -134,4 +154,22 @@ __all__ = [
     # Assertion fixtures
     "assert_cli",
     "assert_file",
+    # Presenter and DTO fixtures
+    "milestone_dto",
+    "milestone_dto_minimal",
+    "milestone_dto_overdue",
+    "project_dto",
+    "project_dto_minimal",
+    "project_dto_with_large_effort",
+    "mock_closed_issue",
+    "mock_in_progress_issue",
+    "mock_issues",
+    "mock_issues_with_third",
+    "progress_data",
+    "effort_data",
+    "large_effort_data",
+    "milestone_description_content",
+    "project_description_content",
+    "milestone_with_all_components",
+    "project_with_all_components",
 ]

@@ -12,9 +12,8 @@ Validates:
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from roadmap.adapters.cli.dtos import MilestoneDTO, ProjectDTO
 from roadmap.adapters.cli.mappers import MilestoneMapper, ProjectMapper
 from roadmap.adapters.cli.presentation.milestone_presenter import MilestonePresenter
 from roadmap.adapters.cli.presentation.project_presenter import ProjectPresenter
@@ -25,105 +24,30 @@ from roadmap.core.domain.project import Project, ProjectStatus
 class TestMilestonePresenterFullRendering:
     """Test MilestonePresenter render with full milestone data."""
 
-    def test_render_with_all_components(self):
+    def test_render_with_all_components(self, milestone_with_all_components):
         """Test rendering milestone with issues, progress, and content."""
-        # Setup milestone DTO
-        milestone_dto = MilestoneDTO(
-            id="m1",
-            name="v1.0.0",
-            status="open",
-            due_date=datetime.now() + timedelta(days=30),
-            description="Release version 1.0",
-            progress_percentage=75,
-            issue_count=4,
-            completed_count=3,
-            created=datetime.now(),
-            updated=datetime.now(),
-        )
-
-        # Setup mock issues
-        mock_issues = [
-            MagicMock(
-                id="i1",
-                title="Feature A",
-                status=MagicMock(value="closed"),
-                priority=MagicMock(value="high"),
-                assignee="alice",
-                progress_display="100%",
-                estimated_time_display="8h",
-            ),
-            MagicMock(
-                id="i2",
-                title="Feature B with a longer title that should be truncated",
-                status=MagicMock(value="in-progress"),
-                priority=MagicMock(value="medium"),
-                assignee="bob",
-                progress_display="50%",
-                estimated_time_display="16h",
-            ),
-        ]
-
-        # Setup progress data
-        progress_data = {"completed": 3, "total": 4}
-
-        # Setup description with content
-        description_content = (
-            "This is the milestone description.\n"
-            "\n"
-            "## Goals\n"
-            "- Complete feature A\n"
-            "- Complete feature B"
-        )
-
         # Render (should not raise)
         presenter = MilestonePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
-            presenter.render(
-                milestone_dto,
-                issues=mock_issues,
-                progress_data=progress_data,
-                description_content=description_content,
-                comments_text=None,
-            )
+            presenter.render(**milestone_with_all_components)
 
             # Verify print was called for header, progress, metadata, issues, description
             assert mock_console.return_value.print.call_count >= 5
 
-    def test_render_without_optional_data(self):
+    def test_render_without_optional_data(self, milestone_dto_minimal):
         """Test rendering milestone with minimal data."""
-        milestone_dto = MilestoneDTO(
-            id="m1",
-            name="v1.0.0",
-            status="closed",
-            due_date=None,
-            description="",
-            created=datetime.now(),
-            updated=datetime.now(),
-        )
-
         presenter = MilestonePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
-            presenter.render(milestone_dto)
+            presenter.render(milestone_dto_minimal)
 
             # Should still print header and metadata
             assert mock_console.return_value.print.call_count >= 2
 
-    def test_render_with_overdue_milestone(self):
+    def test_render_with_overdue_milestone(self, milestone_dto_overdue):
         """Test rendering overdue milestone with due date handling."""
-        due_date = datetime.now() - timedelta(days=5)
-        milestone_dto = MilestoneDTO(
-            id="m1",
-            name="v0.9.0",
-            status="open",
-            due_date=due_date,
-            description="Overdue milestone",
-            created=datetime.now() - timedelta(days=30),
-            updated=datetime.now(),
-        )
-
         presenter = MilestonePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
-            presenter.render(milestone_dto)
+            presenter.render(milestone_dto_overdue)
 
             # Should render header with overdue warning
             assert mock_console.return_value.print.called
@@ -132,25 +56,10 @@ class TestMilestonePresenterFullRendering:
 class TestProjectPresenterFullRendering:
     """Test ProjectPresenter render with full project data."""
 
-    def test_render_with_all_components(self):
+    def test_render_with_all_components(
+        self, project_dto, effort_data, project_description_content
+    ):
         """Test rendering project with milestones, effort, and content."""
-        project_dto = ProjectDTO(
-            id="p1",
-            name="Website Redesign",
-            status="active",
-            description="Redesign the main website",
-            owner="alice",
-            target_end_date=datetime.now() + timedelta(days=60),
-            actual_end_date=None,
-            created=datetime.now(),
-            updated=datetime.now(),
-        )
-
-        # Skip milestone rendering for this test (tested separately)
-        # Just test effort and description
-        effort_data = {"estimated": 320.0, "actual": 240.0}
-        description_content = "Project to redesign the main website and improve UX."
-
         # Render (should not raise)
         presenter = ProjectPresenter()
         with patch.object(presenter, "_get_console") as mock_console:
@@ -158,56 +67,31 @@ class TestProjectPresenterFullRendering:
                 project_dto,
                 milestones=None,  # Skip milestone rendering in this test
                 effort_data=effort_data,
-                description_content=description_content,
+                description_content=project_description_content,
                 comments_text=None,
             )
 
             # Verify print was called for header, metadata, effort, description
             assert mock_console.return_value.print.call_count >= 4
 
-    def test_render_without_optional_data(self):
+    def test_render_without_optional_data(self, project_dto_minimal):
         """Test rendering project with minimal data."""
-        project_dto = ProjectDTO(
-            id="p1",
-            name="Small Task",
-            status="planning",
-            description="",
-            owner=None,
-            target_end_date=None,
-            actual_end_date=None,
-            created=datetime.now(),
-            updated=datetime.now(),
-        )
-
         presenter = ProjectPresenter()
         with patch.object(presenter, "_get_console") as mock_console:
-            presenter.render(project_dto)
+            presenter.render(project_dto_minimal)
 
             # Should still print header and metadata
             assert mock_console.return_value.print.call_count >= 2
 
-    def test_render_with_large_effort_estimate(self):
+    def test_render_with_large_effort_estimate(
+        self, project_dto_with_large_effort, large_effort_data
+    ):
         """Test effort formatting for large hour counts."""
-        project_dto = ProjectDTO(
-            id="p1",
-            name="Major Project",
-            status="active",
-            description="Large undertaking",
-            owner="bob",
-            target_end_date=datetime.now() + timedelta(days=120),
-            actual_end_date=None,
-            milestone_count=5,
-            issue_count=50,
-            created=datetime.now(),
-            updated=datetime.now(),
-        )
-
-        # Large effort data (should be displayed in days)
-        effort_data = {"estimated": 800.0, "actual": 600.0}
-
         presenter = ProjectPresenter()
         with patch.object(presenter, "_get_console") as mock_console:
-            presenter.render(project_dto, effort_data=effort_data)
+            presenter.render(
+                project_dto_with_large_effort, effort_data=large_effort_data
+            )
 
             # Verify effort panel was rendered
             assert mock_console.return_value.print.call_count >= 3
@@ -216,32 +100,29 @@ class TestProjectPresenterFullRendering:
 class TestMilestonePresenterIntegrationWithMapper:
     """Test MilestonePresenter integration with MilestoneMapper."""
 
-    def test_domain_to_dto_to_presenter_flow(self):
+    def test_domain_to_dto_to_presenter_flow(self, milestone_dto):
         """Test end-to-end flow: domain model -> DTO -> presenter."""
         # Create domain milestone
         milestone = Milestone(
             name="v1.0.0",
             status=MilestoneStatus.OPEN,
-            due_date=datetime.now() + timedelta(days=30),
             description="Release version 1.0",
             content="Release version 1.0\n\n## Goals\n- Complete features",
-            created=datetime.now(),
-            updated=datetime.now(),
             comments=[],
         )
 
         # Convert to DTO
-        milestone_dto = MilestoneMapper.domain_to_dto(milestone)
+        milestone_dto_converted = MilestoneMapper.domain_to_dto(milestone)
 
         # Verify DTO conversion
-        assert milestone_dto.name == "v1.0.0"
-        assert milestone_dto.status == "open"
+        assert milestone_dto_converted.name == "v1.0.0"
+        assert milestone_dto_converted.status == "open"
         # Note: progress_percentage may not be preserved in mapper, so just check rendering
 
         # Render with presenter (should not raise)
         presenter = MilestonePresenter()
         with patch.object(presenter, "_get_console") as mock_console:
-            presenter.render(milestone_dto)
+            presenter.render(milestone_dto_converted)
             assert mock_console.return_value.print.call_count >= 2
 
     def test_milestone_dto_roundtrip_with_enum_conversion(self):
