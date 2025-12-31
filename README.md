@@ -27,6 +27,8 @@ Roadmap stores your project data in **plain YAML + Markdown files tracked in git
 | **Missing context** | Full git history + blame for every change |
 | **Team bloat for small teams** | Start solo, scale to teams without learning new tool |
 
+Project management as a durable, automatable, self-owned system — not a product you rent.
+
 ## Why It Works for Small Teams
 
 ### For Solo Developers
