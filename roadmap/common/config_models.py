@@ -87,6 +87,49 @@ class GitConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class GitHubConfig(BaseModel):
+    """GitHub integration settings."""
+
+    repository: str | None = Field(
+        default=None,
+        description="GitHub repository in format owner/repo",
+    )
+    owner: str | None = Field(
+        default=None,
+        description="GitHub repository owner",
+    )
+    repo: str | None = Field(
+        default=None,
+        description="GitHub repository name",
+    )
+    enabled: bool = Field(
+        default=False,
+        description="Whether GitHub integration is enabled",
+    )
+    sync_enabled: bool = Field(
+        default=False,
+        description="Whether GitHub sync is enabled",
+    )
+    sync_backend: str = Field(
+        default="github",
+        description="Sync backend to use (github or git)",
+    )
+    webhook_secret: str | None = Field(
+        default=None,
+        description="Webhook secret for GitHub events",
+    )
+    sync_settings: dict = Field(
+        default_factory=lambda: {
+            "bidirectional": True,
+            "auto_close": True,
+            "sync_labels": True,
+            "sync_milestones": True,
+        },
+        description="Sync settings",
+    )
+    model_config = ConfigDict(extra="allow")
+
+
 class RoadmapConfig(BaseModel):
     """Complete roadmap configuration schema."""
 
@@ -94,6 +137,7 @@ class RoadmapConfig(BaseModel):
     export: ExportConfig = Field(default_factory=ExportConfig)
     behavior: BehaviorConfig = Field(default_factory=BehaviorConfig)
     git: GitConfig = Field(default_factory=GitConfig)
+    github: GitHubConfig = Field(default_factory=GitHubConfig)
     model_config = ConfigDict(extra="allow")
 
     def merge(self, other: "RoadmapConfig") -> "RoadmapConfig":
@@ -131,6 +175,12 @@ class RoadmapConfig(BaseModel):
                 **{
                     **self.git.model_dump(),
                     **other.git.model_dump(exclude_unset=True),
+                }
+            ),
+            github=GitHubConfig(
+                **{
+                    **self.github.model_dump(),
+                    **other.github.model_dump(exclude_unset=True),
                 }
             ),
         )

@@ -7,9 +7,10 @@ paths:
   db_dir: .roadmap/db
 github:
   owner: shanewilkins
-  repo: null
-  enabled: false
-  sync_enabled: false
+  repo: roadmap
+  enabled: true
+  sync_enabled: true
+  sync_backend: github
   webhook_secret: null
   sync_settings:
     bidirectional: true

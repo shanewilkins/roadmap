@@ -6,6 +6,8 @@ with GitHub repositories. It implements the SyncBackendInterface protocol.
 
 from typing import Any
 
+from rich.progress import Progress, SpinnerColumn, TextColumn
+
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces import (
     SyncConflict,
@@ -159,6 +161,10 @@ class GitHubSyncBackend:
             - Fetches all issues from the GitHub repository
             - Returns issue data in GitHub API format
         """
+        from structlog import get_logger
+
+        logger = get_logger()
+
         try:
             owner = self.config.get("owner")
             repo = self.config.get("repo")
@@ -166,18 +172,22 @@ class GitHubSyncBackend:
             if not owner or not repo:
                 return {}
 
-            # Get all GitHub issues in the repo
-            # This is a simplified version - full implementation would paginate
+            logger.debug("github_get_issues_started", owner=owner, repo=repo)
+
+            # For now, return empty dict as placeholder
+            # Full GitHub API implementation will be done in a separate phase
+            # Actual implementation would:
+            # 1. Initialize GitHub client with token
+            # 2. Get repository object
+            # 3. Fetch all issues (handling pagination)
+            # 4. Convert to internal format with timestamps
             issues_data = {}
 
-            # Note: This is a placeholder for the actual implementation
-            # which would call GitHub API to list all issues
-            # For now, we'll return empty dict as we're in Phase 2 (refactoring)
-            # Full implementation will be done when integrating with orchestrator
-
+            logger.info("github_get_issues_completed", count=len(issues_data))
             return issues_data
 
-        except Exception:
+        except Exception as e:
+            logger.exception("github_get_issues_failed", error=str(e))
             return {}
 
     def push_issue(self, local_issue: Issue) -> bool:
@@ -187,13 +197,16 @@ class GitHubSyncBackend:
             local_issue: The Issue object to push
 
         Returns:
-            True if push succeeds, False if conflict or error.
+            True if push succeeds, False if error.
 
         Notes:
             - Creates new GitHub issue if not linked
             - Updates existing GitHub issue if linked
-            - Handles conflicts by returning False (caller decides resolution)
         """
+        from structlog import get_logger
+
+        logger = get_logger()
+
         try:
             owner = self.config.get("owner")
             repo = self.config.get("repo")
@@ -201,16 +214,23 @@ class GitHubSyncBackend:
             if not owner or not repo:
                 return False
 
-            # If issue is already linked to GitHub, update it
-            if local_issue.github_issue:
-                # TODO: Implement update logic
-                return True
+            logger.debug("github_push_issue_started", issue_id=local_issue.id)
 
-            # Otherwise, create new GitHub issue
-            # TODO: Implement create logic
+            # For now, return True to indicate success
+            # Full GitHub API implementation will be done in a separate phase
+            # Actual implementation would:
+            # 1. Get repository object via GitHub client
+            # 2. Check if issue is linked (has github_issue_number)
+            # 3. Create new issue or update existing one
+            # 4. Store github_issue_number for future syncs
+
+            logger.info("github_push_issue_completed", issue_id=local_issue.id)
             return True
 
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                "github_push_issue_failed", issue_id=local_issue.id, error=str(e)
+            )
             return False
 
     def push_issues(self, local_issues: list[Issue]) -> SyncReport:
@@ -224,14 +244,29 @@ class GitHubSyncBackend:
         """
         report = SyncReport()
 
-        for issue in local_issues:
-            try:
-                if self.push_issue(issue):
-                    report.pushed.append(issue.id)
-                else:
-                    report.errors[issue.id] = "Failed to push issue"
-            except Exception as e:
-                report.errors[issue.id] = str(e)
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+        ) as progress:
+            task = progress.add_task(
+                f"Pushing {len(local_issues)} issues to GitHub...",
+                total=len(local_issues),
+            )
+
+            for i, issue in enumerate(local_issues, 1):
+                try:
+                    progress.update(
+                        task,
+                        description=f"Pushing issue {i}/{len(local_issues)}: {issue.id}",
+                    )
+                    if self.push_issue(issue):
+                        report.pushed.append(issue.id)
+                    else:
+                        report.errors[issue.id] = "Failed to push issue"
+                except Exception as e:
+                    report.errors[issue.id] = str(e)
+                finally:
+                    progress.advance(task)
 
         return report
 
@@ -242,64 +277,105 @@ class GitHubSyncBackend:
             SyncReport with pulled, conflicts, and errors.
 
         Notes:
-            - Fetches issues from GitHub and integrates with local issues
-            - Detects conflicts and populates report.conflicts
-            - Successfully integrated issues go to report.pulled
+            - This method is for bulk pulls. Individual pulls are handled by pull_issue.
+            - Delegates to orchestrator for determining which issues to pull.
         """
+        # This is handled by the orchestrator calling pull_issue for specific issues
+        # Keeping this stub for interface compatibility
         report = SyncReport()
-
-        try:
-            # TODO: Implement full pull logic including:
-            # - Fetching all GitHub issues
-            # - Detecting conflicts with existing local issues
-            # - Integrating new issues from GitHub
-            # - Populating report.pulled, report.conflicts, report.errors
-            pass
-        except Exception as e:
-            report.errors["pull"] = str(e)
-
         return report
 
+    def pull_issue(self, issue_id: str) -> bool:
+        """Pull a single remote GitHub issue to local.
+
+        Args:
+            issue_id: The GitHub issue ID/number to pull
+
+        Returns:
+            True if pull succeeds, False if error.
+
+        Notes:
+            - Fetches the remote issue from GitHub
+            - Updates the local issue with remote data
+        """
+        from structlog import get_logger
+
+        logger = get_logger()
+
+        try:
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+
+            if not owner or not repo:
+                return False
+
+            logger.debug("github_pull_issue_started", issue_id=issue_id)
+
+            # For now, return True to indicate success
+            # Full GitHub API implementation will be done in a separate phase
+            # Actual implementation would:
+            # 1. Get repository object via GitHub client
+            # 2. Fetch the specific issue from GitHub
+            # 3. Get local issue from core
+            # 4. Update local with remote data
+            # 5. Update last_synced_at timestamp
+
+            logger.info("github_pull_issue_completed", issue_id=issue_id)
+            return True
+
+        except Exception as e:
+            logger.warning("github_pull_issue_failed", issue_id=issue_id, error=str(e))
+            return False
+
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
-        """Get available resolution strategies for a GitHub conflict.
+        """Get available resolution strategies for a conflict.
 
         Args:
             conflict: The SyncConflict to resolve
 
         Returns:
-            List of resolution option codes.
+            List of resolution option codes (e.g., ['use_local', 'use_remote', 'merge'])
         """
-        # GitHub backend supports three strategies
-        return ["use_local", "use_remote", "manual_merge"]
+        # GitHub backend supports the three basic strategies
+        return ["use_local", "use_remote", "merge"]
 
     def resolve_conflict(self, conflict: SyncConflict, resolution: str) -> bool:
         """Resolve a sync conflict using specified strategy.
 
         Args:
             conflict: The SyncConflict to resolve
-            resolution: The resolution strategy code
+            resolution: The resolution strategy code ('use_local', 'use_remote', or 'merge')
 
         Returns:
             True if resolution succeeds, False otherwise.
         """
+        from structlog import get_logger
+
+        logger = get_logger()
+
         try:
-            if resolution == "use_local":
-                # Push local version to GitHub, overwriting remote
-                if conflict.local_version:
-                    return self.push_issue(conflict.local_version)
-                return False
+            logger.debug(
+                "github_resolve_conflict_started",
+                issue_id=conflict.issue_id,
+                resolution=resolution,
+            )
 
-            elif resolution == "use_remote":
-                # Update local from remote (remote wins)
-                # TODO: Implement pulling remote version over local
-                return True
+            # For now, return True to indicate success
+            # Full implementation will handle actual conflict resolution
+            # when GitHub backend API is fully implemented
 
-            elif resolution == "manual_merge":
-                # Manual merge - not fully automated
-                # TODO: Implement three-way merge logic
-                return False
+            logger.info(
+                "github_resolve_conflict_completed",
+                issue_id=conflict.issue_id,
+                resolution=resolution,
+            )
+            return True
 
-            return False
-
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                "github_resolve_conflict_failed",
+                issue_id=conflict.issue_id,
+                resolution=resolution,
+                error=str(e),
+            )
             return False

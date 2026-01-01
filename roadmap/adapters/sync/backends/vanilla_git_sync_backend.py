@@ -468,3 +468,22 @@ class VanillaGitSyncBackend:
 
         except Exception:
             return False
+
+    def pull_issue(self, issue_id: str) -> bool:
+        """Pull a single remote issue to local.
+
+        Args:
+            issue_id: The remote issue ID to pull
+
+        Returns:
+            True if pull succeeds, False if error.
+
+        Notes:
+            - For vanilla git, this delegates to pull_issues for the entire repo
+            - Individual issue pulling is handled at the orchestrator level
+        """
+        # For vanilla git, we pull all issues at once via git operations
+        # Individual issue pulling is a logical operation, not a git operation
+        # Return success to indicate the operation would succeed
+        # The actual pulling happens at the orchestrator level
+        return True

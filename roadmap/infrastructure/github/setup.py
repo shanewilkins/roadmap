@@ -317,15 +317,19 @@ class GitHubInitializationService:
         )
 
     def _validate_setup_conditions(self, github_repo, interactive, yes, token):
-        """Validate prerequisites for GitHub integration setup."""
+        """Validate prerequisites for GitHub integration setup.
+
+        Returns:
+            True if setup should proceed, False if user wants to skip
+        """
         if GitHubClient is None or CredentialManager is None:
             raise ImportError("GitHub integration dependencies not available")
 
         if interactive and not yes:
             if not show_github_setup_instructions(github_repo, yes):
-                return None
+                return False
 
-        return token
+        return True
 
     def _resolve_and_test_token(self, token, interactive, yes):
         """Resolve token and test GitHub connection."""
@@ -420,11 +424,11 @@ class GitHubInitializationService:
             True if setup successful, False otherwise
         """
         try:
-            # Validate setup conditions
-            token = self._validate_setup_conditions(
+            # Validate setup conditions - this will prompt user if they want to proceed
+            setup_result = self._validate_setup_conditions(
                 github_repo, interactive, yes, token
             )
-            if token is None and (interactive and not yes):
+            if not setup_result:
                 return False
 
             # Resolve and test token

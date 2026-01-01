@@ -130,6 +130,21 @@ class SyncBackendInterface(Protocol):
         """
         ...
 
+    def pull_issue(self, issue_id: str) -> bool:
+        """Pull a single remote issue to local.
+
+        Args:
+            issue_id: The remote issue ID to pull
+
+        Returns:
+            True if pull succeeds, False if error.
+
+        Notes:
+            - Fetches the remote issue and updates local
+            - Should not raise exceptions; return False on failure
+        """
+        ...
+
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Get available resolution strategies for a conflict.
 

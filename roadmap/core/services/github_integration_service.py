@@ -56,15 +56,19 @@ class GitHubIntegrationService:
         try:
             config_manager = ConfigManager(self.config_file)
             config = config_manager.load()
-            github_config = getattr(config, "github", None) or {}
+            github_config = getattr(config, "github", None)
 
             # Get owner and repo from config
-            owner = (
-                github_config.get("owner") if isinstance(github_config, dict) else None
-            )
-            repo = (
-                github_config.get("repo") if isinstance(github_config, dict) else None
-            )
+            if github_config is None:
+                owner = None
+                repo = None
+            elif isinstance(github_config, dict):
+                owner = github_config.get("owner")
+                repo = github_config.get("repo")
+            else:
+                # github_config is a GitHubConfig object
+                owner = getattr(github_config, "owner", None)
+                repo = getattr(github_config, "repo", None)
 
             if not owner or not repo:
                 log_validation_error(

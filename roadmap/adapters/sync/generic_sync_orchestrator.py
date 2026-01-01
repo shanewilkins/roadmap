@@ -5,26 +5,42 @@ reporting conflicts, etc.) and delegates backend-specific operations
 to SyncBackendInterface implementations.
 """
 
-from datetime import datetime
+from structlog import get_logger
 
-from roadmap.core.domain import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
-from roadmap.core.services.sync_report import IssueChange, SyncReport
+from roadmap.core.services.sync_conflict_resolver import (
+    ConflictStrategy,
+    SyncConflictResolver,
+)
+from roadmap.core.services.sync_report import SyncReport
+from roadmap.core.services.sync_state_comparator import SyncStateComparator
 from roadmap.infrastructure.core import RoadmapCore
+
+logger = get_logger(__name__)
 
 
 class GenericSyncOrchestrator:
     """Orchestrates sync using a pluggable backend implementation."""
 
-    def __init__(self, core: RoadmapCore, backend: SyncBackendInterface):
+    def __init__(
+        self,
+        core: RoadmapCore,
+        backend: SyncBackendInterface,
+        state_comparator: SyncStateComparator | None = None,
+        conflict_resolver: SyncConflictResolver | None = None,
+    ):
         """Initialize orchestrator with core services and backend.
 
         Args:
             core: RoadmapCore instance with access to issues
             backend: SyncBackendInterface implementation (GitHub, vanilla Git, etc.)
+            state_comparator: SyncStateComparator for detecting changes (optional, creates default)
+            conflict_resolver: SyncConflictResolver for resolving conflicts (optional, creates default)
         """
         self.core = core
         self.backend = backend
+        self.state_comparator = state_comparator or SyncStateComparator()
+        self.conflict_resolver = conflict_resolver or SyncConflictResolver()
 
     def sync_all_issues(
         self,
@@ -45,15 +61,24 @@ class GenericSyncOrchestrator:
         report = SyncReport()
 
         try:
+            logger.info(
+                "sync_all_issues_started",
+                dry_run=dry_run,
+                force_local=force_local,
+                force_remote=force_remote,
+            )
+
             # 1. Authenticate with backend
             if not self.backend.authenticate():
                 report.error = "Backend authentication failed"
+                logger.error("backend_authentication_failed")
                 return report
 
-            # 2. Get remote issues
-            remote_issues = self.backend.get_issues()
-            if remote_issues is None:
+            # 2. Get remote issues (dict format)
+            remote_issues_data = self.backend.get_issues()
+            if remote_issues_data is None:
                 report.error = "Failed to fetch remote issues"
+                logger.error("failed_to_fetch_remote_issues")
                 return report
 
             # 3. Get local issues
@@ -61,178 +86,132 @@ class GenericSyncOrchestrator:
             if not local_issues:
                 local_issues = []
 
-            # 4. Detect changes for each local issue
-            for local_issue in local_issues:
-                change = self._detect_issue_changes(
-                    local_issue, remote_issues, force_local, force_remote
+            # Convert to dict for comparator
+            local_issues_dict = {issue.id: issue for issue in local_issues}
+
+            logger.debug(
+                "sync_state_detected",
+                local_count=len(local_issues_dict),
+                remote_count=len(remote_issues_data),
+            )
+
+            # 4. Use state comparator to identify changes
+            conflicts = self.state_comparator.identify_conflicts(
+                local_issues_dict, remote_issues_data
+            )
+            updates = self.state_comparator.identify_updates(
+                local_issues_dict, remote_issues_data
+            )
+            pulls = self.state_comparator.identify_pulls(
+                local_issues_dict, remote_issues_data
+            )
+            up_to_date = self.state_comparator.identify_up_to_date(
+                local_issues_dict, remote_issues_data
+            )
+
+            logger.debug(
+                "sync_analysis_complete",
+                conflicts=len(conflicts),
+                updates=len(updates),
+                pulls=len(pulls),
+                up_to_date=len(up_to_date),
+            )
+
+            # 5. Report findings
+            report.conflicts_detected = len(conflicts)
+            report.issues_updated = len(updates)
+            report.issues_up_to_date = len(up_to_date)
+
+            # 6. Resolve conflicts if applicable
+            resolved_issues = []
+            if conflicts:
+                strategy = (
+                    ConflictStrategy.KEEP_LOCAL
+                    if force_local
+                    else ConflictStrategy.KEEP_REMOTE
+                    if force_remote
+                    else ConflictStrategy.AUTO_MERGE
                 )
-                report.changes.append(change)
+                resolved_issues = self.conflict_resolver.resolve_batch(
+                    conflicts, strategy
+                )
+                logger.info(
+                    "conflicts_resolved",
+                    count=len(resolved_issues),
+                    strategy=strategy.value,
+                )
 
-                if change.has_conflict:
-                    report.conflicts_detected += 1
-                elif change.local_changes or change.github_changes:
-                    report.issues_updated += 1
-                else:
-                    report.issues_up_to_date += 1
+            # 7. Apply changes if not dry-run
+            if not dry_run and (updates or resolved_issues or pulls):
+                report = self._apply_changes(report, updates, resolved_issues, pulls)
+            elif dry_run:
+                logger.info("sync_dry_run_mode", skip_apply=True)
 
-            # 5. Apply changes if not dry-run
-            if not dry_run and not report.has_conflicts():
-                report = self._apply_changes(report)
-
+            logger.info("sync_all_issues_completed", error=report.error)
             return report
 
         except Exception as e:
             report.error = str(e)
+            logger.exception("sync_all_issues_failed", error=str(e))
             return report
 
-    def _detect_issue_changes(
+    def _apply_changes(
         self,
-        local_issue: Issue,
-        remote_issues: dict,
-        force_local: bool = False,
-        force_remote: bool = False,
-    ) -> IssueChange:
-        """Detect what has changed for a single issue.
-
-        Args:
-            local_issue: Local issue to check
-            remote_issues: Remote issues dict from backend
-            force_local: If True, prefer local changes in conflicts
-            force_remote: If True, prefer remote changes in conflicts
-
-        Returns:
-            IssueChange with detected changes
-        """
-        change = IssueChange(
-            issue_id=local_issue.id,
-            title=local_issue.title,
-            last_sync_time=self._get_last_sync_time(local_issue),
-        )
-
-        # Check if issue exists remotely
-        remote_issue = remote_issues.get(local_issue.id)
-
-        if not remote_issue:
-            # Issue is only local - needs to be pushed
-            change.local_changes = {"action": "create"}
-            return change
-
-        # Compare local and remote versions
-        local_changes = self._detect_local_changes(local_issue, remote_issue)
-        remote_changes = self._detect_remote_changes(local_issue, remote_issue)
-
-        change.local_changes = local_changes
-        change.github_changes = remote_changes
-
-        # Detect conflicts
-        if local_changes and remote_changes:
-            change.has_conflict = True
-
-        return change
-
-    def _detect_local_changes(self, local_issue: Issue, remote_issue: dict) -> dict:
-        """Detect changes made locally since last sync.
-
-        Args:
-            local_issue: Local issue object
-            remote_issue: Remote issue dict
-
-        Returns:
-            Dict describing local changes, or empty dict if no changes
-        """
-        changes = {}
-
-        # Check title
-        if local_issue.title != remote_issue.get("title"):
-            changes["title"] = f"{remote_issue.get('title')} -> {local_issue.title}"
-
-        # Check status
-        local_status = str(local_issue.status.value)
-        remote_status = remote_issue.get("status")
-        if local_status != remote_status:
-            changes["status"] = f"{remote_status} -> {local_status}"
-
-        # Check description
-        if getattr(local_issue, "description", None) != remote_issue.get("description"):
-            local_desc = getattr(local_issue, "description", "")
-            changes["description"] = (
-                f"{remote_issue.get('description')} -> {local_desc}"
-            )
-
-        return changes
-
-    def _detect_remote_changes(self, local_issue: Issue, remote_issue: dict) -> dict:
-        """Detect changes made on remote since last sync.
-
-        Args:
-            local_issue: Local issue object
-            remote_issue: Remote issue dict
-
-        Returns:
-            Dict describing remote changes, or empty dict if no changes
-        """
-        changes = {}
-
-        # Check title
-        if remote_issue.get("title") != local_issue.title:
-            changes["title"] = f"{local_issue.title} -> {remote_issue.get('title')}"
-
-        # Check status
-        local_status = str(local_issue.status.value)
-        remote_status = remote_issue.get("status")
-        if remote_status != local_status:
-            changes["status"] = f"{local_status} -> {remote_status}"
-
-        # Check description
-        local_desc = getattr(local_issue, "description", "")
-        if remote_issue.get("description") != local_desc:
-            changes["description"] = (
-                f"{local_desc} -> {remote_issue.get('description')}"
-            )
-
-        return changes
-
-    def _get_last_sync_time(self, issue: Issue) -> datetime | None:
-        """Get the last sync timestamp for an issue.
-
-        Args:
-            issue: Issue to check
-
-        Returns:
-            Last sync timestamp, or None if never synced
-        """
-        if hasattr(issue, "last_synced_at"):
-            return getattr(issue, "last_synced_at", None)
-        return None
-
-    def _apply_changes(self, report: SyncReport) -> SyncReport:
+        report: SyncReport,
+        updates: list,
+        resolved_issues: list,
+        pulls: list,
+    ) -> SyncReport:
         """Apply detected changes using the backend.
 
         Args:
-            report: SyncReport with detected changes
+            report: SyncReport to update
+            updates: Issues to push (local updates)
+            resolved_issues: Issues resolved from conflicts
+            pulls: Issues to pull (remote updates)
 
         Returns:
             Updated SyncReport with applied changes
         """
-        issues_to_push = [
-            self.core.issues.get(change.issue_id)
-            for change in report.changes
-            if change.local_changes and change.issue_id
-        ]
+        logger.debug(
+            "applying_changes",
+            updates=len(updates),
+            resolved=len(resolved_issues),
+            pulls=len(pulls),
+        )
 
-        if issues_to_push:
-            # Filter out None values
-            issues_to_push = [i for i in issues_to_push if i]
+        try:
+            # Push local updates and resolved conflicts
+            issues_to_push = updates + resolved_issues
+            if issues_to_push:
+                if len(issues_to_push) == 1:
+                    success = self.backend.push_issue(issues_to_push[0])
+                    if not success:
+                        report.error = "Failed to push issue"
+                        logger.warning(
+                            "push_issue_failed", issue_id=issues_to_push[0].id
+                        )
+                else:
+                    push_report = self.backend.push_issues(issues_to_push)
+                    if push_report and push_report.errors:
+                        report.error = f"Push failed: {push_report.errors}"
+                        logger.warning(
+                            "push_issues_failed", error_count=len(push_report.errors)
+                        )
 
-            if len(issues_to_push) == 1:
-                # Single issue push
-                success = self.backend.push_issue(issues_to_push[0])
-                if not success:
-                    report.error = "Failed to push issue"
-            else:
-                # Batch push
-                push_report = self.backend.push_issues(issues_to_push)
-                if push_report and push_report.errors:
-                    report.error = f"Push failed: {push_report.errors}"
+            # Pull remote updates
+            if pulls:
+                for pull_issue_id in pulls:
+                    success = self.backend.pull_issue(pull_issue_id)
+                    if not success:
+                        logger.warning("pull_issue_failed", issue_id=pull_issue_id)
 
-        return report
+            logger.info(
+                "changes_applied", pushed=len(issues_to_push), pulled=len(pulls)
+            )
+            return report
+
+        except Exception as e:
+            report.error = f"Error applying changes: {str(e)}"
+            logger.exception("apply_changes_failed", error=str(e))
+            return report

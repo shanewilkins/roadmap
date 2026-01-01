@@ -1,7 +1,6 @@
 """Git integration and workflow commands."""
 
 import sys
-from pathlib import Path
 
 import click
 import structlog
@@ -415,20 +414,18 @@ def sync_git(
 
     core = ctx.obj["core"]
     console_inst = get_console()
-    roadmap_root = Path.cwd()
 
     try:
         # Load config from both locations
-        gh_service = GitHubIntegrationService(
-            roadmap_root, roadmap_root / ".github/config.json"
-        )
+        gh_service = GitHubIntegrationService(core, core.roadmap_dir / "config.yaml")
         config_result = gh_service.get_github_config()
 
         # Handle both tuple (real code) and dict (mocked code) returns
         if isinstance(config_result, tuple):
-            owner, repo, token = config_result
+            token, owner, repo = config_result
             config = {
-                "github": {"owner": owner, "repo": repo},
+                "owner": owner,
+                "repo": repo,
                 "token": token,
             }
         else:
@@ -466,8 +463,20 @@ def sync_git(
 
         # Use generic orchestrator with the backend
         from roadmap.adapters.sync import GenericSyncOrchestrator
+        from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
+        from roadmap.core.services.sync_state_comparator import SyncStateComparator
 
-        orchestrator = GenericSyncOrchestrator(core, sync_backend)
+        # Create service instances
+        state_comparator = SyncStateComparator()
+        conflict_resolver = SyncConflictResolver()
+
+        # Create orchestrator with services
+        orchestrator = GenericSyncOrchestrator(
+            core,
+            sync_backend,
+            state_comparator=state_comparator,
+            conflict_resolver=conflict_resolver,
+        )
         report = orchestrator.sync_all_issues(dry_run=True)
 
         if report.error:
