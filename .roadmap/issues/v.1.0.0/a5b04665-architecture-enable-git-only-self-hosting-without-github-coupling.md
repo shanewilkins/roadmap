@@ -4,11 +4,11 @@ title: 'Architecture: Enable Git-Only Self-Hosting Without GitHub Coupling'
 priority: high
 status: todo
 issue_type: feature
-milestone: backlog
+milestone: v.1.0.0
 labels: []
 github_issue: null
 created: '2026-01-01T14:13:50.213803+00:00'
-updated: '2026-01-01T14:13:50.213806+00:00'
+updated: '2026-01-01T14:17:39.039250+00:00'
 assignee: shanewilkins
 estimated_hours: 16.0
 due_date: null

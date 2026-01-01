@@ -4,11 +4,11 @@ title: Implement GitHub Sync Authentication Flow
 priority: high
 status: todo
 issue_type: feature
-milestone: backlog
+milestone: v.1.0.0
 labels: []
 github_issue: null
 created: '2026-01-01T14:13:44.383788+00:00'
-updated: '2026-01-01T14:13:44.383791+00:00'
+updated: '2026-01-01T14:17:36.877220+00:00'
 assignee: shanewilkins
 estimated_hours: 8.0
 due_date: null
