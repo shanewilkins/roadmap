@@ -80,6 +80,7 @@ class InitParams:
     description: str | None = None
     skip_project: bool = False
     skip_github: bool = False
+    sync_backend: str = "github"
     github_repo: str | None = None
     github_token: str | None = None
     interactive: bool = True
@@ -88,6 +89,18 @@ class InitParams:
     force: bool = False
     template: str | None = None
     template_path: str | None = None
+
+    def __post_init__(self):
+        """Validate parameters after initialization."""
+        from roadmap.common.constants import SyncBackend
+
+        # Validate sync_backend matches enum values
+        valid_backends = {backend.value for backend in SyncBackend}
+        if self.sync_backend not in valid_backends:
+            raise ValueError(
+                f"Invalid sync_backend '{self.sync_backend}'. "
+                f"Must be one of: {', '.join(sorted(valid_backends))}"
+            )
 
 
 @dataclass

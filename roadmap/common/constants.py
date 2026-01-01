@@ -55,6 +55,13 @@ class IssueType(str, Enum):
     OTHER = "other"
 
 
+class SyncBackend(str, Enum):
+    """Sync backend types."""
+
+    GITHUB = "github"
+    GIT = "git"
+
+
 # Application Configuration Defaults
 # ============================================================================
 

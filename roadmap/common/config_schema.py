@@ -57,6 +57,7 @@ class GitHubConfig:
     repo: str | None = None
     enabled: bool = False
     sync_enabled: bool = False
+    sync_backend: str = "github"  # "github" or "git"
     webhook_secret: str | None = None
     sync_settings: dict = field(
         default_factory=lambda: {

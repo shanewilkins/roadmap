@@ -8,9 +8,13 @@ from typing import TYPE_CHECKING
 
 import click
 import yaml
+from structlog import get_logger
 
 from roadmap.common.console import get_console
+from roadmap.common.constants import SyncBackend
 from roadmap.infrastructure.core import RoadmapCore
+
+logger = get_logger()
 
 console = get_console()
 
@@ -171,32 +175,72 @@ class GitHubConfigManager:
         self.core = core
         self.config_file = core.roadmap_dir / "config.yaml"
 
-    def save_github_config(self, github_repo: str) -> None:
-        """Save GitHub repository configuration."""
-        if self.config_file.exists():
-            with open(self.config_file) as f:
-                loaded = yaml.safe_load(f)
-                config = loaded if isinstance(loaded, dict) else {}
-        else:
-            config: dict = {}
+    def save_github_config(
+        self, github_repo: str, sync_backend: SyncBackend = SyncBackend.GITHUB
+    ) -> None:
+        """Save GitHub repository configuration.
 
-        config["github"] = {
-            "repository": github_repo,
-            "enabled": True,
-            "sync_enabled": True,
-            "webhook_secret": None,
-            "sync_settings": {
-                "bidirectional": True,
-                "auto_close": True,
-                "sync_labels": True,
-                "sync_milestones": True,
-            },
-        }
+        Args:
+            github_repo: GitHub repository (owner/repo)
+            sync_backend: Backend to use (SyncBackend.GITHUB or SyncBackend.GIT)
 
-        with open(self.config_file, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        Raises:
+            ValueError: If github_repo is invalid format
+        """
+        # Validate repository format
+        if not github_repo or "/" not in github_repo:
+            log = logger.bind(github_repo=github_repo, operation="save_github_config")
+            log.error("invalid_github_repo_format")
+            raise ValueError(
+                f"Invalid GitHub repository format: '{github_repo}'. "
+                "Expected format: 'owner/repo'"
+            )
 
-        console.print("⚙️  Configuration saved")
+        try:
+            if self.config_file.exists():
+                with open(self.config_file) as f:
+                    loaded = yaml.safe_load(f)
+                    config = loaded if isinstance(loaded, dict) else {}
+            else:
+                config: dict = {}
+
+            config["github"] = {
+                "repository": github_repo,
+                "enabled": True,
+                "sync_enabled": True,
+                "sync_backend": sync_backend.value,
+                "webhook_secret": None,
+                "sync_settings": {
+                    "bidirectional": True,
+                    "auto_close": True,
+                    "sync_labels": True,
+                    "sync_milestones": True,
+                },
+            }
+
+            with open(self.config_file, "w") as f:
+                yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+            log = logger.bind(
+                github_repo=github_repo,
+                sync_backend=sync_backend.value,
+                operation="save_github_config",
+            )
+            log.info("github_config_saved")
+            get_console().print("⚙️  Configuration saved")
+
+        except ValueError:
+            # Re-raise validation errors
+            raise
+        except Exception as e:
+            log = logger.bind(
+                github_repo=github_repo,
+                sync_backend=sync_backend.value,
+                error=str(e),
+                operation="save_github_config",
+            )
+            log.error("github_config_save_failed")
+            raise
 
 
 def show_github_setup_instructions(github_repo: str, yes: bool) -> bool:
@@ -241,9 +285,20 @@ class GitHubInitializationService:
         yes: bool,
         github_token: str | None,
         presenter=None,
+        sync_backend: SyncBackend = SyncBackend.GITHUB,
     ) -> bool:
         """
         Set up GitHub integration if requested.
+
+        Args:
+            skip_github: If True, skip GitHub setup
+            github_repo: GitHub repository (owner/repo)
+            detected_info: Auto-detected project information
+            interactive: If True, prompt user for input
+            yes: If True, answer yes to all prompts
+            github_token: GitHub personal access token
+            presenter: UI presenter for output
+            sync_backend: Backend to use (SyncBackend.GITHUB or SyncBackend.GIT)
 
         Returns:
             True if configured, False if skipped or failed
@@ -258,7 +313,7 @@ class GitHubInitializationService:
             return False
 
         return self._configure_integration(
-            repo_name, interactive, yes, token=github_token
+            repo_name, interactive, yes, token=github_token, sync_backend=sync_backend
         )
 
     def _validate_setup_conditions(self, github_repo, interactive, yes, token):
@@ -314,8 +369,21 @@ class GitHubInitializationService:
 
         return True
 
-    def _store_credentials_and_config(self, use_token, existing_token, github_repo):
-        """Store credentials and save configuration."""
+    def _store_credentials_and_config(
+        self,
+        use_token: str,
+        existing_token: str | None,
+        github_repo: str,
+        sync_backend: SyncBackend = SyncBackend.GITHUB,
+    ) -> None:
+        """Store credentials and save configuration.
+
+        Args:
+            use_token: Token to store
+            existing_token: Previously stored token
+            github_repo: GitHub repository (owner/repo)
+            sync_backend: Backend to use (SyncBackend.GITHUB or SyncBackend.GIT)
+        """
         if use_token != existing_token:
             cred_manager = CredentialManager()  # type: ignore[call-arg]
             cred_manager.store_token(use_token)
@@ -325,7 +393,11 @@ class GitHubInitializationService:
                 console.print("✅ GitHub credentials stored", style="green")
 
         config_manager = GitHubConfigManager(self.core)
-        config_manager.save_github_config(github_repo)
+        # Only pass sync_backend if it's not the default (GITHUB)
+        if sync_backend != SyncBackend.GITHUB:
+            config_manager.save_github_config(github_repo, sync_backend=sync_backend)
+        else:
+            config_manager.save_github_config(github_repo)
 
     def _configure_integration(
         self,
@@ -333,8 +405,20 @@ class GitHubInitializationService:
         interactive: bool,
         yes: bool = False,
         token: str | None = None,
+        sync_backend: SyncBackend = SyncBackend.GITHUB,
     ) -> bool:
-        """Set up GitHub integration with credential flow."""
+        """Set up GitHub integration with credential flow.
+
+        Args:
+            github_repo: GitHub repository (owner/repo)
+            interactive: If True, prompt user for input
+            yes: If True, answer yes to all prompts
+            token: GitHub personal access token
+            sync_backend: Backend to use (SyncBackend.GITHUB or SyncBackend.GIT)
+
+        Returns:
+            True if setup successful, False otherwise
+        """
         try:
             # Validate setup conditions
             token = self._validate_setup_conditions(
@@ -357,7 +441,9 @@ class GitHubInitializationService:
             # Store credentials and config
             cred_manager = CredentialManager()  # type: ignore[call-arg]
             existing_token = GitHubTokenResolver(cred_manager).get_existing_token()
-            self._store_credentials_and_config(use_token, existing_token, github_repo)
+            self._store_credentials_and_config(
+                use_token, existing_token, github_repo, sync_backend=sync_backend
+            )
 
             return True
 

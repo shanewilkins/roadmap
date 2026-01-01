@@ -216,3 +216,38 @@ site/
 *_REPORT.md
 .venv/
 docs/HOMEBREW_SUBMISSION.md
+
+# Roadmap local data (generated exports, backups, logs, temp files)
+test_sync_backend/artifacts/
+test_sync_backend/backups/
+test_sync_backend/logs/
+test_sync_backend/*.tmp
+test_sync_backend/*.lock
+
+# Roadmap local data (generated exports, backups, logs, temp files)
+/tmp/test_init/artifacts/
+/tmp/test_init/backups/
+/tmp/test_init/logs/
+/tmp/test_init/*.tmp
+/tmp/test_init/*.lock
+
+# Roadmap local data (generated exports, backups, logs, temp files)
+test_sync_init/artifacts/
+test_sync_init/backups/
+test_sync_init/logs/
+test_sync_init/*.tmp
+test_sync_init/*.lock
+
+# Roadmap local data (generated exports, backups, logs, temp files)
+/tmp/test_check_init/artifacts/
+/tmp/test_check_init/backups/
+/tmp/test_check_init/logs/
+/tmp/test_check_init/*.tmp
+/tmp/test_check_init/*.lock
+
+# Roadmap local data (generated exports, backups, logs, temp files)
+/tmp/test_check_sync/artifacts/
+/tmp/test_check_sync/backups/
+/tmp/test_check_sync/logs/
+/tmp/test_check_sync/*.tmp
+/tmp/test_check_sync/*.lock

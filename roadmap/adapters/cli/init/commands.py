@@ -13,6 +13,7 @@ from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectCreationService,
     ProjectDetectionService,
 )
+from roadmap.common.constants import SyncBackend
 from roadmap.core.services.initialization import (
     InitializationLock,
     InitializationManifest,
@@ -245,6 +246,12 @@ def _handle_already_initialized(
     help="Skip GitHub integration setup",
 )
 @click.option(
+    "--sync-backend",
+    type=click.Choice(["github", "git"]),
+    default="github",
+    help="Sync backend to use: 'github' for GitHub API, 'git' for vanilla Git push/pull",
+)
+@click.option(
     "--github-repo",
     default=None,
     help="GitHub repository (owner/repo)",
@@ -295,6 +302,7 @@ def init(
     description: str | None,
     skip_project: bool,
     skip_github: bool,
+    sync_backend: str,
     github_repo: str | None,
     github_token: str | None,
     interactive: bool,
@@ -314,6 +322,7 @@ def init(
         description=description,
         skip_project=skip_project,
         skip_github=skip_github,
+        sync_backend=sync_backend,
         github_repo=github_repo,
         github_token=github_token,
         interactive=interactive,
@@ -413,6 +422,8 @@ def init(
 
         # Configure GitHub
         github_service = GitHubInitializationService(custom_core)
+        # Convert sync_backend string to enum
+        sync_backend_enum = SyncBackend(params.sync_backend)
         github_service.setup(
             params.skip_github,
             params.github_repo,
@@ -421,7 +432,56 @@ def init(
             params.yes,
             github_token,
             presenter,
+            sync_backend=sync_backend_enum,
         )
+
+        # Persist sync_backend selection to config if it's not the default
+        if params.sync_backend != "github":
+            try:
+                from roadmap.common.config_manager import ConfigManager
+
+                config_manager = ConfigManager(custom_core.config_file)
+                config = config_manager.load()
+
+                if config.github:
+                    log.info(
+                        "persisting_sync_backend",
+                        sync_backend=params.sync_backend,
+                        config_file=str(custom_core.config_file),
+                    )
+                    config.github.sync_backend = params.sync_backend
+                    config_manager.save(config)
+
+                    # Verify persistence
+                    verify_config = config_manager.load()
+                    persisted_backend = verify_config.github.sync_backend
+                    if persisted_backend == params.sync_backend:
+                        log.info(
+                            "sync_backend_persisted_verified",
+                            sync_backend=params.sync_backend,
+                        )
+                    else:
+                        log.warning(
+                            "sync_backend_persistence_mismatch",
+                            expected=params.sync_backend,
+                            actual=persisted_backend,
+                        )
+                else:
+                    log.warning(
+                        "github_config_not_initialized",
+                        sync_backend=params.sync_backend,
+                    )
+            except Exception as e:
+                log.error(
+                    "sync_backend_persistence_failed",
+                    sync_backend=params.sync_backend,
+                    error=str(e),
+                    error_type=type(e).__name__,
+                )
+                presenter.present_initialization_warning(
+                    f"⚠️  Could not persist sync backend selection: {str(e)}"
+                )
+                # Don't fail init over this - continue with warning
 
         # Validate and show summary
         validation_ok = InitializationValidator.post_init_validate(

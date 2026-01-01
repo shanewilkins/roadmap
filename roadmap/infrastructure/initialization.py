@@ -256,7 +256,20 @@ Project notes and additional context.
 
         config_data = {
             "project_name": "My Roadmap",
-            "github": None,
+            "github": {
+                "owner": None,
+                "repo": None,
+                "enabled": False,
+                "sync_enabled": False,
+                "sync_backend": "github",  # Default to github backend
+                "webhook_secret": None,
+                "sync_settings": {
+                    "bidirectional": True,
+                    "auto_close": True,
+                    "sync_labels": True,
+                    "sync_milestones": True,
+                },
+            },
             "defaults": {
                 "priority": "medium",
                 "issue_type": "other",

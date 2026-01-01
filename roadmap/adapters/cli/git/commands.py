@@ -13,7 +13,6 @@ from roadmap.adapters.git.git_hooks_manager import GitHookManager
 from roadmap.common.console import get_console
 from roadmap.core.domain import Issue, Status
 from roadmap.core.services.github_integration_service import GitHubIntegrationService
-from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
 
 from .status_display import GitStatusDisplay
 
@@ -131,6 +130,11 @@ def hooks_status(ctx: click.Context):
     is_flag=True,
     help="Resolve conflicts by keeping GitHub changes",
 )
+@click.option(
+    "--backend",
+    type=click.Choice(["github", "git"]),
+    help="Sync backend to use (github or git)",
+)
 @click.pass_context
 @require_initialized
 def sync_git(
@@ -139,12 +143,17 @@ def sync_git(
     verbose: bool,
     force_local: bool,
     force_github: bool,
+    backend: str | None,
 ) -> None:
-    """Sync roadmap with GitHub issues.
+    """Sync roadmap with remote repository.
+
+    Supports multiple backends:
+    - github: GitHub issues API (requires GitHub config)
+    - git: Vanilla Git push/pull (works with any Git hosting)
 
     Two-way sync:
-    - Push local changes to GitHub
-    - Pull GitHub changes to local
+    - Push local changes to remote
+    - Pull remote changes to local
     - Detect and resolve conflicts
 
     Examples:
@@ -154,15 +163,23 @@ def sync_git(
         # Sync all changes
         roadmap git sync
 
+        # Sync with specific backend
+        roadmap git sync --backend=git
+
         # Sync with conflict resolution
         roadmap git sync --force-local
     """
+    from roadmap.adapters.sync import (
+        detect_backend_from_config,
+        get_sync_backend,
+    )
+
     core = ctx.obj["core"]
     console_inst = get_console()
     roadmap_root = Path.cwd()
 
     try:
-        # Get GitHub config
+        # Load config from both locations
         gh_service = GitHubIntegrationService(
             roadmap_root, roadmap_root / ".github/config.json"
         )
@@ -171,38 +188,52 @@ def sync_git(
         # Handle both tuple (real code) and dict (mocked code) returns
         if isinstance(config_result, tuple):
             owner, repo, token = config_result
-            config = {"owner": owner, "repo": repo, "token": token}
+            config = {
+                "github": {"owner": owner, "repo": repo},
+                "token": token,
+            }
         else:
-            config = config_result
+            config = config_result or {}
 
-        if not config or not config.get("token"):
-            console_inst.print(
-                "❌ GitHub not configured. Run 'roadmap git setup' first",
-                style="bold red",
-            )
-            sys.exit(1)
-
-        # Get linked issues
-        try:
-            all_issues = core.issues.list()
-            linked_issues = [
-                issue for issue in all_issues if getattr(issue, "github_issue", None)
-            ]
-        except Exception:
-            linked_issues = []
-
-        if not linked_issues:
-            console_inst.print("⚠️  No GitHub-linked issues found", style="yellow")
-            return
+        # Determine backend to use
+        if backend:
+            backend_type = backend
+        else:
+            backend_type = detect_backend_from_config(config)
 
         console_inst.print(
-            f"🔄 Syncing {len(linked_issues)} GitHub-linked issue(s)", style="bold cyan"
+            f"🔄 Syncing with {backend_type.upper()} backend",
+            style="bold cyan",
         )
-        console_inst.print()
 
-        # Create orchestrator and run sync (dry-run first to preview)
-        orchestrator = GitHubSyncOrchestrator(core, config)
-        report = orchestrator.sync_all_linked_issues(dry_run=True)
+        # Create backend
+        sync_backend = get_sync_backend(backend_type, core, config)
+        if not sync_backend:
+            console_inst.print(
+                f"❌ Failed to initialize {backend_type} backend",
+                style="bold red",
+            )
+            if backend_type == "git":
+                console_inst.print(
+                    "   Ensure you're in a Git repository",
+                    style="yellow",
+                )
+            elif backend_type == "github":
+                console_inst.print(
+                    "   GitHub config may be missing or incomplete",
+                    style="yellow",
+                )
+            sys.exit(1)
+
+        # Use generic orchestrator with the backend
+        from roadmap.adapters.sync import GenericSyncOrchestrator
+
+        orchestrator = GenericSyncOrchestrator(core, sync_backend)
+        report = orchestrator.sync_all_issues(dry_run=True)
+
+        if report.error:
+            console_inst.print(f"❌ Sync error: {report.error}", style="bold red")
+            sys.exit(1)
 
         # Display report
         if verbose:
@@ -241,8 +272,8 @@ def sync_git(
 
         # Apply changes
         console_inst.print("[cyan]🔄 Applying changes...[/cyan]")
-        apply_report = orchestrator.sync_all_linked_issues(
-            dry_run=False, force_local=force_local, force_github=force_github
+        apply_report = orchestrator.sync_all_issues(
+            dry_run=False, force_local=force_local, force_remote=force_github
         )
 
         if apply_report.error:

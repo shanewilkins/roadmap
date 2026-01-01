@@ -9,6 +9,11 @@ from .state_managers import (
     QueryStateManager,
     SyncStateManager,
 )
+from .sync_backend import (
+    SyncBackendInterface,
+    SyncConflict,
+    SyncReport,
+)
 
 __all__ = [
     "CredentialProvider",
@@ -18,6 +23,9 @@ __all__ = [
     "IssueStateManager",
     "SyncStateManager",
     "QueryStateManager",
+    "SyncBackendInterface",
+    "SyncConflict",
+    "SyncReport",
 ]
 
 
@@ -74,7 +82,7 @@ class AssigneeValidator(Protocol):
     any specific implementation.
     """
 
-    def validate(self, assignee: str) -> tuple[bool, str, str]:
+    def validate(self, assignee: str) -> tuple[bool, str, str]:  # noqa: F841
         """Validate an assignee.
 
         Args:

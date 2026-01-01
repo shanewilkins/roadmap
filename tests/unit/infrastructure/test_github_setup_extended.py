@@ -1,71 +1,85 @@
 """Extended coverage tests for GitHub setup module."""
 
-from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
 
+from roadmap.common.constants import SyncBackend
 from roadmap.infrastructure.github.setup import (
     GitHubConfigManager,
     GitHubInitializationService,
     show_github_setup_instructions,
 )
-from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
 class TestGitHubConfigManager:
     """Test GitHub configuration management."""
 
-    @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.roadmap_dir = Path("/test/roadmap")
-        return core
-
     def test_save_github_config_new_file(self, mock_core):
         """Test saving GitHub config to new file."""
-        mock_core.roadmap_dir = Path("/test/roadmap")
-
         manager = GitHubConfigManager(mock_core)
 
-        # Mock the config file
-        with patch("builtins.open", mock_open()) as m_open:
-            with patch("pathlib.Path.exists", return_value=False):
-                with patch("roadmap.infrastructure.github.setup.console"):
-                    manager.save_github_config("owner/repo")
+        manager.save_github_config("owner/repo")
 
-        # Verify file was opened for writing
-        m_open.assert_called()
+        assert manager.config_file.exists()
+        # Verify file contains github config
+        with open(manager.config_file) as f:
+            content = f.read()
+            assert "github" in content
+            assert "owner/repo" in content
+            assert "sync_backend: github" in content
 
     def test_save_github_config_existing_file(self, mock_core):
         """Test saving GitHub config to existing file."""
-        mock_core.roadmap_dir = Path("/test/roadmap")
-
-        existing_config = {"other_setting": "value"}
-
         manager = GitHubConfigManager(mock_core)
-        manager.config_file = MagicMock()
-        manager.config_file.exists.return_value = True
 
-        with patch("builtins.open", mock_open(read_data=yaml.dump(existing_config))):
-            with patch("roadmap.infrastructure.github.setup.console"):
-                with patch(
-                    "roadmap.infrastructure.github.setup.yaml.safe_load",
-                    return_value=existing_config,
-                ):
-                    with patch(
-                        "roadmap.infrastructure.github.setup.yaml.dump"
-                    ) as m_dump:
-                        manager.save_github_config("owner/repo")
+        # Create existing config
+        existing_config = {"other_setting": "value"}
+        with open(manager.config_file, "w") as f:
+            yaml.dump(existing_config, f)
 
-                        # Verify dump was called
-                        m_dump.assert_called_once()
-                        args = m_dump.call_args[0]
-                        config = args[0]
-                        assert "github" in config
-                        assert config["github"]["repository"] == "owner/repo"
+        # Save new config
+        manager.save_github_config("owner/repo")
+
+        # Verify both settings exist
+        with open(manager.config_file) as f:
+            config = yaml.safe_load(f)
+            assert isinstance(config, dict)
+            assert config["other_setting"] == "value"
+            assert isinstance(config["github"], dict)
+            assert config["github"]["repository"] == "owner/repo"
+
+    def test_save_github_config_with_git_backend(self, mock_core):
+        """Test saving GitHub config with git backend."""
+        manager = GitHubConfigManager(mock_core)
+
+        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GIT)
+
+        with open(manager.config_file) as f:
+            config = yaml.safe_load(f)
+            assert isinstance(config, dict)
+            assert isinstance(config["github"], dict)
+            assert config["github"]["sync_backend"] == "git"
+
+    def test_save_github_config_invalid_repo_format(self, mock_core):
+        """Test saving config with invalid repository format raises error."""
+        manager = GitHubConfigManager(mock_core)
+
+        with pytest.raises(ValueError, match="Invalid GitHub repository format"):
+            manager.save_github_config("invalid_repo")
+
+        # Verify file was not created
+        assert not manager.config_file.exists()
+
+    def test_save_github_config_empty_repo(self, mock_core):
+        """Test saving config with empty repository raises error."""
+        manager = GitHubConfigManager(mock_core)
+
+        with pytest.raises(ValueError, match="Invalid GitHub repository format"):
+            manager.save_github_config("")
+
+        assert not manager.config_file.exists()
 
 
 class TestShowGitHubSetupInstructions:
@@ -98,13 +112,6 @@ class TestShowGitHubSetupInstructions:
 
 class TestGitHubInitializationServiceCoverage:
     """Test GitHub initialization service edge cases."""
-
-    @pytest.fixture
-    def mock_core(self):
-        """Create mock RoadmapCore."""
-        core = TestDataFactory.create_mock_core(is_initialized=True)
-        core.roadmap_dir = Path("/test/roadmap")
-        return core
 
     def test_validate_setup_conditions_missing_imports(self, mock_core):
         """Test when GitHub dependencies are not available.
@@ -322,7 +329,7 @@ class TestGitHubInitializationServiceCoverage:
 
                     # Should store the new token
                     mock_cred_mgr.store_token.assert_called_once_with("new_token")
-                    # Should save config
+                    # Should save config without explicit sync_backend (uses default GITHUB)
                     mock_config_mgr.save_github_config.assert_called_once_with(
                         "owner/repo"
                     )
@@ -350,7 +357,7 @@ class TestGitHubInitializationServiceCoverage:
 
                     # Should NOT store token again
                     mock_cred_mgr.store_token.assert_not_called()
-                    # Should still save config
+                    # Should still save config without explicit sync_backend (uses default GITHUB)
                     mock_config_mgr.save_github_config.assert_called_once_with(
                         "owner/repo"
                     )
@@ -379,3 +386,51 @@ class TestGitHubInitializationServiceCoverage:
 
                 # Should call presenter method
                 presenter.present_github_credentials_stored.assert_called_once()
+
+
+class TestSyncBackendValidation:
+    """Test sync_backend enum validation in InitParams."""
+
+    def test_init_params_valid_github_backend(self):
+        """Test InitParams with valid github backend."""
+        from roadmap.common.cli_models import InitParams
+
+        params = InitParams(name=".roadmap", sync_backend="github")
+        assert params.sync_backend == "github"
+
+    def test_init_params_valid_git_backend(self):
+        """Test InitParams with valid git backend."""
+        from roadmap.common.cli_models import InitParams
+
+        params = InitParams(name=".roadmap", sync_backend="git")
+        assert params.sync_backend == "git"
+
+    def test_init_params_invalid_backend_raises_error(self):
+        """Test InitParams with invalid backend raises ValueError."""
+        from roadmap.common.cli_models import InitParams
+
+        with pytest.raises(ValueError, match="Invalid sync_backend"):
+            InitParams(name=".roadmap", sync_backend="invalid")
+
+    def test_init_params_invalid_backend_lists_valid_options(self):
+        """Test error message lists valid backend options."""
+        from roadmap.common.cli_models import InitParams
+
+        with pytest.raises(ValueError) as exc_info:
+            InitParams(name=".roadmap", sync_backend="invalid")
+
+        error_message = str(exc_info.value)
+        assert "git" in error_message or "github" in error_message
+
+    def test_sync_backend_enum_values(self):
+        """Test SyncBackend enum has correct values."""
+        assert SyncBackend.GITHUB.value == "github"
+        assert SyncBackend.GIT.value == "git"
+
+    def test_sync_backend_enum_string_compatible(self):
+        """Test SyncBackend enum is string-compatible."""
+        backend = SyncBackend.GITHUB
+        # Should be usable as string
+        assert str(backend) == "SyncBackend.GITHUB"
+        # But .value should give the actual string value
+        assert backend.value == "github"
