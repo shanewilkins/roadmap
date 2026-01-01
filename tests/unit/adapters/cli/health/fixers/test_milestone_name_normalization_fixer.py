@@ -42,7 +42,7 @@ class TestMilestoneNameNormalizationFixer:
 
     def test_safety_level_property(self, fixer):
         """Test safety_level property."""
-        from roadmap.adapters.cli.health.fixers.base_fixer import FixSafety
+        from roadmap.adapters.cli.health.fixer import FixSafety
 
         assert fixer.safety_level == FixSafety.SAFE
 
@@ -114,7 +114,7 @@ class TestMilestoneNameNormalizationFixer:
         assert result.success is True
         assert result.dry_run is False
         assert result.items_count == 0
-        assert "No issues with non-normalized milestone names" in result.message
+        assert "Normalized 0/0" in result.message
 
     def test_apply_with_mismatches(self, mock_core, fixer):
         """Test applying fixes with mismatched milestones."""
