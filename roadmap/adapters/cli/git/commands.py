@@ -41,18 +41,26 @@ def git():
     is_flag=True,
     help="Update stored GitHub token",
 )
+@click.option(
+    "--git-auth",
+    is_flag=True,
+    help="Test and verify Git repository connectivity for self-hosting",
+)
 @click.pass_context
 @require_initialized
-def setup_git(ctx: click.Context, auth: bool, update_token: bool):
+def setup_git(ctx: click.Context, auth: bool, update_token: bool, git_auth: bool):
     """Setup Git integration and authentication.
 
     Configure GitHub authentication for sync operations or manage git workflow.
+    Supports both GitHub PAT tokens and vanilla Git self-hosting.
     """
     core = ctx.obj["core"]
 
     try:
         if auth or update_token:
             _setup_github_auth(core, update_token)
+        elif git_auth:
+            _test_git_connectivity(core)
         else:
             console.print("⚙️  Git setup", style="green")
             console.print("\nAvailable options:")
@@ -61,6 +69,9 @@ def setup_git(ctx: click.Context, auth: bool, update_token: bool):
             )
             console.print(
                 "  roadmap git setup --update-token  Update stored GitHub token"
+            )
+            console.print(
+                "  roadmap git setup --git-auth      Test Git repository connectivity"
             )
             console.print("  roadmap git hooks-install        Install git hooks")
     except Exception as e:
@@ -160,6 +171,102 @@ def _setup_github_auth(core, update_token: bool = False):
         )
         log.warning(
             "github_token_storage_error",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+
+
+def _test_git_connectivity(core):
+    """Test and verify Git repository connectivity for self-hosting.
+
+    Args:
+        core: RoadmapCore instance
+
+    Raises:
+        Exception: If git connectivity test fails
+    """
+    from roadmap.adapters.sync.backend_factory import get_sync_backend
+
+    console.print("🔌 Git Repository Connectivity Test", style="bold cyan")
+    console.print()
+
+    # Try to create vanilla git backend to test connectivity
+    console.print("🧪 Testing Git repository connectivity...", style="cyan")
+    log.debug("git_connectivity_testing")
+
+    try:
+        # Use backend factory to create vanilla git backend
+        backend = get_sync_backend("git", core, {})
+
+        if backend is None:
+            console.print(
+                "❌ Could not initialize Git backend (not in a git repository?)",
+                style="bold red",
+            )
+            log.warning("git_backend_initialization_failed")
+            return
+
+        # Test authentication (connectivity check)
+        if backend.authenticate():
+            console.print(
+                "✅ Git repository connectivity verified",
+                style="green",
+            )
+            console.print(
+                "Your git repository is accessible and ready for syncing",
+                style="dim",
+            )
+            log.info("git_connectivity_verified")
+        else:
+            console.print(
+                "⚠️  Could not verify git remote access",
+                style="yellow",
+            )
+            console.print()
+            console.print(
+                "This might be due to:",
+                style="dim",
+            )
+            console.print("  • SSH key not configured", style="dim")
+            console.print("  • HTTPS credentials needed", style="dim")
+            console.print("  • Network connectivity issues", style="dim")
+            console.print(
+                "  • Remote repository doesn't exist yet",
+                style="dim",
+            )
+            console.print()
+            console.print(
+                "For SSH: Make sure your SSH key is in ~/.ssh/",
+                style="dim",
+            )
+            console.print(
+                "For HTTPS: Configure git credentials with: git config credential.helper",
+                style="dim",
+            )
+            log.warning("git_connectivity_verification_failed")
+
+    except ValueError as e:
+        console.print(
+            f"❌ Git repository error: {e}",
+            style="bold red",
+        )
+        log.error(
+            "git_repository_error",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        console.print()
+        console.print(
+            "Make sure you're in a git repository directory",
+            style="dim",
+        )
+    except Exception as e:
+        console.print(
+            f"❌ Connectivity test failed: {e}",
+            style="bold red",
+        )
+        log.error(
+            "git_connectivity_error",
             error=str(e),
             error_type=type(e).__name__,
         )
