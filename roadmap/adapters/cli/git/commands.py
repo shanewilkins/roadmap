@@ -4,19 +4,23 @@ import sys
 from pathlib import Path
 
 import click
+import structlog
 from rich.console import Console
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.git.hooks_config import hooks_config
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
+from roadmap.adapters.github.github import GitHubClient
 from roadmap.common.console import get_console
 from roadmap.core.domain import Issue, Status
 from roadmap.core.services.github_integration_service import GitHubIntegrationService
+from roadmap.infrastructure.security.credentials import CredentialManager
 
 from .status_display import GitStatusDisplay
 
 console = Console()
+log = structlog.get_logger()
 
 
 @click.group()
@@ -27,10 +31,138 @@ def git():
 
 # Basic git commands - full implementation would be extracted from main CLI
 @git.command("setup")
+@click.option(
+    "--auth",
+    is_flag=True,
+    help="Set up GitHub authentication for sync operations",
+)
+@click.option(
+    "--update-token",
+    is_flag=True,
+    help="Update stored GitHub token",
+)
 @click.pass_context
-def setup_git(ctx: click.Context):
-    """Setup Git integration."""
-    console.print("⚙️ Git setup functionality will be implemented", style="green")
+@require_initialized
+def setup_git(ctx: click.Context, auth: bool, update_token: bool):
+    """Setup Git integration and authentication.
+
+    Configure GitHub authentication for sync operations or manage git workflow.
+    """
+    core = ctx.obj["core"]
+
+    try:
+        if auth or update_token:
+            _setup_github_auth(core, update_token)
+        else:
+            console.print("⚙️  Git setup", style="green")
+            console.print("\nAvailable options:")
+            console.print(
+                "  roadmap git setup --auth          Set up GitHub authentication"
+            )
+            console.print(
+                "  roadmap git setup --update-token  Update stored GitHub token"
+            )
+            console.print("  roadmap git hooks-install        Install git hooks")
+    except Exception as e:
+        log.error("git_setup_failed", error=str(e), error_type=type(e).__name__)
+        console.print(f"❌ Setup failed: {e}", style="bold red")
+        ctx.exit(1)
+
+
+def _setup_github_auth(core, update_token: bool = False):
+    """Set up or update GitHub authentication.
+
+    Args:
+        core: RoadmapCore instance
+        update_token: If True, force update token; otherwise ask if exists
+
+    Raises:
+        Exception: If authentication setup fails
+    """
+    cred_manager = CredentialManager()
+    existing_token = None
+
+    if not update_token:
+        try:
+            existing_token = cred_manager.get_token()
+            if existing_token:
+                console.print("🔍 Found existing GitHub credentials")
+                if click.confirm("Use existing GitHub token?"):
+                    log.info("github_auth_using_existing")
+                    console.print("✅ GitHub authentication configured")
+                    return
+                elif not click.confirm("Update GitHub token?"):
+                    console.print("Skipped GitHub authentication setup")
+                    return
+        except Exception:
+            pass  # No existing token
+
+    # Get new token from user
+    console.print("🔑 GitHub Authentication Setup", style="bold cyan")
+    console.print()
+    console.print(
+        "You'll need a Personal Access Token with 'repo' scope to sync with GitHub."
+    )
+    console.print("Create one here: https://github.com/settings/tokens/new")
+    console.print()
+    console.print(
+        "Required scopes: repo (full control of private repositories)",
+        style="dim",
+    )
+    console.print()
+
+    token = click.prompt("Enter your GitHub Personal Access Token", hide_input=True)
+
+    if not token or len(token.strip()) == 0:
+        console.print("❌ Token cannot be empty", style="bold red")
+        log.warning("github_auth_empty_token")
+        return
+
+    # Validate token
+    console.print("🧪 Validating GitHub token...", style="cyan")
+    log.debug("github_token_validating")
+
+    try:
+        client = GitHubClient(token)
+        # Test connection and authentication
+        user_data = client.test_authentication()
+        username = user_data.get("login", "user")
+        console.print(f"✅ Token valid (authenticated as @{username})", style="green")
+        log.info("github_token_valid", username=username)
+    except Exception as e:
+        console.print(f"❌ Token validation failed: {e}", style="bold red")
+        log.error(
+            "github_token_validation_error",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        return
+
+    # Store token
+    try:
+        if cred_manager.store_token(token):
+            console.print("✅ GitHub authentication configured", style="green")
+            console.print(
+                "Token stored securely in system keychain",
+                style="dim",
+            )
+            log.info("github_token_stored")
+        else:
+            console.print(
+                "⚠️  Token validation succeeded but storage failed",
+                style="yellow",
+            )
+            log.warning("github_token_storage_failed")
+    except Exception as e:
+        console.print(
+            f"⚠️  Token validation succeeded but could not store: {e}",
+            style="yellow",
+        )
+        log.warning(
+            "github_token_storage_error",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
 
 
 @git.command("hooks-install")
