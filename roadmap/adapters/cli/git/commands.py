@@ -1,5 +1,8 @@
 """Git integration and workflow commands."""
 
+import sys
+from pathlib import Path
+
 import click
 from rich.console import Console
 
@@ -7,7 +10,10 @@ from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.git.hooks_config import hooks_config
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
+from roadmap.common.console import get_console
 from roadmap.core.domain import Issue, Status
+from roadmap.core.services.github_integration_service import GitHubIntegrationService
+from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
 
 from .status_display import GitStatusDisplay
 
@@ -109,10 +115,160 @@ def hooks_status(ctx: click.Context):
 
 
 @git.command("sync")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Preview changes without applying",
+)
+@click.option("--verbose", is_flag=True, help="Show detailed sync information")
+@click.option(
+    "--force-local",
+    is_flag=True,
+    help="Resolve conflicts by keeping local changes",
+)
+@click.option(
+    "--force-github",
+    is_flag=True,
+    help="Resolve conflicts by keeping GitHub changes",
+)
 @click.pass_context
-def sync_git(ctx: click.Context):
-    """Sync with Git repository."""
-    console.print("🔄 Git sync functionality will be implemented", style="green")
+@require_initialized
+def sync_git(
+    ctx: click.Context,
+    dry_run: bool,
+    verbose: bool,
+    force_local: bool,
+    force_github: bool,
+) -> None:
+    """Sync roadmap with GitHub issues.
+
+    Two-way sync:
+    - Push local changes to GitHub
+    - Pull GitHub changes to local
+    - Detect and resolve conflicts
+
+    Examples:
+        # Preview what will be synced
+        roadmap git sync --dry-run
+
+        # Sync all changes
+        roadmap git sync
+
+        # Sync with conflict resolution
+        roadmap git sync --force-local
+    """
+    core = ctx.obj["core"]
+    console_inst = get_console()
+    roadmap_root = Path.cwd()
+
+    try:
+        # Get GitHub config
+        gh_service = GitHubIntegrationService(
+            roadmap_root, roadmap_root / ".github/config.json"
+        )
+        config_result = gh_service.get_github_config()
+
+        # Handle both tuple (real code) and dict (mocked code) returns
+        if isinstance(config_result, tuple):
+            owner, repo, token = config_result
+            config = {"owner": owner, "repo": repo, "token": token}
+        else:
+            config = config_result
+
+        if not config or not config.get("token"):
+            console_inst.print(
+                "❌ GitHub not configured. Run 'roadmap git setup' first",
+                style="bold red",
+            )
+            sys.exit(1)
+
+        # Get linked issues
+        try:
+            all_issues = core.issues.list()
+            linked_issues = [
+                issue for issue in all_issues if getattr(issue, "github_issue", None)
+            ]
+        except Exception:
+            linked_issues = []
+
+        if not linked_issues:
+            console_inst.print("⚠️  No GitHub-linked issues found", style="yellow")
+            return
+
+        console_inst.print(
+            f"🔄 Syncing {len(linked_issues)} GitHub-linked issue(s)", style="bold cyan"
+        )
+        console_inst.print()
+
+        # Create orchestrator and run sync (dry-run first to preview)
+        orchestrator = GitHubSyncOrchestrator(core, config)
+        report = orchestrator.sync_all_linked_issues(dry_run=True)
+
+        # Display report
+        if verbose:
+            report.display_verbose()
+        else:
+            report.display_brief()
+
+        console_inst.print()
+
+        # If dry-run flag, stop here
+        if dry_run:
+            console_inst.print("[dim]Dry-run mode: No changes applied[/dim]")
+            return
+
+        # Handle conflicts
+        if report.has_conflicts():
+            if force_local:
+                console_inst.print(
+                    "[yellow]⚠️  Conflicts detected - using --force-local[/yellow]"
+                )
+            elif force_github:
+                console_inst.print(
+                    "[yellow]⚠️  Conflicts detected - using --force-github[/yellow]"
+                )
+            else:
+                console_inst.print(
+                    "[red]❌ Conflicts detected. Use --force-local or --force-github[/red]"
+                )
+                sys.exit(1)
+
+        # Ask for confirmation if there are changes
+        if report.has_changes():
+            if not click.confirm("Apply these changes?"):
+                console_inst.print("❌ Sync cancelled", style="red")
+                return
+
+        # Apply changes
+        console_inst.print("[cyan]🔄 Applying changes...[/cyan]")
+        apply_report = orchestrator.sync_all_linked_issues(
+            dry_run=False, force_local=force_local, force_github=force_github
+        )
+
+        if apply_report.error:
+            console_inst.print(
+                f"❌ Error applying sync: {apply_report.error}", style="bold red"
+            )
+            sys.exit(1)
+
+        # Summary
+        console_inst.print()
+        console_inst.print("[green]✅ Sync complete![/green]")
+        console_inst.print(f"   • {apply_report.issues_up_to_date} up-to-date")
+        console_inst.print(f"   • {apply_report.issues_updated} updated")
+        if apply_report.conflicts_detected > 0:
+            console_inst.print(
+                f"   • {apply_report.conflicts_detected} conflicts resolved"
+            )
+
+    except Exception as e:
+        handle_cli_error(
+            error=e,
+            operation="sync",
+            entity_type="git",
+            entity_id="repository",
+            context={},
+        )
 
 
 @git.command("status")
