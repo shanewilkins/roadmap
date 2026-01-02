@@ -1,0 +1,124 @@
+"""Sync state models for tracking local and remote state."""
+
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
+from datetime import datetime
+
+
+@dataclass
+class IssueBaseState:
+    """Base state of an issue from sync perspective."""
+
+    id: str
+    status: str
+    assignee: Optional[str] = None
+    labels: list[str] = field(default_factory=list)
+    description: str = ""
+    title: str = ""
+    priority: int = 0
+    blocked_by: list[str] = field(default_factory=list)
+    blocks: list[str] = field(default_factory=list)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    archived: bool = False
+    custom_fields: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for comparison."""
+        return {
+            "id": self.id,
+            "status": self.status,
+            "assignee": self.assignee,
+            "labels": self.labels,
+            "description": self.description,
+            "title": self.title,
+            "priority": self.priority,
+            "blocked_by": self.blocked_by,
+            "blocks": self.blocks,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "archived": self.archived,
+            "custom_fields": self.custom_fields,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "IssueBaseState":
+        """Create from dictionary."""
+        return cls(**data)
+
+
+@dataclass
+class SyncState:
+    """Current sync state of the system."""
+
+    local_issues: Dict[str, IssueBaseState] = field(default_factory=dict)
+    remote_issues: Dict[str, IssueBaseState] = field(default_factory=dict)
+    base_issues: Dict[str, IssueBaseState] = field(default_factory=dict)
+    last_sync_time: Optional[datetime] = None
+    sync_in_progress: bool = False
+    local_deleted_ids: set[str] = field(default_factory=set)
+    remote_deleted_ids: set[str] = field(default_factory=set)
+
+    def get_issue_dict(
+        self, source: str
+    ) -> Dict[str, Dict[str, Any]]:
+        """Get issues as dictionary of dicts for merging."""
+        if source == "local":
+            issues = self.local_issues
+        elif source == "remote":
+            issues = self.remote_issues
+        elif source == "base":
+            issues = self.base_issues
+        else:
+            raise ValueError(f"Unknown source: {source}")
+
+        return {
+            issue_id: state.to_dict()
+            for issue_id, state in issues.items()
+        }
+
+    def add_issue(
+        self,
+        source: str,
+        issue: IssueBaseState,
+    ) -> None:
+        """Add or update an issue in the specified source."""
+        if source == "local":
+            self.local_issues[issue.id] = issue
+        elif source == "remote":
+            self.remote_issues[issue.id] = issue
+        elif source == "base":
+            self.base_issues[issue.id] = issue
+        else:
+            raise ValueError(f"Unknown source: {source}")
+
+    def get_issue(
+        self, source: str, issue_id: str
+    ) -> Optional[IssueBaseState]:
+        """Get a specific issue from a source."""
+        if source == "local":
+            return self.local_issues.get(issue_id)
+        elif source == "remote":
+            return self.remote_issues.get(issue_id)
+        elif source == "base":
+            return self.base_issues.get(issue_id)
+        else:
+            raise ValueError(f"Unknown source: {source}")
+
+    def mark_deleted(self, source: str, issue_id: str) -> None:
+        """Mark an issue as deleted in the specified source."""
+        if source == "local":
+            self.local_deleted_ids.add(issue_id)
+            if issue_id in self.local_issues:
+                del self.local_issues[issue_id]
+        elif source == "remote":
+            self.remote_deleted_ids.add(issue_id)
+            if issue_id in self.remote_issues:
+                del self.remote_issues[issue_id]
+        else:
+            raise ValueError(f"Unknown source: {source}")
+
+    def mark_synced(self) -> None:
+        """Mark sync as complete."""
+        self.sync_in_progress = False
+        self.last_sync_time = datetime.now()

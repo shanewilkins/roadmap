@@ -200,11 +200,12 @@ class VanillaGitSyncBackend:
             # Commit changes
             commit_message = f"chore: Update {local_issue.id} - {local_issue.title}"
             result = subprocess.run(
-                ["git", "commit", "-m", commit_message],
+                ["git", "commit", "-m", commit_message, "--no-verify"],
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
                 timeout=10,
+                stdin=subprocess.DEVNULL,  # Prevent hanging on input
             )
 
             if result.returncode != 0:
@@ -217,6 +218,7 @@ class VanillaGitSyncBackend:
                 capture_output=True,
                 text=True,
                 timeout=30,
+                stdin=subprocess.DEVNULL,  # Prevent hanging on SSH passphrase
             )
 
             return result.returncode == 0
@@ -266,11 +268,12 @@ class VanillaGitSyncBackend:
             # Commit all staged changes together
             commit_message = f"chore: Sync {len(staged_files)} issues"
             result = subprocess.run(
-                ["git", "commit", "-m", commit_message],
+                ["git", "commit", "-m", commit_message, "--no-verify"],
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
                 timeout=10,
+                stdin=subprocess.DEVNULL,  # Prevent hanging on input
             )
 
             if result.returncode != 0:
@@ -284,6 +287,7 @@ class VanillaGitSyncBackend:
                 capture_output=True,
                 text=True,
                 timeout=30,
+                stdin=subprocess.DEVNULL,  # Prevent hanging on SSH passphrase
             )
 
             if result.returncode == 0:

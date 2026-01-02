@@ -162,6 +162,7 @@ def register_commands():
     from roadmap.adapters.cli.git import git as git_cmd
     from roadmap.adapters.cli.issues import issue
     from roadmap.adapters.cli.milestones import milestone
+    from roadmap.adapters.cli.sync import sync
 
     # progress commands moved to future/ (post-v1.0)
     from roadmap.adapters.cli.projects import project
@@ -174,6 +175,7 @@ def register_commands():
     main.add_command(milestone)
     main.add_command(git_cmd)
     main.add_command(comment)
+    main.add_command(sync)
     # recalculate_progress and progress_reports moved to future/
 
     # ARCHIVED TO future/ (post-1.0 features):
