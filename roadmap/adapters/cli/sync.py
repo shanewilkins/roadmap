@@ -11,7 +11,6 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
-from roadmap.core.services.github_integration_service import GitHubIntegrationService
 
 
 @click.command(name="sync")
@@ -93,7 +92,6 @@ def sync(
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
     from roadmap.adapters.sync import (
         GenericSyncOrchestrator,
-        detect_backend_from_config,
     )
     from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
     from roadmap.core.services.sync_state_comparator import SyncStateComparator
@@ -102,41 +100,44 @@ def sync(
     console_inst = get_console()
 
     try:
-        # Load config from both locations
-        gh_service = GitHubIntegrationService(core, core.roadmap_dir / "config.yaml")
-        config_result = gh_service.get_github_config()
+        import yaml
 
-        # Handle both tuple (real code) and dict (mocked code) returns
-        if isinstance(config_result, tuple):
-            token, owner, repo = config_result
-            config = {
-                "owner": owner,
-                "repo": repo,
-                "token": token,
-            }
-        else:
-            config = config_result or {}
+        # Load full config from file
+        config_file = core.roadmap_dir / "config.yaml"
+        full_config = {}
+
+        if config_file.exists():
+            with open(config_file) as f:
+                full_config = yaml.safe_load(f) or {}
 
         # Determine backend to use
         if backend:
             backend_type = backend.lower()
         else:
-            backend_type = detect_backend_from_config(config)
-            if not backend_type:
-                console_inst.print(
-                    "❌ Could not auto-detect sync backend from config",
-                    style="bold red",
-                )
-                console_inst.print(
-                    "   Please run: roadmap init",
-                    style="yellow",
-                )
-                sys.exit(1)
+            # Check if backend is explicitly set in config
+            if full_config.get("github", {}).get("sync_backend"):
+                backend_type = full_config["github"]["sync_backend"].lower()
+            else:
+                # Default to git backend for self-hosting
+                backend_type = "git"
 
         console_inst.print(
             f"🔄 Syncing with {backend_type.upper()} backend",
             style="bold cyan",
         )
+
+        # Prepare config for backend
+        if backend_type == "github":
+            # GitHub backend expects owner, repo, token at top level
+            github_config = full_config.get("github", {})
+            config = {
+                "owner": github_config.get("owner"),
+                "repo": github_config.get("repo"),
+                "token": github_config.get("token"),
+            }
+        else:
+            # Git backend doesn't need config
+            config = {}
 
         # Create backend
         sync_backend = get_sync_backend(backend_type, core, config)  # type: ignore
