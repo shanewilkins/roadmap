@@ -5,6 +5,8 @@ and workflow correctness rather than implementation details and mocks.
 Uses builders for realistic test data and assertions on actual behavior.
 """
 
+import pytest
+
 from roadmap.common.constants import MilestoneStatus, Status
 from roadmap.core.services.helpers.status_change_helpers import (
     extract_issue_status_update,
@@ -65,48 +67,48 @@ class TestOrchestrationWorkflowService:
         assert change["number"] == 1
         assert change["title"] == "v1.0 Release"
 
-    def test_orchestrator_service_validates_status_transitions(self):
-        """Test orchestrator validates all status transitions work correctly."""
-        # Setup: Create multiple status transitions
-        transitions = [
+    @pytest.mark.parametrize(
+        "status_value,expected_enum",
+        [
             ("todo", Status.TODO),
             ("in-progress", Status.IN_PROGRESS),
             ("blocked", Status.BLOCKED),
             ("review", Status.REVIEW),
             ("closed", Status.CLOSED),
-        ]
+        ],
+    )
+    def test_orchestrator_processes_status_transition(
+        self, status_value, expected_enum
+    ):
+        """Test orchestrator processes a single status transition correctly."""
+        # Execute: Process the status transition
+        change_str = f"todo -> {status_value}"
+        result = extract_issue_status_update(change_str)
 
-        # Execute: Test each transition
-        for status_value, expected_enum in transitions:
-            change_str = f"todo -> {status_value}"
-            result = extract_issue_status_update(change_str)
+        # Verify: Transition processes correctly
+        assert result is not None
+        assert result["status_enum"] == expected_enum
 
-            # Verify: Each transition processes correctly
-            assert result is not None, f"Failed to process transition to {status_value}"
-            assert result["status_enum"] == expected_enum
-
-    def test_orchestrator_maps_github_states_correctly_for_issue_statuses(self):
-        """Test orchestrator correctly maps issue statuses to GitHub states."""
-        # Mapping verification tests
-        test_cases = [
+    @pytest.mark.parametrize(
+        "change_str,expected_github_state,expected_status",
+        [
             ("todo -> in-progress", "open", Status.IN_PROGRESS),
             ("in-progress -> review", "open", Status.REVIEW),
             ("review -> closed", "closed", Status.CLOSED),
             ("blocked -> todo", "open", Status.TODO),
-        ]
+        ],
+    )
+    def test_orchestrator_github_state_mapping(
+        self, change_str, expected_github_state, expected_status
+    ):
+        """Test orchestrator correctly maps issue status change to GitHub state."""
+        # Execute: Process the status change
+        result = extract_issue_status_update(change_str)
 
-        # Execute: Test each mapping
-        for change_str, expected_github_state, expected_status in test_cases:
-            result = extract_issue_status_update(change_str)
-
-            # Verify: GitHub state and status match correctly
-            assert result is not None
-            assert (
-                result["github_state"] == expected_github_state
-            ), f"Wrong GitHub state for {change_str}"
-            assert (
-                result["status_enum"] == expected_status
-            ), f"Wrong status for {change_str}"
+        # Verify: GitHub state and status match correctly
+        assert result is not None
+        assert result["github_state"] == expected_github_state
+        assert result["status_enum"] == expected_status
 
 
 class TestOrchestrationMultiChangeWorkflow:
