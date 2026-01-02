@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from roadmap.common.constants import SyncBackend
 from roadmap.infrastructure.github.setup import (
     GitHubConfigManager,
     GitHubInitializationService,
@@ -33,7 +34,7 @@ class TestGitHubConfigManager:
     def test_save_github_config_new_file(self, mock_core):
         """Test saving GitHub config to new file."""
         manager = GitHubConfigManager(mock_core)
-        manager.save_github_config("owner/repo")
+        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GITHUB)
 
         assert manager.config_file.exists()
         # Verify file contains github config
@@ -50,7 +51,7 @@ class TestGitHubConfigManager:
         with open(manager.config_file, "w") as f:
             f.write("other_setting: value\n")
 
-        manager.save_github_config("owner/repo")
+        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GITHUB)
 
         # Verify both settings exist
         with open(manager.config_file) as f:
@@ -63,7 +64,7 @@ class TestGitHubConfigManager:
         import yaml
 
         manager = GitHubConfigManager(mock_core)
-        manager.save_github_config("owner/repo")
+        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GITHUB)
 
         with open(manager.config_file) as f:
             config = yaml.safe_load(f)

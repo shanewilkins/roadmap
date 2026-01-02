@@ -20,7 +20,7 @@ class TestGitHubConfigManager:
         """Test saving GitHub config to new file."""
         manager = GitHubConfigManager(mock_core)
 
-        manager.save_github_config("owner/repo")
+        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GITHUB)
 
         assert manager.config_file.exists()
         # Verify file contains github config
@@ -40,7 +40,7 @@ class TestGitHubConfigManager:
             yaml.dump(existing_config, f)
 
         # Save new config
-        manager.save_github_config("owner/repo")
+        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GITHUB)
 
         # Verify both settings exist
         with open(manager.config_file) as f:
@@ -67,7 +67,7 @@ class TestGitHubConfigManager:
         manager = GitHubConfigManager(mock_core)
 
         with pytest.raises(ValueError, match="Invalid GitHub repository format"):
-            manager.save_github_config("invalid_repo")
+            manager.save_github_config("invalid_repo", sync_backend=SyncBackend.GITHUB)
 
         # Verify file was not created
         assert not manager.config_file.exists()
@@ -77,7 +77,7 @@ class TestGitHubConfigManager:
         manager = GitHubConfigManager(mock_core)
 
         with pytest.raises(ValueError, match="Invalid GitHub repository format"):
-            manager.save_github_config("")
+            manager.save_github_config("", sync_backend=SyncBackend.GITHUB)
 
         assert not manager.config_file.exists()
 
