@@ -5,6 +5,7 @@ GitHub credentials are missing or invalid.
 """
 
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from roadmap.adapters.sync.backends.github_sync_backend import GitHubSyncBackend
@@ -22,7 +23,9 @@ class TestGitHubSyncBackendInitialization:
             "repo": "test-repo",
         }
 
-        with patch("roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"):
+        with patch(
+            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+        ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
 
             assert backend is not None
@@ -47,13 +50,11 @@ class TestGitHubSyncBackendInitialization:
     def test_backend_initializes_with_owner_and_repo(self):
         """Test backend stores owner and repo configuration."""
         mock_core = MagicMock()
-        config = {
-            "token": "test-token",
-            "owner": "test-owner",
-            "repo": "test-repo"
-        }
+        config = {"token": "test-token", "owner": "test-owner", "repo": "test-repo"}
 
-        with patch("roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"):
+        with patch(
+            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+        ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
 
             assert backend.config["owner"] == "test-owner"
@@ -68,24 +69,32 @@ class TestGitHubSyncBackendInitialization:
             "repo": "test-repo",
         }
 
-        with patch("roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"):
+        with patch(
+            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+        ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
 
             # Should have _safe_init or similar pattern for optional GitHub
-            assert hasattr(backend, "_safe_init") or hasattr(backend, "authenticate") or hasattr(backend, "client")
+            assert (
+                hasattr(backend, "_safe_init")
+                or hasattr(backend, "authenticate")
+                or hasattr(backend, "client")
+            )
 
     def test_backend_handles_invalid_credentials(self):
         """Test backend gracefully handles invalid credentials."""
         mock_core = MagicMock()
         config = {"token": "invalid-token"}
 
-        with patch("roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient") as mock_client:
+        with patch(
+            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+        ) as mock_client:
             # Simulate invalid token error
             mock_client.side_effect = Exception("Invalid token")
 
             try:
                 # Should not crash during init if token is validated lazily
-                backend = GitHubSyncBackend(core=mock_core, config=config)
+                GitHubSyncBackend(core=mock_core, config=config)
             except Exception:
                 # Error handling at init time is acceptable for invalid tokens
                 pass
@@ -98,26 +107,24 @@ class TestGitHubSyncBackendOperations:
     def backend(self):
         """Create a mock GitHub sync backend."""
         mock_core = MagicMock()
-        config = {
-            "token": "test-token",
-            "owner": "test-owner",
-            "repo": "test-repo"
-        }
+        config = {"token": "test-token", "owner": "test-owner", "repo": "test-repo"}
 
-        with patch("roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"):
+        with patch(
+            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+        ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
             backend.client = MagicMock()
             return backend
 
     def test_backend_fetch_issues(self, backend):
         """Test backend can fetch issues from GitHub."""
+        assert backend.client is not None
         backend.client.get_issues.return_value = [
             {"number": 1, "title": "Issue 1", "state": "open"},
             {"number": 2, "title": "Issue 2", "state": "closed"},
         ]
 
         # Should be able to call get_issues through client
-        assert backend.client is not None
         assert backend.client.get_issues.return_value is not None
 
     def test_backend_fetch_milestones(self, backend):
@@ -175,11 +182,12 @@ class TestGitHubSyncBackendErrorHandling:
             backend.client = mock_client
 
             # Operations should fail gracefully, not crash the backend
-            try:
-                backend.client.get_issues()
-            except ConnectionError:
-                # Expected behavior - operations fail, but backend is still usable
-                pass
+            if backend.client is not None:
+                try:
+                    backend.client.get_issues()
+                except ConnectionError:
+                    # Expected behavior - operations fail, but backend is still usable
+                    pass
 
     def test_backend_handles_github_api_errors(self):
         """Test backend handles GitHub API errors gracefully."""
@@ -190,18 +198,23 @@ class TestGitHubSyncBackendErrorHandling:
             "repo": "test-repo",
         }
 
-        with patch("roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"):
+        with patch(
+            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+        ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
             backend.client = MagicMock()
 
             # Simulate GitHub API returning an error
-            backend.client.get_issues.side_effect = Exception("API rate limit exceeded")
+            if backend.client is not None:
+                backend.client.get_issues.side_effect = Exception(
+                    "API rate limit exceeded"
+                )
 
-            try:
-                backend.client.get_issues()
-            except Exception:
-                # Expected - caller should handle
-                pass
+                try:
+                    backend.client.get_issues()
+                except Exception:
+                    # Expected - caller should handle
+                    pass
 
             # Backend should still be usable
             assert backend is not None
