@@ -54,6 +54,94 @@ git commit -m "[closes roadmap:issue-id] auth complete"
 
 ---
 
+## GitHub Sync Workflow
+
+**Goal:** Keep roadmap synchronized with GitHub issues.
+
+### Understanding the Sync Architecture
+
+The sync process is designed to give you full control over git operations:
+
+1. **Sync modifies files**: `roadmap sync` updates `.roadmap/issues/*.md` with remote data
+2. **You control git**: You manually `git add`, `git commit`, `git push`
+3. **No prompts**: Changes apply immediately (use `--dry-run` to preview)
+4. **Smart conflict resolution**: Automatic merge with configurable strategies
+
+### Typical Sync Workflow
+
+```bash
+# Step 1: Preview what would be synced
+roadmap sync --dry-run
+
+# Step 2: Run sync (applies changes to local files)
+roadmap sync
+
+# Step 3: Review what changed
+git diff .roadmap/
+
+# Step 4: Commit and push the changes
+git add .roadmap/
+git commit -m "chore: sync issues from GitHub"
+git push
+
+# Step 5: Continue with your work
+roadmap today
+```
+
+### Advanced Sync Options
+
+```bash
+# Sync with verbose output (see all pulls/pushes)
+roadmap sync --verbose
+
+# Resolve conflicts by keeping local changes
+roadmap sync --force-local
+
+# Resolve conflicts by keeping remote changes
+roadmap sync --force-remote
+
+# Dry-run with verbose output (safe preview)
+roadmap sync --dry-run --verbose
+```
+
+### Integration with Team Workflow
+
+For teams, sync typically happens:
+
+1. **Morning**: `roadmap sync` to get latest GitHub issues
+2. **During work**: Update issues locally with `roadmap issue update`
+3. **Before standup**: `roadmap sync --dry-run --verbose` to see what changed
+4. **Before merging**: `roadmap sync` to pull any GitHub activity, then commit/push
+5. **End of day**: Push sync changes to git
+
+Example:
+
+```bash
+# Morning sync
+roadmap sync
+git add .roadmap/ && git commit -m "chore: morning sync" && git push
+
+# Work during the day (on feature branch)
+git checkout -b feat/feature-name
+roadmap issue update issue-id --status in-progress
+# ... make code changes ...
+git commit -m "fixes issue-id: implement feature"
+
+# Before creating PR, get latest from main
+git checkout main && git pull
+roadmap sync --dry-run --verbose  # Safe preview
+roadmap sync  # Apply latest changes
+git add .roadmap/ && git commit -m "chore: pre-pr sync" && git push
+
+# Create PR
+git checkout feat/feature-name
+git rebase main
+git push
+# ... create and merge PR ...
+```
+
+---
+
 ## Small Team Workflow (3-8 people)
 
 **Goal:** Coordinate work across developers with PM visibility.

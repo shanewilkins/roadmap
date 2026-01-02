@@ -22,32 +22,86 @@ The roadmap CLI will automatically store it securely after first use with `--git
 
 ## 3. Configure GitHub in Roadmap
 
-Create `.github/config.json`:
-```json
-{
-  "github": {
-    "owner": "shanewilkins",
-    "repo": "roadmap"
-  }
-}
+Run the initialization command:
+```bash
+roadmap init
 ```
 
-## 4. Run Sync
+This will prompt you for:
+- GitHub personal access token (or uses GITHUB_TOKEN env var)
+- Repository owner (e.g., `shanewilkins`)
+- Repository name (e.g., `roadmap`)
+
+## 4. Sync with GitHub
+
+### Preview Changes (Dry-Run)
 
 ```bash
-# Preview changes
-roadmap git sync --dry-run
+# See what would be synced without making changes
+roadmap sync --dry-run
+```
 
-# Sync with confirmation
-roadmap git sync
+### Sync and Apply Changes
 
-# Force conflict resolution
-roadmap git sync --force-local   # Keep local changes
-roadmap git sync --force-github  # Keep GitHub changes
+```bash
+# Sync with GitHub API
+# This pulls remote issues and pushes local changes
+roadmap sync
+
+# Note: Sync modifies files in .roadmap/issues/ but does NOT commit/push to git
+# You must manually manage git:
+git add .roadmap/
+git commit -m "chore: sync with GitHub"
+git push
+```
+
+### View Detailed Sync Information
+
+```bash
+# See all pulls and pushes during sync
+roadmap sync --verbose
+```
+
+### Resolve Conflicts
+
+```bash
+# Automatically keep local changes when conflicts occur
+roadmap sync --force-local
+
+# Automatically keep remote changes when conflicts occur
+roadmap sync --force-remote
+```
+
+## Understanding the Sync Workflow
+
+The new sync architecture gives you full control:
+
+1. **Sync modifies files**: `roadmap sync` updates `.roadmap/issues/*.md` files
+2. **You control git**: You manually run `git add`, `git commit`, `git push`
+3. **No confirmation prompts**: Changes are applied immediately (unless `--dry-run`)
+4. **Preview before committing**: Use `--dry-run` to preview changes first
+
+### Typical Workflow
+
+```bash
+# Step 1: Preview changes
+roadmap sync --dry-run
+
+# Step 2: Run sync and apply changes to local files
+roadmap sync
+
+# Step 3: Review what changed
+git diff .roadmap/
+
+# Step 4: Commit and push
+git add .roadmap/
+git commit -m "chore: sync with GitHub"
+git push
 ```
 
 ## Current Status
 
-- ✅ GitHub config created: `.github/config.json`
-- ❌ GitHub token not set (needed for actual sync)
+- ✅ GitHub config created
+- ✅ GitHub token configured
 - ✅ Sync command implemented and ready
+- ✅ Backend agnostic (GitHub or self-hosted)

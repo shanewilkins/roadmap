@@ -67,6 +67,7 @@ def sync(
     2. Resolve conflicts automatically (when possible)
     3. Flag unresolvable conflicts for manual review
     4. Push local changes to remote
+    5. User must manually run: git add, git commit, git push
 
     **Conflict Resolution:**
     - Critical fields (status, assignee, milestone) → flagged for review
@@ -74,13 +75,13 @@ def sync(
     - Metadata (timestamps) → remote wins (remote is authoritative)
 
     **Examples:**
-        # Sync using auto-detected backend
+        # Sync with GitHub API
         roadmap sync
 
-        # Preview changes (dry-run)
+        # Preview changes (dry-run, no modifications)
         roadmap sync --dry-run
 
-        # Sync with verbose output
+        # Sync with verbose output (shows all pulls and pushes)
         roadmap sync --verbose
 
         # Resolve all conflicts locally (keep your changes)
@@ -168,8 +169,12 @@ def sync(
             conflict_resolver=conflict_resolver,
         )
 
-        # Run sync (dry-run by default)
-        report = orchestrator.sync_all_issues(dry_run=True)
+        # Run sync with specified flags
+        report = orchestrator.sync_all_issues(
+            dry_run=dry_run,
+            force_local=force_local,
+            force_remote=force_remote,
+        )
 
         if report.error:
             console_inst.print(f"❌ Sync error: {report.error}", style="bold red")
@@ -183,21 +188,10 @@ def sync(
 
         console_inst.print()
 
-        # If dry-run flag, stop here
+        # If dry-run flag, note that no changes were applied
         if dry_run:
             console_inst.print("[dim]Dry-run mode: No changes applied[/dim]")
             return
-
-        # Confirm before applying
-        if not _confirm_sync(console_inst, report):
-            console_inst.print("Sync cancelled", style="yellow")
-            return
-
-        # Apply changes
-        report = orchestrator.sync_all_issues(dry_run=False)
-        if report.error:
-            console_inst.print(f"❌ Sync failed: {report.error}", style="bold red")
-            sys.exit(1)
 
         console_inst.print(
             "✅ Sync completed successfully",
@@ -212,14 +206,3 @@ def sync(
         if verbose:
             raise
         sys.exit(1)
-
-
-def _confirm_sync(console_inst, report) -> bool:
-    """Ask user to confirm sync changes."""
-    try:
-        response = console_inst.input(
-            "\n[bold cyan]Apply sync changes?[/bold cyan] (y/n): "
-        )
-        return response.lower().strip() in ("y", "yes")
-    except (EOFError, KeyboardInterrupt):
-        return False
