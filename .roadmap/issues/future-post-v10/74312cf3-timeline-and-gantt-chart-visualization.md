@@ -23,6 +23,7 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: null
+comments: []
 ---
 
 # Timeline and Gantt chart visualization

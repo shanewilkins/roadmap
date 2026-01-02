@@ -8,14 +8,14 @@ milestone: v.1.0.0
 labels: []
 github_issue: null
 created: '2026-01-01T14:13:44.383788+00:00'
-updated: '2026-01-01T16:05:00.000000+00:00'
+updated: '2026-01-01T16:05:00+00:00'
 assignee: shanewilkins
 estimated_hours: 8.0
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2026-01-01T15:42:00.000000+00:00'
-actual_end_date: '2026-01-01T16:05:00.000000+00:00'
+actual_start_date: '2026-01-01T15:42:00+00:00'
+actual_end_date: '2026-01-01T16:05:00+00:00'
 progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
