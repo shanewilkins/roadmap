@@ -72,28 +72,30 @@ class TestAssertionQualityIssueStatusChanges:
         non_closed_result = extract_issue_status_update("todo -> in-progress")
         assert non_closed_result["github_state"] == "open"
 
-    def test_assertion_quality_for_all_open_statuses(self):
-        """Test assertions verify mapping consistency across all 'open' statuses."""
-        open_statuses = [Status.TODO, Status.IN_PROGRESS, Status.BLOCKED, Status.REVIEW]
-        closed_statuses = [Status.CLOSED]
+    @pytest.mark.parametrize(
+        "status,expected_github_state",
+        [
+            (Status.TODO, "open"),
+            (Status.IN_PROGRESS, "open"),
+            (Status.BLOCKED, "open"),
+            (Status.REVIEW, "open"),
+            (Status.CLOSED, "closed"),
+        ],
+    )
+    def test_assertion_quality_status_github_mapping(
+        self, status, expected_github_state
+    ):
+        """Test assertions verify status to GitHub state mapping for each status."""
+        # Execute: Process status change through service
+        change_str = f"todo -> {status.value}"
+        result = extract_issue_status_update(change_str)
 
-        # GOOD: Verify all 'open' statuses map to GitHub "open" state
-        for status in open_statuses:
-            change_str = f"todo -> {status.value}"
-            result = extract_issue_status_update(change_str)
-            assert (
-                result["github_state"] == "open"
-            ), f"Status {status.value} should map to 'open'"
-            assert result["status_enum"] == status, f"Wrong enum for {status.value}"
-
-        # GOOD: Verify all 'closed' statuses map to GitHub "closed" state
-        for status in closed_statuses:
-            change_str = f"todo -> {status.value}"
-            result = extract_issue_status_update(change_str)
-            assert (
-                result["github_state"] == "closed"
-            ), f"Status {status.value} should map to 'closed'"
-            assert result["status_enum"] == status, f"Wrong enum for {status.value}"
+        # GOOD: Verify correct enum value
+        assert result["status_enum"] == status, f"Wrong enum for {status.value}"
+        # GOOD: Verify correct GitHub state mapping
+        assert (
+            result["github_state"] == expected_github_state
+        ), f"Status {status.value} should map to '{expected_github_state}'"
         """Test assertions verify parsing doesn't lose change context."""
         issue = (
             IssueChangeTestBuilder()
@@ -139,24 +141,29 @@ class TestAssertionQualityMilestoneStatusChanges:
         assert milestone["number"] == 1
         assert milestone["title"] == "v1.0"
 
-    def test_assertion_quality_for_all_milestone_states(self):
-        """Test assertions verify all milestone states map correctly."""
-        # MilestoneStatus has OPEN and CLOSED
-        milestone_states = [
+    @pytest.mark.parametrize(
+        "status_enum,github_state",
+        [
             (MilestoneStatus.OPEN, "open"),
             (MilestoneStatus.CLOSED, "closed"),
-        ]
+        ],
+    )
+    def test_assertion_quality_milestone_github_mapping(
+        self, status_enum, github_state
+    ):
+        """Test assertions verify milestone status to GitHub state mapping."""
+        # Execute: Process milestone status change
+        change_str = f"open -> {status_enum.value}"
+        result = extract_milestone_status_update(change_str)
 
-        # GOOD: Verify 1:1 mapping between MilestoneStatus and GitHub state
-        for status_enum, github_state in milestone_states:
-            change_str = f"open -> {status_enum.value}"
-            result = extract_milestone_status_update(change_str)
-            assert (
-                result["status_enum"] == status_enum
-            ), f"Wrong enum for {status_enum.value}"
-            assert (
-                result["github_state"] == github_state
-            ), f"Wrong GitHub state for {status_enum.value}"
+        # GOOD: Verify correct status enum
+        assert (
+            result["status_enum"] == status_enum
+        ), f"Wrong enum for {status_enum.value}"
+        # GOOD: Verify correct GitHub state mapping
+        assert (
+            result["github_state"] == github_state
+        ), f"Wrong GitHub state for {status_enum.value}"
 
 
 class TestAssertionQualityBatchOperations:
