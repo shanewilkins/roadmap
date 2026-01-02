@@ -12,6 +12,8 @@ Key improvements from audit:
 5. Ensure change context is preserved through processing
 """
 
+import pytest
+
 from roadmap.common.constants import MilestoneStatus, Status
 from roadmap.core.services.helpers.status_change_helpers import (
     extract_issue_status_update,
@@ -92,8 +94,6 @@ class TestAssertionQualityIssueStatusChanges:
                 result["github_state"] == "closed"
             ), f"Status {status.value} should map to 'closed'"
             assert result["status_enum"] == status, f"Wrong enum for {status.value}"
-
-    def test_assertion_quality_for_change_parsing_with_context(self):
         """Test assertions verify parsing doesn't lose change context."""
         issue = (
             IssueChangeTestBuilder()
@@ -223,27 +223,29 @@ class TestAssertionQualityBatchOperations:
 class TestAssertionQualityErrorCases:
     """Demonstrate assertion quality for error handling cases."""
 
-    def test_assertion_quality_for_malformed_inputs(self):
-        """Test assertions verify error handling is explicit."""
-        malformed_inputs = [
+    @pytest.mark.parametrize(
+        "malformed_input",
+        [
             "no arrow",
             "->",
             "",
             "incomplete ->",
             "-> incomplete",
-        ]
-
-        # GOOD: Test each malformed input returns None (explicit rejection)
-        for malformed in malformed_inputs:
-            issue_result = extract_issue_status_update(malformed)
-            milestone_result = extract_milestone_status_update(malformed)
-            # GOOD: Explicit assertion that None is returned
-            assert (
-                issue_result is None
-            ), f"Should reject malformed issue input: {malformed}"
-            assert (
-                milestone_result is None
-            ), f"Should reject malformed milestone input: {malformed}"
+        ],
+    )
+    @pytest.mark.parametrize(
+        "update_func",
+        [
+            extract_issue_status_update,
+            extract_milestone_status_update,
+        ],
+    )
+    def test_assertion_quality_malformed_input_rejected(
+        self, malformed_input, update_func
+    ):
+        """Test assertions verify error handling is explicit."""
+        result = update_func(malformed_input)
+        assert result is None, f"Should reject malformed: {malformed_input}"
 
     def test_assertion_quality_for_whitespace_handling(self):
         """Test assertions verify whitespace handling is consistent."""

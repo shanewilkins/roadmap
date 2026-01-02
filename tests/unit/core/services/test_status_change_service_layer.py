@@ -4,6 +4,8 @@ Demonstrates refactored tests using real domain objects instead of mocks,
 with specific assertions testing actual behavior rather than mock calls.
 """
 
+import pytest
+
 from roadmap.common.constants import MilestoneStatus, Status
 from roadmap.core.services.helpers.status_change_helpers import (
     extract_issue_status_update,
@@ -19,78 +21,83 @@ from tests.factories.github_sync_data import (
 class TestStatusChangeServiceLayer:
     """Test status change helpers as a service layer."""
 
-    def test_service_parses_all_issue_status_changes(self):
-        """Test service can parse all valid issue status changes."""
-        # Use real Status enum values
-        status_changes = [
-            "todo",
-            "in-progress",
-            "blocked",
-            "review",
-            "closed",
-        ]
+    @pytest.mark.parametrize(
+        "from_status,to_status",
+        [
+            ("todo", "todo"),
+            ("todo", "in-progress"),
+            ("todo", "blocked"),
+            ("todo", "review"),
+            ("todo", "closed"),
+        ],
+    )
+    def test_service_parses_status_change(self, from_status, to_status):
+        """Test service can parse status changes."""
+        parsed = parse_status_change(f"{from_status} -> {to_status}")
+        assert parsed == to_status, f"Failed to parse {to_status}"
 
-        for change_str in status_changes:
-            parsed = parse_status_change(f"todo -> {change_str}")
-            # Specific assertion on actual value
-            assert parsed == change_str, f"Failed to parse {change_str}"
-
-    def test_service_extracts_issue_status_with_correct_github_mapping(self):
+    @pytest.mark.parametrize(
+        "to_status,expected_github_state",
+        [
+            (Status.TODO, "open"),
+            (Status.IN_PROGRESS, "open"),
+            (Status.BLOCKED, "open"),
+            (Status.REVIEW, "open"),
+            (Status.CLOSED, "closed"),
+        ],
+    )
+    def test_service_issue_status_maps_to_github_state(
+        self, to_status, expected_github_state
+    ):
         """Test service extracts issue status and maps to GitHub state correctly."""
-        # Test closed mapping
-        result = extract_issue_status_update("todo -> closed")
+        result = extract_issue_status_update(f"todo -> {to_status.value}")
         assert result is not None
-        assert result["status_enum"] == Status.CLOSED
-        assert result["github_state"] == "closed"  # Specific assertion on mapping
+        assert result["status_enum"] == to_status
+        assert result["github_state"] == expected_github_state
 
-        # Test open mapping
-        result = extract_issue_status_update("blocked -> in-progress")
-        assert result is not None
-        assert result["status_enum"] == Status.IN_PROGRESS
-        assert result["github_state"] == "open"  # Specific assertion on mapping
-
-    def test_service_extracts_milestone_status_with_correct_github_mapping(self):
+    @pytest.mark.parametrize(
+        "milestone_status,expected_github_state",
+        [
+            (MilestoneStatus.OPEN, "open"),
+            (MilestoneStatus.CLOSED, "closed"),
+        ],
+    )
+    def test_service_milestone_status_maps_to_github_state(
+        self, milestone_status, expected_github_state
+    ):
         """Test service extracts milestone status and maps to GitHub state correctly."""
-        # Test closed mapping
-        result = extract_milestone_status_update("open -> closed")
+        result = extract_milestone_status_update(f"open -> {milestone_status.value}")
         assert result is not None
-        assert result["status_enum"] == MilestoneStatus.CLOSED
-        assert result["github_state"] == "closed"
+        assert result["status_enum"] == milestone_status
+        assert result["github_state"] == expected_github_state
 
-        # Test open mapping
-        result = extract_milestone_status_update("closed -> open")
-        assert result is not None
-        assert result["status_enum"] == MilestoneStatus.OPEN
-        assert result["github_state"] == "open"
-
-    def test_service_validates_invalid_status_changes(self):
-        """Test service rejects invalid status changes."""
-        # Invalid status values
-        invalid_changes = [
+    @pytest.mark.parametrize(
+        "invalid_change",
+        [
             "todo -> invalid-status",
             "fake -> real",
             "in-progress -> unknown",
-        ]
+        ],
+    )
+    def test_service_rejects_invalid_status_change(self, invalid_change):
+        """Test service rejects invalid status changes."""
+        result = extract_issue_status_update(invalid_change)
+        assert result is None, f"Should reject invalid change: {invalid_change}"
 
-        for change_str in invalid_changes:
-            result = extract_issue_status_update(change_str)
-            # Specific assertion: result must be None for invalid changes
-            assert result is None, f"Should reject invalid change: {change_str}"
-
-    def test_service_handles_malformed_change_strings(self):
-        """Test service gracefully handles malformed change strings."""
-        malformed = [
+    @pytest.mark.parametrize(
+        "malformed_input",
+        [
             "no arrow here",
             "->",
             "todo",
             "",
             "   ->   ",
-        ]
-
-        for change_str in malformed:
-            result = extract_issue_status_update(change_str)
-            # Specific assertion: result must be None for malformed strings
-            assert result is None, f"Should reject malformed: {change_str}"
+        ],
+    )
+    def test_service_rejects_malformed_input(self, malformed_input):
+        """Test service gracefully handles malformed change strings."""
+        result = extract_issue_status_update(malformed_input)
+        assert result is None, f"Should reject malformed: {malformed_input}"
 
 
 class TestStatusChangeServiceWithBuilders:
