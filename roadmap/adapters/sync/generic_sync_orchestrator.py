@@ -7,7 +7,6 @@ to SyncBackendInterface implementations.
 
 from structlog import get_logger
 
-from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.services.sync_conflict_resolver import (
     ConflictStrategy,
@@ -159,9 +158,6 @@ class GenericSyncOrchestrator:
                         strategy=strategy.value,
                     )
 
-                    # Persist resolved issues back to disk
-                    self._persist_resolved_issues(resolved_issues)
-
                 except Exception as e:
                     logger.warning(
                         "conflicts_resolution_failed",
@@ -272,48 +268,3 @@ class GenericSyncOrchestrator:
             report.error = f"Error applying changes: {str(e)}"
             logger.exception("apply_changes_failed", error=str(e))
             return report
-
-    def _persist_resolved_issues(self, resolved_issues: list) -> None:
-        """Persist resolved issues back to disk.
-
-        Args:
-            resolved_issues: List of resolved Issue objects to save
-
-        Raises:
-            Exception: If any issue fails to persist
-        """
-        if not resolved_issues:
-            return
-
-        # Get the issues directory path from the core
-        core = RoadmapCore()
-        issues_base_dir = core.root_path / ".roadmap" / "issues"
-
-        try:
-            for issue in resolved_issues:
-                # Find where the issue file is currently stored
-                # Issues are stored in milestone subdirectories
-                issue_files = list(issues_base_dir.rglob(f"{issue.id}-*.md"))
-
-                if issue_files:
-                    # Save to the existing location
-                    issue_file_path = issue_files[0]
-                    IssueParser.save_issue_file(issue, issue_file_path)
-                    logger.debug(
-                        "persisted_resolved_issue",
-                        issue_id=issue.id,
-                        file_path=str(issue_file_path),
-                    )
-                else:
-                    # If no existing file found, skip (shouldn't happen in normal sync)
-                    logger.warning(
-                        "no_file_for_resolved_issue",
-                        issue_id=issue.id,
-                    )
-
-        except Exception as e:
-            logger.exception(
-                "persist_resolved_issues_failed",
-                error=str(e),
-            )
-            raise
