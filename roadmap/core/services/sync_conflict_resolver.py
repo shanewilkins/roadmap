@@ -246,30 +246,122 @@ class SyncConflictResolver:
     ) -> Issue:
         """Convert remote issue dict to local Issue instance.
 
-        This is a stub that returns the local issue as-is. In practice,
-        this would be implemented by the sync backend to convert remote
-        format to local Issue format.
+        Reconstructs a local Issue from remote data. This is called when
+        the remote version is newer and should be applied locally.
 
         Args:
             issue_id: The local issue ID
             remote_issue: The remote issue data dict
 
         Returns:
-            Issue instance (currently returns None - backend responsibility)
+            Issue instance with remote data applied
 
-        Note:
-            This method should be called by sync backends to perform
-            actual format conversion. For now, it's a placeholder indicating
-            that the backend should handle this conversion.
+        Raises:
+            ValueError: If remote data cannot be converted to Issue
         """
+        from datetime import datetime, timezone
+
+        from roadmap.core.domain.issue import (
+            Issue,
+            IssueType,
+            Priority,
+        )
+        from roadmap.core.domain.issue import (
+            Status as IssueStatus,
+        )
+
         self.logger.debug(
             "converting_remote_to_local",
             issue_id=issue_id,
             remote_id=remote_issue.get("id"),
         )
-        # This will be implemented by the sync backend
-        # For now, we just log that conversion should happen
-        return None  # type: ignore
+
+        try:
+            # Convert remote dict to Issue
+            # Remote dict should contain at least: id, title, status
+            # Optional: description, priority, assignee, milestone, labels, updated_at, etc.
+
+            title = remote_issue.get("title", "")
+            status_str = remote_issue.get("status", "todo")
+            priority_str = remote_issue.get("priority", "medium")
+
+            # Convert status string to Status enum
+            try:
+                status = IssueStatus(status_str)
+            except (ValueError, KeyError):
+                status = IssueStatus.TODO
+
+            # Convert priority string to Priority enum
+            try:
+                priority = Priority(priority_str)
+            except (ValueError, KeyError):
+                priority = Priority.MEDIUM
+
+            # Parse timestamps
+            updated_at_str = remote_issue.get("updated_at")
+            if updated_at_str:
+                try:
+                    if isinstance(updated_at_str, str):
+                        updated = datetime.fromisoformat(
+                            updated_at_str.replace("Z", "+00:00")
+                        )
+                    else:
+                        updated = updated_at_str
+                except (ValueError, AttributeError):
+                    updated = datetime.now(timezone.utc)
+            else:
+                updated = datetime.now(timezone.utc)
+
+            created_at_str = remote_issue.get("created_at")
+            if created_at_str:
+                try:
+                    if isinstance(created_at_str, str):
+                        created = datetime.fromisoformat(
+                            created_at_str.replace("Z", "+00:00")
+                        )
+                    else:
+                        created = created_at_str
+                except (ValueError, AttributeError):
+                    created = updated
+            else:
+                created = updated
+
+            # Construct Issue with remote data
+            issue = Issue(
+                id=issue_id,
+                title=title,
+                status=status,
+                priority=priority,
+                issue_type=IssueType(remote_issue.get("issue_type", "other")),
+                created=created,
+                updated=updated,
+                milestone=remote_issue.get("milestone"),
+                assignee=remote_issue.get("assignee"),
+                labels=remote_issue.get("labels", []),
+                content=remote_issue.get("description", ""),
+                estimated_hours=remote_issue.get("estimated_hours"),
+                due_date=remote_issue.get("due_date"),
+                # Add other fields as needed
+            )
+
+            self.logger.debug(
+                "remote_converted_to_local",
+                issue_id=issue_id,
+                title=title,
+                status=status.value,
+            )
+
+            return issue
+
+        except Exception as e:
+            self.logger.error(
+                "remote_conversion_failed",
+                issue_id=issue_id,
+                error=str(e),
+            )
+            raise ValueError(
+                f"Failed to convert remote issue {issue_id}: {str(e)}"
+            ) from e
 
     def detect_field_conflicts(
         self,

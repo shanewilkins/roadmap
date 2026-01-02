@@ -190,11 +190,6 @@ class GenericSyncOrchestrator:
                 )
             elif dry_run:
                 logger.info("sync_dry_run_mode", skip_apply=True)
-                report = self._apply_changes(
-                    report, updates_filtered, resolved_issues, pulls
-                )
-            elif dry_run:
-                logger.info("sync_dry_run_mode", skip_apply=True)
 
             logger.info("sync_all_issues_completed", error=report.error)
             return report
