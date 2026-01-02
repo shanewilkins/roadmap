@@ -130,10 +130,17 @@ def sync(
         if backend_type == "github":
             # GitHub backend expects owner, repo, token at top level
             github_config = full_config.get("github", {})
+
+            # Get token from secure credentials storage
+            from roadmap.infrastructure.security.credentials import CredentialManager
+
+            cred_manager = CredentialManager()  # type: ignore[call-arg]
+            token = cred_manager.get_token()
+
             config = {
                 "owner": github_config.get("owner"),
                 "repo": github_config.get("repo"),
-                "token": github_config.get("token"),
+                "token": token,
             }
         else:
             # Git backend doesn't need config

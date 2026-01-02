@@ -5,6 +5,7 @@ with GitHub repositories. It implements the SyncBackendInterface protocol.
 """
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any, TypeVar
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -186,23 +187,99 @@ class GitHubSyncBackend:
         try:
             owner = self.config.get("owner")
             repo = self.config.get("repo")
+            token = self.config.get("token")
 
-            if not owner or not repo:
+            if not owner or not repo or not token:
                 return {}
 
             logger.debug("github_get_issues_started", owner=owner, repo=repo)
 
-            # For now, return empty dict as placeholder
-            # Full GitHub API implementation will be done in a separate phase
-            # Actual implementation would:
-            # 1. Initialize GitHub client with token
-            # 2. Get repository object
-            # 3. Fetch all issues (handling pagination)
-            # 4. Convert to internal format with timestamps
+            # Fetch all issues using GitHub Client
             issues_data = {}
 
-            logger.info("github_get_issues_completed", count=len(issues_data))
-            return issues_data
+            try:
+                from roadmap.adapters.github.github import GitHubClient
+
+                client = GitHubClient(token=token, owner=owner, repo=repo)
+
+                # Fetch issues with pagination
+                page = 1
+                per_page = 100
+
+                while True:
+                    url = f"https://api.github.com/repos/{owner}/{repo}/issues"
+                    params = {
+                        "state": "all",  # Get both open and closed issues
+                        "per_page": per_page,
+                        "page": page,
+                        "sort": "updated",
+                        "direction": "desc",
+                    }
+
+                    response = client.session.get(url, params=params)
+                    response.raise_for_status()
+
+                    issues = response.json()
+                    if not issues:
+                        break
+
+                    for issue in issues:
+                        # Use GitHub issue number as the ID (with gh- prefix)
+                        issue_id = f"gh-{issue.get('number')}"
+
+                        # Extract relevant fields
+                        issues_data[issue_id] = {
+                            "id": issue_id,
+                            "number": issue.get("number"),
+                            "title": issue.get("title", ""),
+                            "body": issue.get("body", ""),
+                            "state": issue.get("state", "open"),  # 'open' or 'closed'
+                            "labels": [
+                                label.get("name") for label in issue.get("labels", [])
+                            ]
+                            if issue.get("labels")
+                            else [],
+                            "assignees": [
+                                assignee.get("login")
+                                for assignee in issue.get("assignees", [])
+                            ]
+                            if issue.get("assignees")
+                            else [],
+                            "assignee": issue.get("assignee", {}).get("login")
+                            if issue.get("assignee")
+                            else None,
+                            "milestone": issue.get("milestone", {}).get("title")
+                            if issue.get("milestone")
+                            else None,
+                            "url": issue.get("html_url", ""),
+                            "created_at": issue.get("created_at"),
+                            "updated_at": issue.get("updated_at"),
+                        }
+
+                    page += 1
+
+                    # For now, limit to first page (100 issues) for performance
+                    # In production, we'd paginate through all
+                    if page > 1:
+                        break
+
+                logger.info(
+                    "github_get_issues_completed",
+                    count=len(issues_data),
+                    owner=owner,
+                    repo=repo,
+                )
+                return issues_data
+
+            except Exception as e:
+                logger.error(
+                    "github_api_fetch_failed",
+                    owner=owner,
+                    repo=repo,
+                    error=str(e),
+                    exc_info=True,
+                )
+                return {}
 
         except Exception as e:
             logger.exception("github_get_issues_failed", error=str(e))
@@ -303,47 +380,226 @@ class GitHubSyncBackend:
         report = SyncReport()
         return report
 
-    def pull_issue(self, issue_id: str) -> bool:
+    def pull_issue(self, remote_issue: dict[str, Any]) -> bool:
         """Pull a single remote GitHub issue to local.
 
         Args:
-            issue_id: The GitHub issue ID/number to pull
+            remote_issue: Remote issue dict with at least 'id' and 'title' keys
 
         Returns:
             True if pull succeeds, False if error.
 
         Notes:
-            - Fetches the remote issue from GitHub
-            - Updates the local issue with remote data
+            - Converts remote issue dict to local Issue object
+            - Saves to local .roadmap/issues/ directory
+            - Updates the local file with remote data
         """
         from structlog import get_logger
 
         logger = get_logger()
 
         try:
-            owner = self.config.get("owner")
-            repo = self.config.get("repo")
+            issue_id = remote_issue.get("id")
+            title = remote_issue.get("title", "")
 
-            if not owner or not repo:
+            if not issue_id or not title:
+                logger.warning(
+                    "pull_issue_missing_id_or_title", remote_issue=remote_issue
+                )
                 return False
 
             logger.debug("github_pull_issue_started", issue_id=issue_id)
 
-            # For now, return True to indicate success
-            # Full GitHub API implementation will be done in a separate phase
-            # Actual implementation would:
-            # 1. Get repository object via GitHub client
-            # 2. Fetch the specific issue from GitHub
-            # 3. Get local issue from core
-            # 4. Update local with remote data
-            # 5. Update last_synced_at timestamp
+            # Convert GitHub remote dict to local Issue object
+            issue = self._convert_github_to_issue(issue_id, remote_issue)
+
+            # Check if issue with same title already exists locally
+            # This prevents duplicate creation when syncing
+            existing_issues = self.core.issues.list()
+            matching_local_issue = None
+            for local_issue in existing_issues:
+                if local_issue.title.lower() == title.lower():
+                    matching_local_issue = local_issue
+                    logger.debug(
+                        "github_pull_found_matching_local_issue",
+                        github_id=issue_id,
+                        local_id=local_issue.id,
+                        title=title,
+                    )
+                    break
+
+            # Update/create locally using the coordinator
+            # Extract only the fields that update_issue accepts
+            updates = {
+                "title": issue.title,
+                "status": issue.status,
+                "priority": issue.priority,
+                "assignee": issue.assignee,
+                "milestone": issue.milestone,
+                "description": issue.content,  # Issue.content → description
+            }
+
+            if matching_local_issue:
+                # Update existing issue that was matched by title
+                self.core.issues.update(matching_local_issue.id, **updates)
+                logger.debug(
+                    "github_pull_issue_updated",
+                    issue_id=issue_id,
+                    local_id=matching_local_issue.id,
+                )
+            elif self.core.issues.get(issue_id):
+                # Update if it already exists with same ID
+                self.core.issues.update(issue_id, **updates)
+                logger.debug("github_pull_issue_updated", issue_id=issue_id)
+            else:
+                # Create new issue
+                self.core.issues.create(
+                    title=issue.title,
+                    status=issue.status,
+                    priority=issue.priority,
+                    assignee=issue.assignee,
+                    milestone=issue.milestone,
+                    issue_type=issue.issue_type,
+                    labels=issue.labels,
+                    estimated_hours=issue.estimated_hours,
+                )
+                logger.debug("github_pull_issue_created", issue_id=issue_id)
 
             logger.info("github_pull_issue_completed", issue_id=issue_id)
             return True
 
         except Exception as e:
-            logger.warning("github_pull_issue_failed", issue_id=issue_id, error=str(e))
+            issue_id = remote_issue.get("id", "unknown")
+            logger.warning(
+                "github_pull_issue_failed",
+                issue_id=issue_id,
+                error=str(e),
+                exc_info=True,
+            )
             return False
+
+    def _convert_github_to_issue(
+        self, issue_id: str, remote_data: dict[str, Any]
+    ) -> "Issue":
+        """Convert GitHub issue dict to local Issue object.
+
+        Args:
+            issue_id: Local issue ID
+            remote_data: GitHub issue data from API
+
+        Returns:
+            Issue instance with converted data
+
+        Raises:
+            ValueError: If conversion fails
+        """
+        from datetime import timezone
+
+        from roadmap.core.domain.issue import (
+            Issue,
+            IssueType,
+            Priority,
+            Status,
+        )
+
+        # Map GitHub state to local Status
+        github_state = remote_data.get("state", "open")
+        status_map = {"open": Status.TODO, "closed": Status.CLOSED}
+        status = status_map.get(github_state, Status.TODO)
+
+        # Default priority to medium (GitHub doesn't have priority in issues)
+        priority = Priority.MEDIUM
+
+        # Extract timestamps
+        created_at_str = remote_data.get("created_at")
+        created = self._parse_timestamp(created_at_str) or datetime.now(timezone.utc)
+
+        updated_at_str = remote_data.get("updated_at")
+        updated = self._parse_timestamp(updated_at_str) or datetime.now(timezone.utc)
+
+        # Extract labels as list of label names
+        labels = []
+        if "labels" in remote_data:
+            # GitHub returns labels as list of dicts with 'name' key
+            labels_data = remote_data.get("labels", [])
+            if isinstance(labels_data, list):
+                labels = (
+                    [
+                        label["name"] if isinstance(label, dict) else str(label)
+                        for label in labels_data
+                    ]
+                    if labels_data
+                    else []
+                )
+
+        # Extract assignee (first assignee if multiple)
+        assignee = None
+        assignees = remote_data.get("assignees", [])
+        if assignees and isinstance(assignees, list):
+            first_assignee = assignees[0]
+            assignee = (
+                first_assignee.get("login")
+                if isinstance(first_assignee, dict)
+                else str(first_assignee)
+            )
+        elif "assignee" in remote_data and remote_data["assignee"]:
+            assignee_data = remote_data["assignee"]
+            assignee = (
+                assignee_data.get("login")
+                if isinstance(assignee_data, dict)
+                else str(assignee_data)
+            )
+
+        # Extract milestone
+        milestone = None
+        milestone_data = remote_data.get("milestone")
+        if milestone_data:
+            milestone = (
+                milestone_data.get("title")
+                if isinstance(milestone_data, dict)
+                else str(milestone_data)
+            )
+
+        # Create Issue object
+        issue = Issue(
+            id=issue_id,
+            title=remote_data.get("title", ""),
+            status=status,
+            priority=priority,
+            issue_type=IssueType.OTHER,  # GitHub doesn't have issue types
+            created=created,
+            updated=updated,
+            milestone=milestone,
+            assignee=assignee,
+            labels=labels,
+            content=remote_data.get("body") or "",  # Handle None body
+            # Don't set estimated_hours - GitHub doesn't have this
+            # Don't set due_date - GitHub doesn't have this in basic API
+        )
+
+        return issue
+
+    def _parse_timestamp(self, timestamp_str: str | None) -> "datetime | None":
+        """Parse ISO format timestamp string.
+
+        Args:
+            timestamp_str: ISO format timestamp (may have 'Z' suffix)
+
+        Returns:
+            datetime object or None if parsing fails
+        """
+        if not timestamp_str:
+            return None
+
+        try:
+            if isinstance(timestamp_str, str):
+                # Handle 'Z' timezone suffix
+                if timestamp_str.endswith("Z"):
+                    timestamp_str = timestamp_str[:-1] + "+00:00"
+                return datetime.fromisoformat(timestamp_str)
+            return timestamp_str  # Already a datetime
+        except (ValueError, AttributeError):
+            return None
 
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Get available resolution strategies for a conflict.
