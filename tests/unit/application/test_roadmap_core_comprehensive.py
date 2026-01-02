@@ -9,8 +9,6 @@ Tests cover:
 
 import os
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -475,7 +473,7 @@ class TestCoreEdgeCases:
     def test_milestone_with_special_characters(self, initialized_core):
         """Test creating milestone with special characters."""
         special_name = "v1.0-alpha+build.123"
-        milestone = initialized_core.milestones.create(special_name, "Test")
+        initialized_core.milestones.create(special_name, "Test")
 
         # Should be able to retrieve it
         retrieved = initialized_core.milestones.get(special_name)
@@ -551,7 +549,7 @@ class TestRoadmapCoreUncoveredLines:
         milestone_names = ["v1.0", "v2.0-beta", "release-2025-01-15", "2025.Q1.alpha"]
 
         for name in milestone_names:
-            milestone = core.milestones.create(name, f"Milestone {name}")
+            core.milestones.create(name, f"Milestone {name}")
             retrieved = core.milestones.get(name)
             assert retrieved is not None
             assert retrieved.name == name
@@ -648,8 +646,8 @@ class TestRoadmapCoreUncoveredLines:
         """Test complex filtering with multiple criteria."""
         # Setup: Create various issues
         issue1 = core.issues.create("Bug 1", Priority.HIGH, issue_type=IssueType.BUG)
-        issue2 = core.issues.create("Feature 1", Priority.LOW, issue_type=IssueType.FEATURE)
-        issue3 = core.issues.create("Bug 2", Priority.HIGH, issue_type=IssueType.BUG)
+        core.issues.create("Feature 1", Priority.LOW, issue_type=IssueType.FEATURE)
+        core.issues.create("Bug 2", Priority.HIGH, issue_type=IssueType.BUG)
 
         # Update some to different statuses
         core.issues.update(issue1.id, status=Status.CLOSED)

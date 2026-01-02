@@ -13,12 +13,16 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces import (
     SyncConflict,
     SyncReport,
 )
 from roadmap.infrastructure.core import RoadmapCore
+
+logger = get_logger(__name__)
 
 
 class VanillaGitSyncBackend:
@@ -247,10 +251,23 @@ class VanillaGitSyncBackend:
                 report.errors["push"] = "Issues directory not found"
                 return report
 
+            logger.info(
+                "push_issues_start",
+                issue_count=len(local_issues),
+                ids_str=",".join([issue.id for issue in local_issues]),
+            )
+
             # Stage all issue files
             staged_files = []
             for issue in local_issues:
+                # Search recursively since files are in milestone subdirectories
                 issue_files = list(issues_dir.rglob(f"{issue.id}-*.md"))
+                logger.debug(
+                    "searching_issue_files",
+                    issue_id=issue.id,
+                    pattern=f"{issue.id}-*.md",
+                    files_found=len(issue_files),
+                )
                 if issue_files:
                     file_path = issue_files[0]
                     result = subprocess.run(
@@ -258,6 +275,7 @@ class VanillaGitSyncBackend:
                         cwd=self.repo_path,
                         capture_output=True,
                         timeout=10,
+                        stdin=subprocess.DEVNULL,
                     )
                     if result.returncode == 0:
                         staged_files.append((issue.id, file_path))

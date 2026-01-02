@@ -67,7 +67,7 @@ base state + local + remote → three-way merge → intelligent conflict detecti
 ```
 36 tests passing
 - 14 three-way merger tests
-- 15 conflict resolver tests  
+- 15 conflict resolver tests
 - 7 CLI command tests
 ```
 
@@ -166,11 +166,11 @@ When you run `roadmap sync`:
    Base:    status=todo,    assignee=alice
    Local:   status=in-progress (CHANGED)
    Remote:  status=todo,    assignee=bob (CHANGED)
-   
+
    → Field "status": only local changed → use local
    → Field "assignee": only remote changed → use remote
    → NO CONFLICT because different fields changed
-   
+
    Result: status=in-progress, assignee=bob ✅
    ```
 
@@ -179,7 +179,7 @@ When you run `roadmap sync`:
    Base:    assignee=alice
    Local:   assignee=bob (CHANGED)
    Remote:  assignee=charlie (CHANGED)
-   
+
    → Both sides changed the SAME field differently
    → TRUE CONFLICT → flag for manual resolution
    ```

@@ -10,17 +10,15 @@ Tests that:
 
 import json
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
 import pytest
 
 from roadmap.adapters.sync.generic_sync_orchestrator import GenericSyncOrchestrator
 from roadmap.core.domain.issue import Issue, Status
-from roadmap.core.models.sync_state import SyncState, IssueBaseState
-from roadmap.core.services.sync_state_manager import SyncStateManager
-from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
+from roadmap.core.models.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.sync.three_way_merger import ThreeWayMerger
+from roadmap.core.services.sync_state_manager import SyncStateManager
 
 
 @pytest.fixture
@@ -60,10 +58,8 @@ class TestThreeWayMergeIntegration:
 
     def test_orchestrator_uses_three_way_merger(self, mock_core, mock_backend):
         """Verify orchestrator creates and uses ThreeWayMerger."""
-        orchestrator = GenericSyncOrchestrator(
-            mock_core, mock_backend
-        )
-        
+        orchestrator = GenericSyncOrchestrator(mock_core, mock_backend)
+
         assert isinstance(orchestrator.merger, ThreeWayMerger)
         assert orchestrator.merger is not None
 
@@ -71,13 +67,13 @@ class TestThreeWayMergeIntegration:
         """Test sync when no prior sync state exists."""
         # Setup
         orchestrator = GenericSyncOrchestrator(mock_core, mock_backend)
-        
+
         mock_core.issues.list.return_value = []
         mock_backend.get_issues.return_value = {}
-        
+
         # Execute
         report = orchestrator.sync_all_issues(dry_run=True)
-        
+
         # Verify
         assert report.error is None
         assert report.conflicts_detected == 0
@@ -91,15 +87,13 @@ class TestThreeWayMergeIntegration:
         local_issue.assignee = None
         local_issue.labels = []
         local_issue.content = "Test issue"
-        
+
         # Setup orchestrator with merger
-        orchestrator = GenericSyncOrchestrator(
-            mock_core, mock_backend
-        )
-        
+        orchestrator = GenericSyncOrchestrator(mock_core, mock_backend)
+
         mock_core.issues.list.return_value = [local_issue]
         mock_core.roadmap_dir = sync_state_manager.roadmap_dir
-        
+
         # Remote has same issue, same state (clean)
         mock_backend.get_issues.return_value = {
             "issue-1": {
@@ -110,10 +104,10 @@ class TestThreeWayMergeIntegration:
                 "content": "Test issue",
             }
         }
-        
+
         # Execute dry-run
         report = orchestrator.sync_all_issues(dry_run=True)
-        
+
         # Verify: no conflicts
         assert report.error is None
         assert report.conflicts_detected == 0
@@ -128,13 +122,11 @@ class TestThreeWayMergeIntegration:
         local_issue.labels = ["bug"]
         local_issue.content = "Test issue"
         local_issue.updated = datetime.now()
-        
+
         # Setup
-        orchestrator = GenericSyncOrchestrator(
-            mock_core, mock_backend
-        )
+        orchestrator = GenericSyncOrchestrator(mock_core, mock_backend)
         orchestrator.state_manager = sync_state_manager
-        
+
         mock_core.issues.list.return_value = [local_issue]
         mock_backend.get_issues.return_value = {
             "issue-1": {
@@ -146,20 +138,22 @@ class TestThreeWayMergeIntegration:
             }
         }
         mock_backend.push_issues.return_value = None
-        
+
         # Execute with apply
-        report = orchestrator.sync_all_issues(dry_run=False)
-        
+        orchestrator.sync_all_issues(dry_run=False)
+
         # Verify: sync state was saved
         assert sync_state_manager.state_file.exists()
-        
-        with open(sync_state_manager.state_file, "r") as f:
+
+        with open(sync_state_manager.state_file) as f:
             saved_state = json.load(f)
-        
+
         assert "issue-1" in saved_state["issues"]
         assert saved_state["issues"]["issue-1"]["status"] == "in-progress"
 
-    def test_base_state_loaded_for_merge(self, mock_core, mock_backend, sync_state_manager):
+    def test_base_state_loaded_for_merge(
+        self, mock_core, mock_backend, sync_state_manager
+    ):
         """Test that base state is loaded and used for three-way merge."""
         # Create previous sync state (base)
         base_state = SyncState(
@@ -174,18 +168,16 @@ class TestThreeWayMergeIntegration:
                     description="Original",
                     labels=[],
                 )
-            }
+            },
         )
-        
+
         # Save base state
         sync_state_manager.save_sync_state(base_state)
-        
+
         # Create orchestrator
-        orchestrator = GenericSyncOrchestrator(
-            mock_core, mock_backend
-        )
+        orchestrator = GenericSyncOrchestrator(mock_core, mock_backend)
         orchestrator.state_manager = sync_state_manager
-        
+
         # Local changed: status → in-progress
         local_issue = Mock(spec=Issue)
         local_issue.id = "issue-1"
@@ -193,9 +185,9 @@ class TestThreeWayMergeIntegration:
         local_issue.assignee = None
         local_issue.labels = []
         local_issue.content = "Original"
-        
+
         mock_core.issues.list.return_value = [local_issue]
-        
+
         # Remote changed: assignee → bob
         mock_backend.get_issues.return_value = {
             "issue-1": {
@@ -206,10 +198,10 @@ class TestThreeWayMergeIntegration:
                 "content": "Original",
             }
         }
-        
+
         # Execute
         report = orchestrator.sync_all_issues(dry_run=True)
-        
+
         # Verify: both changes should be accepted (no conflict since different fields)
         assert report.error is None
         assert report.conflicts_detected == 0  # No true conflicts
@@ -233,16 +225,14 @@ class TestConflictDetectionAndResolution:
                     description="Original",
                     labels=[],
                 )
-            }
+            },
         )
         sync_state_manager.save_sync_state(base_state)
-        
+
         # Create orchestrator
-        orchestrator = GenericSyncOrchestrator(
-            mock_core, mock_backend
-        )
+        orchestrator = GenericSyncOrchestrator(mock_core, mock_backend)
         orchestrator.state_manager = sync_state_manager
-        
+
         # Local changed: status → in-progress
         local_issue = Mock(spec=Issue)
         local_issue.id = "issue-1"
@@ -250,9 +240,9 @@ class TestConflictDetectionAndResolution:
         local_issue.assignee = None
         local_issue.labels = []
         local_issue.content = "Original"
-        
+
         mock_core.issues.list.return_value = [local_issue]
-        
+
         # Remote changed: status → done (CONFLICT!)
         mock_backend.get_issues.return_value = {
             "issue-1": {
@@ -263,14 +253,16 @@ class TestConflictDetectionAndResolution:
                 "content": "Original",
             }
         }
-        
+
         # Execute
         report = orchestrator.sync_all_issues(dry_run=True)
-        
+
         # Verify: true conflict detected
         assert report.conflicts_detected > 0
 
-    def test_auto_resolution_of_non_critical_field(self, mock_core, mock_backend, sync_state_manager):
+    def test_auto_resolution_of_non_critical_field(
+        self, mock_core, mock_backend, sync_state_manager
+    ):
         """Test that non-critical field conflicts are auto-resolved."""
         # Create base state with created_at
         base_state = SyncState(
@@ -285,15 +277,13 @@ class TestConflictDetectionAndResolution:
                     description="Original",
                     labels=[],
                 )
-            }
+            },
         )
         sync_state_manager.save_sync_state(base_state)
-        
-        orchestrator = GenericSyncOrchestrator(
-            mock_core, mock_backend
-        )
+
+        orchestrator = GenericSyncOrchestrator(mock_core, mock_backend)
         orchestrator.state_manager = sync_state_manager
-        
+
         # Local: labels changed
         local_issue = Mock(spec=Issue)
         local_issue.id = "issue-1"
@@ -301,9 +291,9 @@ class TestConflictDetectionAndResolution:
         local_issue.assignee = None
         local_issue.labels = ["bug", "urgent"]  # Local added labels
         local_issue.content = "Original"
-        
+
         mock_core.issues.list.return_value = [local_issue]
-        
+
         # Remote: labels changed differently
         mock_backend.get_issues.return_value = {
             "issue-1": {
@@ -314,10 +304,10 @@ class TestConflictDetectionAndResolution:
                 "content": "Original",
             }
         }
-        
+
         # Execute
         report = orchestrator.sync_all_issues(dry_run=True)
-        
+
         # Verify: should be merged (union) not marked as true conflict
         # Labels conflict should be auto-resolvable
         assert report.error is None
@@ -341,12 +331,12 @@ class TestSyncStateFileManagement:
                     description="Test",
                     labels=["bug"],
                 )
-            }
+            },
         )
-        
+
         # Save
         success = sync_state_manager.save_sync_state(state)
-        
+
         # Verify
         assert success
         assert sync_state_manager.state_file.exists()
@@ -366,13 +356,13 @@ class TestSyncStateFileManagement:
                     description="Test",
                     labels=["bug"],
                 )
-            }
+            },
         )
         sync_state_manager.save_sync_state(original)
-        
+
         # Load
         loaded = sync_state_manager.load_sync_state()
-        
+
         # Verify
         assert loaded is not None
         assert loaded.backend == "github"
@@ -382,5 +372,5 @@ class TestSyncStateFileManagement:
     def test_missing_sync_state_returns_none(self, sync_state_manager):
         """Test that loading nonexistent state returns None."""
         loaded = sync_state_manager.load_sync_state()
-        
+
         assert loaded is None

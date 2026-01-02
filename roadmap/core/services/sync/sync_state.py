@@ -1,8 +1,8 @@
 """Sync state models for tracking local and remote state."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -11,19 +11,19 @@ class IssueBaseState:
 
     id: str
     status: str
-    assignee: Optional[str] = None
+    assignee: str | None = None
     labels: list[str] = field(default_factory=list)
     description: str = ""
     title: str = ""
     priority: int = 0
     blocked_by: list[str] = field(default_factory=list)
     blocks: list[str] = field(default_factory=list)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     archived: bool = False
-    custom_fields: Dict[str, Any] = field(default_factory=dict)
+    custom_fields: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for comparison."""
         return {
             "id": self.id,
@@ -42,7 +42,7 @@ class IssueBaseState:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "IssueBaseState":
+    def from_dict(cls, data: dict[str, Any]) -> "IssueBaseState":
         """Create from dictionary."""
         return cls(**data)
 
@@ -51,17 +51,15 @@ class IssueBaseState:
 class SyncState:
     """Current sync state of the system."""
 
-    local_issues: Dict[str, IssueBaseState] = field(default_factory=dict)
-    remote_issues: Dict[str, IssueBaseState] = field(default_factory=dict)
-    base_issues: Dict[str, IssueBaseState] = field(default_factory=dict)
-    last_sync_time: Optional[datetime] = None
+    local_issues: dict[str, IssueBaseState] = field(default_factory=dict)
+    remote_issues: dict[str, IssueBaseState] = field(default_factory=dict)
+    base_issues: dict[str, IssueBaseState] = field(default_factory=dict)
+    last_sync_time: datetime | None = None
     sync_in_progress: bool = False
     local_deleted_ids: set[str] = field(default_factory=set)
     remote_deleted_ids: set[str] = field(default_factory=set)
 
-    def get_issue_dict(
-        self, source: str
-    ) -> Dict[str, Dict[str, Any]]:
+    def get_issue_dict(self, source: str) -> dict[str, dict[str, Any]]:
         """Get issues as dictionary of dicts for merging."""
         if source == "local":
             issues = self.local_issues
@@ -72,10 +70,7 @@ class SyncState:
         else:
             raise ValueError(f"Unknown source: {source}")
 
-        return {
-            issue_id: state.to_dict()
-            for issue_id, state in issues.items()
-        }
+        return {issue_id: state.to_dict() for issue_id, state in issues.items()}
 
     def add_issue(
         self,
@@ -92,9 +87,7 @@ class SyncState:
         else:
             raise ValueError(f"Unknown source: {source}")
 
-    def get_issue(
-        self, source: str, issue_id: str
-    ) -> Optional[IssueBaseState]:
+    def get_issue(self, source: str, issue_id: str) -> IssueBaseState | None:
         """Get a specific issue from a source."""
         if source == "local":
             return self.local_issues.get(issue_id)

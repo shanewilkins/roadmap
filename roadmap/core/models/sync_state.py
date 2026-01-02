@@ -4,23 +4,23 @@ Stores the base state (from the last successful sync) which is used
 for three-way merge during the next sync.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class IssueBaseState:
     """Represents the base (agreed-upon) state of a single issue.
-    
+
     This is the snapshot taken after the last successful sync.
     Stored in .sync-state.json for use in three-way merge.
     """
 
     id: str
     status: str
-    assignee: Optional[str] = None
-    milestone: Optional[str] = None
+    assignee: str | None = None
+    milestone: str | None = None
     description: str = ""
     labels: list[str] = field(default_factory=list)
     updated_at: datetime = field(default_factory=datetime.utcnow)
@@ -36,16 +36,14 @@ class IssueBaseState:
         """Load from JSON dict."""
         data_copy = data.copy()
         if isinstance(data_copy.get("updated_at"), str):
-            data_copy["updated_at"] = datetime.fromisoformat(
-                data_copy["updated_at"]
-            )
+            data_copy["updated_at"] = datetime.fromisoformat(data_copy["updated_at"])
         return cls(**data_copy)
 
 
 @dataclass
 class SyncState:
     """Represents the complete sync state (base snapshot from last successful sync).
-    
+
     This is serialized to .sync-state.json in the .roadmap directory.
     It tracks the agreed-upon state of all issues after the last sync.
     """
@@ -60,8 +58,7 @@ class SyncState:
             "last_sync": self.last_sync.isoformat(),
             "backend": self.backend,
             "issues": {
-                issue_id: state.to_dict()
-                for issue_id, state in self.issues.items()
+                issue_id: state.to_dict() for issue_id, state in self.issues.items()
             },
         }
 

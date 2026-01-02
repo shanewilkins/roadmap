@@ -1,8 +1,9 @@
 """Tests for the top-level sync command."""
 
+from unittest.mock import Mock
+
 import pytest
 from click.testing import CliRunner
-from unittest.mock import Mock, patch, MagicMock
 
 from roadmap.adapters.cli.sync import sync
 
@@ -41,7 +42,9 @@ class TestSyncCommand:
     def test_sync_help_mentions_conflict_resolution(self, runner):
         """Test that help mentions conflict resolution strategies."""
         result = runner.invoke(sync, ["--help"])
-        assert "conflict" in result.output.lower() or "three-way" in result.output.lower()
+        assert (
+            "conflict" in result.output.lower() or "three-way" in result.output.lower()
+        )
 
     def test_sync_option_force_local(self, runner):
         """Test that --force-local option exists."""

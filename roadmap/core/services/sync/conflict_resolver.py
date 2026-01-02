@@ -6,7 +6,7 @@ what to do with that conflict.
 """
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class ConflictResolutionStrategy(str, Enum):
@@ -64,9 +64,7 @@ class ConflictResolver:
             (resolved_value, is_flagged)
             where is_flagged=True means this needs manual review
         """
-        strategy = self.RULES.get(
-            field, ConflictResolutionStrategy.FLAG_FOR_REVIEW
-        )
+        strategy = self.RULES.get(field, ConflictResolutionStrategy.FLAG_FOR_REVIEW)
 
         if strategy == ConflictResolutionStrategy.FLAG_FOR_REVIEW:
             # Return None to indicate this needs manual review
@@ -80,15 +78,9 @@ class ConflictResolver:
 
         elif strategy == ConflictResolutionStrategy.MERGE_UNION:
             # For labels: combine both lists, deduplicate
-            local_list = (
-                local if isinstance(local, list) else [local] if local else []
-            )
+            local_list = local if isinstance(local, list) else [local] if local else []
             remote_list = (
-                remote
-                if isinstance(remote, list)
-                else [remote]
-                if remote
-                else []
+                remote if isinstance(remote, list) else [remote] if remote else []
             )
             merged = list(set(local_list + remote_list))
             return merged, False
@@ -159,6 +151,4 @@ class ConflictResolver:
 
     def get_strategy_for_field(self, field: str) -> ConflictResolutionStrategy:
         """Get the strategy for a specific field."""
-        return self.RULES.get(
-            field, ConflictResolutionStrategy.FLAG_FOR_REVIEW
-        )
+        return self.RULES.get(field, ConflictResolutionStrategy.FLAG_FOR_REVIEW)

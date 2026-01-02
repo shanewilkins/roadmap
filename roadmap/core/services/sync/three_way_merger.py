@@ -6,7 +6,7 @@ to automatically resolve most conflicts without data loss.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class MergeStatus(str, Enum):
@@ -172,9 +172,7 @@ class ThreeWayMerger:
                 deleted.append(issue_id)
                 continue
 
-            merged, conflicts = self.merge_issue(
-                issue_id, base, local, remote
-            )
+            merged, conflicts = self.merge_issue(issue_id, base, local, remote)
             results[issue_id] = (merged, conflicts)
 
         return results, deleted

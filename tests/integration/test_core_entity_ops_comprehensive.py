@@ -9,13 +9,11 @@ Tests cover:
 
 import os
 from datetime import datetime, timedelta
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 from roadmap.core.domain import (
-    IssueType,
     MilestoneStatus,
     Priority,
     Status,

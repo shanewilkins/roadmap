@@ -6,13 +6,12 @@ The backend is automatically detected from configuration.
 """
 
 import sys
-from pathlib import Path
 
 import click
 
+from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.services.github_integration_service import GitHubIntegrationService
-from roadmap.adapters.cli.helpers import require_initialized
 
 
 @click.command(name="sync")
@@ -91,8 +90,10 @@ def sync(
         roadmap sync --backend=github
     """
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.adapters.sync import detect_backend_from_config
-    from roadmap.adapters.sync import GenericSyncOrchestrator
+    from roadmap.adapters.sync import (
+        GenericSyncOrchestrator,
+        detect_backend_from_config,
+    )
     from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
     from roadmap.core.services.sync_state_comparator import SyncStateComparator
 

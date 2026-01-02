@@ -3,12 +3,11 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from structlog import get_logger
 
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
 from roadmap.core.domain.issue import Issue
+from roadmap.core.models.sync_state import IssueBaseState, SyncState
 
 logger = get_logger(__name__)
 
@@ -25,7 +24,7 @@ class SyncStateManager:
         self.roadmap_dir = roadmap_dir
         self.state_file = roadmap_dir / ".sync-state.json"
 
-    def load_sync_state(self) -> Optional[SyncState]:
+    def load_sync_state(self) -> SyncState | None:
         """Load sync state from file.
 
         Returns:
@@ -36,7 +35,7 @@ class SyncStateManager:
             return None
 
         try:
-            with open(self.state_file, "r") as f:
+            with open(self.state_file) as f:
                 data = json.load(f)
             state = SyncState.from_dict(data)
             logger.debug(

@@ -1,9 +1,8 @@
 """Tests for ConflictResolver."""
 
-import pytest
 from roadmap.core.services.sync.conflict_resolver import (
-    ConflictResolver,
     ConflictResolutionStrategy,
+    ConflictResolver,
 )
 
 
@@ -34,7 +33,6 @@ class TestConflictResolver:
 
     def test_resolve_local_wins(self):
         """Test LOCAL_WINS strategy - not currently in RULES but test the logic."""
-        resolver = ConflictResolver()
         # Manually test the logic path
         strategy = ConflictResolutionStrategy.LOCAL_WINS
         # This strategy isn't in default rules, but the code handles it
@@ -149,12 +147,24 @@ class TestConflictResolver:
         resolver = ConflictResolver()
 
         # Known fields
-        assert resolver.get_strategy_for_field("status") == ConflictResolutionStrategy.FLAG_FOR_REVIEW
-        assert resolver.get_strategy_for_field("labels") == ConflictResolutionStrategy.MERGE_UNION
-        assert resolver.get_strategy_for_field("created_at") == ConflictResolutionStrategy.GITHUB_WINS
+        assert (
+            resolver.get_strategy_for_field("status")
+            == ConflictResolutionStrategy.FLAG_FOR_REVIEW
+        )
+        assert (
+            resolver.get_strategy_for_field("labels")
+            == ConflictResolutionStrategy.MERGE_UNION
+        )
+        assert (
+            resolver.get_strategy_for_field("created_at")
+            == ConflictResolutionStrategy.GITHUB_WINS
+        )
 
         # Unknown field defaults to FLAG_FOR_REVIEW
-        assert resolver.get_strategy_for_field("custom_field") == ConflictResolutionStrategy.FLAG_FOR_REVIEW
+        assert (
+            resolver.get_strategy_for_field("custom_field")
+            == ConflictResolutionStrategy.FLAG_FOR_REVIEW
+        )
 
     def test_resolve_empty_strings(self):
         """Test resolving conflicts with empty strings."""

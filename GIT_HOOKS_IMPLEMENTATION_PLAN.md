@@ -14,17 +14,17 @@
 1. **Configuration**: `GitHookAutoSyncConfig` class exists but isn't wired to CLI
    - Users cannot enable/disable auto-sync per event without code changes
    - No persistence of hook configuration
-   
+
 2. **Backend Agnosticism**: GitHub-hardcoded in `GitHookAutoSyncService`
    - Imports `GitHubIntegrationService` and `GitHubSyncOrchestrator` directly
    - No backend selection logic
    - No support for vanilla Git sync via hooks
-   
+
 3. **Issue Status Auto-Update**: Partially implemented
    - `_update_issue_from_commit()` method exists but never called
    - No automatic status progression (TODO → IN_PROGRESS)
    - No commit reference attachment to issues
-   
+
 4. **Visibility**: No way to see hook configuration or behavior
    - `hooks-config` command exists but is empty/incomplete
    - No command to show what hooks will do or their configuration
@@ -152,12 +152,12 @@
   - ✅ Separate from other config
   - ✅ Easy to version control
   - ❌ One more file in .roadmap
-  
+
 - **B) Inside `config.yaml` under `hooks` section**
   - ✅ Single source of truth
   - ✅ Already using YAML
   - ❌ Mixes concerns (GitHub config + hooks config)
-  
+
 - **C) Inside `.github/config.json` (if exists)**
   - ✅ Already exists if GitHub is configured
   - ❌ Doesn't work for vanilla Git sync only
@@ -173,7 +173,7 @@
   - ✅ Safer, no surprises
   - ✅ Clear user intent
   - ❌ Requires extra step for new users
-  
+
 - **B) Opt-Out (default ON)** - Auto-sync enabled after `hooks install`
   - ✅ More convenience
   - ✅ Hooks immediately useful
@@ -188,11 +188,11 @@
 - **A) First commit triggers TODO → IN_PROGRESS**
   - ✅ Simple, obvious signal
   - ❌ May be premature (just started work)
-  
+
 - **B) Require N commits or time threshold**
   - ✅ More deliberate
   - ❌ Complex, harder to explain
-  
+
 - **C) No automatic status change, just track commits**
   - ✅ Safest, no surprises
   - ❌ Less value from hooks
@@ -208,12 +208,12 @@
 - **A) Always silent fail** (current)
   - ✅ Never blocks developer workflow
   - ❌ Issues silently fail to sync
-  
+
 - **B) Warn but don't block**
   - ✅ User sees the error
   - ✅ Doesn't block Git
   - ❌ Noisy for minor issues
-  
+
 - **C) Block on critical errors, silent on non-critical**
   - ✅ Balance safety and UX
   - ❌ Complex, need to define "critical"
@@ -259,4 +259,3 @@
 - Current sync implementation status: Phase B complete (top-level sync command)
 - Next: Phase C (GitHub backend integration using ThreeWayMerger)
 - Hooks provide complementary automation that will be more valuable once Phase C is done
-

@@ -1,10 +1,9 @@
 """Tests for ThreeWayMerger."""
 
-import pytest
 from roadmap.core.services.sync.three_way_merger import (
-    ThreeWayMerger,
-    MergeStatus,
     FieldMergeResult,
+    MergeStatus,
+    ThreeWayMerger,
 )
 
 
@@ -89,9 +88,7 @@ class TestThreeWayMerger:
             "description": "Fix bug - urgent",
         }
 
-        merged, conflicts = merger.merge_issue(
-            "issue-1", base, local, remote
-        )
+        merged, conflicts = merger.merge_issue("issue-1", base, local, remote)
 
         assert len(conflicts) == 0
         assert merged["status"] == "in-progress"  # Only local changed
@@ -106,9 +103,7 @@ class TestThreeWayMerger:
         local = {"status": "in-progress", "assignee": "alice"}
         remote = {"status": "closed", "assignee": "bob"}
 
-        merged, conflicts = merger.merge_issue(
-            "issue-2", base, local, remote
-        )
+        merged, conflicts = merger.merge_issue("issue-2", base, local, remote)
 
         assert "status" in conflicts
         assert "assignee" in conflicts
@@ -140,9 +135,7 @@ class TestThreeWayMerger:
             "description": "Updated description",  # Changed remotely
         }
 
-        merged, conflicts = merger.merge_issue(
-            "issue-3", base, local, remote
-        )
+        merged, conflicts = merger.merge_issue("issue-3", base, local, remote)
 
         # Status: both changed → conflict
         assert "status" in conflicts

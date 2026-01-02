@@ -145,7 +145,7 @@ roadmap git sync [OPTIONS]
 
 #### A.1 Create Base State Tracking
 - **File:** `.roadmap/.sync-state.json`
-- **Content:** 
+- **Content:**
 ```json
 {
   "last_sync": "2026-01-01T12:00:00Z",
@@ -185,14 +185,14 @@ class ThreeWayMerger:
 class ConflictResolver:
     RULES = {
         "status": "flag_for_review",
-        "assignee": "flag_for_review", 
+        "assignee": "flag_for_review",
         "milestone": "flag_for_review",
         "labels": "merge_union",
         "description": "merge_append",
         "comments": "merge_append",
         # ... etc
     }
-    
+
     def resolve_conflict(self, field, base, local, remote) -> value:
         rule = self.RULES.get(field, "flag_for_review")
         return apply_rule(rule, base, local, remote)
@@ -291,7 +291,7 @@ class GitCoordinator:
 
 **Phase A Status:** ✅ COMPLETE
 - ✅ Three-way merger implemented and tested (14 tests)
-- ✅ Conflict resolver with field-level rules implemented (15 tests)  
+- ✅ Conflict resolver with field-level rules implemented (15 tests)
 - ✅ Sync state models implemented (11 tests)
 - **Total:** 40 tests passing
 
@@ -381,4 +381,3 @@ GitHubSyncBackend   GitSyncBackend
 - `tests/unit/core/services/sync/test_three_way_merger.py`
 - `tests/unit/core/services/sync/test_conflict_resolver.py`
 - `tests/integration/test_sync_end_to_end.py`
-

@@ -7,6 +7,7 @@ to SyncBackendInterface implementations.
 
 from structlog import get_logger
 
+from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.services.sync_conflict_resolver import (
     ConflictStrategy,
@@ -117,14 +118,30 @@ class GenericSyncOrchestrator:
                 up_to_date=len(up_to_date),
             )
 
+            # Filter out conflicted issues from updates list
+            # A conflict should be resolved, not treated as a simple update
+            conflict_ids = {c.issue_id for c in conflicts}
+            updates_filtered = [u for u in updates if u.id not in conflict_ids]
+
+            logger.debug(
+                "updates_filtered",
+                original_count=len(updates),
+                filtered_count=len(updates_filtered),
+                conflicts_removed=len(conflict_ids),
+            )
+
             # 5. Report findings
             report.conflicts_detected = len(conflicts)
-            report.issues_updated = len(updates)
+            report.issues_updated = len(updates_filtered)
             report.issues_up_to_date = len(up_to_date)
 
             # 6. Resolve conflicts if applicable
             resolved_issues = []
             if conflicts:
+                logger.info(
+                    "resolving_conflicts_start",
+                    conflict_count=len(conflicts),
+                )
                 strategy = (
                     ConflictStrategy.KEEP_LOCAL
                     if force_local
@@ -132,18 +149,54 @@ class GenericSyncOrchestrator:
                     if force_remote
                     else ConflictStrategy.AUTO_MERGE
                 )
-                resolved_issues = self.conflict_resolver.resolve_batch(
-                    conflicts, strategy
-                )
-                logger.info(
-                    "conflicts_resolved",
-                    count=len(resolved_issues),
-                    strategy=strategy.value,
-                )
+                try:
+                    resolved_issues = self.conflict_resolver.resolve_batch(
+                        conflicts, strategy
+                    )
+                    logger.info(
+                        "conflicts_resolved",
+                        count=len(resolved_issues),
+                        strategy=strategy.value,
+                    )
+
+                    # Persist resolved issues back to disk
+                    self._persist_resolved_issues(resolved_issues)
+
+                except Exception as e:
+                    logger.warning(
+                        "conflicts_resolution_failed",
+                        error=str(e),
+                        strategy=strategy.value,
+                        exc_info=True,
+                    )
+                    resolved_issues = []
 
             # 7. Apply changes if not dry-run
-            if not dry_run and (updates or resolved_issues or pulls):
-                report = self._apply_changes(report, updates, resolved_issues, pulls)
+            updates_count = len(updates_filtered)
+            resolved_count = len(resolved_issues)
+            pulls_count = len(pulls)
+            should_apply = not dry_run and bool(
+                updates_filtered or resolved_issues or pulls
+            )
+
+            logger.info(
+                "applying_changes_check",
+                dry_run=dry_run,
+                updates_count=updates_count,
+                resolved_count=resolved_count,
+                pulls_count=pulls_count,
+                condition_result=should_apply,
+            )
+
+            if should_apply:
+                report = self._apply_changes(
+                    report, updates_filtered, resolved_issues, pulls
+                )
+            elif dry_run:
+                logger.info("sync_dry_run_mode", skip_apply=True)
+                report = self._apply_changes(
+                    report, updates_filtered, resolved_issues, pulls
+                )
             elif dry_run:
                 logger.info("sync_dry_run_mode", skip_apply=True)
 
@@ -184,6 +237,10 @@ class GenericSyncOrchestrator:
             # Push local updates and resolved conflicts
             issues_to_push = updates + resolved_issues
             if issues_to_push:
+                issue_ids = [issue.id for issue in issues_to_push]
+                logger.info(
+                    "pushing_issues", count=len(issue_ids), ids_str=",".join(issue_ids)
+                )
                 if len(issues_to_push) == 1:
                     success = self.backend.push_issue(issues_to_push[0])
                     if not success:
@@ -215,3 +272,48 @@ class GenericSyncOrchestrator:
             report.error = f"Error applying changes: {str(e)}"
             logger.exception("apply_changes_failed", error=str(e))
             return report
+
+    def _persist_resolved_issues(self, resolved_issues: list) -> None:
+        """Persist resolved issues back to disk.
+
+        Args:
+            resolved_issues: List of resolved Issue objects to save
+
+        Raises:
+            Exception: If any issue fails to persist
+        """
+        if not resolved_issues:
+            return
+
+        # Get the issues directory path from the core
+        core = RoadmapCore()
+        issues_base_dir = core.root_path / ".roadmap" / "issues"
+
+        try:
+            for issue in resolved_issues:
+                # Find where the issue file is currently stored
+                # Issues are stored in milestone subdirectories
+                issue_files = list(issues_base_dir.rglob(f"{issue.id}-*.md"))
+
+                if issue_files:
+                    # Save to the existing location
+                    issue_file_path = issue_files[0]
+                    IssueParser.save_issue_file(issue, issue_file_path)
+                    logger.debug(
+                        "persisted_resolved_issue",
+                        issue_id=issue.id,
+                        file_path=str(issue_file_path),
+                    )
+                else:
+                    # If no existing file found, skip (shouldn't happen in normal sync)
+                    logger.warning(
+                        "no_file_for_resolved_issue",
+                        issue_id=issue.id,
+                    )
+
+        except Exception as e:
+            logger.exception(
+                "persist_resolved_issues_failed",
+                error=str(e),
+            )
+            raise
