@@ -1,5 +1,7 @@
 """Link GitHub issue command - link internal issue to GitHub issue."""
 
+from typing import Any
+
 import click
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
@@ -59,7 +61,44 @@ def link_github_issue(
     """
     core = ctx.obj["core"]
 
-    # Validate the internal issue exists
+    # Validate internal issue
+    issue = _validate_internal_issue(ctx, issue_id)
+
+    # Validate GitHub ID is positive
+    _validate_github_id(ctx, github_id)
+
+    # Check if already linked
+    if issue.github_issue is not None:
+        if issue.github_issue == github_id:
+            _display_already_linked(issue, issue_id)
+            return
+        else:
+            _display_already_linked_different(ctx, issue_id, issue.github_issue)
+
+    # Get owner/repo from config or command-line
+    config_owner, config_repo = _resolve_github_config(ctx, core, owner, repo)
+
+    # Validate GitHub issue exists
+    _validate_github_issue_exists(ctx, config_owner, config_repo, github_id)
+
+    # Perform the link
+    _perform_link(ctx, core, issue, issue_id, github_id, config_owner, config_repo)
+
+
+def _validate_internal_issue(ctx: click.Context, issue_id: str) -> Any:
+    """Validate that an internal issue exists.
+
+    Args:
+        ctx: Click context
+        issue_id: Issue ID to validate
+
+    Returns:
+        Issue object
+
+    Raises:
+        SystemExit: If issue not found
+    """
+    core = ctx.obj["core"]
     try:
         issue = core.issues.get_by_id(issue_id)
         if not issue:
@@ -67,6 +106,7 @@ def link_github_issue(
             for line in lines:
                 console.print(line)
             ctx.exit(1)
+        return issue
     except Exception as e:
         handle_cli_error(
             error=e,
@@ -76,39 +116,85 @@ def link_github_issue(
             fatal=True,
         )
 
-    # Validate GitHub ID is positive
+
+def _validate_github_id(ctx: click.Context, github_id: int) -> None:
+    """Validate GitHub ID is positive.
+
+    Args:
+        ctx: Click context
+        github_id: GitHub issue ID to validate
+
+    Raises:
+        SystemExit: If ID is invalid
+    """
     if github_id <= 0:
         lines = format_operation_failure(
-            "link issue", issue_id, "Invalid GitHub issue number"
+            "link issue", "", "Invalid GitHub issue number"
         )
         for line in lines:
             console.print(line)
         ctx.exit(1)
 
-    # Check if already linked to a different GitHub issue
-    if issue.github_issue is not None and issue.github_issue != github_id:
-        lines = format_operation_failure(
-            "link issue",
-            issue_id,
-            f"Already linked to GitHub issue #{issue.github_issue}",
-        )
-        for line in lines:
-            console.print(line)
-        ctx.exit(1)
 
-    # If already linked to same ID, nothing to do
-    if issue.github_issue == github_id:
-        lines = format_operation_success("✅", "Linked", issue.title, issue_id)
-        for line in lines:
-            console.print(line)
-        return
+def _display_already_linked(issue: Any, issue_id: str) -> None:
+    """Display message when issue is already linked to same GitHub ID.
 
-    # Get owner/repo from config or command-line
+    Args:
+        issue: Issue object
+        issue_id: Issue ID
+    """
+    lines = format_operation_success("✅", "Linked", issue.title, issue_id)
+    for line in lines:
+        console.print(line)
+
+
+def _display_already_linked_different(
+    ctx: click.Context, issue_id: str, existing_github_id: int
+) -> None:
+    """Display error when issue is already linked to different GitHub ID.
+
+    Args:
+        ctx: Click context
+        issue_id: Issue ID
+        existing_github_id: Existing GitHub issue ID
+
+    Raises:
+        SystemExit: Always exits
+    """
+    lines = format_operation_failure(
+        "link issue",
+        issue_id,
+        f"Already linked to GitHub issue #{existing_github_id}",
+    )
+    for line in lines:
+        console.print(line)
+    ctx.exit(1)
+
+
+def _resolve_github_config(
+    ctx: click.Context,
+    core: Any,
+    owner: str | None,
+    repo: str | None,
+) -> tuple[str, str]:
+    """Resolve GitHub owner and repo from config or arguments.
+
+    Args:
+        ctx: Click context
+        core: RoadmapCore instance
+        owner: Optional owner override
+        repo: Optional repo override
+
+    Returns:
+        Tuple of (owner, repo)
+
+    Raises:
+        SystemExit: If config cannot be resolved
+    """
     config_owner = owner
     config_repo = repo
 
     if not config_owner or not config_repo:
-        # Try to get from GitHub integration service
         try:
             from pathlib import Path
 
@@ -133,15 +219,30 @@ def link_github_issue(
                 console.print(line)
             ctx.exit(1)
 
-    # Type narrowing: at this point config_owner and config_repo must be non-None
-    # because we exit if they aren't
+    # Type narrowing: at this point these must be non-None
     assert config_owner is not None
     assert config_repo is not None
 
-    # Validate GitHub issue exists
+    return config_owner, config_repo
+
+
+def _validate_github_issue_exists(
+    ctx: click.Context, owner: str, repo: str, github_id: int
+) -> None:
+    """Validate that a GitHub issue exists.
+
+    Args:
+        ctx: Click context
+        owner: GitHub repository owner
+        repo: GitHub repository name
+        github_id: GitHub issue ID
+
+    Raises:
+        SystemExit: If GitHub issue doesn't exist
+    """
     try:
         gh_client = GitHubIssueClient()
-        exists = gh_client.issue_exists(config_owner, config_repo, github_id)
+        exists = gh_client.issue_exists(owner, repo, github_id)
         if not exists:
             lines = format_operation_failure(
                 "verify GitHub issue",
@@ -157,7 +258,30 @@ def link_github_issue(
             console.print(line)
         ctx.exit(1)
 
-    # Update the issue with GitHub ID
+
+def _perform_link(
+    ctx: click.Context,
+    core: Any,
+    issue: Any,
+    issue_id: str,
+    github_id: int,
+    owner: str,
+    repo: str,
+) -> None:
+    """Perform the actual link operation.
+
+    Args:
+        ctx: Click context
+        core: RoadmapCore instance
+        issue: Issue object
+        issue_id: Issue ID
+        github_id: GitHub issue ID
+        owner: GitHub repository owner
+        repo: GitHub repository name
+
+    Raises:
+        SystemExit: If link fails
+    """
     try:
         issue.github_issue = github_id
         core.issues.update(issue)
@@ -167,7 +291,7 @@ def link_github_issue(
         for line in lines:
             console.print(line)
         console.print(
-            f"   Repository: {config_owner}/{config_repo}",
+            f"   Repository: {owner}/{repo}",
             style="cyan",
         )
         console.print(

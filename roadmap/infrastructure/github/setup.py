@@ -397,11 +397,8 @@ class GitHubInitializationService:
                 console.print("✅ GitHub credentials stored", style="green")
 
         config_manager = GitHubConfigManager(self.core)
-        # Only pass sync_backend if it's not the default (GITHUB)
-        if sync_backend != SyncBackend.GITHUB:
-            config_manager.save_github_config(github_repo, sync_backend=sync_backend)
-        else:
-            config_manager.save_github_config(github_repo)
+        # Always pass sync_backend explicitly for consistency and clarity
+        config_manager.save_github_config(github_repo, sync_backend=sync_backend)
 
     def _configure_integration(
         self,

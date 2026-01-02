@@ -58,7 +58,9 @@ tests/
 │   ├── test_milestone_commands.py
 │   ├── test_comments.py
 │   ├── test_platform_integration.py
-│   ├── test_init_phase1.py
+│   ├── test_init_core_setup.py
+│   ├── test_init_templates_and_customization.py
+│   ├── test_sync_and_link_helper_functions.py
 │   └── test_enhanced_list_command.py
 │
 ├── fixtures/                       # Shared test fixtures and utilities

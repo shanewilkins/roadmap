@@ -329,9 +329,9 @@ class TestGitHubInitializationServiceCoverage:
 
                     # Should store the new token
                     mock_cred_mgr.store_token.assert_called_once_with("new_token")
-                    # Should save config without explicit sync_backend (uses default GITHUB)
+                    # Always pass sync_backend explicitly (defaults to GITHUB)
                     mock_config_mgr.save_github_config.assert_called_once_with(
-                        "owner/repo"
+                        "owner/repo", sync_backend=SyncBackend.GITHUB
                     )
 
     def test_store_credentials_same_token(self, mock_core):
@@ -357,9 +357,9 @@ class TestGitHubInitializationServiceCoverage:
 
                     # Should NOT store token again
                     mock_cred_mgr.store_token.assert_not_called()
-                    # Should still save config without explicit sync_backend (uses default GITHUB)
+                    # Always pass sync_backend explicitly (defaults to GITHUB)
                     mock_config_mgr.save_github_config.assert_called_once_with(
-                        "owner/repo"
+                        "owner/repo", sync_backend=SyncBackend.GITHUB
                     )
 
     def test_store_credentials_with_presenter(self, mock_core):

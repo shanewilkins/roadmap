@@ -213,80 +213,124 @@ class HealthCheck:
         return HealthStatus(status_str), message
 
     @staticmethod
-    def check_comment_integrity(core) -> tuple[HealthStatus, str]:
-        """Check for malformed comments in issues, milestones, and projects.
+    @staticmethod
+    def _check_entity_comments(
+        entity_list,
+        entity_type_name: str,
+        id_field: str = "id",
+        name_field: str = "name",
+    ) -> tuple[int, list[str]]:
+        """Check comments on a collection of entities.
+
+        Args:
+            entity_list: List of entities to check
+            entity_type_name: Name of entity type for error messages
+            id_field: Field name containing entity ID/name
+            name_field: Field name for display (defaults to 'name')
 
         Returns:
-            Tuple of (status, message) describing comment validation results
+            Tuple of (total_comment_count, error_list)
         """
         from roadmap.core.services.comment_service import CommentService
 
         errors = []
         total_comments = 0
 
-        # Check issue comments
         try:
-            for issue in core.issues.list():
-                if hasattr(issue, "comments") and issue.comments:
-                    total_comments += len(issue.comments)
-                    issue_errors = CommentService.validate_comment_thread(
-                        issue.comments
+            for entity in entity_list:
+                if hasattr(entity, "comments") and entity.comments:
+                    total_comments += len(entity.comments)
+                    entity_errors = CommentService.validate_comment_thread(
+                        entity.comments
                     )
-                    if issue_errors:
-                        errors.extend(
-                            [f"Issue {issue.id}: {error}" for error in issue_errors]
-                        )
-        except Exception as e:
-            logger.warning("error_checking_issue_comments", error=str(e))
-
-        # Check milestone comments
-        try:
-            for milestone in core.milestones.list():
-                if hasattr(milestone, "comments") and milestone.comments:
-                    total_comments += len(milestone.comments)
-                    milestone_errors = CommentService.validate_comment_thread(
-                        milestone.comments
-                    )
-                    if milestone_errors:
+                    if entity_errors:
+                        entity_id = getattr(entity, id_field, "Unknown")
                         errors.extend(
                             [
-                                f"Milestone {milestone.name}: {error}"
-                                for error in milestone_errors
+                                f"{entity_type_name} {entity_id}: {error}"
+                                for error in entity_errors
                             ]
                         )
         except Exception as e:
-            logger.warning("error_checking_milestone_comments", error=str(e))
+            logger.warning(
+                f"error_checking_{entity_type_name.lower()}_comments",
+                error=str(e),
+            )
 
-        # Check project comments
-        try:
-            for project in core.projects.list():
-                if hasattr(project, "comments") and project.comments:
-                    total_comments += len(project.comments)
-                    project_errors = CommentService.validate_comment_thread(
-                        project.comments
-                    )
-                    if project_errors:
-                        errors.extend(
-                            [
-                                f"Project {project.name}: {error}"
-                                for error in project_errors
-                            ]
-                        )
-        except Exception as e:
-            logger.warning("error_checking_project_comments", error=str(e))
+        return total_comments, errors
 
-        if errors:
-            message = f"Found {len(errors)} comment validation error(s). Details: {'; '.join(errors[:3])}"
-            if len(errors) > 3:
-                message += f"... and {len(errors) - 3} more"
-            return HealthStatus.UNHEALTHY, message
+    @staticmethod
+    @staticmethod
+    def _aggregate_comment_checks(
+        checks: list[tuple[int, list[str]]],
+    ) -> tuple[int, list[str]]:
+        """Aggregate results from multiple comment check operations.
+
+        Args:
+            checks: List of (comment_count, error_list) tuples
+
+        Returns:
+            Tuple of (total_count, aggregated_errors)
+        """
+        total_count = sum(check[0] for check in checks)
+        all_errors = []
+        for _, errors in checks:
+            all_errors.extend(errors)
+        return total_count, all_errors
+
+    @staticmethod
+    def _format_comment_integrity_message(
+        all_errors: list[str], total_comments: int
+    ) -> str:
+        """Format the comment integrity check message.
+
+        Args:
+            all_errors: List of validation errors found
+            total_comments: Total number of comments checked
+
+        Returns:
+            Formatted message string
+        """
+        if all_errors:
+            message = f"Found {len(all_errors)} comment validation error(s). Details: {'; '.join(all_errors[:3])}"
+            if len(all_errors) > 3:
+                message += f"... and {len(all_errors) - 3} more"
+            return message
 
         return (
-            HealthStatus.HEALTHY,
             f"All {total_comments} comment(s) are well-formed"
             if total_comments > 0
-            else "No comments to validate",
+            else "No comments to validate"
         )
+
+    def check_comment_integrity(core) -> tuple[HealthStatus, str]:
+        """Check for malformed comments in issues, milestones, and projects.
+
+        Returns:
+            Tuple of (status, message) describing comment validation results
+        """
+        # Check comments across all entity types
+        checks = [
+            HealthCheck._check_entity_comments(
+                core.issues.list(), "Issue", id_field="id"
+            ),
+            HealthCheck._check_entity_comments(
+                core.milestones.list(), "Milestone", id_field="name", name_field="name"
+            ),
+            HealthCheck._check_entity_comments(
+                core.projects.list(), "Project", id_field="name", name_field="name"
+            ),
+        ]
+
+        total_comments, all_errors = HealthCheck._aggregate_comment_checks(checks)
+
+        message = HealthCheck._format_comment_integrity_message(
+            all_errors, total_comments
+        )
+
+        status = HealthStatus.UNHEALTHY if all_errors else HealthStatus.HEALTHY
+
+        return status, message
 
     @staticmethod
     def check_data_integrity() -> tuple[HealthStatus, str]:

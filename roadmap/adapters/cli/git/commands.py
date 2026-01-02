@@ -184,7 +184,10 @@ def _test_git_connectivity(core):
     Raises:
         Exception: If git connectivity test fails
     """
-    from roadmap.adapters.sync.backend_factory import get_sync_backend
+    from roadmap.adapters.cli.services.sync_service import (
+        get_sync_backend,
+        test_backend_connectivity,
+    )
 
     console.print("🔌 Git Repository Connectivity Test", style="bold cyan")
     console.print()
@@ -194,7 +197,7 @@ def _test_git_connectivity(core):
     log.debug("git_connectivity_testing")
 
     try:
-        # Use backend factory to create vanilla git backend
+        # Use sync service to create vanilla git backend
         backend = get_sync_backend("git", core, {})
 
         if backend is None:
@@ -206,11 +209,9 @@ def _test_git_connectivity(core):
             return
 
         # Test authentication (connectivity check)
-        if backend.authenticate():
-            console.print(
-                "✅ Git repository connectivity verified",
-                style="green",
-            )
+        success, message = test_backend_connectivity(backend, "git")
+        if success:
+            console.print(message, style="green")
             console.print(
                 "Your git repository is accessible and ready for syncing",
                 style="dim",
@@ -407,9 +408,11 @@ def sync_git(
         # Sync with conflict resolution
         roadmap git sync --force-local
     """
+    from roadmap.adapters.cli.services.sync_service import (
+        get_sync_backend,
+    )
     from roadmap.adapters.sync import (
         detect_backend_from_config,
-        get_sync_backend,
     )
 
     core = ctx.obj["core"]

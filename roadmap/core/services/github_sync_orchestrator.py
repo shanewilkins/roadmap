@@ -7,7 +7,13 @@ from roadmap.common.constants import Status
 from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.core.domain import Issue
 from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
+from roadmap.core.services.github_entity_classifier import GitHubEntityClassifier
 from roadmap.core.services.github_issue_client import GitHubIssueClient
+from roadmap.core.services.helpers import (
+    extract_issue_status_update,
+    extract_milestone_status_update,
+    parse_status_change,
+)
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
 from roadmap.core.services.sync_report import IssueChange, SyncReport
 from roadmap.infrastructure.core import RoadmapCore
@@ -28,6 +34,7 @@ class GitHubSyncOrchestrator:
         token = self.config.get("token")
         self.github_client = GitHubIssueClient(token)
         self.metadata_service = SyncMetadataService(core)
+        self.entity_classifier = GitHubEntityClassifier()
         if hasattr(core, "github_service"):
             self.conflict_detector = GitHubConflictDetector(core.github_service)
         else:
@@ -58,193 +65,269 @@ class GitHubSyncOrchestrator:
         report = SyncReport()
 
         try:
-            # Get all local issues and milestones (including archived)
+            # Load all issues and milestones
             all_issues = self.core.issues.list()
-            all_milestones = []
-            if hasattr(self.core, "milestones"):
-                try:
-                    milestone_list = self.core.milestones.list()
-                    # Ensure it's iterable (handle mocks that don't return lists)
-                    if milestone_list and hasattr(milestone_list, "__iter__"):
-                        all_milestones = list(milestone_list)
-                except (AttributeError, TypeError):
-                    all_milestones = []
+            all_milestones = self._load_milestones()
 
-            # Separate active and archived issues
-            active_issues = []
-            archived_issues = []
-            for i in all_issues:
-                # Check if archived attribute is explicitly set and truthy
-                # (Mocks will return MagicMock for undefined attributes)
-                is_archived = False
-                if hasattr(i, "archived"):
-                    archived_attr = getattr(i, "archived", False)
-                    # Check if it's an actual boolean value, not a mock
-                    if isinstance(archived_attr, bool):
-                        is_archived = archived_attr
+            # Classify into active/archived
+            active_issues, archived_issues = self.entity_classifier.separate_by_state(
+                all_issues
+            )
+            active_milestones, archived_milestones = (
+                self.entity_classifier.separate_by_state(all_milestones)
+            )
 
-                if is_archived:
-                    archived_issues.append(i)
-                else:
-                    active_issues.append(i)
-
-            # Separate active and archived milestones
-            active_milestones = []
-            archived_milestones = []
-            for m in all_milestones:
-                # Check if archived attribute is explicitly set and truthy
-                is_archived = False
-                if hasattr(m, "archived"):
-                    archived_attr = getattr(m, "archived", False)
-                    # Check if it's an actual boolean value, not a mock
-                    if isinstance(archived_attr, bool):
-                        is_archived = archived_attr
-
-                if is_archived:
-                    archived_milestones.append(m)
-                else:
-                    active_milestones.append(m)
-
-            # 1. Sync existing linked issues (active only)
-            linked_issues = [i for i in active_issues if i.github_issue is not None]
-            report.total_issues = len(linked_issues)
-
-            for local_issue in linked_issues:
-                change = self._detect_issue_changes(local_issue)
-                report.changes.append(change)
-
-                # Update counters
-                if change.has_conflict:
-                    report.conflicts_detected += 1
-                elif change.local_changes or change.github_changes:
-                    report.issues_updated += 1
-                else:
-                    report.issues_up_to_date += 1
-
-            # 2. Detect newly created issues (active, local only)
-            unlinked_issues = [i for i in active_issues if i.github_issue is None]
-            for local_issue in unlinked_issues:
-                change = IssueChange(
-                    issue_id=local_issue.id,
-                    title=local_issue.title,
-                    local_changes={"action": "create on GitHub"},
-                )
-                report.changes.append(change)
-                report.issues_updated += 1
-
-            # 3. Detect archived issues (to be synced as closed on GitHub)
-            for archived_issue in archived_issues:
-                if archived_issue.github_issue is not None:
-                    change = IssueChange(
-                        issue_id=archived_issue.id,
-                        title=archived_issue.title,
-                        local_changes={
-                            "action": "archive",
-                            "archived": "archived locally",
-                        },
-                    )
-                    report.changes.append(change)
-                    report.issues_updated += 1
-
-            # 4. Sync milestones if available
-            if hasattr(self.core, "milestones"):
-                # Active milestones
-                for local_milestone in active_milestones:
-                    change = self._detect_milestone_changes(local_milestone)
-                    if change:
-                        report.changes.append(change)
-                        if change.has_conflict:
-                            report.conflicts_detected += 1
-                        elif change.local_changes or change.github_changes:
-                            report.issues_updated += 1
-
-                # Archived milestones
-                for archived_milestone in archived_milestones:
-                    if archived_milestone.github_milestone is not None:
-                        change = IssueChange(
-                            issue_id=archived_milestone.name,
-                            title=archived_milestone.name,
-                            local_changes={
-                                "action": "archive",
-                                "archived": "archived locally",
-                            },
-                        )
-                        report.changes.append(change)
-                        report.issues_updated += 1
-
-            # 5. Detect orphaned GitHub references (optional reporting)
-            # These are issues/milestones with github_issue/github_milestone set
-            # but no active sync. Can be reported for user awareness.
-            # (Implementation deferred to v1.1 for full deleted entity sync)
+            # Detect changes for active issues and milestones
+            self._detect_and_report_linked_issues(report, active_issues)
+            self._detect_and_report_unlinked_issues(report, active_issues)
+            self._detect_and_report_archived_issues(report, archived_issues)
+            self._detect_and_report_milestones(report, active_milestones)
+            self._detect_and_report_archived_milestones(report, archived_milestones)
 
             # Apply changes if not dry-run
             if not dry_run and (
                 force_local or force_github or not report.has_conflicts()
             ):
-                for change in report.changes:
-                    # Determine if this is an issue or milestone change
-                    # First try to get as an issue
-                    issue_obj = self.core.issues.get(change.issue_id)
-
-                    # If not an issue, check if it's a milestone
-                    is_milestone = False
-                    if issue_obj is None and hasattr(self.core, "milestones"):
-                        # Try as milestone only if not found as issue
-                        try:
-                            milestone_obj = self.core.milestones.get(change.issue_id)
-                            is_milestone = milestone_obj is not None and hasattr(
-                                milestone_obj, "name"
-                            )
-                        except (AttributeError, TypeError):
-                            is_milestone = False
-
-                    if is_milestone:
-                        # Handle milestone archive/restore
-                        if "action" in change.local_changes:
-                            if change.local_changes["action"] == "archive":
-                                self._apply_archived_milestone_to_github(
-                                    change.issue_id
-                                )
-                            elif change.local_changes["action"] == "restore":
-                                self._apply_restored_milestone_to_github(
-                                    change.issue_id
-                                )
-                            elif change.local_changes["action"] == "create_milestone":
-                                self._create_milestone_on_github(change.issue_id)
-                        else:
-                            # Handle existing milestones
-                            if change.github_changes and not (
-                                change.has_conflict and force_local
-                            ):
-                                self._apply_github_milestone_changes(change)
-                            if change.local_changes and not (
-                                change.has_conflict and force_github
-                            ):
-                                self._apply_local_milestone_changes(change)
-                    else:
-                        # Handle issue archive/restore
-                        if "action" in change.local_changes:
-                            if change.local_changes["action"] == "archive":
-                                self._apply_archived_issue_to_github(change.issue_id)
-                            elif change.local_changes["action"] == "restore":
-                                self._apply_restored_issue_to_github(change.issue_id)
-                            elif change.local_changes["action"] == "create on GitHub":
-                                self._create_issue_on_github(change.issue_id)
-                        else:
-                            # Handle existing issues
-                            if change.github_changes and not (
-                                change.has_conflict and force_local
-                            ):
-                                self._apply_github_changes(change)
-                            if change.local_changes and not (
-                                change.has_conflict and force_github
-                            ):
-                                self._apply_local_changes(change)
+                self._apply_all_changes(
+                    report, force_local=force_local, force_github=force_github
+                )
 
         except Exception as e:
             report.error = str(e)
 
         return report
+
+    def _load_milestones(self) -> list[Any]:
+        """Load all milestones if available.
+
+        Returns:
+            List of milestones, or empty list if not available
+        """
+        all_milestones = []
+        if hasattr(self.core, "milestones"):
+            try:
+                milestone_list = self.core.milestones.list()
+                if milestone_list and hasattr(milestone_list, "__iter__"):
+                    all_milestones = list(milestone_list)
+            except (AttributeError, TypeError):
+                pass
+        return all_milestones
+
+    def _detect_and_report_linked_issues(
+        self, report: SyncReport, active_issues: list[Issue]
+    ) -> None:
+        """Detect and report changes for linked issues.
+
+        Args:
+            report: SyncReport to update
+            active_issues: List of active issues
+        """
+        linked_issues = [i for i in active_issues if i.github_issue is not None]
+        report.total_issues = len(linked_issues)
+
+        for local_issue in linked_issues:
+            change = self._detect_issue_changes(local_issue)
+            report.changes.append(change)
+            self._update_report_counters(report, change)
+
+    def _detect_and_report_unlinked_issues(
+        self, report: SyncReport, active_issues: list[Issue]
+    ) -> None:
+        """Detect and report new issues not yet linked to GitHub.
+
+        Args:
+            report: SyncReport to update
+            active_issues: List of active issues
+        """
+        unlinked_issues = [i for i in active_issues if i.github_issue is None]
+
+        for local_issue in unlinked_issues:
+            change = IssueChange(
+                issue_id=local_issue.id,
+                title=local_issue.title,
+                local_changes={"action": "create on GitHub"},
+            )
+            report.changes.append(change)
+            report.issues_updated += 1
+
+    def _detect_and_report_archived_issues(
+        self, report: SyncReport, archived_issues: list[Issue]
+    ) -> None:
+        """Detect and report archived issues to sync.
+
+        Args:
+            report: SyncReport to update
+            archived_issues: List of archived issues
+        """
+        for archived_issue in archived_issues:
+            if archived_issue.github_issue is not None:
+                change = IssueChange(
+                    issue_id=archived_issue.id,
+                    title=archived_issue.title,
+                    local_changes={
+                        "action": "archive",
+                        "archived": "archived locally",
+                    },
+                )
+                report.changes.append(change)
+                report.issues_updated += 1
+
+    def _detect_and_report_milestones(
+        self, report: SyncReport, active_milestones: list[Any]
+    ) -> None:
+        """Detect and report changes for active milestones.
+
+        Args:
+            report: SyncReport to update
+            active_milestones: List of active milestones
+        """
+        for local_milestone in active_milestones:
+            change = self._detect_milestone_changes(local_milestone)
+            if change:
+                report.changes.append(change)
+                self._update_report_counters(report, change)
+
+    def _detect_and_report_archived_milestones(
+        self, report: SyncReport, archived_milestones: list[Any]
+    ) -> None:
+        """Detect and report archived milestones to sync.
+
+        Args:
+            report: SyncReport to update
+            archived_milestones: List of archived milestones
+        """
+        for archived_milestone in archived_milestones:
+            if archived_milestone.github_milestone is not None:
+                change = IssueChange(
+                    issue_id=archived_milestone.name,
+                    title=archived_milestone.name,
+                    local_changes={
+                        "action": "archive",
+                        "archived": "archived locally",
+                    },
+                )
+                report.changes.append(change)
+                report.issues_updated += 1
+
+    def _update_report_counters(self, report: SyncReport, change: IssueChange) -> None:
+        """Update sync report counters based on change.
+
+        Args:
+            report: SyncReport to update
+            change: Detected change
+        """
+        if change.has_conflict:
+            report.conflicts_detected += 1
+        elif change.local_changes or change.github_changes:
+            report.issues_updated += 1
+        else:
+            report.issues_up_to_date += 1
+
+    def _apply_all_changes(
+        self,
+        report: SyncReport,
+        force_local: bool = False,
+        force_github: bool = False,
+    ) -> None:
+        """Apply all detected changes to local and GitHub.
+
+        Args:
+            report: SyncReport containing detected changes
+            force_local: If True, resolve conflicts by keeping local
+            force_github: If True, resolve conflicts by keeping GitHub
+        """
+        for change in report.changes:
+            # Determine if this is an issue or milestone
+            is_milestone = self._is_milestone_change(change)
+
+            if is_milestone:
+                self._apply_milestone_change(
+                    change, force_local=force_local, force_github=force_github
+                )
+            else:
+                self._apply_issue_change(
+                    change, force_local=force_local, force_github=force_github
+                )
+
+    def _is_milestone_change(self, change: IssueChange) -> bool:
+        """Determine if change is for a milestone or issue.
+
+        Args:
+            change: Change to check
+
+        Returns:
+            True if milestone change, False if issue change
+        """
+        # Try to get as issue
+        issue_obj = self.core.issues.get(change.issue_id)
+        if issue_obj is not None:
+            return False
+
+        # Try as milestone
+        if hasattr(self.core, "milestones"):
+            try:
+                milestone_obj = self.core.milestones.get(change.issue_id)
+                return milestone_obj is not None and hasattr(milestone_obj, "name")
+            except (AttributeError, TypeError):
+                pass
+
+        return False
+
+    def _apply_milestone_change(
+        self,
+        change: IssueChange,
+        force_local: bool = False,
+        force_github: bool = False,
+    ) -> None:
+        """Apply changes to a milestone.
+
+        Args:
+            change: Change to apply
+            force_local: If True, prioritize local changes
+            force_github: If True, prioritize GitHub changes
+        """
+        if "action" in change.local_changes:
+            action = change.local_changes["action"]
+            if action == "archive":
+                self._apply_archived_milestone_to_github(change.issue_id)
+            elif action == "restore":
+                self._apply_restored_milestone_to_github(change.issue_id)
+            elif action == "create_milestone":
+                self._create_milestone_on_github(change.issue_id)
+        else:
+            # Handle milestone updates
+            if change.github_changes and not (change.has_conflict and force_local):
+                self._apply_github_milestone_changes(change)
+            if change.local_changes and not (change.has_conflict and force_github):
+                self._apply_local_milestone_changes(change)
+
+    def _apply_issue_change(
+        self,
+        change: IssueChange,
+        force_local: bool = False,
+        force_github: bool = False,
+    ) -> None:
+        """Apply changes to an issue.
+
+        Args:
+            change: Change to apply
+            force_local: If True, prioritize local changes
+            force_github: If True, prioritize GitHub changes
+        """
+        if "action" in change.local_changes:
+            action = change.local_changes["action"]
+            if action == "archive":
+                self._apply_archived_issue_to_github(change.issue_id)
+            elif action == "restore":
+                self._apply_restored_issue_to_github(change.issue_id)
+            elif action == "create on GitHub":
+                self._create_issue_on_github(change.issue_id)
+        else:
+            # Handle issue updates
+            if change.github_changes and not (change.has_conflict and force_local):
+                self._apply_github_changes(change)
+            if change.local_changes and not (change.has_conflict and force_github):
+                self._apply_local_changes(change)
 
     def _detect_issue_changes(self, local_issue: Issue) -> IssueChange:
         """Detect what has changed for a single issue.
@@ -406,6 +489,101 @@ class GitHubSyncOrchestrator:
         except (ValueError, TypeError):
             return None
 
+    def _get_issue_handler(self, owner: str, repo: str) -> Any:
+        """Create and return a GitHub issue handler.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+
+        Returns:
+            IssueHandler instance
+        """
+        from requests import Session
+
+        from roadmap.adapters.github.handlers.issues import IssueHandler
+
+        session = Session()
+        session.headers.update(
+            {
+                "Authorization": f"token {self.config.get('token')}",
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "roadmap-cli/1.0",
+            }
+        )
+        return IssueHandler(session, owner, repo)
+
+    def _get_milestone_handler(self, owner: str, repo: str) -> Any:
+        """Create and return a GitHub milestone handler.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+
+        Returns:
+            MilestoneHandler instance
+        """
+        from requests import Session
+
+        from roadmap.adapters.github.handlers.milestones import MilestoneHandler
+
+        session = Session()
+        session.headers.update(
+            {
+                "Authorization": f"token {self.config.get('token')}",
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "roadmap-cli/1.0",
+            }
+        )
+        return MilestoneHandler(session, owner, repo)
+
+    def _get_owner_repo(self) -> tuple[str, str] | None:
+        """Extract and validate owner and repo from config.
+
+        Returns:
+            Tuple of (owner, repo) or None if either is missing
+        """
+        owner = self.config.get("owner")
+        repo = self.config.get("repo")
+        if not owner or not repo:
+            return None
+        return (owner, repo)
+
+    def _extract_status_update(self, status_change: str) -> dict[str, Any] | None:
+        """Extract and validate status update from change string.
+
+        Args:
+            status_change: Change string in format "old -> new"
+
+        Returns:
+            Dict with 'github_state' and 'status_enum', or None if invalid
+        """
+        return extract_issue_status_update(status_change)
+
+    def _extract_milestone_status_update(
+        self, status_change: str
+    ) -> dict[str, Any] | None:
+        """Extract and validate milestone status update from change string.
+
+        Args:
+            status_change: Change string in format "old -> new"
+
+        Returns:
+            Dict with 'github_state' and 'status_enum', or None if invalid
+        """
+        return extract_milestone_status_update(status_change)
+
+    def _parse_status_change(self, change_str: str) -> str | None:
+        """Parse and validate change string in format 'old -> new'.
+
+        Args:
+            change_str: Change string in format "old -> new"
+
+        Returns:
+            The new status string, or None if format is invalid
+        """
+        return parse_status_change(change_str)
+
     def _apply_local_changes(self, change: IssueChange) -> None:
         """Apply local changes to GitHub issue.
 
@@ -432,54 +610,30 @@ class GitHubSyncOrchestrator:
             )
 
             # Get GitHub handler for API operations
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.issues import IssueHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = IssueHandler(session, owner, repo)
+            handler = self._get_issue_handler(owner, repo)
 
             # Prepare GitHub update
             update_data = {}
 
             # Apply status change to GitHub and locally
             if "status" in change.local_changes:
-                new_status = change.local_changes["status"].split(" -> ")[1]
-                # Try to validate the status
-                from roadmap.common.constants import Status
-
-                try:
-                    # Validate that it's a valid status
-                    Status(new_status)
-                    # Map local status to GitHub state (done -> closed, others -> open)
-                    github_state = "closed" if new_status == "done" else "open"
-                    update_data["state"] = github_state
-                    # Update local object
-                    issue.status = Status(new_status)
-                except (ValueError, KeyError):
-                    # Invalid status - skip the update
-                    pass
+                status_update = self._extract_status_update(
+                    change.local_changes["status"]
+                )
+                if status_update:
+                    update_data["state"] = status_update["github_state"]
+                    issue.status = status_update["status_enum"]
 
             # Apply title change to GitHub and locally
             if "title" in change.local_changes:
                 new_title = change.local_changes["title"].split(" -> ")[1]
                 update_data["title"] = new_title
-                # Update local object
                 issue.title = new_title
 
             # Apply description/body change to GitHub and locally
             if "description" in change.local_changes:
                 new_desc = change.local_changes["description"].split(" -> ")[1]
                 update_data["body"] = new_desc
-                # Update local object
                 issue.description = new_desc
 
             # Push changes to GitHub
@@ -576,10 +730,10 @@ class GitHubSyncOrchestrator:
         )
 
         try:
-            owner = self.config.get("owner")
-            repo = self.config.get("repo")
-            if not owner or not repo:
+            owner_repo = self._get_owner_repo()
+            if not owner_repo:
                 return None
+            owner, repo = owner_repo
 
             # If milestone not yet linked to GitHub, mark for creation
             if not hasattr(local_milestone, "github_milestone") or (
@@ -589,19 +743,7 @@ class GitHubSyncOrchestrator:
                 return change
 
             # Milestone exists on GitHub - detect local changes
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-            handler = MilestoneHandler(session, owner, repo)
+            handler = self._get_milestone_handler(owner, repo)
 
             # Fetch milestone from GitHub
             gh_milestone = handler.get_milestone(local_milestone.github_milestone)
@@ -653,20 +795,7 @@ class GitHubSyncOrchestrator:
             if not owner or not repo:
                 return
 
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.issues import IssueHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = IssueHandler(session, owner, repo)
+            handler = self._get_issue_handler(owner, repo)
 
             # Create issue on GitHub
             github_issue = handler.create_issue(
@@ -716,25 +845,12 @@ class GitHubSyncOrchestrator:
             if not milestone:
                 return
 
-            owner = self.config.get("owner")
-            repo = self.config.get("repo")
-            if not owner or not repo:
+            owner_repo = self._get_owner_repo()
+            if not owner_repo:
                 return
+            owner, repo = owner_repo
 
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = MilestoneHandler(session, owner, repo)
+            handler = self._get_milestone_handler(owner, repo)
 
             # Create milestone on GitHub
             github_milestone = handler.create_milestone(
@@ -784,20 +900,7 @@ class GitHubSyncOrchestrator:
             if not owner or not repo:
                 return
 
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = MilestoneHandler(session, owner, repo)
+            handler = self._get_milestone_handler(owner, repo)
 
             # Prepare milestone update
             update_data = {}
@@ -816,16 +919,12 @@ class GitHubSyncOrchestrator:
 
             # Apply status change
             if "status" in change.local_changes:
-                new_status = change.local_changes["status"].split(" -> ")[1]
-                github_state = "closed" if new_status == "closed" else "open"
-                update_data["state"] = github_state
-                # Update local milestone status
-                from roadmap.common.constants import MilestoneStatus
-
-                try:
-                    milestone.status = MilestoneStatus(new_status)
-                except (ValueError, KeyError):
-                    pass
+                status_update = self._extract_milestone_status_update(
+                    change.local_changes["status"]
+                )
+                if status_update:
+                    update_data["state"] = status_update["github_state"]
+                    milestone.status = status_update["status_enum"]
 
             # Push changes to GitHub
             if update_data:
@@ -911,25 +1010,12 @@ class GitHubSyncOrchestrator:
             if not issue or not issue.github_issue:
                 return
 
-            owner = self.config.get("owner")
-            repo = self.config.get("repo")
-            if not owner or not repo:
+            owner_repo = self._get_owner_repo()
+            if not owner_repo:
                 return
+            owner, repo = owner_repo
 
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.issues import IssueHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = IssueHandler(session, owner, repo)
+            handler = self._get_issue_handler(owner, repo)
 
             # Close the issue on GitHub (GitHub doesn't have archive, closest is closed + label)
             github_issue_number = (
@@ -964,25 +1050,12 @@ class GitHubSyncOrchestrator:
             if not issue or not issue.github_issue:
                 return
 
-            owner = self.config.get("owner")
-            repo = self.config.get("repo")
-            if not owner or not repo:
+            owner_repo = self._get_owner_repo()
+            if not owner_repo:
                 return
+            owner, repo = owner_repo
 
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.issues import IssueHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = IssueHandler(session, owner, repo)
+            handler = self._get_issue_handler(owner, repo)
 
             # Reopen the issue on GitHub
             github_issue_number = (
@@ -1017,25 +1090,12 @@ class GitHubSyncOrchestrator:
             if not milestone or not milestone.github_milestone:
                 return
 
-            owner = self.config.get("owner")
-            repo = self.config.get("repo")
-            if not owner or not repo:
+            owner_repo = self._get_owner_repo()
+            if not owner_repo:
                 return
+            owner, repo = owner_repo
 
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = MilestoneHandler(session, owner, repo)
+            handler = self._get_milestone_handler(owner, repo)
 
             # Close the milestone on GitHub (GitHub closest equivalent to archive)
             handler.update_milestone(milestone.github_milestone, state="closed")
@@ -1064,25 +1124,12 @@ class GitHubSyncOrchestrator:
             if not milestone or not milestone.github_milestone:
                 return
 
-            owner = self.config.get("owner")
-            repo = self.config.get("repo")
-            if not owner or not repo:
+            owner_repo = self._get_owner_repo()
+            if not owner_repo:
                 return
+            owner, repo = owner_repo
 
-            from requests import Session
-
-            from roadmap.adapters.github.handlers.milestones import MilestoneHandler
-
-            session = Session()
-            session.headers.update(
-                {
-                    "Authorization": f"token {self.config.get('token')}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "roadmap-cli/1.0",
-                }
-            )
-
-            handler = MilestoneHandler(session, owner, repo)
+            handler = self._get_milestone_handler(owner, repo)
 
             # Reopen the milestone on GitHub
             handler.update_milestone(milestone.github_milestone, state="open")

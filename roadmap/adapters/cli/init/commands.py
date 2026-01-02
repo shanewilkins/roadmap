@@ -216,6 +216,161 @@ def _handle_already_initialized(
     return True, True
 
 
+def _setup_project_and_context(
+    custom_core: RoadmapCore,
+    skip_project: bool,
+    detected_info: dict,
+    project_name: str | None,
+    description: str | None,
+    template: str | None,
+    template_path: str | None,
+    interactive: bool,
+) -> dict | None:
+    """Setup project and save configuration.
+
+    Args:
+        custom_core: The roadmap core instance
+        skip_project: Whether to skip project setup
+        detected_info: Detected project context
+        project_name: Optional project name
+        description: Optional project description
+        template: Optional template name
+        template_path: Optional path to template
+        interactive: Whether interactive mode is enabled
+
+    Returns:
+        Project info dict or None
+    """
+    project_info = _setup_project(
+        custom_core,
+        skip_project,
+        detected_info,
+        project_name,
+        description,
+        template,
+        template_path,
+        interactive,
+    )
+
+    # Save default project ID if created
+    if project_info and project_info.get("action") == "created":
+        from roadmap.common.config_manager import ConfigManager
+
+        config_manager = ConfigManager(custom_core.config_file)
+        config = config_manager.load()
+        config.behavior.default_project_id = project_info.get("id")
+        config_manager.save(config)
+
+    return project_info
+
+
+def _present_project_results(project_info: dict | None) -> None:
+    """Display project setup results to user.
+
+    Args:
+        project_info: Information about the created/joined project
+    """
+    if not project_info:
+        return
+
+    if project_info.get("action") == "created":
+        presenter.present_project_created(project_info.get("name", "Main Project"))
+    elif project_info.get("action") == "joined":
+        count = project_info.get("count", 1)
+        if count > 1:
+            presenter.present_projects_joined(project_info.get("name", ""), count)
+        else:
+            presenter.present_project_joined(project_info.get("name", ""))
+
+
+def _persist_sync_backend_config(
+    custom_core: RoadmapCore, sync_backend: str, log
+) -> None:
+    """Persist sync backend selection to configuration.
+
+    Args:
+        custom_core: The roadmap core instance
+        sync_backend: The sync backend to persist
+        log: Logger instance for recording operations
+    """
+    if sync_backend == "github":
+        return
+
+    try:
+        from roadmap.common.config_manager import ConfigManager
+
+        config_manager = ConfigManager(custom_core.config_file)
+        config = config_manager.load()
+
+        if not config.github:
+            log.warning("github_config_not_initialized", sync_backend=sync_backend)
+            return
+
+        log.info(
+            "persisting_sync_backend",
+            sync_backend=sync_backend,
+            config_file=str(custom_core.config_file),
+        )
+        config.github.sync_backend = sync_backend
+        config_manager.save(config)
+
+        # Verify persistence
+        verify_config = config_manager.load()
+        persisted_backend = verify_config.github.sync_backend
+        if persisted_backend == sync_backend:
+            log.info("sync_backend_persisted_verified", sync_backend=sync_backend)
+        else:
+            log.warning(
+                "sync_backend_persistence_mismatch",
+                expected=sync_backend,
+                actual=persisted_backend,
+            )
+    except Exception as e:
+        log.error(
+            "sync_backend_persistence_failed",
+            sync_backend=sync_backend,
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        presenter.present_initialization_warning(
+            f"⚠️  Could not persist sync backend selection: {str(e)}"
+        )
+
+
+def _finalize_initialization(
+    custom_core: RoadmapCore,
+    name: str,
+    project_info: dict | None,
+    should_create_structure: bool,
+) -> None:
+    """Finalize initialization with validation and summary.
+
+    Args:
+        custom_core: The roadmap core instance
+        name: The roadmap name
+        project_info: Information about the setup project
+        should_create_structure: Whether new structure was created
+    """
+    # Validate and show summary
+    validation_ok = InitializationValidator.post_init_validate(
+        custom_core, name, project_info
+    )
+    if not validation_ok:
+        presenter.present_initialization_warning("Some validation checks failed")
+
+    # Show completion message with next steps
+    presenter.present_initialization_complete(created_new=should_create_structure)
+
+    # If we joined existing projects (not created), show them
+    if project_info and project_info.get("action") == "joined":
+        all_projects = ProjectDetectionService.detect_existing_projects(
+            custom_core.projects_dir
+        )
+        if all_projects:
+            project_names = [p.get("name", "Unknown") for p in all_projects]
+            presenter.present_existing_projects_info(project_names)
+
+
 @click.command()
 @click.option(
     "--name",
@@ -383,8 +538,8 @@ def init(
 
         ctx.obj["core"] = custom_core
 
-        # Setup project
-        project_info = _setup_project(
+        # Setup project and context
+        project_info = _setup_project_and_context(
             custom_core,
             params.skip_project,
             detected_info,
@@ -395,34 +550,11 @@ def init(
             params.interactive,
         )
 
-        # Save default project ID if created
-        if project_info and project_info.get("action") == "created":
-            from roadmap.common.config_manager import ConfigManager
-
-            config_manager = ConfigManager(custom_core.config_file)
-            config = config_manager.load()
-            config.behavior.default_project_id = project_info.get("id")
-            config_manager.save(config)
-            log.info("default_project_set", project_id=project_info.get("id"))
-
-        # Show project summary
-        if project_info:
-            if project_info.get("action") == "created":
-                presenter.present_project_created(
-                    project_info.get("name", "Main Project")
-                )
-            elif project_info.get("action") == "joined":
-                count = project_info.get("count", 1)
-                if count > 1:
-                    presenter.present_projects_joined(
-                        project_info.get("name", ""), count
-                    )
-                else:
-                    presenter.present_project_joined(project_info.get("name", ""))
+        # Present project results
+        _present_project_results(project_info)
 
         # Configure GitHub
         github_service = GitHubInitializationService(custom_core)
-        # Convert sync_backend string to enum
         sync_backend_enum = SyncBackend(params.sync_backend)
         github_service.setup(
             params.skip_github,
@@ -435,73 +567,13 @@ def init(
             sync_backend=sync_backend_enum,
         )
 
-        # Persist sync_backend selection to config if it's not the default
-        if params.sync_backend != "github":
-            try:
-                from roadmap.common.config_manager import ConfigManager
+        # Persist sync backend configuration
+        _persist_sync_backend_config(custom_core, params.sync_backend, log)
 
-                config_manager = ConfigManager(custom_core.config_file)
-                config = config_manager.load()
-
-                if config.github:
-                    log.info(
-                        "persisting_sync_backend",
-                        sync_backend=params.sync_backend,
-                        config_file=str(custom_core.config_file),
-                    )
-                    config.github.sync_backend = params.sync_backend
-                    config_manager.save(config)
-
-                    # Verify persistence
-                    verify_config = config_manager.load()
-                    persisted_backend = verify_config.github.sync_backend
-                    if persisted_backend == params.sync_backend:
-                        log.info(
-                            "sync_backend_persisted_verified",
-                            sync_backend=params.sync_backend,
-                        )
-                    else:
-                        log.warning(
-                            "sync_backend_persistence_mismatch",
-                            expected=params.sync_backend,
-                            actual=persisted_backend,
-                        )
-                else:
-                    log.warning(
-                        "github_config_not_initialized",
-                        sync_backend=params.sync_backend,
-                    )
-            except Exception as e:
-                log.error(
-                    "sync_backend_persistence_failed",
-                    sync_backend=params.sync_backend,
-                    error=str(e),
-                    error_type=type(e).__name__,
-                )
-                presenter.present_initialization_warning(
-                    f"⚠️  Could not persist sync backend selection: {str(e)}"
-                )
-                # Don't fail init over this - continue with warning
-
-        # Validate and show summary
-        validation_ok = InitializationValidator.post_init_validate(
-            custom_core, name, project_info
+        # Finalize and validate
+        _finalize_initialization(
+            custom_core, name, project_info, should_create_structure
         )
-        if not validation_ok:
-            presenter.present_initialization_warning("Some validation checks failed")
-
-        # Show completion message with next steps
-        presenter.present_initialization_complete(created_new=should_create_structure)
-
-        # If we joined existing projects (not created), show them
-        if project_info and project_info.get("action") == "joined":
-            # Try to get all project names for the user's reference
-            all_projects = ProjectDetectionService.detect_existing_projects(
-                custom_core.projects_dir
-            )
-            if all_projects:
-                project_names = [p.get("name", "Unknown") for p in all_projects]
-                presenter.present_existing_projects_info(project_names)
 
     except Exception as e:
         log.error("init_failed", error=str(e))

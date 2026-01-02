@@ -87,6 +87,113 @@ class CommentService:
 
     @staticmethod
     @traced("validate_comment_thread")
+    @staticmethod
+    def _validate_comment_field(comment: Comment) -> list[str]:
+        """Validate individual comment fields.
+
+        Args:
+            comment: Comment to validate
+
+        Returns:
+            List of field validation errors
+        """
+        errors = []
+
+        if not isinstance(comment.created_at, datetime):
+            errors.append(f"Comment {comment.id}: created_at is not a valid datetime")
+        if not isinstance(comment.updated_at, datetime):
+            errors.append(f"Comment {comment.id}: updated_at is not a valid datetime")
+
+        if not comment.author or not comment.author.strip():
+            errors.append(f"Comment {comment.id}: author cannot be empty")
+
+        if not comment.body or not comment.body.strip():
+            errors.append(f"Comment {comment.id}: body cannot be empty")
+
+        return errors
+
+    @staticmethod
+    def _validate_duplicate_ids(comments: list[Comment]) -> tuple[list[str], set[str]]:
+        """Validate for duplicate comment IDs.
+
+        Args:
+            comments: List of comments to check
+
+        Returns:
+            Tuple of (error_messages, comment_ids_set)
+        """
+        errors = []
+        comment_ids = set()
+
+        for comment in comments:
+            if comment.id in comment_ids:
+                errors.append(f"Duplicate comment ID: {comment.id}")
+            comment_ids.add(comment.id)
+
+        return errors, comment_ids
+
+    @staticmethod
+    def _validate_reply_references(
+        comments: list[Comment], comment_ids: set[str]
+    ) -> list[str]:
+        """Validate in_reply_to references point to existing comments.
+
+        Args:
+            comments: List of comments
+            comment_ids: Set of known comment IDs
+
+        Returns:
+            List of reference validation errors
+        """
+        errors = []
+
+        for comment in comments:
+            if (
+                comment.in_reply_to is not None
+                and comment.in_reply_to not in comment_ids
+            ):
+                if comment_ids:
+                    errors.append(
+                        f"Comment {comment.id}: in_reply_to references non-existent comment {comment.in_reply_to}"
+                    )
+
+        return errors
+
+    @staticmethod
+    def _validate_circular_references(comments: list[Comment]) -> list[str]:
+        """Validate for circular references in reply chain.
+
+        Args:
+            comments: List of comments
+
+        Returns:
+            List of circular reference errors
+        """
+        errors = []
+
+        for comment in comments:
+            if comment.in_reply_to is None:
+                continue
+
+            chain = set()
+            current_id = comment.in_reply_to
+            max_depth = len(comments) + 1
+
+            while current_id is not None and max_depth > 0:
+                if current_id == comment.id:
+                    errors.append(f"Comment {comment.id}: circular reference detected")
+                    break
+                if current_id in chain:
+                    break
+                chain.add(current_id)
+                current_comment = next(
+                    (c for c in comments if c.id == current_id), None
+                )
+                current_id = current_comment.in_reply_to if current_comment else None
+                max_depth -= 1
+
+        return errors
+
     def validate_comment_thread(comments: list[Comment]) -> list[str]:
         """Validate comment threads for errors.
 
@@ -103,67 +210,23 @@ class CommentService:
             List of error messages (empty if valid)
         """
         errors = []
-        comment_ids = set()
 
+        # Check for duplicate IDs
+        dup_errors, comment_ids = CommentService._validate_duplicate_ids(comments)
+        errors.extend(dup_errors)
+
+        # Check field validity
         for comment in comments:
-            # Check for duplicate IDs
-            if comment.id in comment_ids:
-                errors.append(f"Duplicate comment ID: {comment.id}")
-            comment_ids.add(comment.id)
+            field_errors = CommentService._validate_comment_field(comment)
+            errors.extend(field_errors)
 
-            # Check for invalid datetime fields
-            if not isinstance(comment.created_at, datetime):
-                errors.append(
-                    f"Comment {comment.id}: created_at is not a valid datetime"
-                )
-            if not isinstance(comment.updated_at, datetime):
-                errors.append(
-                    f"Comment {comment.id}: updated_at is not a valid datetime"
-                )
-
-            # Check for empty author
-            if not comment.author or not comment.author.strip():
-                errors.append(f"Comment {comment.id}: author cannot be empty")
-
-            # Check for empty body
-            if not comment.body or not comment.body.strip():
-                errors.append(f"Comment {comment.id}: body cannot be empty")
-
-            # Validate in_reply_to reference
-            if (
-                comment.in_reply_to is not None
-                and comment.in_reply_to not in comment_ids
-            ):
-                # Only warn if the comment isn't the first one and has an invalid reply-to
-                if comment_ids:  # Only if we've seen other comments
-                    errors.append(
-                        f"Comment {comment.id}: in_reply_to references non-existent comment {comment.in_reply_to}"
-                    )
+        # Check reply references
+        ref_errors = CommentService._validate_reply_references(comments, comment_ids)
+        errors.extend(ref_errors)
 
         # Check for circular references
-        for comment in comments:
-            if comment.in_reply_to is None:
-                continue
-
-            chain = set()
-            current_id = comment.in_reply_to  # Start with what this comment replies to
-            max_depth = len(comments) + 1  # Prevent infinite loops
-
-            while current_id is not None and max_depth > 0:
-                if current_id == comment.id:
-                    # Found circular reference back to original
-                    errors.append(f"Comment {comment.id}: circular reference detected")
-                    break
-                if current_id in chain:
-                    # Found a cycle not including the original
-                    break
-                chain.add(current_id)
-                # Find what the current comment replies to
-                current_comment = next(
-                    (c for c in comments if c.id == current_id), None
-                )
-                current_id = current_comment.in_reply_to if current_comment else None
-                max_depth -= 1
+        circular_errors = CommentService._validate_circular_references(comments)
+        errors.extend(circular_errors)
 
         return errors
 

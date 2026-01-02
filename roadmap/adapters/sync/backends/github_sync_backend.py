@@ -4,9 +4,11 @@ This module provides the GitHub API backend for syncing roadmap issues
 with GitHub repositories. It implements the SyncBackendInterface protocol.
 """
 
-from typing import Any
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from structlog import get_logger
 
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces import (
@@ -17,6 +19,10 @@ from roadmap.core.services.github_conflict_detector import GitHubConflictDetecto
 from roadmap.core.services.github_issue_client import GitHubIssueClient
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
 from roadmap.infrastructure.core import RoadmapCore
+
+logger = get_logger()
+
+T = TypeVar("T")
 
 
 class GitHubSyncBackend:
@@ -52,29 +58,45 @@ class GitHubSyncBackend:
 
         # Initialize GitHub client if token is provided, otherwise defer to authenticate()
         token = config.get("token")
-        if token:
-            try:
-                self.github_client = GitHubIssueClient(token)
-            except Exception:
-                # Token validation error - will fail at authenticate time
-                self.github_client = None
-        else:
-            self.github_client = None
+        self.github_client = self._safe_init(
+            lambda: GitHubIssueClient(token) if token else None,
+            "GitHubIssueClient",
+        )
 
         # Initialize metadata service if available
-        try:
-            self.metadata_service = SyncMetadataService(core)
-        except Exception:
-            self.metadata_service = None
+        self.metadata_service = self._safe_init(
+            lambda: SyncMetadataService(core),
+            "SyncMetadataService",
+        )
 
         # Initialize conflict detector if available
         self.conflict_detector = None
         if hasattr(core, "github_service") and core.github_service is not None:
-            try:
-                self.conflict_detector = GitHubConflictDetector(core.github_service)
-            except Exception:
-                # GitHub service not properly initialized - will fail at sync time
-                self.conflict_detector = None
+            self.conflict_detector = self._safe_init(
+                lambda: GitHubConflictDetector(core.github_service),
+                "GitHubConflictDetector",
+            )
+
+    def _safe_init(self, factory: Callable[[], T], name: str) -> T | None:
+        """Safely initialize a component, returning None on failure.
+
+        Args:
+            factory: Callable that returns the initialized component
+            name: Component name for logging
+
+        Returns:
+            Initialized component or None if initialization fails
+        """
+        try:
+            return factory()
+        except Exception as e:
+            logger.warning(
+                "initialization_failed",
+                component=name,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return None
 
     def authenticate(self) -> bool:
         """Verify credentials and remote connectivity.
@@ -83,10 +105,6 @@ class GitHubSyncBackend:
             True if authentication succeeds (token valid and repo accessible),
             False otherwise (no exceptions raised).
         """
-        from structlog import get_logger
-
-        logger = get_logger()
-
         try:
             token = self.config.get("token")
             if not token:

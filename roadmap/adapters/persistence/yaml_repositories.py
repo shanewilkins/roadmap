@@ -221,128 +221,140 @@ class YAMLIssueRepository(IssueRepository):
             logger.debug("issue_not_found_for_update", issue_id=issue_id)
             return None
 
-        # Track old milestone and filename to handle file moves and renames
+        # Track old state before modification
         old_milestone = issue.milestone
-        old_filename = issue.filename  # Capture before title/other changes
+        old_filename = issue.filename
+
         logger.debug(
             "updating_issue",
             issue_id=issue_id,
             old_milestone=old_milestone,
-            old_filename=old_filename,
             update_fields=list(updates.keys()),
         )
 
-        # Update fields
+        # Apply updates to issue object
         for key, value in updates.items():
             if hasattr(issue, key):
                 setattr(issue, key, value)
 
-        # If milestone changed, move the file from old location to new location
+        # Handle file system changes based on what was updated
         if "milestone" in updates and old_milestone != issue.milestone:
-            # Determine old location
-            if old_milestone and old_milestone != "backlog":
-                old_path = self.issues_dir / old_milestone / issue.filename
-            else:
-                old_path = self.issues_dir / "backlog" / issue.filename
+            self._handle_milestone_change(issue, old_milestone)
+        elif old_filename != issue.filename:
+            self._handle_filename_change(issue, old_filename)
 
-            # Determine new location
-            if issue.milestone and issue.milestone != "backlog":
-                new_path = self.issues_dir / issue.milestone / issue.filename
-            else:
-                new_path = self.issues_dir / "backlog" / issue.filename
-
-            # Create new directory if needed
-            new_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Move the file if it exists at old location
-            if old_path.exists():
-                try:
-                    shutil.move(str(old_path), str(new_path))
-                except (OSError, PermissionError):
-                    # If move fails, just save to new location
-                    IssueParser.save_issue_file(issue, new_path)
-            else:
-                # If file doesn't exist at old location, just save to new location
-                IssueParser.save_issue_file(issue, new_path)
-
-            # Clean up any other copies that might exist in other directories
-            # This handles migration from old file locations
-            for subdir in self.issues_dir.glob("*"):
-                if subdir.is_dir() and subdir != new_path.parent:
-                    stale_path = subdir / issue.filename
-                    if stale_path.exists():
-                        try:
-                            stale_path.unlink()
-                        except (OSError, PermissionError):
-                            pass
-
-            # Set the file_path on the issue object so it reflects the new location
-            issue.file_path = str(new_path)
-            logger.info(
-                "issue_milestone_updated",
-                issue_id=issue_id,
-                old_milestone=old_milestone,
-                new_milestone=issue.milestone,
-                old_path=str(old_path) if old_path.exists() else None,
-                new_path=str(new_path),
-            )
-            return issue
-
-        # For non-milestone updates, handle filename changes (e.g., when title is updated)
-        logger.debug(
-            "issue_field_updated_without_milestone_change",
-            issue_id=issue_id,
-            old_filename=old_filename,
-            new_filename=issue.filename,
-            update_fields=list(updates.keys()),
-        )
-
-        # Determine the current directory
-        if issue.milestone and issue.milestone != "backlog":
-            target_dir = self.issues_dir / issue.milestone
-        else:
-            target_dir = self.issues_dir / "backlog"
-
-        # If filename changed (e.g., due to title change), clean up the old file
-        if old_filename != issue.filename:
-            old_file_path = target_dir / old_filename
-            if old_file_path.exists():
-                try:
-                    old_file_path.unlink()
-                    logger.debug(
-                        "removed_old_filename_after_update",
-                        issue_id=issue_id,
-                        old_filename=old_filename,
-                        removed_path=str(old_file_path),
-                    )
-                except (OSError, PermissionError) as e:
-                    logger.warning(
-                        "failed_to_remove_old_filename_after_update",
-                        issue_id=issue_id,
-                        old_filename=old_filename,
-                        path=str(old_file_path),
-                        error=str(e),
-                    )
-
-            # Also check in other directories for the old file (in case of a race condition)
-            for subdir in self.issues_dir.glob("*"):
-                if subdir.is_dir():
-                    stale_path = subdir / old_filename
-                    if stale_path.exists():
-                        try:
-                            stale_path.unlink()
-                            logger.debug(
-                                "removed_stale_old_filename_after_update",
-                                issue_id=issue_id,
-                                old_filename=old_filename,
-                                removed_path=str(stale_path),
-                            )
-                        except (OSError, PermissionError):
-                            pass
-
-        # Save the updated issue with its new filename
+        # Save and return updated issue
         self.save(issue)
         return issue
+
+    def _handle_milestone_change(self, issue: Issue, old_milestone: str) -> None:
+        """Handle file move when issue's milestone changes.
+
+        Args:
+            issue: Updated issue object
+            old_milestone: Previous milestone value
+        """
+        old_path = self._get_issue_path(old_milestone, issue.filename)
+        new_path = self._get_issue_path(issue.milestone, issue.filename)
+
+        # Create destination directory if needed
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Move file to new location
+        if old_path.exists():
+            try:
+                shutil.move(str(old_path), str(new_path))
+            except (OSError, PermissionError):
+                # If move fails, save to new location directly
+                IssueParser.save_issue_file(issue, new_path)
+        else:
+            # File doesn't exist at old location, save to new location
+            IssueParser.save_issue_file(issue, new_path)
+
+        # Clean up stale copies from other directories
+        self._cleanup_stale_files(issue.filename, new_path.parent)
+
+        # Update the issue's file path
+        issue.file_path = str(new_path)
+
+        logger.info(
+            "issue_milestone_updated",
+            issue_id=issue.id,
+            old_milestone=old_milestone,
+            new_milestone=issue.milestone,
+            new_path=str(new_path),
+        )
+
+    def _handle_filename_change(self, issue: Issue, old_filename: str) -> None:
+        """Handle file removal when issue's filename changes.
+
+        Args:
+            issue: Updated issue object
+            old_filename: Previous filename
+        """
+        # Get current directory for issue
+        target_dir = self._get_milestone_dir(issue.milestone)
+
+        # Remove old file from target directory
+        old_path = target_dir / old_filename
+        if old_path.exists():
+            try:
+                old_path.unlink()
+                logger.debug(
+                    "removed_old_filename_after_update",
+                    issue_id=issue.id,
+                    old_filename=old_filename,
+                )
+            except (OSError, PermissionError) as e:
+                logger.warning(
+                    "failed_to_remove_old_filename",
+                    issue_id=issue.id,
+                    error=str(e),
+                )
+
+        # Also check for stale copies in other directories
+        self._cleanup_stale_files(old_filename, target_dir)
+
+    def _get_issue_path(self, milestone: str | None, filename: str) -> Path:
+        """Get the full path for an issue file.
+
+        Args:
+            milestone: Issue milestone (None or "backlog" means backlog dir)
+            filename: Issue filename
+
+        Returns:
+            Full path to issue file
+        """
+        return self._get_milestone_dir(milestone) / filename
+
+    def _get_milestone_dir(self, milestone: str | None) -> Path:
+        """Get directory for a milestone.
+
+        Args:
+            milestone: Milestone name (None or "backlog" means backlog)
+
+        Returns:
+            Directory path
+        """
+        if milestone and milestone != "backlog":
+            return self.issues_dir / milestone
+        return self.issues_dir / "backlog"
+
+    def _cleanup_stale_files(self, filename: str, exclude_dir: Path) -> None:
+        """Remove stale copies of a file from other directories.
+
+        Args:
+            filename: Filename to search for
+            exclude_dir: Directory to exclude from cleanup
+        """
+        for subdir in self.issues_dir.glob("*"):
+            if subdir.is_dir() and subdir != exclude_dir:
+                stale_path = subdir / filename
+                if stale_path.exists():
+                    try:
+                        stale_path.unlink()
+                    except (OSError, PermissionError):
+                        pass
 
     def delete(self, issue_id: str) -> bool:
         """Delete an issue.

@@ -105,6 +105,112 @@ class BaseRestore(ABC):
             return True, f"already exists in active {self.entity_type.value}s"
         return False, None
 
+    def _validate_files_for_restore(
+        self, files_to_restore: list[Path]
+    ) -> tuple[list[Path], list[tuple[Path, str | None]]]:
+        """Validate files before restoration.
+
+        Args:
+            files_to_restore: List of files to validate
+
+        Returns:
+            Tuple of (valid_files, invalid_files_with_reasons)
+        """
+        invalid_files = []
+
+        for file_path in files_to_restore:
+            is_valid, error_msg = self.validate_entity_before_restore(file_path)
+            if not is_valid:
+                invalid_files.append((file_path, error_msg))
+
+        valid_files = [
+            f for f in files_to_restore if f not in [f[0] for f in invalid_files]
+        ]
+
+        return valid_files, invalid_files
+
+    def _check_files_for_conflicts(
+        self, files_to_restore: list[Path]
+    ) -> tuple[list[Path], list[tuple[Path, str | None]]]:
+        """Check files for conflicts with active entities.
+
+        Args:
+            files_to_restore: List of files to check
+
+        Returns:
+            Tuple of (non_conflicting_files, conflicting_files_with_reasons)
+        """
+        conflicts = []
+
+        for file_path in files_to_restore:
+            has_conflict, conflict_desc = self.check_conflict(file_path)
+            if has_conflict:
+                conflicts.append((file_path, conflict_desc))
+
+        non_conflicting = [
+            f for f in files_to_restore if f not in [f[0] for f in conflicts]
+        ]
+
+        return non_conflicting, conflicts
+
+    def _perform_file_restore(
+        self, files_to_restore: list[Path]
+    ) -> tuple[list[Path], int]:
+        """Move files from archive to active directory.
+
+        Args:
+            files_to_restore: List of files to restore
+
+        Returns:
+            Tuple of (successfully_restored_files, failed_count)
+        """
+        active_dir = get_active_dir(self.entity_type)
+        active_dir.mkdir(parents=True, exist_ok=True)
+
+        restored_files = []
+        failed_count = 0
+
+        for archive_file in files_to_restore:
+            try:
+                active_file = active_dir / archive_file.name
+                active_file.write_text(archive_file.read_text())
+                archive_file.unlink()
+                restored_files.append(active_file)
+            except Exception as e:
+                self.console.print(
+                    f"⚠️  Failed to restore {archive_file.name}: {str(e)}",
+                    style="yellow",
+                )
+                failed_count += 1
+
+        return restored_files, failed_count
+
+    def _display_validation_errors(
+        self, invalid_files: list[tuple[Path, str | None]]
+    ) -> None:
+        """Display validation errors to user.
+
+        Args:
+            invalid_files: List of files with validation errors
+        """
+        for file_path, error_msg in invalid_files:
+            self.console.print(
+                f"⚠️  Cannot restore {file_path.name}: {error_msg}",
+                style="yellow",
+            )
+
+    def _display_conflicts(self, conflicts: list[tuple[Path, str | None]]) -> None:
+        """Display conflict errors to user.
+
+        Args:
+            conflicts: List of conflicting files
+        """
+        for file_path, conflict_desc in conflicts:
+            self.console.print(
+                f"⚠️  Cannot restore {file_path.name}: {conflict_desc}",
+                style="yellow",
+            )
+
     def execute(self, entity_id: str | None = None, **kwargs) -> bool:
         """Execute restore operation (Template Method).
 
@@ -136,67 +242,25 @@ class BaseRestore(ABC):
                 return False
 
             # Step 2: Validate files
-            invalid_files = []
-            for file_path in files_to_restore:
-                is_valid, error_msg = self.validate_entity_before_restore(file_path)
-                if not is_valid:
-                    invalid_files.append((file_path, error_msg))
-
+            files_to_restore, invalid_files = self._validate_files_for_restore(
+                files_to_restore
+            )
             if invalid_files:
-                for file_path, error_msg in invalid_files:
-                    self.console.print(
-                        f"⚠️  Cannot restore {file_path.name}: {error_msg}",
-                        style="yellow",
-                    )
-                # Continue with valid files
-                files_to_restore = [
-                    f
-                    for f in files_to_restore
-                    if f not in [f[0] for f in invalid_files]
-                ]
+                self._display_validation_errors(invalid_files)
                 if not files_to_restore:
                     return False
 
             # Step 3: Check for conflicts
-            conflicts = []
-            for file_path in files_to_restore:
-                has_conflict, conflict_desc = self.check_conflict(file_path)
-                if has_conflict:
-                    conflicts.append((file_path, conflict_desc))
-
+            files_to_restore, conflicts = self._check_files_for_conflicts(
+                files_to_restore
+            )
             if conflicts:
-                for file_path, conflict_desc in conflicts:
-                    self.console.print(
-                        f"⚠️  Cannot restore {file_path.name}: {conflict_desc}",
-                        style="yellow",
-                    )
-                # Continue with non-conflicting files
-                files_to_restore = [
-                    f for f in files_to_restore if f not in [f[0] for f in conflicts]
-                ]
+                self._display_conflicts(conflicts)
                 if not files_to_restore:
                     return False
 
             # Step 4: Restore files
-            active_dir = get_active_dir(self.entity_type)
-            active_dir.mkdir(parents=True, exist_ok=True)
-
-            restored_files = []
-            failed_count = 0
-
-            for archive_file in files_to_restore:
-                try:
-                    active_file = active_dir / archive_file.name
-                    active_file.write_text(archive_file.read_text())
-                    archive_file.unlink()
-                    restored_files.append(active_file)
-
-                except Exception as e:
-                    self.console.print(
-                        f"⚠️  Failed to restore {archive_file.name}: {str(e)}",
-                        style="yellow",
-                    )
-                    failed_count += 1
+            restored_files, failed_count = self._perform_file_restore(files_to_restore)
 
             # Step 5: Update state via hook
             self.post_restore_hook(restored_files, **kwargs)
