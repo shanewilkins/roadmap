@@ -1,15 +1,15 @@
 ---
-id: ba7b870b
-title: Build developer SDK and integration platform
+id: c29e126d
+title: Complete production deployment and security certification
 priority: medium
 status: todo
 issue_type: other
-milestone: future-post-v10
+milestone: null
 labels: []
-github_issue: 32
-created: '2025-10-14T15:46:35.942526+00:00'
-updated: '2025-12-04T23:37:46.476050+00:00'
-assignee: ''
+github_issue: 21
+created: '2025-10-14T15:46:46.825403+00:00'
+updated: '2026-01-02T19:20:52.092563+00:00'
+assignee: shanewilkins
 estimated_hours: 24.0
 due_date: null
 depends_on: []
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Build developer SDK and integration platform
+# Complete production deployment and security certification
 
 ## Description
 

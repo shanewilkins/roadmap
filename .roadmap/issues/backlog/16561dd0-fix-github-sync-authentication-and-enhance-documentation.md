@@ -1,16 +1,16 @@
 ---
-id: fa568786
-title: Build enterprise SSO and role-based access control
-priority: high
+id: 16561dd0
+title: Fix GitHub sync authentication and enhance documentation
+priority: medium
 status: todo
 issue_type: other
-milestone: future-post-v10
+milestone: null
 labels: []
-github_issue: 19
-created: '2025-10-14T15:46:20.506536+00:00'
-updated: '2025-12-04T23:37:45.132291+00:00'
-assignee: shanewilkins
-estimated_hours: 24.0
+github_issue: null
+created: '2026-01-02T19:20:54.343126+00:00'
+updated: '2026-01-02T19:20:54.343127+00:00'
+assignee: null
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Build enterprise SSO and role-based access control
+# Fix GitHub sync authentication and enhance documentation
 
 ## Description
 
@@ -37,7 +37,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

@@ -295,8 +295,9 @@ class GitHubSyncBackend:
             True if push succeeds, False if error.
 
         Notes:
-            - Creates new GitHub issue if not linked
-            - Updates existing GitHub issue if linked
+            - Creates new GitHub issue if not linked (no github_issue field)
+            - Updates existing GitHub issue if linked (has github_issue field)
+            - Stores the GitHub issue number for future syncs
         """
         from structlog import get_logger
 
@@ -305,26 +306,90 @@ class GitHubSyncBackend:
         try:
             owner = self.config.get("owner")
             repo = self.config.get("repo")
+            token = self.config.get("token")
 
-            if not owner or not repo:
+            if not owner or not repo or not token:
                 return False
 
             logger.debug("github_push_issue_started", issue_id=local_issue.id)
 
-            # For now, return True to indicate success
-            # Full GitHub API implementation will be done in a separate phase
-            # Actual implementation would:
-            # 1. Get repository object via GitHub client
-            # 2. Check if issue is linked (has github_issue_number)
-            # 3. Create new issue or update existing one
-            # 4. Store github_issue_number for future syncs
+            from roadmap.adapters.github.github import GitHubClient
 
-            logger.info("github_push_issue_completed", issue_id=local_issue.id)
-            return True
+            client = GitHubClient(token=token, owner=owner, repo=repo)
+
+            # Check if this issue is already linked to a GitHub issue
+            if local_issue.github_issue:
+                # Update existing GitHub issue
+                github_issue_number = int(local_issue.github_issue)
+
+                url = f"https://api.github.com/repos/{owner}/{repo}/issues/{github_issue_number}"
+                payload = {
+                    "title": local_issue.title,
+                    "body": local_issue.content or "",
+                    "state": "closed"
+                    if local_issue.status.value == "closed"
+                    else "open",
+                    # Labels: convert local labels to GitHub label names
+                    "labels": local_issue.labels,
+                    # Milestone: GitHub expects milestone number, but we only have title
+                    # For now, skip milestone updates on push (would need milestone ID)
+                }
+
+                response = client.session.patch(url, json=payload)
+                response.raise_for_status()
+
+                logger.info(
+                    "github_push_issue_updated",
+                    issue_id=local_issue.id,
+                    github_number=github_issue_number,
+                )
+                return True
+
+            else:
+                # Create new GitHub issue
+                url = f"https://api.github.com/repos/{owner}/{repo}/issues"
+                payload = {
+                    "title": local_issue.title,
+                    "body": local_issue.content or "",
+                    # Labels: convert local labels to GitHub label names
+                    "labels": local_issue.labels,
+                    # Milestone: GitHub expects milestone number, but we only have title
+                    # For now, skip milestone on creation (would need milestone ID)
+                }
+
+                response = client.session.post(url, json=payload)
+                response.raise_for_status()
+
+                github_response = response.json()
+                github_issue_number = github_response.get("number")
+
+                if github_issue_number:
+                    # Store the GitHub issue number on the local issue for future syncs
+                    from roadmap.adapters.persistence.yaml_repositories import (
+                        YAMLIssueRepository,
+                    )
+
+                    if hasattr(self.core, "issue_service") and hasattr(
+                        self.core.issue_service, "repository"
+                    ):
+                        repo_inst = self.core.issue_service.repository
+                        if isinstance(repo_inst, YAMLIssueRepository):
+                            local_issue.github_issue = github_issue_number
+                            repo_inst.save(local_issue)
+
+                logger.info(
+                    "github_push_issue_created",
+                    issue_id=local_issue.id,
+                    github_number=github_issue_number,
+                )
+                return True
 
         except Exception as e:
             logger.warning(
-                "github_push_issue_failed", issue_id=local_issue.id, error=str(e)
+                "github_push_issue_failed",
+                issue_id=local_issue.id,
+                error=str(e),
+                exc_info=True,
             )
             return False
 
@@ -380,26 +445,32 @@ class GitHubSyncBackend:
         report = SyncReport()
         return report
 
-    def pull_issue(self, remote_issue: dict[str, Any]) -> bool:
+    def pull_issue(self, issue_id: str) -> bool:
         """Pull a single remote GitHub issue to local.
 
         Args:
-            remote_issue: Remote issue dict with at least 'id' and 'title' keys
+            issue_id: The remote issue ID to pull
 
         Returns:
             True if pull succeeds, False if error.
 
         Notes:
-            - Converts remote issue dict to local Issue object
-            - Saves to local .roadmap/issues/ directory
-            - Updates the local file with remote data
+            - Fetches the remote issue and updates local
+            - Should not raise exceptions; return False on failure
         """
         from structlog import get_logger
 
         logger = get_logger()
 
         try:
-            issue_id = remote_issue.get("id")
+            # Fetch the remote issue by ID
+            remote_issues = self.get_issues()
+            remote_issue = remote_issues.get(issue_id)
+
+            if not remote_issue:
+                logger.warning("pull_issue_not_found_remote", issue_id=issue_id)
+                return False
+
             title = remote_issue.get("title", "")
 
             if not issue_id or not title:
@@ -407,26 +478,45 @@ class GitHubSyncBackend:
                     "pull_issue_missing_id_or_title", remote_issue=remote_issue
                 )
                 return False
-
             logger.debug("github_pull_issue_started", issue_id=issue_id)
 
             # Convert GitHub remote dict to local Issue object
             issue = self._convert_github_to_issue(issue_id, remote_issue)
 
-            # Check if issue with same title already exists locally
-            # This prevents duplicate creation when syncing
+            # Extract GitHub issue number from remote issue
+            github_issue_number = remote_issue.get("number")
+
+            # Check if issue with same GitHub issue number exists locally
+            # This is the primary match - if we've synced this GitHub issue before, use existing
             existing_issues = self.core.issues.list()
             matching_local_issue = None
+
+            # First priority: match by github_issue_number (already synced)
             for local_issue in existing_issues:
-                if local_issue.title.lower() == title.lower():
+                if (
+                    local_issue.github_issue is not None
+                    and int(local_issue.github_issue) == github_issue_number
+                ):
                     matching_local_issue = local_issue
                     logger.debug(
-                        "github_pull_found_matching_local_issue",
-                        github_id=issue_id,
+                        "github_pull_found_existing_by_github_number",
+                        github_number=github_issue_number,
                         local_id=local_issue.id,
-                        title=title,
                     )
                     break
+
+            # Second priority: match by title (first-time sync of existing local issue)
+            if not matching_local_issue:
+                for local_issue in existing_issues:
+                    if local_issue.title.lower() == title.lower():
+                        matching_local_issue = local_issue
+                        logger.debug(
+                            "github_pull_found_matching_by_title",
+                            github_number=github_issue_number,
+                            local_id=local_issue.id,
+                            title=title,
+                        )
+                        break
 
             # Update/create locally using the coordinator
             # Extract only the fields that update_issue accepts
@@ -440,11 +530,30 @@ class GitHubSyncBackend:
             }
 
             if matching_local_issue:
-                # Update existing issue that was matched by title
+                # Update existing issue and store GitHub issue number
                 self.core.issues.update(matching_local_issue.id, **updates)
+
+                # Also update the github_issue field to track this link for future syncs
+                # Use raw file update to add the github_issue field
+                from roadmap.adapters.persistence.yaml_repositories import (
+                    YAMLIssueRepository,
+                )
+
+                # Get the issue service to access the repository
+                if hasattr(self.core, "issue_service") and hasattr(
+                    self.core.issue_service, "repository"
+                ):
+                    repo = self.core.issue_service.repository
+                    if isinstance(repo, YAMLIssueRepository):
+                        # Load the issue, update github_issue field, save
+                        updated_issue = self.core.issues.get(matching_local_issue.id)
+                        if updated_issue:
+                            updated_issue.github_issue = github_issue_number
+                            repo.save(updated_issue)
+
                 logger.debug(
                     "github_pull_issue_updated",
-                    issue_id=issue_id,
+                    github_number=github_issue_number,
                     local_id=matching_local_issue.id,
                 )
             elif self.core.issues.get(issue_id):
@@ -452,8 +561,8 @@ class GitHubSyncBackend:
                 self.core.issues.update(issue_id, **updates)
                 logger.debug("github_pull_issue_updated", issue_id=issue_id)
             else:
-                # Create new issue
-                self.core.issues.create(
+                # Create new issue with github_issue number
+                created_issue = self.core.issues.create(
                     title=issue.title,
                     status=issue.status,
                     priority=issue.priority,
@@ -463,13 +572,31 @@ class GitHubSyncBackend:
                     labels=issue.labels,
                     estimated_hours=issue.estimated_hours,
                 )
-                logger.debug("github_pull_issue_created", issue_id=issue_id)
+
+                # Store GitHub issue number for future syncs
+                if created_issue:
+                    from roadmap.adapters.persistence.yaml_repositories import (
+                        YAMLIssueRepository,
+                    )
+
+                    if hasattr(self.core, "issue_service") and hasattr(
+                        self.core.issue_service, "repository"
+                    ):
+                        repo = self.core.issue_service.repository
+                        if isinstance(repo, YAMLIssueRepository):
+                            created_issue.github_issue = github_issue_number
+                            repo.save(created_issue)
+
+                logger.debug(
+                    "github_pull_issue_created",
+                    github_number=github_issue_number,
+                    local_id=created_issue.id if created_issue else "unknown",
+                )
 
             logger.info("github_pull_issue_completed", issue_id=issue_id)
             return True
 
         except Exception as e:
-            issue_id = remote_issue.get("id", "unknown")
             logger.warning(
                 "github_pull_issue_failed",
                 issue_id=issue_id,

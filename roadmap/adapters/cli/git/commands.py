@@ -1,6 +1,7 @@
 """Git integration and workflow commands."""
 
 import sys
+from typing import Literal
 
 import click
 import structlog
@@ -436,7 +437,7 @@ def sync_git(
 
         # Determine backend to use
         if backend:
-            backend_type = backend
+            backend_type: Literal["github", "git"] = backend  # type: ignore[assignment]
         else:
             backend_type = detect_backend_from_config(config)
 

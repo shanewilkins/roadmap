@@ -1,16 +1,22 @@
 ---
-id: d121eded
-title: Project template customization and scaffolding
+id: 0839a0e9
+title: GitHub sync not preserving milestone relationships for existing issues
 priority: medium
 status: todo
 issue_type: other
-milestone: future-post-v10
-labels: []
-github_issue: 35
-created: '2025-10-14T14:18:34.926585+00:00'
-updated: '2025-12-04T23:37:51.900174+00:00'
-assignee: ''
-estimated_hours: 3.0
+milestone: v.0.2.0
+labels:
+- bug
+- priority:high
+- status:done
+- github-integration
+- sync
+- milestone-tracking
+github_issue: null
+created: '2026-01-02T19:20:51.957433+00:00'
+updated: '2026-01-02T19:20:51.957434+00:00'
+assignee: shanewilkins
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -26,7 +32,7 @@ completed_date: null
 comments: []
 ---
 
-# Project template customization and scaffolding
+# GitHub sync not preserving milestone relationships for existing issues
 
 ## Description
 
@@ -37,7 +43,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

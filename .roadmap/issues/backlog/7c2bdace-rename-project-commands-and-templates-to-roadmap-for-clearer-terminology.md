@@ -1,16 +1,18 @@
 ---
-id: 78c91f46
-title: Team workload analysis and capacity planning
+id: 7c2bdace
+title: Rename project commands and templates to roadmap for clearer terminology
 priority: medium
 status: todo
 issue_type: other
-milestone: future-post-v10
-labels: []
-github_issue: 31
-created: '2025-10-14T14:18:29.392002+00:00'
-updated: '2025-12-04T23:37:50.450960+00:00'
-assignee: ''
-estimated_hours: 4.0
+milestone: null
+labels:
+- priority:medium
+- status:done
+github_issue: null
+created: '2026-01-02T19:20:51.671790+00:00'
+updated: '2026-01-02T19:20:51.671792+00:00'
+assignee: null
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -26,7 +28,7 @@ completed_date: null
 comments: []
 ---
 
-# Team workload analysis and capacity planning
+# Rename project commands and templates to roadmap for clearer terminology
 
 ## Description
 
@@ -37,7 +39,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

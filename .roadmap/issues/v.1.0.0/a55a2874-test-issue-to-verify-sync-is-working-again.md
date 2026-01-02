@@ -1,16 +1,16 @@
 ---
-id: 8d746af1
-title: Advanced reporting and analytics engine
+id: a55a2874
+title: TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!
 priority: medium
 status: todo
 issue_type: other
-milestone: future-post-v10
+milestone: v.1.0.0
 labels: []
-github_issue: 28
-created: '2025-10-14T14:18:13.540775+00:00'
-updated: '2025-12-04T23:37:47.810254+00:00'
-assignee: ''
-estimated_hours: 6.0
+github_issue: null
+created: '2026-01-02T19:20:50.938842+00:00'
+updated: '2026-01-02T19:20:50.938846+00:00'
+assignee: shanewilkins
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -26,7 +26,7 @@ completed_date: null
 comments: []
 ---
 
-# Advanced reporting and analytics engine
+# TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!
 
 ## Description
 
@@ -37,7 +37,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

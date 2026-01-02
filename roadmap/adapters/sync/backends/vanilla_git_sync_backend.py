@@ -68,13 +68,13 @@ class VanillaGitSyncBackend:
         """
         return {}
 
-    def push_issue(self, _local_issue: Issue) -> bool:
+    def push_issue(self, local_issue: Issue) -> bool:
         """No-op: Push a single issue.
 
         For self-hosting, the user is responsible for git operations.
 
         Args:
-            _local_issue: The Issue object (unused)
+            local_issue: The Issue object (unused)
 
         Returns:
             True (no-op succeeds)
@@ -117,27 +117,27 @@ class VanillaGitSyncBackend:
         """
         return True
 
-    def get_conflict_resolution_options(self, _conflict: SyncConflict) -> list[str]:
+    def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Get available resolution strategies.
 
         For self-hosting, no conflict resolution options (no remote to conflict with).
 
         Args:
-            _conflict: The SyncConflict (unused)
+            conflict: The SyncConflict (unused)
 
         Returns:
             Empty list (no remote database)
         """
         return []
 
-    def resolve_conflict(self, _conflict: SyncConflict, _resolution: str) -> bool:
+    def resolve_conflict(self, conflict: SyncConflict, resolution: str) -> bool:
         """No-op: Resolve a conflict.
 
         For self-hosting, no conflicts can occur (no remote database).
 
         Args:
-            _conflict: The SyncConflict (unused)
-            _resolution: The resolution strategy (unused)
+            conflict: The SyncConflict (unused)
+            resolution: The resolution strategy (unused)
 
         Returns:
             True (no-op succeeds)

@@ -135,14 +135,14 @@ def sync_github(
     _display_sync_summary(console_inst, apply_report)
 
 
-def _load_github_config(roadmap_root: Path) -> dict[str, str] | None:
+def _load_github_config(roadmap_root: Path) -> dict[str, str | None] | None:
     """Load GitHub configuration.
 
     Args:
         roadmap_root: Root path of roadmap
 
     Returns:
-        GitHub config dict or None if not configured
+        GitHub config dict (with str | None values) or None if not configured
     """
     gh_service = GitHubIntegrationService(
         roadmap_root, roadmap_root / ".github/config.json"

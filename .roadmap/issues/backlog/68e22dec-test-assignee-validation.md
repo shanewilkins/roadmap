@@ -1,16 +1,18 @@
 ---
-id: 327cfe35
-title: Advanced branch management and merging strategies
+id: 68e22dec
+title: Test assignee validation
 priority: medium
 status: todo
 issue_type: other
-milestone: future-post-v10
-labels: []
-github_issue: 29
-created: '2025-10-14T14:17:51.110415+00:00'
-updated: '2025-12-04T23:37:53.218547+00:00'
-assignee: ''
-estimated_hours: 4.0
+milestone: null
+labels:
+- priority:low
+- status:todo
+github_issue: null
+created: '2026-01-02T19:20:51.102968+00:00'
+updated: '2026-01-02T19:20:51.102969+00:00'
+assignee: null
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -26,7 +28,7 @@ completed_date: null
 comments: []
 ---
 
-# Advanced branch management and merging strategies
+# Test assignee validation
 
 ## Description
 
@@ -37,7 +39,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

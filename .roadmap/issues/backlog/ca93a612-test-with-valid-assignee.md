@@ -1,16 +1,18 @@
 ---
-id: 74312cf3
-title: Timeline and Gantt chart visualization
+id: ca93a612
+title: Test with valid assignee
 priority: medium
 status: todo
 issue_type: other
-milestone: future-post-v10
-labels: []
-github_issue: 30
-created: '2025-10-14T14:18:18.947332+00:00'
-updated: '2025-12-04T23:37:49.129030+00:00'
-assignee: ''
-estimated_hours: 5.0
+milestone: null
+labels:
+- priority:low
+- status:todo
+github_issue: null
+created: '2026-01-02T19:20:50.981417+00:00'
+updated: '2026-01-02T19:20:50.981418+00:00'
+assignee: null
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -26,7 +28,7 @@ completed_date: null
 comments: []
 ---
 
-# Timeline and Gantt chart visualization
+# Test with valid assignee
 
 ## Description
 
@@ -37,7 +39,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins
