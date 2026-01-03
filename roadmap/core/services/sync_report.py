@@ -19,6 +19,7 @@ class IssueChange:
     github_changes: dict[str, Any] = field(default_factory=dict)
     has_conflict: bool = False
     last_sync_time: datetime | None = None
+    flagged_conflicts: dict[str, Any] = field(default_factory=dict)
 
     def get_conflict_description(self) -> str:
         """Get human-readable conflict description."""

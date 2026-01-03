@@ -14,8 +14,11 @@ from roadmap.core.services.helpers import (
     extract_milestone_status_update,
     parse_status_change,
 )
+from roadmap.core.services.sync.conflict_resolver import ConflictResolver
+from roadmap.core.services.sync.three_way_merger import ThreeWayMerger
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
 from roadmap.core.services.sync_report import IssueChange, SyncReport
+from roadmap.core.services.sync_state_manager import SyncStateManager
 from roadmap.infrastructure.core import RoadmapCore
 
 
@@ -35,6 +38,9 @@ class GitHubSyncOrchestrator:
         self.github_client = GitHubIssueClient(token)
         self.metadata_service = SyncMetadataService(core)
         self.entity_classifier = GitHubEntityClassifier()
+        self.three_way_merger = ThreeWayMerger()
+        self.conflict_resolver = ConflictResolver()
+        self.state_manager = SyncStateManager(core.roadmap_dir)
         if hasattr(core, "github_service"):
             self.conflict_detector = GitHubConflictDetector(core.github_service)
         else:
@@ -330,13 +336,16 @@ class GitHubSyncOrchestrator:
                 self._apply_local_changes(change)
 
     def _detect_issue_changes(self, local_issue: Issue) -> IssueChange:
-        """Detect what has changed for a single issue.
+        """Detect what has changed for a single issue using three-way merge.
+
+        Uses the three-way merge algorithm (base vs local vs remote) to intelligently
+        determine whether changes conflict or can be auto-resolved.
 
         Args:
             local_issue: Local issue to check
 
         Returns:
-            IssueChange with detected changes
+            IssueChange with detected changes and conflict status
         """
         change = IssueChange(
             issue_id=local_issue.id,
@@ -358,13 +367,14 @@ class GitHubSyncOrchestrator:
                 change.github_changes = {"error": "Issue not linked to GitHub"}
                 return change
 
-            # Ensure github_issue is an int (should be after validation in Issue model)
+            # Ensure github_issue is an int
             github_issue_number = (
                 int(local_issue.github_issue)
                 if isinstance(local_issue.github_issue, str)
                 else local_issue.github_issue
             )
 
+            # Fetch the remote GitHub issue
             github_issue = self.github_client.fetch_issue(
                 owner, repo, github_issue_number
             )
@@ -373,22 +383,134 @@ class GitHubSyncOrchestrator:
                 change.github_changes = {"issue": "deleted on GitHub"}
                 return change
 
-            # Detect local changes
-            change.local_changes = self._detect_local_changes(local_issue)
+            # Load the base state (last agreed-upon state from .sync-state.json)
+            sync_state = self.state_manager.load_sync_state()
+            base_state = None
+            if sync_state and local_issue.id in sync_state.issues:
+                base_state = sync_state.issues[local_issue.id]
 
-            # Detect GitHub changes
-            change.github_changes = self._detect_github_changes(
-                local_issue, github_issue
+            # Perform three-way merge for each field
+            merged_issue, flagged_conflicts = self._merge_issue_fields(
+                local_issue, github_issue, base_state
             )
 
-            # Check for conflicts
-            if change.local_changes and change.github_changes and change.last_sync_time:
+            # Set change details
+            if flagged_conflicts:
                 change.has_conflict = True
+                change.flagged_conflicts = flagged_conflicts
+            else:
+                change.has_conflict = False
+
+            # Compare to detect what actually changed
+            local_changes = self._detect_local_changes(local_issue)
+            github_changes = self._detect_github_changes(local_issue, github_issue)
+
+            if local_changes:
+                change.local_changes = local_changes
+            if github_changes:
+                change.github_changes = github_changes
 
         except Exception as e:
             change.github_changes = {"error": f"Failed to fetch: {str(e)}"}
 
         return change
+
+    def _merge_issue_fields(
+        self, local_issue: Issue, github_issue: dict[str, Any], base_state: Any
+    ) -> tuple[Issue, dict[str, Any]]:
+        """Merge issue fields using three-way merge logic.
+
+        Args:
+            local_issue: Current local issue
+            github_issue: Current GitHub issue state
+            base_state: Last agreed-upon state (from sync-state.json)
+
+        Returns:
+            (merged_issue, flagged_conflicts)
+            where flagged_conflicts is a dict of fields that need manual review
+        """
+        # For fields we track, perform three-way merge
+        fields_to_merge = ["status", "assignee", "milestone", "labels", "description"]
+        flagged_conflicts = {}
+
+        for field in fields_to_merge:
+            # Get values from each source
+            base_val = getattr(base_state, field, None) if base_state else None
+            local_val = self._get_issue_field(local_issue, field)
+            remote_val = self._get_github_field(github_issue, field)
+
+            # Perform three-way merge
+            merge_result = self.three_way_merger.merge_field(
+                field, base_val, local_val, remote_val
+            )
+
+            # If clean, the merge result is the value to use
+            # If conflict, apply conflict resolver
+            if merge_result.is_conflict():
+                resolved_val, is_flagged = self.conflict_resolver.resolve_conflict(
+                    field, base_val, local_val, remote_val
+                )
+                if is_flagged:
+                    flagged_conflicts[field] = {
+                        "base": base_val,
+                        "local": local_val,
+                        "remote": remote_val,
+                        "reason": merge_result.reason,
+                    }
+
+        return local_issue, flagged_conflicts
+
+    def _get_issue_field(self, issue: Issue, field: str) -> Any:
+        """Get a field value from an Issue object.
+
+        Args:
+            issue: Issue to get field from
+            field: Field name
+
+        Returns:
+            Field value or None
+        """
+        if field == "status":
+            return issue.status.value if issue.status else None
+        elif field == "assignee":
+            return issue.assignee
+        elif field == "milestone":
+            return issue.milestone if hasattr(issue, "milestone") else None
+        elif field == "labels":
+            return issue.labels or []
+        elif field == "description":
+            return issue.content or ""
+        else:
+            return getattr(issue, field, None)
+
+    def _get_github_field(self, github_issue: dict[str, Any], field: str) -> Any:
+        """Get a field value from a GitHub issue dict.
+
+        Args:
+            github_issue: GitHub issue dict from API
+            field: Field name
+
+        Returns:
+            Field value or None
+        """
+        if field == "status":
+            return self._map_github_status(github_issue)
+        elif field == "assignee":
+            assignee_obj = github_issue.get("assignee")
+            return assignee_obj.get("login") if assignee_obj else None
+        elif field == "milestone":
+            milestone_obj = github_issue.get("milestone")
+            return milestone_obj.get("title") if milestone_obj else None
+        elif field == "labels":
+            labels_obj = github_issue.get("labels", [])
+            return [
+                label.get("name") if isinstance(label, dict) else str(label)
+                for label in labels_obj
+            ]
+        elif field == "description":
+            return github_issue.get("body", "")
+        else:
+            return github_issue.get(field)
 
     def _detect_local_changes(self, issue: Issue) -> dict[str, Any]:
         """Detect what has changed locally since last sync.
