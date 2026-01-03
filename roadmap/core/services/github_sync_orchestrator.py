@@ -231,16 +231,25 @@ class GitHubSyncOrchestrator:
                 }
                 return
 
-            # Record what would be pushed (placeholder implementation)
-            # Full implementation requires GitHub API update methods
+            github_issue_number = (
+                int(local_issue.github_issue)
+                if isinstance(local_issue.github_issue, str)
+                else local_issue.github_issue
+            )
+
+            # Get GitHub handler for updates
+            handler = self._get_issue_handler(owner, repo)
+            update_data = {}
 
             # Track title change
             if local_issue.title != github_issue.get("title"):
-                change.github_changes["title"] = "would be updated"
+                update_data["title"] = local_issue.title
+                change.github_changes["title"] = "updated"
 
             # Track description change
             if local_issue.content != github_issue.get("body"):
-                change.github_changes["description"] = "would be updated"
+                update_data["body"] = local_issue.content or ""
+                change.github_changes["description"] = "updated"
 
             # Track status change
             local_status = (
@@ -253,9 +262,24 @@ class GitHubSyncOrchestrator:
                     if local_status in ("closed", "completed")
                     else "open"
                 )
-                change.github_changes[
-                    "status"
-                ] = f"would be updated to {github_state}"
+                update_data["state"] = github_state
+                change.github_changes["status"] = f"updated to {github_state}"
+
+            # Track labels change
+            local_labels = local_issue.labels or []
+            github_labels = github_issue.get("labels", [])
+            github_label_names = (
+                [label["name"] for label in github_labels]
+                if github_labels and isinstance(github_labels, list) and github_labels
+                else []
+            )
+            if set(local_labels) != set(github_label_names):
+                update_data["labels"] = local_labels
+                change.github_changes["labels"] = "updated"
+
+            # If there are changes, push to GitHub
+            if update_data:
+                handler.update_issue(github_issue_number, **update_data)
 
         except Exception as e:
             change.github_changes = {"error": f"Push failed: {str(e)}"}
