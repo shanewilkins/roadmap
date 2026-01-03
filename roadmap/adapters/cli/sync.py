@@ -90,9 +90,6 @@ def sync(
         roadmap sync --backend=github
     """
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.adapters.sync import (
-        GenericSyncOrchestrator,
-    )
     from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
     from roadmap.core.services.sync_state_comparator import SyncStateComparator
 
@@ -171,12 +168,17 @@ def sync(
         state_comparator = SyncStateComparator()
         conflict_resolver = SyncConflictResolver()
 
-        # Create orchestrator with services
-        orchestrator = GenericSyncOrchestrator(
+        # Create optimized orchestrator with progress support
+        from roadmap.adapters.sync.optimized_sync_orchestrator import (
+            OptimizedSyncOrchestrator,
+        )
+
+        orchestrator = OptimizedSyncOrchestrator(
             core,
             sync_backend,
             state_comparator=state_comparator,
             conflict_resolver=conflict_resolver,
+            show_progress=not dry_run,  # Show progress during real sync, not dry-run
         )
 
         # Run sync with specified flags
@@ -184,6 +186,7 @@ def sync(
             dry_run=dry_run,
             force_local=force_local,
             force_remote=force_remote,
+            show_progress=not dry_run,
         )
 
         if report.error:

@@ -1,16 +1,16 @@
 ---
-id: 58f6a00a
-title: Implement Git hooks automation system
+id: 6c13e4ea
+title: Implement CI/CD integration for automatic issue branch and commit tracking
 priority: medium
 status: todo
 issue_type: other
-milestone: v.0.3.0
+milestone: null
 labels:
 - priority:high
 - status:todo
-github_issue: 12
-created: '2026-01-02T19:20:52.817566+00:00'
-updated: '2026-01-03T17:46:26.072032+00:00'
+github_issue: 86
+created: '2026-01-02T19:20:53.068871+00:00'
+updated: '2026-01-03T20:57:44.641424+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ completed_date: null
 comments: []
 ---
 
-# Implement Git hooks automation system
+# Implement CI/CD integration for automatic issue branch and commit tracking
 
 ## Description
 
@@ -39,7 +39,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

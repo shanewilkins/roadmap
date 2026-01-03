@@ -1,14 +1,16 @@
 ---
-id: '39081400'
-title: 'Phase 4: Critical Path Calculation'
+id: 58f6a00a
+title: Implement Git hooks automation system
 priority: medium
 status: todo
-issue_type: feature
+issue_type: other
 milestone: null
-labels: []
-github_issue: 57
-created: '2025-12-25T14:55:57.681537+00:00'
-updated: '2026-01-03T20:58:35.120080+00:00'
+labels:
+- priority:high
+- status:todo
+github_issue: 84
+created: '2026-01-02T19:20:52.817566+00:00'
+updated: '2026-01-03T20:57:45.566755+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +28,7 @@ completed_date: null
 comments: []
 ---
 
-# Phase 4: Critical Path Calculation
+# Implement Git hooks automation system
 
 ## Description
 

@@ -1,14 +1,16 @@
 ---
-id: '39081400'
-title: 'Phase 4: Critical Path Calculation'
+id: a24c5633
+title: Implement automatic milestone and project progress updates based on issue completion
 priority: medium
 status: todo
-issue_type: feature
+issue_type: other
 milestone: null
-labels: []
-github_issue: 57
-created: '2025-12-25T14:55:57.681537+00:00'
-updated: '2026-01-03T20:58:35.120080+00:00'
+labels:
+- priority:high
+- status:todo
+github_issue: 87
+created: '2026-01-02T19:20:53.155759+00:00'
+updated: '2026-01-03T20:57:43.714264+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +28,7 @@ completed_date: null
 comments: []
 ---
 
-# Phase 4: Critical Path Calculation
+# Implement automatic milestone and project progress updates based on issue completion
 
 ## Description
 

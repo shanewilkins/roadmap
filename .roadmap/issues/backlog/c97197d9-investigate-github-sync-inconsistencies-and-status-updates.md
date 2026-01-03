@@ -1,14 +1,16 @@
 ---
-id: '39081400'
-title: 'Phase 4: Critical Path Calculation'
+id: c97197d9
+title: Investigate GitHub sync inconsistencies and status updates
 priority: medium
 status: todo
-issue_type: feature
+issue_type: other
 milestone: null
-labels: []
-github_issue: 57
-created: '2025-12-25T14:55:57.681537+00:00'
-updated: '2026-01-03T20:58:35.120080+00:00'
+labels:
+- priority:high
+- status:todo
+github_issue: 89
+created: '2026-01-02T19:20:53.336462+00:00'
+updated: '2026-01-03T20:57:41.825975+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +28,7 @@ completed_date: null
 comments: []
 ---
 
-# Phase 4: Critical Path Calculation
+# Investigate GitHub sync inconsistencies and status updates
 
 ## Description
 
