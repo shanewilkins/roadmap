@@ -113,50 +113,50 @@ class TestGitHubSyncBackendOperations:
             "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
         ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
-            backend.client = MagicMock()
+            backend.github_client = MagicMock()
             return backend
 
     def test_backend_fetch_issues(self, backend):
         """Test backend can fetch issues from GitHub."""
-        assert backend.client is not None
-        backend.client.get_issues.return_value = [
+        assert backend.github_client is not None
+        backend.github_client.get_issues.return_value = [
             {"number": 1, "title": "Issue 1", "state": "open"},
             {"number": 2, "title": "Issue 2", "state": "closed"},
         ]
 
         # Should be able to call get_issues through client
-        assert backend.client.get_issues.return_value is not None
+        assert backend.github_client.get_issues.return_value is not None
 
     def test_backend_fetch_milestones(self, backend):
         """Test backend can fetch milestones from GitHub."""
-        backend.client.get_milestones.return_value = [
+        backend.github_client.get_milestones.return_value = [
             {"number": 1, "title": "v1.0", "state": "open"},
             {"number": 2, "title": "v2.0", "state": "closed"},
         ]
 
         # Should be able to call get_milestones through client
-        assert backend.client is not None
-        assert backend.client.get_milestones.return_value is not None
+        assert backend.github_client is not None
+        assert backend.github_client.get_milestones.return_value is not None
 
     def test_backend_update_issue_state(self, backend):
         """Test backend can update issue state on GitHub."""
-        backend.client.update_issue_state.return_value = True
+        backend.github_client.update_issue_state.return_value = True
 
         # Verify update capability exists
-        assert hasattr(backend.client, "update_issue_state")
+        assert hasattr(backend.github_client, "update_issue_state")
 
     def test_backend_with_mocked_client(self, backend):
         """Test backend operations with fully mocked client."""
         # Setup mock responses
-        backend.client.get_issues.return_value = [
+        backend.github_client.get_issues.return_value = [
             {"number": 1, "title": "Test", "state": "open"}
         ]
-        backend.client.update_issue_state.return_value = {"state": "closed"}
+        backend.github_client.update_issue_state.return_value = {"state": "closed"}
 
         # Verify we can use the backend
         assert backend.config["owner"] == "test-owner"
         assert backend.config["repo"] == "test-repo"
-        assert backend.client.get_issues() is not None
+        assert backend.github_client.get_issues() is not None
 
 
 class TestGitHubSyncBackendErrorHandling:
@@ -179,12 +179,12 @@ class TestGitHubSyncBackendErrorHandling:
             mock_client_class.return_value = mock_client
 
             backend = GitHubSyncBackend(core=mock_core, config=config)
-            backend.client = mock_client
+            backend.github_client = mock_client
 
             # Operations should fail gracefully, not crash the backend
-            if backend.client is not None:
+            if backend.github_client is not None:
                 try:
-                    backend.client.get_issues()
+                    backend.github_client.get_issues()
                 except ConnectionError:
                     # Expected behavior - operations fail, but backend is still usable
                     pass
@@ -202,16 +202,16 @@ class TestGitHubSyncBackendErrorHandling:
             "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
         ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
-            backend.client = MagicMock()
+            backend.github_client = MagicMock()
 
             # Simulate GitHub API returning an error
-            if backend.client is not None:
-                backend.client.get_issues.side_effect = Exception(
+            if backend.github_client is not None:
+                backend.github_client.get_issues.side_effect = Exception(
                     "API rate limit exceeded"
                 )
 
                 try:
-                    backend.client.get_issues()
+                    backend.github_client.get_issues()
                 except Exception:
                     # Expected - caller should handle
                     pass

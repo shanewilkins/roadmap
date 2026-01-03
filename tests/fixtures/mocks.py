@@ -135,9 +135,9 @@ def cli_test_data():
     """Create CLI test data factory function.
 
     Returns:
-        Factory function for creating CLI test data
+        TestDataFactory class for creating test data
     """
-    return TestDataFactory.create_cli_test_data
+    return TestDataFactory
 
 
 @pytest.fixture

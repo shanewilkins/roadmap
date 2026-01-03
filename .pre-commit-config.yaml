@@ -81,7 +81,6 @@ repos:
     hooks:
       - id: pyright
         args: ['--outputjson']
-        stages: [manual]
 
   # Documentation validation (warnings only, non-blocking)
   - repo: local

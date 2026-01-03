@@ -180,7 +180,7 @@ class ContextLogger:
             """
             self.operation = operation
 
-        def __enter__(self) -> None:
+        def __enter__(self) -> "ContextLogger._ContextManager":
             """Enter context."""
             print(f"\n→ START: {self.operation}")
             return self

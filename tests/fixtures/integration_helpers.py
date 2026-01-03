@@ -102,14 +102,22 @@ class IntegrationTestBase:
         # Return milestone object from core
         core = RoadmapCore()
         try:
-            return core.milestones.get(name)
+            milestone = core.milestones.get(name)
+            if milestone is not None:
+                return {
+                    "name": milestone.name,
+                    "description": milestone.description,
+                    "due_date": str(milestone.due_date) if milestone.due_date else None,
+                }
         except Exception:
-            # If not found immediately, return dict with known values
-            return {
-                "name": name,
-                "description": description,
-                "due_date": due_date,
-            }
+            pass
+
+        # If not found immediately, return dict with known values
+        return {
+            "name": name,
+            "description": description,
+            "due_date": due_date,
+        }
 
     @staticmethod
     def create_issue(
