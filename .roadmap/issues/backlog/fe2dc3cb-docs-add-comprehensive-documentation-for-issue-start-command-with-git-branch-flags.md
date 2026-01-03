@@ -9,8 +9,8 @@ milestone: null
 labels: []
 github_issue: 98
 created: '2026-01-02T19:20:54.235023+00:00'
-updated: '2026-01-02T19:20:54.235024+00:00'
-assignee: shanewilkins
+updated: '2026-01-03T01:51:40.145709+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []

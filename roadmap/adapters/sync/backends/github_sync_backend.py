@@ -348,16 +348,45 @@ class GitHubSyncBackend:
             else:
                 # Create new GitHub issue
                 url = f"https://api.github.com/repos/{owner}/{repo}/issues"
-                payload = {
+                payload: dict[str, Any] = {
                     "title": local_issue.title,
                     "body": local_issue.content or "",
                 }
-                
+
                 # Only include labels if they exist and are non-empty
+                # Handle labels that might be comma-separated strings
                 if local_issue.labels:
-                    payload["labels"] = local_issue.labels
+                    labels_list = []
+                    for label in local_issue.labels:
+                        if isinstance(label, str):
+                            # Split comma-separated labels into individual labels
+                            labels_list.extend(
+                                [
+                                    label_item.strip()
+                                    for label_item in label.split(",")
+                                    if label_item.strip()
+                                ]
+                            )
+                        else:
+                            # In case label is not a string, convert to string
+                            labels_list.append(str(label).strip())
+
+                    if labels_list:  # Only include if we have labels after processing
+                        payload["labels"] = labels_list
 
                 response = client.session.post(url, json=payload)
+
+                # Debug: Log response status and content for 422 errors
+                if response.status_code >= 400:
+                    with open("/tmp/github_api_error.log", "a") as f:
+                        f.write(
+                            f"\n=== GITHUB API ERROR (Status {response.status_code}) ===\n"
+                        )
+                        f.write(f"URL: {url}\n")
+                        f.write(f"Payload: {payload}\n")
+                        f.write(f"Response: {response.text}\n")
+                        f.write("=====================================\n")
+
                 response.raise_for_status()
 
                 github_response = response.json()
