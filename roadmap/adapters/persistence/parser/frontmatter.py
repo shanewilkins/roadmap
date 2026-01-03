@@ -77,3 +77,60 @@ class FrontmatterParser:
             else:
                 prepared[key] = value
         return prepared
+
+    @classmethod
+    def extract_sync_metadata(
+        cls, frontmatter: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Extract sync_metadata from frontmatter if present.
+
+        Args:
+            frontmatter: Parsed frontmatter dictionary
+
+        Returns:
+            Sync metadata dictionary or None if not present
+        """
+        return frontmatter.get("sync_metadata")
+
+    @classmethod
+    def update_sync_metadata(
+        cls, frontmatter: dict[str, Any], sync_metadata: dict[str, Any] | None
+    ) -> None:
+        """Update sync_metadata in frontmatter.
+
+        Args:
+            frontmatter: Frontmatter dictionary to update in-place
+            sync_metadata: Sync metadata to set (converts datetime to ISO strings), or None to remove
+        """
+        if sync_metadata:
+            # Prepare nested sync_metadata for YAML serialization
+            prepared = {}
+            for key, value in sync_metadata.items():
+                if isinstance(value, datetime):
+                    prepared[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    # Handle nested dictionaries (e.g., remote_state)
+                    prepared[key] = cls._prepare_dict_for_yaml(value)
+                elif hasattr(value, "value"):  # Handle enum values
+                    prepared[key] = value.value
+                else:
+                    prepared[key] = value
+            frontmatter["sync_metadata"] = prepared
+        elif "sync_metadata" in frontmatter:
+            # Remove if None
+            del frontmatter["sync_metadata"]
+
+    @classmethod
+    def _prepare_dict_for_yaml(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Recursively prepare a dictionary for YAML serialization."""
+        prepared = {}
+        for key, value in data.items():
+            if isinstance(value, datetime):
+                prepared[key] = value.isoformat()
+            elif isinstance(value, dict):
+                prepared[key] = cls._prepare_dict_for_yaml(value)
+            elif hasattr(value, "value"):  # Handle enum values
+                prepared[key] = value.value
+            else:
+                prepared[key] = value
+        return prepared

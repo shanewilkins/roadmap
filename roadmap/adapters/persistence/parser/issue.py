@@ -73,10 +73,51 @@ class IssueParser:
         return Issue(**frontmatter)
 
     @classmethod
-    def save_issue_file(cls, issue: Issue, file_path: Path) -> None:
-        """Save an Issue object to a markdown file."""
+    def save_issue_file(
+        cls, issue: Issue, file_path: Path, sync_metadata: dict | None = None
+    ) -> None:
+        """Save an Issue object to a markdown file.
+
+        Args:
+            issue: Issue object to save
+            file_path: Path to write the file to
+            sync_metadata: Optional sync metadata to include in frontmatter
+        """
         frontmatter = issue.model_dump(exclude={"content"})
+
+        # Add sync_metadata if provided
+        if sync_metadata:
+            FrontmatterParser.update_sync_metadata(frontmatter, sync_metadata)
+
         FrontmatterParser.serialize_file(frontmatter, issue.content, file_path)
+
+    @classmethod
+    def load_sync_metadata(cls, file_path: Path) -> dict | None:
+        """Load sync_metadata from an issue file without parsing the full issue.
+
+        Args:
+            file_path: Path to the issue file
+
+        Returns:
+            Sync metadata dictionary or None if not present
+        """
+        frontmatter, _ = FrontmatterParser.parse_file(file_path)
+        return FrontmatterParser.extract_sync_metadata(frontmatter)
+
+    @classmethod
+    def update_issue_sync_metadata(cls, file_path: Path, sync_metadata: dict) -> None:
+        """Update only the sync_metadata in an issue file without parsing the full Issue.
+
+        This is useful for updating sync state without deserializing and re-serializing
+        the entire Issue object.
+
+        Args:
+            file_path: Path to the issue file
+            sync_metadata: Sync metadata to set
+        """
+        frontmatter, content = FrontmatterParser.parse_file(file_path)
+        FrontmatterParser.update_sync_metadata(frontmatter, sync_metadata)
+        FrontmatterParser.serialize_file(frontmatter, content, file_path)
 
     @classmethod
     def _validate_enum_field(
