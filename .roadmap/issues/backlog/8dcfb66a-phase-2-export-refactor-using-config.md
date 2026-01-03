@@ -1,15 +1,15 @@
 ---
 id: 8dcfb66a
 title: 'Phase 2: Export Refactor (Using Config)'
-priority: critical
+priority: medium
 status: todo
 issue_type: feature
-milestone: backlog
+milestone: null
 labels: []
 github_issue: 53
 created: '2025-12-25T14:55:25.733371+00:00'
-updated: '2025-12-25T19:51:02.380728+00:00'
-assignee: shanewilkins
+updated: '2026-01-03T02:31:02.100872+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []

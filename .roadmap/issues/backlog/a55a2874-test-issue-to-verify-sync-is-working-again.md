@@ -4,12 +4,12 @@ title: TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!
 priority: medium
 status: todo
 issue_type: other
-milestone: v.1.0.0
+milestone: null
 labels: []
 github_issue: 60
 created: '2026-01-02T19:20:50.938842+00:00'
-updated: '2026-01-02T19:20:50.938846+00:00'
-assignee: shanewilkins
+updated: '2026-01-03T02:31:06.293276+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []

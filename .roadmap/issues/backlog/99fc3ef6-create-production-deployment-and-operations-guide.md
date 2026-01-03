@@ -1,16 +1,16 @@
 ---
 id: 99fc3ef6
 title: Create production deployment and operations guide
-priority: high
+priority: medium
 status: todo
 issue_type: feature
-milestone: backlog
+milestone: null
 labels:
 - documentation,deployment
 github_issue: 103
 created: '2025-12-20T18:33:29.195197+00:00'
-updated: '2025-12-25T19:51:02.608695+00:00'
-assignee: shanewilkins
+updated: '2026-01-03T02:31:19.718843+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []

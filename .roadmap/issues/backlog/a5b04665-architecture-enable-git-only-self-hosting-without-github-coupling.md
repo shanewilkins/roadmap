@@ -1,15 +1,15 @@
 ---
 id: a5b04665
 title: 'Architecture: Enable Git-Only Self-Hosting Without GitHub Coupling'
-priority: high
+priority: medium
 status: closed
 issue_type: feature
-milestone: v.1.0.0
+milestone: null
 labels: []
 github_issue: 59
 created: '2026-01-01T14:13:50.213803+00:00'
-updated: '2026-01-01T15:42:00+00:00'
-assignee: shanewilkins
+updated: '2026-01-03T02:31:15.369419+00:00'
+assignee: null
 estimated_hours: 16.0
 due_date: null
 depends_on:

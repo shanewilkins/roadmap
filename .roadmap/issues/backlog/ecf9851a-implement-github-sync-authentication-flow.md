@@ -1,15 +1,15 @@
 ---
 id: ecf9851a
 title: Implement GitHub Sync Authentication Flow
-priority: high
+priority: medium
 status: closed
 issue_type: feature
-milestone: v.1.0.0
+milestone: null
 labels: []
 github_issue: 58
 created: '2026-01-01T14:13:44.383788+00:00'
-updated: '2026-01-01T16:05:00+00:00'
-assignee: shanewilkins
+updated: '2026-01-03T02:31:16.288753+00:00'
+assignee: null
 estimated_hours: 8.0
 due_date: null
 depends_on: []

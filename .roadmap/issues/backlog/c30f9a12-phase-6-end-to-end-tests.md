@@ -1,15 +1,15 @@
 ---
 id: c30f9a12
 title: 'Phase 6: End-to-End Tests'
-priority: high
+priority: medium
 status: todo
 issue_type: feature
-milestone: backlog
+milestone: null
 labels: []
 github_issue: 56
 created: '2025-12-25T14:55:48.000595+00:00'
-updated: '2025-12-25T19:51:02.868521+00:00'
-assignee: shanewilkins
+updated: '2026-01-03T02:31:18.010844+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []

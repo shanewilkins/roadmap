@@ -323,17 +323,36 @@ class GitHubSyncBackend:
                 github_issue_number = int(local_issue.github_issue)
 
                 url = f"https://api.github.com/repos/{owner}/{repo}/issues/{github_issue_number}"
-                payload = {
+                payload: dict[str, Any] = {
                     "title": local_issue.title,
                     "body": local_issue.content or "",
                     "state": "closed"
                     if local_issue.status.value == "closed"
                     else "open",
-                    # Labels: convert local labels to GitHub label names
-                    "labels": local_issue.labels,
                     # Milestone: GitHub expects milestone number, but we only have title
                     # For now, skip milestone updates on push (would need milestone ID)
                 }
+
+                # Only include labels if they exist and are non-empty
+                # Handle labels that might be comma-separated strings
+                if local_issue.labels:
+                    labels_list = []
+                    for label in local_issue.labels:
+                        if isinstance(label, str):
+                            # Split comma-separated labels into individual labels
+                            labels_list.extend(
+                                [
+                                    label_item.strip()
+                                    for label_item in label.split(",")
+                                    if label_item.strip()
+                                ]
+                            )
+                        else:
+                            # In case label is not a string, convert to string
+                            labels_list.append(str(label).strip())
+
+                    if labels_list:  # Only include if we have labels after processing
+                        payload["labels"] = labels_list
 
                 response = client.session.patch(url, json=payload)
                 response.raise_for_status()
