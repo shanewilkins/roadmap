@@ -99,3 +99,63 @@ class GitCoordinator:
         """
         branch = self._git.get_current_branch()
         return branch.name if branch else None
+
+    def get_local_changes(self) -> list[str]:
+        """Get list of issue IDs that have changed locally since last sync.
+
+        Compares current issue files in .roadmap/issues with the last committed
+        versions (git HEAD) to detect which issues were modified locally.
+
+        Returns:
+            List of issue IDs that have uncommitted changes
+        """
+        try:
+            import subprocess
+            from pathlib import Path
+
+            issues_dir = self._core.issues_dir if self._core else None
+            if not issues_dir:
+                return []
+
+            # Get modified files relative to git HEAD in the issues directory
+            result = subprocess.run(
+                [
+                    "git",
+                    "diff",
+                    "HEAD",
+                    "--name-only",
+                    "--",
+                    str(issues_dir),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=self._git.repo_path,
+            )
+
+            if result.returncode != 0:
+                # If diff fails, return empty list (might not be in git repo)
+                return []
+
+            # Parse filenames to extract issue IDs
+            changed_issue_ids = []
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+
+                # Extract filename from path (e.g., ".roadmap/issues/ID.md" -> "ID")
+                filepath = Path(line)
+                filename = filepath.stem  # Remove .md extension
+
+                # Validate it looks like an issue ID (uuid-like)
+                if filename and len(filename) > 4:
+                    changed_issue_ids.append(filename)
+
+            return changed_issue_ids
+
+        except Exception as e:
+            # Log but don't crash on git errors
+            if self._core:
+                import structlog
+
+                structlog.get_logger().warning("get_local_changes_failed", error=str(e))
+            return []

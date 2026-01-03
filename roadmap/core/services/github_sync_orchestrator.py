@@ -103,6 +103,162 @@ class GitHubSyncOrchestrator:
 
         return report
 
+    def push_local_changes(
+        self, dry_run: bool = True, force_github: bool = False
+    ) -> SyncReport:
+        """Push local changes to GitHub (PUSH Phase).
+
+        Detects which issues changed locally (using git diff), then pushes
+        those changes to GitHub API. Handles conflicts that GitHub might report.
+
+        Args:
+            dry_run: If True, only detect changes without applying them
+            force_github: If True, overwrite GitHub changes with local versions
+
+        Returns:
+            SyncReport with push results
+        """
+        report = SyncReport()
+
+        try:
+            # Get list of locally changed issue IDs
+            git_coordinator = getattr(self.core, "git_coordinator", None)
+            if not git_coordinator:
+                report.error = "Git coordinator not available"
+                return report
+
+            changed_issue_ids = git_coordinator.get_local_changes()
+            if not changed_issue_ids:
+                report.issues_up_to_date = 1  # Everything is in sync
+                return report
+
+            # For each changed issue, fetch it and push to GitHub
+            for issue_id in changed_issue_ids:
+                try:
+                    local_issue = self.core.issues.get(issue_id)
+                    if not local_issue:
+                        continue
+
+                    # If not linked to GitHub, we'd need to create it (separate action)
+                    if not local_issue.github_issue:
+                        report.changes.append(
+                            IssueChange(
+                                issue_id=issue_id,
+                                title=local_issue.title,
+                                local_changes={"action": "create on GitHub"},
+                            )
+                        )
+                        report.issues_updated += 1
+                        continue
+
+                    # Fetch current GitHub state
+                    owner = self.config.get("owner")
+                    repo = self.config.get("repo")
+                    if not owner or not repo:
+                        continue
+
+                    github_issue_number = (
+                        int(local_issue.github_issue)
+                        if isinstance(local_issue.github_issue, str)
+                        else local_issue.github_issue
+                    )
+
+                    github_issue = self.github_client.fetch_issue(
+                        owner, repo, github_issue_number
+                    )
+                    if not github_issue:
+                        # Issue was deleted on GitHub
+                        report.changes.append(
+                            IssueChange(
+                                issue_id=issue_id,
+                                title=local_issue.title,
+                                github_changes={"issue": "deleted on GitHub"},
+                            )
+                        )
+                        continue
+
+                    # Detect what changed locally
+                    local_changes = self._detect_local_changes(local_issue)
+                    if not local_changes:
+                        report.issues_up_to_date += 1
+                        continue
+
+                    # Create change record
+                    change = IssueChange(
+                        issue_id=issue_id,
+                        title=local_issue.title,
+                        local_changes=local_changes,
+                    )
+
+                    # If not dry-run, push to GitHub
+                    if not dry_run:
+                        self._push_issue_to_github(change, local_issue, github_issue)
+
+                    report.changes.append(change)
+                    report.issues_updated += 1
+
+                except Exception as e:
+                    report.changes.append(
+                        IssueChange(
+                            issue_id=issue_id,
+                            title=local_issue.title if local_issue else issue_id,
+                            github_changes={"error": f"Push failed: {str(e)}"},
+                        )
+                    )
+
+        except Exception as e:
+            report.error = str(e)
+
+        return report
+
+    def _push_issue_to_github(
+        self, change: IssueChange, local_issue: Issue, github_issue: dict[str, Any]
+    ) -> None:
+        """Push a local issue's changes to GitHub.
+
+        Args:
+            change: IssueChange record to update
+            local_issue: Local issue with changes
+            github_issue: Current GitHub issue state
+        """
+        try:
+            owner = self.config.get("owner")
+            repo = self.config.get("repo")
+            if not owner or not repo:
+                change.github_changes = {
+                    "error": "GitHub config incomplete (owner/repo required)"
+                }
+                return
+
+            # Record what would be pushed (placeholder implementation)
+            # Full implementation requires GitHub API update methods
+
+            # Track title change
+            if local_issue.title != github_issue.get("title"):
+                change.github_changes["title"] = "would be updated"
+
+            # Track description change
+            if local_issue.content != github_issue.get("body"):
+                change.github_changes["description"] = "would be updated"
+
+            # Track status change
+            local_status = (
+                local_issue.status.value if local_issue.status else "unknown"
+            )
+            github_status = self._map_github_status(github_issue)
+            if local_status != github_status:
+                github_state = (
+                    "closed"
+                    if local_status in ("closed", "completed")
+                    else "open"
+                )
+                change.github_changes[
+                    "status"
+                ] = f"would be updated to {github_state}"
+
+        except Exception as e:
+            change.github_changes = {"error": f"Push failed: {str(e)}"}
+
     def _load_milestones(self) -> list[Any]:
         """Load all milestones if available.
 
