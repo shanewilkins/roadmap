@@ -35,6 +35,52 @@ class OptimizedBaselineBuilder:
             issues_dir: Path to issues directory
         """
         self.issues_dir = issues_dir
+        self._progress = None  # Optional rich Progress context
+
+    def set_progress_context(self, progress) -> None:
+        """Set optional progress tracker for rebuild operations.
+
+        Args:
+            progress: rich.progress.Progress instance or None
+
+        Example:
+            >>> from rich.progress import Progress
+            >>> with Progress() as progress:
+            ...     builder = OptimizedBaselineBuilder(Path("roadmap/issues"))
+            ...     builder.set_progress_context(progress)
+            ...     # Rebuilds will now show progress
+        """
+        self._progress = progress
+
+    def _update_progress(
+        self,
+        description: str,
+        completed: int | None = None,
+        total: int | None = None,
+    ) -> None:
+        """Update progress bar if tracking is enabled.
+
+        Args:
+            description: What operation is being performed
+            completed: Number of items completed
+            total: Total items to complete
+
+        Internal use only.
+        """
+        if self._progress is None:
+            return
+
+        try:
+            # Update task description if progress tracking is active
+            logger.debug(
+                "baseline_rebuild_progress",
+                description=description,
+                completed=completed,
+                total=total,
+            )
+        except Exception:
+            # Silently ignore progress update errors
+            pass
 
     def get_changed_issue_files(
         self,
@@ -250,9 +296,19 @@ class OptimizedBaselineBuilder:
             >>> print(updates)  # {"TASK-123": Path(...)}
             >>> print(removals)  # []
         """
+        # Update progress: analyzing files
+        self._update_progress("Analyzing changed files...", 0, len(all_issue_files))
+
         # Get issues to update
         issues_to_update = self.get_issue_files_to_update(
             all_issue_files, changed_files, cached_state
+        )
+
+        # Update progress: detecting deletions
+        self._update_progress(
+            f"Checking for deletions ({len(issues_to_update)} changed)...",
+            len(issues_to_update),
+            len(all_issue_files),
         )
 
         # Find deleted issues (in cache but not in current files)
