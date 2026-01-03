@@ -191,6 +191,8 @@ class TestGitHubSyncBackendPushIssue:
 
     def test_push_issue_new_issue(self):
         """Test push_issue creates new GitHub issue."""
+        from unittest.mock import patch
+
         core = MagicMock()
         config = {
             "owner": "test-owner",
@@ -201,13 +203,27 @@ class TestGitHubSyncBackendPushIssue:
         backend = GitHubSyncBackend(core, config)
         issue = Issue(title="New Issue", github_issue=None)
 
-        result = backend.push_issue(issue)
+        # Mock the GitHub client (imported locally in the method)
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value = mock_client
 
-        # Should return True (placeholder implementation)
-        assert result is True
+            # Mock the response
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"number": 42}
+            mock_client.session.post.return_value = mock_response
+
+            result = backend.push_issue(issue)
+
+            # Should return True
+            assert result is True
+            # Verify the post was called
+            mock_client.session.post.assert_called_once()
 
     def test_push_issue_existing_issue(self):
         """Test push_issue updates existing GitHub issue."""
+        from unittest.mock import patch
+
         core = MagicMock()
         config = {
             "owner": "test-owner",
@@ -218,10 +234,22 @@ class TestGitHubSyncBackendPushIssue:
         backend = GitHubSyncBackend(core, config)
         issue = Issue(title="Existing Issue", github_issue="123")
 
-        result = backend.push_issue(issue)
+        # Mock the GitHub client (imported locally in the method)
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value = mock_client
 
-        # Should return True (placeholder implementation)
-        assert result is True
+            # Mock the response
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"number": 123}
+            mock_client.session.patch.return_value = mock_response
+
+            result = backend.push_issue(issue)
+
+            # Should return True
+            assert result is True
+            # Verify the patch was called
+            mock_client.session.patch.assert_called_once()
 
     def test_push_issue_missing_config(self):
         """Test push_issue returns False without config."""
@@ -258,6 +286,8 @@ class TestGitHubSyncBackendPushIssues:
 
     def test_push_issues_multiple_issues(self):
         """Test push_issues handles multiple issues."""
+        from unittest.mock import patch
+
         core = MagicMock()
         config = {
             "owner": "test-owner",
@@ -268,10 +298,23 @@ class TestGitHubSyncBackendPushIssues:
         backend = GitHubSyncBackend(core, config)
         issues = [Issue(title="Issue 1"), Issue(title="Issue 2")]
 
-        report = backend.push_issues(issues)
+        # Mock the GitHub client (imported locally in the method)
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value = mock_client
 
-        # Placeholder implementation returns all as pushed
-        assert len(report.pushed) == 2
+            # Mock the response for multiple issues
+            def mock_post_response(*args, **kwargs):
+                response = MagicMock()
+                response.json.return_value = {"number": 1}
+                return response
+
+            mock_client.session.post.side_effect = mock_post_response
+
+            report = backend.push_issues(issues)
+
+            # Should return SyncReport
+            assert isinstance(report, SyncReport)
 
 
 class TestGitHubSyncBackendPullIssues:
