@@ -351,11 +351,11 @@ class GitHubSyncBackend:
                 payload = {
                     "title": local_issue.title,
                     "body": local_issue.content or "",
-                    # Labels: convert local labels to GitHub label names
-                    "labels": local_issue.labels,
-                    # Milestone: GitHub expects milestone number, but we only have title
-                    # For now, skip milestone on creation (would need milestone ID)
                 }
+                
+                # Only include labels if they exist and are non-empty
+                if local_issue.labels:
+                    payload["labels"] = local_issue.labels
 
                 response = client.session.post(url, json=payload)
                 response.raise_for_status()
