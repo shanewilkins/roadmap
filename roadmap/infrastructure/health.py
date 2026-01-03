@@ -213,12 +213,10 @@ class HealthCheck:
         return HealthStatus(status_str), message
 
     @staticmethod
-    @staticmethod
     def _check_entity_comments(
         entity_list,
         entity_type_name: str,
         id_field: str = "id",
-        name_field: str = "name",
     ) -> tuple[int, list[str]]:
         """Check comments on a collection of entities.
 
@@ -226,7 +224,6 @@ class HealthCheck:
             entity_list: List of entities to check
             entity_type_name: Name of entity type for error messages
             id_field: Field name containing entity ID/name
-            name_field: Field name for display (defaults to 'name')
 
         Returns:
             Tuple of (total_comment_count, error_list)
@@ -259,7 +256,6 @@ class HealthCheck:
 
         return total_comments, errors
 
-    @staticmethod
     @staticmethod
     def _aggregate_comment_checks(
         checks: list[tuple[int, list[str]]],
@@ -303,6 +299,7 @@ class HealthCheck:
             else "No comments to validate"
         )
 
+    @staticmethod
     def check_comment_integrity(core) -> tuple[HealthStatus, str]:
         """Check for malformed comments in issues, milestones, and projects.
 
@@ -315,10 +312,10 @@ class HealthCheck:
                 core.issues.list(), "Issue", id_field="id"
             ),
             HealthCheck._check_entity_comments(
-                core.milestones.list(), "Milestone", id_field="name", name_field="name"
+                core.milestones.list(), "Milestone", id_field="name"
             ),
             HealthCheck._check_entity_comments(
-                core.projects.list(), "Project", id_field="name", name_field="name"
+                core.projects.list(), "Project", id_field="name"
             ),
         ]
 

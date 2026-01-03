@@ -194,6 +194,7 @@ class CommentService:
 
         return errors
 
+    @staticmethod
     def validate_comment_thread(comments: list[Comment]) -> list[str]:
         """Validate comment threads for errors.
 
