@@ -104,11 +104,13 @@ def sync(
 
         # Load full config from file
         config_file = core.roadmap_dir / "config.yaml"
-        full_config = {}
+        full_config: dict = {}
 
         if config_file.exists():
             with open(config_file) as f:
-                full_config = yaml.safe_load(f) or {}
+                loaded = yaml.safe_load(f)
+                if isinstance(loaded, dict):
+                    full_config = loaded
 
         # Determine backend to use
         if backend:
@@ -116,7 +118,7 @@ def sync(
         else:
             # Check if backend is explicitly set in config
             if full_config.get("github", {}).get("sync_backend"):
-                backend_type = full_config["github"]["sync_backend"].lower()
+                backend_type = str(full_config["github"]["sync_backend"]).lower()
             else:
                 # Default to git backend for self-hosting
                 backend_type = "git"

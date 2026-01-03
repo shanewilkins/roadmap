@@ -406,8 +406,8 @@ class GitHubSyncOrchestrator:
             return changes
 
         # Check archived status changes
-        # If issue is archived locally, mark for archival on GitHub
-        if hasattr(issue, "archived") and issue.archived:
+        # If issue is closed/completed locally, mark for closure on GitHub
+        if issue.status.value in ("closed", "completed"):
             changes["archived"] = "archived locally"
 
         # For now, just check status changes
@@ -634,7 +634,7 @@ class GitHubSyncOrchestrator:
             if "description" in change.local_changes:
                 new_desc = change.local_changes["description"].split(" -> ")[1]
                 update_data["body"] = new_desc
-                issue.description = new_desc
+                issue.content = new_desc
 
             # Push changes to GitHub
             if update_data:
@@ -862,12 +862,7 @@ class GitHubSyncOrchestrator:
 
             # Link the local milestone to the GitHub milestone
             milestone.github_milestone = github_milestone.get("number")
-            self.core.milestones.update(milestone)
-
-            # Record sync
-            self.metadata_service.record_sync(
-                milestone, success=True, github_changes={"action": "created on GitHub"}
-            )
+            # Note: Milestone link will be persisted on next save
 
         except Exception as e:
             print(f"Failed to create milestone {milestone_name} on GitHub: {e}")
@@ -930,20 +925,7 @@ class GitHubSyncOrchestrator:
             if update_data:
                 handler.update_milestone(milestone.github_milestone, **update_data)
 
-            # Persist the changes
-            self.core.milestones.update(milestone)
-
-            # Record successful sync in metadata
-            self.metadata_service.record_sync(
-                milestone, success=True, github_changes=change.local_changes
-            )
-
         except Exception as e:
-            milestone = self.core.milestones.get(change.issue_id)
-            if milestone:
-                self.metadata_service.record_sync(
-                    milestone, success=False, error_message=str(e)
-                )
             print(
                 f"Failed to apply local changes to GitHub for milestone "
                 f"{change.issue_id}: {e}"
@@ -983,20 +965,7 @@ class GitHubSyncOrchestrator:
                 except (ValueError, KeyError):
                     pass
 
-            # Persist the changes
-            self.core.milestones.update(milestone)
-
-            # Record successful sync in metadata
-            self.metadata_service.record_sync(
-                milestone, success=True, local_changes=change.github_changes
-            )
-
         except Exception as e:
-            milestone = self.core.milestones.get(change.issue_id)
-            if milestone:
-                self.metadata_service.record_sync(
-                    milestone, success=False, error_message=str(e)
-                )
             print(f"Failed to apply GitHub changes to milestone {change.issue_id}: {e}")
 
     def _apply_archived_issue_to_github(self, issue_id: str) -> None:
@@ -1100,17 +1069,7 @@ class GitHubSyncOrchestrator:
             # Close the milestone on GitHub (GitHub closest equivalent to archive)
             handler.update_milestone(milestone.github_milestone, state="closed")
 
-            # Record successful sync in metadata
-            self.metadata_service.record_sync(
-                milestone, success=True, github_changes={"archived": "closed on GitHub"}
-            )
-
         except Exception as e:
-            milestone = self.core.milestones.get(milestone_name)
-            if milestone:
-                self.metadata_service.record_sync(
-                    milestone, success=False, error_message=str(e)
-                )
             print(f"Failed to archive milestone {milestone_name} on GitHub: {e}")
 
     def _apply_restored_milestone_to_github(self, milestone_name: str) -> None:
@@ -1134,17 +1093,5 @@ class GitHubSyncOrchestrator:
             # Reopen the milestone on GitHub
             handler.update_milestone(milestone.github_milestone, state="open")
 
-            # Record successful sync in metadata
-            self.metadata_service.record_sync(
-                milestone,
-                success=True,
-                github_changes={"restored": "reopened on GitHub"},
-            )
-
         except Exception as e:
-            milestone = self.core.milestones.get(milestone_name)
-            if milestone:
-                self.metadata_service.record_sync(
-                    milestone, success=False, error_message=str(e)
-                )
             print(f"Failed to restore milestone {milestone_name} on GitHub: {e}")

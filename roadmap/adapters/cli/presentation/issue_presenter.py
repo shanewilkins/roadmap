@@ -4,6 +4,7 @@ from datetime import datetime
 
 from rich.markdown import Markdown
 from rich.panel import Panel
+from rich.table import Table
 from rich.text import Text
 
 from roadmap.adapters.cli.dtos import IssueDTO
@@ -218,17 +219,15 @@ class IssuePresenter(BasePresenter):
 
         return description, acceptance
 
-    def _build_comments_text(self, comments: list) -> Text:
+    def _build_comments_text(self, comments: list) -> Table:
         """Build formatted text for displaying comments.
 
         Args:
             comments: List of CommentDTO objects
 
         Returns:
-            Rich Text object with formatted comments
+            Rich Table object with formatted comments
         """
-        from rich.table import Table
-
         # Create a table for comments
         table = Table(show_header=False, box=None, padding=(1, 0))
         table.add_column("Comments", style="white")

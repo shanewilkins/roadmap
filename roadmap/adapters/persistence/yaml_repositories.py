@@ -247,7 +247,7 @@ class YAMLIssueRepository(IssueRepository):
         self.save(issue)
         return issue
 
-    def _handle_milestone_change(self, issue: Issue, old_milestone: str) -> None:
+    def _handle_milestone_change(self, issue: Issue, old_milestone: str | None) -> None:
         """Handle file move when issue's milestone changes.
 
         Args:

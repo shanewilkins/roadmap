@@ -13,7 +13,7 @@ from roadmap.shared import ProjectTableFormatter
 console = get_console()
 
 
-def _parse_project_metadata(file_path):
+def _parse_project_metadata(file_path) -> dict | None:
     """Parse project metadata from markdown file."""
     try:
         content = file_path.read_text()
@@ -30,13 +30,13 @@ def _parse_project_metadata(file_path):
         metadata = yaml.safe_load(yaml_content)
 
         # Add ID from frontmatter if present, or extract from filename
-        if metadata and not metadata.get("id"):
+        if isinstance(metadata, dict) and not metadata.get("id"):
             # Extract ID from filename (format: {id}-{name}.md)
             filename_stem = file_path.stem
             if "-" in filename_stem:
                 metadata["id"] = filename_stem.split("-", 1)[0]
 
-        return metadata
+        return metadata if isinstance(metadata, dict) else None
     except Exception:
         return None
 

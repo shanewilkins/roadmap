@@ -55,7 +55,7 @@ def close_project(ctx: click.Context, project_id: str, force: bool):
             "update", "project", entity_id=project_id, warn_threshold_ms=2000
         ):
             updated_project = core.projects.update(
-                project_id, status=ProjectStatus.CLOSED
+                project_id, status=ProjectStatus.COMPLETED
             )
 
         if updated_project:
