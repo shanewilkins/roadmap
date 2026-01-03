@@ -8,7 +8,7 @@ milestone: v.0.2.0
 labels:
 - priority:high
 - status:done
-github_issue: null
+github_issue: 73
 created: '2026-01-02T19:20:51.896529+00:00'
 updated: '2026-01-02T19:20:51.896530+00:00'
 assignee: shanewilkins

@@ -6,7 +6,7 @@ status: todo
 issue_type: other
 milestone: v.1.0.0
 labels: []
-github_issue: null
+github_issue: 60
 created: '2026-01-02T19:20:50.938842+00:00'
 updated: '2026-01-02T19:20:50.938846+00:00'
 assignee: shanewilkins

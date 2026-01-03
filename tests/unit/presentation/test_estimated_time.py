@@ -327,51 +327,6 @@ class TestEstimatedTimeCLI:
         assert total_hours == 24.0
 
 
-class TestEstimatedTimeCore:
-    """Test estimated time functionality in RoadmapCore."""
-
-    @pytest.mark.skip(reason="Requires real core initialization, not mock")
-    def test_create_issue_with_estimated_hours(self, mock_core_initialized):
-        """Test creating an issue with estimated hours through core."""
-        core = mock_core_initialized
-
-        issue = core.issues.create(title="Test Issue", estimated_hours=5.5)
-
-        assert issue.estimated_hours == 5.5
-        assert issue.estimated_time_display == "5.5h"
-
-    @pytest.mark.skip(reason="Requires real core initialization, not mock")
-    def test_create_issue_without_estimated_hours(self, mock_core_initialized):
-        """Test creating an issue without estimated hours through core."""
-        core = mock_core_initialized
-
-        issue = core.issues.create(title="Test Issue")
-
-        assert issue.estimated_hours is None
-        assert issue.estimated_time_display == "Not estimated"
-
-
-class TestEstimatedTimePersistence:
-    """Test that estimated time persists correctly."""
-
-    @pytest.mark.skip(reason="Requires real core initialization, not mock")
-    def test_estimated_time_saves_and_loads(self, mock_core_initialized):
-        """Test that estimated time is saved to and loaded from files."""
-        core = mock_core_initialized
-
-        # Create and save an issue with estimated time
-        original_issue = core.issues.create(
-            title="Persistent Issue", estimated_hours=12.0
-        )
-
-        # Load the issue back from file
-        loaded_issues = core.issues.list()
-        loaded_issue = next(i for i in loaded_issues if i.id == original_issue.id)
-
-        assert loaded_issue.estimated_hours == 12.0
-        assert loaded_issue.estimated_time_display == "1.5d"
-
-
 class TestEstimatedTimeEdgeCases:
     """Test edge cases for estimated time functionality."""
 

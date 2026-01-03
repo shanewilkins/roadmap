@@ -11,7 +11,7 @@ labels:
 - automation
 - git-integration
 - workflow
-github_issue: null
+github_issue: 66
 created: '2026-01-02T19:20:51.462978+00:00'
 updated: '2026-01-02T19:20:51.462978+00:00'
 assignee: shanewilkins

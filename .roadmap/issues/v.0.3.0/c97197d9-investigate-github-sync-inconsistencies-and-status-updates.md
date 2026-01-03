@@ -8,7 +8,7 @@ milestone: v.0.3.0
 labels:
 - priority:high
 - status:todo
-github_issue: null
+github_issue: 89
 created: '2026-01-02T19:20:53.336462+00:00'
 updated: '2026-01-02T19:20:53.336463+00:00'
 assignee: shanewilkins

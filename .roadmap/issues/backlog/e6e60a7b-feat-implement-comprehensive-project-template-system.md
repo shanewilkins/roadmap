@@ -6,7 +6,7 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-github_issue: null
+github_issue: 101
 created: '2026-01-02T19:20:54.572056+00:00'
 updated: '2026-01-02T19:20:54.572058+00:00'
 assignee: null
