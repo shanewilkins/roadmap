@@ -8,9 +8,9 @@ milestone: null
 labels:
 - priority:medium
 - status:todo
-github_issue: 71
+github_issue: 5
 created: '2026-01-02T19:20:51.780622+00:00'
-updated: '2026-01-02T19:20:51.780623+00:00'
+updated: '2026-01-03T17:46:16.304521+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,14 +28,4 @@ completed_date: null
 comments: []
 ---
 
-# test issue to validate sync
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+lorem ipsum etc. etc. etc.

@@ -29,7 +29,7 @@ class SyncStateRepository:
         """
         conn = self._get_connection()
         row = conn.execute(
-            "SELECT value FROM sync_state WHERE key = ?", (key,)
+            "SELECT value FROM sync_metadata WHERE key = ?", (key,)
         ).fetchone()
         return row["value"] if row else None
 
@@ -43,7 +43,7 @@ class SyncStateRepository:
         with self._transaction() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO sync_state (key, value) VALUES (?, ?)
+                INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?)
             """,
                 (key, value),
             )
@@ -56,11 +56,11 @@ class SyncStateRepository:
             key: State key
         """
         with self._transaction() as conn:
-            conn.execute("DELETE FROM sync_state WHERE key = ?", (key,))
+            conn.execute("DELETE FROM sync_metadata WHERE key = ?", (key,))
         logger.debug("Deleted sync state", key=key)
 
     def clear_all(self) -> None:
         """Clear all sync state values."""
         with self._transaction() as conn:
-            conn.execute("DELETE FROM sync_state")
+            conn.execute("DELETE FROM sync_metadata")
         logger.info("Cleared all sync state")

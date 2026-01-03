@@ -8,9 +8,9 @@ milestone: null
 labels:
 - priority:medium
 - status:done
-github_issue: 67
+github_issue: 27
 created: '2026-01-02T19:20:51.511129+00:00'
-updated: '2026-01-02T19:20:51.563426+00:00'
+updated: '2026-01-03T17:46:30.535465+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

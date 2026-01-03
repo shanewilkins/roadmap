@@ -26,7 +26,7 @@ class SyncStateTracker:
         """Get sync state value by key."""
         conn = self._get_connection()
         row = conn.execute(
-            "SELECT value FROM sync_state WHERE key = ?", (key,)
+            "SELECT value FROM sync_metadata WHERE key = ?", (key,)
         ).fetchone()
         return row["value"] if row else None
 
@@ -34,7 +34,7 @@ class SyncStateTracker:
         """Set sync state value by key."""
         conn = self._get_connection()
         conn.execute(
-            "INSERT OR REPLACE INTO sync_state (key, value) VALUES (?, ?)",
+            "INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?)",
             (key, value),
         )
 

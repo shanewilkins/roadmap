@@ -1,0 +1,716 @@
+{
+  "last_sync": "2026-01-03T17:45:32.574246",
+  "backend": "github",
+  "issues": {
+    "7e99d67b": {
+      "id": "7e99d67b",
+      "status": "todo",
+      "title": "Implement performance optimization strategy with hybrid storage and caching",
+      "assignee": "shanewilkins",
+      "milestone": null,
+      "description": "# Implement performance optimization strategy with hybrid storage and caching\n\n## Description\n\nThe current file-based storage system works well for small datasets but has scalability limitations as the number of issues, milestones, and roadmaps grows. We need to implement a hybrid storage approach that maintains the git-friendly file format while adding performance optimizations through SQLite indexing and intelligent caching.\n\n## Current Performance Analysis\n\n### File-Store Limitations\n- **List operations**: O(n) file reads for every query\n- **Search operations**: Full-text grep across all files\n- **Relationship queries**: Expensive traversal for dependencies/milestones\n- **Memory usage**: Grows linearly with dataset size\n- **Concurrent access**: Risk of file corruption\n\n### Scale Breaking Points\n- **~100-500 issues**: Noticeable delays but acceptable\n- **~1,000-5,000 issues**: Slow operations, user frustration\n- **~10,000+ issues**: Likely unusable without optimization\n\n### Current Bottlenecks\n```bash\n# These operations become expensive at scale:\nroadmap issue list --status in-progress    # Scans all files\nroadmap issue list --assignee shane        # Full file reads\nroadmap milestone status v090              # Relationship traversal\n```\n\n## Proposed Hybrid Architecture\n\n### Core Design Principles\n1. **Files remain source of truth** - Maintains git integration\n2. **SQLite for fast queries** - Indexed metadata for performance\n3. **Lazy loading content** - Only load full issue when needed\n4. **Automatic sync** - Keep file and database in sync\n5. **Graceful degradation** - Falls back to file-only if DB issues\n\n### Architecture Overview\n```python\n# Hybrid storage layer\nclass HybridStorage:\n    def __init__(self):\n        self.file_store = FileStore()           # Current implementation\n        self.index_db = SQLiteIndex()           # New performance layer\n        self.cache = InMemoryCache()            # Fast access cache\n\n    def list_issues(self, filters):\n        # Fast: Query SQLite index\n        return self.index_db.query(filters)\n\n    def get_issue(self, issue_id):\n        # Full content: Always from file\n        return self.file_store.load(issue_id)\n\n    def update_issue(self, issue_id, data):\n        # Write to file, sync to index\n        self.file_store.save(issue_id, data)\n        self.index_db.update_from_file(issue_id)\n```\n\n## Implementation Plan\n\n### Phase 1: SQLite Index Layer (2.5h)\n\n#### Database Schema\n```sql\nCREATE TABLE issues (\n    id TEXT PRIMARY KEY,\n    title TEXT NOT NULL,\n    status TEXT NOT NULL,\n    priority TEXT NOT NULL,\n    assignee TEXT,\n    milestone TEXT,\n    estimated_hours REAL,\n    progress_percentage INTEGER,\n    created_date TEXT,\n    updated_date TEXT,\n    file_path TEXT NOT NULL,\n    file_mtime INTEGER NOT NULL\n);\n\nCREATE INDEX idx_issues_status ON issues(status);\nCREATE INDEX idx_issues_assignee ON issues(assignee);\nCREATE INDEX idx_issues_milestone ON issues(milestone);\nCREATE INDEX idx_issues_priority ON issues(priority);\n\nCREATE TABLE milestones (\n    id TEXT PRIMARY KEY,\n    title TEXT NOT NULL,\n    status TEXT NOT NULL,\n    due_date TEXT,\n    file_path TEXT NOT NULL,\n    file_mtime INTEGER NOT NULL\n);\n\nCREATE TABLE roadmaps (\n    id TEXT PRIMARY KEY,\n    title TEXT NOT NULL,\n    status TEXT NOT NULL,\n    owner TEXT,\n    priority TEXT,\n    file_path TEXT NOT NULL,\n    file_mtime INTEGER NOT NULL\n);\n```\n\n#### Index Management\n```python\nclass SQLiteIndex:\n    def __init__(self, db_path='.roadmap/index.db'):\n        self.db_path = db_path\n        self.conn = sqlite3.connect(db_path)\n        self.init_schema()\n\n    def sync_from_files(self):\n        \"\"\"Full rebuild from all files\"\"\"\n        for file_path in glob('.roadmap/issues/*.md'):\n            self.update_from_file(file_path)\n\n    def update_from_file(self, file_path):\n        \"\"\"Update single file in index\"\"\"\n        metadata = parse_yaml_header(file_path)\n        mtime = os.path.getmtime(file_path)\n\n        self.conn.execute(\"\"\"\n            INSERT OR REPLACE INTO issues\n            (id, title, status, priority, assignee, milestone,\n             estimated_hours, progress_percentage, created_date,\n             updated_date, file_path, file_mtime)\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n        \"\"\", (metadata['id'], metadata['title'], ...))\n\n    def is_stale(self, file_path):\n        \"\"\"Check if index needs update\"\"\"\n        current_mtime = os.path.getmtime(file_path)\n        db_mtime = self.get_file_mtime(file_path)\n        return current_mtime > db_mtime\n```\n\n### Phase 2: Intelligent Caching (1.5h)\n\n#### Memory Cache Layer\n```python\nclass InMemoryCache:\n    def __init__(self, max_size=1000):\n        self.metadata_cache = LRUCache(max_size)\n        self.content_cache = LRUCache(max_size // 4)  # Smaller for full content\n\n    @lru_cache(maxsize=1000)\n    def get_issue_metadata(self, issue_id, file_mtime):\n        \"\"\"Cache metadata keyed by file modification time\"\"\"\n        return self.load_metadata_from_file(issue_id)\n\n    def invalidate_issue(self, issue_id):\n        \"\"\"Clear cache when file changes\"\"\"\n        # Clear all cached versions of this issue\n```\n\n#### File System Watching\n```python\nclass FileWatcher:\n    def __init__(self, storage):\n        self.storage = storage\n        self.observer = Observer()\n\n    def start_watching(self):\n        \"\"\"Watch .roadmap directory for changes\"\"\"\n        handler = FileSystemEventHandler()\n        handler.on_modified = self.on_file_changed\n        self.observer.schedule(handler, '.roadmap', recursive=True)\n        self.observer.start()\n\n    def on_file_changed(self, event):\n        \"\"\"Update index when files change\"\"\"\n        if event.src_path.endswith('.md'):\n            self.storage.index_db.update_from_file(event.src_path)\n            self.storage.cache.invalidate_file(event.src_path)\n```\n\n### Phase 3: Performance Optimizations (2h)\n\n#### Lazy Loading Implementation\n```python\nclass LazyIssue:\n    def __init__(self, metadata, file_path):\n        self._metadata = metadata\n        self._file_path = file_path\n        self._content = None\n\n    @property\n    def content(self):\n        \"\"\"Load full content only when accessed\"\"\"\n        if self._content is None:\n            self._content = load_full_issue(self._file_path)\n        return self._content\n\n    # Fast access to indexed fields\n    @property\n    def status(self):\n        return self._metadata['status']\n\n    @property\n    def assignee(self):\n        return self._metadata['assignee']\n```\n\n#### Batch Operations\n```python\nclass BatchOperations:\n    def bulk_update_status(self, issue_ids, new_status):\n        \"\"\"Update multiple issues efficiently\"\"\"\n        with self.storage.index_db.transaction():\n            for issue_id in issue_ids:\n                # Update file\n                self.storage.file_store.update_metadata(issue_id, {'status': new_status})\n                # Update index\n                self.storage.index_db.update_field(issue_id, 'status', new_status)\n\n    def bulk_assign_milestone(self, issue_ids, milestone):\n        \"\"\"Assign multiple issues to milestone\"\"\"\n        # Similar batch processing\n```\n\n## Acceptance Criteria\n\n### Performance Improvements\n- [ ] List operations complete in <200ms for datasets up to 1000 issues\n- [ ] Search operations complete in <500ms across all content\n- [ ] Memory usage remains constant regardless of dataset size\n- [ ] CLI remains responsive during large operations\n\n### Data Integrity\n- [ ] File format remains unchanged (git-friendly)\n- [ ] Index automatically rebuilds when inconsistencies detected\n- [ ] Graceful fallback to file-only mode if database issues\n- [ ] No data loss during index rebuilding or corruption\n\n### Compatibility\n- [ ] Existing CLI commands work unchanged\n- [ ] File-based workflows (git, manual editing) continue working\n- [ ] Database is optional - tool works without it\n- [ ] Migration path for existing installations\n\n### Developer Experience\n- [ ] Index rebuilding is automatic and transparent\n- [ ] Performance monitoring and metrics available\n- [ ] Clear error messages for storage issues\n- [ ] Debug tools for troubleshooting performance\n\n## Technical Implementation Details\n\n### Configuration Options\n```bash\n# Performance settings\nroadmap config set storage.use_index true\nroadmap config set storage.cache_size 1000\nroadmap config set storage.auto_rebuild_index true\nroadmap config set storage.watch_files true\n\n# Performance monitoring\nroadmap config set debug.log_query_times true\nroadmap config set debug.profile_operations true\n```\n\n### Migration Strategy\n```python\ndef migrate_to_hybrid_storage():\n    \"\"\"One-time migration for existing installations\"\"\"\n    print(\"\ud83d\udd04 Migrating to hybrid storage...\")\n\n    # Create SQLite index\n    index = SQLiteIndex()\n    index.init_schema()\n\n    # Rebuild from all existing files\n    index.sync_from_files()\n\n    # Update configuration\n    config.set('storage.use_index', True)\n\n    print(\"\u2705 Migration complete!\")\n```\n\n### Performance Monitoring\n```python\nclass PerformanceMonitor:\n    def time_operation(self, operation_name):\n        \"\"\"Decorator to monitor operation performance\"\"\"\n        def decorator(func):\n            def wrapper(*args, **kwargs):\n                start = time.time()\n                result = func(*args, **kwargs)\n                duration = time.time() - start\n\n                if duration > 1.0:  # Log slow operations\n                    logger.warning(f\"Slow operation: {operation_name} took {duration:.2f}s\")\n\n                return result\n            return wrapper\n        return decorator\n```\n\n## Success Metrics\n\n### Performance Targets\n- **List operations**: <200ms for 1000 issues\n- **Search operations**: <500ms full-text search\n- **Memory usage**: <100MB regardless of dataset size\n- **Startup time**: <1s even with large datasets\n\n### Scalability Goals\n- Support 10,000+ issues without performance degradation\n- Linear scaling of storage space only\n- Constant time for common operations\n- Graceful handling of concurrent access\n\n## Related Issues\n\n- 1fb2b36c: Enhanced init command (should set up performance optimizations)\n- 515a927c: Progress tracking (will benefit from fast queries)\n- ea4606b6: CI/CD integration (needs efficient data access)\n\n## Risk Mitigation\n\n### Data Safety\n- Always keep files as source of truth\n- Index is rebuild-able from files\n- Atomic operations prevent corruption\n- Regular integrity checks\n\n### Backwards Compatibility\n- Index is optional enhancement\n- Fallback to file-only mode\n- No breaking changes to CLI\n- Migration is reversible\n\n### Performance Regression\n- Monitoring and alerting for slow operations\n- A/B testing of optimizations\n- Rollback capability if issues arise\n- Performance benchmarks in CI/CD\n\n## Future Enhancements\n\n### Advanced Optimizations\n- Distributed storage for enterprise scale\n- Read replicas for multi-user scenarios\n- Advanced query optimization\n- Compressed storage for large datasets\n\n### Integration Opportunities\n- External database support (PostgreSQL, etc.)\n- Cloud storage backends\n- Real-time collaboration features\n- Advanced analytics and reporting\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.480858"
+    },
+    "327cfe35": {
+      "id": "327cfe35",
+      "status": "todo",
+      "title": "Advanced branch management and merging strategies",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Advanced branch management and merging strategies\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.481853"
+    },
+    "8d746af1": {
+      "id": "8d746af1",
+      "status": "todo",
+      "title": "Advanced reporting and analytics engine",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Advanced reporting and analytics engine\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.482405"
+    },
+    "74312cf3": {
+      "id": "74312cf3",
+      "status": "todo",
+      "title": "Timeline and Gantt chart visualization",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Timeline and Gantt chart visualization\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.483350"
+    },
+    "78c91f46": {
+      "id": "78c91f46",
+      "status": "todo",
+      "title": "Team workload analysis and capacity planning",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Team workload analysis and capacity planning\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.484606"
+    },
+    "d121eded": {
+      "id": "d121eded",
+      "status": "todo",
+      "title": "Project template customization and scaffolding",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Project template customization and scaffolding\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.485871"
+    },
+    "fa568786": {
+      "id": "fa568786",
+      "status": "todo",
+      "title": "Build enterprise SSO and role-based access control",
+      "assignee": "shanewilkins",
+      "milestone": null,
+      "description": "# Build enterprise SSO and role-based access control\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.486537"
+    },
+    "ba7b870b": {
+      "id": "ba7b870b",
+      "status": "todo",
+      "title": "Build developer SDK and integration platform",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Build developer SDK and integration platform\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.487100"
+    },
+    "c29e126d": {
+      "id": "c29e126d",
+      "status": "todo",
+      "title": "Complete production deployment and security certification",
+      "assignee": "shanewilkins",
+      "milestone": null,
+      "description": "# Complete production deployment and security certification\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.487914"
+    },
+    "cfe784f8": {
+      "id": "cfe784f8",
+      "status": "todo",
+      "title": "Achieve Professional-Grade Code Quality Standards",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Achieve Professional-Grade Code Quality Standards\n\n## Description\n\nElevate the codebase to professional-grade quality standards matching industry best practices. This issue captures the gap between current B-tier quality and professional A-tier standards.\n\n### Current State (B-tier, 81/100 score)\n- Test Pass Rate: 98.7% \u2192 Need 100%\n- Test Coverage: 81% \u2192 Need 85%+\n- Maintainability Score: 81/100 \u2192 Need 85+/100\n- Code Duplication: 5-10% \u2192 Need <2%\n- Average Complexity: 1.8 \u2192 Need 1.2-1.5\n- Failing Tests: 17 \u2192 Need 0\n- Unused Code: +1,290 LOC increase (should be reduction)\n\n### Gap Analysis\n| Metric | Current | Target | Gap |\n|--------|---------|--------|-----|\n| Test Pass Rate | 98.7% | 100% | +1.3% |\n| Test Coverage | 81% | 85%+ | +4% |\n| Maintainability | 81/100 | 85+/100 | +4 points |\n| Code Duplication | 5-10% | <2% | -3% to -8% |\n| Avg Complexity | 1.8 | 1.2-1.5 | -0.3 to -0.6 |\n\n## Acceptance Criteria\n\n### Critical Path (must complete)\n- [ ] Fix all 17 failing tests \u2192 100% pass rate\n- [ ] Increase test coverage to 85%+ (currently 81%)\n- [ ] Reduce code duplication to <2% (currently 5-10%)\n- [ ] Remove unused/dead code \u2192 Net LOC reduction\n\n### Quality Standards (must complete)\n- [ ] Increase maintainability score to 85+/100 (currently 81)\n- [ ] Reduce average complexity to 1.2-1.5 (currently 1.8)\n- [ ] Zero known warnings in linting\n- [ ] Comprehensive API documentation\n\n### Nice-to-Have (desirable)\n- [ ] Performance benchmarking suite\n- [ ] Security audit and vulnerability scan\n- [ ] Further modularize orchestrators to 50-100 LOC\n\n## Work Breakdown\n1. **Fix 17 failing tests** (Team integration, GitHub features) - ~4 hours\n2. **Increase coverage to 85%+** (Add missing edge case tests) - ~6 hours\n3. **Reduce duplication** (Consolidate utilities, extract patterns) - ~4 hours\n4. **Remove dead code** (Clean up unused orchestrators/services) - ~2 hours\n5. **Document APIs** (Add docstrings, examples) - ~4 hours\n6. **Performance benchmarks** (Setup suite, baseline metrics) - ~3 hours\n7. **Security audit** (Dependency scan, vuln assessment) - ~2 hours\n\n**Estimated Total:** 25-30 hours\n\n## Notes\n- Refactoring from monolithic to modular architecture completed\n- 1,333 tests passing but 17 persistent failures\n- Architecture is solid but needs final polish\n- This work should move project to professional-grade quality",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.489221"
+    },
+    "ab2ad1b4": {
+      "id": "ab2ad1b4",
+      "status": "todo",
+      "title": "Cross-platform compatibility testing (macOS, Linux, Windows)",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Cross-platform compatibility testing (macOS, Linux, Windows)\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "testing,compatibility"
+      ],
+      "updated_at": "2026-01-03T17:34:26.490091"
+    },
+    "99fc3ef6": {
+      "id": "99fc3ef6",
+      "status": "todo",
+      "title": "Create production deployment and operations guide",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Create production deployment and operations guide\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "documentation,deployment"
+      ],
+      "updated_at": "2026-01-03T17:34:26.490774"
+    },
+    "6763af95": {
+      "id": "6763af95",
+      "status": "todo",
+      "title": "Phase 9: Test Quality Improvements",
+      "assignee": null,
+      "milestone": null,
+      "description": "Phase 9 Progress: Completed 3 of 5 Priority 1 modules\n\nCoverage improvements:\n- sync_status.py: 15.3% \u2192 64.3% (+57 tests)\n- projects/view.py: 15.7% \u2192 71.4% (+28 tests)\n- git_commit_analyzer.py: 15.9% \u2192 59.8% (+39 tests)\n\nOverall metrics:\n- Tests written: 124 new tests\n- Overall coverage: 70.0% \u2192 71.2% (+1.2%)\n- Total passing tests: 2908 \u2192 3032 (+124)\n\nNext targets:\n4. git_branch_manager.py (16.8%) - 167 statements\n5. common/progress.py (17.0%) - 112 statements\n\nPhase 9 target: 75.8% \u2192 85%+ coverage",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.492182"
+    },
+    "8dcfb66a": {
+      "id": "8dcfb66a",
+      "status": "todo",
+      "title": "Phase 2: Export Refactor (Using Config)",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Phase 2: Export Refactor (Using Config)\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.493889"
+    },
+    "c30f9a12": {
+      "id": "c30f9a12",
+      "status": "todo",
+      "title": "Phase 6: End-to-End Tests",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Phase 6: End-to-End Tests\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.494940"
+    },
+    "39081400": {
+      "id": "39081400",
+      "status": "todo",
+      "title": "Phase 4: Critical Path Calculation",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Phase 4: Critical Path Calculation\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.496252"
+    },
+    "ecf9851a": {
+      "id": "ecf9851a",
+      "status": "closed",
+      "title": "Implement GitHub Sync Authentication Flow",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Implement GitHub Sync Authentication Flow\n\n## Description\n\nThe `roadmap git sync` command is implemented but requires a GitHub Personal Access Token to function. Currently, users must manually set up the token via environment variable or system keychain. We need to implement a proper authentication flow that:\n\n1. Makes it easy for users to authenticate with GitHub on first use\n2. Stores credentials securely (using system keychain on macOS/Linux, Windows Credential Manager on Windows)\n3. Handles token expiration and refresh\n4. Provides clear error messages when authentication fails\n5. Allows users to switch GitHub accounts or update tokens\n\n## Current State\n\n- \u2705 `roadmap git sync` command implemented\n- \u2705 GitHub config (owner/repo) stored in `.github/config.json`\n- \u2705 Interactive auth flow for GitHub users implemented\n- \u2705 Connectivity testing for vanilla Git self-hosting implemented\n- \u2705 Token stored securely in system keychain/credential manager\n- \u2705 Token validation before attempting sync\n- \u2705 Clear error messages for auth failures\n- \u2705 `roadmap git setup` command fully implemented with dual auth support\n- \u2705 Token refresh/expiration handling (graceful with warnings)\n\n## Acceptance Criteria\n\n- [x] Implement interactive prompt when token is missing: `roadmap git setup --auth`\n  - **Complete**: Command prompts user for token with validation\n  - Detects existing stored tokens and offers to reuse\n  - Clear instructions for creating GitHub PAT\n\n- [x] Integration with system credential storage (keychain/credential manager)\n  - **Complete**: Uses existing CredentialManager\n  - macOS: Keychain integration\n  - Windows: Credential Manager integration\n  - Linux: Secret Service integration\n\n- [x] Token validation before attempting sync\n  - **Complete**: `GitHubClient.test_authentication()` validates token\n  - Verifies user identity before storing\n  - Shows authenticated username to user\n\n- [x] Clear error messages for auth failures\n  - **Complete**: Structured error handling with logging\n  - User-friendly error messages for all failure scenarios\n  - Detailed logs for debugging\n\n- [x] `roadmap git setup` command fully implemented (currently a placeholder)\n  - **Complete**: Full interactive auth flow\n  - Supports `--auth` flag for token setup\n  - Supports `--update-token` flag to change tokens\n  - Shows help when no options provided\n\n- [x] Documentation updated with auth setup instructions\n  - **In Progress**: Issue documentation updated with implementation details\n  - User guide section needs creation\n\n- [x] Unit tests for auth flow and credential management\n  - **Complete**: 8 new unit tests created\n  - Tests cover: token validation, storage, error cases, existing tokens\n  - All tests passing \u2705\n\n## Technical Design & Implementation\n\n### GitHub Authentication (`roadmap git setup --auth`)\n- Interactive PAT token prompt with security (hidden input)\n- Token validation via `GitHubClient.test_authentication()`\n- Secure storage in system keychain (macOS), Credential Manager (Windows), Secret Service (Linux)\n- Detects and reuses existing tokens with user confirmation\n- Clear error handling with helpful troubleshooting messages\n- Support for `--update-token` flag to rotate credentials\n\n### Git Self-Hosting Authentication (`roadmap git setup --git-auth`)\n- Connectivity testing via `git ls-remote` command\n- Works with any Git hosting: GitHub, GitLab, Gitea, vanilla SSH, etc.\n- No credentials needed - tests user's existing git configuration\n- Helpful error messages for SSH key and HTTPS credential issues\n- Uses `VanillaGitSyncBackend.authenticate()` via backend factory\n\n### Implementation Details\n- **Framework**: Click CLI with structured error handling\n- **Logging**: Structured logging with context for debugging\n- **Storage**: Cross-platform credential management\n- **Testing**: 8+ unit tests covering all auth scenarios\n- **Error Handling**: Graceful degradation with non-fatal warnings\n\n### Command Structure\n```\nroadmap git setup [OPTIONS]\n  --auth          Set up GitHub PAT authentication\n  --update-token  Update existing GitHub token\n  --git-auth      Test Git repository connectivity\n```\n\n## Completion Summary\n\n\u2705 **ISSUE CLOSED - ALL REQUIREMENTS MET**\n\n**Total Implementation Time:** ~2.5 hours\n**Tests Added:** 8 comprehensive auth flow tests\n**Total Tests Passing:** 5893 \u2705\n**Code Quality:** All pre-commit hooks passing\n\n**Dual Authentication System:**\n1. **GitHub-Only Users**: Interactive PAT setup with secure storage\n2. **Self-Hosting Users**: Git connectivity verification for any Git hosting\n\nBoth authentication flows integrate seamlessly with the existing sync backends (GitHub and Vanilla Git)",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.497272"
+    },
+    "a5b04665": {
+      "id": "a5b04665",
+      "status": "closed",
+      "title": "Architecture: Enable Git-Only Self-Hosting Without GitHub Coupling",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Architecture: Enable Git-Only Self-Hosting Without GitHub Coupling\n\n## Description\n\nCurrently, the sync architecture is tightly coupled to GitHub. Teams who want to self-host roadmaps through vanilla Git repositories (GitLab, Gitea, vanilla Git over SSH, etc.) should have that option without requiring GitHub integration.\n\nThis issue addresses the architectural refactoring needed to support multiple sync backends and ensure GitHub is *optional*, not mandatory.\n\n## Current State\n\n- \u2705 GitHub sync orchestrator implemented and working\n- \u2705 Interface abstraction created (SyncBackendInterface Protocol)\n- \u2705 GitHub-specific code extracted into GitHubSyncBackend\n- \u274c Cannot sync to vanilla Git-only repos yet (Phase 3 in progress)\n- \u274c Backend selection not yet wired into CLI/config\n\n## Acceptance Criteria\n\n- [x] Create `SyncBackendInterface` in `roadmap/core/interfaces/` defining sync contract\n  - **Phase 1 Complete**: Protocol defined in `roadmap/core/interfaces/sync_backend.py`\n  - Includes SyncConflict and SyncReport supporting classes\n  - 13 unit tests validating interface contract\n\n- [x] Extract GitHub-specific code into `GitHubSyncBackend` implementing the interface\n  - **Phase 2 Complete**: Implementation in `roadmap/adapters/sync/backends/github_sync_backend.py`\n  - All 7 core methods implemented\n  - 22 unit tests covering full functionality\n  - Graceful error handling without raising exceptions\n\n- [x] Implement `VanillaGitSyncBackend` for vanilla Git (git push/pull) sync\n  - **Phase 3 Complete**: Implementation in `roadmap/adapters/sync/backends/vanilla_git_sync_backend.py`\n  - All 7 core methods implemented using subprocess git commands\n  - 25 unit tests covering full functionality (all passing \u2705)\n  - Supports any Git hosting: GitHub, GitLab, Gitea, vanilla SSH, etc.\n\n- [x] Update `GitHubSyncOrchestrator` to use abstracted backend interface\n  - **Phase 4 Complete**: Orchestrator updated in `roadmap/adapters/sync/generic_sync_orchestrator.py`\n\n- [x] CLI supports selecting backend: `roadmap init --sync-backend=[github|git]`\n  - **Phase 4 Complete**: CLI option added to init/commands.py with proper enum conversion\n\n- [x] Configuration stores selected backend in `.roadmap/config.json`\n  - **Phase 4 Complete**: Config schema extended in common/config_schema.py\n  - Backend selection persists and reloads correctly\n\n- [x] Documentation: SELF_HOSTING.md with setup instructions\n  - **Phase 4 Complete**: Comprehensive guide in `docs/SELF_HOSTING.md`\n\n- [x] Unit tests for both backends with interface contract tests\n  - **Complete**: Interface contract tests \u2705 (13 passing)\n  - **Complete**: GitHub backend tests \u2705 (22 passing)\n  - **Complete**: Vanilla Git backend tests \u2705 (25 passing)\n  - **Complete**: Integration tests \u2705 (4 passing for backend selection)\n  - **Total**: 64 unit tests across all phases\n  - **Full test suite**: 5885 tests passing \u2705\n\n- [x] Ensure GitHub integration gracefully degrades when not configured\n  - **Phase 4 Complete**: Backend factory has fallback logic\n  - Non-fatal error handling with structured logging\n\n## Progress Summary\n\n\u2705 **ISSUE COMPLETED - ALL ACCEPTANCE CRITERIA MET**\n\n**Phase 1 (25%)**: Interface & Contract Definition \u2705 COMPLETE\n**Phase 2 (50%)**: GitHub Backend Extraction \u2705 COMPLETE\n**Phase 3 (75%)**: Vanilla Git Backend Implementation \u2705 COMPLETE\n**Phase 4 (100%)**: Integration & CLI Wiring \u2705 COMPLETE\n\n### Summary of Completion\n\n**Total Implementation Time:** ~8 hours\n**Total Tests:** 5885 passing (including 64 new tests for this feature)\n**Code Quality:** All pre-commit hooks passing, zero violations\n\n**Key Deliverables:**\n1. \u2705 SyncBackendInterface Protocol with full contract definition\n2. \u2705 GitHubSyncBackend implementation with 22 unit tests\n3. \u2705 VanillaGitSyncBackend implementation with 25 unit tests\n4. \u2705 Backend factory with detection and fallback logic\n5. \u2705 CLI integration: `roadmap init --sync-backend=[github|git]`\n6. \u2705 Config persistence for backend selection\n7. \u2705 SELF_HOSTING.md documentation\n8. \u2705 4 integration tests verifying backend selection persistence\n9. \u2705 Structured logging for observability and debugging\n10. \u2705 Graceful error handling and fallback mechanisms\n\n**Architecture Achievement:**\n- \u2705 GitHub is now optional, not mandatory\n- \u2705 Users can choose vanilla Git hosting without GitHub dependency\n- \u2705 Extensible design allows future backends (GitLab, Jira, etc.)\n- \u2705 Non-breaking changes to existing GitHub functionality\n- \u2705 Full backward compatibility maintained\n\n## Technical Design\n\n### Backend Interface (Location: `roadmap/core/interfaces/sync_backend.py`)\n\n```python\nclass SyncBackendInterface(Protocol):\n    \"\"\"Abstract sync backend for two-way sync operations\"\"\"\n\n    def authenticate(self) -> bool:\n        \"\"\"Verify credentials and connectivity\"\"\"\n\n    def get_issues(self) -> List[Dict]:\n        \"\"\"Fetch all issues from remote\"\"\"\n\n    def push_issue(self, local_issue: Issue) -> bool:\n        \"\"\"Push local issue to remote\"\"\"\n\n    def push_issues(self, local_issues: List[Issue]) -> Dict:\n        \"\"\"Batch push with conflict reporting\"\"\"\n\n    def pull_issues(self) -> Dict:\n        \"\"\"Pull remote issues to local\"\"\"\n```\n\n### Backends to Implement\n\n1. **GitHubSyncBackend** (refactored from current code)\n   - Uses GitHub REST API\n   - Supports all GitHub-specific features (labels, milestones, etc.)\n   - Requires authentication token\n\n2. **VanillaGitSyncBackend** (new)\n   - Syncs through git push/pull only\n   - Treats issues as files in a known directory structure\n   - No external API dependency\n   - Works with any Git hosting (GitHub, GitLab, Gitea, vanilla SSH, etc.)\n\n## Implementation Plan\n\n1. **Phase 1: Define Interface** (2-4 hrs)\n   - Create `SyncBackendInterface` protocol\n   - Document sync contract and error handling\n\n2. **Phase 2: Refactor GitHub Sync** (4-6 hrs)\n   - Extract current GitHub sync into `GitHubSyncBackend`\n   - Update CLI to use abstracted interface\n   - Ensure all tests still pass\n\n3. **Phase 3: Implement Vanilla Git Backend** (6-8 hrs)\n   - Create `VanillaGitSyncBackend`\n   - Implement push/pull logic using git commands\n   - Handle merge conflicts gracefully\n\n4. **Phase 4: Integration & Testing** (2-4 hrs)\n   - Update `roadmap init` to support backend selection\n   - Write comprehensive tests for both backends\n   - Update CLI help and documentation\n\n## Benefits\n\n- **Flexibility**: Teams choose their hosting solution\n- **No Vendor Lock-in**: Never forced to use GitHub\n- **Offline Support**: Git-only mode works fully offline\n- **Compliance**: On-premise Git hosting available\n- **Extensibility**: New backends can be added (GitLab, Jira, etc.)\n\n## Implementation Status\n\n### Files Created (Phase 1-2)\n\n**Core Interface:**\n- `roadmap/core/interfaces/sync_backend.py` - SyncBackendInterface Protocol (7 methods)\n- `roadmap/core/interfaces/__init__.py` - Updated exports\n\n**GitHub Backend:**\n- `roadmap/adapters/sync/backends/github_sync_backend.py` - GitHubSyncBackend class\n- `roadmap/adapters/sync/backends/__init__.py` - Module initialization\n- `roadmap/adapters/sync/__init__.py` - Sync module initialization\n\n**Tests:**\n- `tests/unit/core/interfaces/test_sync_backend.py` - Interface contract tests (13 tests) \u2705\n- `tests/unit/adapters/sync/test_github_sync_backend.py` - GitHub backend tests (22 tests) \u2705\n\n### Pending Implementation (Phase 3-4)\n\n**Phase 3 (Vanilla Git Backend):**\n- `roadmap/adapters/sync/backends/vanilla_git_sync_backend.py` - New\n- `tests/unit/adapters/sync/test_vanilla_git_sync_backend.py` - New tests\n\n**Phase 4 (Integration & CLI):**\n- Update `roadmap/adapters/cli/git/commands.py` - Accept backend parameter\n- Create backend factory/selector\n- Update `roadmap init` command for `--sync-backend` option\n- Documentation: `docs/SELF_HOSTING.md`\n\n## Related Issues\n\n- Depends on: GitHub Authentication implementation (needs working sync first)\n- Unblocks: Teams wanting to self-host without GitHub dependency",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.498111"
+    },
+    "a55a2874": {
+      "id": "a55a2874",
+      "status": "todo",
+      "title": "TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!",
+      "assignee": "shanewilkins",
+      "milestone": "v.1.0.0",
+      "description": "let's make sure this is good.",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.499026"
+    },
+    "ca93a612": {
+      "id": "ca93a612",
+      "status": "todo",
+      "title": "Test with valid assignee",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Test with valid assignee\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:low",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.186299"
+    },
+    "43d67b9b": {
+      "id": "43d67b9b",
+      "status": "todo",
+      "title": "Test sync validation fix without assignee",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Test sync validation fix without assignee\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:34:26.502628"
+    },
+    "b45cef30": {
+      "id": "b45cef30",
+      "status": "todo",
+      "title": "Test assignee validation improved",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Test assignee validation improved\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:low",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.189104"
+    },
+    "68e22dec": {
+      "id": "68e22dec",
+      "status": "todo",
+      "title": "Test assignee validation",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Test assignee validation\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:low",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.191418"
+    },
+    "c592873c": {
+      "id": "c592873c",
+      "status": "todo",
+      "title": "Enhance backup system with management, cleanup, and user control features",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Enhance backup system with management, cleanup, and user control features\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:done",
+        "backup",
+        "data-management",
+        "cleanup"
+      ],
+      "updated_at": "2026-01-03T17:45:32.558044"
+    },
+    "0c7f8e37": {
+      "id": "0c7f8e37",
+      "status": "todo",
+      "title": "Auto-create feature branch for new issues",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Auto-create feature branch for new issues\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:done",
+        "automation",
+        "git-integration",
+        "workflow"
+      ],
+      "updated_at": "2026-01-03T17:45:32.560178"
+    },
+    "90736b7b": {
+      "id": "90736b7b",
+      "status": "todo",
+      "title": "Test backward compatibility",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Test backward compatibility\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [
+        "priority:medium",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:41:38.460598"
+    },
+    "2acc5c5f": {
+      "id": "2acc5c5f",
+      "status": "todo",
+      "title": "Test finish command workflow",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Test finish command workflow\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:43:49.199463"
+    },
+    "7c2bdace": {
+      "id": "7c2bdace",
+      "status": "todo",
+      "title": "Rename project commands and templates to roadmap for clearer terminology",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Rename project commands and templates to roadmap for clearer terminology\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:43:49.202629"
+    },
+    "ff53faca": {
+      "id": "ff53faca",
+      "status": "todo",
+      "title": "Test git integration workflow",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Test git integration workflow\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:43:49.205354"
+    },
+    "8faa5b97": {
+      "id": "8faa5b97",
+      "status": "todo",
+      "title": "test issue to validate sync",
+      "assignee": null,
+      "milestone": null,
+      "description": "# test issue to validate sync\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.207097"
+    },
+    "3ea638d3": {
+      "id": "3ea638d3",
+      "status": "todo",
+      "title": "Add project level template",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Add project level template\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:medium",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:43:49.209918"
+    },
+    "7d4e6e84": {
+      "id": "7d4e6e84",
+      "status": "todo",
+      "title": "Align CLI with GitHub terminology: rename roadmaps to projects",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Align CLI with GitHub terminology: rename roadmaps to projects\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:43:49.211924"
+    },
+    "0839a0e9": {
+      "id": "0839a0e9",
+      "status": "todo",
+      "title": "GitHub sync not preserving milestone relationships for existing issues",
+      "assignee": null,
+      "milestone": null,
+      "description": "# GitHub sync not preserving milestone relationships for existing issues\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "bug",
+        "priority:high",
+        "status:done",
+        "github-integration",
+        "sync",
+        "milestone-tracking"
+      ],
+      "updated_at": "2026-01-03T17:45:32.561650"
+    },
+    "31296e09": {
+      "id": "31296e09",
+      "status": "todo",
+      "title": "Implement semantic versioning enforcement and PyPI publication",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Implement semantic versioning enforcement and PyPI publication\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.216334"
+    },
+    "25dc67b3": {
+      "id": "25dc67b3",
+      "status": "todo",
+      "title": "Complete comprehensive API documentation and freeze API design",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Complete comprehensive API documentation and freeze API design\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.218475"
+    },
+    "b36a111b": {
+      "id": "b36a111b",
+      "status": "todo",
+      "title": "Implement comprehensive security audit framework",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Implement comprehensive security audit framework\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.220544"
+    },
+    "c2c03e3e": {
+      "id": "c2c03e3e",
+      "status": "todo",
+      "title": "Build predictive analytics for milestone completion",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Build predictive analytics for milestone completion\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.222226"
+    },
+    "63c544b3": {
+      "id": "63c544b3",
+      "status": "todo",
+      "title": "Implement AI-powered project insights and recommendations",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Implement AI-powered project insights and recommendations\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.224200"
+    },
+    "76e0c263": {
+      "id": "76e0c263",
+      "status": "todo",
+      "title": "Automated testing pipeline and quality gates",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Automated testing pipeline and quality gates\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.226317"
+    },
+    "50b09354": {
+      "id": "50b09354",
+      "status": "todo",
+      "title": "Smart notification system with configurable alerts",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Smart notification system with configurable alerts\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.228236"
+    },
+    "da507d37": {
+      "id": "da507d37",
+      "status": "todo",
+      "title": "Interactive project dashboard with real-time updates",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Interactive project dashboard with real-time updates\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:43:49.230099"
+    },
+    "29d069a9": {
+      "id": "29d069a9",
+      "status": "todo",
+      "title": "Add milestone-level kanban board with status columns",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Add milestone-level kanban board with status columns\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [
+        "priority:high",
+        "status:todo",
+        "kanban",
+        "milestone",
+        "ui"
+      ],
+      "updated_at": "2026-01-03T17:45:32.562997"
+    },
+    "58f6a00a": {
+      "id": "58f6a00a",
+      "status": "todo",
+      "title": "Implement Git hooks automation system",
+      "assignee": null,
+      "milestone": "v.0.3.0",
+      "description": "# Implement Git hooks automation system\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:45:32.564641"
+    },
+    "f7e2d76d": {
+      "id": "f7e2d76d",
+      "status": "closed",
+      "title": "Validate assignee is team member",
+      "assignee": "shanewilkins",
+      "milestone": "v.0.5.0",
+      "description": "# Validate assignee is team member\n\n## Description\n\nWhen assigning an issue to someone using the `--assignee` flag, we need to validate that the assignee is a valid GitHub user ID who is listed as a team member, collaborator, or contributor in the repository. This should prevent assignment to invalid users and ensure proper access control.\n\nCurrently, the system accepts any string as an assignee without validation, which could lead to:\n- Issues assigned to non-existent users\n- Issues assigned to users without repository access\n- Security concerns around unauthorized assignments\n\n## Acceptance Criteria\n\n- [ ] Validate assignee exists as a GitHub user\n- [ ] Check if assignee has repository access (collaborator/team member)\n- [ ] Provide clear error messages for invalid assignments\n- [ ] Cache team member list for performance\n- [ ] Support both username and GitHub user ID formats\n- [ ] Integration with existing GitHub API client\n- [ ] Update CLI help documentation with validation requirements",
+      "labels": [
+        "priority:high",
+        "status:done",
+        "security",
+        "validation",
+        "github-integration"
+      ],
+      "updated_at": "2026-01-03T17:45:32.566183"
+    },
+    "6c13e4ea": {
+      "id": "6c13e4ea",
+      "status": "todo",
+      "title": "Implement CI/CD integration for automatic issue branch and commit tracking",
+      "assignee": "shanewilkins",
+      "milestone": "v.0.3.0",
+      "description": "# Implement CI/CD integration for automatic issue branch and commit tracking\n\n## Description\n\nCurrently, the issue YAML header includes `git_branches` and `git_commits` fields, but these are not automatically populated. We need to implement CI/CD integration that automatically tracks which branches and commits are associated with specific issues, enabling better traceability from work items to actual code changes and deployments.\n\n## Current State Analysis\n\n### Issue YAML Header Fields (Currently Manual)\n```yaml\ngit_branches: []     # Empty - should auto-populate\ngit_commits: []      # Empty - should auto-populate  \nactual_start_date: null    # Could auto-detect from first commit\nactual_end_date: null      # Could auto-detect from issue closure\ncompleted_date: null       # Could auto-populate on status=done\n```\n\n### Missing Integration Points\n- No automatic branch detection from issue ID patterns\n- No commit message parsing to associate commits with issues\n- No CI/CD pipeline integration for deployment tracking\n- No automatic issue closure on merge/deployment\n- No traceability from code changes back to requirements\n\n## Proposed CI/CD Integration Architecture\n\n### Branch Detection Patterns\n```bash\n# Automatic detection of issue-related branches\nfeature/ea4606b6-*           # Feature branches with issue ID\nbugfix/ea4606b6-*            # Bug fix branches  \nhotfix/ea4606b6-*            # Hotfix branches\nea4606b6-*                   # Simple issue ID prefix\n*/ea4606b6/*                 # Issue ID anywhere in branch path\n```\n\n### Commit Message Parsing\n```bash\n# Commit message patterns to associate with issues\n\"feat: implement CI/CD integration (fixes #ea4606b6)\"\n\"fix: resolve sync issue ea4606b6\" \n\"docs: update CI/CD guide for ea4606b6\"\n\"closes ea4606b6: add branch tracking\"\n\"related to ea4606b6: refactor sync logic\"\n```\n\n### CI/CD Pipeline Integration\n```yaml\n# GitHub Actions integration example\nname: Roadmap Issue Tracking\non:\n  push:\n    branches: [\"**\"]\n  pull_request:\n    types: [opened, closed, merged]\n  \njobs:\n  track-issue-progress:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Update Issue Tracking\n        run: |\n          roadmap ci track-commit ${{ github.sha }}\n          roadmap ci track-branch ${{ github.ref }}\n          roadmap ci track-pr ${{ github.event.number }}\n```\n\n## Detailed Feature Requirements\n\n### Automatic Branch Tracking\n\n#### Git Hook Integration\n```python\n# Git hooks for local development\ndef on_branch_created(branch_name):\n    issue_ids = extract_issue_ids_from_branch(branch_name)\n    for issue_id in issue_ids:\n        roadmap_add_branch_to_issue(issue_id, branch_name)\n\ndef on_branch_checkout(branch_name):\n    # Optionally auto-start issues when checking out their branch\n    issue_ids = extract_issue_ids_from_branch(branch_name)\n    for issue_id in issue_ids:\n        if get_issue_status(issue_id) == 'todo':\n            roadmap_start_issue(issue_id)\n```\n\n#### CLI Commands for Branch Management\n```bash\n# Manual branch association\nroadmap issue branch add ea4606b6 feature/ci-cd-integration\nroadmap issue branch remove ea4606b6 old-branch-name\nroadmap issue branch list ea4606b6\n\n# Automatic branch detection  \nroadmap ci scan-branches          # Scan all branches for issue patterns\nroadmap ci track-branch <branch>  # Track specific branch\n```\n\n### Automatic Commit Tracking\n\n#### Commit Message Analysis\n```python\ndef parse_commit_for_issues(commit_message, commit_sha):\n    patterns = [\n        r'(?:fixes?|closes?|resolves?)\\s+#?(\\w{8})',  # \"fixes ea4606b6\"\n        r'(\\w{8})[:]\\s',                              # \"ea4606b6: commit message\"\n        r'(?:related to|refs?)\\s+(\\w{8})',           # \"related to ea4606b6\"\n    ]\n    \n    for pattern in patterns:\n        for match in re.finditer(pattern, commit_message, re.IGNORECASE):\n            issue_id = match.group(1)\n            associate_commit_with_issue(issue_id, commit_sha, commit_message)\n```\n\n#### Git Hook Implementation\n```bash\n# Post-commit hook\n#!/bin/sh\n# .git/hooks/post-commit\nroadmap ci track-commit HEAD\n\n# Pre-push hook  \n#!/bin/sh\n# .git/hooks/pre-push\nroadmap ci sync-branch-tracking\n```\n\n### CI/CD Pipeline Commands\n\n#### New CLI Commands for CI/CD\n```bash\n# Commit tracking\nroadmap ci track-commit <commit-sha> [--message \"commit message\"]\nroadmap ci track-commits <from-sha>..<to-sha>\n\n# Branch tracking\nroadmap ci track-branch <branch-name> [--issue-id ea4606b6]\nroadmap ci track-pr <pr-number> [--branch <branch>]\n\n# Bulk operations\nroadmap ci scan-repository         # Scan entire repo history\nroadmap ci sync-with-github        # Sync branch/commit data from GitHub\n\n# Issue lifecycle automation\nroadmap ci auto-start <issue-id>   # Start issue when branch created\nroadmap ci auto-close <issue-id>   # Close issue when PR merged\n```\n\n### Automatic Issue Status Updates\n\n#### PR Integration\n```python\ndef on_pull_request_opened(pr_info):\n    # Auto-start issues when PR is opened\n    issue_ids = extract_issue_ids_from_branch(pr_info.head_branch)\n    for issue_id in issue_ids:\n        if get_issue_status(issue_id) == 'todo':\n            roadmap_update_issue(issue_id, status='in-progress')\n\ndef on_pull_request_merged(pr_info):\n    # Auto-complete issues when PR is merged to main\n    if pr_info.base_branch in ['main', 'master', 'develop']:\n        issue_ids = extract_issue_ids_from_branch(pr_info.head_branch)\n        for issue_id in issue_ids:\n            roadmap_update_issue(issue_id, status='done', actual_end_date=now())\n```\n\n#### Deployment Tracking\n```python\ndef on_deployment_success(deployment_info):\n    # Track which issues were deployed\n    commits = get_commits_in_deployment(deployment_info)\n    deployed_issues = set()\n    \n    for commit in commits:\n        issue_ids = get_issues_for_commit(commit.sha)\n        deployed_issues.update(issue_ids)\n    \n    for issue_id in deployed_issues:\n        add_deployment_info_to_issue(issue_id, deployment_info)\n```\n\n## Acceptance Criteria\n\n### Branch Tracking\n- [ ] Automatic detection of issue IDs in branch names\n- [ ] Support for multiple branch naming conventions\n- [ ] CLI commands to manually associate branches with issues\n- [ ] Branch tracking in issue YAML header gets populated automatically\n- [ ] Integration with git hooks for real-time tracking\n\n### Commit Tracking  \n- [ ] Automatic parsing of commit messages for issue references\n- [ ] Support for multiple commit message patterns (fixes, closes, refs)\n- [ ] CLI commands to manually associate commits with issues\n- [ ] Commit tracking in issue YAML header gets populated automatically\n- [ ] Historical repository scanning for existing commits\n\n### CI/CD Integration\n- [ ] GitHub Actions workflow examples for issue tracking\n- [ ] Git hooks for local development workflow\n- [ ] CLI commands designed for CI/CD pipeline usage\n- [ ] Support for batch operations and bulk updates\n- [ ] Integration with existing GitHub sync functionality\n\n### Automatic Status Updates\n- [ ] Auto-start issues when feature branch is created\n- [ ] Auto-progress issues when PR is opened\n- [ ] Auto-complete issues when PR is merged to main branch\n- [ ] Deployment tracking and release association\n- [ ] Configurable automation rules and triggers\n\n### Data Integrity\n- [ ] Validation of issue IDs before association\n- [ ] Handling of branch renames and deletions\n- [ ] Cleanup of stale branch/commit references\n- [ ] Conflict resolution for multiple issue associations\n- [ ] Rollback capabilities for incorrect associations\n\n## Implementation Plan\n\n### Phase 1: Core Tracking Engine (1.5h)\n- [ ] Implement issue ID extraction from branch names and commit messages\n- [ ] Create CLI commands for manual branch/commit association\n- [ ] Add automatic population of git_branches and git_commits fields\n- [ ] Basic validation and error handling\n\n### Phase 2: Git Integration (1.5h)\n- [ ] Implement git hooks for real-time tracking\n- [ ] Add repository scanning for historical data\n- [ ] Create bulk update and sync operations\n- [ ] Integration with existing git operations\n\n### Phase 3: CI/CD Automation (1h)\n- [ ] Create CI/CD specific CLI commands\n- [ ] Implement PR lifecycle automation\n- [ ] Add GitHub Actions workflow examples\n- [ ] Configure automatic status transitions\n\n## Technical Implementation Details\n\n### Git Integration\n```python\n# Core git operations\nclass GitTracker:\n    def get_branches_for_issue(self, issue_id: str) -> List[str]:\n        \"\"\"Find all branches containing issue ID\"\"\"\n        \n    def get_commits_for_issue(self, issue_id: str) -> List[GitCommit]:\n        \"\"\"Find all commits mentioning issue ID\"\"\"\n        \n    def scan_repository_history(self) -> Dict[str, List[str]]:\n        \"\"\"Scan entire repo for issue associations\"\"\"\n```\n\n### Configuration Options\n```bash\n# Branch tracking configuration\nroadmap config set ci.branch_patterns \"feature/{issue_id}-*,{issue_id}-*\"\nroadmap config set ci.auto_start_on_branch true\nroadmap config set ci.auto_close_on_merge true\n\n# Commit tracking configuration  \nroadmap config set ci.commit_patterns \"fixes #{issue_id},closes {issue_id},{issue_id}:\"\nroadmap config set ci.scan_commit_history false\nroadmap config set ci.track_all_commits false\n\n# CI/CD integration\nroadmap config set ci.github_actions true\nroadmap config set ci.deployment_tracking true\nroadmap config set ci.main_branches \"main,master,develop\"\n```\n\n### GitHub Actions Integration\n```yaml\n# .github/workflows/roadmap-tracking.yml\nname: Roadmap Issue Tracking\n\non:\n  push:\n    branches: [\"**\"]\n  pull_request:\n    types: [opened, closed]\n\njobs:\n  track-progress:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Setup Python\n        uses: actions/setup-python@v4\n        with:\n          python-version: '3.11'\n      \n      - name: Install roadmap CLI\n        run: pip install roadmap-cli\n        \n      - name: Configure credentials\n        env:\n          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n        run: |\n          roadmap config set github.owner ${{ github.repository_owner }}\n          roadmap config set github.repo ${{ github.event.repository.name }}\n          \n      - name: Track branch and commits\n        run: |\n          roadmap ci track-branch ${{ github.ref_name }}\n          roadmap ci track-commit ${{ github.sha }}\n          \n      - name: Handle PR events\n        if: github.event_name == 'pull_request'\n        run: |\n          roadmap ci track-pr ${{ github.event.number }} --branch ${{ github.head_ref }}\n          \n      - name: Sync with roadmap\n        run: roadmap sync bidirectional\n```\n\n## User Stories\n\n### Story 1: Developer - Branch Association\n**As a** developer working on issue ea4606b6\n**I want** my feature branch `feature/ea4606b6-ci-integration` to automatically associate with the issue\n**So that** there's clear traceability from requirements to code changes\n\n### Story 2: Project Manager - Progress Visibility\n**As a** project manager\n**I want** to see which branches and commits are associated with each issue\n**So that** I can track actual development progress and code review status\n\n### Story 3: DevOps Engineer - Deployment Tracking\n**As a** DevOps engineer\n**I want** issues to automatically close when their associated PR is merged\n**So that** the roadmap reflects actual deployment status without manual updates\n\n### Story 4: Team Lead - Historical Analysis\n**As a** team lead\n**I want** to scan our repository history to populate existing issue associations\n**So that** we have complete traceability for past work items\n\n## Success Metrics\n\n- **Reduced manual tracking** by 90% through automation\n- **Improved traceability** from requirements to deployed code\n- **Faster issue closure** through automatic PR integration\n- **Better project visibility** through real development progress tracking\n\n## Integration Considerations\n\n### Existing Features\n- Must integrate with current GitHub sync functionality\n- Should work with milestone and project progress tracking\n- Compatible with credential management system\n- Extends existing issue YAML structure\n\n### Future Enhancements\n- Integration with deployment platforms (Kubernetes, Docker)\n- Support for additional git hosting platforms (GitLab, Bitbucket)\n- Advanced analytics on development velocity\n- Integration with project management tools (Jira, Linear)\n\n## Related Issues\n\n- b55e5d2f: GitHub sync status issues (ensure CI/CD data syncs properly)\n- 515a927c: Automatic progress tracking (CI/CD data should feed into progress)\n- 1fb2b36c: Enhanced init command (could include CI/CD setup)\n\n## Priority Justification\n\n**High Priority** because:\n- **Developer workflow**: Seamless integration with existing git practices\n- **Automation value**: Eliminates manual tracking of branches and commits\n- **Traceability**: Essential for compliance and code review processes\n- **CI/CD adoption**: Modern development requires automated issue tracking\n- **Data accuracy**: Automatic tracking prevents human error and omissions\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:45:32.567867"
+    },
+    "a24c5633": {
+      "id": "a24c5633",
+      "status": "todo",
+      "title": "Implement automatic milestone and project progress updates based on issue completion",
+      "assignee": "shanewilkins",
+      "milestone": "v.0.3.0",
+      "description": "# Implement automatic milestone and project progress updates based on issue completion\n\n## Description\n\nCurrently, users work directly on issues but must manually track and update milestone and project-level progress. We need to implement automatic progress aggregation that flows upward: issue completion \u2192 milestone progress \u2192 project roadmap updates. This creates a single source of truth where individual work automatically reflects in higher-level planning documents.\n\n## Current State Analysis\n\n### What Works Now\n- Individual issue tracking with status and progress\n- Manual milestone and project management\n- Basic relationships between issues and milestones\n\n### What's Missing\n- Automatic milestone progress calculation from assigned issues\n- Project-level progress aggregation from multiple milestones\n- Real-time updates when issue status changes\n- Timeline adjustments based on actual completion rates\n- Automatic milestone completion detection\n- Project health indicators and risk assessment\n\n## Proposed Integration Architecture\n\n### Progress Flow Hierarchy\n```\nIssues (individual work) \n    \u2193 automatic aggregation\nMilestones (feature/release groupings)\n    \u2193 automatic aggregation  \nProjects (top-level initiatives)\n    \u2193 automatic reporting\nProject Portfolio Dashboard\n```\n\n### Automatic Update Triggers\n1. **Issue Status Change** \u2192 Update milestone progress\n2. **Issue Progress Update** \u2192 Recalculate milestone percentage\n3. **Milestone Completion** \u2192 Update project timeline\n4. **Issue Assignment to Milestone** \u2192 Refresh milestone scope\n5. **Estimated Hours Change** \u2192 Update timeline projections\n\n## Detailed Feature Requirements\n\n### Issue-to-Milestone Integration\n\n#### Progress Calculation\n```python\n# Milestone progress based on assigned issues\ndef calculate_milestone_progress(milestone_id):\n    issues = get_issues_for_milestone(milestone_id)\n    \n    if not issues:\n        return 0.0\n    \n    # Option 1: Simple count-based\n    completed = len([i for i in issues if i.status == 'done'])\n    return (completed / len(issues)) * 100\n    \n    # Option 2: Effort-weighted (preferred)\n    total_effort = sum(i.estimated_hours or 1 for i in issues)\n    completed_effort = sum(i.estimated_hours or 1 for i in issues if i.status == 'done')\n    return (completed_effort / total_effort) * 100\n```\n\n#### Status Propagation\n```python\n# Automatic milestone status updates\ndef update_milestone_status(milestone_id):\n    progress = calculate_milestone_progress(milestone_id)\n    \n    if progress >= 100.0:\n        milestone.status = 'completed'\n        milestone.actual_end_date = datetime.now()\n    elif progress > 0:\n        milestone.status = 'in-progress'\n        if not milestone.actual_start_date:\n            milestone.actual_start_date = datetime.now()\n    else:\n        milestone.status = 'not-started'\n```\n\n### Milestone-to-Project Integration\n\n#### Project Progress Aggregation\n```python\n# Project progress from milestone completion\ndef calculate_project_progress(project_id):\n    milestones = get_milestones_for_project(project_id)\n    \n    if not milestones:\n        return 0.0\n    \n    # Weight by milestone importance/effort\n    total_weight = sum(m.estimated_effort or 1 for m in milestones)\n    completed_weight = sum(m.estimated_effort or 1 for m in milestones if m.status == 'completed')\n    \n    return (completed_weight / total_weight) * 100\n```\n\n#### Timeline Projection\n```python\n# Automatic timeline updates based on velocity\ndef update_project_timeline(project_id):\n    project = get_project(project_id)\n    milestones = get_milestones_for_project(project_id)\n    \n    # Calculate velocity from completed work\n    velocity = calculate_completion_velocity(milestones)\n    \n    # Project remaining work based on incomplete milestones\n    remaining_effort = sum(m.estimated_effort for m in milestones if m.status != 'completed')\n    \n    # Update projected end date\n    projected_completion = calculate_projected_date(velocity, remaining_effort)\n    project.projected_end_date = projected_completion\n    \n    # Risk assessment\n    if projected_completion > project.target_end_date:\n        project.risk_level = 'high'\n        project.schedule_variance = (projected_completion - project.target_end_date).days\n```\n\n### Real-Time Update System\n\n#### Event-Driven Updates\n```python\n# Hook into issue update events\n@event_listener('issue_updated')\ndef on_issue_updated(issue_id, changes):\n    if 'status' in changes or 'progress_percentage' in changes:\n        # Find affected milestones\n        milestones = get_milestones_containing_issue(issue_id)\n        for milestone in milestones:\n            update_milestone_progress(milestone.id)\n            \n            # Find affected projects  \n            projects = get_projects_containing_milestone(milestone.id)\n            for project in projects:\n                update_project_progress(project.id)\n                update_project_timeline(project.id)\n```\n\n#### Batch Update Commands\n```bash\n# CLI commands for manual recalculation\nroadmap recalculate milestone MILESTONE_ID\nroadmap recalculate project PROJECT_ID  \nroadmap recalculate all\n\n# Status reporting\nroadmap milestone status MILESTONE_ID --show-issues\nroadmap project status PROJECT_ID --show-milestones --show-timeline\n```\n\n## Acceptance Criteria\n\n### Automatic Progress Calculation\n- [ ] Milestone progress automatically updates when issue status changes\n- [ ] Project progress automatically updates when milestone status changes\n- [ ] Progress calculation supports both count-based and effort-weighted methods\n- [ ] Real-time updates occur on issue/milestone modifications\n\n### Status Propagation\n- [ ] Milestone status automatically changes based on issue completion\n- [ ] Project status reflects milestone completion state\n- [ ] Automatic start/end date tracking for milestones and projects\n- [ ] Completion detection and status finalization\n\n### Timeline Management\n- [ ] Project timeline updates based on actual completion velocity\n- [ ] Schedule variance calculation and risk assessment\n- [ ] Projected completion date calculation\n- [ ] Timeline visualization shows actual vs planned progress\n\n### Integration Points\n- [ ] Issue assignment to milestone triggers progress recalculation\n- [ ] Milestone assignment to project triggers project update\n- [ ] Bulk operations maintain data consistency\n- [ ] GitHub sync includes progress updates\n\n### User Interface\n- [ ] CLI commands for manual progress recalculation\n- [ ] Progress reporting commands with drill-down capability\n- [ ] Visual progress indicators in status displays\n- [ ] Warning alerts for schedule risks\n\n## Implementation Plan\n\n### Phase 1: Core Progress Engine (2h)\n- [ ] Implement milestone progress calculation from issues\n- [ ] Implement project progress calculation from milestones\n- [ ] Add automatic status propagation logic\n- [ ] Create event system for real-time updates\n\n### Phase 2: Timeline Intelligence (2h)\n- [ ] Add velocity calculation from historical data\n- [ ] Implement projected completion date calculation\n- [ ] Add schedule variance and risk assessment\n- [ ] Create timeline adjustment algorithms\n\n### Phase 3: CLI Integration (1h)\n- [ ] Add recalculation commands to CLI\n- [ ] Enhance status display commands with progress info\n- [ ] Add progress reporting and drill-down commands\n- [ ] Integrate with existing issue/milestone/project commands\n\n## Technical Implementation Details\n\n### Data Model Enhancements\n```yaml\n# Enhanced milestone fields\nmilestone:\n  calculated_progress: float  # Auto-calculated from issues\n  last_progress_update: datetime\n  completion_velocity: float  # Issues/week\n  risk_level: enum  # low, medium, high\n  \n# Enhanced project fields  \nproject:\n  calculated_progress: float  # Auto-calculated from milestones\n  projected_end_date: date    # Auto-calculated\n  schedule_variance: int      # Days ahead/behind\n  completion_velocity: float  # Milestones/week\n  risk_level: enum\n```\n\n### Configuration Options\n```bash\n# Progress calculation preferences\nroadmap config set progress.calculation_method \"effort_weighted\"  # or \"count_based\"\nroadmap config set progress.auto_update true\nroadmap config set progress.velocity_window_weeks 4\n\n# Timeline projection settings  \nroadmap config set timeline.auto_adjust true\nroadmap config set timeline.risk_threshold_days 7\nroadmap config set timeline.velocity_smoothing 0.3\n```\n\n### Performance Considerations\n- Batch updates to avoid excessive recalculation\n- Caching of calculated values with invalidation\n- Async processing for large project hierarchies\n- Debounced updates for rapid issue changes\n\n## User Stories\n\n### Story 1: Project Manager - Real-Time Visibility\n**As a** project manager\n**I want** project progress to automatically update when team members complete issues\n**So that** I have real-time visibility into project health without manual tracking\n\n### Story 2: Team Lead - Milestone Tracking  \n**As a** team lead\n**I want** milestone progress to reflect the actual completion of assigned issues\n**So that** I can accurately communicate milestone status to stakeholders\n\n### Story 3: Individual Contributor - Progress Visibility\n**As a** developer completing issues\n**I want** to see how my work contributes to milestone and project progress\n**So that** I understand the impact of my individual contributions\n\n### Story 4: Stakeholder - Timeline Confidence\n**As a** project stakeholder\n**I want** timeline projections based on actual completion velocity\n**So that** I can make informed decisions about resource allocation and expectations\n\n## Success Metrics\n\n- **Reduced manual tracking time** by 80% for project managers\n- **Improved timeline accuracy** through velocity-based projections\n- **Increased visibility** into project health and risk factors\n- **Better team alignment** through clear progress indicators\n\n## Integration Considerations\n\n### GitHub Sync Integration\n- Progress updates should sync to GitHub issue milestones\n- Project progress could update GitHub project boards\n- Timeline changes might trigger GitHub milestone due date updates\n\n### Visualization Integration\n- Progress data should feed into charts and dashboards\n- Timeline visualization should show actual vs projected completion\n- Risk indicators should be prominently displayed\n\n### Notification System\n- Alert on milestone completion\n- Warn on schedule variance exceeding thresholds\n- Notify on risk level changes\n\n## Related Issues\n\n- 1fb2b36c: Enhanced init command (project creation integration)\n- b55e5d2f: GitHub sync status (ensure progress syncs properly)\n- Future: Dashboard and visualization features\n\n## Priority Justification\n\n**High Priority** because:\n- **Core value proposition**: Automatic progress tracking is key differentiator\n- **User experience**: Manual tracking defeats automation purpose\n- **Data integrity**: Ensures consistency between individual work and project status\n- **Decision making**: Accurate progress data enables better project decisions\n- **Team motivation**: Visible progress contribution increases engagement\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:45:32.569468"
+    },
+    "26ac08b4": {
+      "id": "26ac08b4",
+      "status": "closed",
+      "title": "Enhance init command with automatic project setup and credential flow",
+      "assignee": "shanewilkins",
+      "milestone": null,
+      "description": "# Enhance init command with automatic project setup and credential flow\n\n## Description\n\nThe current `roadmap init` command creates basic directory structure but doesn't provide a smooth onboarding experience for new users. We need to enhance the initialization process to automatically create a top-level project document and guide users through essential setup steps including credential configuration for GitHub integration.\n\n## Current State Analysis\n\n### What `init` Currently Does\n- Creates `.roadmap/` directory structure\n- Sets up basic configuration files\n- Creates empty folders for issues, milestones, projects\n\n### What's Missing\n- No automatic project creation for the repository/workspace\n- No guided credential setup flow\n- No GitHub integration configuration prompts\n- No validation of setup completion\n- Limited user guidance for next steps\n\n## Proposed Enhanced Flow\n\n### 1. Smart Project Detection & Creation\n```bash\nroadmap init [project-name]\n# If no project-name provided, infer from:\n# - Git repository name\n# - Current directory name\n# - Prompt user for input\n```\n\n### 2. Automatic Top-Level Project Generation\n- Create a main project document that represents the entire repository/workspace\n- Include sensible defaults based on detected information\n- Set appropriate timeline and initial milestones\n\n### 3. Interactive Credential Setup\n- Detect if GitHub integration is desired (check for .git directory)\n- Guide user through GitHub token creation\n- Test connection and validate permissions\n- Store credentials securely\n\n### 4. Configuration Validation\n- Verify all setup steps completed successfully\n- Provide clear success/failure feedback\n- Suggest next steps for getting started\n\n## Detailed Feature Requirements\n\n### Enhanced Init Command Options\n```bash\nroadmap init [OPTIONS] [PROJECT_NAME]\n\nOptions:\n  --project-name TEXT     Name of the main project (auto-detected if not provided)\n  --description TEXT      Project description\n  --github-repo TEXT      GitHub repository (user/repo format)\n  --skip-github          Skip GitHub integration setup\n  --skip-project         Skip automatic project creation\n  --interactive          Run in interactive mode with prompts\n  --template TEXT        Use project template (basic, software, research, etc.)\n```\n\n### Automatic Project Creation Logic\n```python\n# Pseudo-code for enhanced init flow\ndef enhanced_init():\n    # 1. Detect context\n    project_name = detect_project_name()\n    git_repo = detect_git_repository()\n\n    # 2. Create directory structure\n    create_roadmap_structure()\n\n    # 3. Generate main project\n    if not skip_project:\n        create_main_project(project_name)\n\n    # 4. GitHub integration setup\n    if git_repo and not skip_github:\n        setup_github_integration(git_repo)\n\n    # 5. Validation and next steps\n    validate_setup()\n    show_getting_started_guide()\n```\n\n### Interactive Setup Flow\n1. **Welcome & Context Detection**\n   ```\n   \ud83d\ude80 Roadmap CLI Initialization\n\n   Detected: Git repository \"shanewilkins/roadmap\"\n   Current directory: /Users/shane/roadmap\n\n   We'll set up your roadmap with:\n   \u2713 Main project creation\n   \u2713 GitHub integration\n   \u2713 Credential configuration\n   ```\n\n2. **Project Setup**\n   ```\n   \ud83d\udccb Creating Main Project\n\n   Project name: [roadmap] (auto-detected)\n   Description: [A powerful CLI tool for project roadmaps]\n   Owner: [shane] (from git config)\n   Priority: [high]\n   ```\n\n3. **GitHub Integration**\n   ```\n   \ud83d\udd17 GitHub Integration Setup\n\n   Repository: shanewilkins/roadmap \u2713\n\n   To sync with GitHub, you'll need a personal access token.\n   \u2192 Open: https://github.com/settings/tokens\n   \u2192 Create token with 'public_repo' scope\n   \u2192 Paste token when prompted (secure input)\n   ```\n\n4. **Validation & Next Steps**\n   ```\n   \u2705 Setup Complete!\n\n   Created:\n   \u2713 Main project: roadmap (ID: abc12345)\n   \u2713 GitHub connection: Connected as shanewilkins\n   \u2713 Credentials: Stored securely in keychain\n\n   Next steps:\n   \u2192 roadmap project overview\n   \u2192 roadmap issue create \"Your first issue\"\n   \u2192 roadmap sync bidirectional\n   ```\n\n## Acceptance Criteria\n\n### Core Functionality\n- [x] `roadmap init` automatically creates a main project document\n- [x] Project name auto-detection from git repo or directory name\n- [x] Interactive prompts for missing information\n- [x] Optional GitHub integration setup during init\n- [ ] Credential setup flow with validation\n- [x] Setup completion verification\n\n### User Experience\n- [ ] Clear progress indicators during initialization\n- [ ] Helpful error messages with recovery suggestions\n- [x] Option to skip optional steps (--skip-github, --skip-project)\n- [x] Getting started guide after successful init\n- [x] Template support for different project types\n\n### Technical Requirements\n- [x] Backwards compatibility with existing init behavior\n- [ ] Proper error handling for all setup steps\n- [ ] Secure credential handling during setup\n- [ ] GitHub API validation during credential setup\n- [ ] Configuration validation and rollback on errors\n\n### Documentation & Testing\n- [ ] Update CLI documentation with new init options\n- [ ] Add examples for different initialization scenarios\n- [ ] Unit tests for auto-detection logic\n- [ ] Integration tests for full init flow\n- [ ] Error handling test cases\n\n## Implementation Plan\n\n### Phase 1: Core Enhancement (2h)\n- [ ] Enhance init command with project creation\n- [ ] Add auto-detection for project name and git repo\n- [ ] Implement basic interactive prompts\n- [ ] Add validation for successful setup\n\n### Phase 2: GitHub Integration (1.5h)\n- [ ] Add GitHub credential setup to init flow\n- [ ] Implement connection testing during init\n- [ ] Add GitHub configuration validation\n- [ ] Handle credential setup errors gracefully\n\n### Phase 3: Polish & Documentation (0.5h)\n- [ ] Add progress indicators and better UX\n- [ ] Update documentation and help text\n- [ ] Add template support (if time permits)\n- [ ] Test edge cases and error conditions\n\n## Progress Update\n\nSummary of work completed (so far):\n\n- Implemented automatic main project creation (`roadmap init` creates a project file under `.roadmap/projects`).\n- Project name auto-detection from Git remote or current directory implemented in `_detect_project_context()`.\n- Interactive and non-interactive flows supported (`--non-interactive`, `--yes`).\n- `--skip-github` and `--skip-project` options supported.\n- Template support expanded with `--template` builtin options and `--template-path` for custom template files.\n- Post-init validation added (`_post_init_validate`) checking `config.yaml` and project files.\n- Init manifest and targeted rollback implemented (`.roadmap/.init_manifest.json`).\n- `--github-token` CLI option and `ROADMAP_GITHUB_TOKEN` env var support implemented.\n- Credential flow wired to `CredentialManager` with token storage; `GitHubClient` integration tested via unit/integration tests (mocked).\n- UX improvements: progress status messages and clearer prompts/ guidance for token creation.\n- Documentation: `docs/INIT_ENHANCEMENTS.md` added with examples.\n\nRemaining tasks / follow-ups:\n\n- Add more integration tests that exercise real credential backends (or full mocks covering failure modes).\n- Add environment-var fallback for `GITHUB_TOKEN` (widely used in CI) as an additional convenience.\n- Polish error messages and add a short troubleshooting section to the docs.\n- Decide fate of `roadmap/cli_backup_original.py` (archive/delete/keep) and update repository cleanup docs.\n\nIf you want, I can: add the `GITHUB_TOKEN` env-var fallback, create a CHANGELOG entry and bump `pyproject.toml` version, or open a PR for this branch.\n\n## Technical Considerations\n\n### Auto-Detection Logic\n```python\ndef detect_project_name():\n    # Priority order:\n    # 1. Git repository name\n    # 2. Directory name\n    # 3. Package name (pyproject.toml, package.json)\n    # 4. Prompt user\n```\n\n### GitHub Repository Detection\n```python\ndef detect_git_repository():\n    # Check git remote origin\n    # Parse owner/repo from URL\n    # Validate repository exists and is accessible\n```\n\n### Credential Setup Integration\n```python\ndef setup_github_integration(repo_info):\n    # Guide user through token creation\n    # Test connection with minimal API call\n    # Store credentials using existing credential manager\n    # Configure repository settings\n```\n\n## User Stories\n\n### Story 1: New User - Fresh Repository\n**As a** developer starting a new project\n**I want** to run `roadmap init` and have everything set up automatically\n**So that** I can start managing my roadmap immediately without manual configuration\n\n### Story 2: Existing Project - Adding Roadmap\n**As a** project maintainer adding roadmap to an existing repository\n**I want** the init command to detect my project context and GitHub repository\n**So that** I don't have to manually configure obvious settings\n\n### Story 3: Team Onboarding - GitHub Integration\n**As a** team member joining a project with roadmap\n**I want** the init command to guide me through GitHub credential setup\n**So that** I can collaborate on the roadmap without technical barriers\n\n## Success Metrics\n\n- **Reduced time to first productive use** from ~10 minutes to ~2 minutes\n- **Elimination of common setup errors** (missing credentials, wrong repo config)\n- **Improved user satisfaction** with onboarding experience\n- **Increased GitHub integration adoption** due to easier setup\n\n## Related Issues\n\n- b55e5d2f: Investigate GitHub sync inconsistencies (this will help prevent future issues)\n- Documentation updates needed for enhanced init flow\n- Consider impact on existing roadmap installations\n\n## Priority Justification\n\n**High Priority** because:\n- **First impressions matter**: Init is the first command new users run\n- **Adoption barrier**: Complex setup prevents tool adoption\n- **Support reduction**: Better onboarding reduces user support requests\n- **Competitive advantage**: Smooth setup experience vs manual configuration\n\n**Finished:** Successfully implemented comprehensive init command enhancement with automatic project setup, credential flow, and GitHub integration\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [
+        "priority:high",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:45:32.571006"
+    },
+    "c97197d9": {
+      "id": "c97197d9",
+      "status": "todo",
+      "title": "Investigate GitHub sync inconsistencies and status updates",
+      "assignee": "shanewilkins",
+      "milestone": "v.0.3.0",
+      "description": "# Investigate GitHub sync inconsistencies and status updates\n\n## Description\n\nWhile the GitHub sync authentication has been fixed, there are inconsistencies between local roadmap issue status and GitHub issue status. Local issues show as \"done\" but some GitHub issues remain open, indicating that status updates may not be syncing properly in the bidirectional sync process.\n\n## Issues Observed\n\n### Local vs GitHub Status Mismatch\n- **c0850c90** (Fix broken sync): Local = `done`, GitHub = needs verification\n- **ac64f265** (Add project template): Local = `done`, GitHub = needs verification  \n- **88d2e91d** (Test issue): Local = `done`, GitHub = needs verification\n\n### Sync Authentication Working\n- \u2705 Connection established successfully\n- \u2705 Bidirectional sync runs without errors\n- \u2705 New issues sync properly\n- \u274c Status updates not propagating correctly\n\n## Root Cause Investigation Needed\n\n1. **Status Mapping**: Verify how local status (`done`) maps to GitHub issue state (`closed`)\n2. **API Permissions**: Ensure token has permissions to update issue status\n3. **Sync Logic**: Check if status updates are included in bidirectional sync\n4. **Error Handling**: Review logs for any silent failures during status updates\n\n## Acceptance Criteria\n\n- [ ] Investigate why local `done` status doesn't close GitHub issues\n- [ ] Verify GitHub API permissions for issue state changes\n- [ ] Review sync logic for status update handling\n- [ ] Test status changes sync in both directions (local\u2192GitHub, GitHub\u2192local)\n- [ ] Document proper status mapping between roadmap and GitHub\n- [ ] Ensure completed issues automatically close on GitHub\n- [ ] Create test cases for status sync verification\n- [ ] Update documentation with status sync behavior\n\n## Technical Tasks\n\n### Phase 1: Investigation\n- [ ] Check GitHub API token permissions (needs `repo` scope for state changes?)\n- [ ] Review sync code for status update logic\n- [ ] Test manual status sync with verbose logging\n- [ ] Verify GitHub issue state API endpoints\n\n### Phase 2: Implementation\n- [ ] Fix status mapping logic if broken\n- [ ] Implement proper error handling for status updates\n- [ ] Add status sync verification\n- [ ] Test bidirectional status changes\n\n### Phase 3: Validation\n- [ ] Close the three identified issues manually on GitHub as test\n- [ ] Verify new issues sync status changes properly\n- [ ] Document expected sync behavior\n- [ ] Add automated tests for status sync\n\n## Priority Justification\n\n**High Priority** because:\n- Core functionality expectation: completed work should close GitHub issues\n- User experience: manual GitHub issue management defeats automation purpose\n- Data integrity: inconsistent status creates confusion about actual work state\n- Trust: users need reliable sync to depend on the tool\n\n## Related Issues\n\n- c0850c90: Fix broken sync between GitHub issues and roadmap folder (completed locally)\n- ac64f265: Add project level template (completed locally)  \n- 88d2e91d: test issue to validate sync (completed locally)\n\n## Next Steps for Tomorrow\n\n1. Start with `roadmap sync test-connection --verbose` to check current state\n2. Review GitHub issues #3, #4, #5 to confirm they're still open\n3. Investigate sync logs for status update attempts\n4. Test manual status sync commands if available\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [
+        "priority:high",
+        "status:todo"
+      ],
+      "updated_at": "2026-01-03T17:45:32.572591"
+    },
+    "2f616963": {
+      "id": "2f616963",
+      "status": "closed",
+      "title": "Fix broken sync between GitHub issues and roadmap folder",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Fix broken sync between GitHub issues and roadmap folder\n\n## Description\n\nThe synchronization between GitHub issues and the local `.roadmap/issues/` folder is currently broken. This is a critical feature that allows the roadmap tool to maintain consistency between local project tracking and remote GitHub issue management.\n\n## Problem Details\n\n- **Sync Commands Not Working**: The `roadmap sync` commands may not be properly updating local issues from GitHub\n- **GitHub Integration Issues**: Issues created locally may not be properly pushed to GitHub\n- **Data Consistency**: Local and remote issue states are becoming out of sync\n- **Core Functionality Impact**: This breaks one of the main value propositions of the roadmap tool\n\n## Expected Behavior\n\n- `roadmap sync pull` should fetch GitHub issues and update local `.roadmap/issues/` files\n- `roadmap sync push` should create/update GitHub issues from local files\n- `roadmap sync` (bidirectional) should keep both sides in sync\n- Issue metadata should be properly mapped between GitHub and local formats\n\n## Investigation Areas\n\n1. **GitHub API Integration**: Verify GitHub client authentication and API calls\n2. **Sync Manager Logic**: Check the sync algorithms and conflict resolution\n3. **Data Mapping**: Ensure proper conversion between GitHub issue format and local YAML frontmatter\n4. **Error Handling**: Improve error reporting when sync operations fail\n\n## Acceptance Criteria\n\n- [ ] `roadmap sync pull` successfully fetches and updates local issues from GitHub\n- [ ] `roadmap sync push` successfully creates/updates GitHub issues from local files\n- [ ] Bidirectional sync maintains data consistency\n- [ ] Proper error handling and user feedback for sync operations\n- [ ] Documentation updated with current sync behavior and troubleshooting\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "labels": [
+        "priority:high",
+        "status:done"
+      ],
+      "updated_at": "2026-01-03T17:45:32.574243"
+    },
+    "47614de7": {
+      "id": "47614de7",
+      "status": "closed",
+      "title": "chore: assign five issues to shanewilkins",
+      "assignee": null,
+      "milestone": null,
+      "description": "Assign five issues to shanewilkins (automated via CLI). Please review and approve.\n\nIssues:\n- 7e99d67b\n- 749c3870\n- fa568786\n- 8eced822\n- c29e126d\n\n@shanewilkins \u2014 please review.",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.598683"
+    },
+    "9b5869bb": {
+      "id": "9b5869bb",
+      "status": "closed",
+      "title": "[WIP] Add milestone close convenience command to CLI",
+      "assignee": "shanewilkins",
+      "milestone": null,
+      "description": "Implementation of `roadmap milestone close` convenience command and test:\n\n- [x] Verify existing code in `roadmap/cli/milestone.py` - `close` subcommand exists (lines 180-208)\n- [x] Verify test in `tests/test_cli/test_milestone_close.py` - test exists and passes\n- [x] Verify `milestone update --status open|closed` option - implemented on line 215\n- [x] Run existing tests to ensure all milestone tests pass (14/14 passed)\n- [x] Manually verify `milestone update --status closed` works correctly\n- [x] Identify bug with `--name` option in update command (causes \"got multiple values for argument 'name'\" error)\n- [ ] Fix the `--name` bug in milestone update command\n- [ ] Run linting to ensure code quality\n- [ ] Final verification of all changes\n\nCurrent Status:\nThe core functionality requested (milestone close command and --status option) is already fully implemented and working. Tests pass. However, there's an unrelated bug with the --name option in the update command that should be fixed.\n\n<!-- START COPILOT CODING AGENT SUFFIX -->\n\n\n\n<details>\n\n<summary>Original prompt</summary>\n\n> cli: add 'milestone close' convenience command and test\n> \n> This PR adds a convenience `roadmap milestone close <NAME>` command to quickly mark a milestone closed from the CLI. It includes:\n> \n> - `roadmap/cli/milestone.py` - new `close` subcommand with confirmation and `--force` to skip prompt. It uses `core.update_milestone(..., status=MilestoneStatus.CLOSED)` and prints success/failure.\n> - `tests/test_cli/test_milestone_close.py` - a unit/CLI test that creates a milestone and then closes it with `--force`, verifying the milestone is listed as closed.\n> \n> Notes:\n> - The PR includes a small fix to the existing `milestone update` command to accept `--status open|closed`.\n> \n> Please review and let me know if you'd like an alias `roadmap milestone done` or an interactive option.\n\n\n</details>\n\nCreated from VS Code via the [GitHub Pull Request](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github) extension.\n\n<!-- START COPILOT CODING AGENT TIPS -->\n---\n\n\ud83d\udca1 You can make Copilot smarter by setting up custom instructions, customizing its development environment and configuring Model Context Protocol (MCP) servers. Learn more [Copilot coding agent tips](https://gh.io/copilot-coding-agent-tips) in the docs.",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.600924"
+    },
+    "f1a8dbf6": {
+      "id": "f1a8dbf6",
+      "status": "closed",
+      "title": "Feat/1900c289 auto branch",
+      "assignee": null,
+      "milestone": null,
+      "description": "",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.602454"
+    },
+    "4e7eb2b9": {
+      "id": "4e7eb2b9",
+      "status": "todo",
+      "title": "[WIP] Add semantic versioning support to project",
+      "assignee": null,
+      "milestone": null,
+      "description": "# [WIP] Add semantic versioning support to project\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.604130"
+    },
+    "145ea1b5": {
+      "id": "145ea1b5",
+      "status": "closed",
+      "title": "feat(init): enhance init command, credential flow, tests & docs",
+      "assignee": null,
+      "milestone": null,
+      "description": "Implements enhanced init command with automatic project creation, credential flow (env + CLI), manifest rollback, tests, and docs. Closes issue 1fb2b36c.",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.605827"
+    },
+    "e7e606da": {
+      "id": "e7e606da",
+      "status": "closed",
+      "title": "tests: add unit tests for closing remote orphaned issues",
+      "assignee": null,
+      "milestone": null,
+      "description": "Add tests for SyncManager._close_remote_orphaned_issues covering closing, skipping when linked, and API error handling.",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.607339"
+    },
+    "96a2644d": {
+      "id": "96a2644d",
+      "status": "todo",
+      "title": "Add comprehensive unit tests for closing remote orphaned issues",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Add comprehensive unit tests for closing remote orphaned issues\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.609038"
+    },
+    "fe2dc3cb": {
+      "id": "fe2dc3cb",
+      "status": "todo",
+      "title": "docs: add comprehensive documentation for `issue start` command with git-branch flags",
+      "assignee": null,
+      "milestone": null,
+      "description": "# docs: add comprehensive documentation for `issue start` command with git-branch flags\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.610758"
+    },
+    "16561dd0": {
+      "id": "16561dd0",
+      "status": "todo",
+      "title": "Fix GitHub sync authentication and enhance documentation",
+      "assignee": null,
+      "milestone": null,
+      "description": "# Fix GitHub sync authentication and enhance documentation\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.612333"
+    },
+    "7ba40e67": {
+      "id": "7ba40e67",
+      "status": "todo",
+      "title": "feat: comprehensive test suite fixes and documentation updates",
+      "assignee": null,
+      "milestone": null,
+      "description": "# feat: comprehensive test suite fixes and documentation updates\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.613996"
+    },
+    "e6e60a7b": {
+      "id": "e6e60a7b",
+      "status": "todo",
+      "title": "feat: implement comprehensive project template system",
+      "assignee": null,
+      "milestone": null,
+      "description": "# feat: implement comprehensive project template system\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "labels": [],
+      "updated_at": "2026-01-03T17:34:26.616889"
+    }
+  }
+}

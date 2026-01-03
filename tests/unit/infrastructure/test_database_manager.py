@@ -118,7 +118,8 @@ class TestDatabaseManager:
             "issue_dependencies",
             "issue_labels",
             "comments",
-            "sync_state",
+            "sync_base_state",
+            "sync_metadata",
             "file_sync_state",
         ]
 

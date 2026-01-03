@@ -395,17 +395,6 @@ class GitHubSyncBackend:
 
                 response = client.session.post(url, json=payload)
 
-                # Debug: Log response status and content for 422 errors
-                if response.status_code >= 400:
-                    with open("/tmp/github_api_error.log", "a") as f:
-                        f.write(
-                            f"\n=== GITHUB API ERROR (Status {response.status_code}) ===\n"
-                        )
-                        f.write(f"URL: {url}\n")
-                        f.write(f"Payload: {payload}\n")
-                        f.write(f"Response: {response.text}\n")
-                        f.write("=====================================\n")
-
                 response.raise_for_status()
 
                 github_response = response.json()

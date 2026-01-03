@@ -13,6 +13,7 @@ class TestIssueBaseState:
         state = IssueBaseState(
             id="issue-1",
             status="in-progress",
+            title="Fix the bug",
             assignee="alice",
             milestone="v1.0",
             description="Fix the bug",
@@ -21,6 +22,7 @@ class TestIssueBaseState:
 
         assert state.id == "issue-1"
         assert state.status == "in-progress"
+        assert state.title == "Fix the bug"
         assert state.assignee == "alice"
         assert state.milestone == "v1.0"
         assert state.description == "Fix the bug"
@@ -31,6 +33,7 @@ class TestIssueBaseState:
         state = IssueBaseState(
             id="issue-2",
             status="todo",
+            title="New issue",
             description="New issue",
         )
 
@@ -43,6 +46,7 @@ class TestIssueBaseState:
         state = IssueBaseState(
             id="issue-1",
             status="closed",
+            title="Done",
             assignee="bob",
             description="Done",
             updated_at=now,
@@ -52,6 +56,7 @@ class TestIssueBaseState:
 
         assert result["id"] == "issue-1"
         assert result["status"] == "closed"
+        assert result["title"] == "Done"
         assert result["assignee"] == "bob"
         assert result["updated_at"] == "2026-01-01T12:00:00"
 
@@ -60,6 +65,7 @@ class TestIssueBaseState:
         data = {
             "id": "issue-3",
             "status": "review",
+            "title": "Under review",
             "assignee": "charlie",
             "milestone": None,
             "description": "Under review",
@@ -71,6 +77,7 @@ class TestIssueBaseState:
 
         assert state.id == "issue-3"
         assert state.status == "review"
+        assert state.title == "Under review"
         assert state.assignee == "charlie"
         assert isinstance(state.updated_at, datetime)
 
@@ -90,7 +97,9 @@ class TestSyncState:
     def test_add_issue_to_sync_state(self):
         """Test adding issues to sync state."""
         sync_state = SyncState(last_sync=datetime.now(), backend="github")
-        issue_state = IssueBaseState(id="issue-1", status="todo", description="Test")
+        issue_state = IssueBaseState(
+            id="issue-1", status="todo", title="Test", description="Test"
+        )
 
         sync_state.add_issue("issue-1", issue_state)
 
@@ -100,11 +109,13 @@ class TestSyncState:
     def test_update_issue_in_sync_state(self):
         """Test updating an issue in sync state."""
         sync_state = SyncState(last_sync=datetime.now(), backend="github")
-        issue_state = IssueBaseState(id="issue-1", status="todo", description="Test")
+        issue_state = IssueBaseState(
+            id="issue-1", status="todo", title="Test", description="Test"
+        )
         sync_state.add_issue("issue-1", issue_state)
 
         updated_state = IssueBaseState(
-            id="issue-1", status="closed", description="Done"
+            id="issue-1", status="closed", title="Done", description="Done"
         )
         sync_state.update_issue("issue-1", updated_state)
 
@@ -113,7 +124,9 @@ class TestSyncState:
     def test_remove_issue_from_sync_state(self):
         """Test removing an issue from sync state."""
         sync_state = SyncState(last_sync=datetime.now(), backend="github")
-        issue_state = IssueBaseState(id="issue-1", status="todo", description="Test")
+        issue_state = IssueBaseState(
+            id="issue-1", status="todo", title="Test", description="Test"
+        )
         sync_state.add_issue("issue-1", issue_state)
 
         sync_state.remove_issue("issue-1")
@@ -128,6 +141,7 @@ class TestSyncState:
         issue_state = IssueBaseState(
             id="issue-1",
             status="in-progress",
+            title="Working on it",
             assignee="alice",
             description="Working on it",
             updated_at=now,
@@ -150,6 +164,7 @@ class TestSyncState:
                 "issue-1": {
                     "id": "issue-1",
                     "status": "closed",
+                    "title": "Fixed",
                     "assignee": "bob",
                     "milestone": None,
                     "description": "Fixed",
@@ -174,6 +189,7 @@ class TestSyncState:
         issue1 = IssueBaseState(
             id="issue-1",
             status="todo",
+            title="First",
             assignee=None,
             description="First",
             updated_at=now,
@@ -181,6 +197,7 @@ class TestSyncState:
         issue2 = IssueBaseState(
             id="issue-2",
             status="closed",
+            title="Second",
             assignee="alice",
             milestone="v1.0",
             description="Second",

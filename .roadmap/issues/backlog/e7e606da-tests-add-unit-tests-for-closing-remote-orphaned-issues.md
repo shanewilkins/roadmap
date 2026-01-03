@@ -2,13 +2,13 @@
 id: e7e606da
 title: 'tests: add unit tests for closing remote orphaned issues'
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: null
 labels: []
-github_issue: 96
+github_issue: 48
 created: '2026-01-02T19:20:54.018875+00:00'
-updated: '2026-01-03T01:51:41.875969+00:00'
+updated: '2026-01-03T17:47:04.784171+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,14 +26,4 @@ completed_date: null
 comments: []
 ---
 
-# tests: add unit tests for closing remote orphaned issues
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+Add tests for SyncManager._close_remote_orphaned_issues covering closing, skipping when linked, and API error handling.

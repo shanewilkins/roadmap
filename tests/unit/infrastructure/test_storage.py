@@ -68,7 +68,8 @@ class TestStateManager:
             "issue_dependencies",
             "issue_labels",
             "comments",
-            "sync_state",
+            "sync_base_state",
+            "sync_metadata",
             "file_sync_state",
         ]
 
@@ -284,7 +285,7 @@ class TestStateManager:
         # Set sync state directly
         conn = state_manager._get_connection()
         conn.execute(
-            "INSERT INTO sync_state (key, value) VALUES (?, ?)",
+            "INSERT INTO sync_metadata (key, value) VALUES (?, ?)",
             ("test_key", "test_value"),
         )
 

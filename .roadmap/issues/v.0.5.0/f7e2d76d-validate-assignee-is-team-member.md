@@ -2,7 +2,7 @@
 id: f7e2d76d
 title: Validate assignee is team member
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: v.0.5.0
 labels:
@@ -11,9 +11,9 @@ labels:
 - security
 - validation
 - github-integration
-github_issue: 85
+github_issue: 38
 created: '2026-01-02T19:20:52.900884+00:00'
-updated: '2026-01-02T19:20:52.900885+00:00'
+updated: '2026-01-03T17:46:05.122560+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -35,10 +35,19 @@ comments: []
 
 ## Description
 
-Brief description of the issue or feature request.
+When assigning an issue to someone using the `--assignee` flag, we need to validate that the assignee is a valid GitHub user ID who is listed as a team member, collaborator, or contributor in the repository. This should prevent assignment to invalid users and ensure proper access control.
+
+Currently, the system accepts any string as an assignee without validation, which could lead to:
+- Issues assigned to non-existent users
+- Issues assigned to users without repository access
+- Security concerns around unauthorized assignments
 
 ## Acceptance Criteria
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+- [ ] Validate assignee exists as a GitHub user
+- [ ] Check if assignee has repository access (collaborator/team member)
+- [ ] Provide clear error messages for invalid assignments
+- [ ] Cache team member list for performance
+- [ ] Support both username and GitHub user ID formats
+- [ ] Integration with existing GitHub API client
+- [ ] Update CLI help documentation with validation requirements

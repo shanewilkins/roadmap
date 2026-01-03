@@ -19,6 +19,7 @@ class IssueBaseState:
 
     id: str
     status: str
+    title: str  # Added: title is synced to remote, so track it
     assignee: str | None = None
     milestone: str | None = None
     description: str = ""

@@ -24,7 +24,8 @@ class TestStateComparatorInitialization(TestCase):
         """Verify comparator initializes with default fields to sync."""
         comparator = SyncStateComparator()
         assert comparator.fields_to_sync is not None
-        assert "title" in comparator.fields_to_sync
+        # Title is intentionally excluded as it's display metadata
+        assert "title" not in comparator.fields_to_sync
         assert "status" in comparator.fields_to_sync
 
     def test_initialization_with_custom_fields(self):
@@ -69,12 +70,13 @@ class TestIdentifyConflicts(TestCase):
         local = {
             "issue-1": IssueTestDataBuilder("issue-1")
             .with_title("Local Title")
+            .with_status(Status.TODO)
             .with_updated_at(local_time)
             .build()
         }
         remote = {
             "issue-1": {
-                "title": "Remote Title",
+                "status": "in_progress",
                 "updated_at": remote_time.isoformat(),
             }
         }
@@ -82,7 +84,7 @@ class TestIdentifyConflicts(TestCase):
         conflicts = self.comparator.identify_conflicts(local, remote)
         assert len(conflicts) == 1
         assert conflicts[0].issue_id == "issue-1"
-        assert "title" in conflicts[0].field_names
+        assert "status" in conflicts[0].field_names
 
     def test_detects_multiple_conflicts(self):
         """Verify multiple conflicts detected correctly."""
@@ -485,10 +487,10 @@ class TestComplexScenarios(TestCase):
         }
 
         remote = {
-            # Conflict case
+            # Conflict case - different status
             "issue-1": {
-                "title": "Remote Title",
-                "status": "todo",
+                "title": "Same Title",
+                "status": "in_progress",
                 "priority": "medium",
                 "content": "",
                 "updated_at": base_time.isoformat(),
@@ -514,7 +516,7 @@ class TestComplexScenarios(TestCase):
         pulls = self.comparator.identify_pulls(local, remote)
         up_to_date = self.comparator.identify_up_to_date(local, remote)
 
-        assert len(conflicts) >= 1  # issue-1
+        assert len(conflicts) >= 1  # issue-1 (status conflict)
         assert any(u.id == "issue-2" for u in updates)  # new local
         assert len(pulls) >= 1  # issue-4
         assert "issue-3" in up_to_date  # identical

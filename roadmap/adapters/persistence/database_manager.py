@@ -161,8 +161,21 @@ class DatabaseManager:
             FOREIGN KEY (issue_id) REFERENCES issues (id) ON DELETE CASCADE
         );
 
-        -- Git sync state table
-        CREATE TABLE IF NOT EXISTS sync_state (
+        -- Sync base state (three-way merge baseline from last successful sync)
+        CREATE TABLE IF NOT EXISTS sync_base_state (
+            issue_id TEXT PRIMARY KEY,
+            status TEXT NOT NULL,
+            assignee TEXT,
+            milestone TEXT,
+            description TEXT,
+            labels TEXT,  -- JSON array of label strings
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (issue_id) REFERENCES issues (id) ON DELETE CASCADE
+        );
+
+        -- Sync metadata (overall sync state)
+        CREATE TABLE IF NOT EXISTS sync_metadata (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -178,6 +191,7 @@ class DatabaseManager:
         );
 
         -- Indexes for performance
+        CREATE INDEX IF NOT EXISTS idx_sync_base_state_synced_at ON sync_base_state (synced_at);
         CREATE INDEX IF NOT EXISTS idx_milestones_project_id ON milestones (project_id);
         CREATE INDEX IF NOT EXISTS idx_issues_project_id ON issues (project_id);
         CREATE INDEX IF NOT EXISTS idx_issues_milestone_id ON issues (milestone_id);

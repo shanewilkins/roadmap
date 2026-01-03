@@ -49,6 +49,8 @@ class SyncReport:
     issues_up_to_date: int = 0
     issues_updated: int = 0
     conflicts_detected: int = 0
+    issues_pushed: int = 0
+    issues_pulled: int = 0
     changes: list[IssueChange] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.now)
     error: str | None = None
@@ -63,6 +65,11 @@ class SyncReport:
         console.print(f"   Total issues: {self.total_issues}")
         console.print(f"   Up-to-date: {self.issues_up_to_date}")
         console.print(f"   Updated: {self.issues_updated}")
+
+        if self.issues_pushed > 0:
+            console.print(f"   📤 Pushed: {self.issues_pushed}", style="green")
+        if self.issues_pulled > 0:
+            console.print(f"   📥 Pulled: {self.issues_pulled}", style="green")
 
         if self.conflicts_detected > 0:
             console.print(
@@ -85,6 +92,11 @@ class SyncReport:
         console.print(f"   Total issues: {self.total_issues}")
         console.print(f"   Up-to-date: {self.issues_up_to_date}")
         console.print(f"   Updated: {self.issues_updated}")
+
+        if self.issues_pushed > 0:
+            console.print(f"   📤 Pushed: {self.issues_pushed}", style="green")
+        if self.issues_pulled > 0:
+            console.print(f"   📥 Pulled: {self.issues_pulled}", style="green")
 
         if self.conflicts_detected > 0:
             console.print(

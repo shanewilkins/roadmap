@@ -2,7 +2,7 @@
 id: 0c7f8e37
 title: Auto-create feature branch for new issues
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: v.0.2.0
 labels:
@@ -11,9 +11,9 @@ labels:
 - automation
 - git-integration
 - workflow
-github_issue: 66
+github_issue: 40
 created: '2026-01-02T19:20:51.462978+00:00'
-updated: '2026-01-02T19:20:51.462978+00:00'
+updated: '2026-01-03T17:46:04.234343+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -35,10 +35,29 @@ comments: []
 
 ## Description
 
-Brief description of the issue or feature request.
+Evaluate whether the roadmap CLI should automatically create a new feature branch in Git when starting work on a new issue. This would streamline the development workflow by ensuring each issue has its own dedicated branch for isolated development.
+
+Currently, developers must manually create branches for issues. An automatic branch creation feature could:
+
+- Enforce consistent branch naming conventions
+- Ensure feature isolation and cleaner Git history
+- Reduce setup overhead when starting new work
+- Integrate with existing `roadmap issue start` command
+
+However, there are considerations around:
+
+- Branch naming strategies (feature/issue-id vs feature/issue-title)
+- Handling of existing branches
+- Developer preferences for branch management
+- Integration with team workflows
 
 ## Acceptance Criteria
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+- [ ] Research existing branch creation patterns in the codebase
+- [ ] Design configurable branch naming strategies
+- [ ] Implement `--git-branch` flag for `roadmap issue start` command
+- [ ] Add configuration option to enable/disable auto-branch creation
+- [ ] Handle edge cases (existing branches, dirty working tree)
+- [ ] Provide option to checkout the new branch automatically
+- [ ] Update documentation with new workflow options
+- [ ] Consider integration with GitHub flow vs Git flow patterns

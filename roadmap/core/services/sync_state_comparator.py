@@ -27,19 +27,23 @@ class SyncStateComparator:
 
         Args:
             fields_to_sync: Fields to check for changes (default: common fields)
+                Note: 'title' is intentionally excluded as it's display metadata
+                that doesn't affect workflow state. Only sync fields that change
+                the work item's state (status, labels, priority, etc).
         """
         self.logger = get_logger()
-        self.fields_to_sync = fields_to_sync or [
-            "title",
+        default_fields = [
             "status",
             "priority",
             "content",
             "labels",
             "assignee",
         ]
+        self.fields_to_sync = fields_to_sync or default_fields
         self.logger.debug(
             "sync_state_comparator_initialized",
             fields_to_sync=self.fields_to_sync,
+            note="title excluded from sync as display metadata",
         )
 
     def identify_conflicts(
@@ -338,6 +342,10 @@ class SyncStateComparator:
         remote: dict[str, Any],
     ) -> list[ConflictField]:
         """Detect field-level conflicts between local and remote issues.
+
+        Compares only fields that affect workflow state. The 'title' field is
+        intentionally excluded as it's metadata that doesn't change work item
+        state or require synchronization.
 
         Args:
             local: The local Issue

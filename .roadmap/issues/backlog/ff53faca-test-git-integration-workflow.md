@@ -2,15 +2,15 @@
 id: ff53faca
 title: Test git integration workflow
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: null
 labels:
 - priority:medium
 - status:done
-github_issue: 70
+github_issue: 23
 created: '2026-01-02T19:20:51.725404+00:00'
-updated: '2026-01-02T19:20:51.725405+00:00'
+updated: '2026-01-03T17:46:15.401092+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -39,3 +39,11 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+**Auto-updated from commit fefa3a2a:** Working on #480f35d0 - Initial implementation of git integration test
+
+**Auto-updated from commit afa4971a:** fixes #480f35d0 - Git integration workflow test completed
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

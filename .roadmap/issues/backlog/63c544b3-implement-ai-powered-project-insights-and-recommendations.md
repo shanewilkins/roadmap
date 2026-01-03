@@ -8,9 +8,9 @@ milestone: null
 labels:
 - priority:high
 - status:todo
-github_issue: 79
+github_issue: 16
 created: '2026-01-02T19:20:52.433559+00:00'
-updated: '2026-01-02T19:20:52.433560+00:00'
+updated: '2026-01-03T17:46:07.927209+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -39,3 +39,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins
