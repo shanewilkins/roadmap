@@ -19,6 +19,7 @@ from roadmap.core.services.sync.three_way_merger import ThreeWayMerger
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
 from roadmap.core.services.sync_report import IssueChange, SyncReport
 from roadmap.core.services.sync_state_manager import SyncStateManager
+from roadmap.core.utils.github_urls import get_issue_url, get_milestone_url
 from roadmap.infrastructure.core import RoadmapCore
 
 
@@ -258,6 +259,36 @@ class GitHubSyncOrchestrator:
 
         except Exception as e:
             change.github_changes = {"error": f"Push failed: {str(e)}"}
+
+    def get_github_issue_url(self, issue_number: int | str) -> str | None:
+        """Generate GitHub issue URL from configuration.
+
+        Args:
+            issue_number: GitHub issue number
+
+        Returns:
+            Full GitHub issue URL, or None if config incomplete
+        """
+        owner = self.config.get("owner")
+        repo = self.config.get("repo")
+        if not owner or not repo:
+            return None
+        return get_issue_url(owner, repo, issue_number)
+
+    def get_github_milestone_url(self, milestone_number: int | str) -> str | None:
+        """Generate GitHub milestone URL from configuration.
+
+        Args:
+            milestone_number: GitHub milestone number
+
+        Returns:
+            Full GitHub milestone URL, or None if config incomplete
+        """
+        owner = self.config.get("owner")
+        repo = self.config.get("repo")
+        if not owner or not repo:
+            return None
+        return get_milestone_url(owner, repo, milestone_number)
 
     def _load_milestones(self) -> list[Any]:
         """Load all milestones if available.
