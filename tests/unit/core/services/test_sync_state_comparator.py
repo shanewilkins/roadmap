@@ -253,7 +253,7 @@ class TestIdentifyPulls(TestCase):
 
         pulls = self.comparator.identify_pulls(local, remote)
         assert len(pulls) == 1
-        assert pulls[0]["id"] == 100
+        assert pulls[0] == "new-1"  # Should be the issue_id
 
     def test_newer_remote_issue_identified_as_pull(self):
         """Verify remote issues newer than local are identified as pulls."""
@@ -274,7 +274,7 @@ class TestIdentifyPulls(TestCase):
 
         pulls = self.comparator.identify_pulls(local, remote)
         assert len(pulls) == 1
-        assert pulls[0]["id"] == 100
+        assert pulls[0] == "issue-1"  # Should be the issue_id
 
     def test_older_remote_issue_not_identified_as_pull(self):
         """Verify remote issues older than local are not identified as pulls."""

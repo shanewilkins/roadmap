@@ -227,7 +227,7 @@ class SyncStateComparator:
                 # New remote issue (doesn't exist locally)
                 if issue_id not in local:
                     self.logger.debug("new_remote_issue_identified", issue_id=issue_id)
-                    pulls.append(remote_issue)
+                    pulls.append(issue_id)
                     continue
 
                 # Existing issue - check if remote is newer
@@ -249,7 +249,7 @@ class SyncStateComparator:
                         issue_id=issue_id,
                         seconds_ahead=time_diff,
                     )
-                    pulls.append(remote_issue)
+                    pulls.append(issue_id)
 
             except Exception as e:
                 self.logger.error(
