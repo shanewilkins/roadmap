@@ -1,263 +1,450 @@
-# Sync System Architecture
+# Roadmap Sync Architecture: Git-Based State Management
 
-## Overview
+## Executive Summary
 
-The sync system provides two-way synchronization between local roadmap files and remote sources (GitHub API, Git repos, etc.). It's designed to be backend-agnostic, allowing any sync target without modifying the core sync logic.
+This document describes the redesigned sync architecture for the roadmap tool. The architecture shifts from a database-heavy baseline state management system to a **file-as-source-of-truth** approach leveraging git history and frontmatter metadata. This enables backend-agnostic sync while maintaining atomic, versioned state and three-way merge conflict detection.
 
-## Architecture Principles
+---
 
-### 1. Backend Agnosticism
-The core sync logic doesn't know or care about git, GitHub, or any specific backend. All backend-specific code lives in backend implementations:
+## 1. Architecture Overview
 
-- **GitHub Logic** → `github_sync_backend.py`
-- **Git Logic** → `vanilla_git_sync_backend.py`
-- **Core Sync Logic** → `generic_sync_orchestrator.py`
-
-### 2. API-Based Sync
-Sync interacts with **remote data sources** (GitHub API), not git:
+### Layers
 
 ```
-Local Issues (files)  ←→  GitHub API  ←→  GitHub Issues
-                           (backend)
+┌─────────────────────────────────────────────────────────────┐
+│                   User Workflow (CLI)                       │
+│  roadmap sync → Fetch remote → Three-way merge → Commit     │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│            Generic Sync Orchestrator                        │
+│  • Detects changes (git diff + git history)                │
+│  • Performs three-way merge                                │
+│  • Handles conflict resolution                             │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│         Backend-Agnostic Sync Interface                     │
+│  • GitHub API Backend                                       │
+│  • Vanilla Git Backend                                      │
+│  • Future: Jira, Linear, GitLab adapters                   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│          Local File-Based Storage                           │
+│  • Issues: .roadmap/projects/{project}/issues/             │
+│  • YAML Frontmatter: sync_metadata embedded                │
+│  • Git History: Baseline reconstruction via git log        │
+│  • Database: Cache layer only (rebuilt on startup)         │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-The user handles git operations separately:
+### Core Principle
 
+**Files are the source of truth.** Everything else (database, git history, sync metadata) is derived from or supporting.
+
+---
+
+## 2. Sync Metadata Structure
+
+Sync metadata is embedded in issue YAML frontmatter as a separate section. This ensures:
+- **Atomic storage** with issue data
+- **Git history integration** (part of committed file)
+- **Backend agnostic** (applies to any syncing system)
+- **User transparency** (they see all state in git)
+
+### Metadata Format
+
+```yaml
+---
+id: "gh-123"
+title: "Implement feature X"
+status: "in-progress"
+assignee: "jane"
+priority: "high"
+labels:
+  - "feature"
+  - "backend"
+content: "Description here"
+milestone: "v1.0"
+
+# Sync metadata - stored in YAML header for git tracking
+sync_metadata:
+  last_synced: "2026-01-03T10:30:45Z"
+  last_updated: "2026-01-03T10:25:00Z"
+  remote_state:
+    status: "open"
+    assignee: "bob"
+    priority: "medium"
+    labels: ["feature"]
+    content: "Original description"
+    milestone: null
+---
+
+Full markdown content and body here...
 ```
-Local Files  →  git add  →  git commit  →  git push  →  Git Remote
+
+### Fields Explained
+
+| Field | Purpose | Source |
+|-------|---------|--------|
+| `last_synced` | Timestamp of last successful sync | Set after sync completes |
+| `last_updated` | Last update time from remote system | From remote API response |
+| `remote_state` | Snapshot of remote issue at last sync | Captured from API response |
+
+---
+
+## 3. Baseline State Management via Git History
+
+Instead of storing baseline state in a database, we reconstruct it from git history.
+
+### How It Works
+
+1. **User makes local changes** → Edit issue file directly
+2. **User prepares to commit** → `roadmap sync`
+3. **Sync reads local baseline**:
+   ```python
+   local_baseline = git_history.get_file_at_timestamp(
+       issue_file_path,
+       last_synced_timestamp
+   )
+   ```
+4. **Sync reads remote baseline** → From `sync_metadata.remote_state`
+5. **Three-way merge comparison**:
+   - Local baseline → Local current = What user changed
+   - Remote baseline → Remote current = What external system changed
+   - Detects conflicts when both changed same field differently
+
+### Git History Utilities
+
+```python
+# File: roadmap/adapters/persistence/git_history.py
+
+def get_file_at_timestamp(file_path: str, timestamp: str) -> str:
+    """Get file content as it existed at timestamp."""
+    # Find git commit closest to timestamp
+    # Return file content at that commit
+
+def find_commit_at_time(timestamp: str, file_path: str = None) -> str:
+    """Find commit SHA closest to given timestamp."""
+    # git log --format="%H %aI" | find closest
+
+def extract_yaml_header(content: str) -> tuple[dict, str]:
+    """Parse YAML frontmatter from markdown file."""
+    # Returns (metadata_dict, body_content)
 ```
 
-### 3. User Responsibility
-The sync command is responsible only for:
-- Fetching remote issues via API
-- Comparing local vs remote
-- Resolving conflicts
-- Creating/updating local `.roadmap/issues/*.md` files
+### Benefits
 
-Users are responsible for:
-- `git add .roadmap/`
-- `git commit -m "..."`
-- `git push`
+✅ **No database needed** for baseline state
+✅ **Full audit trail** in git
+✅ **Atomic** (baseline + metadata in single commit)
+✅ **Mergeable** (standard git conflicts if needed)
+✅ **Recoverable** (can inspect any past commit)
 
-### 4. No File Persistence in Orchestrator
-The orchestrator **does not** save files to disk. That's the user's responsibility.
+---
 
-**Before (Wrong):**
+## 4. Database as Cache Layer
+
+The SQLite database (`~/.roadmap/roadmap.db`) is only a **query cache**:
+
+### Tables
+- `projects` - Project metadata (name, description, status)
+- `milestones` - Milestone data with foreign key to projects
+- `issues` - Issue data with foreign key to milestones
+- `issue_dependencies` - Issue relationship graph
+- `issue_labels` - Many-to-many issue-label associations
+- `comments` - Issue comments
+
+
+### Rebuild Strategy
+
+**On startup:**
 ```
-sync() → modifies files → persists to disk → commits to git
+1. Get list of changed files since last DB rebuild
+   git diff --name-only <last_sync_commit> HEAD
+2. For each changed .md file:
+   - Parse YAML frontmatter
+   - Update corresponding DB row
+3. Full rebuild if needed (safety fallback)
+   - Scan all .roadmap/projects/**/*.md
+   - Rebuild entire projects/milestones/issues tables
+   - ~50-100ms for typical projects
 ```
 
-**After (Correct):**
-```
-sync() → modifies files → user persists to disk (git add/commit/push)
+### Usage in List Commands
+
+```python
+# Old approach (file scan):
+issues = [load_issue(f) for f in glob("**/*.md")]  # Slow
+
+# New approach (DB):
+issues = db.query("SELECT * FROM issues ORDER BY status")  # Fast
 ```
 
-## System Components
+---
 
-### SyncBackendInterface (Protocol)
-Defines the contract all backends must implement:
+## 5. Backend-Agnostic Sync Interface
+
+The `SyncBackendInterface` abstracts away backend details:
 
 ```python
 class SyncBackendInterface(Protocol):
-    def authenticate(self) -> bool                          # Verify connection
-    def get_issues(self) -> dict[str, Any]                 # Fetch remote issues
-    def push_issue(self, local_issue: Issue) -> bool       # Push 1 issue
-    def push_issues(self, local_issues: list[Issue]) -> SyncReport  # Push N issues
-    def pull_issues(self) -> SyncReport                    # Pull all issues
-    def pull_issue(self, issue_id: str) -> bool            # Pull 1 issue
-    def get_conflict_resolution_options(...) -> list[str]  # Conflict options
-    def resolve_conflict(...) -> bool                       # Resolve conflict
+    """Contract all backends must implement."""
+
+    def authenticate(self) -> bool:
+        """Verify credentials and remote connectivity."""
+
+    def get_issues(self) -> dict[str, Any]:
+        """Fetch all issues from remote system."""
+
+    def push_issue(self, issue: Issue) -> bool:
+        """Push single local issue to remote."""
+
+    def push_issues(self, issues: list[Issue]) -> SyncReport:
+        """Push multiple issues with conflict reporting."""
+
+    def pull_issues(self) -> SyncReport:
+        """Pull and merge remote issues locally."""
+
+    def get_conflict_resolution_options(self, conflict) -> list[str]:
+        """Available strategies: 'use_local', 'use_remote', 'merge'."""
+
+    def resolve_conflict(self, conflict, resolution: str) -> bool:
+        """Apply conflict resolution."""
 ```
 
-### Backends
+### Current Implementations
 
-#### GitHubSyncBackend
-Implements sync with GitHub API:
-- `authenticate()`: Validates GitHub token
-- `get_issues()`: Calls GitHub API to fetch issues
-- `push_issue()`: Creates/updates issue via API
-- `pull_issue()`: Fetches issue from API
+1. **GitHubSyncBackend** - GitHub REST API
+   - Maps GitHub issue number to local issue ID
+   - Syncs: status, assignee, labels, content, milestone
 
-**No git operations** - all interaction is via GitHub API.
+2. **VanillaGitSyncBackend** - Git push/pull
+   - Works with any git hosting (GitHub, GitLab, Gitea, SSH)
+   - No API calls - just git operations
 
-#### VanillaGitSyncBackend (Self-Hosting)
-For self-hosted deployments (no remote database):
-- All methods are no-ops (return empty/True)
-- Users handle git operations themselves
-- Exists for interface compatibility
+### Adding New Backends
 
-### GenericSyncOrchestrator
-Orchestrates sync using any backend:
+Implement the interface once, and `GenericSyncOrchestrator` handles everything else (conflict detection, merging, DB updates).
 
-1. **Authenticate** with backend
-2. **Get issues** from both local and remote
-3. **Compare** local vs remote using `SyncStateComparator`
-4. **Detect**:
-   - Conflicts (both sides changed)
-   - Updates (local changed, remote unchanged)
-   - Pulls (remote changed, local unchanged)
-   - Up-to-date (no changes)
-5. **Resolve** conflicts using `SyncConflictResolver` (three-way merge)
-6. **Apply changes** to local files (if not dry-run)
+---
 
-### SyncStateComparator
-Detects changes:
-- Compares local issues with remote data
-- Identifies conflicts, updates, pulls, up-to-date status
-- Uses timestamps and field comparison
+## 6. GitHub API Integration
 
-### SyncConflictResolver
-Resolves conflicts using three-way merge:
-- Compares base version (from prior sync state)
-- Compares local vs remote changes
-- Auto-merges non-conflicting changes
-- Flags critical field conflicts for review
+### Metadata Compatibility
 
-## Data Flow
+GitHub API provides these fields on issues:
 
-### Sync Operation (dry-run = False)
+| GitHub Field | Roadmap Field | Note |
+|---|---|---|
+| `state` | `status` | Maps: open↔in-progress, closed↔done |
+| `assignee.login` | `assignee` | Single assignee (roadmap) |
+| `labels[*].name` | `labels` | Array of label names |
+| `body` | `content` | Issue description |
+| `milestone.title` | `milestone` | Single milestone title |
+| `created_at` | `created` | ISO 8601 timestamp |
+| `updated_at` | `updated` | Last modification time |
+| `closed_at` | `closed_at` | Closure timestamp |
+| `comments` | `comment_count` | Number of comments |
 
-```
-┌─────────────────────────────────────────────────────────┐
-│ CLI: roadmap sync                                       │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│ GenericSyncOrchestrator.sync_all_issues()               │
-│ - backend.authenticate()                                │
-│ - backend.get_issues()                                  │
-│ - core.issues.list()                                    │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│ SyncStateComparator                                     │
-│ - identify_conflicts()                                  │
-│ - identify_updates()                                    │
-│ - identify_pulls()                                      │
-│ - identify_up_to_date()                                 │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│ SyncConflictResolver                                    │
-│ - resolve_batch(conflicts)                              │
-│ - Returns resolved issues                               │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│ Apply Changes (if not dry-run)                          │
-│ - backend.push_issues(updates + resolved)               │
-│ - backend.pull_issue(pulls)                             │
-│ - Modify .roadmap/issues/*.md files                     │
-│   (via core.issues or file parser)                      │
-└─────────────┬───────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────┐
-│ User Performs Git Operations (user responsibility)      │
-│ - git add .roadmap/                                     │
-│ - git commit -m "chore: sync"                           │
-│ - git push                                              │
-└─────────────────────────────────────────────────────────┘
-```
+### Not Supported by GitHub API
 
-### Sync Operation (dry-run = True)
+Fields the roadmap tool uses that GitHub doesn't provide natively:
 
-Same as above, but skip the "Apply Changes" and "User Git Ops" steps. Show what would happen.
+- ❌ `priority` - Must be in milestone description or labels
+- ❌ `estimated_hours` - Must be in issue body
+- ❌ `dependencies` - No API support (could use labels like "blocks-#123")
 
-## Conflict Resolution
+**Workaround:** Roadmap stores these in issue content/body; sync skips them when syncing to GitHub.
 
-### Three-Way Merge Strategy
+---
 
-Three-way merge compares three versions:
+## 7. Pre-Commit Sync Workflow
 
-1. **Base** (previous sync state)
-2. **Local** (current local version)
-3. **Remote** (current remote version)
-
-Results:
+The user's sync happens **before** commit, not after:
 
 ```
-Base       Local      Remote     Result
-─────────  ─────────  ─────────  ──────────────────
-unchanged  unchanged  unchanged  No change
-unchanged  changed    unchanged  Use local (our change)
-unchanged  unchanged  changed    Use remote (their change)
-unchanged  changed    changed    Conflict (both changed differently)
-changed    changed    changed    Conflict (all three differ)
+User Branch
+    ↓
+User edits issues
+    ↓
+$ roadmap sync (before committing)
+    │
+    ├─ Fetch remote state via backend
+    ├─ Load local baseline (git history at last_synced)
+    ├─ Load remote baseline (sync_metadata.remote_state)
+    ├─ Three-way merge
+    ├─ Update issue files with merged state
+    └─ Update sync_metadata with new remote baseline
+    ↓
+$ git add . && git commit "Feature X + sync"
+    │
+    └─ Single atomic commit with:
+       - Feature changes
+       - Sync metadata updates
+       - Conflict resolutions
+    ↓
+$ git push
+    │
+    └─ If conflicts with master:
+       - Standard git merge conflict
+       - User resolves normally
+       - Merged commit includes all state
 ```
 
-### Auto-Merge Rules
+### Benefits
 
-Non-critical fields are auto-merged:
-- Labels
-- Description
-- Other metadata
+✅ **Clean history** - No separate sync commits
+✅ **Atomic** - Work + sync metadata in one commit
+✅ **Conflict resolution at merge time** - Standard git workflow
+✅ **Audit trail** - Every commit shows what user + remote changed
+✅ **Project-as-code** - Everything versioned in git
 
-Critical fields are flagged:
-- Status (blocks work)
-- Assignee (ownership issue)
-- Priority (work order)
+---
 
-## Configuration
+## 8. Conflict Resolution Strategy
 
-Backend selection at init time:
+### Detection (Three-Way Merge)
 
-```bash
-roadmap init
-# Prompts for GitHub token/repo or Git config
-# Saves to .roadmap/config.yaml
+```python
+def detect_conflicts(local_baseline, local_current, remote_baseline, remote_current):
+    """Find fields that both local and remote changed."""
+    conflicts = {}
+    for field in ['status', 'assignee', 'priority', 'labels', 'content']:
+        local_changed = local_baseline[field] != local_current[field]
+        remote_changed = remote_baseline[field] != remote_current[field]
+
+        if local_changed and remote_changed:
+            if local_current[field] != remote_current[field]:
+                # Both changed differently - conflict
+                conflicts[field] = {
+                    'local': local_current[field],
+                    'remote': remote_current[field],
+                    'baseline': local_baseline[field]
+                }
+    return conflicts
 ```
 
-Sync uses configured backend:
+### Resolution Options
 
-```bash
-roadmap sync  # Uses backend from config
+1. **`use_local`** - Keep local version
+2. **`use_remote`** - Accept remote version
+3. **`merge`** - Try to combine (array fields like labels)
+
+### Field-Level Conflicts
+
+Because we store field-level baseline state in `remote_state`, we can offer smart merging:
+
+```python
+# Labels example:
+baseline:  ['bug']
+local:     ['bug', 'priority-high']  # Added priority-high
+remote:    ['bug', 'documentation']  # Added documentation
+
+# Smart merge result: ['bug', 'priority-high', 'documentation']
 ```
 
-## Testing
+---
 
-### Unit Tests
-- `test_sync_state_comparator.py` - Change detection
-- `test_sync_conflict_resolver.py` - Conflict resolution
-- `test_github_sync_backend.py` - GitHub API operations
+## 9. Data Flow Example
 
-### Integration Tests
-- `test_sync_orchestrator_end_to_end.py` - Full workflow with mocks
-- `test_sync_end_to_end_integration.py` - Full workflow with real objects
-- CLI tests - Command-line interface
+**Scenario:** User changes issue status locally; GitHub issue was reassigned
 
-### What's NOT Tested Anymore
-- Git operations in backends (removed as per new architecture)
-- File persistence in orchestrator (user responsibility now)
-- State file management (decoupled from orchestrator)
+```yaml
+# Local file at last_synced (git history)
+status: "open"
+assignee: "alice"
 
-## Future Enhancements
+# Local file now (user edit)
+status: "in-progress"
+assignee: "alice"
 
-### New Backends
-To support a new sync target (GitLab, Jira, etc.):
+# Remote baseline (sync_metadata.remote_state)
+status: "open"
+assignee: "jane"
 
-1. Create new class implementing `SyncBackendInterface`
-2. Implement all required methods
-3. Add to backend factory
-4. Test with existing integration tests (no changes needed!)
+# Remote now (GitHub API)
+status: "open"
+assignee: "bob"
+```
 
-### Improved Conflict Resolution
-- UI for choosing resolution strategy interactively
-- Custom merge strategies per field
-- Conflict history tracking
+**Three-Way Merge:**
+- Local changed: status only (open → in-progress)
+- Remote changed: assignee only (jane → bob)
+- Result: Both changes merged
+  ```yaml
+  status: "in-progress"  # From local
+  assignee: "bob"        # From remote
+  ```
 
-### Performance
-- Incremental sync (only changed issues)
-- Batch API operations
-- Caching of remote state
+No conflict because they changed different fields.
 
-## See Also
+---
 
-- [Architecture Guide](ARCHITECTURE.md) - Overall project structure
-- [Workflow Patterns](../user_guide/WORKFLOWS.md) - How teams use sync
-- [GitHub Setup](../user_guide/GITHUB_SYNC_SETUP.md) - User documentation
-- [SyncBackendInterface](../../roadmap/core/interfaces/sync_backend.py) - Protocol definition
+## 10. Implementation Phases
+
+### Phase 1: Foundation
+- Create git history utilities module
+- Update IssueFileStorage to read/write sync_metadata YAML
+- Implement git-based baseline reconstruction
+
+### Phase 2: Orchestration
+- Update GenericSyncOrchestrator to use git baselines
+- Remove database sync table queries
+- Implement pre-commit sync workflow trigger
+
+### Phase 3: Optimization
+- Implement git diff-based DB cache invalidation
+- Add DB rebuild on startup
+- Performance testing with large projects
+
+### Phase 4: Testing & Documentation
+- Update all sync tests for new approach
+- Integration tests with GitHub API
+- User documentation for sync workflow
+
+---
+
+## 11. Appendix: Removed Infrastructure
+
+### Why We Removed `sync_base_state` Table
+
+**Old approach:**
+```sql
+-- sync_base_state table
+CREATE TABLE sync_base_state (
+    issue_id TEXT PRIMARY KEY,
+    status TEXT,
+    assignee TEXT,
+    description TEXT,
+    labels TEXT,  -- JSON array
+    synced_at TIMESTAMP
+);
+```
+
+**Problems:**
+- ✗ Duplicate data (files + DB)
+- ✗ Sync issues if DB and files diverged
+- ✗ Lost history (only current baseline stored)
+- ✗ Required cleanup/migration logic
+
+**New approach:**
+- ✓ Single source of truth (git + YAML)
+- ✓ Complete history available
+- ✓ No synchronization issues
+- ✓ Mergeable via standard git
+
+---
+
+## 12. Glossary
+
+| Term | Definition |
+|---|---|
+| **Baseline** | The state of an issue at the time of last sync |
+| **Local Baseline** | What the file contained at `last_synced` (via git history) |
+| **Remote Baseline** | What remote system had at `last_synced` (via sync_metadata) |
+| **Three-Way Merge** | Comparing local_baseline→local_current vs remote_baseline→remote_current |
+| **Sync Metadata** | YAML frontmatter tracking sync timestamps and remote state |
+| **Backend** | Implementation of SyncBackendInterface (GitHub, Git, etc.) |
+| **Source of Truth** | Files in `.roadmap/projects/` - the authoritative state |
