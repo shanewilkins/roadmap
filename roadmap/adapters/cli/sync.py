@@ -168,12 +168,12 @@ def sync(
         state_comparator = SyncStateComparator()
         conflict_resolver = SyncConflictResolver()
 
-        # Create optimized orchestrator with progress support
-        from roadmap.adapters.sync.optimized_sync_orchestrator import (
-            OptimizedSyncOrchestrator,
+        # Create cached orchestrator with progress support
+        from roadmap.adapters.sync.cached_sync_orchestrator import (
+            CachedSyncOrchestrator,
         )
 
-        orchestrator = OptimizedSyncOrchestrator(
+        orchestrator = CachedSyncOrchestrator(
             core,
             sync_backend,
             state_comparator=state_comparator,

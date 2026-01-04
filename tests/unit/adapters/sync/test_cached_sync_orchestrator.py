@@ -1,4 +1,4 @@
-"""Tests for OptimizedSyncOrchestrator.
+"""Tests for CachedSyncOrchestrator.
 
 Tests verify that the optimized sync orchestrator correctly integrates
 baseline building, database caching, and progress tracking.
@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.adapters.sync.optimized_sync_orchestrator import (
-    OptimizedSyncOrchestrator,
+from roadmap.adapters.sync.cached_sync_orchestrator import (
+    CachedSyncOrchestrator,
 )
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.models.sync_state import IssueBaseState, SyncState
@@ -43,42 +43,42 @@ def mock_core(tmp_path):
 
 
 @pytest.fixture
-def optimized_orchestrator(mock_core, mock_backend):
-    """Create OptimizedSyncOrchestrator instance."""
-    return OptimizedSyncOrchestrator(
+def cached_orchestrator(mock_core, mock_backend):
+    """Create CachedSyncOrchestrator instance."""
+    return CachedSyncOrchestrator(
         mock_core,
         mock_backend,
         show_progress=False,
     )
 
 
-class TestOptimizedSyncOrchestrator:
-    """Test suite for OptimizedSyncOrchestrator."""
+class TestCachedSyncOrchestrator:
+    """Test suite for CachedSyncOrchestrator."""
 
-    def test_initialization(self, optimized_orchestrator):
+    def test_initialization(self, cached_orchestrator):
         """Test orchestrator initializes correctly."""
-        assert optimized_orchestrator.core is not None
-        assert optimized_orchestrator.backend is not None
-        assert optimized_orchestrator.optimized_builder is not None
-        assert optimized_orchestrator.show_progress is False
+        assert cached_orchestrator.core is not None
+        assert cached_orchestrator.backend is not None
+        assert cached_orchestrator.optimized_builder is not None
+        assert cached_orchestrator.show_progress is False
 
     def test_initialization_with_progress(self, mock_core, mock_backend):
         """Test orchestrator can enable progress."""
-        orchestrator = OptimizedSyncOrchestrator(
+        orchestrator = CachedSyncOrchestrator(
             mock_core,
             mock_backend,
             show_progress=True,
         )
         assert orchestrator.show_progress is True
 
-    def test_create_progress_context_disabled(self, optimized_orchestrator):
+    def test_create_progress_context_disabled(self, cached_orchestrator):
         """Test progress context creation when disabled."""
-        ctx = optimized_orchestrator._create_progress_context()
+        ctx = cached_orchestrator._create_progress_context()
         assert ctx is None
 
     def test_create_progress_context_enabled(self, mock_core, mock_backend):
         """Test progress context creation when enabled."""
-        orchestrator = OptimizedSyncOrchestrator(
+        orchestrator = CachedSyncOrchestrator(
             mock_core,
             mock_backend,
             show_progress=True,
@@ -86,30 +86,30 @@ class TestOptimizedSyncOrchestrator:
         ctx = orchestrator._create_progress_context()
         assert ctx is not None
 
-    def test_load_cached_baseline_no_db(self, optimized_orchestrator):
+    def test_load_cached_baseline_no_db(self, cached_orchestrator):
         """Test loading baseline when database doesn't exist."""
-        baseline = optimized_orchestrator._load_cached_baseline()
+        baseline = cached_orchestrator._load_cached_baseline()
         assert baseline is None
 
-    def test_get_baseline_with_optimization_no_issues(self, optimized_orchestrator):
+    def test_get_baseline_with_optimization_no_issues(self, cached_orchestrator):
         """Test baseline construction with no issues."""
-        baseline = optimized_orchestrator._get_baseline_with_optimization()
+        baseline = cached_orchestrator._get_baseline_with_optimization()
         # Should handle gracefully
         assert baseline is not None or baseline is None
 
-    def test_sync_all_issues_without_progress(self, optimized_orchestrator):
+    def test_sync_all_issues_without_progress(self, cached_orchestrator):
         """Test sync without progress context."""
         with patch.object(
-            optimized_orchestrator, "_get_baseline_with_optimization"
+            cached_orchestrator, "_get_baseline_with_optimization"
         ) as mock_baseline:
             mock_baseline.return_value = None
 
             with patch.object(
-                OptimizedSyncOrchestrator.__bases__[0],
+                CachedSyncOrchestrator.__bases__[0],
                 "sync_all_issues",
                 return_value=MagicMock(error=None),
             ):
-                report = optimized_orchestrator.sync_all_issues(
+                report = cached_orchestrator.sync_all_issues(
                     dry_run=True,
                     show_progress=False,
                 )
@@ -118,7 +118,7 @@ class TestOptimizedSyncOrchestrator:
 
     def test_sync_all_issues_with_progress(self, mock_core, mock_backend):
         """Test sync with progress context."""
-        orchestrator = OptimizedSyncOrchestrator(
+        orchestrator = CachedSyncOrchestrator(
             mock_core,
             mock_backend,
             show_progress=True,
@@ -130,7 +130,7 @@ class TestOptimizedSyncOrchestrator:
             mock_baseline.return_value = None
 
             with patch.object(
-                OptimizedSyncOrchestrator.__bases__[0],
+                CachedSyncOrchestrator.__bases__[0],
                 "sync_all_issues",
                 return_value=MagicMock(
                     error=None,
@@ -145,7 +145,7 @@ class TestOptimizedSyncOrchestrator:
 
                 assert report is not None
 
-    def test_save_baseline_to_cache(self, optimized_orchestrator):
+    def test_save_baseline_to_cache(self, cached_orchestrator):
         """Test saving baseline to cache."""
         baseline = SyncState(
             last_sync=datetime.now(),
@@ -154,11 +154,11 @@ class TestOptimizedSyncOrchestrator:
         )
 
         # Should not raise
-        optimized_orchestrator._save_baseline_to_cache(baseline)
+        cached_orchestrator._save_baseline_to_cache(baseline)
 
     def test_get_baseline_with_optimization_progress(self, mock_core, mock_backend):
         """Test baseline construction with progress context."""
-        orchestrator = OptimizedSyncOrchestrator(
+        orchestrator = CachedSyncOrchestrator(
             mock_core,
             mock_backend,
             show_progress=True,
@@ -170,19 +170,19 @@ class TestOptimizedSyncOrchestrator:
         # Should handle with or without progress
         assert baseline is None or isinstance(baseline, SyncState)
 
-    def test_optimized_builder_integration(self, optimized_orchestrator):
+    def test_optimized_builder_integration(self, cached_orchestrator):
         """Test that OptimizedBaselineBuilder is properly integrated."""
-        assert optimized_orchestrator.optimized_builder is not None
-        assert optimized_orchestrator.optimized_builder.issues_dir is not None
+        assert cached_orchestrator.optimized_builder is not None
+        assert cached_orchestrator.optimized_builder.issues_dir is not None
 
-    def test_sync_error_handling(self, optimized_orchestrator):
+    def test_sync_error_handling(self, cached_orchestrator):
         """Test error handling during sync."""
         with patch.object(
-            optimized_orchestrator,
+            cached_orchestrator,
             "_get_baseline_with_optimization",
             side_effect=Exception("Test error"),
         ):
-            report = optimized_orchestrator.sync_all_issues(dry_run=True)
+            report = cached_orchestrator.sync_all_issues(dry_run=True)
             assert report.error is not None
             assert "Test error" in report.error
 
@@ -192,14 +192,14 @@ class TestOptimizedSyncIntegration:
 
     def test_full_sync_flow_dry_run(self, mock_core, mock_backend):
         """Test full sync flow in dry-run mode."""
-        orchestrator = OptimizedSyncOrchestrator(
+        orchestrator = CachedSyncOrchestrator(
             mock_core,
             mock_backend,
             show_progress=False,
         )
 
         with patch.object(
-            OptimizedSyncOrchestrator.__bases__[0],
+            CachedSyncOrchestrator.__bases__[0],
             "sync_all_issues",
             return_value=MagicMock(error=None),
         ):
@@ -208,7 +208,7 @@ class TestOptimizedSyncIntegration:
 
     def test_full_sync_flow_with_baseline(self, mock_core, mock_backend):
         """Test sync with baseline state."""
-        orchestrator = OptimizedSyncOrchestrator(
+        orchestrator = CachedSyncOrchestrator(
             mock_core,
             mock_backend,
             show_progress=False,
@@ -230,7 +230,7 @@ class TestOptimizedSyncIntegration:
 
         with patch.object(orchestrator, "_load_cached_baseline", return_value=baseline):
             with patch.object(
-                OptimizedSyncOrchestrator.__bases__[0],
+                CachedSyncOrchestrator.__bases__[0],
                 "sync_all_issues",
                 return_value=MagicMock(error=None),
             ):

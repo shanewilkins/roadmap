@@ -23,7 +23,7 @@ from roadmap.core.services.sync_report import SyncReport
 logger = get_logger(__name__)
 
 
-class OptimizedSyncOrchestrator(EnhancedSyncOrchestrator):
+class CachedSyncOrchestrator(EnhancedSyncOrchestrator):
     """Sync orchestrator with optimized baseline building and database caching.
 
     Extends EnhancedSyncOrchestrator with:
