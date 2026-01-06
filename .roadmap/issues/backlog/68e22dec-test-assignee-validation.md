@@ -2,7 +2,7 @@
 id: 68e22dec
 title: Test assignee validation
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: null
 labels:
@@ -11,7 +11,7 @@ labels:
 remote_ids:
   github: 33
 created: '2026-01-02T19:20:51.102968+00:00'
-updated: '2026-01-06T02:03:52.306001+00:00'
+updated: '2026-01-06T02:12:52.913586+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

@@ -1,25 +1,24 @@
 ---
-id: da507d37
-title: Interactive project dashboard with real-time updates
-priority: medium
-status: todo
-issue_type: other
-milestone: null
+id: b7a6e094
+title: Implement performance benchmarking and profiling
+priority: high
+status: closed
+issue_type: feature
+milestone: v080
 labels:
-- priority:high
-- status:todo
+- performance,testing
 remote_ids:
-  github: 82
-created: '2026-01-02T19:20:52.656836+00:00'
-updated: '2026-01-06T02:03:41.003168+00:00'
-assignee: null
+  github: 138
+created: '2025-12-20T18:33:27.255856+00:00'
+updated: '2025-12-25T19:51:02.526805+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -27,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 82
+github_issue: 138
 ---
 
-# Interactive project dashboard with real-time updates
+# Implement performance benchmarking and profiling
 
 ## Description
 

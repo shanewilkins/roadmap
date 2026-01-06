@@ -1,20 +1,17 @@
 ---
-id: c592873c
-title: Enhance backup system with management, cleanup, and user control features
+id: c2c03e3e
+title: Build predictive analytics for milestone completion
 priority: medium
-status: todo
+status: closed
 issue_type: other
-milestone: null
+milestone: v.0.3.0
 labels:
-- priority:medium
-- status:done
-- backup
-- data-management
-- cleanup
+- priority:high
+- status:todo
 remote_ids:
-  github: 65
-created: '2026-01-02T19:20:51.369959+00:00'
-updated: '2026-01-06T02:03:20.893794+00:00'
+  github: 17
+created: '2026-01-02T19:20:52.363535+00:00'
+updated: '2026-01-06T02:12:21.367890+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -30,10 +27,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 65
+github_issue: 17
 ---
 
-# Enhance backup system with management, cleanup, and user control features
+# Build predictive analytics for milestone completion
 
 ## Description
 
@@ -44,3 +41,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

@@ -2,7 +2,7 @@
 id: 29d069a9
 title: Add milestone-level kanban board with status columns
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: v.0.4.0
 labels:
@@ -14,7 +14,7 @@ labels:
 remote_ids:
   github: 39
 created: '2026-01-02T19:20:52.737054+00:00'
-updated: '2026-01-06T02:03:33.276263+00:00'
+updated: '2026-01-06T02:12:16.860178+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -40,6 +40,7 @@ github_issue: 39
 Implement a kanban board view at the milestone level that displays issues organized in four columns:
 
 ## Requirements
+
 - **Overdue**: Issues past their due date that are not completed
 - **Blocked**: Issues with status 'blocked' or dependencies that prevent progress
 - **In Progress**: Issues currently being worked on (status 'in-progress')
@@ -56,6 +57,7 @@ Implement a kanban board view at the milestone level that displays issues organi
 - [ ] Update existing milestone view to include kanban option
 
 ## Technical Notes
+
 - Consider using rich library for enhanced terminal display
 - Integrate with existing milestone and issue management
 - Ensure performance with large numbers of issues

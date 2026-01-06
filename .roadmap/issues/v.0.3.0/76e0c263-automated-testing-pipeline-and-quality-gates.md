@@ -2,7 +2,7 @@
 id: 76e0c263
 title: Automated testing pipeline and quality gates
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: v.0.3.0
 labels:
@@ -11,7 +11,7 @@ labels:
 remote_ids:
   github: 15
 created: '2026-01-02T19:20:52.505428+00:00'
-updated: '2026-01-06T02:03:50.469055+00:00'
+updated: '2026-01-06T02:12:26.374662+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

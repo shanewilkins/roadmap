@@ -2,17 +2,17 @@
 id: 63c544b3
 title: Implement AI-powered project insights and recommendations
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: null
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: 79
+  github: 16
 created: '2026-01-02T19:20:52.433559+00:00'
-updated: '2026-01-06T02:02:57.698893+00:00'
-assignee: null
+updated: '2026-01-06T02:12:39.062618+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 79
+github_issue: 16
 ---
 
 # Implement AI-powered project insights and recommendations
@@ -41,3 +41,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

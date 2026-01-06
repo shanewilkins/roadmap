@@ -1,18 +1,16 @@
 ---
-id: c2c03e3e
-title: Build predictive analytics for milestone completion
-priority: medium
-status: todo
-issue_type: other
-milestone: null
-labels:
-- priority:high
-- status:todo
+id: 865d50d6
+title: Refactor .roadmap directory structure for scalability
+priority: high
+status: closed
+issue_type: feature
+milestone: v.0.6.0
+labels: []
 remote_ids:
-  github: 78
-created: '2026-01-02T19:20:52.363535+00:00'
-updated: '2026-01-06T02:03:21.887239+00:00'
-assignee: null
+  github: 140
+created: '2025-11-26T19:23:01.575872+00:00'
+updated: '2025-12-04T19:12:33.538038+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -27,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 78
+github_issue: 140
 ---
 
-# Build predictive analytics for milestone completion
+# Refactor .roadmap directory structure for scalability
 
 ## Description
 

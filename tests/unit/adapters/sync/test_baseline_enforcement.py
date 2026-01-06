@@ -28,6 +28,9 @@ class TestBaselineEnforcement:
         mock.issues_dir = Path("/test/roadmap/issues")
         mock.issues = MagicMock()
         mock.issues.list = MagicMock(return_value=[])
+        # Mock database to return no baseline by default
+        mock.db = MagicMock()
+        mock.db.get_sync_baseline = MagicMock(return_value=None)
         return mock
 
     @pytest.fixture
