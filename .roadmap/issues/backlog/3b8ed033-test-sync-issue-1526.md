@@ -1,15 +1,16 @@
 ---
 id: 3b8ed033
 title: test sync issue 1/5/26
-priority: high
+priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {}
+remote_ids:
+  github: 109
 created: '2026-01-05T21:44:33.825237+00:00'
-updated: '2026-01-05T21:44:33.825240+00:00'
-assignee: shanewilkins
+updated: '2026-01-06T02:02:52.904671+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -24,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: 109
 ---
 
 # test sync issue 1/5/26

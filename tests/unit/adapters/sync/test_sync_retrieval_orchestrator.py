@@ -158,7 +158,8 @@ class TestGetBaselineState:
     """Test composite baseline state retrieval."""
 
     def test_returns_none_when_no_baselines_available(self, enhanced_orchestrator):
-        """Should return None when no git or YAML baselines available."""
+        """Should return None when no database, git or YAML baselines available."""
+        enhanced_orchestrator.state_manager.get_sync_baseline = Mock(return_value=None)
         enhanced_orchestrator._build_baseline_state_from_git = Mock(return_value=None)
         enhanced_orchestrator._build_baseline_state_from_sync_metadata = Mock(
             return_value=None
@@ -196,6 +197,10 @@ class TestGetBaselineState:
             backend="git",
             issues={issue_id: local_baseline},
         )
+
+        # Mock: database baseline not available (falls through to git)
+        enhanced_orchestrator.core.db = Mock()
+        enhanced_orchestrator.core.db.get_sync_baseline = Mock(return_value=None)
 
         # Mock: sync_metadata returns remote state, git returns local state
         with patch.object(

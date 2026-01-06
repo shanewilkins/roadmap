@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:low
 - status:todo
-remote_ids: {github: 64}
+remote_ids:
+  github: 33
 created: '2026-01-02T19:20:51.102968+00:00'
-updated: '2026-01-04T14:48:41.121097+00:00'
+updated: '2026-01-06T02:03:52.306001+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 33
 ---
 
 # Test assignee validation
@@ -39,3 +41,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

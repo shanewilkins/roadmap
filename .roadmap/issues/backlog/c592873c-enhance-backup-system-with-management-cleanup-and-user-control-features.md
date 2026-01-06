@@ -1,16 +1,20 @@
 ---
-id: 7d4e6e84
-title: 'Align CLI with GitHub terminology: rename roadmaps to projects'
+id: c592873c
+title: Enhance backup system with management, cleanup, and user control features
 priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels:
-- priority:high
+- priority:medium
 - status:done
-remote_ids: {github: 73}
-created: '2026-01-02T19:20:51.896529+00:00'
-updated: '2026-01-04T14:48:35.739890+00:00'
+- backup
+- data-management
+- cleanup
+remote_ids:
+  github: 65
+created: '2026-01-02T19:20:51.369959+00:00'
+updated: '2026-01-06T02:03:20.893794+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,9 +30,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 65
 ---
 
-# Align CLI with GitHub terminology: rename roadmaps to projects
+# Enhance backup system with management, cleanup, and user control features
 
 ## Description
 

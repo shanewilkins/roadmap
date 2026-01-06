@@ -169,7 +169,42 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
         Returns:
             SyncState or None if unable to construct
         """
-        # Try to load from cache first
+        # PHASE 3: Try database baseline first (fastest - ~10ms)
+        try:
+            db_baseline = self.core.db.get_sync_baseline()
+            if db_baseline:
+                logger.debug(
+                    "using_database_baseline",
+                    issue_count=len(db_baseline),
+                )
+                from datetime import datetime
+
+                from roadmap.core.models.sync_state import IssueBaseState, SyncState
+
+                issues = {}
+                for issue_id, data in db_baseline.items():
+                    issues[issue_id] = IssueBaseState(
+                        id=issue_id,
+                        status=data.get("status", "todo"),
+                        title="",
+                        assignee=data.get("assignee"),
+                        milestone=data.get("milestone"),
+                        description=data.get("description", ""),
+                        labels=data.get("labels", []),
+                    )
+
+                return SyncState(
+                    last_sync=datetime.utcnow(),
+                    backend="github",
+                    issues=issues,
+                )
+        except Exception as e:
+            logger.warning(
+                "database_baseline_load_failed",
+                error=str(e),
+            )
+
+        # Try to load from cache (fallback)
         cached = self._load_cached_baseline()
         if cached:
             logger.debug(

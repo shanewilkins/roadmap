@@ -7,9 +7,10 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {github: 98}
+remote_ids:
+  github: 98
 created: '2026-01-02T19:20:54.235023+00:00'
-updated: '2026-01-04T14:48:56.373193+00:00'
+updated: '2026-01-06T02:03:57.405699+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -25,6 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 98
 ---
 
 # docs: add comprehensive documentation for `issue start` command with git-branch flags

@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:high
 - status:todo
-remote_ids: {github: 79}
+remote_ids:
+  github: 79
 created: '2026-01-02T19:20:52.433559+00:00'
-updated: '2026-01-04T14:48:31.251458+00:00'
+updated: '2026-01-06T02:02:57.698893+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 79
 ---
 
 # Implement AI-powered project insights and recommendations

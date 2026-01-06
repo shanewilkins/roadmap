@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:medium
 - status:done
-remote_ids: {github: 27}
+remote_ids:
+  github: 67
 created: '2026-01-02T19:20:51.511129+00:00'
-updated: '2026-01-04T14:48:49.359422+00:00'
+updated: '2026-01-06T02:03:59.066810+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 67
 ---
 
 # Test backward compatibility

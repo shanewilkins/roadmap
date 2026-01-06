@@ -11,9 +11,10 @@ labels:
 - automation
 - git-integration
 - workflow
-remote_ids: {github: 40}
+remote_ids:
+  github: 40
 created: '2026-01-02T19:20:51.462978+00:00'
-updated: '2026-01-04T14:48:10.866258+00:00'
+updated: '2026-01-06T02:03:45.961155+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -29,6 +30,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 40
 ---
 
 # Auto-create feature branch for new issues

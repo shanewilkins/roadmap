@@ -4,13 +4,14 @@ title: Implement Git hooks automation system
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: v.0.3.0
 labels:
 - priority:high
 - status:todo
-remote_ids: {github: 84}
+remote_ids:
+  github: 12
 created: '2026-01-02T19:20:52.817566+00:00'
-updated: '2026-01-04T14:48:06.684193+00:00'
+updated: '2026-01-06T02:03:44.863597+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 12
 ---
 
 # Implement Git hooks automation system
@@ -39,3 +41,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

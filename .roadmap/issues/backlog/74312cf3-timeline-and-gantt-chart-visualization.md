@@ -6,9 +6,10 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {github: 30}
+remote_ids:
+  github: 30
 created: '2025-10-14T14:18:18.947332+00:00'
-updated: '2026-01-04T14:49:09.583973+00:00'
+updated: '2026-01-06T02:03:23.669863+00:00'
 assignee: null
 estimated_hours: 5.0
 due_date: null
@@ -24,6 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 30
 ---
 
 # Timeline and Gantt chart visualization

@@ -228,55 +228,50 @@ def sync(
             initial_baseline = orchestrator._create_initial_baseline()
 
             if initial_baseline and len(initial_baseline.issues) > 0:
-                # Save to database
-                import json
-                import sqlite3
-                from datetime import datetime
+                # Convert SyncState to baseline dict for saving
+                baseline_dict = {}
+                for issue_id, issue_state in initial_baseline.issues.items():
+                    baseline_dict[issue_id] = {
+                        "status": issue_state.status,
+                        "assignee": issue_state.assignee,
+                        "milestone": issue_state.milestone,
+                        "description": issue_state.description,
+                        "labels": issue_state.labels,
+                    }
 
                 try:
-                    db_path = core.roadmap_dir / ".roadmap" / "db" / "state.db"
-                    db_path.parent.mkdir(parents=True, exist_ok=True)
+                    # Use the StateManager to save baseline (properly formatted)
+                    result = core.db.save_sync_baseline(baseline_dict)
 
-                    conn = sqlite3.connect(str(db_path))
-                    cursor = conn.cursor()
+                    if result:
+                        console_inst.print(
+                            "\n✅ Initial baseline created and saved to database:",
+                            style="bold green",
+                        )
+                        console_inst.print(
+                            f"   Last Sync: {initial_baseline.last_sync}",
+                        )
+                        console_inst.print(
+                            f"   Backend: {initial_baseline.backend}",
+                        )
+                        console_inst.print(
+                            f"   Issues in baseline: {len(initial_baseline.issues)}",
+                        )
 
-                    # Insert into sync_base_state
-                    cursor.execute(
-                        """
-                        INSERT OR REPLACE INTO sync_base_state (last_sync, data, created_at)
-                        VALUES (?, ?, ?)
-                        """,
-                        (
-                            initial_baseline.last_sync.isoformat(),
-                            json.dumps(initial_baseline.to_dict()),
-                            datetime.now().isoformat(),
-                        ),
-                    )
-                    conn.commit()
-                    conn.close()
-
-                    console_inst.print(
-                        "\n✅ Initial baseline created and saved to database:",
-                        style="bold green",
-                    )
-                    console_inst.print(
-                        f"   Last Sync: {initial_baseline.last_sync}",
-                    )
-                    console_inst.print(
-                        f"   Backend: {initial_baseline.backend}",
-                    )
-                    console_inst.print(
-                        f"   Issues in baseline: {len(initial_baseline.issues)}",
-                    )
-
-                    if verbose and initial_baseline.issues:
-                        console_inst.print("\n   Issues:", style="bold")
-                        for issue_id, issue_state in sorted(
-                            initial_baseline.issues.items()
-                        ):
-                            console_inst.print(
-                                f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
-                            )
+                        if verbose and initial_baseline.issues:
+                            console_inst.print("\n   Issues:", style="bold")
+                            for issue_id, issue_state in sorted(
+                                initial_baseline.issues.items()
+                            ):
+                                console_inst.print(
+                                    f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
+                                )
+                    else:
+                        console_inst.print(
+                            "❌ Failed to save baseline to database",
+                            style="bold red",
+                        )
+                        sys.exit(1)
 
                 except Exception as e:
                     console_inst.print(

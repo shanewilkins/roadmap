@@ -1,15 +1,16 @@
 ---
 id: 1042a421
 title: Test issue for sync push
-priority: high
+priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {}
+remote_ids:
+  github: 108
 created: '2026-01-05T21:59:08.104004+00:00'
-updated: '2026-01-05T21:59:08.104008+00:00'
-assignee: shanewilkins
+updated: '2026-01-06T02:02:55.723237+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -24,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: 108
 ---
 
 # Test issue for sync push

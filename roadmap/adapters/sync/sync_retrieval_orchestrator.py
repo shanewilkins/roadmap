@@ -14,7 +14,7 @@ from structlog import get_logger
 
 from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-from roadmap.core.models.sync_state import SyncState
+from roadmap.core.models.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.baseline_selector import (
     BaselineStrategy,
     InteractiveBaselineSelector,
@@ -51,14 +51,24 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         """Check if a baseline has been established.
 
         A baseline exists if:
-        1. Previous sync state can be loaded, OR
-        2. Sync metadata with remote_state exists in issue files
+        1. Baseline exists in database (Phase 3), OR
+        2. Previous sync state can be loaded (legacy), OR
+        3. Sync metadata with remote_state exists in issue files (legacy)
 
         Returns:
             True if baseline exists, False if first sync
         """
         try:
-            # Check if sync state can be loaded
+            # PHASE 3: Check database baseline first (fast)
+            try:
+                db_baseline = self.core.db.get_sync_baseline()
+                if db_baseline:
+                    logger.debug("baseline_exists_in_database")
+                    return True
+            except Exception as e:
+                logger.debug("database_baseline_check_failed", error=str(e))
+
+            # Check if sync state can be loaded (legacy)
             base_state = self.state_manager.load_sync_state()
             if base_state and base_state.issues:
                 logger.debug("baseline_exists_from_sync_state")
@@ -152,8 +162,19 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
             logger.info("creating_baseline_from_local")
             baseline = self._create_initial_baseline()
             if baseline and baseline.issues:
-                # Save the baseline
-                self.state_manager.save_sync_state(baseline)
+                # Save baseline to database for fast retrieval
+                baseline_dict = {
+                    issue_id: {
+                        "status": state.status,
+                        "assignee": state.assignee,
+                        "milestone": state.milestone,
+                        "description": state.description or "",
+                        "labels": state.labels or [],
+                    }
+                    for issue_id, state in baseline.issues.items()
+                }
+                self.core.db.save_sync_baseline(baseline_dict)
+
                 logger.info(
                     "baseline_created_from_local",
                     issue_count=len(baseline.issues),
@@ -215,8 +236,19 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         error=str(e),
                     )
 
-            # Save the baseline
-            self.state_manager.save_sync_state(baseline)
+            # Save baseline to database for fast retrieval
+            baseline_dict = {
+                issue_id: {
+                    "status": base_state.status,
+                    "assignee": base_state.assignee,
+                    "milestone": base_state.milestone,
+                    "description": base_state.description,
+                    "labels": base_state.labels or [],
+                }
+                for issue_id, base_state in baseline.issues.items()
+            }
+            self.core.db.save_sync_baseline(baseline_dict)
+
             logger.info(
                 "baseline_created_from_remote",
                 issue_count=len(baseline.issues),
@@ -511,14 +543,12 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         return baseline
 
     def get_baseline_state(self) -> SyncState | None:
-        """Get baseline state using git history and YAML metadata.
+        """Get baseline state using database cache with git fallback.
 
         Strategy:
-        1. Try to load last_synced timestamp from any issue's sync_metadata
-        2. Reconstruct local baseline from git history at that timestamp
-        3. Load remote baseline from sync_metadata YAML
-
-        Falls back to JSON file if available (for migration), then to no baseline.
+        1. Try to load baseline from database (fast: ~10ms)
+        2. If not in database, fall back to git history (slower: ~500ms)
+        3. If git fails, load from YAML sync_metadata
 
         Returns:
             SyncState with local and remote baselines
@@ -526,7 +556,39 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         try:
             logger.debug("baseline_state_retrieval_start")
 
-            # First, try git-based approach
+            # PHASE 3: Try database baseline first (fast path)
+            db_baseline = self.core.db.get_sync_baseline()
+            if db_baseline:
+                logger.debug(
+                    "baseline_state_loaded_from_database",
+                    issue_count=len(db_baseline),
+                    source="sync_base_state_table",
+                )
+
+                # Convert from database format to SyncState format
+                issues = {}
+                for issue_id, data in db_baseline.items():
+                    issues[issue_id] = IssueBaseState(
+                        id=issue_id,
+                        status=data.get("status", "todo"),
+                        title="",  # Title not stored in baseline, will come from issue
+                        assignee=data.get("assignee"),
+                        milestone=data.get("milestone"),
+                        description=data.get("description", ""),
+                        labels=data.get("labels", []),
+                    )
+
+                sync_state = SyncState(
+                    last_sync=datetime.utcnow(),
+                    backend="github",
+                    issues=issues,
+                )
+                return sync_state
+
+            # Fallback: Try git history approach (original logic)
+            logger.debug("database_baseline_not_found_falling_back_to_git_history")
+
+            # Try to load last_synced timestamp from any issue's sync_metadata
             remote_baseline = self._build_baseline_state_from_sync_metadata()
 
             if remote_baseline:
@@ -563,18 +625,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     )
                     return remote_baseline
 
-            # Fallback: try loading legacy JSON file
-            logger.debug("baseline_fallback_to_json_file")
-            json_baseline = self.state_manager.load_sync_state()
-            if json_baseline:
-                logger.info(
-                    "baseline_state_loaded",
-                    source="legacy_json_file",
-                    issue_count=len(json_baseline.issues),
-                )
-                return json_baseline
-
-            # No baseline available
+            # No baseline available (no database, git, or metadata)
             logger.info(
                 "baseline_state_not_found",
                 reason="first_sync_or_no_metadata",

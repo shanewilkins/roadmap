@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:high
 - status:todo
-remote_ids: {github: 89}
+remote_ids:
+  github: 89
 created: '2026-01-02T19:20:53.336462+00:00'
-updated: '2026-01-04T14:48:02.212454+00:00'
+updated: '2026-01-06T02:03:16.341174+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 89
 ---
 
 # Investigate GitHub sync inconsistencies and status updates

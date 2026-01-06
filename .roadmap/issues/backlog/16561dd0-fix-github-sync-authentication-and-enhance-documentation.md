@@ -6,9 +6,10 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {github: 99}
+remote_ids:
+  github: 99
 created: '2026-01-02T19:20:54.343126+00:00'
-updated: '2026-01-04T14:48:55.577503+00:00'
+updated: '2026-01-06T02:03:53.494094+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -24,6 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 99
 ---
 
 # Fix GitHub sync authentication and enhance documentation

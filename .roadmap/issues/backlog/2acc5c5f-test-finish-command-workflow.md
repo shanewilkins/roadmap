@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:medium
 - status:done
-remote_ids: {github: 68}
+remote_ids:
+  github: 68
 created: '2026-01-02T19:20:51.619153+00:00'
-updated: '2026-01-04T14:48:40.272684+00:00'
+updated: '2026-01-06T02:03:43.148091+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 68
 ---
 
 # Test finish command workflow

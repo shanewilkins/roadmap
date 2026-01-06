@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:high
 - status:done
-remote_ids: {github: 88}
+remote_ids:
+  github: 88
 created: '2026-01-02T19:20:53.245289+00:00'
-updated: '2026-01-04T14:48:03.212334+00:00'
+updated: '2026-01-06T02:03:18.162993+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 88
 ---
 
 # Enhance init command with automatic project setup and credential flow

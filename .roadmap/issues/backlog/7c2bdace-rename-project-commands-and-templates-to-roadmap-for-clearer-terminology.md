@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:medium
 - status:done
-remote_ids: {github: 69}
+remote_ids:
+  github: 69
 created: '2026-01-02T19:20:51.671790+00:00'
-updated: '2026-01-04T14:48:39.481911+00:00'
+updated: '2026-01-06T02:03:04.459718+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 69
 ---
 
 # Rename project commands and templates to roadmap for clearer terminology

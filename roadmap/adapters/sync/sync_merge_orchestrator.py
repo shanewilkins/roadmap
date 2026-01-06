@@ -323,7 +323,8 @@ class SyncMergeOrchestrator:
             # 3. Get local issues
             try:
                 logger.debug("fetching_local_issues")
-                local_issues = self.core.issues.list()
+                # Get ALL issues including archived for sync
+                local_issues = self.core.issues.list_all_including_archived()
                 if not local_issues:
                     local_issues = []
                 logger.info(

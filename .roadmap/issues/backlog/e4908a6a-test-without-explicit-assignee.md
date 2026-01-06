@@ -1,7 +1,7 @@
 ---
 id: e4908a6a
 title: test without explicit assignee
-priority: low
+priority: medium
 status: todo
 issue_type: other
 milestone: null
@@ -9,8 +9,8 @@ labels: []
 remote_ids:
   github: 104
 created: '2026-01-05T21:49:38.481146+00:00'
-updated: '2026-01-05T21:49:38.481149+00:00'
-assignee: shanewilkins
+updated: '2026-01-06T02:03:48.755796+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []

@@ -6,9 +6,10 @@ status: closed
 issue_type: feature
 milestone: null
 labels: []
-remote_ids: {github: 58}
+remote_ids:
+  github: 58
 created: '2026-01-01T14:13:44.383788+00:00'
-updated: '2026-01-04T14:49:14.217196+00:00'
+updated: '2026-01-06T02:03:22.770023+00:00'
 assignee: null
 estimated_hours: 8.0
 due_date: null
@@ -24,6 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: '2026-01-01T16:05:00.000000+00:00'
 comments: []
+github_issue: 58
 ---
 
 # Implement GitHub Sync Authentication Flow

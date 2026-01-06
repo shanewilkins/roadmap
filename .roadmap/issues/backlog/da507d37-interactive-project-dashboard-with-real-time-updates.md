@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:high
 - status:todo
-remote_ids: {github: 82}
+remote_ids:
+  github: 82
 created: '2026-01-02T19:20:52.656836+00:00'
-updated: '2026-01-04T14:48:28.688099+00:00'
+updated: '2026-01-06T02:03:41.003168+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 82
 ---
 
 # Interactive project dashboard with real-time updates

@@ -1,17 +1,18 @@
 ---
-id: b36a111b
-title: Implement comprehensive security audit framework
+id: 76e0c263
+title: Automated testing pipeline and quality gates
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: v.0.3.0
 labels:
 - priority:high
 - status:todo
-remote_ids: {github: 77}
-created: '2026-01-02T19:20:52.294664+00:00'
-updated: '2026-01-04T14:48:32.942018+00:00'
-assignee: null
+remote_ids:
+  github: 15
+created: '2026-01-02T19:20:52.505428+00:00'
+updated: '2026-01-06T02:03:50.469055+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -26,9 +27,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 15
 ---
 
-# Implement comprehensive security audit framework
+# Automated testing pipeline and quality gates
 
 ## Description
 
@@ -39,3 +41,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

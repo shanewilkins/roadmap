@@ -6,9 +6,10 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {github: 31}
+remote_ids:
+  github: 31
 created: '2025-10-14T14:18:29.392002+00:00'
-updated: '2026-01-04T14:49:08.672671+00:00'
+updated: '2026-01-06T02:02:34.773603+00:00'
 assignee: null
 estimated_hours: 4.0
 due_date: null
@@ -24,6 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 31
 ---
 
 # Team workload analysis and capacity planning

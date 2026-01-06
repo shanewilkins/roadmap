@@ -6,9 +6,10 @@ status: closed
 issue_type: feature
 milestone: null
 labels: []
-remote_ids: {github: 59}
+remote_ids:
+  github: 59
 created: '2026-01-01T14:13:50.213803+00:00'
-updated: '2026-01-04T14:49:12.339475+00:00'
+updated: '2026-01-06T02:02:44.387728+00:00'
 assignee: null
 estimated_hours: 16.0
 due_date: null
@@ -25,6 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: '2026-01-01T15:42:00.000000+00:00'
 comments: []
+github_issue: 59
 ---
 
 # Architecture: Enable Git-Only Self-Hosting Without GitHub Coupling

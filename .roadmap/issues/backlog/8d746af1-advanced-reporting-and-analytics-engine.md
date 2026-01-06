@@ -6,9 +6,10 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {github: 28}
+remote_ids:
+  github: 28
 created: '2025-10-14T14:18:13.540775+00:00'
-updated: '2026-01-04T14:49:11.447829+00:00'
+updated: '2026-01-06T02:03:10.795772+00:00'
 assignee: null
 estimated_hours: 6.0
 due_date: null
@@ -24,6 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 28
 ---
 
 # Advanced reporting and analytics engine

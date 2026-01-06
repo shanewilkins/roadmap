@@ -151,7 +151,8 @@ class TestBaselineEnforcement:
             result = orchestrator._create_baseline_from_local()
 
         assert result is True
-        orchestrator.state_manager.save_sync_state.assert_called_once()
+        # Mock the database save method instead of state_manager
+        orchestrator.core.db.save_sync_baseline.assert_called_once()
 
     def test_create_baseline_from_local_fails_when_empty(self, orchestrator):
         """Test creating baseline from local fails with empty state."""
@@ -193,11 +194,12 @@ class TestBaselineEnforcement:
         result = orchestrator._create_baseline_from_remote()
 
         assert result is True
-        orchestrator.state_manager.save_sync_state.assert_called_once()
+        # Mock the database save method instead of state_manager
+        orchestrator.core.db.save_sync_baseline.assert_called_once()
 
-        # Check that the saved state has the remote issue
-        saved_state = orchestrator.state_manager.save_sync_state.call_args[0][0]
-        assert "issue-1" in saved_state.issues
+        # Check that the saved baseline has the remote issue data
+        saved_baseline = orchestrator.core.db.save_sync_baseline.call_args[0][0]
+        assert "issue-1" in saved_baseline
 
     def test_create_baseline_from_remote_fails_when_auth_fails(self, orchestrator):
         """Test creating baseline from remote fails when auth fails."""

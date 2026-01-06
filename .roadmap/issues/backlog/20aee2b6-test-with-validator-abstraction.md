@@ -1,15 +1,16 @@
 ---
 id: 20aee2b6
 title: test with validator abstraction
-priority: high
+priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {}
+remote_ids:
+  github: 106
 created: '2026-01-05T21:55:12.807283+00:00'
-updated: '2026-01-05T21:55:12.807286+00:00'
-assignee: shanewilkins
+updated: '2026-01-06T02:02:42.442490+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -24,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: 106
 ---
 
 # test with validator abstraction

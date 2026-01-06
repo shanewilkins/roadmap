@@ -6,10 +6,11 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {}
+remote_ids:
+  github: 107
 created: '2026-01-05T21:44:38.394653+00:00'
-updated: '2026-01-05T21:44:38.394658+00:00'
-assignee: shanewilkins
+updated: '2026-01-06T02:03:12.538642+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -24,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: 107
 ---
 
 # test issue no assignee

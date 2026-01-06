@@ -170,8 +170,7 @@ class DatabaseManager:
             description TEXT,
             labels TEXT,  -- JSON array of label strings
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (issue_id) REFERENCES issues (id) ON DELETE CASCADE
+            synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         -- Sync metadata (overall sync state)
@@ -264,6 +263,25 @@ class DatabaseManager:
             migrations.append("""
                 ALTER TABLE issues ADD COLUMN archived INTEGER DEFAULT 0;
                 ALTER TABLE issues ADD COLUMN archived_at TIMESTAMP NULL;
+            """)
+
+        # Migration 2: Create sync_base_state table if it doesn't exist
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_base_state'"
+        )
+        if not cursor.fetchone():
+            migrations.append("""
+                CREATE TABLE sync_base_state (
+                    issue_id TEXT PRIMARY KEY,
+                    status TEXT NOT NULL,
+                    assignee TEXT,
+                    milestone TEXT,
+                    description TEXT,
+                    labels TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE INDEX idx_sync_base_state_synced_at ON sync_base_state (synced_at);
             """)
 
         # Execute migrations

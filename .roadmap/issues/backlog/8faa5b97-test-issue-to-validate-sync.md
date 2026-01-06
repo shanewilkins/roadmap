@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:medium
 - status:todo
-remote_ids: {github: 71}
+remote_ids:
+  github: 5
 created: '2026-01-02T19:20:51.780622+00:00'
-updated: '2026-01-04T14:48:37.642170+00:00'
+updated: '2026-01-06T02:02:56.682950+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,16 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 5
 ---
 
-# test issue to validate sync
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+lorem ipsum etc. etc. etc.

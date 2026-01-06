@@ -46,14 +46,12 @@ class CredentialProvider(Protocol):
         """
         ...
 
-    def store_token(
-        self, _token: str, _repo_info: dict[str, str] | None = None
-    ) -> bool:
+    def store_token(self, token: str, repo_info: dict[str, str] | None = None) -> bool:
         """Store a token securely.
 
         Args:
-            _token: Token to store
-            _repo_info: Optional repository information (owner, repo)
+            token: Token to store
+            repo_info: Optional repository information (owner, repo)
 
         Returns:
             True if stored successfully, False otherwise

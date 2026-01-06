@@ -1,16 +1,21 @@
 ---
-id: 76e0c263
-title: Automated testing pipeline and quality gates
+id: 0839a0e9
+title: GitHub sync not preserving milestone relationships for existing issues
 priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels:
+- bug
 - priority:high
-- status:todo
-remote_ids: {github: 80}
-created: '2026-01-02T19:20:52.505428+00:00'
-updated: '2026-01-04T14:48:30.413681+00:00'
+- status:done
+- github-integration
+- sync
+- milestone-tracking
+remote_ids:
+  github: 74
+created: '2026-01-02T19:20:51.957433+00:00'
+updated: '2026-01-06T02:04:00.820528+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,9 +31,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 74
 ---
 
-# Automated testing pipeline and quality gates
+# GitHub sync not preserving milestone relationships for existing issues
 
 ## Description
 

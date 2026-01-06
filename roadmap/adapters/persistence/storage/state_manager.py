@@ -1,6 +1,7 @@
 """State manager and database errors for persistence layer."""
 
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -254,6 +255,133 @@ class StateManager:
     def set_sync_state(self, key: str, value: str):
         """Set sync state value."""
         self._sync_state_storage.set_sync_state(key, value)
+
+    # Sync baseline operations - store/retrieve baseline for three-way merge
+    def get_sync_baseline(self) -> dict[str, Any] | None:
+        """Get the sync baseline from database.
+
+        The baseline represents the state of issues as they were during the last
+        successful sync. Used for three-way merge to detect conflicts.
+
+        Returns:
+            Dictionary mapping issue_id to baseline state, or None if no baseline exists
+        """
+        try:
+            import json
+
+            self._sync_git_state()
+
+            conn = self._get_connection()
+            rows = conn.execute(
+                """
+                SELECT issue_id, status, assignee, milestone, description, labels, synced_at
+                FROM sync_base_state
+                ORDER BY synced_at DESC
+            """
+            ).fetchall()
+
+            if not rows:
+                logger.debug("no_sync_baseline_found")
+                return None
+
+            baseline = {}
+            for row in rows:
+                baseline[row["issue_id"]] = {
+                    "status": row["status"],
+                    "assignee": row["assignee"],
+                    "milestone": row["milestone"],
+                    "description": row["description"],
+                    "labels": json.loads(row["labels"]) if row["labels"] else [],
+                    "synced_at": row["synced_at"],
+                }
+
+            logger.debug(
+                "loaded_sync_baseline",
+                issue_count=len(baseline),
+                synced_at=rows[0]["synced_at"],
+            )
+            return baseline
+
+        except Exception as e:
+            logger.error(
+                "error_loading_sync_baseline",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return None
+
+    def save_sync_baseline(self, baseline: dict[str, Any]) -> bool:
+        """Save the current sync baseline to database.
+
+        Called after a successful sync to establish the new baseline for the
+        next sync's three-way merge.
+
+        Args:
+            baseline: Dictionary mapping issue_id to state dict with keys:
+                     status, assignee, milestone, description, labels
+
+        Returns:
+            True if saved successfully, False otherwise
+        """
+        try:
+            import json
+
+            now = datetime.utcnow().isoformat()
+
+            with self.transaction() as conn:
+                # Clear old baseline
+                conn.execute("DELETE FROM sync_base_state")
+
+                # Insert new baseline
+                for issue_id, state in baseline.items():
+                    conn.execute(
+                        """
+                        INSERT INTO sync_base_state
+                        (issue_id, status, assignee, milestone, description, labels, synced_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                        (
+                            issue_id,
+                            state.get("status"),
+                            state.get("assignee"),
+                            state.get("milestone"),
+                            state.get("description"),
+                            json.dumps(state.get("labels", [])),
+                            now,
+                        ),
+                    )
+
+            logger.debug(
+                "saved_sync_baseline", issue_count=len(baseline), synced_at=now
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                "error_saving_sync_baseline",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return False
+
+    def clear_sync_baseline(self) -> bool:
+        """Clear the sync baseline (used before first sync).
+
+        Returns:
+            True if cleared successfully
+        """
+        try:
+            with self.transaction() as conn:
+                conn.execute("DELETE FROM sync_base_state")
+            logger.debug("cleared_sync_baseline")
+            return True
+        except Exception as e:
+            logger.error(
+                "error_clearing_sync_baseline",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return False
 
     # File sync delegation - delegate to SyncStateStorage
     def get_file_sync_status(self, file_path: str) -> dict[str, Any] | None:

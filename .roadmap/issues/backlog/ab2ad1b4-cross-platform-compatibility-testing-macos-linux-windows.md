@@ -7,9 +7,10 @@ issue_type: feature
 milestone: null
 labels:
 - testing,compatibility
-remote_ids: {github: 102}
+remote_ids:
+  github: 102
 created: '2025-12-20T18:33:28.214417+00:00'
-updated: '2026-01-04T14:48:48.402741+00:00'
+updated: '2026-01-06T02:02:47.139936+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -25,6 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 102
 ---
 
 # Cross-platform compatibility testing (macOS, Linux, Windows)

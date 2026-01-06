@@ -8,9 +8,10 @@ milestone: null
 labels:
 - priority:low
 - status:todo
-remote_ids: {github: 61}
+remote_ids:
+  github: 61
 created: '2026-01-02T19:20:50.981417+00:00'
-updated: '2026-01-04T14:48:42.858755+00:00'
+updated: '2026-01-06T02:03:40.121215+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 61
 ---
 
 # Test with valid assignee

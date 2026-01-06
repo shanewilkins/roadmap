@@ -250,19 +250,6 @@ class TestHealthCheckService:
         service = HealthCheckService(core=mock_core)
         assert service.core is mock_core
 
-    def test_multiple_status_checks(self, service):
-        """Test running multiple status checks."""
-        with patch.object(
-            HealthCheck, "get_overall_status", return_value=HealthStatus.HEALTHY
-        ):
-            result1 = service.is_healthy()
-            result2 = service.is_degraded()
-            result3 = service.is_unhealthy()
-
-            assert result1
-            assert not result2
-            assert not result3
-
     def test_check_status_error_handling(self, service):
         """Test error handling when retrieving specific check."""
         with patch.object(

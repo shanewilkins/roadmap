@@ -6,9 +6,10 @@ status: todo
 issue_type: feature
 milestone: null
 labels: []
-remote_ids: {github: 56}
+remote_ids:
+  github: 56
 created: '2025-12-25T14:55:48.000595+00:00'
-updated: '2026-01-04T14:49:16.049045+00:00'
+updated: '2026-01-06T02:03:29.562324+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -24,6 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 56
 ---
 
 # Phase 6: End-to-End Tests

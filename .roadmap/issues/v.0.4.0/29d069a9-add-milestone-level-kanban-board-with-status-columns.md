@@ -11,9 +11,10 @@ labels:
 - kanban
 - milestone
 - ui
-remote_ids: {github: 39}
+remote_ids:
+  github: 39
 created: '2026-01-02T19:20:52.737054+00:00'
-updated: '2026-01-04T14:48:07.644646+00:00'
+updated: '2026-01-06T02:03:33.276263+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -29,6 +30,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 39
 ---
 
 # Add milestone-level kanban board with status columns
