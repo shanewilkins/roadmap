@@ -5,6 +5,8 @@ using YAML file storage, maintaining backward compatibility with existing
 file-based storage while decoupling services from implementation details.
 """
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
 
@@ -90,19 +92,54 @@ class YAMLIssueRepository(IssueRepository):
     def list(
         self, milestone: str | None = None, status: str | None = None
     ) -> list[Issue]:
-        """List issues with optional filtering.
+        """List issues with optional filtering (active issues only).
 
         Args:
             milestone: Optional milestone filter
             status: Optional status filter
 
         Returns:
-            List of Issue objects matching filters
+            List of active Issue objects matching filters (not including archived)
         """
+        # Get issues from active directory only
         issues = FileEnumerationService.enumerate_and_parse(
             self.issues_dir,
             IssueParser.parse_issue_file,
         )
+
+        if milestone:
+            issues = [i for i in issues if i.milestone == milestone]
+        if status:
+            issues = [i for i in issues if i.status.value == status]
+
+        return issues
+
+    def list_all_including_archived(
+        self, milestone: str | None = None, status: str | None = None
+    ) -> list[Issue]:
+        """List all issues including archived (for sync operations).
+
+        Args:
+            milestone: Optional milestone filter
+            status: Optional status filter
+
+        Returns:
+            List of all Issue objects matching filters (from both active and archived)
+        """
+        # Get issues from active directory
+        issues = FileEnumerationService.enumerate_and_parse(
+            self.issues_dir,
+            IssueParser.parse_issue_file,
+        )
+
+        # Also get issues from archive directory if it exists
+        archive_dir = self.issues_dir.parent / "archive" / "issues"
+        if archive_dir.exists():
+            archived_issues = FileEnumerationService.enumerate_and_parse(
+                archive_dir,
+                IssueParser.parse_issue_file,
+            )
+            issues.extend(archived_issues)
 
         if milestone:
             issues = [i for i in issues if i.milestone == milestone]

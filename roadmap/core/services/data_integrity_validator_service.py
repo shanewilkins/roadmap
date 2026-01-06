@@ -27,7 +27,10 @@ from roadmap.core.services.validators.health_status_utils import (
 logger = get_logger(__name__)
 
 # Re-export validators for backward compatibility - use same list as validators module
-__all__ = ["DataIntegrityValidatorService"] + _validators_all
+_exported_validators: list[str] = (
+    list(_validators_all) if isinstance(_validators_all, list | tuple) else []
+)
+__all__: list[str] = ["DataIntegrityValidatorService"] + _exported_validators
 
 
 class DataIntegrityValidatorService:

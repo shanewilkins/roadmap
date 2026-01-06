@@ -10,7 +10,7 @@ labels:
 - github-integration
 - sync
 - milestone-tracking
-github_issue: 42
+remote_ids: {github: 42}
 created: '2025-10-14T17:01:42.932554+00:00'
 updated: '2025-11-16T13:41:23.293019'
 assignee: shanewilkins

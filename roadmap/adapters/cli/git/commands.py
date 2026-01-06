@@ -466,7 +466,7 @@ def sync_git(
             sys.exit(1)
 
         # Use generic orchestrator with the backend
-        from roadmap.adapters.sync import GenericSyncOrchestrator
+        from roadmap.adapters.sync import SyncMergeOrchestrator
         from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
         from roadmap.core.services.sync_state_comparator import SyncStateComparator
 
@@ -475,7 +475,7 @@ def sync_git(
         conflict_resolver = SyncConflictResolver()
 
         # Create orchestrator with services
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             core,
             sync_backend,
             state_comparator=state_comparator,
@@ -538,7 +538,8 @@ def sync_git(
         console_inst.print()
         console_inst.print("[green]✅ Sync complete![/green]")
         console_inst.print(f"   • {apply_report.issues_up_to_date} up-to-date")
-        console_inst.print(f"   • {apply_report.issues_updated} updated")
+        console_inst.print(f"   • {apply_report.issues_needs_push} pushed")
+        console_inst.print(f"   • {apply_report.issues_needs_pull} pulled")
         if apply_report.conflicts_detected > 0:
             console_inst.print(
                 f"   • {apply_report.conflicts_detected} conflicts resolved"

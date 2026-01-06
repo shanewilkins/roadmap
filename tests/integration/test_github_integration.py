@@ -31,14 +31,6 @@ def test_lookup_github_command_exists():
     assert "lookup" in result.output.lower()
 
 
-def test_sync_github_command_exists():
-    """Test that sync-github command is registered."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "sync-github", "--help"])
-    assert result.exit_code == 0
-    assert "sync" in result.output.lower()
-
-
 def test_list_command_show_github_ids_flag():
     """Test that list command has --show-github-ids flag."""
     runner = CliRunner()
@@ -74,14 +66,6 @@ def test_lookup_github_help():
     assert result.exit_code == 0
 
 
-def test_sync_github_help():
-    """Test sync-github command help output."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["issue", "sync-github", "--help"])
-    assert result.exit_code == 0
-    assert "--auto-confirm" in result.output or "auto" in result.output.lower()
-
-
 def test_issue_view_help():
     """Test that view command exists for detailed display."""
     runner = CliRunner()
@@ -113,22 +97,6 @@ def test_workflow_isolation():
         assert result.exit_code in [0, 2], f"init should complete: {result.output}"
         # Verify something happened (either success or indication it already exists)
         assert "Roadmap" in result.output or result.exit_code == 2
-
-
-def test_sync_command_requires_github_config():
-    """Test that sync command behaves properly without GitHub config."""
-    runner = CliRunner()
-    with runner.isolated_filesystem():
-        # Initialize without GitHub
-        result = runner.invoke(
-            main,
-            ["init", "--project-name", "Test", "--non-interactive", "--skip-github"],
-        )
-        # Try to use GitHub commands
-        result = runner.invoke(main, ["issue", "sync-github", "test-id"])
-        # Should handle gracefully (either no config or no issues)
-        # Exit code 0 is acceptable if it just says "no issues to sync"
-        assert result.exit_code in (0, 1)
 
 
 def test_github_integration_imports():

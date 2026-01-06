@@ -393,6 +393,64 @@ class HealthCheck:
         status_str, message = DuplicateMilestonesValidator.perform_check()
         return HealthStatus(status_str), message
 
+    @staticmethod
+    def check_unlinked_issues(core) -> tuple[HealthStatus, str]:
+        """Check for issues not linked to remote backend.
+
+        Issues must have the appropriate remote_id for the configured backend
+        to sync properly. Unlinked issues will be treated as new on sync.
+
+        Returns:
+            Tuple of (DEGRADED status, informational message) if unlinked issues found
+        """
+        import yaml
+
+        # Determine configured backend
+        config_file = core.roadmap_dir / "config.yaml"
+        full_config: dict = {}
+
+        if config_file.exists():
+            with open(config_file) as f:
+                loaded = yaml.safe_load(f)
+                if isinstance(loaded, dict):
+                    full_config = loaded
+
+        if full_config.get("github", {}).get("sync_backend"):
+            backend_name = str(full_config["github"]["sync_backend"]).lower()
+        else:
+            backend_name = "git"
+
+        # Check all issues for linking
+        unlinked_issues = []
+        try:
+            issues = core.issues.list()
+            for issue in issues:
+                # Issue must have remote_ids dict and backend key
+                if not issue.remote_ids or backend_name not in issue.remote_ids:
+                    unlinked_issues.append(issue.id)
+        except Exception as e:
+            logger.warning("error_checking_unlinked_issues", error=str(e))
+            return (
+                HealthStatus.DEGRADED,
+                f"Error scanning for unlinked issues: {str(e)}",
+            )
+
+        if unlinked_issues:
+            count = len(unlinked_issues)
+            sample = ", ".join(unlinked_issues[:3])
+            message = (
+                f"Found {count} issue(s) not linked to {backend_name} backend. "
+                f"Unlinked issues won't sync properly and will be treated as duplicates. "
+                f"Sample: {sample}"
+                + (f" ... and {count - 3} more" if count > 3 else "")
+            )
+            return HealthStatus.DEGRADED, message
+
+        return (
+            HealthStatus.HEALTHY,
+            f"All issues linked to {backend_name} backend",
+        )
+
     @classmethod
     def run_all_checks(cls, core) -> dict[str, tuple[HealthStatus, str]]:
         """Run all health checks and return results.
@@ -422,6 +480,7 @@ class HealthCheck:
             "archivable_issues": cls.check_archivable_issues(core),
             "archivable_milestones": cls.check_archivable_milestones(core),
             "comment_integrity": cls.check_comment_integrity(core),
+            "unlinked_issues": cls.check_unlinked_issues(core),
         }
 
         # Count statuses

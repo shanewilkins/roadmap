@@ -360,13 +360,21 @@ class TestHealthCheck:
             patch.object(HealthCheck, "check_database_integrity") as mock_db,
             patch.object(HealthCheck, "check_data_integrity") as mock_data,
             patch.object(HealthCheck, "check_duplicate_issues") as mock_duplicates,
+            patch.object(
+                HealthCheck, "check_duplicate_milestones"
+            ) as mock_dup_milestones,
             patch.object(HealthCheck, "check_folder_structure") as mock_folders,
             patch.object(HealthCheck, "check_orphaned_issues") as mock_orphaned,
+            patch.object(
+                HealthCheck, "check_orphaned_milestones"
+            ) as mock_orp_milestones,
             patch.object(HealthCheck, "check_old_backups") as mock_backups,
             patch.object(HealthCheck, "check_archivable_issues") as mock_arch_issues,
             patch.object(
                 HealthCheck, "check_archivable_milestones"
             ) as mock_arch_milestones,
+            patch.object(HealthCheck, "check_comment_integrity") as mock_comments,
+            patch.object(HealthCheck, "check_unlinked_issues") as mock_unlinked,
         ):
             # Set up mock returns
             ok_status: tuple[HealthStatus, str] = (HealthStatus.HEALTHY, "OK")
@@ -378,11 +386,15 @@ class TestHealthCheck:
             mock_db.return_value = ok_status
             mock_data.return_value = ok_status
             mock_duplicates.return_value = ok_status
+            mock_dup_milestones.return_value = ok_status
             mock_folders.return_value = ok_status
             mock_orphaned.return_value = ok_status
+            mock_orp_milestones.return_value = ok_status
             mock_backups.return_value = ok_status
             mock_arch_issues.return_value = ok_status
             mock_arch_milestones.return_value = ok_status
+            mock_comments.return_value = ok_status
+            mock_unlinked.return_value = ok_status
 
             # Create mock core
             mock_core = TestDataFactory.create_mock_core(is_initialized=True)

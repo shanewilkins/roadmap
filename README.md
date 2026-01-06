@@ -204,14 +204,14 @@ roadmap today --filter priority=critical
 
 ## Compare to Other Tools
 
-| Tool | Model | Data | Good For | Bad For Roadmap |
+| Tool | Model | Data | Good For | Bad For |
 | --- | --- | --- | --- | --- |
 | **Jira** | SaaS/On-prem | Proprietary DB | Large enterprises | Small teams, CLI, offline work |
 | **Linear** | SaaS | Cloud | Growing startups | No offline, no git-native |
 | **Trello** | SaaS | Cloud | Visual boards | Serious PM, git-less |
 | **GitHub Issues** | SaaS | GitHub | Open source | Cross-repo, multiple teams |
 | **Notion** | SaaS | Cloud | Note-taking | Structured workflows |
-| **Roadmap** | CLI | Git + YAML | Small teams, developers | Enterprise RBAC, web UI (coming v2.0) |
+| **Roadmap** | CLI | Git + YAML | Small teams, developers | Enterprise RBAC, Web UI |
 
 See [FAQ.md](docs/user_guide/FAQ.md) for deeper comparisons.
 

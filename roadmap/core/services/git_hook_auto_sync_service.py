@@ -11,9 +11,10 @@ when Git events occur (commits, checkouts, merges). It provides:
 from pathlib import Path
 from typing import Any
 
+from roadmap.adapters.sync.backend_factory import get_sync_backend
+from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
 from roadmap.common.console import get_console
 from roadmap.core.services.github_integration_service import GitHubIntegrationService
-from roadmap.core.services.github_sync_orchestrator import GitHubSyncOrchestrator
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
 
 
@@ -230,21 +231,45 @@ class GitHookAutoSyncService:
                 return False
 
             # Display what will be synced (brief, non-intrusive)
-            self.console.print(
-                f"[dim]🔄 Auto-syncing {len(linked_issues)} linked issue(s) "
-                f"({event})...[/dim]"
+            self.console.print(f"[dim]🔄 Auto-syncing issues ({event})...[/dim]")
+
+            # Get GitHub backend for sync
+            backend = get_sync_backend("github", self.core, config)
+            if not backend:
+                self.console.print(
+                    "[yellow]  ⚠️  GitHub backend not available - skipping sync[/yellow]"
+                )
+                return False
+
+            # Create cache orchestrator for actual sync (uses three-way merge)
+            from roadmap.core.services.sync_conflict_resolver import (
+                SyncConflictResolver,
+            )
+            from roadmap.core.services.sync_state_comparator import (
+                SyncStateComparator,
+            )
+
+            orchestrator = SyncCacheOrchestrator(
+                self.core,
+                backend,
+                state_comparator=SyncStateComparator(),
+                conflict_resolver=SyncConflictResolver(),
+                show_progress=False,  # Silent mode for hooks
             )
 
             # Run sync detection (dry-run first to preview)
-            orchestrator = GitHubSyncOrchestrator(self.core, config)
-            report = orchestrator.sync_all_linked_issues(dry_run=True)
+            report = orchestrator.sync_all_issues(
+                dry_run=True,
+                force_local=self.config.force_local,
+                force_remote=self.config.force_github,
+            )
 
-            if not report.has_changes():
+            if not report.changes:
                 self.console.print("[dim]  ✓ No changes to sync[/dim]")
                 return True
 
             # Handle conflicts
-            if report.has_conflicts():
+            if report.conflicts_detected > 0:
                 if self.config.force_local:
                     self.console.print(
                         "[dim]  ⚠️  Resolving conflicts with --force-local[/dim]"
@@ -257,23 +282,24 @@ class GitHookAutoSyncService:
                     # Cannot proceed without conflict resolution
                     self.console.print(
                         "[yellow]  ⚠️  Conflicts detected - skipping sync. "
-                        "Use 'roadmap issue sync-github' with conflict resolution option.[/yellow]"
+                        "Use 'roadmap sync --force-local' or '--force-remote' to resolve.[/yellow]"
                     )
                     return False
 
             # Ask for confirmation if enabled
             if confirm:
-                self.console.print(f"  • {report.issues_updated} issue(s) to update")
+                self.console.print(f"  • {len(report.changes)} change(s) to apply")
                 response = input("  Continue with sync? [y/N]: ").strip().lower() == "y"
                 if not response:
                     self.console.print("[dim]  Sync cancelled[/dim]")
                     return False
 
             # Apply changes (dry-run=False)
-            apply_report = orchestrator.sync_all_linked_issues(
+            apply_report = orchestrator.sync_all_issues(
                 dry_run=False,
                 force_local=self.config.force_local,
-                force_github=self.config.force_github,
+                force_remote=self.config.force_github,
+                show_progress=False,
             )
 
             if apply_report.error:
@@ -281,9 +307,7 @@ class GitHookAutoSyncService:
                 return False
 
             # Success
-            self.console.print(
-                f"[green]  ✓ Synced {apply_report.issues_updated} issue(s)[/green]"
-            )
+            self.console.print("[green]  ✓ Synced successfully[/green]")
             return True
 
         except Exception as e:

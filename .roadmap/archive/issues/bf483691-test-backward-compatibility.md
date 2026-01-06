@@ -6,7 +6,7 @@ status: closed
 issue_type: other
 milestone: backlog
 labels: []
-github_issue: 27
+remote_ids: {github: 27}
 created: '2025-10-12T11:36:21.441984+00:00'
 updated: '2025-12-30T16:45:32.746246+00:00'
 assignee: ''

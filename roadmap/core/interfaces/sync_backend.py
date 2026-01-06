@@ -8,6 +8,7 @@ without coupling the core sync logic to specific implementations.
 from typing import Any, Protocol
 
 from roadmap.core.domain.issue import Issue
+from roadmap.core.models.sync_models import SyncIssue, SyncMilestone, SyncProject
 
 
 class SyncConflict:
@@ -69,17 +70,26 @@ class SyncBackendInterface(Protocol):
         """
         ...
 
-    def get_issues(self) -> dict[str, Any]:
+    def get_backend_name(self) -> str:
+        """Get the canonical name of this backend.
+
+        Returns:
+            Backend name (e.g., 'github', 'git', 'gitlab')
+            Used as key in Issue.remote_ids dict to track remote issue IDs.
+        """
+        ...
+
+    def get_issues(self) -> dict[str, SyncIssue]:
         """Fetch all issues from remote.
 
         Returns:
-            Dictionary mapping issue_id -> issue_data (as dict).
+            Dictionary mapping issue_id -> SyncIssue.
             Empty dict if no issues exist or remote is not available.
 
         Notes:
             - Should return local/cached copy if remote unavailable
-            - Issue data should include at minimum: id, title, status, priority
-            - May include additional fields like github_issue, labels, etc.
+            - Backends normalize their API responses to SyncIssue format
+            - All fields are populated from backend data, including raw_response
         """
         ...
 
@@ -175,5 +185,23 @@ class SyncBackendInterface(Protocol):
             - Should not raise exceptions; return False on failure
             - After resolution, issue should be in consistent state
             - May involve local or remote modifications
+        """
+        ...
+
+    def get_milestones(self) -> dict[str, SyncMilestone]:
+        """Fetch all milestones from remote.
+
+        Returns:
+            Dictionary mapping milestone_id -> SyncMilestone.
+            Empty dict if no milestones exist or remote is not available.
+        """
+        ...
+
+    def get_projects(self) -> dict[str, SyncProject]:
+        """Fetch all projects from remote.
+
+        Returns:
+            Dictionary mapping project_id -> SyncProject.
+            Empty dict if no projects exist or remote is not available.
         """
         ...

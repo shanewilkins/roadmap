@@ -4,6 +4,8 @@ This module defines protocols (interfaces) for data persistence operations.
 Implementations can be swapped (YAML, JSON, database) without affecting services.
 """
 
+from __future__ import annotations
+
 from typing import Protocol
 
 from roadmap.core.domain.issue import Issue
@@ -67,6 +69,14 @@ class IssueRepository(Protocol):
 
         Returns:
             True if deleted, False if not found
+        """
+        ...
+
+    def list_all_including_archived(self) -> list[Issue]:
+        """List all issues including archived ones.
+
+        Returns:
+            List of all Issue objects (both active and archived)
         """
         ...
 

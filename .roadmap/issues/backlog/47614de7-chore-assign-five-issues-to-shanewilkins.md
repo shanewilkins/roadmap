@@ -6,9 +6,9 @@ status: closed
 issue_type: other
 milestone: null
 labels: []
-github_issue: 50
+remote_ids: {github: 50}
 created: '2026-01-02T19:20:53.521026+00:00'
-updated: '2026-01-03T20:58:40.680227+00:00'
+updated: '2026-01-04T14:49:20.609154+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

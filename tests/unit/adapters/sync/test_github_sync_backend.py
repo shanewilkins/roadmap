@@ -94,6 +94,8 @@ class TestGitHubSyncBackendAuthenticate:
         backend = GitHubSyncBackend(core, config)
 
         # Mock the github_client to simulate successful auth
+        if backend.github_client is None:
+            backend.github_client = Mock()
         backend.github_client.fetch_issue = Mock(side_effect=Exception("404"))
         result = backend.authenticate()
 
@@ -113,6 +115,8 @@ class TestGitHubSyncBackendAuthenticate:
         backend = GitHubSyncBackend(core, config)
 
         # Mock the github_client to simulate auth failure
+        if backend.github_client is None:
+            backend.github_client = Mock()
         backend.github_client.fetch_issue = Mock(
             side_effect=Exception("401 Unauthorized")
         )
@@ -162,6 +166,8 @@ class TestGitHubSyncBackendGetIssues:
 
         backend = GitHubSyncBackend(core, config)
         # Mock get_issues to raise an error
+        if backend.github_client is None:
+            backend.github_client = Mock()
         backend.github_client.fetch_issue = Mock(side_effect=Exception("API Error"))
 
         result = backend.get_issues()
@@ -201,7 +207,7 @@ class TestGitHubSyncBackendPushIssue:
         }
 
         backend = GitHubSyncBackend(core, config)
-        issue = Issue(title="New Issue", github_issue=None)
+        issue = Issue(title="New Issue", remote_ids={})
 
         # Mock the GitHub client (imported locally in the method)
         with patch("roadmap.adapters.github.github.GitHubClient") as mock_client_class:
@@ -232,7 +238,7 @@ class TestGitHubSyncBackendPushIssue:
         }
 
         backend = GitHubSyncBackend(core, config)
-        issue = Issue(title="Existing Issue", github_issue="123")
+        issue = Issue(title="Existing Issue", remote_ids={"github": 123})
 
         # Mock the GitHub client (imported locally in the method)
         with patch("roadmap.adapters.github.github.GitHubClient") as mock_client_class:

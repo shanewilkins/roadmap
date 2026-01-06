@@ -6,9 +6,9 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-github_issue: 19
+remote_ids: {github: 19}
 created: '2025-10-14T15:46:20.506536+00:00'
-updated: '2026-01-03T20:58:26.446643+00:00'
+updated: '2026-01-04T14:49:06.344416+00:00'
 assignee: shanewilkins
 estimated_hours: 24.0
 due_date: null

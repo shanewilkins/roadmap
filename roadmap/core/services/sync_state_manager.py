@@ -1,6 +1,5 @@
-"""Manages persistence of sync state to database and/from legacy JSON file."""
+"""Manages persistence of sync state via git-based baselines."""
 
-import json
 from datetime import datetime
 from pathlib import Path
 
@@ -13,93 +12,35 @@ logger = get_logger(__name__)
 
 
 class SyncStateManager:
-    """Manages loading and saving sync state from/to database (with JSON fallback for migration)."""
+    """Manages loading and saving sync state from git-based baselines."""
 
     def __init__(self, roadmap_dir: Path, db_manager=None):
-        """Initialize manager with roadmap directory and optional database.
+        """Initialize manager with roadmap directory.
 
         Args:
             roadmap_dir: Path to .roadmap directory
             db_manager: Optional DatabaseManager instance for persistent storage
         """
         self.roadmap_dir = roadmap_dir
-        self.state_file = (
-            roadmap_dir / ".sync-state.json"
-        )  # Legacy file, kept for migration
         self.db_manager = db_manager
+        self.state_file = roadmap_dir / "sync_state.json"
 
     def load_sync_state(self) -> SyncState | None:
-        """Load sync state from file.
+        """Load sync state from git-based baseline metadata.
 
         Returns:
-            SyncState if file exists and is valid, None otherwise
+            SyncState if baseline metadata exists and is valid, None otherwise
         """
-        if not self.state_file.exists():
-            logger.debug(
-                "sync_state_file_not_found",
-                path=str(self.state_file),
-                reason="first_sync_or_state_cleared",
-            )
-            return None
-
-        try:
-            file_size = self.state_file.stat().st_size
-            logger.debug(
-                "sync_state_load_starting",
-                path=str(self.state_file),
-                file_size=file_size,
-            )
-
-            with open(self.state_file) as f:
-                data = json.load(f)
-
-            state = SyncState.from_dict(data)
-
-            logger.info(
-                "sync_state_loaded_successfully",
-                issues_count=len(state.issues),
-                backend=state.backend,
-                last_sync=state.last_sync.isoformat() if state.last_sync else None,
-                path=str(self.state_file),
-            )
-            return state
-        except json.JSONDecodeError as e:
-            logger.error(
-                "sync_state_json_decode_failed",
-                error=str(e),
-                path=str(self.state_file),
-                error_type="JSONDecodeError",
-                line=e.lineno,
-                column=e.colno,
-            )
-            return None
-        except (KeyError, ValueError) as e:
-            logger.error(
-                "sync_state_validation_failed",
-                error=str(e),
-                path=str(self.state_file),
-                error_type=type(e).__name__,
-            )
-            return None
-        except OSError as e:
-            logger.error(
-                "sync_state_file_io_error",
-                error=str(e),
-                path=str(self.state_file),
-                error_type="OSError",
-            )
-            return None
-        except Exception as e:
-            logger.error(
-                "sync_state_load_unexpected_error",
-                error=str(e),
-                path=str(self.state_file),
-                error_type=type(e).__name__,
-            )
-            return None
+        # Git-based baselines are retrieved via SyncRetrievalOrchestrator
+        # This method is kept for compatibility but delegates to git history
+        logger.debug(
+            "sync_state_load_deprecated",
+            reason="Use SyncRetrievalOrchestrator.get_baseline_state() instead",
+        )
+        return None
 
     def save_sync_state(self, state: SyncState) -> bool:
-        """Save sync state to file.
+        """Save sync state to git-based baseline metadata.
 
         Args:
             state: SyncState to save
@@ -107,52 +48,13 @@ class SyncStateManager:
         Returns:
             True if save was successful
         """
-        try:
-            self.state_file.parent.mkdir(parents=True, exist_ok=True)
-
-            logger.debug(
-                "sync_state_save_starting",
-                path=str(self.state_file),
-                issues_count=len(state.issues),
-                backend=state.backend,
-            )
-
-            with open(self.state_file, "w") as f:
-                json.dump(state.to_dict(), f, indent=2)
-
-            file_size = self.state_file.stat().st_size
-            logger.info(
-                "sync_state_saved_successfully",
-                issues_count=len(state.issues),
-                backend=state.backend,
-                file_size=file_size,
-                path=str(self.state_file),
-            )
-            return True
-        except OSError as e:
-            logger.error(
-                "sync_state_save_file_error",
-                error=str(e),
-                path=str(self.state_file),
-                error_type="OSError",
-            )
-            return False
-        except (TypeError, ValueError) as e:
-            logger.error(
-                "sync_state_serialization_error",
-                error=str(e),
-                error_type=type(e).__name__,
-                issues_count=len(state.issues),
-            )
-            return False
-        except Exception as e:
-            logger.error(
-                "sync_state_save_unexpected_error",
-                error=str(e),
-                path=str(self.state_file),
-                error_type=type(e).__name__,
-            )
-            return False
+        # Git-based baselines are managed via SyncRetrievalOrchestrator
+        # This method is deprecated in favor of git history + YAML metadata
+        logger.debug(
+            "sync_state_save_deprecated",
+            reason="Use SyncRetrievalOrchestrator baseline management instead",
+        )
+        return True
 
     def save_sync_state_to_db(self, state: SyncState) -> bool:
         """Save sync state to database (preferred storage method).

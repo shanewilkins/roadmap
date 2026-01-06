@@ -305,6 +305,32 @@ class IssueService:
         log_exit("list_issues", issue_count=len(sorted_issues))
         return sorted_issues
 
+    @traced("list_all_including_archived")
+    def list_all_including_archived(self) -> list[Issue]:
+        """List all issues including archived ones.
+
+        Used by sync operations that need to compare both active and archived issues.
+
+        Returns:
+            List of all Issue objects (both active and archived)
+        """
+        log_entry("list_all_including_archived")
+
+        try:
+            issues = self.repository.list_all_including_archived()
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="list_all_including_archived",
+                entity_type="Issue",
+            )
+            logger.warning("returning_empty_issue_list_due_to_error")
+            return []
+
+        log_metric("all_issues_enumerated", len(issues))
+        log_exit("list_all_including_archived", issue_count=len(issues))
+        return issues
+
     @traced("get_issue")
     def get_issue(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID.

@@ -16,7 +16,6 @@ Provides all issue management commands:
 - comment: Manage comments and discussions on issues
 - link: Link internal issue to GitHub issue
 - lookup-github: Look up internal issue by GitHub issue number
-- sync-github: Sync issue with GitHub and apply remote changes
 - sync-status: View sync history and statistics for GitHub-linked issues
 """
 
@@ -35,7 +34,6 @@ from roadmap.adapters.cli.issues.lookup import lookup_github_issue
 from roadmap.adapters.cli.issues.progress import update_progress
 from roadmap.adapters.cli.issues.restore import restore_issue
 from roadmap.adapters.cli.issues.start import start_issue
-from roadmap.adapters.cli.issues.sync import sync_github
 from roadmap.adapters.cli.issues.sync_status import sync_status
 from roadmap.adapters.cli.issues.unblock import unblock_issue
 from roadmap.adapters.cli.issues.unlink import unlink_github_issue
@@ -67,7 +65,6 @@ issue.add_command(comment_group, name="comment")
 issue.add_command(link_github_issue, name="link-github")
 issue.add_command(unlink_github_issue, name="unlink-github")
 issue.add_command(lookup_github_issue, name="lookup-github")
-issue.add_command(sync_github, name="sync-github")
 issue.add_command(sync_status, name="sync-status")
 
 __all__ = ["issue"]

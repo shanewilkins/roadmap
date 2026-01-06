@@ -2,6 +2,7 @@
 
 Provides logic to compare local and remote issue states, identifying
 what needs to be pushed, pulled, or resolved. Backend-agnostic.
+Supports both two-way (legacy) and three-way merge analysis.
 """
 
 from datetime import datetime
@@ -10,7 +11,10 @@ from typing import Any
 from structlog import get_logger
 
 from roadmap.core.domain.issue import Issue
+from roadmap.core.models.sync_models import SyncIssue
+from roadmap.core.models.sync_state import IssueBaseState
 from roadmap.core.services.sync_conflict_resolver import Conflict, ConflictField
+from roadmap.core.services.sync_report import IssueChange
 
 logger = get_logger()
 
@@ -22,7 +26,11 @@ class SyncStateComparator:
     without knowledge of the backend implementation.
     """
 
-    def __init__(self, fields_to_sync: list[str] | None = None):
+    def __init__(
+        self,
+        fields_to_sync: list[str] | None = None,
+        backend=None,  # Optional: SyncBackendInterface for key normalization
+    ):
         """Initialize the state comparator.
 
         Args:
@@ -30,8 +38,12 @@ class SyncStateComparator:
                 Note: 'title' is intentionally excluded as it's display metadata
                 that doesn't affect workflow state. Only sync fields that change
                 the work item's state (status, labels, priority, etc).
+            backend: Optional backend instance for normalizing remote issue keys.
+                When provided, remote issue keys are normalized to match local keys
+                using backend-specific ID mapping (e.g., gh-42 → 42).
         """
         self.logger = get_logger()
+        self.backend = backend
         default_fields = [
             "status",
             "priority",
@@ -43,8 +55,91 @@ class SyncStateComparator:
         self.logger.debug(
             "sync_state_comparator_initialized",
             fields_to_sync=self.fields_to_sync,
+            backend_aware=backend is not None,
             note="title excluded from sync as display metadata",
         )
+
+    def _normalize_remote_keys(
+        self,
+        local: dict[str, Issue],
+        remote: dict[str, SyncIssue],
+    ) -> tuple[dict[str, Issue], dict[str, SyncIssue]]:
+        """Normalize remote issue keys to match local issue keys.
+
+        Local issues are keyed by UUID (e.g., "7e99d67b").
+        Remote issues may be keyed by backend-specific IDs (e.g., "gh-42" or "42").
+
+        This method creates a mapping by matching remote IDs to local remote_ids
+        stored in the Issue.remote_ids dict.
+
+        Args:
+            local: Dict of local issues keyed by UUID
+            remote: Dict of remote SyncIssue objects keyed by backend-specific ID
+
+        Returns:
+            Tuple of (local, normalized_remote) where normalized_remote is keyed
+            by local issue UUIDs for proper matching.
+        """
+        if not self.backend:
+            # Without backend info, can't normalize keys
+            return local, remote
+
+        backend_name = self.backend.get_backend_name()
+        normalized_remote = {}
+
+        # Build reverse mapping: remote_id → local_uuid
+        remote_id_to_local_uuid = {}
+        for local_uuid, local_issue in local.items():
+            if local_issue.remote_ids and backend_name in local_issue.remote_ids:
+                remote_id = local_issue.remote_ids[backend_name]
+                # Normalize remote_id to string for matching
+                remote_id_key = str(remote_id)
+                remote_id_to_local_uuid[remote_id_key] = local_uuid
+                self.logger.debug(
+                    "mapped_remote_id_to_local",
+                    remote_id=remote_id_key,
+                    local_uuid=local_uuid,
+                    backend=backend_name,
+                )
+
+        # Remap remote issues using the mapping
+        unmatched_remote = []
+        for remote_key, remote_issue in remote.items():
+            remote_key_str = str(remote_key)
+            if remote_key_str in remote_id_to_local_uuid:
+                # Found matching local issue - use its UUID as key
+                local_uuid = remote_id_to_local_uuid[remote_key_str]
+                normalized_remote[local_uuid] = remote_issue
+                self.logger.debug(
+                    "normalized_remote_key",
+                    original_key=remote_key_str,
+                    normalized_to=local_uuid,
+                )
+            else:
+                # No matching local issue found - keep original key
+                # This represents a new issue from remote
+                unmatched_remote.append((remote_key, remote_issue))
+
+        # Add unmatched remote issues with prefixed keys to distinguish from local UUIDs
+        for remote_key, remote_issue in unmatched_remote:
+            prefixed_key = f"_remote_{remote_key}"
+            normalized_remote[prefixed_key] = remote_issue
+            self.logger.debug(
+                "new_remote_issue",
+                remote_key=str(remote_key),
+                prefixed_key=prefixed_key,
+            )
+
+        self.logger.info(
+            "remote_keys_normalized",
+            original_remote_count=len(remote),
+            normalized_count=len(normalized_remote),
+            matched=len(remote) - len(unmatched_remote),
+            unmatched=len(unmatched_remote),
+            backend=backend_name,
+        )
+
+        return local, normalized_remote
 
     def identify_conflicts(
         self,
@@ -459,3 +554,330 @@ class SyncStateComparator:
                 error=str(e),
             )
             return None
+
+    def analyze_three_way(
+        self,
+        local: dict[str, Issue],
+        remote: dict[str, SyncIssue],
+        baseline: dict[str, IssueBaseState] | None = None,
+    ) -> list[IssueChange]:
+        """Analyze changes using three-way merge context.
+
+        Compares baseline → local and baseline → remote to identify
+        what changed in each direction, providing complete conflict context.
+
+        Args:
+            local: Dict of local issues keyed by ID
+            remote: Dict of remote SyncIssue objects keyed by ID
+            baseline: Dict of baseline states keyed by ID (from last sync)
+
+        Returns:
+            List of IssueChange objects with three-way context
+
+        Raises:
+            ValueError: If analysis fails
+        """
+        self.logger.info(
+            "analyze_three_way_start",
+            local_count=len(local),
+            remote_count=len(remote),
+            baseline_count=len(baseline or {}),
+            backend_aware=self.backend is not None,
+        )
+
+        if baseline is None:
+            baseline = {}
+
+        # Normalize remote keys to match local UUIDs (if backend aware)
+        local, remote = self._normalize_remote_keys(local, remote)
+
+        changes = []
+        all_issue_ids = set(local.keys()) | set(remote.keys())
+
+        for issue_id in all_issue_ids:
+            try:
+                local_issue = local.get(issue_id)
+                remote_issue = remote.get(issue_id)
+                baseline_state = baseline.get(issue_id)
+
+                # Get title (use local, then remote, then baseline, then default)
+                remote_title = None
+                if remote_issue:
+                    if isinstance(remote_issue, dict):
+                        remote_title = remote_issue.get("title")
+                    else:
+                        remote_title = getattr(remote_issue, "title", None)
+
+                title = (
+                    local_issue.title
+                    if local_issue
+                    else (
+                        remote_title
+                        if remote_title
+                        else (baseline_state.title if baseline_state else None)
+                    )
+                ) or "Unknown"
+
+                # Analyze local changes (baseline → local)
+                local_changes = {}
+                if baseline_state and local_issue:
+                    local_changes = self._compute_changes(
+                        baseline_state, local_issue, "local"
+                    )
+                elif not baseline_state and local_issue:
+                    # New issue (not in baseline)
+                    local_changes = {"_new": True}
+
+                # Analyze remote changes (baseline → remote)
+                remote_changes = {}
+                if baseline_state and remote_issue:
+                    remote_changes = self._compute_changes_remote(
+                        baseline_state, remote_issue
+                    )
+                elif not baseline_state and remote_issue:
+                    # New issue (not in baseline)
+                    remote_changes = {"_new": True}
+
+                # Determine conflict type
+                conflict_type = "no_change"
+
+                # Special case: first sync with both local and remote new
+                # Check if they're actually the same issue with same content
+                if (
+                    not baseline_state
+                    and local_issue
+                    and remote_issue
+                    and local_changes == {"_new": True}
+                    and remote_changes == {"_new": True}
+                ):
+                    # Both sides are new and we don't have a baseline
+                    # Treat as "no_change" only if they have identical content
+
+                    local_status = getattr(local_issue, "status", None)
+                    remote_status = (
+                        remote_issue.get("status")
+                        if isinstance(remote_issue, dict)
+                        else getattr(remote_issue, "status", None)
+                    )
+
+                    # Normalize status values for comparison
+                    local_status_str = (
+                        local_status.value
+                        if hasattr(local_status, "value")
+                        else str(local_status).lower()
+                    )
+                    remote_status_str = str(remote_status).lower()
+
+                    local_title = getattr(local_issue, "title", "")
+                    remote_title = (
+                        remote_issue.get("title", "")
+                        if isinstance(remote_issue, dict)
+                        else getattr(remote_issue, "title", "")
+                    )
+
+                    # Only treat as no_change if status and title are identical
+                    # Otherwise, both_changed (real conflict)
+                    if (
+                        local_status_str == remote_status_str
+                        and local_title == remote_title
+                    ):
+                        conflict_type = "no_change"
+                        # Clear the _new markers since they're identical
+                        local_changes = {}
+                        remote_changes = {}
+                    else:
+                        # Different content = conflict
+                        conflict_type = "both_changed"
+                elif local_changes and remote_changes:
+                    conflict_type = "both_changed"
+                elif local_changes:
+                    conflict_type = "local_only"
+                elif remote_changes:
+                    conflict_type = "remote_only"
+
+                # Create IssueChange with three-way context
+                # Handle both Issue objects and dicts for remote_state
+                remote_state_dict: dict[str, Any] | None = None
+                if remote_issue:
+                    if hasattr(remote_issue, "to_dict"):
+                        remote_state_dict = remote_issue.to_dict()
+                    elif isinstance(remote_issue, dict):
+                        remote_state_dict = remote_issue
+
+                issue_change = IssueChange(
+                    issue_id=issue_id,
+                    title=title,
+                    baseline_state=baseline_state,
+                    local_state=local_issue,
+                    remote_state=remote_state_dict,
+                    local_changes=local_changes,
+                    remote_changes=remote_changes,
+                    conflict_type=conflict_type,
+                    has_conflict=(conflict_type == "both_changed"),
+                )
+
+                changes.append(issue_change)
+                self.logger.debug(
+                    "three_way_analysis_complete",
+                    issue_id=issue_id,
+                    conflict_type=conflict_type,
+                )
+
+            except Exception as e:
+                self.logger.error(
+                    "three_way_analysis_error",
+                    issue_id=issue_id,
+                    error=str(e),
+                )
+                raise ValueError(
+                    f"Failed to analyze {issue_id} in three-way merge: {str(e)}"
+                ) from e
+
+        self.logger.info("analyze_three_way_complete", change_count=len(changes))
+        return changes
+
+    def _compute_changes(
+        self,
+        baseline: IssueBaseState,
+        local: Issue,
+        source: str = "local",
+    ) -> dict[str, Any]:
+        """Compute what changed between baseline and local issue.
+
+        Args:
+            baseline: The baseline state
+            local: The current local issue
+            source: Description of source (for logging)
+
+        Returns:
+            Dict of field → value for changed fields
+        """
+        changes = {}
+
+        # Map of field names to compare
+        field_map = {
+            "status": (
+                "status",
+                lambda x: x.status.value
+                if hasattr(x.status, "value")
+                else str(x.status),
+            ),
+            "assignee": ("assignee", lambda x: x.assignee),
+            "content": ("description", lambda x: x.content),
+            "labels": ("labels", lambda x: sorted(x.labels or [])),
+        }
+
+        for field_name, (baseline_attr, local_getter) in field_map.items():
+            try:
+                baseline_value = getattr(baseline, baseline_attr, None)
+                local_value = local_getter(local)
+
+                if baseline_value != local_value:
+                    changes[field_name] = {
+                        "from": baseline_value,
+                        "to": local_value,
+                    }
+                    self.logger.debug(
+                        "field_changed_detected",
+                        source=source,
+                        field=field_name,
+                        baseline=baseline_value,
+                        current=local_value,
+                    )
+            except Exception as e:
+                self.logger.warning(
+                    "field_change_detection_error",
+                    source=source,
+                    field=field_name,
+                    error=str(e),
+                )
+                continue
+
+        return changes
+
+    def _compute_changes_remote(
+        self,
+        baseline: IssueBaseState,
+        remote: SyncIssue | dict[str, Any],
+    ) -> dict[str, Any]:
+        """Compute what changed between baseline and remote issue.
+
+        Args:
+            baseline: The baseline state
+            remote: The current remote SyncIssue or dict
+
+        Returns:
+            Dict of field → value for changed fields
+        """
+        from roadmap.common.constants import Priority, Status
+
+        changes = {}
+
+        # Helper to get field value from remote (handles both SyncIssue and dict)
+        def get_remote_field(field_name: str, default: Any = None) -> Any:
+            if isinstance(remote, dict):
+                return remote.get(field_name, default)
+            else:
+                return getattr(remote, field_name, default)
+
+        # Map of field names to compare
+        # Remote (SyncIssue or dict) field names
+        field_map = {
+            "status": ("status", lambda: get_remote_field("status")),
+            "assignee": ("assignee", lambda: get_remote_field("assignee")),
+            "content": ("description", lambda: get_remote_field("description") or ""),
+            "labels": (
+                "labels",
+                lambda: sorted(get_remote_field("labels", []))
+                if get_remote_field("labels")
+                else [],
+            ),
+        }
+
+        for field_name, (baseline_attr, remote_getter) in field_map.items():
+            try:
+                baseline_value = getattr(baseline, baseline_attr, None)
+                remote_value = remote_getter()
+
+                # Normalize enum values for comparison
+                if field_name == "status" and remote_value is not None:
+                    if isinstance(remote_value, str):
+                        try:
+                            remote_value = Status(remote_value)
+                        except (ValueError, KeyError):
+                            try:
+                                remote_value = Status(remote_value.lower())
+                            except (ValueError, KeyError):
+                                pass
+
+                if field_name == "priority" and remote_value is not None:
+                    if isinstance(remote_value, str):
+                        try:
+                            remote_value = Priority(remote_value)
+                        except (ValueError, KeyError):
+                            try:
+                                remote_value = Priority(remote_value.lower())
+                            except (ValueError, KeyError):
+                                pass
+
+                if baseline_value != remote_value:
+                    changes[field_name] = {
+                        "from": baseline_value,
+                        "to": remote_value,
+                    }
+                    self.logger.debug(
+                        "field_changed_detected",
+                        source="remote",
+                        field=field_name,
+                        baseline=baseline_value,
+                        current=remote_value,
+                    )
+            except Exception as e:
+                self.logger.warning(
+                    "field_change_detection_error_remote",
+                    field=field_name,
+                    error=str(e),
+                )
+                continue
+
+        return changes

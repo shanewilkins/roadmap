@@ -2,13 +2,13 @@
 id: 145ea1b5
 title: 'feat(init): enhance init command, credential flow, tests & docs'
 priority: medium
-status: closed
+status: todo
 issue_type: other
 milestone: null
 labels: []
-github_issue: 44
+remote_ids: {github: 95}
 created: '2026-01-02T19:20:53.916985+00:00'
-updated: '2026-01-03T20:58:43.164455+00:00'
+updated: '2026-01-04T14:48:59.064148+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,4 +26,14 @@ completed_date: null
 comments: []
 ---
 
-Implements enhanced init command with automatic project creation, credential flow (env + CLI), manifest rollback, tests, and docs. Closes issue 1fb2b36c.
+# feat(init): enhance init command, credential flow, tests & docs
+
+## Description
+
+Brief description of the issue or feature request.
+
+## Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

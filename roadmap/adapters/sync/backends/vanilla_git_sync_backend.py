@@ -17,6 +17,11 @@ from roadmap.core.interfaces import (
     SyncConflict,
     SyncReport,
 )
+from roadmap.core.models.sync_models import (
+    SyncIssue,
+    SyncMilestone,
+    SyncProject,
+)
 from roadmap.infrastructure.core import RoadmapCore
 
 
@@ -46,6 +51,14 @@ class VanillaGitSyncBackend:
         self.core = core
         self.config = config
 
+    def get_backend_name(self) -> str:
+        """Get the canonical name of this backend.
+
+        Returns:
+            'git' - used as key in Issue.remote_ids dict
+        """
+        return "git"
+
     def authenticate(self) -> bool:
         """No-op authentication for self-hosting.
 
@@ -57,7 +70,7 @@ class VanillaGitSyncBackend:
         """
         return True
 
-    def get_issues(self) -> dict[str, Any]:
+    def get_issues(self) -> dict[str, SyncIssue]:
         """No-op: Get issues from remote.
 
         For self-hosting without a remote database, always returns empty dict.
@@ -143,3 +156,23 @@ class VanillaGitSyncBackend:
             True (no-op succeeds)
         """
         return True
+
+    def get_milestones(self) -> dict[str, SyncMilestone]:
+        """No-op: Get milestones from remote.
+
+        For self-hosting without a remote database, always returns empty dict.
+
+        Returns:
+            Empty dict (no remote milestones in self-hosted scenario)
+        """
+        return {}
+
+    def get_projects(self) -> dict[str, SyncProject]:
+        """No-op: Get projects from remote.
+
+        For self-hosting without a remote database, always returns empty dict.
+
+        Returns:
+            Empty dict (no remote projects in self-hosted scenario)
+        """
+        return {}

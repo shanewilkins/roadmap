@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from roadmap.common.constants import IssueType, Priority, Status
 from roadmap.core.domain.comment import Comment
@@ -20,6 +20,8 @@ def now_utc():
 class Issue(BaseModel):
     """Issue data model."""
 
+    model_config = {"ser_json_timedelta": "float"}
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     title: str
     priority: Priority = Priority.MEDIUM
@@ -27,7 +29,10 @@ class Issue(BaseModel):
     issue_type: IssueType = IssueType.OTHER
     milestone: str | None = None
     labels: list[str] = Field(default_factory=list)
-    github_issue: str | int | None = None
+    remote_ids: dict[str, str | int] = Field(
+        default_factory=dict,
+        description="Remote issue IDs keyed by backend name (e.g., {'github': 42, 'gitlab': 123})",
+    )
     created: datetime = Field(default_factory=now_utc)
     updated: datetime = Field(default_factory=now_utc)
     assignee: str | None = None
@@ -61,39 +66,101 @@ class Issue(BaseModel):
         default=None, exclude=True
     )  # Internal: sync metadata tracking for GitHub integration
 
-    @field_validator("github_issue", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def validate_github_issue(_cls: type["Issue"], v: Any) -> int | None:
-        """Validate GitHub issue number.
+    def migrate_github_issue_to_remote_ids(cls, data: Any) -> Any:
+        """Migrate legacy github_issue field to remote_ids dict.
 
-        GitHub issue numbers must be positive integers.
-        None is allowed (no GitHub link).
-
-        Args:
-            _cls: The class being validated (required by Pydantic)
-            v: Value to validate
-
-        Returns:
-            Valid GitHub issue number or None
-
-        Raises:
-            ValueError: If github_issue is not a positive integer or None
+        Handles loading old YAML files that have github_issue field.
+        Validates and converts to proper types (string numbers to int).
         """
-        if v is None:
-            return None
+        if isinstance(data, dict) and "github_issue" in data:
+            github_issue = data.pop("github_issue")
+            if github_issue is not None:
+                # Initialize remote_ids if not present
+                if "remote_ids" not in data:
+                    data["remote_ids"] = {}
 
-        # Convert string to int if needed
-        if isinstance(v, str):
-            try:
-                v = int(v)
-            except ValueError as e:
-                raise ValueError(f"GitHub issue must be an integer, got '{v}'") from e
+                # Convert string to int if needed
+                if isinstance(github_issue, str):
+                    if not github_issue.isdigit():
+                        raise ValueError(
+                            "github_issue: must be an integer or numeric string"
+                        )
+                    github_issue = int(github_issue)
+                elif not isinstance(github_issue, int):
+                    raise ValueError("github_issue: must be an integer")
 
-        # Validate it's a positive integer
-        if not isinstance(v, int) or v <= 0:
-            raise ValueError(f"GitHub issue number must be a positive integer, got {v}")
+                # Validate positive
+                if github_issue <= 0:
+                    raise ValueError("github_issue: must be a positive integer")
 
-        return v
+                # Migrate github_issue to remote_ids
+                data["remote_ids"]["github"] = github_issue
+        return data
+
+    @property
+    def github_issue(self) -> int | str | None:
+        """Get GitHub issue ID from remote_ids dict.
+
+        Provides backwards compatibility for code accessing issue.github_issue.
+        """
+        if self.remote_ids and "github" in self.remote_ids:
+            return self.remote_ids["github"]
+        return None
+
+    @github_issue.setter
+    def github_issue(self, value: int | str | None) -> None:
+        """Set GitHub issue ID in remote_ids dict.
+
+        Provides backwards compatibility for code setting issue.github_issue.
+        Validates that the value is a positive integer.
+        """
+        if value is None:
+            # Remove github key if setting to None
+            if self.remote_ids and "github" in self.remote_ids:
+                del self.remote_ids["github"]
+        else:
+            # Convert string to int and validate
+            if isinstance(value, str):
+                if not value.isdigit():
+                    raise ValueError(
+                        "github_issue: must be an integer or numeric string"
+                    )
+                value = int(value)
+            elif not isinstance(value, int):
+                raise ValueError("github_issue: must be an integer or numeric string")
+
+            if value <= 0:
+                raise ValueError("github_issue: must be a positive integer")
+
+            if not self.remote_ids:
+                self.remote_ids = {}
+            self.remote_ids["github"] = value
+
+    def model_dump(self, **kwargs) -> dict[str, Any]:
+        """Override model_dump to properly serialize remote_ids and github_issue.
+
+        Includes github_issue for backwards compatibility in API/JSON usage.
+        For file serialization (YAML), callers should remove github_issue field
+        to ensure files use the modern remote_ids format.
+        """
+        data = super().model_dump(**kwargs)
+
+        # Add github_issue for backwards compatibility in API responses
+        # Callers handling file serialization should remove this field
+        data["github_issue"] = self.github_issue
+
+        return data
+
+    def model_dump_json(self, **kwargs) -> str:
+        """Override model_dump_json to include github_issue property for backwards compatibility."""
+        # Get the dumped data which already includes github_issue via model_dump
+        data = self.model_dump()
+        # Use JSON serialization
+        import json
+
+        return json.dumps(data, default=str)
 
     @property
     def is_backlog(self) -> bool:

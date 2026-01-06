@@ -11,9 +11,9 @@ labels:
 - kanban
 - milestone
 - ui
-github_issue: 39
+remote_ids: {github: 39}
 created: '2026-01-02T19:20:52.737054+00:00'
-updated: '2026-01-03T20:57:46.596798+00:00'
+updated: '2026-01-04T14:48:07.644646+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

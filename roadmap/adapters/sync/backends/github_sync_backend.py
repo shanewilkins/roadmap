@@ -16,6 +16,11 @@ from roadmap.core.interfaces import (
     SyncConflict,
     SyncReport,
 )
+from roadmap.core.models.sync_models import (
+    SyncIssue,
+    SyncMilestone,
+    SyncProject,
+)
 from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
 from roadmap.core.services.github_issue_client import GitHubIssueClient
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
@@ -99,6 +104,14 @@ class GitHubSyncBackend:
             )
             return None
 
+    def get_backend_name(self) -> str:
+        """Get the canonical name of this backend.
+
+        Returns:
+            'github' - used as key in Issue.remote_ids dict
+        """
+        return "github"
+
     def authenticate(self) -> bool:
         """Verify credentials and remote connectivity.
 
@@ -169,7 +182,7 @@ class GitHubSyncBackend:
             )
             return False
 
-    def get_issues(self) -> dict[str, Any]:
+    def get_issues(self) -> dict[str, SyncIssue]:
         """Fetch all issues from GitHub remote.
 
         Returns:
@@ -269,7 +282,11 @@ class GitHubSyncBackend:
                     owner=owner,
                     repo=repo,
                 )
-                return issues_data
+                # Convert dict representations to SyncIssue objects
+                return {
+                    issue_id: self._dict_to_sync_issue(issue_dict)
+                    for issue_id, issue_dict in issues_data.items()
+                }
 
             except Exception as e:
                 logger.error(
@@ -508,7 +525,7 @@ class GitHubSyncBackend:
                 logger.warning("pull_issue_not_found_remote", issue_id=issue_id)
                 return False
 
-            title = remote_issue.get("title", "")
+            title = remote_issue.title or ""
 
             if not issue_id or not title:
                 logger.warning(
@@ -517,11 +534,11 @@ class GitHubSyncBackend:
                 return False
             logger.debug("github_pull_issue_started", issue_id=issue_id)
 
-            # Convert GitHub remote dict to local Issue object
-            issue = self._convert_github_to_issue(issue_id, remote_issue)
+            # Convert remote SyncIssue to local Issue object
+            issue = self._convert_sync_to_issue(issue_id, remote_issue)
 
             # Extract GitHub issue number from remote issue
-            github_issue_number = remote_issue.get("number")
+            github_issue_number = remote_issue.backend_id
 
             # Check if issue with same GitHub issue number exists locally
             # This is the primary match - if we've synced this GitHub issue before, use existing
@@ -641,6 +658,76 @@ class GitHubSyncBackend:
                 exc_info=True,
             )
             return False
+
+    def _convert_sync_to_issue(self, issue_id: str, sync_issue: SyncIssue) -> "Issue":
+        """Convert SyncIssue to local Issue object.
+
+        Args:
+            issue_id: Local issue ID
+            sync_issue: SyncIssue with remote data
+
+        Returns:
+            Issue instance with converted data
+
+        Raises:
+            ValueError: If conversion fails
+        """
+        from datetime import datetime, timezone
+
+        from roadmap.core.domain.issue import (
+            Issue,
+            IssueType,
+            Priority,
+            Status,
+        )
+
+        # Map GitHub state to local Status
+        github_state = sync_issue.status or "open"
+        status_map = {"open": Status.TODO, "closed": Status.CLOSED}
+        status = status_map.get(github_state, Status.TODO)
+
+        # Default priority to medium (GitHub doesn't have priority in issues)
+        priority = Priority.MEDIUM
+
+        # Extract timestamps - sync_issue already has datetime objects
+        created = sync_issue.created_at or datetime.now(timezone.utc)
+        updated = sync_issue.updated_at or datetime.now(timezone.utc)
+
+        # Extract labels
+        labels = sync_issue.labels or []
+
+        # Extract assignee
+        assignee = sync_issue.assignee
+
+        # Extract milestone
+        milestone = sync_issue.milestone
+
+        # Get the description
+        content = sync_issue.description or ""
+
+        # Remote IDs mapping - ensure all values are str | int
+        if sync_issue.remote_ids:
+            remote_ids: dict[str, str | int] = sync_issue.remote_ids
+        else:
+            # Ensure backend_id is not None for the remote_ids dict
+            remote_ids = (
+                {"github": str(sync_issue.backend_id)} if sync_issue.backend_id else {}
+            )
+
+        return Issue(
+            id=issue_id,
+            title=sync_issue.title or "Untitled",
+            content=content,
+            status=status,
+            priority=priority,
+            issue_type=IssueType.FEATURE,  # Default to feature
+            labels=labels,
+            assignee=assignee,
+            milestone=milestone,
+            created=created,
+            updated=updated,
+            remote_ids=remote_ids,
+        )
 
     def _convert_github_to_issue(
         self, issue_id: str, remote_data: dict[str, Any]
@@ -817,3 +904,47 @@ class GitHubSyncBackend:
                 error=str(e),
             )
             return False
+
+    def get_milestones(self) -> dict[str, SyncMilestone]:
+        """Fetch all milestones from GitHub.
+
+        Currently returns empty dict as detailed milestone fetching is not yet implemented.
+        """
+        # TODO: Implement full milestone fetching from GitHub API
+        return {}
+
+    def get_projects(self) -> dict[str, SyncProject]:
+        """Fetch all projects from GitHub.
+
+        Currently returns empty dict as project fetching is not yet implemented.
+        GitHub uses classic Project Boards and newer Projects (beta).
+        """
+        # TODO: Implement GitHub Projects API integration
+        return {}
+
+    @staticmethod
+    def _dict_to_sync_issue(issue_dict: dict[str, Any]) -> SyncIssue:
+        """Convert a raw GitHub API issue dict to SyncIssue.
+
+        Args:
+            issue_dict: Dict with issue data from GitHub API
+
+        Returns:
+            SyncIssue instance
+        """
+        issue_id = issue_dict.get("id", issue_dict.get("number", ""))
+        return SyncIssue(
+            id=str(issue_id),
+            title=issue_dict.get("title", ""),
+            status=issue_dict.get("state", "open"),
+            description=issue_dict.get("body", ""),
+            assignee=issue_dict.get("assignee"),
+            milestone=issue_dict.get("milestone"),
+            labels=issue_dict.get("labels", []),
+            created_at=issue_dict.get("created_at"),
+            updated_at=issue_dict.get("updated_at"),
+            backend_name="github",
+            backend_id=str(issue_dict.get("number", "")),
+            remote_ids={"github": str(issue_dict.get("number", ""))},
+            raw_response=issue_dict,
+        )

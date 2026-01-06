@@ -12,7 +12,7 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_valid_integer(self):
         """Test creating issue with valid GitHub issue number."""
-        issue = Issue(title="Test", github_issue=123)
+        issue = Issue.model_validate({"title": "Test", "github_issue": 123})
         assert issue.github_issue == 123
 
     def test_github_issue_valid_none(self):
@@ -22,38 +22,38 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_valid_large_number(self):
         """Test creating issue with large GitHub issue number."""
-        issue = Issue(title="Test", github_issue=999999)
+        issue = Issue.model_validate({"title": "Test", "github_issue": 999999})
         assert issue.github_issue == 999999
 
     def test_github_issue_string_to_int(self):
         """Test that string GitHub issue number is converted to int."""
-        issue = Issue(title="Test", github_issue="456")
+        issue = Issue.model_validate({"title": "Test", "github_issue": "456"})
         assert issue.github_issue == 456
         assert isinstance(issue.github_issue, int)
 
     def test_github_issue_zero_raises_error(self):
         """Test that zero GitHub issue number raises error."""
         with pytest.raises(ValueError, match="positive integer"):
-            Issue(title="Test", github_issue=0)
+            Issue.model_validate({"title": "Test", "github_issue": 0})
 
     def test_github_issue_negative_raises_error(self):
         """Test that negative GitHub issue number raises error."""
         with pytest.raises(ValueError, match="positive integer"):
-            Issue(title="Test", github_issue=-123)
+            Issue.model_validate({"title": "Test", "github_issue": -123})
 
     def test_github_issue_invalid_string_raises_error(self):
         """Test that non-numeric string raises error."""
         with pytest.raises(ValueError, match="must be an integer"):
-            Issue(title="Test", github_issue="not-a-number")
+            Issue.model_validate({"title": "Test", "github_issue": "not-a-number"})
 
     def test_github_issue_float_string_raises_error(self):
         """Test that float string raises error."""
         with pytest.raises(ValueError, match="must be an integer"):
-            Issue(title="Test", github_issue="123.45")
+            Issue.model_validate({"title": "Test", "github_issue": "123.45"})
 
     def test_github_issue_explicit_none(self):
         """Test explicitly setting github_issue to None."""
-        issue = Issue(title="Test", github_issue=None)
+        issue = Issue.model_validate({"title": "Test", "github_issue": None})
         assert issue.github_issue is None
 
     def test_github_issue_update(self):
@@ -66,11 +66,13 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_with_other_fields(self):
         """Test github_issue works alongside other fields."""
-        issue = Issue(
-            title="Complete Issue",
-            assignee="john",
-            milestone="v1.0",
-            github_issue=456,
+        issue = Issue.model_validate(
+            {
+                "title": "Complete Issue",
+                "assignee": "john",
+                "milestone": "v1.0",
+                "github_issue": 456,
+            }
         )
         assert issue.github_issue == 456
         assert issue.assignee == "john"
@@ -78,7 +80,7 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_model_dump(self):
         """Test that github_issue is included in model dump."""
-        issue = Issue(title="Test", github_issue=789)
+        issue = Issue.model_validate({"title": "Test", "github_issue": 789})
         data = issue.model_dump()
         assert data["github_issue"] == 789
 
@@ -91,9 +93,9 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_json_serialization(self):
         """Test that github_issue serializes to JSON correctly."""
-        issue = Issue(title="Test", github_issue=321)
+        issue = Issue.model_validate({"title": "Test", "github_issue": 321})
         json_str = issue.model_dump_json()
-        assert '"github_issue":321' in json_str
+        assert '"github_issue": 321' in json_str
 
     def test_github_issue_json_deserialization(self):
         """Test that github_issue deserializes from JSON correctly."""

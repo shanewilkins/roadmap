@@ -3,7 +3,7 @@
 import builtins
 from abc import ABC, abstractmethod
 
-from domain.models import Issue
+from roadmap.core.domain import Issue
 
 
 class IssueRepository(ABC):
@@ -24,7 +24,7 @@ class IssueRepository(ABC):
         pass
 
     @abstractmethod
-    def list(self, filters: dict | None = None) -> list[Issue]:
+    def list(self, _filters: dict | None = None) -> list[Issue]:
         """List issues with optional filtering."""
         pass
 

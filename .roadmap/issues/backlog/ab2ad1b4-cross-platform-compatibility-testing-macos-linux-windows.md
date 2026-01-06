@@ -7,9 +7,9 @@ issue_type: feature
 milestone: null
 labels:
 - testing,compatibility
-github_issue: 102
+remote_ids: {github: 102}
 created: '2025-12-20T18:33:28.214417+00:00'
-updated: '2026-01-03T20:58:08.712416+00:00'
+updated: '2026-01-04T14:48:48.402741+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

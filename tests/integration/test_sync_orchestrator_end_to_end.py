@@ -1,6 +1,6 @@
 """End-to-end integration tests for sync orchestrator with new services.
 
-Tests the full sync workflow using GenericSyncOrchestrator, SyncStateComparator,
+Tests the full sync workflow using SyncMergeOrchestrator, SyncStateComparator,
 and SyncConflictResolver to verify they work together correctly.
 """
 
@@ -8,7 +8,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
-from roadmap.adapters.sync.generic_sync_orchestrator import GenericSyncOrchestrator
+from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 from roadmap.common.constants import Priority, Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncReport
@@ -44,7 +44,7 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {}  # No remote issues
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -56,7 +56,7 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
 
         # Verify
         assert report.error is None
-        assert report.issues_updated == 1  # 1 issue to push
+        assert report.issues_needs_push == 1  # 1 issue to push
         assert report.conflicts_detected == 0
         self.backend.push_issue.assert_not_called()  # Dry run - no actual push
 
@@ -78,7 +78,7 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
         self.backend.get_issues.return_value = {}
         self.backend.push_issue.return_value = True
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -90,7 +90,7 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
 
         # Verify
         assert report.error is None
-        assert report.issues_updated == 1
+        assert report.issues_needs_push == 1
         self.backend.push_issue.assert_called_once_with(local_issue)
 
 
@@ -118,7 +118,7 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"remote-1": remote_issue}
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -148,7 +148,7 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
         self.backend.get_issues.return_value = {"remote-1": remote_issue}
         self.backend.pull_issue.return_value = True
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -204,7 +204,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         self.backend.get_issues.return_value = {"conflict-1": remote_issue}
         self.backend.push_issue.return_value = True
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -247,7 +247,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         self.backend.get_issues.return_value = {"conflict-1": remote_issue}
         self.backend.push_issue.return_value = True
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -293,7 +293,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         self.backend.get_issues.return_value = {"conflict-1": remote_issue}
         self.backend.pull_issue.return_value = True
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -386,7 +386,7 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
 
         self.backend.get_issues.return_value = remote_issues
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -401,7 +401,7 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
         assert (
             report.conflicts_detected == 2
         )  # Both "updated" and "conflict" have conflicts
-        assert report.issues_updated >= 1  # At least the new local issue
+        assert report.issues_needs_push >= 1  # At least the new local issue
         assert not self.backend.push_issue.called
         assert not self.backend.pull_issue.called
 
@@ -463,7 +463,7 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
         self.backend.push_issues.return_value = push_report
         self.backend.pull_issue.return_value = True
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -495,7 +495,7 @@ class TestSyncEnd2EndAuthenticationFailure(unittest.TestCase):
         self.core.issues.list.return_value = []
         self.backend.authenticate.return_value = False
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -527,7 +527,7 @@ class TestSyncEnd2EndRemoteFailure(unittest.TestCase):
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = None  # Failure
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -578,7 +578,7 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"same-1": remote_issue}
 
-        orchestrator = GenericSyncOrchestrator(
+        orchestrator = SyncMergeOrchestrator(
             self.core,
             self.backend,
             state_comparator=self.state_comparator,
@@ -592,7 +592,7 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
         assert report.error is None
         assert report.conflicts_detected == 0
         assert report.issues_up_to_date >= 1  # At least 1 should be up to date
-        assert report.issues_updated == 0
+        assert report.issues_needs_push == 0 and report.issues_needs_pull == 0
 
 
 if __name__ == "__main__":

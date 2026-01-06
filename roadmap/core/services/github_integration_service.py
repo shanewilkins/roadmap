@@ -196,6 +196,9 @@ class GitHubIntegrationService:
         This validation integrates with the identity management system while
         maintaining backward compatibility with the original API.
 
+        Only validates against GitHub if the sync backend is configured to use
+        GitHub. If using vanilla Git backend, validation is skipped.
+
         Args:
             assignee: Username to validate
 
@@ -205,6 +208,36 @@ class GitHubIntegrationService:
             - (False, error_message) if invalid
         """
         logger.info("validating_assignee", assignee=assignee)
+
+        # Check which sync backend is configured
+        try:
+            config_manager = ConfigManager(self.config_file)
+            config = config_manager.load()
+            github_config_obj = getattr(config, "github", None)
+
+            # Determine sync backend
+            if github_config_obj is None:
+                sync_backend = "git"
+            elif isinstance(github_config_obj, dict):
+                sync_backend = github_config_obj.get("sync_backend", "github")
+            else:
+                sync_backend = getattr(github_config_obj, "sync_backend", "github")
+
+            # Only validate against GitHub if using GitHub backend
+            if sync_backend != "github":
+                logger.info(
+                    "skipping_assignee_validation",
+                    reason=f"sync_backend is {sync_backend}, not github",
+                    assignee=assignee,
+                )
+                return True, ""
+        except Exception as e:
+            logger.debug(
+                "sync_backend_detection_failed_continuing_validation",
+                error=str(e),
+            )
+            # If we can't determine backend, continue with validation
+
         try:
             from roadmap.core.services.assignee_validation_service import (
                 AssigneeValidationStrategy,

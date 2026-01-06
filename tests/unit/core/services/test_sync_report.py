@@ -15,9 +15,9 @@ class TestIssueChange:
         assert change.issue_id == "issue-1"
         assert change.title == "Test Issue"
         assert change.local_changes == {}
-        assert change.github_changes == {}
+        assert change.remote_changes == {}
         assert not change.has_conflict
-        assert change.last_sync_time is None
+        assert change.conflict_type == "no_change"
 
     def test_create_with_local_changes(self):
         """Test creating issue change with local changes."""
@@ -26,7 +26,7 @@ class TestIssueChange:
             issue_id="issue-1", title="Test Issue", local_changes=local_changes
         )
         assert change.local_changes == local_changes
-        assert change.github_changes == {}
+        assert change.remote_changes == {}
 
     def test_create_with_github_changes(self):
         """Test creating issue change with GitHub changes."""
@@ -121,7 +121,7 @@ class TestSyncReport:
         report = SyncReport()
         assert report.total_issues == 0
         assert report.issues_up_to_date == 0
-        assert report.issues_updated == 0
+        assert report.issues_needs_push == 0
         assert report.conflicts_detected == 0
         assert report.changes == []
         assert report.error is None
@@ -131,12 +131,12 @@ class TestSyncReport:
         report = SyncReport(
             total_issues=10,
             issues_up_to_date=7,
-            issues_updated=3,
+            issues_needs_push=3,
             conflicts_detected=0,
         )
         assert report.total_issues == 10
         assert report.issues_up_to_date == 7
-        assert report.issues_updated == 3
+        assert report.issues_needs_push == 3
         assert report.conflicts_detected == 0
 
     def test_create_with_changes(self):
@@ -144,7 +144,7 @@ class TestSyncReport:
         change1 = IssueChange(issue_id="issue-1", title="Issue 1")
         change2 = IssueChange(issue_id="issue-2", title="Issue 2")
         report = SyncReport(
-            total_issues=2, issues_updated=2, changes=[change1, change2]
+            total_issues=2, issues_needs_push=2, changes=[change1, change2]
         )
         assert len(report.changes) == 2
         assert report.changes[0].issue_id == "issue-1"
@@ -201,7 +201,7 @@ class TestSyncReport:
         report = SyncReport(
             total_issues=10,
             issues_up_to_date=7,
-            issues_updated=3,
+            issues_needs_push=3,
             conflicts_detected=0,
         )
         report.display_brief()
@@ -214,7 +214,7 @@ class TestSyncReport:
         report = SyncReport(
             total_issues=10,
             issues_up_to_date=7,
-            issues_updated=2,
+            issues_needs_push=2,
             conflicts_detected=1,
         )
         report.display_brief()
@@ -239,7 +239,7 @@ class TestSyncReport:
         )
         report = SyncReport(
             total_issues=1,
-            issues_updated=1,
+            issues_needs_push=1,
             changes=[change],
         )
         report.display_verbose()

@@ -30,7 +30,7 @@ class IssueTestDataBuilder:
         self._content = ""
         self._labels: list[str] = []
         self._assignee: str | None = None
-        self._github_issue: int | None = None
+        self._remote_ids: dict[str, str | int] = {}
         self._github_sync_metadata: dict[str, Any] | None = None
         self._depends_on: list[str] = []
         self._blocks: list[str] = []
@@ -120,7 +120,7 @@ class IssueTestDataBuilder:
         return self
 
     def with_github_issue(self, issue_number: int) -> "IssueTestDataBuilder":
-        """Set the GitHub issue number.
+        """Set the GitHub issue number (maps to remote_ids[github]).
 
         Args:
             issue_number: The GitHub issue number
@@ -128,7 +128,7 @@ class IssueTestDataBuilder:
         Returns:
             Self for fluent chaining
         """
-        self._github_issue = issue_number
+        self._remote_ids["github"] = issue_number
         return self
 
     def with_created_at(self, dt: datetime) -> "IssueTestDataBuilder":
@@ -179,20 +179,6 @@ class IssueTestDataBuilder:
             Self for fluent chaining
         """
         self._github_sync_metadata = metadata
-        return self
-
-    def with_remote_id(self, remote_id: int) -> "IssueTestDataBuilder":
-        """Set the remote ID in sync metadata.
-
-        Args:
-            remote_id: The remote issue ID
-
-        Returns:
-            Self for fluent chaining
-        """
-        if self._github_sync_metadata is None:
-            self._github_sync_metadata = {}
-        self._github_sync_metadata["remote_id"] = remote_id
         return self
 
     def with_last_synced(self, dt: datetime) -> "IssueTestDataBuilder":
@@ -250,7 +236,7 @@ class IssueTestDataBuilder:
             content=self._content,
             labels=self._labels,
             assignee=self._assignee,
-            github_issue=self._github_issue,
+            remote_ids=self._remote_ids,
             created=self._created,
             updated=self._updated,
             github_sync_metadata=self._github_sync_metadata,

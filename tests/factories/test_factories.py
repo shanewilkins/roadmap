@@ -144,9 +144,9 @@ class TestIssueBuilder:
         assert issue.github_issue == 42
 
     def test_builder_with_github_issue_string(self):
-        """Test linking to GitHub issue with string."""
-        issue = IssueBuilder().with_github_issue("octocat/repo#42").build()
-        assert issue.github_issue == "octocat/repo#42"
+        """Test linking to GitHub issue with string number."""
+        issue = IssueBuilder().with_github_issue("42").build()
+        assert issue.github_issue == 42
 
     def test_builder_with_due_date(self):
         """Test setting due date."""

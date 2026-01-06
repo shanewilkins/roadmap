@@ -48,6 +48,9 @@ class IssueCreationService:
         Raises:
             click.Abort: If assignee validation fails
         """
+        # Track whether assignee was explicitly provided (for validation logic)
+        explicitly_provided = assignee is not None
+
         # Auto-detect from Git if not provided
         if not assignee and auto_detect:
             git_user = self.core.git.get_current_user()
@@ -60,24 +63,28 @@ class IssueCreationService:
         if not assignee:
             return None
 
-        # Validate assignee
-        is_valid, result = self.core.team.validate_assignee(assignee)
-        if not is_valid:
-            self._console.print(f"[ERROR] Invalid assignee: {result}")
-            raise click.Abort()
+        # Only validate if explicitly provided (not auto-detected)
+        if explicitly_provided:
+            is_valid, result = self.core.team.validate_assignee(assignee)
+            if not is_valid:
+                self._console.print(f"[ERROR] Invalid assignee: {result}")
+                raise click.Abort()
 
-        if result and "Warning:" in result:
-            self._console.print(f"⚠️  {result}", style="bold yellow")
+            if result and "Warning:" in result:
+                self._console.print(f"⚠️  {result}", style="bold yellow")
+                return assignee
+
+            # Get canonical name
+            canonical = self.core.team.get_canonical_assignee(assignee)
+            if canonical != assignee:
+                self._console.print(
+                    f"🔄 Resolved '{assignee}' to '{canonical}'", style="dim"
+                )
+
+            return canonical
+        else:
+            # Auto-detected assignee - use as-is without validation
             return assignee
-
-        # Get canonical name
-        canonical = self.core.team.get_canonical_assignee(assignee)
-        if canonical != assignee:
-            self._console.print(
-                f"🔄 Resolved '{assignee}' to '{canonical}'", style="dim"
-            )
-
-        return canonical
 
     # ─────────────────────────────────────────────────────────────────────────
     # Git Branch Creation

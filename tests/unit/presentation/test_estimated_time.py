@@ -1,7 +1,5 @@
 """Tests for estimated time functionality."""
 
-import pytest
-
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Issue, Milestone, Status
 from tests.unit.shared.test_helpers import (
@@ -119,10 +117,9 @@ class TestMilestoneEstimatedTime:
 class TestEstimatedTimeCLI:
     """Test CLI commands with estimated time functionality."""
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_create_issue_with_estimate(self, cli_runner_with_init):
         """Test creating an issue with estimated time via CLI."""
-        runner = cli_runner_with_init
+        runner, core = cli_runner_with_init
 
         result = runner.invoke(
             main, ["issue", "create", "Test Issue", "--estimate", "4.5"]
@@ -133,10 +130,9 @@ class TestEstimatedTimeCLI:
         issues = core.issues.list()
         assert any(i.title == "Test Issue" and i.estimated_hours == 4.5 for i in issues)
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_create_issue_without_estimate(self, cli_runner_with_init):
         """Test creating an issue without estimated time via CLI."""
-        runner = cli_runner_with_init
+        runner, core = cli_runner_with_init
 
         result = runner.invoke(main, ["issue", "create", "Test Issue"])
 
@@ -146,10 +142,9 @@ class TestEstimatedTimeCLI:
             i.title == "Test Issue" and i.estimated_hours is None for i in issues
         )
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_update_issue_estimate(self, cli_runner_with_init):
         """Test updating an issue's estimated time via CLI."""
-        runner = cli_runner_with_init
+        runner, core = cli_runner_with_init
 
         # Create an issue first
         create_result = runner.invoke(main, ["issue", "create", "Test Issue"])
@@ -170,7 +165,6 @@ class TestEstimatedTimeCLI:
         updated_issue = core.issues.get(issue.id)
         assert updated_issue.estimated_hours == 6.0
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_issue_list_shows_estimates(self, cli_runner_with_init):
         """Test that issue list shows estimated times."""
         runner, core = cli_runner_with_init
@@ -185,7 +179,6 @@ class TestEstimatedTimeCLI:
 
         assert_command_success(result)
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_issue_list_creates_estimates(self, cli_runner_with_init):
         """Test that issues are created with correct estimate values."""
         runner, core = cli_runner_with_init
@@ -205,7 +198,6 @@ class TestEstimatedTimeCLI:
         assert big_feature is not None
         assert big_feature.estimated_hours == 32.0
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_issue_list_displays_estimate_format(self, cli_runner_with_init):
         """Test that estimated times are displayed in correct format."""
         runner, core = cli_runner_with_init
@@ -218,18 +210,18 @@ class TestEstimatedTimeCLI:
         issues = core.issues.list()
 
         quick_task = next((i for i in issues if i.title == "Quick Task"), None)
+        assert quick_task is not None
         assert quick_task.estimated_time_display == "1.0h"
 
         big_feature = next((i for i in issues if i.title == "Big Feature"), None)
+        assert big_feature is not None
         assert big_feature.estimated_time_display == "4.0d"  # 32 hours = 4 days
 
         no_estimate = next((i for i in issues if i.title == "No Estimate"), None)
+        assert no_estimate is not None
         assert no_estimate.estimated_time_display == "Not estimated"
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
-    def test_milestone_list_shows_estimates_command_success(
-        self, cli_runner_with_init
-    ):
+    def test_milestone_list_shows_estimates_command_success(self, cli_runner_with_init):
         """Test that milestone list command succeeds."""
         runner, core = cli_runner_with_init
 
@@ -246,6 +238,8 @@ class TestEstimatedTimeCLI:
         assert True
         task1 = next((i for i in issues if i.title == "Task 1"), None)
         task2 = next((i for i in issues if i.title == "Task 2"), None)
+        assert task1 is not None
+        assert task2 is not None
 
         # Assign issues to milestone
         runner.invoke(
@@ -259,7 +253,6 @@ class TestEstimatedTimeCLI:
         result = runner.invoke(main, ["milestone", "list"])
         assert_command_success(result)
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_milestone_list_issues_assigned_to_milestone(self, cli_runner_with_init):
         """Test that milestone list shows issues assigned to milestone."""
         runner, core = cli_runner_with_init
@@ -289,10 +282,11 @@ class TestEstimatedTimeCLI:
         # Verify issues are assigned
         fresh_task1 = core.issues.get(task1.id)
         fresh_task2 = core.issues.get(task2.id)
+        assert fresh_task1 is not None
+        assert fresh_task2 is not None
         assert fresh_task1.milestone == "Test Milestone"
         assert fresh_task2.milestone == "Test Milestone"
 
-    @pytest.mark.skip(reason="Fixture returns only runner, not (runner, core) tuple")
     def test_milestone_list_shows_estimated_hours(self, cli_runner_with_init):
         """Test that milestone issues show estimated hours."""
         runner, core = cli_runner_with_init
@@ -308,6 +302,8 @@ class TestEstimatedTimeCLI:
         issues = core.issues.list()
         task1 = next((i for i in issues if i.title == "Task 1"), None)
         task2 = next((i for i in issues if i.title == "Task 2"), None)
+        assert task1 is not None
+        assert task2 is not None
 
         # Assign issues to milestone
         runner.invoke(
@@ -320,6 +316,8 @@ class TestEstimatedTimeCLI:
         # Verify estimated times
         fresh_task1 = core.issues.get(task1.id)
         fresh_task2 = core.issues.get(task2.id)
+        assert fresh_task1 is not None
+        assert fresh_task2 is not None
         assert fresh_task1.estimated_hours == 8.0
         assert fresh_task2.estimated_hours == 16.0
         # Total: 24 hours = 3.0 days

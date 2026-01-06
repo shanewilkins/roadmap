@@ -9,7 +9,7 @@ labels:
 - backup
 - data-management
 - cleanup
-github_issue: 41
+remote_ids: {github: 41}
 created: '2025-10-13T08:55:24.179990+00:00'
 updated: '2025-11-16T13:41:23.310289'
 assignee: shanewilkins

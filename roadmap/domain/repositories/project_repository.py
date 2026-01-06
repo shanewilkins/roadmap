@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from domain.models import Project
+from roadmap.core.domain import Project
 
 
 class ProjectRepository(ABC):

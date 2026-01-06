@@ -259,3 +259,55 @@ class GitHubClient(BaseGitHubHandler):
                 return False, f"GitHub API error: {e.response.status_code}"
         except requests.exceptions.RequestException as e:
             return False, f"GitHub API connection error: {str(e)}"
+
+    def validate_assignee(self, assignee: str) -> tuple[bool, str]:
+        """Validate that a user is a valid assignee for this repository.
+
+        Args:
+            assignee: GitHub username to validate
+
+        Returns:
+            Tuple of (is_valid, error_message)
+            - (True, "") if valid
+            - (False, error_message) if invalid
+        """
+        if not assignee or not assignee.strip():
+            return False, "Assignee cannot be empty"
+
+        assignee = assignee.strip()
+
+        try:
+            self._check_repository()
+            # Check if the user exists and has access to the repository
+            # We'll try to get the user info from GitHub
+            response = self._make_request("GET", f"/users/{assignee}")
+
+            if response.status_code == 200:
+                # User exists, now check if they have access to the repository
+                # Try to get their permission level in the repository
+                perm_response = self._make_request(
+                    "GET",
+                    f"/repos/{self.owner}/{self.repo}/collaborators/{assignee}/permission",
+                )
+
+                if perm_response.status_code == 204:
+                    # User has some level of access to the repository
+                    return True, ""
+                elif perm_response.status_code == 404:
+                    # User exists but is not a collaborator - they can still be assigned
+                    # to public repositories by maintainers, so return True
+                    return True, ""
+                else:
+                    return False, f"Could not verify access for {assignee}"
+            elif response.status_code == 404:
+                return False, f"GitHub user '{assignee}' not found"
+            else:
+                return False, f"GitHub API error: {response.status_code}"
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                return False, f"GitHub user '{assignee}' not found"
+            else:
+                return False, f"GitHub API error: {e.response.status_code}"
+        except requests.exceptions.RequestException as e:
+            return False, f"GitHub API connection error: {str(e)}"

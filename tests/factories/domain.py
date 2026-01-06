@@ -98,6 +98,11 @@ class IssueBuilder:
         self._issue.github_issue = github_issue
         return self
 
+    def with_remote_ids(self, remote_ids: dict[str, str | int]) -> "IssueBuilder":
+        """Set remote IDs for multiple backends."""
+        self._issue.remote_ids = remote_ids
+        return self
+
     def with_due_date(self, due_date: datetime | None) -> "IssueBuilder":
         """Set the due date."""
         self._issue.due_date = due_date

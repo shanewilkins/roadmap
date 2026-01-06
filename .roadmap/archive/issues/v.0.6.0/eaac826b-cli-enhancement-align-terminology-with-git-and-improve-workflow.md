@@ -7,7 +7,7 @@ issue_type: feature
 milestone: v.0.6.0
 labels:
 - cli,ux,1.0-target
-github_issue: null
+remote_ids: {}
 created: '2025-11-26T18:11:41.512485+00:00'
 updated: '2025-11-26T18:37:57.725286+00:00'
 assignee: shanewilkins

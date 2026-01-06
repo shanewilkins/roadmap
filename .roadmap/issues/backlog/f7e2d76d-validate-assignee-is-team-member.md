@@ -11,9 +11,9 @@ labels:
 - security
 - validation
 - github-integration
-github_issue: 85
+remote_ids: {github: 85}
 created: '2026-01-02T19:20:52.900884+00:00'
-updated: '2026-01-03T20:57:24.262526+00:00'
+updated: '2026-01-04T14:48:05.855642+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

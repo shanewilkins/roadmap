@@ -124,7 +124,12 @@ class RoadmapCore:
         issue_ops = IssueOperations(self.issue_service, self.issues_dir)
         milestone_ops = MilestoneOperations(self.milestone_service)
         project_ops = ProjectOperations(self.project_service)
-        user_ops = UserOperations(self.github_service, self.issue_service)
+
+        # Determine appropriate assignee validator based on sync backend
+        assignee_validator = self._get_assignee_validator()
+        user_ops = UserOperations(
+            self.github_service, self.issue_service, assignee_validator
+        )
         git_ops = GitIntegrationOps(self._git, self)
 
         # Initialize domain coordinators (pass self for initialization check)
@@ -145,6 +150,41 @@ class RoadmapCore:
         """Check that roadmap is initialized and raise if not."""
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
+
+    def _get_assignee_validator(self):
+        """Determine the appropriate assignee validator based on sync backend.
+
+        Returns the validator for the configured sync backend:
+        - "github" backend → GitHubAssigneeValidator (validates against collaborators)
+        - "git" or other backend → VanillaAssigneeValidator (accepts any assignee)
+
+        Defaults to vanilla/git validator if no backend is configured.
+
+        Returns:
+            An assignee validator instance (implements AssigneeValidator protocol)
+        """
+        from roadmap.common.config_manager import ConfigManager
+        from roadmap.infrastructure.github_assignee_validator import (
+            GitHubAssigneeValidator,
+        )
+        from roadmap.infrastructure.vanilla_assignee_validator import (
+            VanillaAssigneeValidator,
+        )
+
+        try:
+            config_manager = ConfigManager(self.config_file)
+            config = config_manager.load()
+            # Access dataclass attributes, not dictionary
+            sync_backend = config.github.sync_backend if config.github else "git"
+        except Exception:
+            # If we can't read config, default to vanilla/git validator
+            sync_backend = "git"
+
+        if str(sync_backend).lower() == "github":
+            return GitHubAssigneeValidator(self.github_service)
+        else:
+            # Default to vanilla validator for "git" backend or if not specified
+            return VanillaAssigneeValidator()
 
     @classmethod
     def find_existing_roadmap(

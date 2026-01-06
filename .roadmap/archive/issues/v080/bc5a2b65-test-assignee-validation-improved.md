@@ -6,7 +6,7 @@ status: closed
 issue_type: other
 milestone: v080
 labels: []
-github_issue: 34
+remote_ids: {github: 34}
 created: '2025-10-13T10:03:56.725073+00:00'
 updated: '2025-12-26T15:49:44.298313+00:00'
 assignee: shanewilkins

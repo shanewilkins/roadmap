@@ -123,7 +123,6 @@ class TestRoadmapCoreTemplatesAndConfig:
         core._update_gitignore()
 
         # No gitignore should be created if no git repo
-        core.root_path / ".gitignore"
         # The method might still create one, so we just verify it doesn't crash
         assert True
 

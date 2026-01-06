@@ -9,7 +9,7 @@ labels:
 - kanban
 - milestone
 - ui
-github_issue: 39
+remote_ids: {github: 39}
 created: '2025-10-13T08:41:57.474244+00:00'
 updated: '2025-11-26T18:22:01.239960+00:00'
 assignee: shanewilkins

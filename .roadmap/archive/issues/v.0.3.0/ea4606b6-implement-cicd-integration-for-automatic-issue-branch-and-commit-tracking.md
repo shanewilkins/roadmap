@@ -6,7 +6,7 @@ status: closed
 issue_type: feature
 milestone: v.0.3.0
 labels: []
-github_issue: 10
+remote_ids: {github: 10}
 created: '2025-10-11T20:28:50.243433+00:00'
 updated: '2025-12-03T22:35:47.572964+00:00'
 assignee: shanewilkins

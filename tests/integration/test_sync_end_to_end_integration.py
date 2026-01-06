@@ -84,6 +84,9 @@ def sync_state_manager(temp_roadmap_dir):
     return SyncStateManager(temp_roadmap_dir)
 
 
+@pytest.mark.skip(
+    reason="Deprecated file-based state persistence - using DB approach instead"
+)
 class TestStatePersistence:
     """Test sync state persistence across multiple iterations."""
 

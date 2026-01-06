@@ -41,6 +41,36 @@ class BaselineStateRetriever:
         """
         self.issues_dir = issues_dir
 
+    def get_baseline_from_file(self, issue_file: Path) -> IssueBaseState | None:
+        """Get baseline state directly from current issue file.
+
+        Used for initial baseline creation on first sync, where we extract
+        the current state directly without looking in git history.
+
+        Args:
+            issue_file: Path to issue file
+
+        Returns:
+            IssueBaseState extracted from file, or None if extraction fails
+        """
+        try:
+            if not issue_file.exists():
+                logger.debug(
+                    "baseline_file_not_found",
+                    issue_file=str(issue_file),
+                )
+                return None
+
+            content = issue_file.read_text(encoding="utf-8")
+            return self._extract_baseline_from_content(content, issue_file)
+        except Exception as e:
+            logger.warning(
+                "baseline_from_file_extraction_error",
+                issue_file=str(issue_file),
+                error=str(e),
+            )
+            return None
+
     def get_local_baseline(
         self, issue_file: Path, last_synced: datetime
     ) -> IssueBaseState | None:

@@ -2,15 +2,15 @@
 id: 2acc5c5f
 title: Test finish command workflow
 priority: medium
-status: closed
+status: todo
 issue_type: other
 milestone: null
 labels:
 - priority:medium
 - status:done
-github_issue: 25
+remote_ids: {github: 68}
 created: '2026-01-02T19:20:51.619153+00:00'
-updated: '2026-01-03T20:58:01.776826+00:00'
+updated: '2026-01-04T14:48:40.272684+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -39,9 +39,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
-**Finished:** Successfully unified done and complete commands
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

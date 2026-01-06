@@ -19,7 +19,7 @@ from roadmap.shared.formatters.text.operations import (
 )
 
 if TYPE_CHECKING:
-    from roadmap.core.application import Core  # noqa: F401
+    from roadmap.infrastructure.core import RoadmapCore  # noqa: F401
 
 console = get_console()
 
@@ -46,7 +46,7 @@ class StatusChangeConfig:
 
 
 def apply_status_change(
-    core: "Core",
+    core: "RoadmapCore",
     issue_id: str,
     config: StatusChangeConfig,
     reason: str | None = None,

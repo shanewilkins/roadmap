@@ -5,7 +5,7 @@ priority: "medium"
 status: "todo"
 milestone: ""
 labels: []
-github_issue: null
+remote_ids: {}
 created: "{{ created_date }}"
 updated: "{{ updated_date }}"
 assignee: ""

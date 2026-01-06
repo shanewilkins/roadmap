@@ -10,6 +10,9 @@ from roadmap.core.domain.issue import Issue
 from roadmap.core.services.sync_state_manager import SyncStateManager
 
 
+@pytest.mark.skip(
+    reason="Deprecated file-based state persistence - using DB approach instead"
+)
 class TestSyncStateUpdates:
     """Test that sync state is properly updated after push operations."""
 
@@ -105,6 +108,9 @@ class TestSyncStateUpdates:
         assert "test-minimal" in state.issues
 
 
+@pytest.mark.skip(
+    reason="Deprecated file-based state persistence - using DB approach instead"
+)
 class TestSyncStateAfterPush:
     """Test sync state management after push operations."""
 

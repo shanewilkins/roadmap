@@ -6,9 +6,9 @@ status: todo
 issue_type: other
 milestone: v.1.0.0
 labels: []
-github_issue: 52
+remote_ids: {github: 52}
 created: '2026-01-02T19:20:50.938842+00:00'
-updated: '2026-01-03T20:58:39.732435+00:00'
+updated: '2026-01-04T14:49:19.662848+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

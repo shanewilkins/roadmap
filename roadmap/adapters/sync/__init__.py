@@ -9,7 +9,7 @@ from .backend_factory import (
     get_sync_backend,
 )
 from .backends import GitHubSyncBackend, VanillaGitSyncBackend
-from .generic_sync_orchestrator import GenericSyncOrchestrator
+from .sync_merge_orchestrator import SyncMergeOrchestrator
 
 __all__ = [
     "GitHubSyncBackend",
@@ -17,5 +17,5 @@ __all__ = [
     "get_sync_backend",
     "get_backend_for_config",
     "detect_backend_from_config",
-    "GenericSyncOrchestrator",
+    "SyncMergeOrchestrator",
 ]

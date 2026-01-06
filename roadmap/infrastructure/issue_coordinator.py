@@ -74,6 +74,16 @@ class IssueCoordinator:
             assignee=assignee,
         )
 
+    def list_all_including_archived(self) -> list[Issue]:
+        """List all issues including archived ones.
+
+        Used by sync operations that need to compare both active and archived issues.
+
+        Returns:
+            List of all Issue objects (both active and archived)
+        """
+        return self._ops.list_all_including_archived()
+
     def get(self, issue_id: str) -> Issue | None:
         """Get a specific issue by ID."""
         return self._ops.get_issue(issue_id)

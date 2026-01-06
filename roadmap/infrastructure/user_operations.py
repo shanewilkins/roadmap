@@ -11,6 +11,7 @@ Responsibilities:
 """
 
 from roadmap.core.domain import Issue
+from roadmap.core.interfaces.assignee_validator import AssigneeValidator
 from roadmap.core.services import GitHubIntegrationService, IssueService
 
 
@@ -18,16 +19,31 @@ class UserOperations:
     """Manager for user and team-related operations."""
 
     def __init__(
-        self, github_service: GitHubIntegrationService, issue_service: IssueService
+        self,
+        github_service: GitHubIntegrationService,
+        issue_service: IssueService,
+        assignee_validator: AssigneeValidator | None = None,
     ):
         """Initialize user operations manager.
 
         Args:
             github_service: The GitHubIntegrationService instance
             issue_service: The IssueService instance
+            assignee_validator: Validator for assignees (injected based on backend).
+                               If None, uses vanilla validator for backwards compatibility.
         """
         self.github_service = github_service
         self.issue_service = issue_service
+
+        # Use injected validator, or fall back to vanilla validator
+        if assignee_validator is None:
+            from roadmap.infrastructure.vanilla_assignee_validator import (
+                VanillaAssigneeValidator,
+            )
+
+            assignee_validator = VanillaAssigneeValidator()
+
+        self.assignee_validator = assignee_validator
 
     def get_team_members(self) -> list[str]:
         """Get team members from GitHub repository.
@@ -93,21 +109,21 @@ class UserOperations:
         return self.github_service.get_cached_team_members()
 
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:
-        """Validate an assignee using the identity management system.
+        """Validate an assignee using the configured validator.
 
-        This validation integrates with the identity management system while
-        maintaining backward compatibility with the original API.
+        The validator is backend-specific:
+        - GitHub backend: validates against repository collaborators
+        - Git backend: accepts any assignee (no-op validator)
 
         Args:
             assignee: Username to validate
 
         Returns:
             Tuple of (is_valid, error_message)
-            - (True, "") if valid (backward compatible)
+            - (True, "") if valid
             - (False, error_message) if invalid
         """
-        is_valid, error_msg = self.github_service.validate_assignee(assignee)
-        return is_valid, error_msg
+        return self.assignee_validator.validate(assignee)
 
     def legacy_validate_assignee(self, assignee: str) -> tuple[bool, str]:
         """Legacy validation fallback for when validation strategy fails.
@@ -131,4 +147,4 @@ class UserOperations:
         Returns:
             Canonical assignee name (may be same as input if no mapping exists)
         """
-        return self.github_service.get_canonical_assignee(assignee)
+        return self.assignee_validator.get_canonical_assignee(assignee)

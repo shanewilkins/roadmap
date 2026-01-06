@@ -6,7 +6,7 @@ status: closed
 issue_type: other
 milestone: ''
 labels: []
-github_issue: 23
+remote_ids: {github: 23}
 created: '2025-10-12T11:13:08.442964+00:00'
 updated: '2025-11-16T13:41:23.302370'
 assignee: ''

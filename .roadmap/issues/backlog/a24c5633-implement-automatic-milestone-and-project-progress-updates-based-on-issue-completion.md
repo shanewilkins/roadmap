@@ -8,9 +8,9 @@ milestone: null
 labels:
 - priority:high
 - status:todo
-github_issue: 87
+remote_ids: {github: 87}
 created: '2026-01-02T19:20:53.155759+00:00'
-updated: '2026-01-03T20:57:43.714264+00:00'
+updated: '2026-01-04T14:48:04.062453+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

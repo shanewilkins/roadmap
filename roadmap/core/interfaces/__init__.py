@@ -2,6 +2,7 @@
 
 from typing import Protocol
 
+from .assignee_validator import AssigneeValidator  # type: ignore[assignment]
 from .state_managers import (
     IssueStateManager,
     MilestoneStateManager,
@@ -45,12 +46,12 @@ class CredentialProvider(Protocol):
         """
         ...
 
-    def store_token(self, token: str, repo_info: dict[str, str] | None = None) -> bool:
+    def store_token(self, token: str, _repo_info: dict[str, str] | None = None) -> bool:
         """Store a token securely.
 
         Args:
             token: Token to store
-            repo_info: Optional repository information (owner, repo)
+            _repo_info: Optional repository information (owner, repo)
 
         Returns:
             True if stored successfully, False otherwise
@@ -72,15 +73,6 @@ class CredentialProvider(Protocol):
             True if available, False otherwise
         """
         ...
-
-
-class AssigneeValidator(Protocol):
-    """Abstract interface for assignee validation.
-
-    Allows core services to validate assignees using different backends
-    (GitHub, local rules, identity systems) without hard coupling to
-    any specific implementation.
-    """
 
     def validate(self, assignee: str) -> tuple[bool, str, str]:  # noqa: F841
         """Validate an assignee.

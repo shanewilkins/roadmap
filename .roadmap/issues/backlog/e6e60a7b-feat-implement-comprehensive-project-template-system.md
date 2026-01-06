@@ -6,9 +6,9 @@ status: todo
 issue_type: other
 milestone: null
 labels: []
-github_issue: 101
+remote_ids: {github: 101}
 created: '2026-01-02T19:20:54.572056+00:00'
-updated: '2026-01-03T20:58:13.971708+00:00'
+updated: '2026-01-04T14:48:53.837966+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

@@ -3,7 +3,7 @@
 import builtins
 from abc import ABC, abstractmethod
 
-from domain.models import Milestone
+from roadmap.core.domain import Milestone
 
 
 class MilestoneRepository(ABC):

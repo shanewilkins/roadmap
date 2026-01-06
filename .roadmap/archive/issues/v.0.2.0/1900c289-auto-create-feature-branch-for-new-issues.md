@@ -9,7 +9,7 @@ labels:
 - automation
 - git-integration
 - workflow
-github_issue: 40
+remote_ids: {github: 40}
 created: '2025-10-12T11:42:46.274786+00:00'
 updated: '2025-11-16T13:41:23.308644'
 assignee: shanewilkins

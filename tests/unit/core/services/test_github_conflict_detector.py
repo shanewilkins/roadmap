@@ -33,7 +33,7 @@ class TestGitHubConflictDetector:
             title="Test Issue",
             priority=Priority.HIGH,
             status=Status.IN_PROGRESS,
-            github_issue=42,
+            remote_ids={"github": 42},
         )
 
     def test_init_creates_detector(self, mock_integration_service):
