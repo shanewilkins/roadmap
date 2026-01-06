@@ -60,7 +60,6 @@ def validate_links(
         roadmap sync validate-links --auto-fix
     """
     from roadmap.adapters.persistence.parser.issue import IssueParser
-    from roadmap.config import ConfigManager
 
     core = ctx.obj["core"]
     console = get_console()
@@ -70,8 +69,7 @@ def validate_links(
         state_manager = core.persistence.state_manager
 
         # Load all issues from YAML files
-        config = ConfigManager()
-        issues_dir = config.get_issues_dir()
+        issues_dir = core.issues_dir
 
         if not issues_dir.exists():
             console.print(

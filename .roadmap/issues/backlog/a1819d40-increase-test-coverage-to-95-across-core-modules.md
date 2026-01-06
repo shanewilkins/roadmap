@@ -1,21 +1,22 @@
 ---
-id: dd56c000
-title: Review and Optimize Tech Stack
+id: a1819d40
+title: Increase test coverage to 95% across core modules
 priority: medium
-status: closed
-issue_type: other
-milestone: v.0.6.0
-labels: []
+status: todo
+issue_type: feature
+milestone: null
+labels:
+- testing,quality
 remote_ids:
-  github: 142
-created: '2025-11-17T17:47:50.915196+00:00'
-updated: '2025-12-04T19:16:16.459901+00:00'
-assignee: shanewilkins
+  github: '219'
+created: '2025-12-20T18:33:26.293890+00:00'
+updated: '2026-01-06T16:24:50.956340+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2025-12-22T07:54:47.450881+00:00'
 actual_end_date: null
 progress_percentage: 100.0
 handoff_notes: null
@@ -25,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 142
+github_issue: '219'
 ---
 
-# Review and Optimize Tech Stack
+# Increase test coverage to 95% across core modules
 
 ## Description
 

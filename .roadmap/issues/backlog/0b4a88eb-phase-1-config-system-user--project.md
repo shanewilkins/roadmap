@@ -1,16 +1,16 @@
 ---
 id: 0b4a88eb
 title: 'Phase 1: Config System (User + Project)'
-priority: critical
-status: closed
+priority: medium
+status: todo
 issue_type: feature
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 150
+  github: '216'
 created: '2025-12-25T14:55:08.265846+00:00'
-updated: '2025-12-30T16:12:23.732502+00:00'
-assignee: shanewilkins
+updated: '2026-01-06T16:24:40.399279+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -25,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 150
+github_issue: '216'
 ---
 
 # Phase 1: Config System (User + Project)

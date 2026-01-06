@@ -2,15 +2,15 @@
 id: 224f3405
 title: Implement automatic GitHub issue sync with bidirectional updates
 priority: medium
-status: closed
+status: todo
 issue_type: feature
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 163
+  github: '221'
 created: '2025-12-20T20:47:49.863886+00:00'
-updated: '2025-12-25T19:51:02.988571+00:00'
-assignee: shane
+updated: '2026-01-06T16:25:12.651418+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -25,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 163
+github_issue: '221'
 ---
 
 # Phase 2: Automatic GitHub Issue Sync with Bidirectional Updates

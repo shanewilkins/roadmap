@@ -1,21 +1,21 @@
 ---
-id: c0533ca1
-title: Review Missing Critical 1.0 Functionality
-priority: high
-status: closed
+id: f7fcfecf
+title: Remove Deprecated and Backup Code
+priority: medium
+status: todo
 issue_type: other
-milestone: v.0.6.0
+milestone: null
 labels: []
 remote_ids:
-  github: 148
-created: '2025-11-17T17:47:55.306403+00:00'
-updated: '2025-12-04T20:52:32.041432+00:00'
-assignee: shanewilkins
+  github: '191'
+created: '2025-11-17T17:47:53.097795+00:00'
+updated: '2026-01-06T16:25:07.730047+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-04T14:23:10.834243+00:00'
+actual_start_date: null
 actual_end_date: null
 progress_percentage: 100.0
 handoff_notes: null
@@ -25,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 148
+github_issue: '191'
 ---
 
-# Review Missing Critical 1.0 Functionality
+# Remove Deprecated and Backup Code
 
 ## Description
 
@@ -36,4 +36,6 @@ Brief description of the issue or feature request.
 
 ## Acceptance Criteria
 
-- [ ] 80% test coverage
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

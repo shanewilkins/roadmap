@@ -1,23 +1,25 @@
 ---
-id: f7fcfecf
-title: Remove Deprecated and Backup Code
-priority: high
-status: closed
+id: b36a111b
+title: Implement comprehensive security audit framework
+priority: medium
+status: todo
 issue_type: other
-milestone: v.0.6.0
-labels: []
+milestone: v.0.3.0
+labels:
+- priority:high
+- status:todo
 remote_ids:
-  github: 161
-created: '2025-11-17T17:47:53.097795+00:00'
-updated: '2025-12-04T19:14:39.981971+00:00'
-assignee: shanewilkins
+  github: '18'
+created: '2026-01-02T19:20:52.294664+00:00'
+updated: '2026-01-06T16:25:24.501751+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -25,10 +27,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 161
+github_issue: '18'
 ---
 
-# Remove Deprecated and Backup Code
+# Implement comprehensive security audit framework
 
 ## Description
 
@@ -39,3 +41,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

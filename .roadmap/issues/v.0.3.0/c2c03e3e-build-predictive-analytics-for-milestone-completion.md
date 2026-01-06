@@ -9,9 +9,9 @@ labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: 17
+  github: '17'
 created: '2026-01-02T19:20:52.363535+00:00'
-updated: '2026-01-06T02:12:21.367890+00:00'
+updated: '2026-01-06T16:25:17.239888+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 17
+github_issue: '17'
 ---
 
 # Build predictive analytics for milestone completion

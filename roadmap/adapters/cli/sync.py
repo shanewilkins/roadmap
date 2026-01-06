@@ -695,8 +695,13 @@ def sync(
                 "   This establishes the agreed-upon starting state between local and remote."
             )
 
-            # Ensure baseline with interactive selection
-            if not retrieval_orchestrator.ensure_baseline(interactive=True):
+            # Use REMOTE baseline by default in non-interactive mode
+            from roadmap.core.services.baseline_selector import BaselineStrategy
+
+            strategy = BaselineStrategy.REMOTE
+
+            # Ensure baseline with default strategy (avoids interactive hang)
+            if not retrieval_orchestrator.ensure_baseline(strategy=strategy):
                 console_inst.print(
                     "❌ Baseline creation failed",
                     style="bold red",
@@ -770,7 +775,8 @@ def sync(
                     style="dim",
                 )
 
-        # Display report
+        # Display sync results report
+        console_inst.print("\n[bold cyan]SYNC RESULTS:[/bold cyan]")
         if verbose:
             report.display_verbose()
         else:
@@ -780,7 +786,9 @@ def sync(
 
         # If dry-run flag, note that no changes were applied
         if dry_run:
-            console_inst.print("[dim]Dry-run mode: No changes applied[/dim]")
+            console_inst.print(
+                "[bold yellow]⚠️  Dry-run mode: No changes applied[/bold yellow]"
+            )
             return
 
         console_inst.print(

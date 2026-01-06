@@ -1,17 +1,16 @@
 ---
-id: b7a6e094
-title: Implement performance benchmarking and profiling
-priority: high
-status: closed
-issue_type: feature
-milestone: v080
-labels:
-- performance,testing
+id: 555caa1b
+title: Optimize Test Suite Performance
+priority: medium
+status: todo
+issue_type: other
+milestone: null
+labels: []
 remote_ids:
-  github: 138
-created: '2025-12-20T18:33:27.255856+00:00'
-updated: '2025-12-25T19:51:02.526805+00:00'
-assignee: shanewilkins
+  github: '194'
+created: '2025-11-17T17:47:54.208800+00:00'
+updated: '2026-01-06T16:25:14.782997+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -26,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 138
+github_issue: '194'
 ---
 
-# Implement performance benchmarking and profiling
+# Optimize Test Suite Performance
 
 ## Description
 

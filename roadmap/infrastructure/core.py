@@ -99,6 +99,18 @@ class RoadmapCore:
             repo_path=self.root_path, state_manager=self.db
         )
 
+        # Initialize remote links from YAML (Phase 3)
+        try:
+            self.db.initialize_remote_links(self.root_path)
+        except Exception as e:
+            from roadmap.common.logging import get_logger
+
+            logger = get_logger(__name__)
+            logger.warning(
+                "failed_to_initialize_remote_links_in_core",
+                error=str(e),
+            )
+
         # Wire GitSyncMonitor into StateManager for transparent cache sync
         self.db._git_sync_monitor = self.git_sync_monitor
 

@@ -7,7 +7,7 @@ issue_type: other
 milestone: v.0.6.0
 labels: []
 remote_ids:
-  github: 141
+  github: 230
 created: '2025-11-17T17:47:51.993249+00:00'
 updated: '2025-12-03T15:21:37.254830+00:00'
 assignee: shanewilkins
@@ -25,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 141
+github_issue: 230
 ---
 
 ## Overview

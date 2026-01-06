@@ -9,9 +9,9 @@ labels:
 - priority:medium
 - status:done
 remote_ids:
-  github: 72
+  github: '72'
 created: '2026-01-02T19:20:51.837894+00:00'
-updated: '2026-01-06T02:12:54.813763+00:00'
+updated: '2026-01-06T16:24:35.063480+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 72
+github_issue: '72'
 ---
 
 # Add project level template

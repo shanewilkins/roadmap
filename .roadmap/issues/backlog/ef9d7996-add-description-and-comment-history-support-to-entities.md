@@ -1,22 +1,22 @@
 ---
-id: a1819d40
-title: Increase test coverage to 95% across core modules
-priority: high
-status: closed
+id: ef9d7996
+title: Add description and comment history support to entities
+priority: medium
+status: todo
 issue_type: feature
-milestone: v080
+milestone: null
 labels:
-- testing,quality
+- feature,documentation
 remote_ids:
-  github: 162
-created: '2025-12-20T18:33:26.293890+00:00'
-updated: '2025-12-25T19:51:02.502681+00:00'
-assignee: shanewilkins
+  github: '207'
+created: '2025-12-20T18:33:21.199800+00:00'
+updated: '2026-01-06T16:24:38.602373+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-22T07:54:47.450881+00:00'
+actual_start_date: '2025-12-20T12:34:19.141754+00:00'
 actual_end_date: null
 progress_percentage: 100.0
 handoff_notes: null
@@ -26,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 162
+github_issue: '207'
 ---
 
-# Increase test coverage to 95% across core modules
+# Add description and comment history support to entities
 
 ## Description
 

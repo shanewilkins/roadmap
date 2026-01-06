@@ -1,15 +1,15 @@
 ---
-id: da7e9f68
-title: 'Phase 5: Health Fix Command'
+id: 2e710d10
+title: Clean Up Project Issues and Milestones
 priority: medium
 status: todo
-issue_type: feature
+issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: '217'
-created: '2025-12-25T14:55:32.928132+00:00'
-updated: '2026-01-06T16:24:29.952718+00:00'
+  github: '218'
+created: '2025-11-17T17:47:56.417434+00:00'
+updated: '2026-01-06T16:25:20.641374+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -17,7 +17,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -25,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '217'
+github_issue: '218'
 ---
 
-# Phase 5: Health Fix Command
+# Clean Up Project Issues and Milestones
 
 ## Description
 

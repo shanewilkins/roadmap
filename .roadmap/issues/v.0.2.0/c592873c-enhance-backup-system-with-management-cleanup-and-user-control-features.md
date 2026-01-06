@@ -12,9 +12,9 @@ labels:
 - data-management
 - cleanup
 remote_ids:
-  github: 41
+  github: '41'
 created: '2026-01-02T19:20:51.369959+00:00'
-updated: '2026-01-06T02:12:48.595822+00:00'
+updated: '2026-01-06T16:24:49.810873+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -30,7 +30,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 41
+github_issue: '41'
 ---
 
 # Enhance backup system with management, cleanup, and user control features

@@ -1,16 +1,16 @@
 ---
 id: 11583b53
 title: Migrate to timezone-aware datetime architecture for multi-timezone team support
-priority: high
-status: closed
+priority: medium
+status: todo
 issue_type: feature
-milestone: v.0.6.0
+milestone: null
 labels: []
 remote_ids:
-  github: 154
+  github: '201'
 created: '2025-11-16T12:44:55.151844+00:00'
-updated: '2025-11-26T18:22:03.990704+00:00'
-assignee: shanewilkins
+updated: '2026-01-06T16:24:28.096398+00:00'
+assignee: null
 estimated_hours: 160.0
 due_date: null
 depends_on: []
@@ -25,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 154
+github_issue: '201'
 ---
 
 # Migrate to timezone-aware datetime architecture for multi-timezone team support

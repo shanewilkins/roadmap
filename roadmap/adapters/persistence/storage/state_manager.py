@@ -105,16 +105,8 @@ class StateManager:
             has_git_monitor=git_sync_monitor is not None,
         )
 
-        # Initialize database cache from YAML files (Phase 3)
-        # Load all remote_ids from YAML into database for fast lookups
-        try:
-            self._initialize_remote_links_from_yaml()
-        except Exception as e:
-            logger.warning(
-                "Failed to initialize remote links from YAML",
-                error=str(e),
-                error_type=type(e).__name__,
-            )
+        # Note: Remote links initialization moved to RoadmapCore.initialize_remote_links()
+        # because StateManager doesn't have access to roadmap_dir
 
     # Connection management - delegate to ConnectionManager
     def _get_connection(self) -> sqlite3.Connection:
@@ -153,10 +145,28 @@ class StateManager:
         sync operations.
 
         Only loads links if database is empty (first initialization or reset).
+
+        Note: This method is deprecated. Use initialize_remote_links(roadmap_dir) instead.
+        """
+        # This is kept for backward compatibility but does nothing
+        # The actual initialization is now done by initialize_remote_links()
+
+    def initialize_remote_links(self, roadmap_dir: Path | str) -> None:
+        """Initialize remote_links from YAML files in the given roadmap directory.
+
+        Args:
+            roadmap_dir: Path to the roadmap directory
+        """
+        self._initialize_remote_links_impl(roadmap_dir)
+
+    def _initialize_remote_links_impl(self, roadmap_dir: Path | str) -> None:
+        """Implementation of remote links initialization.
+
+        Args:
+            roadmap_dir: Path to the roadmap directory
         """
         try:
             # Check if remote_links table already has data (skip if so)
-            # Quick check: try to get all links for GitHub backend
             existing_github_links = self._remote_link_repo.get_all_links_for_backend(
                 "github"
             )
@@ -167,21 +177,19 @@ class StateManager:
                 )
                 return
 
-            # Load all issue files from .roadmap/issues directory
+            # Load all issue files from roadmap_dir/.roadmap/issues directory
             from roadmap.adapters.persistence.parser.issue import IssueParser
-            from roadmap.config import ConfigManager
 
-            config = ConfigManager()
-            issues_dir = config.get_issues_dir()
+            issues_dir = Path(roadmap_dir) / ".roadmap" / "issues"
 
             if not issues_dir.exists():
-                logger.debug("issues_directory_not_found")
+                logger.debug("issues_directory_not_found", path=str(issues_dir))
                 return
 
             # Collect all issue files from all subdirectories
             issue_files = list(issues_dir.glob("**/*.md"))
             if not issue_files:
-                logger.debug("no_issue_files_found")
+                logger.debug("no_issue_files_found", path=str(issues_dir))
                 return
 
             # Build dict of issue_uuid -> dict[backend_name -> remote_id]
