@@ -70,7 +70,9 @@ class SyncStateComparator:
         Remote issues may be keyed by backend-specific IDs (e.g., "gh-42" or "42").
 
         This method creates a mapping by matching remote IDs to local remote_ids
-        stored in the Issue.remote_ids dict.
+        using two sources (in order of preference):
+        1. Database cache (fast O(1) lookups via RemoteLinkRepository)
+        2. YAML files (fallback if database not available)
 
         Args:
             local: Dict of local issues keyed by UUID
@@ -88,21 +90,44 @@ class SyncStateComparator:
         normalized_remote = {}
 
         # Build reverse mapping: remote_id → local_uuid
+        # Priority 1: Try database lookups (fast)
         remote_id_to_local_uuid = {}
-        for local_uuid, local_issue in local.items():
-            if local_issue.remote_ids and backend_name in local_issue.remote_ids:
-                remote_id = local_issue.remote_ids[backend_name]
-                # Normalize remote_id to string for matching
-                remote_id_key = str(remote_id)
-                remote_id_to_local_uuid[remote_id_key] = local_uuid
-                self.logger.debug(
-                    "mapped_remote_id_to_local",
-                    remote_id=remote_id_key,
-                    local_uuid=local_uuid,
-                    backend=backend_name,
-                )
+        db_lookup_available = False
 
-        # Remap remote issues using the mapping
+        # Check if backend has access to RemoteLinkRepository
+        remote_link_repo = getattr(self.backend, "remote_link_repo", None)
+        if remote_link_repo:
+            db_lookup_available = True
+            # Use database for reverse lookup: remote_id → issue_uuid
+            db_links = remote_link_repo.get_all_links_for_backend(backend_name)
+            for issue_uuid, remote_id in db_links.items():
+                remote_id_key = str(remote_id)
+                remote_id_to_local_uuid[remote_id_key] = issue_uuid
+            self.logger.debug(
+                "loaded_remote_links_from_database",
+                backend=backend_name,
+                link_count=len(remote_id_to_local_uuid),
+            )
+
+        # Priority 2: If database not available or incomplete, supplement from YAML
+        # (for backward compatibility or if database is out of sync)
+        if not db_lookup_available or len(remote_id_to_local_uuid) < len(local):
+            for local_uuid, local_issue in local.items():
+                if local_issue.remote_ids and backend_name in local_issue.remote_ids:
+                    remote_id = local_issue.remote_ids[backend_name]
+                    # Normalize remote_id to string for matching
+                    remote_id_key = str(remote_id)
+                    # Only add if not already in database mapping
+                    if remote_id_key not in remote_id_to_local_uuid:
+                        remote_id_to_local_uuid[remote_id_key] = local_uuid
+                        self.logger.debug(
+                            "loaded_remote_id_from_yaml",
+                            remote_id=remote_id_key,
+                            local_uuid=local_uuid,
+                            backend=backend_name,
+                        )
+
+        # Remap remote issues using the combined mapping
         unmatched_remote = []
         for remote_key, remote_issue in remote.items():
             remote_key_str = str(remote_key)
@@ -114,6 +139,7 @@ class SyncStateComparator:
                     "normalized_remote_key",
                     original_key=remote_key_str,
                     normalized_to=local_uuid,
+                    source="database" if db_lookup_available else "yaml",
                 )
             else:
                 # No matching local issue found - keep original key
@@ -137,6 +163,7 @@ class SyncStateComparator:
             matched=len(remote) - len(unmatched_remote),
             unmatched=len(unmatched_remote),
             backend=backend_name,
+            db_lookup_used=db_lookup_available,
         )
 
         return local, normalized_remote

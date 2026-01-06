@@ -3,6 +3,7 @@
 from .issue_repository import IssueRepository
 from .milestone_repository import MilestoneRepository
 from .project_repository import ProjectRepository
+from .remote_link_repository import RemoteLinkRepository
 from .sync_state_repository import SyncStateRepository
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "MilestoneRepository",
     "IssueRepository",
     "SyncStateRepository",
+    "RemoteLinkRepository",
 ]

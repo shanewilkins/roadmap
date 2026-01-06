@@ -14,6 +14,7 @@ from ..repositories import (
     IssueRepository,
     MilestoneRepository,
     ProjectRepository,
+    RemoteLinkRepository,
     SyncStateRepository,
 )
 from ..sync_state_tracker import SyncStateTracker
@@ -80,6 +81,9 @@ class StateManager:
             self._db_manager._get_connection, self._db_manager.transaction
         )
         self._sync_state_repo = SyncStateRepository(
+            self._db_manager._get_connection, self._db_manager.transaction
+        )
+        self._remote_link_repo = RemoteLinkRepository(
             self._db_manager._get_connection, self._db_manager.transaction
         )
 
@@ -255,6 +259,12 @@ class StateManager:
     def set_sync_state(self, key: str, value: str):
         """Set sync state value."""
         self._sync_state_storage.set_sync_state(key, value)
+
+    # Remote link operations - delegate to RemoteLinkRepository
+    @property
+    def remote_links(self) -> RemoteLinkRepository:
+        """Get remote link repository for sync backend operations."""
+        return self._remote_link_repo
 
     # Sync baseline operations - store/retrieve baseline for three-way merge
     def get_sync_baseline(self) -> dict[str, Any] | None:

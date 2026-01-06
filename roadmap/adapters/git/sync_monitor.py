@@ -109,6 +109,10 @@ class GitSyncMonitor:
     def sync_to_database(self, changes: dict[str, str]) -> bool:
         """Sync detected changes to database cache.
 
+        This syncs remote_ids from changed YAML files to the database cache,
+        enabling fast O(1) lookups during sync operations instead of scanning
+        all YAML files.
+
         Args:
             changes: Dictionary of changes from detect_changes()
 
@@ -126,8 +130,48 @@ class GitSyncMonitor:
         try:
             logger.debug("Syncing changes to database", change_count=len(changes))
 
-            # Phase 1: Just track the sync state
-            # Phase 2: Will actually sync files to database
+            # Sync remote_ids from changed files to database
+            from roadmap.adapters.persistence.parser import IssueParser
+
+            if self.state_manager.remote_links:
+                synced_count = 0
+                for file_path, change_type in changes.items():
+                    try:
+                        if change_type == "deleted":
+                            # For deleted files, we can't read them, so skip
+                            continue
+
+                        # Load issue from file using IssueParser
+                        file_path_obj = Path(file_path)
+                        if not file_path_obj.is_absolute():
+                            # Make path absolute relative to repo root
+                            file_path_obj = self.repo_path / file_path_obj
+
+                        if not file_path_obj.exists():
+                            continue
+
+                        issue = IssueParser.parse_issue_file(file_path_obj)
+                        if issue and issue.remote_ids:
+                            # Sync remote_ids to database
+                            for backend_name, remote_id in issue.remote_ids.items():
+                                if self.state_manager.remote_links.link_issue(
+                                    issue.id, backend_name, remote_id
+                                ):
+                                    synced_count += 1
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to sync remote_ids for file",
+                            file_path=file_path,
+                            error=str(e),
+                        )
+
+                if synced_count > 0:
+                    logger.debug(
+                        "Synced remote_ids to database",
+                        synced_count=synced_count,
+                    )
+
+            # Update last synced commit
             self._save_last_synced_commit()
 
             logger.debug("Sync to database complete")

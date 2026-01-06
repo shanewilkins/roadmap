@@ -284,6 +284,25 @@ class DatabaseManager:
                 CREATE INDEX idx_sync_base_state_synced_at ON sync_base_state (synced_at);
             """)
 
+        # Migration 3: Create issue_remote_links table for tracking remote backend IDs
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='issue_remote_links'"
+        )
+        if not cursor.fetchone():
+            migrations.append("""
+                CREATE TABLE issue_remote_links (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    issue_uuid TEXT NOT NULL,
+                    backend_name TEXT NOT NULL,
+                    remote_id TEXT NOT NULL,
+                    linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(issue_uuid, backend_name),
+                    FOREIGN KEY (issue_uuid) REFERENCES issues (id) ON DELETE CASCADE
+                );
+                CREATE INDEX idx_issue_remote_links_backend ON issue_remote_links (backend_name);
+                CREATE INDEX idx_issue_remote_links_issue_uuid ON issue_remote_links (issue_uuid);
+            """)
+
         # Execute migrations
         for migration_sql in migrations:
             try:

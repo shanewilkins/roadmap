@@ -40,7 +40,7 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
             updated=datetime.now(timezone.utc),
         )
 
-        self.core.issues.list.return_value = [local_issue]
+        self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {}  # No remote issues
 
@@ -72,7 +72,7 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
             updated=datetime.now(timezone.utc),
         )
 
-        self.core.issues.list.return_value = [local_issue]
+        self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.core.issues.get.return_value = local_issue
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {}
@@ -114,7 +114,7 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        self.core.issues.list.return_value = []
+        self.core.issues.list_all_including_archived.return_value = []
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"remote-1": remote_issue}
 
@@ -143,7 +143,7 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        self.core.issues.list.return_value = []
+        self.core.issues.list_all_including_archived.return_value = []
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"remote-1": remote_issue}
         self.backend.pull_issue.return_value = True
@@ -198,7 +198,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             "updated_at": later.isoformat(),  # Newer
         }
 
-        self.core.issues.list.return_value = [local_issue]
+        self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.core.issues.get.return_value = local_issue
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"conflict-1": remote_issue}
@@ -241,7 +241,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             "updated_at": now.isoformat(),
         }
 
-        self.core.issues.list.return_value = [local_issue]
+        self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.core.issues.get.return_value = local_issue
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"conflict-1": remote_issue}
@@ -288,7 +288,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             "updated_at": now.isoformat(),
         }
 
-        self.core.issues.list.return_value = [local_issue]
+        self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"conflict-1": remote_issue}
         self.backend.pull_issue.return_value = True
@@ -357,7 +357,7 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
             updated=earlier,
         )
 
-        self.core.issues.list.return_value = [
+        self.core.issues.list_all_including_archived.return_value = [
             new_local,
             updated_local,
             conflicted_local,
@@ -430,7 +430,10 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
             updated=earlier,
         )
 
-        self.core.issues.list.return_value = [new_local, conflicted_local]
+        self.core.issues.list_all_including_archived.return_value = [
+            new_local,
+            conflicted_local,
+        ]
         self.core.issues.get.return_value = None  # Will be called but we'll set it up
 
         def get_side_effect(issue_id):
@@ -492,7 +495,7 @@ class TestSyncEnd2EndAuthenticationFailure(unittest.TestCase):
 
     def test_sync_authentication_failure_returns_error(self):
         """Test that auth failure is reported without raising exceptions."""
-        self.core.issues.list.return_value = []
+        self.core.issues.list_all_including_archived.return_value = []
         self.backend.authenticate.return_value = False
 
         orchestrator = SyncMergeOrchestrator(
@@ -523,7 +526,7 @@ class TestSyncEnd2EndRemoteFailure(unittest.TestCase):
 
     def test_sync_remote_fetch_failure_returns_error(self):
         """Test that remote fetch failure is reported."""
-        self.core.issues.list.return_value = []
+        self.core.issues.list_all_including_archived.return_value = []
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = None  # Failure
 
@@ -574,7 +577,7 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
             "updated_at": now.isoformat(),
         }
 
-        self.core.issues.list.return_value = [issue]
+        self.core.issues.list_all_including_archived.return_value = [issue]
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {"same-1": remote_issue}
 

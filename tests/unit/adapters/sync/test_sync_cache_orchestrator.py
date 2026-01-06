@@ -37,7 +37,11 @@ def mock_core(tmp_path):
     issues_dir.mkdir(exist_ok=True, parents=True)
 
     core.issues_dir = issues_dir
-    core.issues.list.return_value = []
+    core.issues.list_all_including_archived.return_value = []
+
+    # Mock database baseline to return None by default
+    core.db = MagicMock()
+    core.db.get_sync_baseline.return_value = None
 
     return core
 
