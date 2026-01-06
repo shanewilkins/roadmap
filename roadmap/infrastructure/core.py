@@ -88,7 +88,17 @@ class RoadmapCore:
 
         # Initialize core infrastructure
         self._git = GitIntegration(self.root_path)
-        self.db = StateManager(self.db_dir / "state.db")
+
+        # Initialize GitSyncMonitor for cache invalidation via git diff
+        from roadmap.adapters.git.sync_monitor import GitSyncMonitor
+
+        self.git_sync_monitor = GitSyncMonitor(repo_path=self.root_path)
+
+        # Initialize StateManager with GitSyncMonitor for transparent cache sync
+        self.db = StateManager(
+            self.db_dir / "state.db", git_sync_monitor=self.git_sync_monitor
+        )
+
         self.github_service = GitHubIntegrationService(
             root_path=self.root_path, config_file=self.config_file
         )

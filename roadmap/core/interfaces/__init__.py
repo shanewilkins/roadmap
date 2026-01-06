@@ -46,11 +46,13 @@ class CredentialProvider(Protocol):
         """
         ...
 
-    def store_token(self, token: str, _repo_info: dict[str, str] | None = None) -> bool:
+    def store_token(
+        self, _token: str, _repo_info: dict[str, str] | None = None
+    ) -> bool:
         """Store a token securely.
 
         Args:
-            token: Token to store
+            _token: Token to store
             _repo_info: Optional repository information (owner, repo)
 
         Returns:
@@ -71,16 +73,5 @@ class CredentialProvider(Protocol):
 
         Returns:
             True if available, False otherwise
-        """
-        ...
-
-    def validate(self, assignee: str) -> tuple[bool, str, str]:  # noqa: F841
-        """Validate an assignee.
-
-        Args:
-            assignee: Username to validate
-
-        Returns:
-            Tuple of (is_valid, error_message, canonical_id)
         """
         ...

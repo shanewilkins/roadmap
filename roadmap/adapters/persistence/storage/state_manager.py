@@ -2,7 +2,7 @@
 
 import sqlite3
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from roadmap.common.logging import get_logger
 
@@ -22,6 +22,9 @@ from .milestone_storage import MilestoneStorage
 from .project_storage import ProjectStorage
 from .sync_state_storage import SyncStateStorage
 
+if TYPE_CHECKING:
+    from roadmap.adapters.git.sync_monitor import GitSyncMonitor
+
 logger = get_logger(__name__)
 
 
@@ -39,16 +42,23 @@ class StateManager:
     and transaction handling.
     """
 
-    def __init__(self, db_path: str | Path | None = None):
+    def __init__(
+        self,
+        db_path: str | Path | None = None,
+        git_sync_monitor: "GitSyncMonitor | None" = None,
+    ):
         """Initialize the state manager.
 
         Args:
             db_path: Path to SQLite database file. Defaults to ~/.roadmap/roadmap.db
+            git_sync_monitor: Optional GitSyncMonitor for cache invalidation via git diff.
+                            If provided, database will sync on access.
         """
         if db_path is None:
             db_path = Path.home() / ".roadmap" / "roadmap.db"
 
         self.db_path = Path(db_path)
+        self._git_sync_monitor = git_sync_monitor
         self._db_manager = DatabaseManager(db_path)
         self._file_synchronizer = FileSynchronizer(
             self._db_manager._get_connection, self._db_manager.transaction
@@ -84,7 +94,11 @@ class StateManager:
         # Expose database manager's _local for backward compatibility with tests
         self._local = self._db_manager._local
 
-        logger.info("Initializing state manager", db_path=str(self.db_path))
+        logger.info(
+            "Initializing state manager",
+            db_path=str(self.db_path),
+            has_git_monitor=git_sync_monitor is not None,
+        )
 
     # Connection management - delegate to ConnectionManager
     def _get_connection(self) -> sqlite3.Connection:
@@ -94,6 +108,26 @@ class StateManager:
     def transaction(self):
         """Context manager for database transactions."""
         return self._connection_manager.transaction()
+
+    def _sync_git_state(self) -> None:
+        """Sync git state to database if GitSyncMonitor is configured.
+
+        This ensures the database cache is up-to-date with git before
+        any repository access. Called transparently before repo operations.
+        """
+        if self._git_sync_monitor is None:
+            return
+
+        try:
+            changes = self._git_sync_monitor.detect_changes()
+            if changes:
+                self._git_sync_monitor.sync_to_database(changes)
+        except Exception as e:
+            logger.warning(
+                "Git sync failed, proceeding with potentially stale cache",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
 
     def _init_database(self):
         """Initialize database schema."""
@@ -120,6 +154,34 @@ class StateManager:
     def database_exists(self) -> bool:
         """Check if database file exists and has tables."""
         return self._connection_manager.database_exists()
+
+    # Repository access - with automatic git sync
+    def get_issue_repository(self) -> IssueRepository:
+        """Get issue repository after syncing git state.
+
+        Returns:
+            IssueRepository with database synced to latest git state
+        """
+        self._sync_git_state()
+        return self._issue_repo
+
+    def get_milestone_repository(self) -> MilestoneRepository:
+        """Get milestone repository after syncing git state.
+
+        Returns:
+            MilestoneRepository with database synced to latest git state
+        """
+        self._sync_git_state()
+        return self._milestone_repo
+
+    def get_project_repository(self) -> ProjectRepository:
+        """Get project repository after syncing git state.
+
+        Returns:
+            ProjectRepository with database synced to latest git state
+        """
+        self._sync_git_state()
+        return self._project_repo
 
     # Project operations - delegate to ProjectStorage
     def create_project(self, project_data: dict[str, Any]) -> str:
