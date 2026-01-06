@@ -166,6 +166,7 @@ def register_commands():
     # progress commands moved to future/ (post-v1.0)
     from roadmap.adapters.cli.projects import project
     from roadmap.adapters.cli.sync import sync
+    from roadmap.adapters.cli.sync_validation import validate_links
 
     main.add_command(analysis)
     main.add_command(config)
@@ -176,6 +177,7 @@ def register_commands():
     main.add_command(git_cmd)
     main.add_command(comment)
     main.add_command(sync)
+    main.add_command(validate_links)
     # recalculate_progress and progress_reports moved to future/
 
     # ARCHIVED TO future/ (post-1.0 features):
