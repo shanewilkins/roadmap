@@ -81,6 +81,12 @@ from roadmap.common.console import get_console
     type=str,
     help="Local issue ID for link/unlink operations",
 )
+@click.option(
+    "--baseline",
+    type=click.Choice(["local", "remote"], case_sensitive=False),
+    default=None,
+    help="Strategy for first sync baseline (local=local is source of truth, remote=remote is source of truth)",
+)
 @click.pass_context
 @require_initialized
 def sync(
@@ -98,6 +104,7 @@ def sync(
     link: str | None,
     unlink: bool,
     issue_id: str | None,
+    baseline: str | None,
 ) -> None:
     """Sync roadmap with remote repository.
 
@@ -131,6 +138,12 @@ def sync(
 
         # Sync with verbose output (shows all pulls and pushes)
         roadmap sync --verbose
+
+        # First sync with local as baseline (local is source of truth)
+        roadmap sync --baseline=local
+
+        # First sync with remote as baseline (remote is source of truth)
+        roadmap sync --baseline=remote
 
         # Resolve all conflicts locally (keep your changes)
         roadmap sync --force-local
@@ -202,19 +215,19 @@ def sync(
 
         # Create orchestrator to get baseline
         orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
-        baseline = orchestrator.get_baseline_state()
+        baseline_state = orchestrator.get_baseline_state()
 
-        if baseline:
+        if baseline_state:
             console_inst.print(
                 "\n📋 Baseline State (from database):", style="bold cyan"
             )
-            console_inst.print(f"   Last Sync: {baseline.last_sync}")
-            console_inst.print(f"   Backend: {baseline.backend}")
-            console_inst.print(f"   Issues in baseline: {len(baseline.issues)}")
+            console_inst.print(f"   Last Sync: {baseline_state.last_sync}")
+            console_inst.print(f"   Backend: {baseline_state.backend}")
+            console_inst.print(f"   Issues in baseline: {len(baseline_state.issues)}")
 
-            if verbose and baseline.issues:
+            if verbose and baseline_state.issues:
                 console_inst.print("\n   Issues:", style="bold")
-                for issue_id, issue_state in sorted(baseline.issues.items()):
+                for issue_id, issue_state in sorted(baseline_state.issues.items()):
                     console_inst.print(
                         f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
                     )
@@ -695,10 +708,18 @@ def sync(
                 "   This establishes the agreed-upon starting state between local and remote."
             )
 
-            # Use REMOTE baseline by default in non-interactive mode
+            # Use baseline strategy from option or default to REMOTE
             from roadmap.core.services.baseline_selector import BaselineStrategy
 
-            strategy = BaselineStrategy.REMOTE
+            if baseline:
+                strategy = (
+                    BaselineStrategy.LOCAL
+                    if baseline.lower() == "local"
+                    else BaselineStrategy.REMOTE
+                )
+            else:
+                # Default to REMOTE if not specified
+                strategy = BaselineStrategy.REMOTE
 
             # Ensure baseline with default strategy (avoids interactive hang)
             if not retrieval_orchestrator.ensure_baseline(strategy=strategy):
