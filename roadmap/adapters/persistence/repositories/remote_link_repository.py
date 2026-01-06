@@ -304,7 +304,7 @@ class RemoteLinkRepository:
                             )
                             count += 1
                         except Exception as e:
-                            logger.warning(
+                            logger.debug(
                                 "Failed to import link",
                                 issue_uuid=issue_uuid,
                                 backend_name=backend_name,

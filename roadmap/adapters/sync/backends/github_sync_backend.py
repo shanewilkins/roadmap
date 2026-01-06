@@ -105,12 +105,22 @@ class GitHubSyncBackend:
         """
         try:
             return factory()
+        except (ImportError, AttributeError) as e:
+            logger.warning(
+                "initialization_failed",
+                component=name,
+                error=str(e),
+                error_type=type(e).__name__,
+                suggested_action="check_dependencies",
+            )
+            return None
         except Exception as e:
             logger.warning(
                 "initialization_failed",
                 component=name,
                 error=str(e),
                 error_type=type(e).__name__,
+                error_classification="unknown_error",
             )
             return None
 
@@ -140,8 +150,21 @@ class GitHubSyncBackend:
             if self.github_client is None:
                 try:
                     self.github_client = GitHubIssueClient(token)
+                except (ImportError, TypeError) as e:
+                    logger.error(
+                        "github_client_init_failed",
+                        error_type=type(e).__name__,
+                        error=str(e),
+                        suggested_action="check_dependencies",
+                    )
+                    return False
                 except Exception as e:
-                    logger.error("github_client_init_failed", error=str(e))
+                    logger.error(
+                        "github_client_init_failed",
+                        error_type=type(e).__name__,
+                        error=str(e),
+                        error_classification="initialization_error",
+                    )
                     return False
 
             owner = self.config.get("owner")
@@ -187,8 +210,10 @@ class GitHubSyncBackend:
         except Exception as e:
             logger.error(
                 "github_auth_unexpected_error",
-                error=str(e),
                 error_type=type(e).__name__,
+                error=str(e),
+                error_classification="authentication_error",
+                suggested_action="check_network",
             )
             return False
 
@@ -281,10 +306,8 @@ class GitHubSyncBackend:
 
                     page += 1
 
-                    # For now, limit to first page (100 issues) for performance
-                    # In production, we'd paginate through all
-                    if page > 1:
-                        break
+                    # Continue fetching all pages (no limit for production)
+                    # Pagination ensures we get all issues regardless of count
 
                 logger.info(
                     "github_get_issues_completed",
@@ -298,18 +321,39 @@ class GitHubSyncBackend:
                     for issue_id, issue_dict in issues_data.items()
                 }
 
+            except (ConnectionError, TimeoutError) as e:
+                logger.error(
+                    "github_api_fetch_failed",
+                    operation="fetch_issues",
+                    owner=owner,
+                    repo=repo,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                    is_recoverable=True,
+                    suggested_action="retry_after_delay",
+                )
+                return {}
             except Exception as e:
                 logger.error(
                     "github_api_fetch_failed",
+                    operation="fetch_issues",
                     owner=owner,
                     repo=repo,
+                    error_type=type(e).__name__,
                     error=str(e),
-                    exc_info=True,
+                    is_recoverable=False,
+                    suggested_action="check_configuration",
                 )
                 return {}
 
         except Exception as e:
-            logger.exception("github_get_issues_failed", error=str(e))
+            logger.error(
+                "github_get_issues_failed",
+                error_type=type(e).__name__,
+                error=str(e),
+                is_recoverable=False,
+                suggested_action="check_configuration",
+            )
             return {}
 
     def push_issue(self, local_issue: Issue) -> bool:
@@ -416,6 +460,47 @@ class GitHubSyncBackend:
 
             else:
                 # Create new GitHub issue
+                # But first, check if an issue with the same title already exists on GitHub
+                # to prevent duplicates
+                all_remote_issues = self.get_issues()
+                duplicate_issue = None
+                for remote_issue in all_remote_issues.values():
+                    if remote_issue.title.lower() == local_issue.title.lower():
+                        duplicate_issue = remote_issue
+                        logger.warning(
+                            "github_push_issue_found_duplicate",
+                            issue_id=local_issue.id,
+                            github_number=remote_issue.backend_id,
+                            title=local_issue.title,
+                        )
+                        break
+
+                # If we found a duplicate, link it instead of creating a new one
+                if duplicate_issue and duplicate_issue.backend_id:
+                    github_issue_number = duplicate_issue.backend_id
+                    # Update the local issue to reference this GitHub issue
+                    from roadmap.adapters.persistence.yaml_repositories import (
+                        YAMLIssueRepository,
+                    )
+
+                    if hasattr(self.core, "issue_service") and hasattr(
+                        self.core.issue_service, "repository"
+                    ):
+                        repo_inst = self.core.issue_service.repository
+                        if isinstance(repo_inst, YAMLIssueRepository):
+                            local_issue.github_issue = github_issue_number
+                            if not local_issue.remote_ids:
+                                local_issue.remote_ids = {}
+                            local_issue.remote_ids["github"] = github_issue_number
+                            repo_inst.save(local_issue)
+                            logger.info(
+                                "github_auto_linked_duplicate_on_push",
+                                issue_id=local_issue.id,
+                                github_number=github_issue_number,
+                            )
+                    return True
+
+                # Create new GitHub issue
                 url = f"https://api.github.com/repos/{owner}/{repo}/issues"
                 payload: dict[str, Any] = {
                     "title": local_issue.title,
@@ -480,12 +565,23 @@ class GitHubSyncBackend:
                 )
                 return True
 
+        except (ConnectionError, TimeoutError) as e:
+            logger.warning(
+                "github_push_issue_failed",
+                issue_id=local_issue.id,
+                error_type=type(e).__name__,
+                error=str(e),
+                is_recoverable=True,
+                suggested_action="retry_after_delay",
+            )
+            return False
         except Exception as e:
             logger.warning(
                 "github_push_issue_failed",
                 issue_id=local_issue.id,
+                error_type=type(e).__name__,
                 error=str(e),
-                exc_info=True,
+                error_classification="sync_error",
             )
             return False
 

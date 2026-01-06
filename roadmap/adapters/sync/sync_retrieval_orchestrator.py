@@ -645,6 +645,8 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         dry_run: bool = True,
         force_local: bool = False,
         force_remote: bool = False,
+        push_only: bool = False,
+        pull_only: bool = False,
     ):
         """Override sync_all_issues to use git-based baselines."""
         try:
@@ -669,6 +671,8 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         dry_run=dry_run,
                         force_local=force_local,
                         force_remote=force_remote,
+                        push_only=push_only,
+                        pull_only=pull_only,
                     )
                 finally:
                     self.state_manager.load_sync_state = original_load
@@ -687,6 +691,8 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         dry_run=dry_run,
                         force_local=force_local,
                         force_remote=force_remote,
+                        push_only=push_only,
+                        pull_only=pull_only,
                     )
                 finally:
                     self.state_manager.load_sync_state = original_load

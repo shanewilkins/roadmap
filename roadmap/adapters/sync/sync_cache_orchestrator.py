@@ -109,8 +109,11 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
         except Exception as e:
             logger.warning(
                 "cached_baseline_load_failed",
-                error=str(e),
+                operation="load_baseline",
                 error_type=type(e).__name__,
+                error=str(e),
+                is_recoverable=True,
+                suggested_action="create_new_baseline",
             )
             return None
 
@@ -151,11 +154,23 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 last_sync=baseline.last_sync.isoformat(),
             )
 
+        except OSError as e:
+            logger.warning(
+                "baseline_cache_save_failed",
+                operation="save_baseline",
+                entity_type="baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+                is_recoverable=True,
+                suggested_action="check_disk_space",
+            )
         except Exception as e:
             logger.warning(
                 "baseline_cache_save_failed",
-                error=str(e),
+                operation="save_baseline",
                 error_type=type(e).__name__,
+                error=str(e),
+                error_classification="database_error",
             )
 
     def _get_baseline_with_optimization(
@@ -290,6 +305,8 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
         force_local: bool = False,
         force_remote: bool = False,
         show_progress: bool = True,
+        push_only: bool = False,
+        pull_only: bool = False,
     ) -> SyncReport:
         """Sync all issues with optimized baseline and progress tracking.
 
@@ -298,6 +315,8 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             force_local: Resolve conflicts by keeping local changes
             force_remote: Resolve conflicts by keeping remote changes
             show_progress: Show progress bars during sync
+            push_only: If True, only push changes (skip pulling)
+            pull_only: If True, only pull changes (skip pushing)
 
         Returns:
             SyncReport with detected changes and conflicts
@@ -326,6 +345,8 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                         dry_run=dry_run,
                         force_local=force_local,
                         force_remote=force_remote,
+                        push_only=push_only,
+                        pull_only=pull_only,
                     )
 
                     progress.update(task, description="Sync complete")
@@ -343,6 +364,8 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                     dry_run=dry_run,
                     force_local=force_local,
                     force_remote=force_remote,
+                    push_only=push_only,
+                    pull_only=pull_only,
                 )
 
         except Exception as e:
@@ -354,3 +377,59 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             report = SyncReport()
             report.error = f"Optimized sync failed: {str(e)}"
             return report
+
+    def capture_post_sync_baseline(self) -> SyncState | None:
+        """Capture the current local state as the new baseline after successful sync.
+
+        This creates a new baseline representing the agreed-upon state
+        after changes have been applied locally and remotely.
+
+        Returns:
+            SyncState representing the current state, or None if capture fails
+        """
+        from datetime import datetime
+
+        try:
+            logger.info("capturing_post_sync_baseline")
+
+            # Get all current local issues (including archived)
+            local_issues = self.core.issues.list_all_including_archived()
+
+            # Create new baseline from current state
+            baseline = SyncState(
+                last_sync=datetime.now(),
+                backend=self.backend.__class__.__name__.lower(),
+            )
+
+            # Reconstruct each issue from current file state
+            for issue in local_issues:
+                try:
+                    issue_file = self.issues_dir / f"{issue.id}.md"
+                    if issue_file.exists():
+                        # Get the current baseline state from file
+                        local_baseline = self.baseline_retriever.get_baseline_from_file(
+                            issue_file
+                        )
+                        if local_baseline:
+                            baseline.issues[issue.id] = local_baseline
+                except Exception as e:
+                    logger.warning(
+                        "post_sync_baseline_issue_reconstruction_failed",
+                        issue_id=issue.id,
+                        error=str(e),
+                    )
+
+            logger.info(
+                "post_sync_baseline_captured",
+                issue_count=len(baseline.issues),
+                last_sync=baseline.last_sync.isoformat(),
+            )
+            return baseline
+
+        except Exception as e:
+            logger.error(
+                "post_sync_baseline_capture_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return None

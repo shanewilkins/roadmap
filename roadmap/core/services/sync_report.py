@@ -112,6 +112,8 @@ class SyncReport:
 
     # Remote items
     remote_total_issues: int = 0
+    remote_open_issues: int = 0
+    remote_closed_issues: int = 0
     remote_total_milestones: int = 0
 
     # Sync analysis statistics (three-way merge results)
@@ -172,10 +174,17 @@ class SyncReport:
             border_style="yellow",
         )
         remote_table.add_column("Type", style="yellow")
+        remote_table.add_column("Open", justify="right", style="green")
+        remote_table.add_column("Closed", justify="right", style="red")
         remote_table.add_column("Total", justify="right", style="bold yellow")
 
-        remote_table.add_row("Issues", str(self.remote_total_issues))
-        remote_table.add_row("Milestones", str(self.remote_total_milestones))
+        remote_table.add_row(
+            "Issues",
+            str(self.remote_open_issues),
+            str(self.remote_closed_issues),
+            str(self.remote_total_issues),
+        )
+        remote_table.add_row("Milestones", "—", "—", str(self.remote_total_milestones))
 
         # Display tables side by side using renderables
         from rich.columns import Columns
@@ -251,10 +260,17 @@ class SyncReport:
             title="Remote Items", show_header=True, header_style="bold yellow"
         )
         remote_table.add_column("Type", style="yellow")
+        remote_table.add_column("Open", justify="right")
+        remote_table.add_column("Closed", justify="right")
         remote_table.add_column("Total", justify="right")
 
-        remote_table.add_row("Issues", str(self.remote_total_issues))
-        remote_table.add_row("Milestones", str(self.remote_total_milestones))
+        remote_table.add_row(
+            "Issues",
+            str(self.remote_open_issues),
+            str(self.remote_closed_issues),
+            str(self.remote_total_issues),
+        )
+        remote_table.add_row("Milestones", "—", "—", str(self.remote_total_milestones))
 
         # Display tables side by side
         columns = Columns([local_table, remote_table], equal=True, expand=True)
@@ -263,6 +279,18 @@ class SyncReport:
         console.print(f"   Up-to-date: {self.issues_up_to_date}")
         console.print(f"   Needs Push: {self.issues_needs_push}")
         console.print(f"   Needs Pull: {self.issues_needs_pull}")
+
+        # Show which issues are up-to-date
+        if self.issues_up_to_date > 0:
+            up_to_date_issues = [
+                c for c in self.changes if c.conflict_type == "no_change"
+            ]
+            if up_to_date_issues:
+                console.print("   \n   Up-to-date issues:", style="bold green")
+                for change in up_to_date_issues:
+                    console.print(
+                        f"      • {change.issue_id}: {change.title}", style="dim green"
+                    )
 
         if self.issues_pushed > 0:
             console.print(f"   📤 Pushed: {self.issues_pushed}", style="green")

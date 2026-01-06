@@ -247,7 +247,11 @@ class SyncMergeOrchestrator:
                 logger.warning(
                     "conflict_conversion_failed",
                     issue_id=change.issue_id,
+                    operation="analyze_conflicts",
+                    error_type=type(e).__name__,
                     error=str(e),
+                    is_recoverable=True,
+                    suggested_action="skip_issue",
                 )
                 continue
 
@@ -258,6 +262,8 @@ class SyncMergeOrchestrator:
         dry_run: bool = True,
         force_local: bool = False,
         force_remote: bool = False,
+        push_only: bool = False,
+        pull_only: bool = False,
     ) -> SyncReport:
         """Sync all issues using the configured backend.
 
@@ -265,6 +271,8 @@ class SyncMergeOrchestrator:
             dry_run: If True, only detect changes without applying them
             force_local: Resolve conflicts by keeping local changes
             force_remote: Resolve conflicts by keeping remote changes
+            push_only: If True, only push local changes (skip pulling remote)
+            pull_only: If True, only pull remote changes (skip pushing local)
 
         Returns:
             SyncReport with detected changes and conflicts
@@ -286,16 +294,32 @@ class SyncMergeOrchestrator:
                     report.error = "Backend authentication failed"
                     logger.error(
                         "backend_authentication_failed",
+                        operation="authenticate",
                         backend_type=type(self.backend).__name__,
+                        suggested_action="check_credentials",
                     )
                     return report
                 logger.info("backend_authenticated_successfully")
+            except (ConnectionError, TimeoutError) as e:
+                report.error = f"Backend authentication error: {str(e)}"
+                logger.error(
+                    "backend_authentication_error",
+                    operation="authenticate",
+                    error_type=type(e).__name__,
+                    error=str(e),
+                    is_recoverable=True,
+                    suggested_action="retry_connection",
+                )
+                return report
             except Exception as e:
                 report.error = f"Backend authentication error: {str(e)}"
                 logger.error(
                     "backend_authentication_error",
-                    error=str(e),
+                    operation="authenticate",
                     error_type=type(e).__name__,
+                    error=str(e),
+                    is_recoverable=False,
+                    suggested_action="check_backend_status",
                 )
                 return report
 
@@ -305,18 +329,36 @@ class SyncMergeOrchestrator:
                 remote_issues_data = self.backend.get_issues()
                 if remote_issues_data is None:
                     report.error = "Failed to fetch remote issues"
-                    logger.error("remote_issues_fetch_returned_none")
+                    logger.error(
+                        "remote_issues_fetch_returned_none",
+                        operation="fetch_remote_issues",
+                        suggested_action="check_backend_connectivity",
+                    )
                     return report
                 logger.info(
                     "remote_issues_fetched",
                     remote_count=len(remote_issues_data),
                 )
+            except (ConnectionError, TimeoutError) as e:
+                report.error = f"Failed to fetch remote issues: {str(e)}"
+                logger.error(
+                    "remote_issues_fetch_error",
+                    operation="fetch_remote_issues",
+                    error_type=type(e).__name__,
+                    error=str(e),
+                    is_recoverable=True,
+                    suggested_action="retry_after_delay",
+                )
+                return report
             except Exception as e:
                 report.error = f"Failed to fetch remote issues: {str(e)}"
                 logger.error(
                     "remote_issues_fetch_error",
-                    error=str(e),
+                    operation="fetch_remote_issues",
                     error_type=type(e).__name__,
+                    error=str(e),
+                    is_recoverable=False,
+                    suggested_action="check_backend_configuration",
                 )
                 return report
 
@@ -331,12 +373,25 @@ class SyncMergeOrchestrator:
                     "local_issues_fetched",
                     local_count=len(local_issues),
                 )
+            except OSError as e:
+                report.error = f"Failed to fetch local issues: {str(e)}"
+                logger.error(
+                    "local_issues_fetch_error",
+                    operation="fetch_local_issues",
+                    error_type=type(e).__name__,
+                    error=str(e),
+                    is_recoverable=False,
+                    suggested_action="check_file_permissions",
+                )
+                return report
             except Exception as e:
                 report.error = f"Failed to fetch local issues: {str(e)}"
                 logger.error(
                     "local_issues_fetch_error",
-                    error=str(e),
+                    operation="fetch_local_issues",
                     error_type=type(e).__name__,
+                    error=str(e),
+                    error_classification="sync_error",
                 )
                 return report
 
@@ -383,6 +438,21 @@ class SyncMergeOrchestrator:
                 remote_issues_count = (
                     len(remote_issues_data) if remote_issues_data else 0
                 )
+                # Count open vs closed remote issues
+                remote_open_count = 0
+                remote_closed_count = 0
+                for issue_data in (
+                    remote_issues_data.values() if remote_issues_data else []
+                ):
+                    # Check for 'state' field which is set to 'open' or 'closed'
+                    state = getattr(issue_data, "state", None) or getattr(
+                        issue_data, "status", "open"
+                    )
+                    if state and state.lower() == "closed":
+                        remote_closed_count += 1
+                    else:
+                        remote_open_count += 1
+
                 # Try to fetch remote milestones
                 remote_milestones = self.backend.get_milestones()
                 remote_milestones_count = (
@@ -391,11 +461,15 @@ class SyncMergeOrchestrator:
                 logger.debug(
                     "remote_items_counted",
                     remote_issues=remote_issues_count,
+                    remote_open=remote_open_count,
+                    remote_closed=remote_closed_count,
                     remote_milestones=remote_milestones_count,
                 )
             except Exception as e:
                 logger.debug("remote_items_count_failed", error=str(e))
                 remote_issues_count = 0
+                remote_open_count = 0
+                remote_closed_count = 0
                 remote_milestones_count = 0
 
             # 4. Load previous sync state (base state for three-way merge)
@@ -478,11 +552,15 @@ class SyncMergeOrchestrator:
             report.active_milestones = active_milestones_count
             report.archived_milestones = archived_milestones_count
             report.remote_total_issues = remote_issues_count
+            report.remote_open_issues = remote_open_count
+            report.remote_closed_issues = remote_closed_count
             report.remote_total_milestones = remote_milestones_count
             report.conflicts_detected = len(conflicts)
             report.issues_up_to_date = len(up_to_date)
             report.issues_needs_push = len(local_only_changes)
             report.issues_needs_pull = len(remote_only_changes)
+            # Add all changes to report for verbose reporting
+            report.changes = changes
 
             # 6. Resolve conflicts if applicable
             resolved_issues = []
@@ -537,7 +615,14 @@ class SyncMergeOrchestrator:
             )
 
             if should_apply:
-                report = self._apply_changes(report, updates, resolved_issues, pulls)
+                report = self._apply_changes(
+                    report,
+                    updates,
+                    resolved_issues,
+                    pulls,
+                    push_only=push_only,
+                    pull_only=pull_only,
+                )
             elif dry_run:
                 logger.info("sync_dry_run_mode", skip_apply=True)
 
@@ -546,7 +631,13 @@ class SyncMergeOrchestrator:
 
         except Exception as e:
             report.error = str(e)
-            logger.exception("sync_all_issues_failed", error=str(e))
+            logger.error(
+                "sync_all_issues_failed",
+                error_type=type(e).__name__,
+                error=str(e),
+                error_classification="sync_error",
+                suggested_action="check_logs_for_details",
+            )
             return report
 
     def _apply_changes(
@@ -555,6 +646,8 @@ class SyncMergeOrchestrator:
         updates: list,
         resolved_issues: list,
         pulls: list,
+        push_only: bool = False,
+        pull_only: bool = False,
     ) -> SyncReport:
         """Apply detected changes using the backend.
 
@@ -563,6 +656,8 @@ class SyncMergeOrchestrator:
             updates: Issues to push (local updates)
             resolved_issues: Issues resolved from conflicts
             pulls: Issues to pull (remote updates)
+            push_only: If True, only push changes (skip pulls)
+            pull_only: If True, only pull changes (skip pushes)
 
         Returns:
             Updated SyncReport with applied changes
@@ -572,6 +667,8 @@ class SyncMergeOrchestrator:
             updates=len(updates),
             resolved=len(resolved_issues),
             pulls=len(pulls),
+            push_only=push_only,
+            pull_only=pull_only,
         )
 
         pushed_count = 0
@@ -580,98 +677,99 @@ class SyncMergeOrchestrator:
         pull_errors = []
 
         try:
-            # Push local updates and resolved conflicts
-            issues_to_push = updates + resolved_issues
-            if issues_to_push:
-                issue_ids = [issue.id for issue in issues_to_push]
-                logger.info(
-                    "pushing_issues_start",
-                    count=len(issue_ids),
-                    ids=",".join(issue_ids[:5]),  # Log first 5 IDs for debugging
-                    total_ids=len(issue_ids),
-                )
+            # Push local updates and resolved conflicts (skip if pull_only)
+            if not pull_only:
+                issues_to_push = updates + resolved_issues
+                if issues_to_push:
+                    issue_ids = [issue.id for issue in issues_to_push]
+                    logger.info(
+                        "pushing_issues_start",
+                        count=len(issue_ids),
+                        ids=",".join(issue_ids[:5]),  # Log first 5 IDs for debugging
+                        total_ids=len(issue_ids),
+                    )
 
-                try:
-                    if len(issues_to_push) == 1:
-                        issue = issues_to_push[0]
-                        logger.debug(
-                            "pushing_single_issue",
-                            issue_id=issue.id,
-                            issue_title=issue.title[:50],
-                        )
-                        success = self.backend.push_issue(issue)
-                        if not success:
-                            report.error = "Failed to push issue"
-                            logger.error(
-                                "push_single_issue_failed",
+                    try:
+                        if len(issues_to_push) == 1:
+                            issue = issues_to_push[0]
+                            logger.debug(
+                                "pushing_single_issue",
                                 issue_id=issue.id,
-                                issue_title=issue.title,
+                                issue_title=issue.title[:50],
                             )
-                            push_errors.append(issue.id)
-                        else:
-                            # Update sync state for successfully pushed issue
-                            try:
-                                self.state_manager.save_base_state(
-                                    issue, remote_version=True
-                                )
-                                pushed_count = 1
-                                logger.debug(
-                                    "single_issue_sync_state_updated",
+                            success = self.backend.push_issue(issue)
+                            if not success:
+                                report.error = "Failed to push issue"
+                                logger.error(
+                                    "push_single_issue_failed",
                                     issue_id=issue.id,
+                                    issue_title=issue.title,
                                 )
-                            except Exception as e:
-                                logger.warning(
-                                    "single_issue_state_update_failed",
-                                    issue_id=issue.id,
-                                    error=str(e),
-                                )
-                    else:
-                        logger.debug(
-                            "pushing_batch_issues",
-                            batch_size=len(issues_to_push),
-                        )
-                        push_report = self.backend.push_issues(issues_to_push)
-                        if push_report and push_report.errors:
-                            report.error = f"Push failed: {push_report.errors}"
-                            logger.error(
-                                "push_batch_failed",
-                                error_count=len(push_report.errors),
-                                errors=str(push_report.errors)[:200],
-                            )
-                            push_errors = list(push_report.errors.keys())
-                        else:
-                            # Update sync state for all successfully pushed issues
-                            state_update_failures = 0
-                            for issue in issues_to_push:
+                                push_errors.append(issue.id)
+                            else:
+                                # Update sync state for successfully pushed issue
                                 try:
                                     self.state_manager.save_base_state(
                                         issue, remote_version=True
                                     )
-                                    pushed_count += 1
+                                    pushed_count = 1
+                                    logger.debug(
+                                        "single_issue_sync_state_updated",
+                                        issue_id=issue.id,
+                                    )
                                 except Exception as e:
                                     logger.warning(
-                                        "batch_issue_state_update_failed",
+                                        "single_issue_state_update_failed",
                                         issue_id=issue.id,
                                         error=str(e),
                                     )
-                                    state_update_failures += 1
-
-                            logger.info(
-                                "batch_issues_pushed",
-                                pushed_count=pushed_count,
-                                state_update_failures=state_update_failures,
+                        else:
+                            logger.debug(
+                                "pushing_batch_issues",
+                                batch_size=len(issues_to_push),
                             )
-                except Exception as e:
-                    report.error = f"Error during push operation: {str(e)}"
-                    logger.error(
-                        "push_operation_exception",
-                        error=str(e),
-                        error_type=type(e).__name__,
-                    )
-                    pushed_count = 0
+                            push_report = self.backend.push_issues(issues_to_push)
+                            if push_report and push_report.errors:
+                                report.error = f"Push failed: {push_report.errors}"
+                                logger.error(
+                                    "push_batch_failed",
+                                    error_count=len(push_report.errors),
+                                    errors=str(push_report.errors)[:200],
+                                )
+                                push_errors = list(push_report.errors.keys())
+                            else:
+                                # Update sync state for all successfully pushed issues
+                                state_update_failures = 0
+                                for issue in issues_to_push:
+                                    try:
+                                        self.state_manager.save_base_state(
+                                            issue, remote_version=True
+                                        )
+                                        pushed_count += 1
+                                    except Exception as e:
+                                        logger.warning(
+                                            "batch_issue_state_update_failed",
+                                            issue_id=issue.id,
+                                            error=str(e),
+                                        )
+                                        state_update_failures += 1
 
-            # Pull remote updates
-            if pulls:
+                                logger.info(
+                                    "batch_issues_pushed",
+                                    pushed_count=pushed_count,
+                                    state_update_failures=state_update_failures,
+                                )
+                    except Exception as e:
+                        report.error = f"Error during push operation: {str(e)}"
+                        logger.error(
+                            "push_operation_exception",
+                            error=str(e),
+                            error_type=type(e).__name__,
+                        )
+                        pushed_count = 0
+
+            # Pull remote updates (skip if push_only)
+            if not push_only and pulls:
                 logger.info(
                     "pulling_remote_updates_start",
                     count=len(pulls),
