@@ -25,7 +25,7 @@ from .project_storage import ProjectStorage
 from .sync_state_storage import SyncStateStorage
 
 if TYPE_CHECKING:
-    from roadmap.adapters.git.sync_monitor import GitSyncMonitor
+    from roadmap.adapters.git.sync_monitor import GitSyncMonitor  # noqa: F401
 
 logger = get_logger(__name__)
 
@@ -105,6 +105,17 @@ class StateManager:
             has_git_monitor=git_sync_monitor is not None,
         )
 
+        # Initialize database cache from YAML files (Phase 3)
+        # Load all remote_ids from YAML into database for fast lookups
+        try:
+            self._initialize_remote_links_from_yaml()
+        except Exception as e:
+            logger.warning(
+                "Failed to initialize remote links from YAML",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+
     # Connection management - delegate to ConnectionManager
     def _get_connection(self) -> sqlite3.Connection:
         """Get thread-local database connection."""
@@ -133,6 +144,81 @@ class StateManager:
                 error=str(e),
                 error_type=type(e).__name__,
             )
+
+    def _initialize_remote_links_from_yaml(self) -> None:
+        """Initialize database remote_links from YAML files on startup.
+
+        This is a one-time initialization that loads all remote_ids found in
+        YAML frontmatter into the database cache for fast O(1) lookups during
+        sync operations.
+
+        Only loads links if database is empty (first initialization or reset).
+        """
+        try:
+            # Check if remote_links table already has data (skip if so)
+            # Quick check: try to get all links for GitHub backend
+            existing_github_links = self._remote_link_repo.get_all_links_for_backend(
+                "github"
+            )
+            if existing_github_links:
+                logger.debug(
+                    "remote_links_already_initialized",
+                    existing_count=len(existing_github_links),
+                )
+                return
+
+            # Load all issue files from .roadmap/issues directory
+            from roadmap.adapters.persistence.parser.issue import IssueParser
+            from roadmap.config import ConfigManager
+
+            config = ConfigManager()
+            issues_dir = config.get_issues_dir()
+
+            if not issues_dir.exists():
+                logger.debug("issues_directory_not_found")
+                return
+
+            # Collect all issue files from all subdirectories
+            issue_files = list(issues_dir.glob("**/*.md"))
+            if not issue_files:
+                logger.debug("no_issue_files_found")
+                return
+
+            # Build dict of issue_uuid -> dict[backend_name -> remote_id]
+            issues_with_remote_ids = {}
+            for file_path in issue_files:
+                try:
+                    issue = IssueParser.parse_issue_file(file_path)
+                    if issue.remote_ids:
+                        issues_with_remote_ids[issue.id] = issue.remote_ids
+                except Exception as e:
+                    logger.warning(
+                        "failed_to_parse_issue_file",
+                        file_path=str(file_path),
+                        error=str(e),
+                    )
+                    continue
+
+            if not issues_with_remote_ids:
+                logger.debug("no_remote_ids_found_in_yaml_files")
+                return
+
+            # Bulk import into database
+            count = self._remote_link_repo.bulk_import_from_yaml(issues_with_remote_ids)
+            logger.info(
+                "initialized_remote_links_from_yaml",
+                total_files=len(issue_files),
+                issues_with_links=len(issues_with_remote_ids),
+                links_imported=count,
+            )
+
+        except Exception as e:
+            logger.error(
+                "failed_to_initialize_remote_links",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            # Don't raise - allow startup to proceed even if initialization fails
 
     def _init_database(self):
         """Initialize database schema."""
