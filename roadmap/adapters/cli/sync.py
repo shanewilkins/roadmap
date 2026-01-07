@@ -8,6 +8,7 @@ The backend is automatically detected from configuration.
 import sys
 
 import click
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
 from roadmap.adapters.cli.helpers import require_initialized
@@ -52,6 +53,11 @@ logger = get_logger(__name__)
     "--reset-baseline",
     is_flag=True,
     help="Force recalculate baseline from current state (WARNING: resets sync history)",
+)
+@click.option(
+    "--clear-baseline",
+    is_flag=True,
+    help="Clear the baseline without syncing (clears sync_base_state table)",
 )
 @click.option(
     "--conflicts",
@@ -101,6 +107,7 @@ def sync(
     backend: str | None,
     base: bool,
     reset_baseline: bool,
+    clear_baseline: bool,
     conflicts: bool,
     push: bool,
     pull: bool,
@@ -482,6 +489,65 @@ def sync(
                 "❌ No local issues found. Create issues first with `roadmap issue create`.",
                 style="bold red",
             )
+        return
+
+    # Handle --clear-baseline flag to clear baseline without syncing
+    if clear_baseline:
+        import sqlite3
+
+        console_inst.print(
+            "⚠️  WARNING: Clearing baseline will:",
+            style="bold yellow",
+        )
+        console_inst.print("  • Delete all sync history")
+        console_inst.print("  • Next sync will rebuild baseline from scratch")
+        console_inst.print()
+
+        if not click.confirm("Continue with baseline clear?"):
+            console_inst.print("Cancelled.", style="dim")
+            return
+
+        try:
+            db_path = core.roadmap_dir / ".roadmap" / "db" / "state.db"
+            if db_path.exists():
+                conn = sqlite3.connect(str(db_path))
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM sync_base_state")
+                conn.commit()
+                conn.close()
+                console_inst.print(
+                    "✅ Baseline cleared successfully", style="bold green"
+                )
+            else:
+                console_inst.print(
+                    "ℹ️  No baseline file found (already empty)",
+                    style="dim",
+                )
+        except OSError as e:
+            logger.error(
+                "baseline_clear_failed",
+                operation="clear_baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+                is_recoverable=True,
+            )
+            console_inst.print(
+                f"❌ Failed to clear baseline: {str(e)}",
+                style="bold red",
+            )
+            sys.exit(1)
+        except Exception as e:
+            logger.error(
+                "baseline_clear_failed",
+                operation="clear_baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
+            console_inst.print(
+                f"❌ Failed to clear baseline: {str(e)}",
+                style="bold red",
+            )
+            sys.exit(1)
         return
 
     # Handle --conflicts flag to show conflict information
@@ -942,22 +1008,41 @@ def sync(
             # Get all local issues to include in baseline
             all_local_issues = core.issues.list_all_including_archived()
 
-            for issue in all_local_issues:
-                # Normalize labels: sort alphabetically for consistency
-                labels = issue.labels or []
-                sorted_labels = sorted(labels) if labels else []
+            # Show progress while building baseline
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                TextColumn(
+                    "[progress.percentage]{task.fields[current]}/{task.fields[total]}"
+                ),
+                console=console_inst,
+                transient=True,
+            ) as progress:
+                task = progress.add_task(
+                    "Building baseline...",
+                    total=len(all_local_issues),
+                    current=0,
+                )
 
-                baseline_dict[issue.id] = {
-                    "status": (
-                        issue.status.value
-                        if hasattr(issue.status, "value")
-                        else str(issue.status)
-                    ),
-                    "assignee": issue.assignee,
-                    "milestone": issue.milestone,
-                    "description": issue.content,
-                    "labels": sorted_labels,  # Store labels sorted for consistency
-                }
+                for idx, issue in enumerate(all_local_issues):
+                    # Normalize labels: sort alphabetically for consistency
+                    labels = issue.labels or []
+                    sorted_labels = sorted(labels) if labels else []
+
+                    baseline_dict[issue.id] = {
+                        "status": (
+                            issue.status.value
+                            if hasattr(issue.status, "value")
+                            else str(issue.status)
+                        ),
+                        "assignee": issue.assignee,
+                        "milestone": issue.milestone,
+                        "description": issue.content,
+                        "labels": sorted_labels,  # Store labels sorted for consistency
+                    }
+
+                    # Update progress
+                    progress.update(task, current=idx + 1)
 
             post_sync_issue_count = len(baseline_dict)
 

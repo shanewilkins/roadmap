@@ -1,16 +1,21 @@
 ---
-id: ab2ad1b4
-title: Cross-platform compatibility testing (macOS, Linux, Windows)
+id: 0839a0e9
+title: GitHub sync not preserving milestone relationships for existing issues
 priority: medium
 status: todo
-issue_type: feature
+issue_type: other
 milestone: null
 labels:
-- testing,compatibility
+- bug
+- priority:high
+- status:done
+- github-integration
+- sync
+- milestone-tracking
 remote_ids:
-  github: 102
-created: '2025-12-20T18:33:28.214417+00:00'
-updated: '2026-01-06T22:14:56.660120+00:00'
+  github: 74
+created: '2026-01-02T19:20:51.957433+00:00'
+updated: '2026-01-06T23:00:31.069906+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,10 +31,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 102
+github_issue: 74
 ---
 
-# Cross-platform compatibility testing (macOS, Linux, Windows)
+# GitHub sync not preserving milestone relationships for existing issues
 
 ## Description
 

@@ -189,6 +189,9 @@ class HealthFixOrchestrator:
         from roadmap.adapters.cli.health.fixers.folder_structure_fixer import (
             FolderStructureFixer,
         )
+        from roadmap.adapters.cli.health.fixers.label_normalization_fixer import (
+            LabelNormalizationFixer,
+        )
         from roadmap.adapters.cli.health.fixers.milestone_name_normalization_fixer import (
             MilestoneNameNormalizationFixer,
         )
@@ -212,6 +215,7 @@ class HealthFixOrchestrator:
             FolderStructureFixer(self.core),
             CorruptedCommentsFixer(self.core),
             DataIntegrityFixer(self.core),
+            LabelNormalizationFixer(self.core),
             MilestoneNameNormalizationFixer(self.core),
             MilestoneNamingComplianceFixer(self.core),
             MilestoneValidationFixer(self.core),

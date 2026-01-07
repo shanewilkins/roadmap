@@ -1,6 +1,6 @@
 ---
-id: a24c5633
-title: Implement automatic milestone and project progress updates based on issue completion
+id: 6c13e4ea
+title: Implement CI/CD integration for automatic issue branch and commit tracking
 priority: medium
 status: todo
 issue_type: other
@@ -9,9 +9,9 @@ labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: 87
-created: '2026-01-02T19:20:53.155759+00:00'
-updated: '2026-01-06T16:17:46.182596+00:00'
+  github: 86
+created: '2026-01-02T19:20:53.068871+00:00'
+updated: '2026-01-06T22:04:23.219694+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,10 +27,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 87
+github_issue: 86
 ---
 
-# Implement automatic milestone and project progress updates based on issue completion
+# Implement CI/CD integration for automatic issue branch and commit tracking
 
 ## Description
 

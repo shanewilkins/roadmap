@@ -1,25 +1,23 @@
 ---
-id: 50b09354
-title: Smart notification system with configurable alerts
-priority: medium
-status: todo
+id: f7fcfecf
+title: Remove Deprecated and Backup Code
+priority: high
+status: closed
 issue_type: other
-milestone: null
-labels:
-- priority:high
-- status:todo
+milestone: v.0.6.0
+labels: []
 remote_ids:
-  github: 81
-created: '2026-01-02T19:20:52.580129+00:00'
-updated: '2026-01-06T16:18:37.310599+00:00'
-assignee: null
+  github: '293'
+created: '2025-11-17T17:47:53.097795+00:00'
+updated: '2025-12-04T19:14:39.981971+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -27,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 81
+github_issue: '293'
 ---
 
-# Smart notification system with configurable alerts
+# Remove Deprecated and Backup Code
 
 ## Description
 

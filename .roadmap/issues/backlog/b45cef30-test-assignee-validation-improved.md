@@ -2,16 +2,16 @@
 id: b45cef30
 title: Test assignee validation improved
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: null
 labels:
 - priority:low
 - status:todo
 remote_ids:
-  github: '63'
+  github: 34
 created: '2026-01-02T19:20:51.059852+00:00'
-updated: '2026-01-06T16:24:53.721591+00:00'
+updated: '2026-01-06T22:07:41.865261+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '63'
+github_issue: 34
 ---
 
 # Test assignee validation improved
@@ -41,3 +41,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

@@ -9,9 +9,9 @@ labels:
 - priority:medium
 - status:done
 remote_ids:
-  github: '68'
+  github: 68
 created: '2026-01-02T19:20:51.619153+00:00'
-updated: '2026-01-06T16:25:08.803400+00:00'
+updated: '2026-01-06T22:05:00.146942+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '68'
+github_issue: 68
 ---
 
 # Test finish command workflow

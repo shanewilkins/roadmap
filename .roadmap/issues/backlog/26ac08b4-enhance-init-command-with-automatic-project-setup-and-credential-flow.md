@@ -9,9 +9,9 @@ labels:
 - priority:high
 - status:done
 remote_ids:
-  github: '9'
+  github: 9
 created: '2026-01-02T19:20:53.245289+00:00'
-updated: '2026-01-06T16:24:25.813720+00:00'
+updated: '2026-01-06T23:00:57.052669+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '9'
+github_issue: 9
 ---
 
 # Enhance init command with automatic project setup and credential flow

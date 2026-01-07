@@ -1,17 +1,17 @@
 ---
-id: bbb5c6c2
-title: fix_the_test_suite
+id: 555caa1b
+title: Optimize Test Suite Performance
 priority: medium
-status: todo
+status: closed
 issue_type: other
-milestone: null
+milestone: v.0.6.0
 labels: []
 remote_ids:
-  github: '198'
-created: '2025-12-23T22:08:47.964369+00:00'
-updated: '2026-01-06T16:25:01.314113+00:00'
-assignee: null
-estimated_hours: 6.0
+  github: '284'
+created: '2025-11-17T17:47:54.208800+00:00'
+updated: '2025-12-04T19:17:04.516675+00:00'
+assignee: shanewilkins
+estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
@@ -25,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '198'
+github_issue: '284'
 ---
 
-# fix_the_test_suite
+# Optimize Test Suite Performance
 
 ## Description
 

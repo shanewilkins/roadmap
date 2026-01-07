@@ -4,13 +4,13 @@ title: TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: v.1.0.0
 labels: []
 remote_ids:
-  github: 60
+  github: 52
 created: '2026-01-02T19:20:50.938842+00:00'
-updated: '2026-01-06T02:04:01.827708+00:00'
-assignee: null
+updated: '2026-01-06T22:20:48.912668+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -25,17 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 60
+github_issue: 52
 ---
 
-# TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+let's make sure this is good.

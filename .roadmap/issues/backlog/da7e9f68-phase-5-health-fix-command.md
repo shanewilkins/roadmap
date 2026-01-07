@@ -1,16 +1,16 @@
 ---
 id: da7e9f68
 title: 'Phase 5: Health Fix Command'
-priority: medium
-status: todo
+priority: high
+status: closed
 issue_type: feature
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
-  github: '217'
+  github: '271'
 created: '2025-12-25T14:55:32.928132+00:00'
-updated: '2026-01-06T16:24:29.952718+00:00'
-assignee: null
+updated: '2025-12-30T16:02:46.962889+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -25,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '217'
+github_issue: '271'
 ---
 
 # Phase 5: Health Fix Command

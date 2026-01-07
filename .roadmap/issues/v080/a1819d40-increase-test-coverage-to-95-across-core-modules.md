@@ -1,21 +1,22 @@
 ---
-id: 4b5429e4
-title: Implement comprehensive logging for CLI, errors, performance, and audit trail
-priority: medium
-status: todo
+id: a1819d40
+title: Increase test coverage to 95% across core modules
+priority: high
+status: closed
 issue_type: feature
-milestone: null
-labels: []
+milestone: v080
+labels:
+- testing,quality
 remote_ids:
-  github: '200'
-created: '2025-11-25T20:27:37.972236+00:00'
-updated: '2026-01-06T16:25:19.702886+00:00'
-assignee: null
+  github: '294'
+created: '2025-12-20T18:33:26.293890+00:00'
+updated: '2025-12-25T19:51:02.502681+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-16T09:39:51.864211+00:00'
+actual_start_date: '2025-12-22T07:54:47.450881+00:00'
 actual_end_date: null
 progress_percentage: 100.0
 handoff_notes: null
@@ -25,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '200'
+github_issue: '294'
 ---
 
-# Implement comprehensive logging for CLI, errors, performance, and audit trail
+# Increase test coverage to 95% across core modules
 
 ## Description
 

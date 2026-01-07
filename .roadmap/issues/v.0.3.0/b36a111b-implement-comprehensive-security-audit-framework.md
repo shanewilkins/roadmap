@@ -9,9 +9,9 @@ labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '18'
+  github: 18
 created: '2026-01-02T19:20:52.294664+00:00'
-updated: '2026-01-06T16:25:24.501751+00:00'
+updated: '2026-01-06T22:07:39.888442+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '18'
+github_issue: 18
 ---
 
 # Implement comprehensive security audit framework

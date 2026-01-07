@@ -8,9 +8,9 @@ milestone: null
 labels:
 - documentation,deployment
 remote_ids:
-  github: '103'
+  github: 103
 created: '2025-12-20T18:33:29.195197+00:00'
-updated: '2026-01-06T16:25:09.895329+00:00'
+updated: '2026-01-06T23:01:02.839473+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '103'
+github_issue: 103
 ---
 
 # Create production deployment and operations guide

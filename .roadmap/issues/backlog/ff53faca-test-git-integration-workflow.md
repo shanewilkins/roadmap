@@ -9,9 +9,9 @@ labels:
 - priority:medium
 - status:done
 remote_ids:
-  github: '70'
+  github: 70
 created: '2026-01-02T19:20:51.725404+00:00'
-updated: '2026-01-06T16:24:52.642915+00:00'
+updated: '2026-01-06T22:08:28.742295+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '70'
+github_issue: 70
 ---
 
 # Test git integration workflow

@@ -7,7 +7,7 @@ issue_type: other
 milestone: v.0.6.0
 labels: []
 remote_ids:
-  github: 249
+  github: '270'
 created: '2025-11-17T17:47:40.981205+00:00'
 updated: '2025-11-26T18:21:05.774176+00:00'
 assignee: shanewilkins
@@ -25,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 249
+github_issue: '270'
 ---
 
 # Review and Simplify Core Architecture

@@ -1,17 +1,16 @@
 ---
-id: b7a6e094
-title: Implement performance benchmarking and profiling
-priority: medium
-status: todo
-issue_type: feature
-milestone: null
-labels:
-- performance,testing
+id: 2e710d10
+title: Clean Up Project Issues and Milestones
+priority: low
+status: closed
+issue_type: other
+milestone: v.0.6.0
+labels: []
 remote_ids:
-  github: '203'
-created: '2025-12-20T18:33:27.255856+00:00'
-updated: '2026-01-06T16:25:10.907880+00:00'
-assignee: null
+  github: '291'
+created: '2025-11-17T17:47:56.417434+00:00'
+updated: '2025-12-04T18:56:48.503685+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -26,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '203'
+github_issue: '291'
 ---
 
-# Implement performance benchmarking and profiling
+# Clean Up Project Issues and Milestones
 
 ## Description
 

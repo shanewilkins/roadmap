@@ -7,7 +7,7 @@ issue_type: feature
 milestone: v.0.6.0
 labels: []
 remote_ids:
-  github: 237
+  github: '286'
 created: '2025-11-16T20:02:56.042815+00:00'
 updated: '2025-11-26T18:22:05.396574+00:00'
 assignee: shanewilkins
@@ -25,7 +25,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 237
+github_issue: '286'
 ---
 
 # Refactor to unified datetime parser - eliminate DRY violations across codebase

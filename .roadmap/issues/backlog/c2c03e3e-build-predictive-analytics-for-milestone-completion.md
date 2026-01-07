@@ -1,23 +1,25 @@
 ---
-id: c0533ca1
-title: Review Missing Critical 1.0 Functionality
+id: c2c03e3e
+title: Build predictive analytics for milestone completion
 priority: medium
 status: todo
 issue_type: other
 milestone: null
-labels: []
+labels:
+- priority:high
+- status:todo
 remote_ids:
-  github: '215'
-created: '2025-11-17T17:47:55.306403+00:00'
-updated: '2026-01-06T16:24:58.673197+00:00'
+  github: 78
+created: '2026-01-02T19:20:52.363535+00:00'
+updated: '2026-01-06T21:37:57.347738+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-04T14:23:10.834243+00:00'
+actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -25,10 +27,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '215'
+github_issue: 78
 ---
 
-# Review Missing Critical 1.0 Functionality
+# Build predictive analytics for milestone completion
 
 ## Description
 
@@ -36,4 +38,6 @@ Brief description of the issue or feature request.
 
 ## Acceptance Criteria
 
-- [ ] 80% test coverage
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

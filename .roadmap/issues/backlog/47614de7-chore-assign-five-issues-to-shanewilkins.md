@@ -2,14 +2,14 @@
 id: 47614de7
 title: 'chore: assign five issues to shanewilkins'
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: 91
+  github: 50
 created: '2026-01-02T19:20:53.521026+00:00'
-updated: '2026-01-06T02:02:53.911156+00:00'
+updated: '2026-01-06T22:21:10.038516+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -25,17 +25,16 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 91
+github_issue: 50
 ---
 
-# chore: assign five issues to shanewilkins
+Assign five issues to shanewilkins (automated via CLI). Please review and approve.
 
-## Description
+Issues:
+- 7e99d67b
+- 749c3870
+- fa568786
+- 8eced822
+- c29e126d
 
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+@shanewilkins — please review.

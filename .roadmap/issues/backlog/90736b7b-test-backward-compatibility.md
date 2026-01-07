@@ -9,9 +9,9 @@ labels:
 - priority:medium
 - status:done
 remote_ids:
-  github: '27'
+  github: 27
 created: '2026-01-02T19:20:51.511129+00:00'
-updated: '2026-01-06T16:24:24.812647+00:00'
+updated: '2026-01-06T22:08:34.850429+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '27'
+github_issue: 27
 ---
 
 # Test backward compatibility

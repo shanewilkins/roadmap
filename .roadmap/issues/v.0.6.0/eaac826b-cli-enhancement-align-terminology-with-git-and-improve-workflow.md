@@ -1,17 +1,17 @@
 ---
 id: eaac826b
 title: 'CLI Enhancement: Align terminology with Git and improve workflow'
-priority: medium
-status: todo
+priority: high
+status: closed
 issue_type: feature
-milestone: null
+milestone: v.0.6.0
 labels:
 - cli,ux,1.0-target
 remote_ids:
-  github: '209'
+  github: '268'
 created: '2025-11-26T18:11:41.512485+00:00'
-updated: '2026-01-06T16:24:57.738105+00:00'
-assignee: null
+updated: '2025-11-26T18:37:57.725286+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '209'
+github_issue: '268'
 ---
 
 # CLI Enhancement: Align terminology with Git and improve workflow

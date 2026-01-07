@@ -156,6 +156,8 @@ def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) 
             "orphaned_issues",
             "folder_structure",
             "corrupted_comments",
+            "data_integrity",
+            "label_normalization",
             "milestone_name_normalization",
             "milestone_naming_compliance",
             "milestone_validation",

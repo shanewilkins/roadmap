@@ -1,24 +1,25 @@
 ---
-id: a1819d40
-title: Increase test coverage to 95% across core modules
+id: c97197d9
+title: Investigate GitHub sync inconsistencies and status updates
 priority: medium
 status: todo
-issue_type: feature
+issue_type: other
 milestone: null
 labels:
-- testing,quality
+- priority:high
+- status:todo
 remote_ids:
-  github: '219'
-created: '2025-12-20T18:33:26.293890+00:00'
-updated: '2026-01-06T16:24:50.956340+00:00'
+  github: 89
+created: '2026-01-02T19:20:53.336462+00:00'
+updated: '2026-01-06T21:32:50.219005+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: '2025-12-22T07:54:47.450881+00:00'
+actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,10 +27,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '219'
+github_issue: 89
 ---
 
-# Increase test coverage to 95% across core modules
+# Investigate GitHub sync inconsistencies and status updates
 
 ## Description
 
