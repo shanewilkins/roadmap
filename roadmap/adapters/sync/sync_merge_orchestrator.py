@@ -5,9 +5,12 @@ reporting conflicts, etc.) and delegates backend-specific operations
 to SyncBackendInterface implementations.
 """
 
+from typing import Any
+
 from structlog import get_logger
 
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
+from roadmap.core.services.issue_matching_service import IssueMatchingService
 from roadmap.core.services.sync_conflict_resolver import (
     Conflict,
     ConflictField,
@@ -257,6 +260,135 @@ class SyncMergeOrchestrator:
 
         return conflicts
 
+    def _match_and_link_remote_issues(
+        self,
+        local_issues_dict: dict,
+        remote_issues_data: dict,
+    ) -> dict[str, list[Any]]:
+        """Match unlinked remote issues to local issues and establish links.
+
+        For remote issues without existing local links, use similarity matching
+        to find potential local counterparts and link them.
+
+        Args:
+            local_issues_dict: Dict of local Issue objects keyed by ID
+            remote_issues_data: Dict of remote issue dicts keyed by ID
+
+        Returns:
+            Dict with keys 'auto_linked', 'potential_duplicates', 'new_remote'
+            containing lists of remote issue IDs
+        """
+        results = {
+            "auto_linked": [],
+            "potential_duplicates": [],
+            "new_remote": [],
+        }
+
+        if not remote_issues_data:
+            return results
+
+        try:
+            # Get all local issues for matching
+            local_issues = list(local_issues_dict.values())
+            matcher = IssueMatchingService(local_issues)
+
+            for remote_id, remote_issue in remote_issues_data.items():
+                # Check if already linked via database lookup
+                existing_issue_uuid = self.core.db.remote_links.get_issue_uuid(
+                    backend_name="github", remote_id=remote_id
+                )
+                if existing_issue_uuid:
+                    logger.debug(
+                        "remote_issue_already_linked",
+                        remote_id=remote_id,
+                        issue_uuid=existing_issue_uuid,
+                    )
+                    continue
+
+                # Try to find a match
+                matched_issue, score, match_type = matcher.find_best_match(remote_issue)
+
+                if match_type == "auto_link" and matched_issue:
+                    # Auto-link with high confidence
+                    try:
+                        self.core.db.remote_links.link_issue(
+                            issue_uuid=matched_issue.id,
+                            backend_name="github",
+                            remote_id=remote_id,
+                        )
+                        logger.info(
+                            "remote_issue_auto_linked",
+                            remote_id=remote_id,
+                            issue_uuid=matched_issue.id,
+                            score=round(score, 3),
+                        )
+                        results["auto_linked"].append(remote_id)
+                    except Exception as e:
+                        logger.warning(
+                            "remote_link_creation_failed",
+                            remote_id=remote_id,
+                            issue_uuid=matched_issue.id,
+                            error=str(e),
+                        )
+
+                elif match_type == "potential_duplicate" and matched_issue:
+                    # Flag for user review - add label to local issue
+                    try:
+                        labels = (
+                            list(matched_issue.labels) if matched_issue.labels else []
+                        )
+                        if "potential-duplicate" not in labels:
+                            labels.append("potential-duplicate")
+                            self.core.issues.update(
+                                issue_id=matched_issue.id, updates={"labels": labels}
+                            )
+                        logger.info(
+                            "remote_issue_potential_duplicate",
+                            remote_id=remote_id,
+                            candidate_id=matched_issue.id,
+                            score=round(score, 3),
+                        )
+                        results["potential_duplicates"].append(remote_id)
+                    except Exception as e:
+                        logger.warning(
+                            "potential_duplicate_label_failed",
+                            remote_id=remote_id,
+                            issue_uuid=matched_issue.id,
+                            error=str(e),
+                        )
+
+                else:
+                    # Truly new remote issue
+                    logger.debug(
+                        "remote_issue_no_match",
+                        remote_id=remote_id,
+                        best_score=round(score, 3) if score > 0 else 0,
+                    )
+                    results["new_remote"].append(remote_id)
+
+            logger.info(
+                "remote_matching_complete",
+                auto_linked=len(results["auto_linked"]),
+                potential_duplicates=len(results["potential_duplicates"]),
+                new_remote=len(results["new_remote"]),
+            )
+
+        except Exception as e:
+            logger.error(
+                "remote_matching_failed",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
+            # If matching fails, treat all unlinked as new
+            for remote_id in remote_issues_data.keys():
+                existing_issue_uuid = self.core.db.remote_links.get_issue_uuid(
+                    backend_name="github", remote_id=remote_id
+                )
+                if not existing_issue_uuid:
+                    results["new_remote"].append(remote_id)
+
+        return results
+
     def sync_all_issues(
         self,
         dry_run: bool = True,
@@ -496,6 +628,12 @@ class SyncMergeOrchestrator:
                     reason="will_treat_as_first_sync",
                 )
                 base_state = None
+
+            # 3b. Match and link unlinked remote issues to local issues (if pulling)
+            # This establishes connections before three-way merge analysis
+            _ = self._match_and_link_remote_issues(  # noqa: F841
+                local_issues_dict, remote_issues_data
+            )
 
             # 4. Use state comparator for three-way merge analysis
             # The NEW comparator provides complete baseline context:
