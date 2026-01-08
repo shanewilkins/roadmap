@@ -46,7 +46,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
                 "status": "in_progress",
                 "assignee": "test_user",
                 "milestone": "v1.0",
-                "description": "Test description",
+                "headline": "Test description",
                 "labels": ["feature", "bug"],
             }
         }
@@ -66,7 +66,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
         self.assertEqual(saved_issue["status"], "in_progress")
         self.assertEqual(saved_issue["assignee"], "test_user")
         self.assertEqual(saved_issue["milestone"], "v1.0")
-        self.assertEqual(saved_issue["description"], "Test description")
+        self.assertEqual(saved_issue["headline"], "Test description")
         self.assertEqual(saved_issue["labels"], ["feature", "bug"])
 
     def test_baseline_state_uses_database_first(self):
@@ -74,14 +74,13 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
         # Create an issue in database
         created_issue = self.core.issues.create(title="Test", status=Status.TODO)
         issue_id = created_issue.id
-
         # Save baseline dict to database
         baseline_dict = {
             issue_id: {
                 "status": "todo",
                 "assignee": "alice",
                 "milestone": None,
-                "description": "Database version",
+                "headline": "Database version",
                 "labels": ["bug"],
             }
         }
@@ -105,11 +104,11 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
         assert retrieved_baseline is not None  # Type guard for Pylance
         self.assertIn(issue_id, retrieved_baseline.issues)
 
-        # Verify description matches database, not remote
+        # Verify headline matches database, not remote
         retrieved_issue = retrieved_baseline.issues[issue_id]
         self.assertEqual(retrieved_issue.status, "todo")
         self.assertEqual(retrieved_issue.assignee, "alice")
-        self.assertEqual(retrieved_issue.description, "Database version")
+        self.assertEqual(retrieved_issue.headline, "Database version")
 
     def test_clear_baseline_removes_from_database(self):
         """Test that clear_sync_baseline removes baseline from database."""
@@ -122,7 +121,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
                 "status": "todo",
                 "assignee": "alice",
                 "milestone": None,
-                "description": "Test",
+                "headline": "Test",
                 "labels": [],
             }
         }
@@ -153,14 +152,14 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
                 "status": "todo",
                 "assignee": "alice",
                 "milestone": "v1.0",
-                "description": "First issue",
+                "headline": "First issue",
                 "labels": ["bug"],
             },
             issue2.id: {
                 "status": "in_progress",
                 "assignee": "bob",
                 "milestone": "v1.0",
-                "description": "Second issue",
+                "headline": "Second issue",
                 "labels": ["feature"],
             },
         }

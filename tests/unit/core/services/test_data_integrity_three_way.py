@@ -31,7 +31,7 @@ class TestDataIntegrityThreeWayMerge:
             title="Original Issue",
             assignee="alice",
             milestone="v1.0",
-            description="Original description",
+            headline="Original description",
             labels=["bug"],
             updated_at=datetime.now(timezone.utc),
         )
