@@ -1,6 +1,7 @@
 ---
 id: 865d50d6
 title: Refactor .roadmap directory structure for scalability
+headline: '# Refactor .roadmap directory structure for scalability'
 priority: high
 status: closed
 issue_type: feature

@@ -1,6 +1,8 @@
 ---
 id: 47614de7
 title: 'chore: assign five issues to shanewilkins'
+headline: Assign five issues to shanewilkins (automated via CLI). Please review and
+  approve.
 priority: medium
 status: closed
 issue_type: other
@@ -9,7 +11,7 @@ labels: []
 remote_ids:
   github: 50
 created: '2026-01-02T19:20:53.521026+00:00'
-updated: '2026-01-06T22:21:10.038516+00:00'
+updated: '2026-01-08T23:46:38.893719+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

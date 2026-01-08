@@ -1,6 +1,7 @@
 ---
 id: 58f6a00a
 title: Implement Git hooks automation system
+headline: '# Implement Git hooks automation system'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 84
 created: '2026-01-02T19:20:52.817566+00:00'
-updated: '2026-01-06T23:00:01.949463+00:00'
+updated: '2026-01-08T23:46:05.409216+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

@@ -390,21 +390,40 @@ class StateManager:
 
             baseline = {}
             for row in rows:
-                baseline[row["issue_id"]] = {
-                    "status": row["status"],
-                    "assignee": row["assignee"],
-                    "milestone": row["milestone"],
-                    "description": row["description"],
-                    "headline": row["headline"],
-                    "content": row["content"],
-                    "labels": json.loads(row["labels"]) if row["labels"] else [],
-                    "synced_at": row["synced_at"],
-                }
+                try:
+                    baseline[row["issue_id"]] = {
+                        "status": row["status"],
+                        "assignee": row["assignee"],
+                        "milestone": row["milestone"],
+                        "description": row["description"],
+                        "headline": row["headline"],
+                        "content": row["content"],
+                        "labels": json.loads(row["labels"]) if row["labels"] else [],
+                        "synced_at": row["synced_at"],
+                    }
+                except json.JSONDecodeError as je:
+                    logger.warning(
+                        "sync_baseline_labels_parse_error",
+                        issue_id=row["issue_id"],
+                        labels_str=row["labels"],
+                        error=str(je),
+                    )
+                    # Fall back to empty labels for this issue
+                    baseline[row["issue_id"]] = {
+                        "status": row["status"],
+                        "assignee": row["assignee"],
+                        "milestone": row["milestone"],
+                        "description": row["description"],
+                        "headline": row["headline"],
+                        "content": row["content"],
+                        "labels": [],
+                        "synced_at": row["synced_at"],
+                    }
 
             logger.debug(
                 "loaded_sync_baseline",
                 issue_count=len(baseline),
-                synced_at=rows[0]["synced_at"],
+                synced_at=rows[0]["synced_at"] if rows else None,
             )
             return baseline
 
@@ -413,6 +432,11 @@ class StateManager:
                 "error_loading_sync_baseline",
                 error=str(e),
                 error_type=type(e).__name__,
+            )
+            import traceback
+
+            logger.error(
+                "sync_baseline_error_traceback", traceback=traceback.format_exc()
             )
             return None
 

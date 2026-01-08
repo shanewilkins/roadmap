@@ -1,6 +1,7 @@
 ---
 id: f7e2d76d
 title: Validate assignee is team member
+headline: '# Validate assignee is team member'
 priority: medium
 status: todo
 issue_type: other
@@ -14,7 +15,7 @@ labels:
 remote_ids:
   github: 85
 created: '2026-01-02T19:20:52.900884+00:00'
-updated: '2026-01-06T22:20:40.890913+00:00'
+updated: '2026-01-08T23:46:06.583818+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

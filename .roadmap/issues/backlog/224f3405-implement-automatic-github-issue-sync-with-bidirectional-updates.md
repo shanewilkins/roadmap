@@ -1,6 +1,7 @@
 ---
 id: 224f3405
 title: Implement automatic GitHub issue sync with bidirectional updates
+headline: '# Phase 2: Automatic GitHub Issue Sync with Bidirectional Updates'
 priority: medium
 status: closed
 issue_type: feature

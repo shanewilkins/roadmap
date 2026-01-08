@@ -221,112 +221,48 @@ class SyncReport:
                 console.print(f"   Pulled: {self.issues_pulled}", style="green")
 
     def display_verbose(self) -> None:
-        """Display detailed sync information."""
+        """Display concise verbose output: just list issue and milestone IDs being synced."""
         if self.error:
             console.print(f"❌ Sync failed: {self.error}", style="bold red")
             return
 
-        console.print("\n📊 Detailed Sync Report", style="bold cyan")
-        console.print(f"   Timestamp: {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        console.print("\n📊 Sync Summary", style="bold cyan")
 
-        # Create items tables
-        from rich.columns import Columns
-        from rich.table import Table
-
-        # Local table - ACTIVE || ARCHIVED || TOTAL format
-        local_table = Table(
-            title="Local Items", show_header=True, header_style="bold cyan"
-        )
-        local_table.add_column("Type", style="cyan")
-        local_table.add_column("Active", justify="right")
-        local_table.add_column("Archived", justify="right")
-        local_table.add_column("Total", justify="right")
-
-        local_table.add_row(
-            "Issues",
-            str(self.active_issues),
-            str(self.archived_issues),
-            str(self.total_issues),
-        )
-        local_table.add_row(
-            "Milestones",
-            str(self.active_milestones),
-            str(self.archived_milestones),
-            str(self.total_milestones),
-        )
-
-        # Remote table
-        remote_table = Table(
-            title="Remote Items", show_header=True, header_style="bold yellow"
-        )
-        remote_table.add_column("Type", style="yellow")
-        remote_table.add_column("Open", justify="right")
-        remote_table.add_column("Closed", justify="right")
-        remote_table.add_column("Total", justify="right")
-
-        remote_table.add_row(
-            "Issues",
-            str(self.remote_open_issues),
-            str(self.remote_closed_issues),
-            str(self.remote_total_issues),
-        )
-        remote_table.add_row("Milestones", "—", "—", str(self.remote_total_milestones))
-
-        # Display tables side by side
-        columns = Columns([local_table, remote_table], equal=True, expand=True)
-        console.print(columns)
-
-        console.print(f"   Up-to-date: {self.issues_up_to_date}")
-        console.print(f"   Needs Push: {self.issues_needs_push}")
-        console.print(f"   Needs Pull: {self.issues_needs_pull}")
-
-        # Show which issues are up-to-date
-        if self.issues_up_to_date > 0:
-            up_to_date_issues = [
-                c for c in self.changes if c.conflict_type == "no_change"
-            ]
-            if up_to_date_issues:
-                console.print("   \n   Up-to-date issues:", style="bold green")
-                for change in up_to_date_issues:
-                    console.print(
-                        f"      • {change.issue_id}: {change.title}", style="dim green"
-                    )
-
-        if self.issues_pushed > 0:
-            console.print(f"   📤 Pushed: {self.issues_pushed}", style="green")
-        if self.issues_pulled > 0:
-            console.print(f"   📥 Pulled: {self.issues_pulled}", style="green")
+        # Show sync analysis summary
+        console.print(f"   ✓ Up-to-date: {self.issues_up_to_date}", style="green")
+        console.print(f"   📤 Needs Push: {self.issues_needs_push}", style="blue")
+        console.print(f"   📥 Needs Pull: {self.issues_needs_pull}", style="magenta")
 
         if self.conflicts_detected > 0:
             console.print(
                 f"   ⚠️  Conflicts: {self.conflicts_detected}",
-                style="bold yellow",
+                style="bold red",
             )
 
+        # Extract and display issue IDs being synced
         if not self.changes:
-            console.print("   No changes to display", style="dim")
+            console.print("   No changes", style="dim")
             return
 
-        console.print("\n   Issue Changes:", style="cyan")
-        for change in self.changes:
-            if change.has_conflict:
-                console.print(
-                    f"   🔴 {change.issue_id} - {change.title[:40]}",
-                    style="bold red",
-                )
-                console.print(
-                    f"      {change.get_conflict_description()}",
-                    style="dim red",
-                )
-            elif change.local_changes or change.github_changes:
-                console.print(
-                    f"   🟢 {change.issue_id} - {change.title[:40]}",
-                    style="bold green",
-                )
-                console.print(
-                    f"      {change.get_change_description()}",
-                    style="dim green",
-                )
+        # Categorize changes by type
+        needs_push = [c for c in self.changes if c.local_changes]
+        needs_pull = [c for c in self.changes if c.remote_changes]
+        has_conflicts = [c for c in self.changes if c.has_conflict]
+
+        if has_conflicts:
+            console.print("\n   🔴 Conflicts:", style="bold red")
+            conflict_ids = [f"{c.issue_id}" for c in has_conflicts]
+            console.print(f"      {', '.join(conflict_ids)}")
+
+        if needs_push:
+            console.print("\n   📤 Pushing:", style="bold blue")
+            push_ids = [f"{c.issue_id}" for c in needs_push]
+            console.print(f"      {', '.join(push_ids)}")
+
+        if needs_pull:
+            console.print("\n   📥 Pulling:", style="bold magenta")
+            pull_ids = [f"{c.issue_id}" for c in needs_pull]
+            console.print(f"      {', '.join(pull_ids)}")
 
     def has_conflicts(self) -> bool:
         """Check if there are any conflicts."""

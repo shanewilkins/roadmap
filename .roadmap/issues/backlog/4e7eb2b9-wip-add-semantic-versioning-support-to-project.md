@@ -1,6 +1,8 @@
 ---
 id: 4e7eb2b9
 title: '[WIP] Add semantic versioning support to project'
+headline: Coding agent has begun work on **Ensuring adherence to semantic versioning
+  in GitHub** and will upda
 priority: medium
 status: closed
 issue_type: other
@@ -9,7 +11,7 @@ labels: []
 remote_ids:
   github: 43
 created: '2026-01-02T19:20:53.815537+00:00'
-updated: '2026-01-06T22:07:23.665731+00:00'
+updated: '2026-01-08T23:46:36.028698+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

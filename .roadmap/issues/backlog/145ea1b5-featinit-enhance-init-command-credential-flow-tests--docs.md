@@ -1,6 +1,8 @@
 ---
 id: 145ea1b5
 title: 'feat(init): enhance init command, credential flow, tests & docs'
+headline: Implements enhanced init command with automatic project creation, credential
+  flow (env + CLI), manif
 priority: medium
 status: closed
 issue_type: other
@@ -9,7 +11,7 @@ labels: []
 remote_ids:
   github: 44
 created: '2026-01-02T19:20:53.916985+00:00'
-updated: '2026-01-06T22:05:43.562477+00:00'
+updated: '2026-01-08T23:46:39.150728+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

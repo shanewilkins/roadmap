@@ -1,6 +1,7 @@
 ---
 id: 1042a421
 title: Test issue for sync push
+headline: '# Test issue for sync push'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 108
 created: '2026-01-05T21:59:08.104004+00:00'
-updated: '2026-01-06T22:04:11.563358+00:00'
+updated: '2026-01-08T23:46:33.783620+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

@@ -1,6 +1,7 @@
 ---
 id: c97197d9
 title: Investigate GitHub sync inconsistencies and status updates
+headline: '# Investigate GitHub sync inconsistencies and status updates'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 89
 created: '2026-01-02T19:20:53.336462+00:00'
-updated: '2026-01-06T21:32:50.219005+00:00'
+updated: '2026-01-08T23:46:08.294509+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

@@ -1,6 +1,7 @@
 ---
 id: b54ea22d
 title: Simplify CLI Commands Structure
+headline: '## Overview'
 priority: low
 status: closed
 issue_type: other

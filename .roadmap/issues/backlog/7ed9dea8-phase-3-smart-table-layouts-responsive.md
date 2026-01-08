@@ -1,6 +1,7 @@
 ---
 id: 7ed9dea8
 title: 'Phase 3: Smart Table Layouts (Responsive)'
+headline: '# Phase 3: Smart Table Layouts (Responsive)'
 priority: high
 status: closed
 issue_type: feature

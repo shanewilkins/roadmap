@@ -1,6 +1,7 @@
 ---
 id: 8d746af1
 title: Advanced reporting and analytics engine
+headline: '# Advanced reporting and analytics engine'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 28
 created: '2025-10-14T14:18:13.540775+00:00'
-updated: '2026-01-06T22:15:18.347102+00:00'
+updated: '2026-01-08T23:46:37.586288+00:00'
 assignee: null
 estimated_hours: 6.0
 due_date: null

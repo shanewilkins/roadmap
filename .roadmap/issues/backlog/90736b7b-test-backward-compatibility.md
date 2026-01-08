@@ -1,6 +1,7 @@
 ---
 id: 90736b7b
 title: Test backward compatibility
+headline: '# Test backward compatibility'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 27
 created: '2026-01-02T19:20:51.511129+00:00'
-updated: '2026-01-06T22:08:34.850429+00:00'
+updated: '2026-01-08T23:46:34.540976+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

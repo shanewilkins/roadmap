@@ -1,6 +1,7 @@
 ---
 id: 31296e09
 title: Implement semantic versioning enforcement and PyPI publication
+headline: '# Implement semantic versioning enforcement and PyPI publication'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 22
 created: '2026-01-02T19:20:52.023274+00:00'
-updated: '2026-01-06T22:15:33.867202+00:00'
+updated: '2026-01-08T23:46:06.202141+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

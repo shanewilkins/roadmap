@@ -1,6 +1,7 @@
 ---
 id: 2acc5c5f
 title: Test finish command workflow
+headline: '# Test finish command workflow'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 68
 created: '2026-01-02T19:20:51.619153+00:00'
-updated: '2026-01-06T22:05:00.146942+00:00'
+updated: '2026-01-08T23:46:08.541208+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

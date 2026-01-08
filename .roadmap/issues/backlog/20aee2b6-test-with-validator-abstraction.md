@@ -1,6 +1,7 @@
 ---
 id: 20aee2b6
 title: test with validator abstraction
+headline: '# test with validator abstraction'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 106
 created: '2026-01-05T21:55:12.807283+00:00'
-updated: '2026-01-06T21:35:22.655998+00:00'
+updated: '2026-01-08T23:46:34.032707+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

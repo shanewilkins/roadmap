@@ -1,6 +1,7 @@
 ---
 id: 26ac08b4
 title: Enhance init command with automatic project setup and credential flow
+headline: '# Enhance init command with automatic project setup and credential flow'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 9
 created: '2026-01-02T19:20:53.245289+00:00'
-updated: '2026-01-06T23:00:57.052669+00:00'
+updated: '2026-01-08T23:46:05.806453+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

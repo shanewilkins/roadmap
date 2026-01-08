@@ -1,6 +1,7 @@
 ---
 id: ef9d7996
 title: Add description and comment history support to entities
+headline: '# Add description and comment history support to entities'
 priority: high
 status: closed
 issue_type: feature

@@ -1,6 +1,7 @@
 ---
 id: e7e606da
 title: 'tests: add unit tests for closing remote orphaned issues'
+headline: '# tests: add unit tests for closing remote orphaned issues'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 96
 created: '2026-01-02T19:20:54.018875+00:00'
-updated: '2026-01-06T22:08:54.897318+00:00'
+updated: '2026-01-08T23:46:39.281664+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

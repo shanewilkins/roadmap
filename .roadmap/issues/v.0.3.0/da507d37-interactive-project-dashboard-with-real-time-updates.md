@@ -1,6 +1,7 @@
 ---
 id: da507d37
 title: Interactive project dashboard with real-time updates
+headline: '# Interactive project dashboard with real-time updates'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 13
 created: '2026-01-02T19:20:52.656836+00:00'
-updated: '2026-01-06T21:38:33.985538+00:00'
+updated: '2026-01-08T23:46:30.589289+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

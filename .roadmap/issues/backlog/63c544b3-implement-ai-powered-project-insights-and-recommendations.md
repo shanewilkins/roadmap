@@ -1,6 +1,7 @@
 ---
 id: 63c544b3
 title: Implement AI-powered project insights and recommendations
+headline: '# Implement AI-powered project insights and recommendations'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 16
 created: '2026-01-02T19:20:52.433559+00:00'
-updated: '2026-01-06T22:20:37.093873+00:00'
+updated: '2026-01-08T23:46:08.160576+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

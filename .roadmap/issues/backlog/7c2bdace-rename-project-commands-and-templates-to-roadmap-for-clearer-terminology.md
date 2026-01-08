@@ -1,6 +1,7 @@
 ---
 id: 7c2bdace
 title: Rename project commands and templates to roadmap for clearer terminology
+headline: '# Rename project commands and templates to roadmap for clearer terminology'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 69
 created: '2026-01-02T19:20:51.671790+00:00'
-updated: '2026-01-06T23:01:11.072448+00:00'
+updated: '2026-01-08T23:46:07.239934+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

@@ -27,12 +27,12 @@ class IssueMatchingService:
         self.local_issues_by_id = {issue.id: issue for issue in local_issues}
 
     def find_best_match(
-        self, remote_issue: dict[str, Any]
+        self, remote_issue: dict[str, Any] | Any
     ) -> tuple[Issue | None, float, str]:
         """Find best matching local issue for a remote issue.
 
         Args:
-            remote_issue: Remote issue data dict with 'title' and optionally 'description'
+            remote_issue: Remote issue data (dict or SyncIssue object) with 'title' and optionally 'description'
 
         Returns:
             Tuple of (matched_issue, similarity_score, match_type)
@@ -41,7 +41,13 @@ class IssueMatchingService:
         if not self.local_issues:
             return None, 0.0, "new"
 
-        remote_title = remote_issue.get("title", "").lower().strip()
+        # Handle both dict and object formats
+        if isinstance(remote_issue, dict):
+            remote_title = remote_issue.get("title", "").lower().strip()
+        else:
+            # Assume it's an object with a title attribute
+            remote_title = getattr(remote_issue, "title", "").lower().strip()
+
         if not remote_title:
             return None, 0.0, "new"
 

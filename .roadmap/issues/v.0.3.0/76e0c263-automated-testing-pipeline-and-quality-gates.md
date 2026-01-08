@@ -1,6 +1,7 @@
 ---
 id: 76e0c263
 title: Automated testing pipeline and quality gates
+headline: '# Automated testing pipeline and quality gates'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 15
 created: '2026-01-02T19:20:52.505428+00:00'
-updated: '2026-01-06T22:08:01.804089+00:00'
+updated: '2026-01-08T23:46:07.102392+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

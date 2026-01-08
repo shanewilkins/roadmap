@@ -1,6 +1,7 @@
 ---
 id: 0839a0e9
 title: GitHub sync not preserving milestone relationships for existing issues
+headline: '# GitHub sync not preserving milestone relationships for existing issues'
 priority: medium
 status: todo
 issue_type: other
@@ -15,7 +16,7 @@ labels:
 remote_ids:
   github: 74
 created: '2026-01-02T19:20:51.957433+00:00'
-updated: '2026-01-06T23:00:31.069906+00:00'
+updated: '2026-01-08T23:46:04.875897+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

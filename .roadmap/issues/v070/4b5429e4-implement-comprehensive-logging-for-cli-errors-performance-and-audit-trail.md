@@ -1,15 +1,17 @@
 ---
 id: 4b5429e4
 title: Implement comprehensive logging for CLI, errors, performance, and audit trail
+headline: '# Implement comprehensive logging for CLI, errors, performance, and audit
+  trail'
 priority: high
 status: closed
 issue_type: feature
 milestone: v070
 labels: []
 remote_ids:
-  github: '292'
+  github: 292
 created: '2025-11-25T20:27:37.972236+00:00'
-updated: '2025-12-17T13:30:58.510811+00:00'
+updated: '2026-01-08T23:46:29.802622+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -25,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '292'
+github_issue: 292
 ---
 
 # Implement comprehensive logging for CLI, errors, performance, and audit trail

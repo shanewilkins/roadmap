@@ -1,6 +1,7 @@
 ---
 id: e6e60a7b
 title: 'feat: implement comprehensive project template system'
+headline: '# feat: implement comprehensive project template system'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 101
 created: '2026-01-02T19:20:54.572056+00:00'
-updated: '2026-01-06T22:03:44.525808+00:00'
+updated: '2026-01-08T23:46:39.545123+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

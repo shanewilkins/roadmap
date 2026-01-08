@@ -1,6 +1,7 @@
 ---
 id: 2e710d10
 title: Clean Up Project Issues and Milestones
+headline: '# Clean Up Project Issues and Milestones'
 priority: low
 status: closed
 issue_type: other

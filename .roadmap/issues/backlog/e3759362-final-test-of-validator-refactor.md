@@ -1,6 +1,7 @@
 ---
 id: e3759362
 title: final test of validator refactor
+headline: '# final test of validator refactor'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 105
 created: '2026-01-05T21:58:24.619134+00:00'
-updated: '2026-01-06T21:36:34.039451+00:00'
+updated: '2026-01-08T23:46:34.158975+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

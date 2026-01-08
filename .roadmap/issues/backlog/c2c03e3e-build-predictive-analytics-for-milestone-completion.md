@@ -1,6 +1,7 @@
 ---
 id: c2c03e3e
 title: Build predictive analytics for milestone completion
+headline: '# Build predictive analytics for milestone completion'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 78
 created: '2026-01-02T19:20:52.363535+00:00'
-updated: '2026-01-06T21:37:57.347738+00:00'
+updated: '2026-01-08T23:46:06.712616+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

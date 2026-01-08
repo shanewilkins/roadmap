@@ -1,6 +1,7 @@
 ---
 id: c592873c
 title: Enhance backup system with management, cleanup, and user control features
+headline: '# Enhance backup system with management, cleanup, and user control features'
 priority: medium
 status: closed
 issue_type: other
@@ -14,7 +15,7 @@ labels:
 remote_ids:
   github: 41
 created: '2026-01-02T19:20:51.369959+00:00'
-updated: '2026-01-06T23:01:09.013143+00:00'
+updated: '2026-01-08T23:46:05.547712+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

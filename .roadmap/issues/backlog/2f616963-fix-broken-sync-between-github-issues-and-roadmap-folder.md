@@ -1,6 +1,7 @@
 ---
 id: 2f616963
 title: Fix broken sync between GitHub issues and roadmap folder
+headline: '# Fix broken sync between GitHub issues and roadmap folder'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 3
 created: '2026-01-02T19:20:53.427910+00:00'
-updated: '2026-01-06T22:07:59.939541+00:00'
+updated: '2026-01-08T23:46:33.536492+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

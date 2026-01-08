@@ -1,6 +1,7 @@
 ---
 id: 16561dd0
 title: Fix GitHub sync authentication and enhance documentation
+headline: '## Summary'
 priority: medium
 status: closed
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 6
 created: '2026-01-02T19:20:54.343126+00:00'
-updated: '2026-01-06T21:33:04.222930+00:00'
+updated: '2026-01-08T23:46:39.413640+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

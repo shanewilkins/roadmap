@@ -1,6 +1,7 @@
 ---
 id: b36a111b
 title: Implement comprehensive security audit framework
+headline: '# Implement comprehensive security audit framework'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 18
 created: '2026-01-02T19:20:52.294664+00:00'
-updated: '2026-01-06T22:07:39.888442+00:00'
+updated: '2026-01-08T23:46:06.972117+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

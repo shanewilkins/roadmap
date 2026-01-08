@@ -1,6 +1,7 @@
 ---
 id: 78c91f46
 title: Team workload analysis and capacity planning
+headline: '# Team workload analysis and capacity planning'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 31
 created: '2025-10-14T14:18:29.392002+00:00'
-updated: '2026-01-06T22:15:26.940037+00:00'
+updated: '2026-01-08T23:46:37.197076+00:00'
 assignee: null
 estimated_hours: 4.0
 due_date: null

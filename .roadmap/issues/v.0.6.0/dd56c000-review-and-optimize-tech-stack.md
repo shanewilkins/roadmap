@@ -1,6 +1,7 @@
 ---
 id: dd56c000
 title: Review and Optimize Tech Stack
+headline: '# Review and Optimize Tech Stack'
 priority: medium
 status: closed
 issue_type: other

@@ -1,6 +1,7 @@
 ---
 id: 68e22dec
 title: Test assignee validation
+headline: '# Test assignee validation'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 33
 created: '2026-01-02T19:20:51.102968+00:00'
-updated: '2026-01-06T22:59:52.036920+00:00'
+updated: '2026-01-08T23:46:07.894100+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

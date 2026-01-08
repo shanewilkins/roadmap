@@ -1,6 +1,7 @@
 ---
 id: 1caab374
 title: test issue no assignee
+headline: '# test issue no assignee'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 107
 created: '2026-01-05T21:44:38.394653+00:00'
-updated: '2026-01-06T21:35:59.746749+00:00'
+updated: '2026-01-08T23:46:33.906036+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

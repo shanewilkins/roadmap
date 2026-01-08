@@ -1,6 +1,7 @@
 ---
 id: ca93a612
 title: Test with valid assignee
+headline: '# Test with valid assignee'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 36
 created: '2026-01-02T19:20:50.981417+00:00'
-updated: '2026-01-06T23:00:13.909464+00:00'
+updated: '2026-01-08T23:46:05.670376+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

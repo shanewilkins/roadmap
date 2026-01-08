@@ -1,6 +1,7 @@
 ---
 id: 50b09354
 title: Smart notification system with configurable alerts
+headline: '# Smart notification system with configurable alerts'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 14
 created: '2026-01-02T19:20:52.580129+00:00'
-updated: '2026-01-06T23:00:19.819900+00:00'
+updated: '2026-01-08T23:46:08.027139+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

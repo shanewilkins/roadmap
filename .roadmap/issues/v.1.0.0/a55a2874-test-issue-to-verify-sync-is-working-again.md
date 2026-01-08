@@ -1,6 +1,7 @@
 ---
 id: a55a2874
 title: TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!
+headline: let's make sure this is good.
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 52
 created: '2026-01-02T19:20:50.938842+00:00'
-updated: '2026-01-06T22:20:48.912668+00:00'
+updated: '2026-01-08T23:46:38.765880+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

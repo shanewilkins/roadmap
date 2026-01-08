@@ -1,6 +1,8 @@
 ---
 id: a24c5633
 title: Implement automatic milestone and project progress updates based on issue completion
+headline: '# Implement automatic milestone and project progress updates based on issue
+  completion'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +13,7 @@ labels:
 remote_ids:
   github: 8
 created: '2026-01-02T19:20:53.155759+00:00'
-updated: '2026-01-06T22:14:25.098845+00:00'
+updated: '2026-01-08T23:46:06.069802+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

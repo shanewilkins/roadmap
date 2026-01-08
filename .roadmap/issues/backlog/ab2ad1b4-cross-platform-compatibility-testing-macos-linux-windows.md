@@ -1,6 +1,7 @@
 ---
 id: ab2ad1b4
 title: Cross-platform compatibility testing (macOS, Linux, Windows)
+headline: '# Cross-platform compatibility testing (macOS, Linux, Windows)'
 priority: medium
 status: todo
 issue_type: feature
@@ -10,7 +11,7 @@ labels:
 remote_ids:
   github: 102
 created: '2025-12-20T18:33:28.214417+00:00'
-updated: '2026-01-06T22:14:56.660120+00:00'
+updated: '2026-01-08T23:46:04.043855+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

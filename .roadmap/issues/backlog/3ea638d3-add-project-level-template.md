@@ -1,6 +1,7 @@
 ---
 id: 3ea638d3
 title: Add project level template
+headline: '# Add project level template'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 72
 created: '2026-01-02T19:20:51.837894+00:00'
-updated: '2026-01-06T22:15:37.650149+00:00'
+updated: '2026-01-08T23:46:06.324189+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

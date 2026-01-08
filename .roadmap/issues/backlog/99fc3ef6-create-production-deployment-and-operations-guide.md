@@ -1,6 +1,7 @@
 ---
 id: 99fc3ef6
 title: Create production deployment and operations guide
+headline: '# Create production deployment and operations guide'
 priority: medium
 status: todo
 issue_type: feature
@@ -10,7 +11,7 @@ labels:
 remote_ids:
   github: 103
 created: '2025-12-20T18:33:29.195197+00:00'
-updated: '2026-01-06T23:01:02.839473+00:00'
+updated: '2026-01-08T23:46:00.747458+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

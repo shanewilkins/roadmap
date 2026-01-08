@@ -1,6 +1,7 @@
 ---
 id: 9b5869bb
 title: '[WIP] Add milestone close convenience command to CLI'
+headline: 'Implementation of `roadmap milestone close` convenience command and test:'
 priority: medium
 status: closed
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 49
 created: '2026-01-02T19:20:53.618250+00:00'
-updated: '2026-01-06T22:05:41.656436+00:00'
+updated: '2026-01-08T23:46:36.283694+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

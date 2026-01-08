@@ -1,6 +1,7 @@
 ---
 id: be1245fc
 title: add_id_to_success_msg_after_issue_creation
+headline: '# add_id_to_success_msg_after_issue_creation'
 priority: medium
 status: closed
 issue_type: other

@@ -1,6 +1,7 @@
 ---
 id: b7a6e094
 title: Implement performance benchmarking and profiling
+headline: '# Implement performance benchmarking and profiling'
 priority: high
 status: closed
 issue_type: feature

@@ -1,6 +1,7 @@
 ---
 id: 0c7f8e37
 title: Auto-create feature branch for new issues
+headline: '# Auto-create feature branch for new issues'
 priority: medium
 status: todo
 issue_type: other
@@ -14,7 +15,7 @@ labels:
 remote_ids:
   github: 66
 created: '2026-01-02T19:20:51.462978+00:00'
-updated: '2026-01-06T22:08:05.938114+00:00'
+updated: '2026-01-08T23:46:02.852914+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

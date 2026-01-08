@@ -2,6 +2,8 @@
 id: 824912a1
 title: Deprecate Status.DONE terminology - update codebase to use consistent status
   naming
+headline: Deprecate Status.DONE terminology - update codebase to use consistent status
+  naming
 priority: high
 status: closed
 issue_type: other

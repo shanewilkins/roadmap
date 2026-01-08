@@ -1,6 +1,7 @@
 ---
 id: ba7b870b
 title: Build developer SDK and integration platform
+headline: '# Build developer SDK and integration platform'
 priority: medium
 status: todo
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 32
 created: '2025-10-14T15:46:35.942526+00:00'
-updated: '2026-01-06T21:35:52.425682+00:00'
+updated: '2026-01-08T23:46:36.803510+00:00'
 assignee: null
 estimated_hours: 24.0
 due_date: null

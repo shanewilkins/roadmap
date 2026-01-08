@@ -1,6 +1,7 @@
 ---
 id: da7e9f68
 title: 'Phase 5: Health Fix Command'
+headline: '# Phase 5: Health Fix Command'
 priority: high
 status: closed
 issue_type: feature

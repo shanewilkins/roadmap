@@ -1,6 +1,7 @@
 ---
 id: b45cef30
 title: Test assignee validation improved
+headline: '# Test assignee validation improved'
 priority: medium
 status: closed
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 34
 created: '2026-01-02T19:20:51.059852+00:00'
-updated: '2026-01-06T22:07:41.865261+00:00'
+updated: '2026-01-08T23:46:08.667376+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

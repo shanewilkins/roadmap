@@ -1,15 +1,17 @@
 ---
 id: 6f111c60
 title: Refactor to unified datetime parser - eliminate DRY violations across codebase
+headline: '# Refactor to unified datetime parser - eliminate DRY violations across
+  codebase'
 priority: high
 status: closed
 issue_type: feature
 milestone: v.0.6.0
 labels: []
 remote_ids:
-  github: '286'
+  github: 286
 created: '2025-11-16T20:02:56.042815+00:00'
-updated: '2025-11-26T18:22:05.396574+00:00'
+updated: '2026-01-08T23:46:29.659328+00:00'
 assignee: shanewilkins
 estimated_hours: 16.0
 due_date: null
@@ -25,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '286'
+github_issue: 286
 ---
 
 # Refactor to unified datetime parser - eliminate DRY violations across codebase

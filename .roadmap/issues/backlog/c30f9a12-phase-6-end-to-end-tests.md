@@ -1,6 +1,7 @@
 ---
 id: c30f9a12
 title: 'Phase 6: End-to-End Tests'
+headline: '# Phase 6: End-to-End Tests'
 priority: medium
 status: todo
 issue_type: feature
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 56
 created: '2025-12-25T14:55:48.000595+00:00'
-updated: '2026-01-06T21:30:28.220810+00:00'
+updated: '2026-01-08T23:46:38.246459+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

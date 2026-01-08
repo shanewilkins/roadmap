@@ -201,10 +201,11 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                     issues[issue_id] = IssueBaseState(
                         id=issue_id,
                         status=data.get("status", "todo"),
-                        title="",
+                        title=data.get("title", ""),
                         assignee=data.get("assignee"),
                         milestone=data.get("milestone"),
-                        description=data.get("description", ""),
+                        headline=data.get("headline", ""),
+                        content=data.get("content", ""),
                         labels=data.get("labels", []),
                     )
 
@@ -217,6 +218,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             logger.warning(
                 "database_baseline_load_failed",
                 error=str(e),
+                error_type=type(e).__name__,
             )
 
         # Try to load from cache (fallback)

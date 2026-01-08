@@ -1,6 +1,7 @@
 ---
 id: 6c13e4ea
 title: Implement CI/CD integration for automatic issue branch and commit tracking
+headline: '# Implement CI/CD integration for automatic issue branch and commit tracking'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +12,7 @@ labels:
 remote_ids:
   github: 86
 created: '2026-01-02T19:20:53.068871+00:00'
-updated: '2026-01-06T22:04:23.219694+00:00'
+updated: '2026-01-08T23:46:07.504815+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

@@ -1,6 +1,8 @@
 ---
 id: 681e4fe2
 title: Enhance health command with entity-level diagnostics
+headline: Implement comprehensive health scanning to identify problematic entities
+  and their issues.
 priority: high
 status: closed
 issue_type: feature

@@ -1,6 +1,7 @@
 ---
 id: f1a8dbf6
 title: Feat/1900c289 auto branch
+headline: ''
 priority: medium
 status: closed
 issue_type: other
@@ -9,7 +10,7 @@ labels: []
 remote_ids:
   github: 46
 created: '2026-01-02T19:20:53.715260+00:00'
-updated: '2026-01-06T22:04:42.928434+00:00'
+updated: '2026-01-08T23:46:39.015768+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
