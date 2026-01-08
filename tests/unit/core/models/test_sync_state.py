@@ -68,7 +68,7 @@ class TestIssueBaseState:
             "title": "Under review",
             "assignee": "charlie",
             "milestone": None,
-            "description": "Under review",
+            "headline": "Under review",
             "labels": [],
             "updated_at": "2026-01-01T10:00:00",
         }

@@ -221,7 +221,7 @@ class BaselineStateRetriever:
                 status=frontmatter.get("status", "todo"),
                 assignee=frontmatter.get("assignee"),
                 milestone=frontmatter.get("milestone"),
-                description=frontmatter.get("description", ""),
+                headline=frontmatter.get("headline", ""),
                 labels=frontmatter.get("labels", []),
                 updated_at=updated_at,
             )
@@ -260,7 +260,7 @@ class BaselineStateRetriever:
                 status=remote_state.get("status", "open"),
                 assignee=remote_state.get("assignee"),
                 milestone=remote_state.get("milestone"),
-                description=remote_state.get("description", ""),
+                headline=remote_state.get("headline", ""),
                 labels=remote_state.get("labels", []),
                 updated_at=updated_at,
             )

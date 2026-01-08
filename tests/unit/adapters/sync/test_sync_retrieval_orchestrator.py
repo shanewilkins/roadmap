@@ -253,7 +253,7 @@ class TestCreateInitialBaseline:
             status=Status.TODO,
             assignee=None,
             milestone=None,
-            description="Test issue 1",
+            headline="Test issue 1",
             labels=[],
         )
         base_state2 = IssueBaseState(
@@ -262,7 +262,7 @@ class TestCreateInitialBaseline:
             status=Status.IN_PROGRESS,
             assignee=None,
             milestone=None,
-            description="Test issue 2",
+            headline="Test issue 2",
             labels=[],
         )
 
@@ -320,7 +320,7 @@ class TestCreateInitialBaseline:
             status="todo",
             assignee=None,
             milestone=None,
-            description="Test",
+            headline="Test",
             labels=[],
         )
 
