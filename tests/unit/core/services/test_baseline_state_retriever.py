@@ -131,7 +131,7 @@ class TestGetRemoteBaseline:
                     "status": "open",  # Remote status
                     "assignee": "jane@example.com",  # Different assignee
                     "milestone": "v1.0",
-                    "description": "Remote description",
+                    "headline": "Remote description",
                     "labels": ["bug"],
                     "updated_at": "2026-01-02T09:00:00+00:00",
                 },
