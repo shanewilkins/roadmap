@@ -29,9 +29,6 @@ class GitSyncMonitor:
     - Instead of: filesystem scan (1000ms) + parse (500ms) = 1500ms total
     """
 
-    # Metadata file to track last synced commit
-    SYNC_METADATA_FILE = "sync_git_state.txt"
-
     def __init__(self, repo_path: Path | None = None, state_manager: Any | None = None):
         """Initialize GitSyncMonitor.
 
@@ -318,14 +315,19 @@ class GitSyncMonitor:
             return self._cached_last_synced_commit
 
         try:
-            # In Phase 1, read from metadata file
-            # In Phase 2, will read from database sync_base_state
-            metadata_path = self.repo_path / self.SYNC_METADATA_FILE
-
-            if metadata_path.exists():
-                commit = metadata_path.read_text().strip()
-                self._cached_last_synced_commit = commit
-                return commit
+            # Read from database sync_metadata table
+            if self.state_manager:
+                conn = self.state_manager._get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT value FROM sync_metadata WHERE key = ?",
+                    ("last_synced_commit",),
+                )
+                row = cursor.fetchone()
+                if row:
+                    commit = row[0]
+                    self._cached_last_synced_commit = commit
+                    return commit
 
             # No previous sync
             self._cached_last_synced_commit = None
@@ -351,11 +353,22 @@ class GitSyncMonitor:
                 logger.error("Cannot save last synced commit: no current commit")
                 return False
 
-            # In Phase 1, write to metadata file
-            # In Phase 2, will write to database sync_base_state
-            metadata_path = self.repo_path / self.SYNC_METADATA_FILE
+            # Write to database sync_metadata table
+            if not self.state_manager:
+                logger.warning("State manager not configured, cannot save sync commit")
+                return False
 
-            metadata_path.write_text(f"{current_commit}\n")
+            with self.state_manager.transaction() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    INSERT INTO sync_metadata (key, value, updated_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = CURRENT_TIMESTAMP
+                    """,
+                    ("last_synced_commit", current_commit, current_commit),
+                )
+                conn.commit()
 
             # Update cache
             self._cached_last_synced_commit = current_commit
