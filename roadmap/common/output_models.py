@@ -36,7 +36,7 @@ class ColumnDef:
         display_name: Human-readable header (e.g., "ID", "Title").
         type: Column data type (string, integer, date, enum, etc.).
         width: Suggested display width in characters (for text-based formats).
-        description: Help text describing the column purpose.
+        headline: Help text describing the column purpose.
         display_style: Rich styling (e.g., "cyan", "bold green"). Ignored in plain-text/JSON/CSV.
         enum_values: Valid values for type="enum". None for other types.
         sortable: Can users sort by this column?
@@ -48,7 +48,7 @@ class ColumnDef:
             display_name="Status",
             type=ColumnType.ENUM,
             width=10,
-            description="Issue status",
+            headline="Issue status",
             display_style="yellow",
             enum_values=["open", "closed", "blocked"],
             sortable=True,
@@ -60,7 +60,7 @@ class ColumnDef:
     display_name: str
     type: ColumnType = ColumnType.STRING
     width: int | None = None
-    description: str = ""
+    headline: str = ""
     display_style: str | None = None
     enum_values: list[str] | None = None
     sortable: bool = True
@@ -73,7 +73,7 @@ class ColumnDef:
             "display_name": self.display_name,
             "type": self.type.value,
             "width": self.width,
-            "description": self.description,
+            "headline": self.headline,
             "display_style": self.display_style,
             "enum_values": self.enum_values,
             "sortable": self.sortable,
@@ -88,7 +88,7 @@ class ColumnDef:
             display_name=data.get("display_name", data["name"]),
             type=ColumnType(data.get("type", "string")),
             width=data.get("width"),
-            description=data.get("description", ""),
+            headline=data.get("headline", ""),
             display_style=data.get("display_style"),
             enum_values=data.get("enum_values"),
             sortable=data.get("sortable", True),
@@ -108,7 +108,7 @@ class TableData:
         columns: List of ColumnDef objects defining table structure.
         rows: List of rows, where each row is a list of values matching column order.
         title: Optional table title/heading.
-        description: Optional table description.
+        headline: Optional table description.
         filters_applied: Dictionary of {column_name: filter_value} for active filters.
         sort_by: List of (column_name, "asc"|"desc") tuples for sort order.
         selected_columns: List of column names to display (None = all columns).
@@ -134,7 +134,7 @@ class TableData:
     columns: list[ColumnDef]
     rows: list[list[Any]]
     title: str | None = None
-    description: str | None = None
+    headline: str | None = None
     filters_applied: dict[str, Any] = field(default_factory=dict)
     sort_by: list[tuple[str, str]] | list = field(default_factory=list)
     selected_columns: list[str] | None = None
@@ -226,7 +226,7 @@ class TableData:
             columns=self.columns,
             rows=filtered_rows,
             title=self.title,
-            description=self.description,
+            headline=self.headline,
             filters_applied={**self.filters_applied, column: value},
             sort_by=self.sort_by,
             selected_columns=self.selected_columns,
@@ -298,7 +298,7 @@ class TableData:
             columns=self.columns,
             rows=sorted_rows,
             title=self.title,
-            description=self.description,
+            headline=self.headline,
             filters_applied=self.filters_applied,
             sort_by=sort_spec_list,
             selected_columns=self.selected_columns,
@@ -331,7 +331,7 @@ class TableData:
             columns=self.columns,
             rows=self.rows,
             title=self.title,
-            description=self.description,
+            headline=self.headline,
             filters_applied=self.filters_applied,
             sort_by=self.sort_by,
             selected_columns=columns,
@@ -344,7 +344,7 @@ class TableData:
         """Export table as dictionary (useful for JSON)."""
         return {
             "title": self.title,
-            "description": self.description,
+            "headline": self.headline,
             "columns": [col.to_dict() for col in self.columns],
             "rows": self.active_rows,
             "metadata": {

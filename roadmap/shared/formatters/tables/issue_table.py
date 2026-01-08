@@ -30,6 +30,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
         self.columns_config = [
             {"name": "ID", "style": "cyan", "width": 8},
             {"name": "Title", "style": "white", "width": 25, "no_wrap": True},
+            {"name": "Headline", "style": "white", "width": 30},
             {"name": "Priority", "style": "yellow", "width": 10},
             {"name": "Status", "style": "green", "width": 12},
             {"name": "Progress", "style": "blue", "width": 10},
@@ -89,6 +90,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
         cells = [
             item.id,
             item.title,
+            Text(item.headline or "", style="white"),
             Text(item.priority.value, style=priority_style),
             Text(item.status.value, style=StatusStyleManager.get_style(item.status)),
             Text(
@@ -201,7 +203,7 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
             columns=columns,
             rows=rows,
             title=title,
-            description=description,
+            headline=description,
             total_count=len(items),
             returned_count=len(items),
         )

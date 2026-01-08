@@ -102,7 +102,7 @@ def update_issue(
         status=status,
         assignee=assignee,
         milestone=milestone,
-        description=description,
+        content=description,
         estimate=estimate,
         reason=reason,
     )
@@ -114,7 +114,7 @@ def update_issue(
         status=params.status,
         assignee=params.assignee,
         milestone=params.milestone,
-        description=params.description,
+        content=params.content,
         estimate=params.estimate,
         reason=params.reason,
     )

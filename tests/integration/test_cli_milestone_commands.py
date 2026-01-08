@@ -38,7 +38,7 @@ def roadmap_with_milestones(cli_runner):
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name=f"Sprint {i}",
-                description=f"Sprint {i} milestone",
+                headline=f"Sprint {i} milestone",
             )
         # Refresh core to pick up newly created milestones
         core = IntegrationTestBase.get_roadmap_core()
@@ -152,8 +152,8 @@ class TestCLIMilestoneUpdate:
             ["milestone", "update", "Sprint 1", "--description", "Updated description"],
         )
 
-        # Should succeed or handle gracefully
-        assert result.exit_code == 0 or "updated" in result.output.lower()
+        # Should succeed
+        assert result.exit_code == 0
 
     def test_update_nonexistent_milestone(self, empty_roadmap):
         """Test updating non-existent milestone."""

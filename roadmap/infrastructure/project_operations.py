@@ -53,7 +53,7 @@ class ProjectOperations:
     def create_project(
         self,
         name: str,
-        description: str = "",
+        headline: str = "",
         milestones: list[str] | None = None,
         status: str | None = None,
     ) -> Project:
@@ -61,7 +61,7 @@ class ProjectOperations:
 
         Args:
             name: Project name
-            description: Project description
+            headline: Project headline (short summary)
             milestones: List of milestone names (optional)
             status: Project status (optional)
 
@@ -71,13 +71,13 @@ class ProjectOperations:
         logger.info(
             "creating_project",
             project_name=name,
-            has_description=description is not None,
+            has_headline=headline is not None,
             milestone_count=len(milestones or []),
             status=status,
         )
         return self.project_service.create_project(
             name=name,
-            description=description,
+            headline=headline,
             milestones=milestones or [],
             status=status,
         )

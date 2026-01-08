@@ -57,6 +57,7 @@ class IssueOperations:
         depends_on: list[str] | None = None,
         blocks: list[str] | None = None,
         status: str | None = None,
+        content: str | None = None,
     ) -> Issue:
         """Create a new issue.
 
@@ -87,6 +88,7 @@ class IssueOperations:
             milestone=milestone,
             labels=labels or [],
             assignee=assignee,
+            content=content,
             estimate=estimated_hours,
             depends_on=depends_on or [],
             blocks=blocks or [],
@@ -180,7 +182,7 @@ class IssueOperations:
         if "milestone" in updates:
             params_dict["milestone"] = updates["milestone"]  # Can be None!
         if "description" in updates:
-            params_dict["description"] = updates["description"]
+            params_dict["content"] = updates["description"]
         if "estimate" in updates:
             params_dict["estimate"] = updates["estimate"]
         if "reason" in updates:
@@ -200,7 +202,7 @@ class IssueOperations:
                 "status",
                 "assignee",
                 "milestone",
-                "description",
+                "content",
                 "estimate",
                 "reason",
             }

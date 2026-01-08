@@ -52,7 +52,7 @@ class ProjectCoordinator:
     def create(
         self,
         name: str,
-        description: str = "",
+        headline: str = "",
         milestones: list[str] | None = None,
         status: str | None = None,
     ) -> Project:
@@ -60,7 +60,7 @@ class ProjectCoordinator:
 
         Args:
             name: Project name
-            description: Project description
+            headline: Project headline (short summary)
             milestones: List of milestone names (optional)
             status: Project status (optional)
 
@@ -69,7 +69,7 @@ class ProjectCoordinator:
         """
         return self._ops.create_project(
             name=name,
-            description=description,
+            headline=headline,
             milestones=milestones or [],
             status=status,
         )

@@ -81,7 +81,7 @@ class TestDataFactory:
         # Set up default properties using TestDataFactory
         issue.id = kwargs.get("id", TestDataFactory.issue_id())
         issue.title = kwargs.get("title", TestDataFactory.message())
-        issue.description = kwargs.get("description", TestDataFactory.message())
+        issue.content = kwargs.get("content", TestDataFactory.message())
         issue.status = kwargs.get("status", "open")
         issue.priority = kwargs.get("priority", "medium")
         issue.labels = kwargs.get("labels", [TestDataFactory.message()])
@@ -108,7 +108,7 @@ class TestDataFactory:
 
         milestone.id = kwargs.get("id", TestDataFactory.milestone_id())
         milestone.title = kwargs.get("title", TestDataFactory.message())
-        milestone.description = kwargs.get("description", TestDataFactory.message())
+        milestone.content = kwargs.get("content", TestDataFactory.message())
         milestone.due_date = kwargs.get("due_date", None)
         milestone.status = kwargs.get("status", "active")
         milestone.created_at = kwargs.get("created_at", datetime.now(timezone.utc))

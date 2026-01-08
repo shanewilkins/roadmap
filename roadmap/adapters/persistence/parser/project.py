@@ -31,7 +31,7 @@ class ProjectParser:
         project = Project(
             id=project_id,
             name=frontmatter.get("name", ""),
-            description=frontmatter.get("description", ""),
+            headline=frontmatter.get("headline", ""),
             status=ProjectStatus(frontmatter.get("status", "planning")),
             priority=Priority(frontmatter.get("priority", "medium")),
             owner=frontmatter.get("owner"),
@@ -65,7 +65,7 @@ class ProjectParser:
         frontmatter = {
             "id": project.id,
             "name": project.name,
-            "description": project.description,
+            "headline": project.headline,
             "status": project.status.value,
             "priority": project.priority.value,
             "owner": project.owner,

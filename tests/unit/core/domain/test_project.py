@@ -28,7 +28,7 @@ class TestProjectInitialization:
         project = Project(
             id="proj001",
             name="Test Project",
-            description="A test project",
+            content="A test project",
             status=ProjectStatus.ACTIVE,
             priority=Priority.HIGH,
             owner="john",
@@ -40,7 +40,7 @@ class TestProjectInitialization:
 
         assert project.id == "proj001"
         assert project.name == "Test Project"
-        assert project.description == "A test project"
+        assert project.content == "A test project"
         assert project.owner == "john"
         assert project.estimated_hours == 100.0
 
@@ -66,7 +66,6 @@ class TestProjectInitialization:
 
         assert project.status == ProjectStatus.PLANNING
         assert project.priority == Priority.MEDIUM
-        assert project.description == ""
         assert project.content == ""
         assert project.milestones == []
         assert project.comments == []

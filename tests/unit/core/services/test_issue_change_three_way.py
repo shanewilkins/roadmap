@@ -19,7 +19,7 @@ def baseline_state():
         status=Status.TODO,
         assignee="alice",
         milestone="v1.0",
-        description="Original description",
+        headline="Original description",
         labels=["bug"],
     )
 

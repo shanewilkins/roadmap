@@ -153,7 +153,7 @@ class TestGitHubIDTableDataConversion:
         table_data = IssueTableFormatter.issues_to_table_data(
             issues,
             title="Issues",
-            description="test",
+            headline="test",
             show_github_ids=show_github_ids,
         )
 

@@ -49,7 +49,7 @@ class TestEntityHealthScanner:
         """Create a mock milestone for testing."""
         milestone = MagicMock(spec=Milestone)
         milestone.name = "v1.0.0"
-        milestone.description = "Test milestone"
+        milestone.content = "Test milestone"
         milestone.status = Status.TODO
         milestone.created = datetime.now()
         milestone.due_date = datetime.now() + timedelta(days=30)
@@ -63,7 +63,7 @@ class TestEntityHealthScanner:
         project.id = "project-1"
         project.name = "Test Project"
         project.status = Status.TODO
-        project.description = "Test project description"
+        project.content = "Test project description"
         project.owner = "test-owner"
         return project
 
@@ -252,7 +252,7 @@ class TestEntityHealthScanner:
     ):
         """Test scanning milestone with various problems."""
         if field_to_set == "description":
-            mock_milestone.description = field_value
+            mock_milestone.content = field_value
         elif field_to_set == "status":
             mock_milestone.status = field_value
             mock_milestone.calculated_progress = 80
@@ -299,7 +299,7 @@ class TestEntityHealthScanner:
         """Test scanning project with missing fields."""
         mock_project.status = Status.TODO
         if field_to_set == "description":
-            mock_project.description = field_value
+            mock_project.content = field_value
         elif field_to_set == "owner":
             mock_project.owner = field_value
 

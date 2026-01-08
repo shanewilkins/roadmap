@@ -184,7 +184,7 @@ class TestBaselineEnforcement:
                 status="todo",
                 assignee="alice",
                 labels=["bug"],
-                description="Test",
+                headline="Test",
                 backend_name="mock",
                 backend_id="1",
                 created_at=datetime.now(),

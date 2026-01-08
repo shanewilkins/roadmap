@@ -105,7 +105,7 @@ class IssueBuilder:
             estimate: Estimated hours
             depends_on: Issue IDs this depends on
             blocks: Issue IDs this blocks
-            description: Markdown description
+            description: Markdown content/description
 
         Returns:
             Dictionary ready for core.issues.create()
@@ -136,9 +136,8 @@ class IssueBuilder:
         if blocks:
             create_dict["blocks"] = blocks
 
-        # Note: description is stored in issue.content during creation via IssueService
-        # We don't pass it here as the coordinator.create() doesn't accept it
-        # Instead, it's set in IssueService.create_issue() with a default template
+        if description:
+            create_dict["content"] = description
 
         return create_dict
 
@@ -242,7 +241,7 @@ class MilestoneBuilder:
 
         Args:
             name: Milestone name (required)
-            description: Milestone description
+            description: Milestone content/description
             due_date: Due date (YYYY-MM-DD format)
 
         Returns:
@@ -251,7 +250,7 @@ class MilestoneBuilder:
         create_dict: dict[str, Any] = {"name": name, "status": "open"}
 
         if description:
-            create_dict["description"] = description
+            create_dict["headline"] = description
 
         if due_date:
             create_dict["due_date"] = MilestoneBuilder.validate_due_date(due_date)
@@ -269,7 +268,7 @@ class MilestoneBuilder:
 
         Args:
             name: New name
-            description: New description
+            description: New content/description
             due_date: New due date (YYYY-MM-DD format)
             status: New status
 
@@ -282,7 +281,7 @@ class MilestoneBuilder:
             update_dict["name"] = name
 
         if description is not None:
-            update_dict["description"] = description
+            update_dict["headline"] = description
 
         if due_date is not None:
             update_dict["due_date"] = MilestoneBuilder.validate_due_date(due_date)
@@ -319,7 +318,7 @@ class ProjectBuilder:
 
         Args:
             name: Project name (required)
-            description: Project description
+            description: Project content
             repository: Repository URL
 
         Returns:
@@ -328,7 +327,7 @@ class ProjectBuilder:
         create_dict = {"name": name, "status": "planning"}
 
         if description:
-            create_dict["description"] = description
+            create_dict["headline"] = description
 
         if repository:
             create_dict["repository"] = repository
@@ -359,7 +358,7 @@ class ProjectBuilder:
             update_dict["name"] = name
 
         if description is not None:
-            update_dict["description"] = description
+            update_dict["headline"] = description
 
         if repository is not None:
             update_dict["repository"] = repository

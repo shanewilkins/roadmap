@@ -70,6 +70,11 @@ class IssueParser:
         # Set content
         frontmatter["content"] = content
 
+        # If headline is not provided, use first line of content as fallback
+        if "headline" not in frontmatter or not frontmatter["headline"]:
+            first_line = content.split("\n")[0] if content else ""
+            frontmatter["headline"] = first_line[:100]  # Limit to 100 chars
+
         return Issue(**frontmatter)
 
     @classmethod

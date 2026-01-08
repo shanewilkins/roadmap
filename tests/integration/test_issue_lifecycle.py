@@ -18,7 +18,7 @@ def roadmap_with_milestones(cli_runner):
         IntegrationTestBase.create_milestone(
             cli_runner,
             name="sprint-1",
-            description="First sprint",
+            headline="First sprint",
         )
         yield cli_runner, core
 

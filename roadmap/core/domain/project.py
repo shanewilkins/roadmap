@@ -16,7 +16,8 @@ class Project(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str
-    description: str = ""
+    headline: str = ""  # Short summary for list views
+    content: str = ""  # Markdown content
     status: ProjectStatus = ProjectStatus.PLANNING
     priority: Priority = Priority.MEDIUM
     owner: str | None = None
@@ -28,7 +29,6 @@ class Project(BaseModel):
     milestones: list[str] = Field(default_factory=list)  # List of milestone names
     estimated_hours: float | None = None
     actual_hours: float | None = None
-    content: str = ""  # Markdown content
     repo_url: str | None = (
         None  # URL to the repository (for context/future cross-repo tooling)
     )

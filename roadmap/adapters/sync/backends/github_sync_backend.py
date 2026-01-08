@@ -885,8 +885,8 @@ class GitHubSyncBackend:
         # Extract milestone
         milestone = sync_issue.milestone
 
-        # Get the description
-        content = sync_issue.description or ""
+        # Get the headline
+        content = sync_issue.headline or ""
 
         # Remote IDs mapping - ensure all values are str | int
         if sync_issue.remote_ids:
@@ -1120,7 +1120,7 @@ class GitHubSyncBackend:
             id=str(issue_id),
             title=issue_dict.get("title", ""),
             status=issue_dict.get("state", "open"),
-            description=issue_dict.get("body", ""),
+            headline=issue_dict.get("body", ""),
             assignee=issue_dict.get("assignee"),
             milestone=issue_dict.get("milestone"),
             labels=issue_dict.get("labels", []),

@@ -53,7 +53,7 @@ class TestIssueDuplicatePrevention:
         issue = core.issues.create("Test", priority=Priority.MEDIUM)
         initial_count = self.count_issue_files(core)
 
-        core.issues.update(issue.id, description="New detailed description here")
+        core.issues.update(issue.id, headline="New detailed description here")
 
         final_count = self.count_issue_files(core)
         assert (
@@ -157,7 +157,7 @@ class TestMilestoneDuplicatePrevention:
         # Update milestone
         core.milestones.update(
             milestone.name,
-            description="Updated description",
+            headline="Updated description",
         )
 
         final_count = self.count_milestone_files(core)
@@ -198,7 +198,7 @@ class TestProjectDuplicatePrevention:
         initial_count = self.count_project_files(core)
 
         # Update project
-        core.projects.update(project.id, description="Updated description")
+        core.projects.update(project.id, headline="Updated description")
 
         final_count = self.count_project_files(core)
         assert (

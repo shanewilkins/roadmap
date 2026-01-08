@@ -36,7 +36,7 @@ class IssueCreate(BaseCreate):
             estimate=kwargs.get("estimate"),
             depends_on=list(kwargs.get("depends_on", [])),
             blocks=list(kwargs.get("blocks", [])),
-            description=kwargs.get("description"),
+            description=kwargs.get("content"),
         )
 
     def _display_success(self, entity) -> None:
@@ -88,7 +88,7 @@ class IssueCreate(BaseCreate):
 )
 @click.option("--depends-on", multiple=True, help="Issue IDs this depends on")
 @click.option("--blocks", multiple=True, help="Issue IDs this blocks")
-@click.option("--description", "-d", help="Markdown description of the issue")
+@click.option("--content", "-d", help="Markdown content/description of the issue")
 @click.option("--git-branch", is_flag=True, help="Create a Git branch for this issue")
 @click.option(
     "--checkout/--no-checkout",
@@ -114,7 +114,7 @@ def create_issue(
     estimate: float,
     depends_on: tuple,
     blocks: tuple,
-    description: str,
+    content: str,
     git_branch: bool,
     checkout: bool,
     branch_name: str,
@@ -135,7 +135,7 @@ def create_issue(
         estimate=estimate,
         depends_on=depends_on,
         blocks=blocks,
-        description=description,
+        content=content,
     )
     git_params = IssueGitParams(
         git_branch=git_branch,
@@ -154,7 +154,7 @@ def create_issue(
         estimate=issue_params.estimate,
         depends_on=issue_params.depends_on,
         blocks=issue_params.blocks,
-        description=issue_params.description,
+        content=issue_params.content,
         git_branch=git_params.git_branch,
         checkout=git_params.checkout,
         branch_name=git_params.branch_name,

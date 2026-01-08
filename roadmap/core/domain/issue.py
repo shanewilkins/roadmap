@@ -24,6 +24,7 @@ class Issue(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     title: str
+    headline: str = ""  # Short summary for list views
     priority: Priority = Priority.MEDIUM
     status: Status = Status.TODO
     issue_type: IssueType = IssueType.OTHER

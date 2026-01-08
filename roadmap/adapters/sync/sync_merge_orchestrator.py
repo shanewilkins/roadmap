@@ -9,6 +9,8 @@ from typing import Any
 
 from structlog import get_logger
 
+from roadmap.common.constants import Status
+from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.services.issue_matching_service import IssueMatchingService
 from roadmap.core.services.sync_conflict_resolver import (
@@ -139,7 +141,7 @@ class SyncMergeOrchestrator:
 
                 # Get base value - map field names appropriately
                 if field_name == "content":
-                    base_value = base_state.description
+                    base_value = base_state.content
                 else:
                     base_value = getattr(base_state, field_name, None)
 
@@ -260,6 +262,74 @@ class SyncMergeOrchestrator:
 
         return conflicts
 
+    def _create_issue_from_remote(
+        self, remote_id: str | int, remote_issue: dict[str, Any]
+    ) -> Issue:
+        """Create a local Issue from remote issue data.
+
+        Extracts relevant fields from remote issue and creates a local Issue object.
+        Adds "synced:from-github" label to mark as synced from remote.
+        Uses remote milestone if available, otherwise defaults to backlog.
+
+        Args:
+            remote_id: Remote issue ID (number)
+            remote_issue: Remote issue data dict with keys:
+                - title: Issue title
+                - body: Issue description
+                - state: 'open' or 'closed'
+                - labels: List of label names
+                - assignee: Assignee login
+                - milestone: Milestone title or None
+                - url: GitHub issue URL
+                - number: GitHub issue number
+
+        Returns:
+            New Issue object ready to be created
+        """
+        # Extract title and description
+        title = remote_issue.get("title", f"GitHub #{remote_issue.get('number')}")
+        body = remote_issue.get("body", "")
+
+        # Add GitHub issue URL as metadata in content if there's body content
+        github_url = remote_issue.get("url", "")
+        if body and github_url:
+            content = f"{body}\n\n---\n*Synced from GitHub: {github_url}*"
+        elif github_url:
+            content = f"*Synced from GitHub: {github_url}*"
+        else:
+            content = body
+
+        # Determine status from GitHub state
+        status = Status.CLOSED if remote_issue.get("state") == "closed" else Status.TODO
+
+        # Get labels and add sync marker
+        labels = list(remote_issue.get("labels", []))
+        if "synced:from-github" not in labels:
+            labels.append("synced:from-github")
+
+        # Get milestone (will be None for backlog)
+        milestone = remote_issue.get("milestone")
+
+        # Create the Issue object
+        issue = Issue(
+            title=title,
+            content=content,
+            status=status,
+            labels=labels,
+            milestone=milestone,
+            assignee=remote_issue.get("assignee"),
+        )
+
+        logger.debug(
+            "created_issue_from_remote",
+            remote_id=remote_id,
+            issue_id=issue.id,
+            title=issue.title,
+            milestone=issue.milestone,
+        )
+
+        return issue
+
     def _match_and_link_remote_issues(
         self,
         local_issues_dict: dict,
@@ -358,13 +428,53 @@ class SyncMergeOrchestrator:
                         )
 
                 else:
-                    # Truly new remote issue
+                    # Truly new remote issue - create it locally
                     logger.debug(
                         "remote_issue_no_match",
                         remote_id=remote_id,
                         best_score=round(score, 3) if score > 0 else 0,
                     )
-                    results["new_remote"].append(remote_id)
+
+                    try:
+                        # Create new Issue from remote data
+                        new_issue = self._create_issue_from_remote(
+                            remote_id=remote_id, remote_issue=remote_issue
+                        )
+
+                        # Create the issue in the repository
+                        created_issue = self.core.issues.create(
+                            title=new_issue.title,
+                            status=new_issue.status,
+                            labels=new_issue.labels,
+                            milestone=new_issue.milestone,
+                            assignee=new_issue.assignee,
+                            content=new_issue.content,
+                        )
+
+                        if not created_issue:
+                            raise Exception("Failed to create issue in repository")
+
+                        # Link it in the database using the created issue's ID
+                        self.core.db.remote_links.link_issue(
+                            issue_uuid=created_issue.id,
+                            backend_name="github",
+                            remote_id=remote_id,
+                        )
+
+                        logger.info(
+                            "remote_issue_created_locally",
+                            remote_id=remote_id,
+                            issue_uuid=created_issue.id,
+                            title=created_issue.title,
+                            milestone=created_issue.milestone,
+                        )
+                        results["new_remote"].append(remote_id)
+                    except Exception as e:
+                        logger.warning(
+                            "remote_issue_creation_failed",
+                            remote_id=remote_id,
+                            error=str(e),
+                        )
 
             logger.info(
                 "remote_matching_complete",

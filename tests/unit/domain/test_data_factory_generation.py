@@ -109,7 +109,7 @@ class TestDataFactory:
 
         milestone.id = kwargs.get("id", TestDataFactory.milestone_id())
         milestone.title = kwargs.get("title", TestDataFactory.message())
-        milestone.description = kwargs.get("description", TestDataFactory.message())
+        milestone.content = kwargs.get("description", TestDataFactory.message())
         milestone.due_date = kwargs.get("due_date", None)
         milestone.status = kwargs.get("status", "active")
         milestone.created_at = kwargs.get("created_at", datetime.now(timezone.utc))

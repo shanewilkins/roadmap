@@ -44,6 +44,7 @@ class IssueMapper:
         return IssueDTO(
             id=issue.id,
             title=issue.title,
+            headline=issue.headline or "",
             priority=issue.priority.value,  # Convert enum to string
             status=issue.status.value,  # Convert enum to string
             issue_type=issue.issue_type.value,  # Convert enum to string
@@ -78,6 +79,7 @@ class IssueMapper:
         return Issue(
             id=dto.id,
             title=dto.title,
+            headline=dto.headline or "",
             priority=Priority(dto.priority),
             status=Status(dto.status),
             issue_type=IssueType(dto.issue_type),
@@ -114,8 +116,8 @@ class MilestoneMapper:
             id=milestone.name,  # Use name as ID
             name=milestone.name,
             status=milestone.status.value,  # Convert enum to string
+            headline=milestone.headline or "",
             due_date=milestone.due_date,
-            description=milestone.description or "",
             progress_percentage=milestone.calculated_progress,
             created=milestone.created,
             updated=milestone.updated,
@@ -135,9 +137,10 @@ class MilestoneMapper:
 
         return Milestone(
             name=dto.name,
+            headline=dto.headline or "",
             status=MilestoneStatus(dto.status),
             due_date=dto.due_date,
-            description=dto.description,
+            content="",
         )
 
 
@@ -158,7 +161,7 @@ class ProjectMapper:
             id=project.id,
             name=project.name,
             status=project.status.value,  # Convert enum to string
-            description=project.description or "",
+            headline=project.headline or "",
             owner=project.owner,
             target_end_date=project.target_end_date,
             actual_end_date=project.actual_end_date,
@@ -181,8 +184,9 @@ class ProjectMapper:
         return Project(
             id=dto.id,
             name=dto.name,
+            headline=dto.headline or "",
             status=ProjectStatus(dto.status),
-            description=dto.description,
+            content="",
             owner=dto.owner,
             target_end_date=dto.target_end_date,
             actual_end_date=dto.actual_end_date,

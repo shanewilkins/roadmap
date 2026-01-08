@@ -100,8 +100,7 @@ def view_milestone(
     progress_data = core.milestones.get_progress(milestone_name)
 
     # Extract description and goals
-    content_to_display = milestone.content or milestone.description
-    description_content = content_to_display if content_to_display else None
+    description_content = milestone.content if milestone.content else None
 
     # Prepare comments if any
     comments_text = None

@@ -26,13 +26,13 @@ class Milestone(BaseModel):
     """Milestone data model."""
 
     name: str
-    description: str = ""
+    headline: str = ""  # Short summary for list views
+    content: str = ""  # Markdown content
     due_date: datetime | None = None
     status: MilestoneStatus = MilestoneStatus.OPEN
     github_milestone: int | None = None
     created: datetime = Field(default_factory=now_utc)
     updated: datetime = Field(default_factory=now_utc)
-    content: str = ""  # Markdown content
     project_id: str | None = (
         None  # Project this milestone belongs to (for relationship tracking)
     )

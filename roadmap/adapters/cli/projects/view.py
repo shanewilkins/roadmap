@@ -82,8 +82,7 @@ def view_project(ctx: click.Context, project_id: str):
         }
 
     # Extract description and objectives
-    content_to_display = project.content or project.description
-    description, objectives = _extract_description_and_objectives(content_to_display)
+    description, objectives = _extract_description_and_objectives(project.content)
     description_content = description
 
     # Prepare comments if any

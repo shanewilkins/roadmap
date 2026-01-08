@@ -25,6 +25,7 @@ class ProjectTableFormatter(BaseTableFormatter):
         self.columns_config = [
             {"name": "ID", "style": "cyan", "width": 10},
             {"name": "Name", "style": "white", "width": 25},
+            {"name": "Headline", "style": "white", "width": 30},
             {"name": "Status", "style": "magenta", "width": 12},
             {"name": "Priority", "style": "yellow", "width": 10},
             {"name": "Owner", "style": "green", "width": 15},
@@ -52,6 +53,7 @@ class ProjectTableFormatter(BaseTableFormatter):
         if isinstance(item, dict):
             project_id = item.get("id", "unknown")[:8]
             project_name = item.get("name", "Unnamed")
+            project_headline = item.get("headline", "")
             project_status = item.get("status", "unknown")
             project_priority = item.get("priority", "medium")
             project_owner = item.get("owner", "Unassigned")
@@ -59,6 +61,7 @@ class ProjectTableFormatter(BaseTableFormatter):
             # Handle Project object
             project_id = getattr(item, "id", "unknown")[:8]
             project_name = getattr(item, "name", "Unnamed")
+            project_headline = getattr(item, "headline", "")
             raw_status = getattr(item, "status", "unknown")
             project_status = (
                 str(cast(Any, raw_status).value)
@@ -76,6 +79,7 @@ class ProjectTableFormatter(BaseTableFormatter):
         table.add_row(
             Text(project_id, style="cyan"),
             Text(project_name, style="white"),
+            Text(project_headline or "", style="white"),
             Text(str(project_status), style="magenta"),
             Text(str(project_priority), style="yellow"),
             Text(str(project_owner), style="green"),
@@ -177,7 +181,7 @@ class ProjectTableFormatter(BaseTableFormatter):
             columns=columns,
             rows=rows,
             title=title,
-            description=description,
+            headline=description,
             total_count=len(items),
             returned_count=len(items),
         )

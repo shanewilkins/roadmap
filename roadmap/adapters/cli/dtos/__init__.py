@@ -52,6 +52,7 @@ class IssueDTO(BaseDTO):
     title: str
     priority: str  # String, not enum (e.g., "high", "medium")
     status: str  # String, not enum (e.g., "todo", "in_progress")
+    headline: str = ""  # Short summary for list views
     issue_type: str = "other"  # String, not enum
     assignee: str | None = None
     milestone: str | None = None
@@ -86,8 +87,8 @@ class MilestoneDTO(BaseDTO):
     id: str
     name: str
     status: str  # String, not enum
+    headline: str = ""  # Short summary for list views
     due_date: datetime | None = None
-    description: str = ""
     progress_percentage: float | None = None
     issue_count: int = 0
     completed_count: int = 0
@@ -114,7 +115,7 @@ class ProjectDTO(BaseDTO):
     id: str
     name: str
     status: str  # String, not enum
-    description: str = ""
+    headline: str = ""  # Short summary for list views
     owner: str | None = None
     target_end_date: datetime | None = None
     actual_end_date: datetime | None = None

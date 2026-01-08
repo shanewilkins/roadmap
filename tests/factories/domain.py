@@ -48,6 +48,11 @@ class IssueBuilder:
         self._issue.title = title
         return self
 
+    def with_headline(self, headline: str) -> "IssueBuilder":
+        """Set the issue headline (short summary for list views)."""
+        self._issue.headline = headline
+        return self
+
     def with_priority(self, priority: Priority) -> "IssueBuilder":
         """Set the issue priority."""
         self._issue.priority = priority
@@ -172,9 +177,14 @@ class MilestoneBuilder:
         self._milestone.name = name
         return self
 
-    def with_description(self, description: str) -> "MilestoneBuilder":
+    def with_headline(self, headline: str) -> "MilestoneBuilder":
+        """Set the milestone headline (short summary for list views)."""
+        self._milestone.headline = headline
+        return self
+
+    def with_description(self, content: str) -> "MilestoneBuilder":
         """Set the milestone description."""
-        self._milestone.description = description
+        self._milestone.content = content
         return self
 
     def with_status(self, status: MilestoneStatus) -> "MilestoneBuilder":
@@ -253,7 +263,7 @@ class ProjectBuilder:
         """Initialize builder with sensible defaults."""
         self._project = Project(
             name="Test Project",
-            description="",
+            content="",
             status=ProjectStatus.PLANNING,
         )
 
@@ -267,9 +277,14 @@ class ProjectBuilder:
         self._project.name = name
         return self
 
+    def with_headline(self, headline: str) -> "ProjectBuilder":
+        """Set the project headline (short summary for list views)."""
+        self._project.headline = headline
+        return self
+
     def with_description(self, description: str) -> "ProjectBuilder":
         """Set the project description."""
-        self._project.description = description
+        self._project.content = description
         return self
 
     def with_status(self, status: ProjectStatus) -> "ProjectBuilder":

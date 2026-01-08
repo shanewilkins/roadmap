@@ -8,6 +8,7 @@ from .data_integrity_validator import DataIntegrityValidator
 from .duplicate_issues_validator import DuplicateIssuesValidator
 from .duplicate_milestones_validator import DuplicateMilestonesValidator
 from .folder_structure_validator import FolderStructureValidator
+from .missing_headlines_validator import MissingHeadlinesValidator
 from .orphaned_issues_validator import OrphanedIssuesValidator
 from .orphaned_milestones_validator import OrphanedMilestonesValidator
 
@@ -23,4 +24,5 @@ __all__ = [
     "DataIntegrityValidator",
     "OrphanedIssuesValidator",
     "OrphanedMilestonesValidator",
+    "MissingHeadlinesValidator",
 ]

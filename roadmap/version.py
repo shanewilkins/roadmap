@@ -296,7 +296,7 @@ class VersionManager:
 
         section = "### Milestones\n"
         for milestone in completed_milestones:
-            section += f"- {milestone.name}: {milestone.description}\n"
+            section += f"- {milestone.name}: {milestone.content}\n"
         section += "\n"
         return section
 

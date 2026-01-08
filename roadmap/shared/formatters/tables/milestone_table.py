@@ -25,7 +25,7 @@ class MilestoneTableFormatter(BaseTableFormatter):
         super().__init__()
         self.columns_config = [
             {"name": "Milestone", "style": "cyan", "width": 20},
-            {"name": "Description", "style": "white", "width": 30},
+            {"name": "Headline", "style": "white", "width": 30},
             {"name": "Status", "style": "green", "width": 10},
             {"name": "Due Date", "style": "yellow", "width": 12},
             {"name": "Progress", "style": "blue", "width": 12},
@@ -63,7 +63,7 @@ class MilestoneTableFormatter(BaseTableFormatter):
 
         table.add_row(
             Text(item.name, style="cyan"),
-            Text(item.description or "", style="white"),
+            Text(item.headline or "", style="white"),
             Text(status_value, style="green"),
             Text(due_date_str, style="yellow"),
             Text(progress, style="blue"),
@@ -216,7 +216,7 @@ class MilestoneTableFormatter(BaseTableFormatter):
             rows.append(
                 [
                     milestone.name,
-                    milestone.description or "",
+                    milestone.content or "",
                     status_value,
                     due_date_str,
                     progress,
@@ -228,7 +228,7 @@ class MilestoneTableFormatter(BaseTableFormatter):
             columns=columns,
             rows=rows,
             title=title,
-            description=description,
+            headline=description,
             total_count=len(items),
             returned_count=len(items),
         )

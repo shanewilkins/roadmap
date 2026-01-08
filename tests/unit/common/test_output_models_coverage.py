@@ -91,9 +91,9 @@ class TestColumnDef:
             name="priority",
             display_name="Priority",
             type=ColumnType.INTEGER,
-            description="Issue priority level (1-5)",
+            headline="Issue priority level (1-5)",
         )
-        assert col.description == "Issue priority level (1-5)"
+        assert col.headline == "Issue priority level (1-5)"
 
     def test_column_alignment(self):
         """Test column display style."""
@@ -152,10 +152,10 @@ class TestColumnDef:
             display_name="Date",
             type=ColumnType.DATE,
             display_style="yellow",
-            description="Creation date",
+            headline="Creation date",
         )
         assert col.display_style == "yellow"
-        assert col.description == "Creation date"
+        assert col.headline == "Creation date"
 
 
 class TestTableData:
@@ -174,7 +174,7 @@ class TestTableData:
         assert len(table.columns) == 2
         assert len(table.rows) == 2
         assert table.title is None
-        assert table.description is None
+        assert table.headline is None
 
     def test_create_table_with_title_and_description(self):
         """Test creating table with title and description."""
@@ -185,11 +185,11 @@ class TestTableData:
             columns=columns,
             rows=rows,
             title="Test Table",
-            description="A table for testing",
+            headline="A table for testing",
         )
 
         assert table.title == "Test Table"
-        assert table.description == "A table for testing"
+        assert table.headline == "A table for testing"
 
     def test_table_with_filters(self):
         """Test table with applied filters."""
@@ -326,7 +326,7 @@ class TestTableData:
             columns=columns,
             rows=rows,
             title="Issues Tracker",
-            description="Current status of all issues",
+            headline="Current status of all issues",
             sort_by=[("priority", "asc")],
             filters_applied={"status": "open", "priority": 1},
             selected_columns=["id", "title", "status", "priority"],
@@ -468,7 +468,7 @@ class TestOutputModelsIntegration:
             columns=columns,
             rows=rows,
             title="Project Tasks",
-            description="Current task assignments and status",
+            headline="Current task assignments and status",
             sort_by=[("priority", "asc"), ("status", "asc")],
             filters_applied={"status": "in_progress"},
             selected_columns=[

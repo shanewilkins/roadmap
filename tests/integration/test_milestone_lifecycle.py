@@ -20,7 +20,7 @@ class TestMilestoneLifecycle:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="sprint-1",
-                description="First sprint",
+                headline="First sprint",
             )
 
             # List milestones to verify creation
@@ -38,7 +38,7 @@ class TestMilestoneLifecycle:
                 IntegrationTestBase.create_milestone(
                     cli_runner,
                     name=name,
-                    description=f"Milestone {name}",
+                    headline=f"Milestone {name}",
                 )
 
             # List and verify all created
@@ -56,7 +56,7 @@ class TestMilestoneLifecycle:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="v1.0",
-                description="Version 1.0",
+                headline="Version 1.0",
             )
 
             # Update milestone description
@@ -80,7 +80,7 @@ class TestMilestoneLifecycle:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="sprint-1",
-                description="Sprint 1",
+                headline="Sprint 1",
             )
 
             # Create issue assigned to milestone

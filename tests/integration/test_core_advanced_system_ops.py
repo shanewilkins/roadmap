@@ -276,7 +276,7 @@ class TestRoadmapCoreErrorHandlingAndEdgeCases:
         """Test milestone operations with edge cases."""
         # Test with milestone names that require sanitization
         milestone = core.milestones.create(
-            name="Test/Milestone With Special@Characters!", description="Description"
+            name="Test/Milestone With Special@Characters!", headline="Description"
         )
         assert milestone is not None
 

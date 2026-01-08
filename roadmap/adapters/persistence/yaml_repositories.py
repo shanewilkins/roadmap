@@ -498,7 +498,7 @@ class YAMLMilestoneRepository(MilestoneRepository):
             self.db.create_milestone(
                 {
                     "title": milestone.name,
-                    "description": milestone.description,
+                    "description": milestone.content,
                     "status": milestone.status.value,
                 }
             )
@@ -627,7 +627,7 @@ class YAMLProjectRepository(ProjectRepository):
             self.db.create_project(
                 {
                     "title": project.name,
-                    "description": project.description,
+                    "description": project.content,
                     "status": project.status.value,
                 }
             )

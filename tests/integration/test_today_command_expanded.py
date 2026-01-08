@@ -129,7 +129,7 @@ class TestTodayCommandFiltering:
                 ("v1.1", "Future milestone"),
             ]:
                 IntegrationTestBase.create_milestone(
-                    cli_runner, name=name, description=desc
+                    cli_runner, name=name, headline=desc
                 )
 
             # Create issue in each milestone assigned to testuser

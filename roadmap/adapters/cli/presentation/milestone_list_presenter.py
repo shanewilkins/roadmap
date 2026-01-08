@@ -62,7 +62,7 @@ class MilestoneTablePresenter:
                 # Add row to table
                 table.add_row(
                     ms.name,
-                    ms.description or "-",
+                    ms.content or "-",
                     due_date_text,
                     ms.status.value,
                     progress_text,

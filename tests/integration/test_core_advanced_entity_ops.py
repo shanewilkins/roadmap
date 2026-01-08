@@ -133,7 +133,7 @@ class TestRoadmapCoreAdvancedIssueOperations:
         # Create milestones
         for name, due_date in create_milestones:
             core.milestones.create(
-                name=name, description=f"Description for {name}", due_date=due_date
+                name=name, headline=f"Headline for {name}", due_date=due_date
             )
 
         # Get next milestone

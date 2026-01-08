@@ -107,7 +107,8 @@ class IssueService:
             estimated_hours=params.estimate,
             depends_on=params.depends_on or [],
             blocks=params.blocks or [],
-            content=f"# {params.title}\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+            content=params.content
+            or f"# {params.title}\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
         )
 
         # Persist using repository abstraction
@@ -388,7 +389,7 @@ class IssueService:
                 "priority",
                 "assignee",
                 "milestone",
-                "description",
+                "content",
                 "estimate",
                 "reason",
             ],
@@ -402,7 +403,7 @@ class IssueService:
                 "priority",
                 "assignee",
                 "milestone",
-                "description",
+                "content",
                 "estimate",
             ],
         )
@@ -445,11 +446,9 @@ class IssueService:
             log_event(
                 "issue_field_updated", issue_id=params.issue_id, field="milestone"
             )
-        if params.description is not NOT_PROVIDED:
-            issue.content = params.description
-            log_event(
-                "issue_field_updated", issue_id=params.issue_id, field="description"
-            )
+        if params.content is not NOT_PROVIDED:
+            issue.content = params.content
+            log_event("issue_field_updated", issue_id=params.issue_id, field="content")
         if params.estimate is not NOT_PROVIDED:
             issue.estimated_hours = params.estimate
             log_event("issue_field_updated", issue_id=params.issue_id, field="estimate")

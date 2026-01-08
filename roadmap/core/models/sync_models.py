@@ -26,7 +26,7 @@ class SyncIssue:
     status: str  # Normalized: "open", "closed", "in_progress", etc.
 
     # Optional fields (may not be present in all backends)
-    description: str = ""
+    headline: str = ""
     assignee: str | None = None
     milestone: str | None = None
     labels: list[str] = field(default_factory=list)
@@ -87,7 +87,7 @@ class SyncMilestone:
     status: str = "open"  # "open", "closed"
 
     # Optional fields
-    description: str | None = None
+    headline: str | None = None
     due_date: datetime | None = None
 
     # Backend tracking
@@ -131,7 +131,7 @@ class SyncProject:
     name: str
 
     # Optional fields
-    description: str | None = None
+    headline: str | None = None
 
     # Backend tracking
     backend_name: str = "unknown"

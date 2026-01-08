@@ -36,7 +36,7 @@ class TestColumnDef:
             display_name="Status",
             type=ColumnType.ENUM,
             width=15,
-            description="Task status",
+            headline="Task status",
             display_style="bold blue",
             enum_values=["todo", "in_progress", "done"],
             sortable=True,
@@ -87,7 +87,7 @@ class TestTableData:
             columns=cols,
             rows=rows,
             title="User Status",
-            description="Current user status",
+            headline="Current user status",
             total_count=2,
             returned_count=2,
         )

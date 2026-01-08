@@ -16,7 +16,7 @@ class TestIssueBaseState:
             title="Fix the bug",
             assignee="alice",
             milestone="v1.0",
-            description="Fix the bug",
+            headline="Fix the bug",
             labels=["bug", "urgent"],
         )
 
@@ -25,7 +25,7 @@ class TestIssueBaseState:
         assert state.title == "Fix the bug"
         assert state.assignee == "alice"
         assert state.milestone == "v1.0"
-        assert state.description == "Fix the bug"
+        assert state.headline == "Fix the bug"
         assert state.labels == ["bug", "urgent"]
 
     def test_issue_base_state_optional_fields(self):
@@ -34,7 +34,7 @@ class TestIssueBaseState:
             id="issue-2",
             status="todo",
             title="New issue",
-            description="New issue",
+            headline="New issue",
         )
 
         assert state.assignee is None
@@ -48,7 +48,7 @@ class TestIssueBaseState:
             status="closed",
             title="Done",
             assignee="bob",
-            description="Done",
+            headline="Done",
             updated_at=now,
         )
 
@@ -98,7 +98,7 @@ class TestSyncState:
         """Test adding issues to sync state."""
         sync_state = SyncState(last_sync=datetime.now(), backend="github")
         issue_state = IssueBaseState(
-            id="issue-1", status="todo", title="Test", description="Test"
+            id="issue-1", status="todo", title="Test", headline="Test"
         )
 
         sync_state.add_issue("issue-1", issue_state)
@@ -110,12 +110,12 @@ class TestSyncState:
         """Test updating an issue in sync state."""
         sync_state = SyncState(last_sync=datetime.now(), backend="github")
         issue_state = IssueBaseState(
-            id="issue-1", status="todo", title="Test", description="Test"
+            id="issue-1", status="todo", title="Test", headline="Test"
         )
         sync_state.add_issue("issue-1", issue_state)
 
         updated_state = IssueBaseState(
-            id="issue-1", status="closed", title="Done", description="Done"
+            id="issue-1", status="closed", title="Done", headline="Done"
         )
         sync_state.update_issue("issue-1", updated_state)
 
@@ -125,7 +125,7 @@ class TestSyncState:
         """Test removing an issue from sync state."""
         sync_state = SyncState(last_sync=datetime.now(), backend="github")
         issue_state = IssueBaseState(
-            id="issue-1", status="todo", title="Test", description="Test"
+            id="issue-1", status="todo", title="Test", headline="Test"
         )
         sync_state.add_issue("issue-1", issue_state)
 
@@ -143,7 +143,7 @@ class TestSyncState:
             status="in-progress",
             title="Working on it",
             assignee="alice",
-            description="Working on it",
+            headline="Working on it",
             updated_at=now,
         )
         sync_state.add_issue("issue-1", issue_state)
@@ -167,7 +167,7 @@ class TestSyncState:
                     "title": "Fixed",
                     "assignee": "bob",
                     "milestone": None,
-                    "description": "Fixed",
+                    "headline": "Fixed",
                     "labels": ["fixed"],
                     "updated_at": "2026-01-01T11:00:00",
                 }
@@ -191,7 +191,7 @@ class TestSyncState:
             status="todo",
             title="First",
             assignee=None,
-            description="First",
+            headline="First",
             updated_at=now,
         )
         issue2 = IssueBaseState(
@@ -200,7 +200,7 @@ class TestSyncState:
             title="Second",
             assignee="alice",
             milestone="v1.0",
-            description="Second",
+            headline="Second",
             labels=["bug"],
             updated_at=now,
         )

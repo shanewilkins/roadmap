@@ -21,10 +21,9 @@ def sample_milestone():
     """Create a sample milestone."""
     return Milestone(
         name="v1.0",
-        description="First release",
+        content="First release",
         due_date=datetime.now() + timedelta(days=30),
         status=MilestoneStatus.OPEN,
-        content="# v1.0\nFirst release",
     )
 
 
@@ -270,10 +269,9 @@ class TestMilestoneKanban:
         """Test header display when milestone has no due date."""
         milestone = Milestone(
             name="v1.0",
-            description="First release",
+            content="First release",
             due_date=None,
             status=MilestoneStatus.OPEN,
-            content="# v1.0",
         )
         with patch("roadmap.adapters.cli.milestones.kanban.console", mock_console):
             _display_header(milestone, sample_issues)

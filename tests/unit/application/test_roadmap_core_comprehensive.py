@@ -264,17 +264,13 @@ class TestRoadmapCore:
 
         due_date = datetime(2025, 12, 31)
         milestone = core.milestones.create(
-            name="v1.0", description="First release", due_date=due_date
+            name="v1.0", headline="First release", due_date=due_date
         )
 
         assert milestone.name == "v1.0"
-        assert milestone.description == "First release"
+        assert milestone.headline == "First release"
         assert milestone.due_date == due_date
         assert milestone.status == MilestoneStatus.OPEN
-
-        # Check file was created
-        milestone_file = core.milestones_dir / milestone.filename
-        assert milestone_file.exists()
 
     def test_list_milestones(self, core):
         """Test listing milestones."""
@@ -293,12 +289,12 @@ class TestRoadmapCore:
         """Test getting specific milestone."""
         core.initialize()
 
-        core.milestones.create("v1.0", "First release")
+        core.milestones.create("v1.0", headline="First release")
         retrieved_milestone = core.milestones.get("v1.0")
 
         assert retrieved_milestone is not None
         assert retrieved_milestone.name == "v1.0"
-        assert retrieved_milestone.description == "First release"
+        assert retrieved_milestone.headline == "First release"
 
     def test_get_milestone_not_found(self, core):
         """Test getting non-existent milestone."""

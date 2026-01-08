@@ -22,7 +22,7 @@ class IssueBaseState:
     title: str  # Added: title is synced to remote, so track it
     assignee: str | None = None
     milestone: str | None = None
-    description: str = ""
+    headline: str = ""
     labels: list[str] = field(default_factory=list)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 

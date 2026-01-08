@@ -35,7 +35,7 @@ class IssueCreateServiceParams:
     issue_type: str | None = None
     milestone: str | None = None
     assignee: str | None = None
-    description: str | None = None
+    content: str | None = None
     estimate: float | None = None
     labels: list[str] = field(default_factory=list)
     depends_on: list[str] = field(default_factory=list)
@@ -52,7 +52,7 @@ class IssueUpdateServiceParams:
     status: str | None | _NotProvided = NOT_PROVIDED
     assignee: str | None | _NotProvided = NOT_PROVIDED
     milestone: str | None | _NotProvided = NOT_PROVIDED
-    description: str | None | _NotProvided = NOT_PROVIDED
+    content: str | None | _NotProvided = NOT_PROVIDED
     estimate: float | None | _NotProvided = NOT_PROVIDED
     reason: str | None | _NotProvided = NOT_PROVIDED
 
@@ -78,7 +78,7 @@ class MilestoneCreateServiceParams:
     """Parameters for creating a milestone (service layer)."""
 
     name: str
-    description: str = ""
+    content: str = ""
     due_date: datetime | None = None
 
 
@@ -87,7 +87,7 @@ class MilestoneUpdateServiceParams:
     """Parameters for updating a milestone (service layer)."""
 
     name: str
-    description: str | None = None
+    content: str | None = None
     due_date: datetime | None = None
     clear_due_date: bool = False
     status: str | None = None
@@ -98,7 +98,7 @@ class ProjectCreateServiceParams:
     """Parameters for creating a project (service layer)."""
 
     name: str
-    description: str = ""
+    content: str = ""
     milestones: list | None = None
 
 
@@ -108,6 +108,6 @@ class ProjectUpdateServiceParams:
 
     project_id: str
     name: str | None = None
-    description: str | None = None
+    content: str | None = None
     milestones: list | None = None
     status: str | None = None

@@ -227,7 +227,7 @@ class TestOptimizedSyncIntegration:
                     id="test-1",
                     title="Test issue",
                     status="open",
-                    description="Test",
+                    headline="Test",
                 )
             },
         )

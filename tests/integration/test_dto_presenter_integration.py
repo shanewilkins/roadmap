@@ -21,6 +21,7 @@ class TestIssueDTOPresenterIntegration:
         domain_issue = MagicMock(spec=Issue)
         domain_issue.id = "issue001"
         domain_issue.title = "Integration Test Issue"
+        domain_issue.headline = "Test issue headline"
         domain_issue.priority = Priority.HIGH
         domain_issue.status = Status.IN_PROGRESS
         domain_issue.issue_type = IssueType.FEATURE
@@ -63,6 +64,7 @@ class TestIssueDTOPresenterIntegration:
         domain_issue = MagicMock(spec=Issue)
         domain_issue.id = "issue002"
         domain_issue.title = "Roundtrip Test"
+        domain_issue.headline = "Roundtrip test headline"
         domain_issue.priority = Priority.MEDIUM
         domain_issue.status = Status.TODO
         domain_issue.issue_type = IssueType.BUG
@@ -126,6 +128,7 @@ class TestListCommandDTOFlow:
             issue = MagicMock(spec=Issue)
             issue.id = f"issue{i:03d}"
             issue.title = f"Test Issue {i}"
+            issue.headline = f"Headline for issue {i}"
             issue.priority = Priority.HIGH if i % 2 == 0 else Priority.LOW
             issue.status = Status.TODO
             issue.issue_type = IssueType.FEATURE

@@ -31,7 +31,7 @@ def roadmap_with_issues_and_milestones(cli_runner):
 
         # Create a milestone
         IntegrationTestBase.create_milestone(
-            cli_runner, name="v1.0", description="First release"
+            cli_runner, name="v1.0", headline="First release"
         )
 
         # Create issues

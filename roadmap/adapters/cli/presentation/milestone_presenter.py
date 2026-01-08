@@ -138,8 +138,8 @@ class MilestonePresenter(BasePresenter):
         else:
             metadata.add_row("Due Date", "Not set")
 
-        if milestone_dto.description:
-            metadata.add_row("Description", milestone_dto.description)
+        if milestone_dto.headline:
+            metadata.add_row("Headline", milestone_dto.headline)
 
         metadata.add_row("Progress", f"{milestone_dto.progress_percentage}%")
         metadata.add_row(

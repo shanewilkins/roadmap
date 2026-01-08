@@ -53,12 +53,11 @@ def sample_project():
     return Project(
         id="PROJ-001",
         name="Test Project",
-        description="A test project",
+        content="A test project",
         status=ProjectStatus.ACTIVE,
         created=datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc),
         updated=datetime(2025, 1, 15, 12, 0, tzinfo=timezone.utc),
         milestones=["Milestone 1", "Milestone 2"],
-        content="# Test Project\n\nProject content",
     )
 
 
@@ -121,7 +120,7 @@ class TestProjectServiceCreate:
             project = project_service.create_project(name="New Project")
 
             assert project.name == "New Project"
-            assert project.description == ""
+            assert project.headline == ""
             assert project.milestones == []
 
     def test_create_project_full(self, project_service):
@@ -129,12 +128,12 @@ class TestProjectServiceCreate:
         with patch.object(project_service, "save_project", return_value=True):
             project = project_service.create_project(
                 name="New Project",
-                description="Project description",
+                headline="Project description",
                 milestones=["M1", "M2"],
             )
 
             assert project.name == "New Project"
-            assert project.description == "Project description"
+            assert project.headline == "Project description"
             assert project.milestones == ["M1", "M2"]
 
     def test_create_project_calls_save(self, project_service):
@@ -147,14 +146,15 @@ class TestProjectServiceCreate:
             mock_save.assert_called_once_with(project)
 
     def test_create_project_generates_content(self, project_service):
-        """Test created project has generated content."""
+        """Test created project initializes with empty content."""
         with patch.object(project_service, "save_project", return_value=True):
             project = project_service.create_project(
-                name="New Project", description="Test description"
+                name="New Project", headline="Test description"
             )
 
-            assert "# New Project" in project.content
-            assert "Test description" in project.content
+            # Project starts with empty content
+            assert project.content == ""
+            assert project.headline == "Test description"
 
 
 class TestProjectServiceUpdate:
@@ -170,12 +170,12 @@ class TestProjectServiceUpdate:
         project_service.repository = mock_repository
 
         updated = project_service.update_project(
-            "PROJ-001", name="Updated Name", description="Updated Description"
+            "PROJ-001", name="Updated Name", headline="Updated Description"
         )
 
         assert updated is not None
         assert updated.name == "Updated Name"
-        assert updated.description == "Updated Description"
+        assert updated.headline == "Updated Description"
 
     def test_update_project_not_found(self, project_service):
         """Test updating a non-existent project returns None."""

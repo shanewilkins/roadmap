@@ -27,7 +27,7 @@ def roadmap_with_data(cli_runner):
         IntegrationTestBase.create_milestone(
             cli_runner,
             name="v1.0.0",
-            description="First release",
+            headline="First release",
             due_date=(datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
         )
 

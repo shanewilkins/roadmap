@@ -97,7 +97,7 @@ class TestRoadmapCoreMilestoneOperations:
         # Create milestone first
         milestone = core.milestones.create(
             name="Test Milestone",
-            description="Original description",
+            headline="Original description",
             due_date=datetime.now() + timedelta(days=30),
         )
         assert milestone is not None
@@ -105,14 +105,14 @@ class TestRoadmapCoreMilestoneOperations:
         # Update milestone
         result = core.milestones.update(
             name="Test Milestone",
-            description="Updated description",
+            headline="Updated description",
             status=MilestoneStatus.OPEN,
         )
         assert result is True
 
         # Verify updates
         updated_milestone = core.milestones.get("Test Milestone")
-        assert updated_milestone.description == "Updated description"
+        assert updated_milestone.headline == "Updated description"
         assert updated_milestone.status == MilestoneStatus.OPEN
 
     def test_update_milestone_clear_due_date(self, core):
@@ -120,7 +120,7 @@ class TestRoadmapCoreMilestoneOperations:
         # Create milestone with due date
         milestone = core.milestones.create(
             name="Test Milestone",
-            description="Description",
+            headline="Description",
             due_date=datetime.now() + timedelta(days=30),
         )
         assert milestone.due_date is not None
@@ -136,7 +136,7 @@ class TestRoadmapCoreMilestoneOperations:
     def test_update_milestone_nonexistent(self, core):
         """Test updating nonexistent milestone."""
         result = core.milestones.update(
-            name="Nonexistent Milestone", description="New description"
+            name="Nonexistent Milestone", headline="New headline"
         )
         assert result is False
 
@@ -145,16 +145,14 @@ class TestRoadmapCoreMilestoneOperations:
         core = RoadmapCore(temp_dir)  # Not explicitly initialized
 
         # Updating on uninitialized core returns False (milestone not found)
-        result = core.milestones.update(
-            name="Test Milestone", description="Description"
-        )
+        result = core.milestones.update(name="Test Milestone", headline="Headline")
         assert result is False
 
     def test_update_milestone_save_error(self, core):
         """Test milestone update with save error."""
         # Create milestone first
         milestone = core.milestones.create(
-            name="Test Milestone", description="Original description"
+            name="Test Milestone", headline="Original headline"
         )
         assert milestone is not None
 
@@ -165,7 +163,7 @@ class TestRoadmapCoreMilestoneOperations:
             mock_save.side_effect = Exception("Save failed")
 
             result = core.milestones.update(
-                name="Test Milestone", description="Updated description"
+                name="Test Milestone", headline="Updated headline"
             )
             assert result is False
 
@@ -184,9 +182,7 @@ class TestRoadmapCoreIssueAssignment:
         """Test successful issue assignment to milestone."""
         # Create issue and milestone
         issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
-        core.milestones.create(
-            name="Test Milestone", description="Milestone description"
-        )
+        core.milestones.create(name="Test Milestone", headline="Milestone headline")
 
         # Assign issue to milestone
         result = core.issues.assign_to_milestone(issue.id, "Test Milestone")
@@ -199,9 +195,7 @@ class TestRoadmapCoreIssueAssignment:
     def test_assign_issue_to_milestone_issue_not_found(self, core):
         """Test assigning nonexistent issue to milestone."""
         # Create milestone
-        core.milestones.create(
-            name="Test Milestone", description="Milestone description"
-        )
+        core.milestones.create(name="Test Milestone", headline="Milestone headline")
 
         result = core.issues.assign_to_milestone("nonexistent-id", "Test Milestone")
         assert result is False
@@ -235,9 +229,7 @@ class TestRoadmapCoreMilestoneProgress:
     def test_get_milestone_progress_with_issues(self, core):
         """Test milestone progress calculation with various issue states."""
         # Create milestone
-        core.milestones.create(
-            name="Test Milestone", description="Milestone description"
-        )
+        core.milestones.create(name="Test Milestone", headline="Milestone headline")
 
         # Create issues with different statuses
         issue1 = core.issues.create(title="Issue 1", priority=Priority.HIGH)
@@ -269,7 +261,7 @@ class TestRoadmapCoreMilestoneProgress:
     def test_get_milestone_progress_no_issues(self, core):
         """Test milestone progress with no assigned issues."""
         # Create milestone with no issues
-        core.milestones.create(name="Empty Milestone", description="No issues assigned")
+        core.milestones.create(name="Empty Milestone", headline="No issues assigned")
 
         progress = core.milestones.get_progress("Empty Milestone")
 
@@ -302,9 +294,7 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_backlog_issues(self, core):
         """Test getting backlog (unassigned) issues."""
         # Create milestone
-        core.milestones.create(
-            name="Test Milestone", description="Milestone description"
-        )
+        core.milestones.create(name="Test Milestone", headline="Milestone headline")
 
         # Create issues - some assigned, some not
         issue1 = core.issues.create(title="Assigned Issue", priority=Priority.HIGH)
@@ -327,9 +317,7 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_backlog_issues_empty(self, core):
         """Test getting backlog when all issues are assigned."""
         # Create milestone
-        core.milestones.create(
-            name="Test Milestone", description="Milestone description"
-        )
+        core.milestones.create(name="Test Milestone", headline="Milestone headline")
 
         # Create issue and assign it
         issue = core.issues.create(title="Assigned Issue", priority=Priority.HIGH)
@@ -342,8 +330,8 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_milestone_issues(self, core):
         """Test getting issues for specific milestone."""
         # Create milestones
-        core.milestones.create(name="Milestone 1", description="First milestone")
-        core.milestones.create(name="Milestone 2", description="Second milestone")
+        core.milestones.create(name="Milestone 1", headline="First milestone")
+        core.milestones.create(name="Milestone 2", headline="Second milestone")
 
         # Create issues
         issue1 = core.issues.create(title="Issue for M1", priority=Priority.HIGH)
@@ -370,7 +358,7 @@ class TestRoadmapCoreBacklogOperations:
     def test_get_milestone_issues_empty(self, core):
         """Test getting issues for milestone with no assignments."""
         # Create milestone
-        core.milestones.create(name="Empty Milestone", description="No issues assigned")
+        core.milestones.create(name="Empty Milestone", headline="No issues assigned")
 
         # Create unassigned issue
         core.issues.create(title="Unassigned Issue", priority=Priority.MEDIUM)

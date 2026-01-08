@@ -24,7 +24,7 @@ class IssueCreateParams:
     estimate: float | None = None
     depends_on: tuple = field(default_factory=tuple)
     blocks: tuple = field(default_factory=tuple)
-    description: str | None = None
+    content: str | None = None
 
 
 @dataclass
@@ -37,7 +37,7 @@ class IssueUpdateParams:
     status: str | None = None
     assignee: str | None = None
     milestone: str | None = None
-    description: str | None = None
+    content: str | None = None
     estimate: float | None = None
     reason: str | None = None
 

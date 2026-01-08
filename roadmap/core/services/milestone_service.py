@@ -62,7 +62,7 @@ class MilestoneService:
     def create_milestone(
         self,
         name: str,
-        description: str = "",
+        headline: str = "",
         due_date: datetime | None = None,
         status: str | None = None,
     ) -> Milestone:
@@ -70,7 +70,7 @@ class MilestoneService:
 
         Args:
             name: Milestone name/title
-            description: Milestone description
+            headline: Milestone headline (short summary)
             due_date: Target completion date
             status: Milestone status (optional, defaults to OPEN)
 
@@ -98,10 +98,10 @@ class MilestoneService:
 
         milestone = Milestone(
             name=name,
-            description=description,
+            headline=headline or "",
+            content="",
             due_date=due_date,
             status=milestone_status,
-            content=f"# {name}\n\n## Description\n\n{description}\n\n## Goals\n\n- [ ] Goal 1\n- [ ] Goal 2\n- [ ] Goal 3",
         )
 
         # Persist using repository abstraction
@@ -196,7 +196,7 @@ class MilestoneService:
     def update_milestone(
         self,
         name: str,
-        description: str | None = None,
+        headline: str | None = None,
         due_date: datetime | None = None,
         clear_due_date: bool = False,
         status: str | None = None,
@@ -205,7 +205,7 @@ class MilestoneService:
 
         Args:
             name: Milestone name
-            description: New description (None to keep current)
+            headline: New headline (None to keep current)
             due_date: New due date (None to keep current)
             clear_due_date: If True, remove the due date
             status: New status
@@ -216,12 +216,12 @@ class MilestoneService:
         log_entry(
             "update_milestone",
             milestone_name=name,
-            fields=["description", "due_date", "status"],
+            fields=["headline", "due_date", "status"],
         )
         logger.info(
             "updating_milestone",
             milestone_name=name,
-            has_description=description is not None,
+            has_headline=headline is not None,
         )
         milestone = self.get_milestone(name)
         if not milestone:
@@ -230,11 +230,9 @@ class MilestoneService:
             return None
 
         # Update fields if provided
-        if description is not None:
-            milestone.description = description
-            log_event(
-                "milestone_field_updated", milestone_name=name, field="description"
-            )
+        if headline is not None:
+            milestone.headline = headline
+            log_event("milestone_field_updated", milestone_name=name, field="headline")
 
         if clear_due_date:
             milestone.due_date = None

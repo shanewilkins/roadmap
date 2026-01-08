@@ -228,10 +228,10 @@ class TestIssueTableFormatter:
     def test_items_to_table_data_with_description(self, formatter, sample_issue):
         """Test converting with description."""
         result = formatter.items_to_table_data(
-            [sample_issue], description="Test Description"
+            [sample_issue], headline="Test Description"
         )
 
-        assert result.description == "Test Description"
+        assert result.headline == "Test Description"
 
     def test_create_issue_table_class_method(self):
         """Test backward compatible class method."""

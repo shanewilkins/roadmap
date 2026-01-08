@@ -50,7 +50,7 @@ class MilestoneCreateParams:
     """Parameters for creating a new milestone through MilestoneCoordinator."""
 
     name: str
-    description: str = ""
+    content: str = ""
     due_date: datetime | None = None
 
 
@@ -59,7 +59,7 @@ class MilestoneUpdateParams:
     """Parameters for updating a milestone through MilestoneCoordinator."""
 
     name: str
-    description: str | None = None
+    content: str | None = None
     due_date: datetime | None = None
     clear_due_date: bool = False
     status: str | None = None
@@ -70,7 +70,7 @@ class ProjectCreateParams:
     """Parameters for creating a new project through ProjectCoordinator."""
 
     name: str
-    description: str = ""
+    content: str = ""
     milestones: list[str] | None = None
 
 

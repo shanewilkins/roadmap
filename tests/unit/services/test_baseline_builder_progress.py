@@ -44,7 +44,7 @@ def cached_state():
                 id="123",
                 title="Test issue",
                 status="open",
-                description="Test",
+                headline="Test",
             ),
         },
     )

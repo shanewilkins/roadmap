@@ -36,7 +36,7 @@ class MilestoneOperations:
     def create_milestone(
         self,
         name: str,
-        description: str = "",
+        headline: str = "",
         due_date: datetime | None = None,
         status: str | None = None,
     ) -> Milestone:
@@ -44,7 +44,7 @@ class MilestoneOperations:
 
         Args:
             name: Milestone name
-            description: Milestone description (optional)
+            headline: Milestone headline (short summary)
             due_date: Due date for the milestone (optional)
             status: Milestone status (optional, defaults to OPEN)
 
@@ -54,12 +54,12 @@ class MilestoneOperations:
         logger.info(
             "creating_milestone",
             milestone_name=name,
-            has_description=description is not None,
+            has_headline=headline is not None,
             has_due_date=due_date is not None,
             status=status,
         )
         return self.milestone_service.create_milestone(
-            name=name, description=description, due_date=due_date, status=status
+            name=name, headline=headline, due_date=due_date, status=status
         )
 
     @safe_operation(OperationType.READ, "Milestone")
@@ -102,7 +102,7 @@ class MilestoneOperations:
     def update_milestone(
         self,
         name: str,
-        description: str | None = None,
+        headline: str | None = None,
         due_date: datetime | None = None,
         clear_due_date: bool = False,
         status: str | None = None,
@@ -111,7 +111,7 @@ class MilestoneOperations:
 
         Args:
             name: Name of the milestone to update
-            description: New description (None to keep current)
+            headline: New headline (None to keep current)
             due_date: New due date (None to keep current)
             clear_due_date: If True, remove the due date
             status: New status (None to keep current)
@@ -124,7 +124,7 @@ class MilestoneOperations:
         logger.info(
             "updating_milestone",
             milestone_name=name,
-            has_description=description is not None,
+            has_headline=headline is not None,
             has_due_date=due_date is not None,
             clear_due_date=clear_due_date,
             has_status=status is not None,
@@ -133,7 +133,7 @@ class MilestoneOperations:
             return (
                 self.milestone_service.update_milestone(
                     name=name,
-                    description=description,
+                    headline=headline,
                     due_date=due_date,
                     clear_due_date=clear_due_date,
                     status=status,

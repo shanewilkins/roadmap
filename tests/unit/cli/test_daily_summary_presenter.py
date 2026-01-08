@@ -29,7 +29,7 @@ def sample_data():
     today = datetime.now()
     milestone = Milestone(
         name="v1.0",
-        description="First release",
+        content="First release",
         status=MilestoneStatus.OPEN,
         due_date=today + timedelta(days=10),
     )
@@ -161,7 +161,7 @@ class TestDailySummaryPresenterHeader:
         """Test that header includes user information."""
         milestone = Milestone(
             name="v1.0",
-            description="Test milestone",
+            content="Test milestone",
             status=MilestoneStatus.OPEN,
             due_date=datetime.now() + timedelta(days=10),
         )
@@ -399,7 +399,7 @@ class TestDailySummaryPresenterIntegration:
 
         milestone = Milestone(
             name="v1.0",
-            description="Test milestone",
+            content="Test milestone",
             status=MilestoneStatus.OPEN,
             due_date=datetime.now() + timedelta(days=10),
         )

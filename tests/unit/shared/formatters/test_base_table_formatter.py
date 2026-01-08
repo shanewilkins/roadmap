@@ -29,11 +29,11 @@ class ConcreteTableFormatter(BaseTableFormatter):
         """Get filter description."""
         return f"{len(items)} test items"
 
-    def items_to_table_data(self, items, title="Items", description=""):
+    def items_to_table_data(self, items, title="Items", headline=""):
         """Convert items to table data."""
         return TableData(
             title=title,
-            description=description,
+            headline=headline,
             rows=[[str(item)] for item in items],
             columns=[
                 ColumnDef(name="data", display_name="Data", type=ColumnType.STRING)
@@ -113,7 +113,7 @@ class TestBaseTableFormatter:
 
         assert isinstance(result, TableData)
         assert result.title == "Items"
-        assert result.description == ""
+        assert result.headline == ""
 
     def test_items_to_table_data_with_custom_title(self, formatter):
         """Test converting items with custom title."""
@@ -125,9 +125,9 @@ class TestBaseTableFormatter:
     def test_items_to_table_data_with_description(self, formatter):
         """Test converting items with description."""
         items = [1, 2]
-        result = formatter.items_to_table_data(items, description="Test description")
+        result = formatter.items_to_table_data(items, headline="Test description")
 
-        assert result.description == "Test description"
+        assert result.headline == "Test description"
 
     def test_items_to_table_data_empty_list(self, formatter):
         """Test converting empty items list."""
@@ -156,7 +156,7 @@ class TestBaseTableFormatter:
                 def get_filter_description(self, items):
                     return "test"
 
-                def items_to_table_data(self, items, title="", description=""):
+                def items_to_table_data(self, items, title="", headline=""):
                     return TableData(columns=[], rows=[])
 
             MissingAddRow()  # type: ignore
@@ -172,7 +172,7 @@ class TestBaseTableFormatter:
                 def add_row(self, table, item):
                     pass
 
-                def items_to_table_data(self, items, title="", description=""):
+                def items_to_table_data(self, items, title="", headline=""):
                     return TableData(columns=[], rows=[])
 
             MissingFilterDesc()  # type: ignore

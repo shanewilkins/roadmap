@@ -121,8 +121,8 @@ class ProjectPresenter(BasePresenter):
         metadata.add_row("Status", project_dto.status.upper())
         metadata.add_row("Owner", project_dto.owner or "Unassigned")
 
-        if project_dto.description:
-            metadata.add_row("Description", project_dto.description)
+        if project_dto.headline:
+            metadata.add_row("Headline", project_dto.headline)
 
         if isinstance(project_dto.target_end_date, datetime):
             metadata.add_row(

@@ -30,7 +30,7 @@ def roadmap_with_workflow_items(cli_runner):
         IntegrationTestBase.create_milestone(
             cli_runner,
             name="v1.0",
-            description="First release",
+            headline="First release",
         )
 
         # Create various issues with different priorities assigned to testuser

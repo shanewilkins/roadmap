@@ -66,7 +66,7 @@ class IntegrationTestBase:
     def create_milestone(
         cli_runner: CliRunner,
         name: str,
-        description: str = "",
+        headline: str = "",
         due_date: str | None = None,
     ) -> dict[str, Any]:
         """Create a milestone and return it.
@@ -74,18 +74,18 @@ class IntegrationTestBase:
         Args:
             cli_runner: Click CliRunner instance
             name: Milestone name
-            description: Optional description
+            headline: Optional headline
             due_date: Optional due date (YYYY-MM-DD format)
 
         Returns:
-            Dictionary with milestone details (name, description, etc.)
+            Dictionary with milestone details (name, headline, etc.)
 
         Raises:
             AssertionError: If milestone creation fails
         """
         cmd = ["milestone", "create", name]
-        if description:
-            cmd.extend(["--description", description])
+        if headline:
+            cmd.extend(["--description", headline])
         if due_date:
             cmd.extend(["--due-date", due_date])
 
@@ -106,7 +106,7 @@ class IntegrationTestBase:
             if milestone is not None:
                 return {
                     "name": milestone.name,
-                    "description": milestone.description,
+                    "headline": milestone.headline,
                     "due_date": str(milestone.due_date) if milestone.due_date else None,
                 }
         except Exception:
@@ -115,7 +115,7 @@ class IntegrationTestBase:
         # If not found immediately, return dict with known values
         return {
             "name": name,
-            "description": description,
+            "headline": headline,
             "due_date": due_date,
         }
 

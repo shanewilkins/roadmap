@@ -168,7 +168,7 @@ class TestMilestoneParser:
             milestone = MilestoneParser.parse_milestone_file(Path(f.name))
 
         assert milestone.name == name
-        assert milestone.description == description
+        assert milestone.content == description
         assert milestone.status == MilestoneStatus(status)
         assert milestone.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
@@ -184,7 +184,7 @@ class TestMilestoneParser:
         """Test saving milestone to file."""
         milestone = Milestone(
             name="v1.0",
-            description="First release",
+            headline="First release",
             status=MilestoneStatus.OPEN,
             content="Milestone content",
             created=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
@@ -207,7 +207,7 @@ class TestMilestoneParser:
         """Test that basic milestone fields survive roundtrip."""
         original_milestone = Milestone(
             name="v1.5",
-            description="Patch release",
+            headline="Patch release",
             status=MilestoneStatus.OPEN,
             due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
             content="Patch release content",
@@ -224,14 +224,14 @@ class TestMilestoneParser:
 
         # Check basic fields
         assert parsed_milestone.name == original_milestone.name
-        assert parsed_milestone.description == original_milestone.description
+        assert parsed_milestone.content == original_milestone.content
         assert parsed_milestone.status == original_milestone.status
 
     def test_roundtrip_serialization_dates_and_content(self):
         """Test that dates and content survive roundtrip."""
         original_milestone = Milestone(
             name="v1.5",
-            description="Patch release",
+            headline="Patch release",
             status=MilestoneStatus.OPEN,
             due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
             content="Patch release content",

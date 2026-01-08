@@ -24,7 +24,6 @@ class TestIssueCreationRobust:
         IntegrationTestBase.create_issue(
             cli_runner,
             title="Implement feature X",
-            description="Add new feature to improve user experience",
             priority="high",
         )
 
@@ -42,7 +41,7 @@ class TestIssueCreationRobust:
         IntegrationTestBase.create_milestone(
             cli_runner,
             name="v1.0",
-            description="First release",
+            headline="First release",
         )
 
         # Action
@@ -89,7 +88,7 @@ class TestMilestoneCreationRobust:
         IntegrationTestBase.create_milestone(
             cli_runner,
             name="v1.0.0",
-            description="Initial release",
+            headline="Initial release",
         )
 
         # Assert through API
@@ -127,7 +126,7 @@ class TestWorkflowRobust:
         IntegrationTestBase.create_milestone(
             cli_runner,
             name="Beta Release",
-            description="Beta version of the product",
+            headline="Beta version of the product",
         )
 
         # Action: Create several issues for the milestone

@@ -64,19 +64,19 @@ class TestDailySummaryServiceMilestoneSelection:
         milestones = [
             Milestone(
                 name="v1.0",
-                description="First release",
+                headline="First release",
                 status=MilestoneStatus.OPEN,
                 due_date=today + timedelta(days=10),
             ),
             Milestone(
                 name="v2.0",
-                description="Second release",
+                headline="Second release",
                 status=MilestoneStatus.OPEN,
                 due_date=today + timedelta(days=20),
             ),
             Milestone(
                 name="v3.0",
-                description="Third release",
+                headline="Third release",
                 status=MilestoneStatus.CLOSED,
                 due_date=today + timedelta(days=5),
             ),
@@ -107,13 +107,13 @@ class TestDailySummaryServiceMilestoneSelection:
         milestones = [
             Milestone(
                 name="no-date",
-                description="No due date",
+                headline="No due date",
                 status=MilestoneStatus.OPEN,
                 due_date=None,
             ),
             Milestone(
                 name="with-date",
-                description="Has due date",
+                headline="Has due date",
                 status=MilestoneStatus.OPEN,
                 due_date=today + timedelta(days=10),
             ),
@@ -284,7 +284,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         today = datetime.now()
         milestone = Milestone(
             name="v1.0",
-            description="First release",
+            headline="First release",
             status=MilestoneStatus.OPEN,
             due_date=today + timedelta(days=10),
         )
@@ -317,7 +317,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         today = datetime.now()
         milestone = Milestone(
             name="v1.0",
-            description="First release",
+            headline="First release",
             status=MilestoneStatus.OPEN,
             due_date=today + timedelta(days=10),
         )
@@ -337,7 +337,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         today = datetime.now()
         milestone = Milestone(
             name="v1.0",
-            description="First release",
+            headline="First release",
             status=MilestoneStatus.OPEN,
             due_date=today + timedelta(days=10),
         )
@@ -357,7 +357,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         today = datetime.now()
         milestone = Milestone(
             name="v1.0",
-            description="First release",
+            headline="First release",
             status=MilestoneStatus.OPEN,
             due_date=today + timedelta(days=10),
         )

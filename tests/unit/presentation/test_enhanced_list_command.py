@@ -39,7 +39,7 @@ def temp_roadmap():
             future_date = datetime.now() + timedelta(days=30)
             future_milestone = Milestone(
                 name="Future Sprint",
-                description="Future sprint",
+                headline="Future sprint",
                 due_date=future_date,
                 status=MilestoneStatus.OPEN,
             )

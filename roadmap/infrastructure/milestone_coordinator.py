@@ -43,14 +43,14 @@ class MilestoneCoordinator:
     def create(
         self,
         name: str,
-        description: str = "",
+        headline: str = "",
         due_date: datetime | None = None,
         status: str | None = None,
         project_id: str | None = None,
     ) -> Milestone:
         """Create a new milestone."""
         milestone = self._ops.create_milestone(
-            name=name, description=description, due_date=due_date, status=status
+            name=name, headline=headline, due_date=due_date, status=status
         )
 
         # Assign to project if provided
@@ -70,7 +70,7 @@ class MilestoneCoordinator:
     def update(
         self,
         name: str,
-        description: str | None = None,
+        headline: str | None = None,
         due_date: datetime | None = None,
         clear_due_date: bool = False,
         status: str | None = None,
@@ -79,7 +79,7 @@ class MilestoneCoordinator:
 
         Args:
             name: Name of the milestone to update
-            description: New description (None to keep current)
+            headline: New headline (None to keep current)
             due_date: New due date (None to keep current)
             clear_due_date: If True, remove the due date
             status: New status (None to keep current)
@@ -89,7 +89,7 @@ class MilestoneCoordinator:
         """
         return self._ops.update_milestone(
             name=name,
-            description=description,
+            headline=headline,
             due_date=due_date,
             clear_due_date=clear_due_date,
             status=status,

@@ -67,7 +67,7 @@ class TestEntityHealthScannerIntegration:
 
         milestone = MagicMock(spec=Milestone)
         milestone.name = "v1.0"
-        milestone.description = "Release 1.0"
+        milestone.content = "Release 1.0"
         milestone.status = Status.CLOSED
         milestone.created = datetime.now() - timedelta(days=30)
         milestone.due_date = datetime.now()
@@ -77,7 +77,7 @@ class TestEntityHealthScannerIntegration:
         project.id = "project-1"
         project.name = "Project"
         project.status = Status.TODO
-        project.description = "Project description"
+        project.content = "Project description"
         project.owner = "owner"
 
         issue_report = scanner.scan_issue(issue)

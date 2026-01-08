@@ -42,6 +42,7 @@ class IssueCoordinator:
         depends_on: list[str] | None = None,
         blocks: list[str] | None = None,
         status: str | None = None,
+        content: str | None = None,
     ) -> Issue:
         """Create a new issue."""
         return self._ops.create_issue(
@@ -55,6 +56,7 @@ class IssueCoordinator:
             depends_on=depends_on,
             blocks=blocks,
             status=status,
+            content=content,
         )
 
     def list(

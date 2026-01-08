@@ -57,7 +57,7 @@ class MilestoneScenarioFactory:
         IntegrationTestBase.create_milestone(
             self.cli_runner,
             name=name,
-            description=description,
+            headline=description,
             due_date=due_date,
         )
         return self
@@ -252,7 +252,7 @@ class ComplexWorkflowFactory:
         IntegrationTestBase.create_milestone(
             self.cli_runner,
             name=milestone_name,
-            description=f"Release planning for {milestone_name}",
+            headline=f"Release planning for {milestone_name}",
         )
 
         # Create feature issues (high priority)
@@ -298,7 +298,7 @@ class ComplexWorkflowFactory:
             IntegrationTestBase.create_milestone(
                 self.cli_runner,
                 name=sprint_name,
-                description=f"Sprint {sprint_num} work",
+                headline=f"Sprint {sprint_num} work",
             )
 
             # Create issues for sprint

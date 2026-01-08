@@ -120,9 +120,7 @@ class TestCommentPersistence:
         core.issues.update(issue.id, comments=issue.comments)
 
         # Update other fields
-        core.issues.update(
-            issue.id, title="Updated Title", description="New description"
-        )
+        core.issues.update(issue.id, title="Updated Title", headline="New description")
 
         # Reload and verify comment still exists
         reloaded = core.issues.get(issue.id)

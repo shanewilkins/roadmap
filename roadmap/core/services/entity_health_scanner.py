@@ -173,11 +173,11 @@ class EntityHealthScanner:
         )
 
         # Check description/content
-        if not milestone.description or not milestone.description.strip():
+        if not milestone.content or not milestone.content.strip():
             report.issues.append(
                 HealthIssue(
-                    code="missing_description",
-                    message="Milestone has no description",
+                    code="missing_content",
+                    message="Milestone has no content",
                     severity=HealthSeverity.WARNING,
                     category="content",
                 )
@@ -235,11 +235,11 @@ class EntityHealthScanner:
         )
 
         # Check description/content
-        if not project.description or not project.description.strip():
+        if not project.content or not project.content.strip():
             report.issues.append(
                 HealthIssue(
-                    code="missing_description",
-                    message="Project has no description",
+                    code="missing_content",
+                    message="Project has no content",
                     severity=HealthSeverity.WARNING,
                     category="content",
                 )

@@ -52,12 +52,11 @@ def sample_project():
     return Project(
         id="PROJ-001",
         name="Test Project",
-        description="A test project",
+        content="A test project",
         status=ProjectStatus.ACTIVE,
         created=datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc),
         updated=datetime(2025, 1, 15, 12, 0, tzinfo=timezone.utc),
         milestones=["Milestone 1", "Milestone 2"],
-        content="# Test Project\n\nProject content",
     )
 
 

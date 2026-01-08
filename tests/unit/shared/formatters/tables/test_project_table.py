@@ -260,10 +260,10 @@ class TestProjectTableFormatter:
     def test_items_to_table_data_with_description(self, formatter, sample_project_dict):
         """Test converting with description."""
         result = formatter.items_to_table_data(
-            [sample_project_dict], description="Test Description"
+            [sample_project_dict], headline="Test Description"
         )
 
-        assert result.description == "Test Description"
+        assert result.headline == "Test Description"
 
     def test_items_to_table_data_with_enum_values(self, formatter):
         """Test TableData handles enum values properly."""
@@ -288,11 +288,11 @@ class TestProjectTableFormatter:
         result = ProjectTableFormatter.projects_to_table_data(
             [sample_project_dict],
             title="Custom",
-            description="Filter",
+            headline="Filter",
         )
 
         assert result.title == "Custom"
-        assert result.description == "Filter"
+        assert result.headline == "Filter"
 
     @pytest.mark.parametrize("project_count", [0, 1, 5, 10])
     def test_add_multiple_rows(self, formatter, project_count):

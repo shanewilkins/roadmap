@@ -224,7 +224,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         title=remote_issue.title or "Untitled",
                         assignee=remote_issue.assignee,
                         milestone=remote_issue.milestone,
-                        description=remote_issue.description or "",
+                        description=remote_issue.headline or "",
                         labels=remote_issue.labels or [],
                         updated_at=datetime.now(),
                     )

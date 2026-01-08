@@ -212,13 +212,13 @@ class TestMilestoneBuilder:
             MilestoneBuilder()
             .with_name("v1.0")
             .with_status(MilestoneStatus.OPEN)
-            .with_description("First release")
+            .with_content("First release")
             .build()
         )
 
         assert milestone.name == "v1.0"
         assert milestone.status == MilestoneStatus.OPEN
-        assert milestone.description == "First release"
+        assert milestone.content == "First release"
 
     def test_builder_with_name(self):
         """Test setting custom name."""
@@ -227,8 +227,8 @@ class TestMilestoneBuilder:
 
     def test_builder_with_description(self):
         """Test setting description."""
-        milestone = MilestoneBuilder().with_description("Major update").build()
-        assert milestone.description == "Major update"
+        milestone = MilestoneBuilder().with_content("Major update").build()
+        assert milestone.content == "Major update"
 
     @pytest.mark.parametrize(
         "status",
@@ -326,7 +326,7 @@ class TestProjectBuilder:
 
         assert project.name == "Roadmap"
         assert project.status == ProjectStatus.ACTIVE
-        assert project.description == "Project management tool"
+        assert project.content == "Project management tool"
 
     def test_builder_with_id(self):
         """Test setting custom project ID."""
@@ -340,8 +340,8 @@ class TestProjectBuilder:
 
     def test_builder_with_description(self):
         """Test setting description."""
-        project = ProjectBuilder().with_description("A test project").build()
-        assert project.description == "A test project"
+        project = ProjectBuilder().with_content("A test project").build()
+        assert project.content == "A test project"
 
     def test_builder_with_all_statuses(self):
         """Test setting all project statuses."""

@@ -451,6 +451,22 @@ class HealthCheck:
             f"All issues linked to {backend_name} backend",
         )
 
+    @staticmethod
+    def check_missing_headlines(core) -> tuple[HealthStatus, str]:
+        """Check for entities with missing or empty headlines.
+
+        Delegates to MissingHeadlinesValidator.
+
+        Returns:
+            Tuple of (status, message) describing the health check result
+        """
+        from roadmap.core.services.validators.missing_headlines_validator import (
+            MissingHeadlinesValidator,
+        )
+
+        status_str, message = MissingHeadlinesValidator.check_missing_headlines(core)
+        return HealthStatus(status_str), message
+
     @classmethod
     def run_all_checks(cls, core) -> dict[str, tuple[HealthStatus, str]]:
         """Run all health checks and return results.
@@ -481,6 +497,7 @@ class HealthCheck:
             "archivable_milestones": cls.check_archivable_milestones(core),
             "comment_integrity": cls.check_comment_integrity(core),
             "unlinked_issues": cls.check_unlinked_issues(core),
+            "missing_headlines": cls.check_missing_headlines(core),
         }
 
         # Count statuses

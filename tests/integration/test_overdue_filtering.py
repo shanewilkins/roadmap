@@ -22,7 +22,7 @@ class TestOverdueIssueFiltering:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",
-                description="This is overdue",
+                headline="This is overdue",
                 due_date=overdue_date,
             )
 
@@ -31,7 +31,7 @@ class TestOverdueIssueFiltering:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="future-milestone",
-                description="This is in the future",
+                headline="This is in the future",
                 due_date=future_date,
             )
 
@@ -133,7 +133,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",
-                description="This is overdue",
+                headline="This is overdue",
                 due_date=overdue_date,
             )
 
@@ -142,7 +142,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="future-milestone",
-                description="This is in the future",
+                headline="This is in the future",
                 due_date=future_date,
             )
 
@@ -165,7 +165,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",
-                description="This is overdue",
+                headline="This is overdue",
                 due_date=overdue_date,
             )
 
@@ -174,7 +174,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="future-milestone",
-                description="This is in the future",
+                headline="This is in the future",
                 due_date=future_date,
             )
 
@@ -196,7 +196,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",
-                description="This is overdue",
+                headline="This is overdue",
                 due_date=overdue_date,
             )
 

@@ -41,6 +41,11 @@ class MilestoneParser:
         # Set content
         frontmatter["content"] = content
 
+        # If headline is not provided, use first line of content as fallback
+        if "headline" not in frontmatter or not frontmatter["headline"]:
+            first_line = content.split("\n")[0] if content else ""
+            frontmatter["headline"] = first_line[:100]  # Limit to 100 chars
+
         return Milestone(**frontmatter)
 
     @classmethod
@@ -71,14 +76,13 @@ class MilestoneParser:
 
             milestone = Milestone(
                 name=data.get("name") or "Untitled Milestone",
-                description=data.get("description", ""),
+                content=data.get("description", ""),
                 status=MilestoneStatus(data.get("status"))
                 if data.get("status")
                 else MilestoneStatus.OPEN,
                 created=created,
                 updated=updated,
                 due_date=due_date,
-                content=data.get("content", ""),
             )
             return True, milestone, None
         except ValueError as e:

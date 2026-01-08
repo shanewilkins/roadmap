@@ -106,7 +106,6 @@ class TestMilestonePresenterIntegrationWithMapper:
         milestone = Milestone(
             name="v1.0.0",
             status=MilestoneStatus.OPEN,
-            description="Release version 1.0",
             content="Release version 1.0\n\n## Goals\n- Complete features",
             comments=[],
         )
@@ -132,7 +131,6 @@ class TestMilestonePresenterIntegrationWithMapper:
             name="v1.0.0",
             status=MilestoneStatus.CLOSED,
             due_date=None,
-            description="Completed milestone",
             content="",  # Changed from None to empty string
             created=datetime.now(),
             updated=datetime.now(),
@@ -160,7 +158,6 @@ class TestProjectPresenterIntegrationWithMapper:
             id="p1",
             name="Website Redesign",
             status=ProjectStatus.ACTIVE,
-            description="Redesign the main website",
             content="Redesign the main website\n\n## Objectives\n- Improve UX",
             owner="alice",
             target_end_date=datetime.now() + timedelta(days=60),
@@ -195,7 +192,6 @@ class TestProjectPresenterIntegrationWithMapper:
             id="p1",
             name="Small Task",
             status=ProjectStatus.PLANNING,
-            description="",  # Changed from None to empty string
             content="",  # Changed from None to empty string
             owner=None,
             target_end_date=None,

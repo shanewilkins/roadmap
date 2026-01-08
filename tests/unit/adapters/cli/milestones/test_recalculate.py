@@ -17,10 +17,9 @@ def sample_milestone():
     """Create a sample milestone."""
     return Milestone(
         name="v1.0",
-        description="First release",
+        content="First release",
         due_date=None,
         status=MilestoneStatus.OPEN,
-        content="# v1.0\nFirst release",
     )
 
 
@@ -229,10 +228,9 @@ class TestRecalculateMilestoneProgress:
         """Test recalculating multiple milestones."""
         milestone2 = Milestone(
             name="v2.0",
-            description="Second release",
+            content="Second release",
             due_date=None,
             status=MilestoneStatus.OPEN,
-            content="# v2.0\nSecond release",
         )
         mock_core.issues.list.return_value = sample_issues
         mock_core.milestones.list.return_value = [sample_milestone, milestone2]

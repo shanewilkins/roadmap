@@ -165,7 +165,7 @@ class ProjectService:
     def create_project(
         self,
         name: str,
-        description: str = "",
+        headline: str = "",
         milestones: list | None = None,
         status: str | None = None,
     ) -> Project:
@@ -173,7 +173,7 @@ class ProjectService:
 
         Args:
             name: Project name
-            description: Project description
+            headline: Project headline (short summary)
             milestones: List of associated milestone names
             status: Project status (optional)
 
@@ -195,10 +195,10 @@ class ProjectService:
 
         project = Project(
             name=name,
-            description=description,
+            headline=headline or "",
+            content="",
             milestones=milestones or [],
             status=project_status,
-            content=f"# {name}\n\n## Description\n\n{description}\n\n## Overview\n\n- Status: Not Started\n- Priority: Medium",
         )
 
         self.save_project(project)
