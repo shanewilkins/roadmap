@@ -84,57 +84,6 @@ def sync_state_manager(temp_roadmap_dir):
     return SyncStateManager(temp_roadmap_dir)
 
 
-@pytest.mark.skip(
-    reason="Deprecated file-based state persistence - using DB approach instead"
-)
-class TestStatePersistence:
-    """Test sync state persistence across multiple iterations."""
-
-    def test_first_sync_creates_state_file(self, sync_state_manager):
-        """First sync should create and save state file."""
-        issue = IssueTestDataBuilder("issue-1").with_status(Status.TODO).build()
-
-        # Initial state should be None
-        assert sync_state_manager.load_sync_state() is None
-
-        # Create and save state
-        state = sync_state_manager.create_sync_state_from_issues(
-            [issue], backend="github"
-        )
-        sync_state_manager.save_sync_state(state)
-
-        # Should be loadable now
-        loaded = sync_state_manager.load_sync_state()
-        assert loaded is not None
-        assert loaded.backend == "github"
-        assert "issue-1" in loaded.issues
-
-    def test_multiple_sync_iterations_preserve_state(self, sync_state_manager):
-        """State should persist and be usable across multiple syncs."""
-        # First sync
-        issue1_v1 = IssueTestDataBuilder("issue-1").with_status(Status.TODO).build()
-        state1 = sync_state_manager.create_sync_state_from_issues(
-            [issue1_v1], backend="github"
-        )
-        sync_state_manager.save_sync_state(state1)
-        timestamp1 = state1.last_sync
-
-        # Second sync - load prior state and add new issue
-        prior_state = sync_state_manager.load_sync_state()
-        assert prior_state is not None
-
-        issue2 = IssueTestDataBuilder("issue-2").with_status(Status.IN_PROGRESS).build()
-        state2 = sync_state_manager.create_sync_state_from_issues(
-            [issue1_v1, issue2], backend="github"
-        )
-        sync_state_manager.save_sync_state(state2)
-        timestamp2 = state2.last_sync
-
-        # Verify progression
-        assert timestamp2 > timestamp1
-        assert len(state2.issues) == 2
-
-
 @pytest.mark.parametrize("scenario", SYNC_SCENARIOS, ids=lambda s: s["name"])
 class TestStatusFieldConflicts:
     """Parameterized tests for status field conflicts using real Issue objects."""
