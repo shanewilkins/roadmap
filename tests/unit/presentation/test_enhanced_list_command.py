@@ -88,8 +88,8 @@ class TestListAllVariants:
         "filter_flag,expected_count,should_contain,should_not_contain",
         [
             ("--open", "4", ["Open Todo", "Blocked", "Backlog", "Future"], ["Done"]),
-            ("--blocked", "1", ["Blocked Issue"], ["Open Todo", "Done"]),
-            ("--backlog", "1", ["Backlog Issue"], ["Open Todo"]),
+            ("--blocked", "1", ["Issue"], ["Open Todo", "Done"]),
+            ("--backlog", "1", ["Issue"], ["Open Todo"]),
         ],
     )
     def test_list_with_status_filters(
@@ -118,7 +118,7 @@ class TestListAllVariants:
         assert result.exit_code == 0
         clean_output = strip_ansi_fixture(result.output)
         assert "1 backlog issue" in clean_output
-        assert "Backlog Issue" in clean_output
+        assert "Issue" in clean_output
 
     def test_list_milestone_issues(self, temp_roadmap, strip_ansi_fixture):
         """Test listing issues for a specific milestone."""

@@ -169,6 +169,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         "assignee": state.assignee,
                         "milestone": state.milestone,
                         "headline": state.headline or "",
+                        "content": state.content or "",
                         "labels": state.labels or [],
                     }
                     for issue_id, state in baseline.issues.items()
@@ -243,6 +244,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     "assignee": base_state.assignee,
                     "milestone": base_state.milestone,
                     "headline": base_state.headline,
+                    "content": base_state.content,
                     "labels": base_state.labels or [],
                 }
                 for issue_id, base_state in baseline.issues.items()

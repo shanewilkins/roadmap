@@ -303,6 +303,15 @@ class DatabaseManager:
                 CREATE INDEX idx_issue_remote_links_issue_uuid ON issue_remote_links (issue_uuid);
             """)
 
+        # Migration 4: Add headline and content columns to sync_base_state
+        cursor.execute("PRAGMA table_info(sync_base_state)")
+        columns = [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
+        if "headline" not in columns and "content" not in columns:
+            migrations.append("""
+                ALTER TABLE sync_base_state ADD COLUMN headline TEXT DEFAULT '';
+                ALTER TABLE sync_base_state ADD COLUMN content TEXT DEFAULT '';
+            """)
+
         # Execute migrations
         for migration_sql in migrations:
             try:

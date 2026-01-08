@@ -38,8 +38,12 @@ class MilestoneParser:
                     f"Valid status values are: {', '.join(valid_statuses)}"
                 ) from e
 
-        # Set content
-        frontmatter["content"] = content
+        # Map legacy "description" field to "content" if present
+        if "description" in frontmatter and "content" not in frontmatter:
+            frontmatter["content"] = frontmatter.pop("description")
+        else:
+            # Otherwise use the body content
+            frontmatter["content"] = content
 
         # If headline is not provided, use first line of content as fallback
         if "headline" not in frontmatter or not frontmatter["headline"]:
@@ -51,7 +55,7 @@ class MilestoneParser:
     @classmethod
     def save_milestone_file(cls, milestone: Milestone, file_path: Path) -> None:
         """Save a Milestone object to a markdown file."""
-        frontmatter = milestone.model_dump(exclude={"content"})
+        frontmatter = milestone.model_dump(exclude={"content", "file_path"})
         FrontmatterParser.serialize_file(frontmatter, milestone.content, file_path)
 
     @classmethod

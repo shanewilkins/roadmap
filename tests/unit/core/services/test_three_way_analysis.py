@@ -32,6 +32,7 @@ class TestThreeWayAnalysis:
             assignee="alice",
             milestone="v1.0",
             headline="Original description",
+            content="Original description",
             labels=["bug"],
             updated_at=datetime.now(timezone.utc),
         )

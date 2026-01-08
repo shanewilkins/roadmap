@@ -108,9 +108,18 @@ class TestMilestoneParser:
     """Test cases for MilestoneParser."""
 
     @pytest.mark.parametrize(
-        "name,description,status,due_date_str,github_milestone,expected_has_due_date,expected_has_github_milestone",
+        "name,headline,status,due_date_str,github_milestone,expected_has_due_date,expected_has_github_milestone,body_content",
         [
-            ("v1.0", "First release", "open", None, None, False, False),
+            (
+                "v1.0",
+                "First release",
+                "open",
+                None,
+                None,
+                False,
+                False,
+                "This is the first release milestone.\n\n## Goals\n\n- Feature A\n- Feature B",
+            ),
             (
                 "v2.0",
                 "Second release",
@@ -119,23 +128,25 @@ class TestMilestoneParser:
                 456,
                 True,
                 True,
+                "Second release content.",
             ),
         ],
     )
     def test_parse_milestone_file(
         self,
         name,
-        description,
+        headline,
         status,
         due_date_str,
         github_milestone,
         expected_has_due_date,
         expected_has_github_milestone,
+        body_content,
     ):
         """Test parsing milestone files with various configurations."""
         frontmatter_lines = [
             f"name: {name}",
-            f"description: {description}",
+            f"headline: {headline}",
             f"status: {status}",
         ]
         if due_date_str:
@@ -149,17 +160,7 @@ class TestMilestoneParser:
             ]
         )
 
-        content = "---\n" + "\n".join(frontmatter_lines) + "\n---\n\n"
-        if status == "open":
-            content += """This is the first release milestone.
-
-## Goals
-
-- Feature A
-- Feature B
-"""
-        else:
-            content += "Second release content.\n"
+        content = "---\n" + "\n".join(frontmatter_lines) + "\n---\n\n" + body_content
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             f.write(content)
@@ -168,7 +169,8 @@ class TestMilestoneParser:
             milestone = MilestoneParser.parse_milestone_file(Path(f.name))
 
         assert milestone.name == name
-        assert milestone.content == description
+        assert milestone.headline == headline
+        assert milestone.content == body_content
         assert milestone.status == MilestoneStatus(status)
         assert milestone.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
@@ -199,7 +201,7 @@ class TestMilestoneParser:
         # Read back and verify
         saved_content = file_path.read_text()
         assert "name: v1.0" in saved_content
-        assert "description: First release" in saved_content
+        assert "headline: First release" in saved_content
         assert "status: open" in saved_content
         assert "Milestone content" in saved_content
 

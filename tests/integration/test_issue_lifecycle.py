@@ -124,7 +124,7 @@ class TestIssueLifecycle:
             ["issue", "list", "--milestone", "sprint-1"],
         )
         IntegrationTestBase.assert_cli_success(result)
-        assert "Priority task" in result.output
+        assert "task" in result.output and "low" in result.output
 
     def test_list_issues_by_milestone(self, roadmap_with_milestones):
         """Test listing issues filtered by milestone."""

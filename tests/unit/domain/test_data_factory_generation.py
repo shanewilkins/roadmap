@@ -82,7 +82,7 @@ class TestDataFactory:
         # Set up default properties using TestDataFactory
         issue.id = kwargs.get("id", TestDataFactory.issue_id())
         issue.title = kwargs.get("title", TestDataFactory.message())
-        issue.description = kwargs.get("description", TestDataFactory.message())
+        issue.headline = kwargs.get("headline", TestDataFactory.message())
         issue.status = kwargs.get("status", "open")
         issue.priority = kwargs.get("priority", "medium")
         issue.labels = kwargs.get("labels", [TestDataFactory.message()])

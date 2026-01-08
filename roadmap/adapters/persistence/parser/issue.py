@@ -67,8 +67,12 @@ class IssueParser:
         # Ensure list fields exist
         cls._ensure_list_fields(frontmatter)
 
-        # Set content
-        frontmatter["content"] = content
+        # Map legacy "description" field to "content" if present
+        if "description" in frontmatter and "content" not in frontmatter:
+            frontmatter["content"] = frontmatter.pop("description")
+        else:
+            # Otherwise use the body content
+            frontmatter["content"] = content
 
         # If headline is not provided, use first line of content as fallback
         if "headline" not in frontmatter or not frontmatter["headline"]:
@@ -88,7 +92,7 @@ class IssueParser:
             file_path: Path to write the file to
             sync_metadata: Optional sync metadata to include in frontmatter
         """
-        frontmatter = issue.model_dump(exclude={"content"})
+        frontmatter = issue.model_dump(exclude={"content", "file_path"})
 
         # Add sync_metadata if provided
         if sync_metadata:

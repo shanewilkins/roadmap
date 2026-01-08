@@ -26,10 +26,12 @@ class MockIssue:
         github_issue=None,
         progress_percentage=0,
         estimated_hours=0,
+        headline="Test Headline",
     ):
         """Initialize mock issue."""
         self.id = issue_id
         self.title = title
+        self.headline = headline
         self.priority = priority or Priority.MEDIUM
         self.status = status or Status.TODO
         self.progress_display = progress_display
@@ -74,10 +76,10 @@ class TestIssueTableFormatter:
     def test_init_sets_columns_config(self):
         """Test columns config is properly initialized."""
         formatter = IssueTableFormatter()
-        assert len(formatter.columns_config) == 8
+        assert len(formatter.columns_config) == 9
         assert formatter.columns_config[0]["name"] == "ID"
         assert formatter.columns_config[1]["name"] == "Title"
-        assert formatter.columns_config[2]["name"] == "Priority"
+        assert formatter.columns_config[2]["name"] == "Headline"
 
     def test_create_table_returns_table(self, formatter):
         """Test creating a table."""
@@ -228,7 +230,7 @@ class TestIssueTableFormatter:
     def test_items_to_table_data_with_description(self, formatter, sample_issue):
         """Test converting with description."""
         result = formatter.items_to_table_data(
-            [sample_issue], headline="Test Description"
+            [sample_issue], description="Test Description"
         )
 
         assert result.headline == "Test Description"

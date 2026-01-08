@@ -14,6 +14,7 @@ def mock_issue_with_github():
     return Mock(
         id="test-123",
         title="Test Issue",
+        headline="Test headline",
         github_issue=456,
         priority=Mock(value="high"),
         status=Mock(value="todo"),
@@ -24,6 +25,7 @@ def mock_issue_with_github():
         estimated_hours=5,
         milestone_name="v0.8",
         is_backlog=False,
+        comments=[],
     )
 
 
@@ -33,6 +35,7 @@ def mock_issue_without_github():
     return Mock(
         id="test-456",
         title="Another Issue",
+        headline="Another headline",
         github_issue=None,
         priority=Mock(value="medium"),
         status=Mock(value="in_progress"),
@@ -43,6 +46,7 @@ def mock_issue_without_github():
         estimated_hours=3,
         milestone_name="backlog",
         is_backlog=True,
+        comments=[],
     )
 
 
@@ -153,7 +157,7 @@ class TestGitHubIDTableDataConversion:
         table_data = IssueTableFormatter.issues_to_table_data(
             issues,
             title="Issues",
-            headline="test",
+            description="test",
             show_github_ids=show_github_ids,
         )
 

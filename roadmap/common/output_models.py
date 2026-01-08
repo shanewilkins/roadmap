@@ -363,7 +363,7 @@ class TableData:
             columns=[ColumnDef.from_dict(col) for col in data.get("columns", [])],
             rows=data.get("rows", []),
             title=data.get("title"),
-            description=data.get("description"),
+            headline=data.get("headline") or data.get("description"),
             filters_applied=data.get("metadata", {}).get("filters_applied", {}),
             sort_by=data.get("metadata", {}).get("sort_by", []),
             selected_columns=data.get("metadata", {}).get("selected_columns"),

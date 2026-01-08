@@ -79,12 +79,12 @@ class TestProjectTableFormatter:
     def test_init_sets_columns_config(self):
         """Test columns config is properly initialized."""
         formatter = ProjectTableFormatter()
-        assert len(formatter.columns_config) == 5
+        assert len(formatter.columns_config) == 6
         assert formatter.columns_config[0]["name"] == "ID"
         assert formatter.columns_config[1]["name"] == "Name"
-        assert formatter.columns_config[2]["name"] == "Status"
-        assert formatter.columns_config[3]["name"] == "Priority"
-        assert formatter.columns_config[4]["name"] == "Owner"
+        assert formatter.columns_config[2]["name"] == "Headline"
+        assert formatter.columns_config[3]["name"] == "Status"
+        assert formatter.columns_config[4]["name"] == "Priority"
 
     def test_create_table_returns_table(self, formatter):
         """Test creating a table."""
@@ -260,7 +260,7 @@ class TestProjectTableFormatter:
     def test_items_to_table_data_with_description(self, formatter, sample_project_dict):
         """Test converting with description."""
         result = formatter.items_to_table_data(
-            [sample_project_dict], headline="Test Description"
+            [sample_project_dict], description="Test Description"
         )
 
         assert result.headline == "Test Description"
@@ -288,7 +288,7 @@ class TestProjectTableFormatter:
         result = ProjectTableFormatter.projects_to_table_data(
             [sample_project_dict],
             title="Custom",
-            headline="Filter",
+            description="Filter",
         )
 
         assert result.title == "Custom"

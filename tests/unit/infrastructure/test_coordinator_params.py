@@ -211,18 +211,18 @@ class TestMilestoneCreateParams:
             # Defaults
             (
                 {"name": "v1.0"},
-                {"name": "v1.0", "description": "", "due_date": None},
+                {"name": "v1.0", "content": "", "due_date": None},
             ),
             # All fields
             (
                 {
                     "name": "v1.0",
-                    "description": "Release version 1.0",
+                    "content": "Release version 1.0",
                     "due_date": datetime(2025, 12, 31),
                 },
                 {
                     "name": "v1.0",
-                    "description": "Release version 1.0",
+                    "content": "Release version 1.0",
                     "due_date": datetime(2025, 12, 31),
                 },
             ),
@@ -246,7 +246,7 @@ class TestMilestoneUpdateParams:
                 {"name": "v1.0"},
                 {
                     "name": "v1.0",
-                    "description": None,
+                    "content": None,
                     "due_date": None,
                     "clear_due_date": False,
                     "status": None,
@@ -256,14 +256,14 @@ class TestMilestoneUpdateParams:
             (
                 {
                     "name": "v1.0",
-                    "description": "Updated description",
+                    "content": "Updated description",
                     "due_date": datetime(2025, 12, 31),
                     "clear_due_date": False,
                     "status": "completed",
                 },
                 {
                     "name": "v1.0",
-                    "description": "Updated description",
+                    "content": "Updated description",
                     "due_date": datetime(2025, 12, 31),
                     "clear_due_date": False,
                     "status": "completed",
@@ -279,7 +279,7 @@ class TestMilestoneUpdateParams:
                     "name": "v1.0",
                     "clear_due_date": True,
                     "due_date": None,
-                    "description": None,
+                    "content": None,
                     "status": None,
                 },
             ),
@@ -301,18 +301,18 @@ class TestProjectCreateParams:
             # Defaults
             (
                 {"name": "My Project"},
-                {"name": "My Project", "description": "", "milestones": None},
+                {"name": "My Project", "content": "", "milestones": None},
             ),
             # All fields
             (
                 {
                     "name": "My Project",
-                    "description": "Project description",
+                    "content": "Project description",
                     "milestones": ["v1.0", "v1.1"],
                 },
                 {
                     "name": "My Project",
-                    "description": "Project description",
+                    "content": "Project description",
                     "milestones": ["v1.0", "v1.1"],
                 },
             ),

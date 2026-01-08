@@ -790,7 +790,7 @@ class SyncStateComparator:
                 else str(x.status),
             ),
             "assignee": ("assignee", lambda x: x.assignee),
-            "content": ("description", lambda x: x.content),
+            "content": ("content", lambda x: x.content),
             "labels": ("labels", lambda x: sorted(x.labels or [])),
         }
 
@@ -849,10 +849,16 @@ class SyncStateComparator:
 
         # Map of field names to compare
         # Remote (SyncIssue or dict) field names
+        # Support both 'content' and 'description' keys for backwards compatibility
         field_map = {
             "status": ("status", lambda: get_remote_field("status")),
             "assignee": ("assignee", lambda: get_remote_field("assignee")),
-            "content": ("description", lambda: get_remote_field("description") or ""),
+            "content": (
+                "content",
+                lambda: get_remote_field("content")
+                or get_remote_field("description")
+                or "",
+            ),
             "labels": (
                 "labels",
                 lambda: sorted(get_remote_field("labels", []))

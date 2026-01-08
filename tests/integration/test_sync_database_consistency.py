@@ -47,6 +47,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
                 "assignee": "test_user",
                 "milestone": "v1.0",
                 "headline": "Test description",
+                "content": "Test description",
                 "labels": ["feature", "bug"],
             }
         }
@@ -67,6 +68,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
         self.assertEqual(saved_issue["assignee"], "test_user")
         self.assertEqual(saved_issue["milestone"], "v1.0")
         self.assertEqual(saved_issue["headline"], "Test description")
+        self.assertEqual(saved_issue["content"], "Test description")
         self.assertEqual(saved_issue["labels"], ["feature", "bug"])
 
     def test_baseline_state_uses_database_first(self):
@@ -81,6 +83,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
                 "assignee": "alice",
                 "milestone": None,
                 "headline": "Database version",
+                "content": "Database version",
                 "labels": ["bug"],
             }
         }
@@ -153,6 +156,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
                 "assignee": "alice",
                 "milestone": "v1.0",
                 "headline": "First issue",
+                "content": "First issue",
                 "labels": ["bug"],
             },
             issue2.id: {
@@ -160,6 +164,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
                 "assignee": "bob",
                 "milestone": "v1.0",
                 "headline": "Second issue",
+                "content": "Second issue",
                 "labels": ["feature"],
             },
         }

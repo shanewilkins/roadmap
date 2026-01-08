@@ -23,6 +23,7 @@ class IssueBaseState:
     assignee: str | None = None
     milestone: str | None = None
     headline: str = ""
+    content: str = ""
     labels: list[str] = field(default_factory=list)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 

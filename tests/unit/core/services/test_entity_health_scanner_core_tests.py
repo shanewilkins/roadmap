@@ -232,7 +232,7 @@ class TestEntityHealthScanner:
     @pytest.mark.parametrize(
         "field_to_set,field_value,issue_code,expected_severity",
         [
-            ("description", "", "missing_description", HealthSeverity.WARNING),
+            ("description", "", "missing_content", HealthSeverity.WARNING),
             (
                 "status",
                 Status.CLOSED,
@@ -289,7 +289,7 @@ class TestEntityHealthScanner:
     @pytest.mark.parametrize(
         "field_to_set,field_value,issue_code",
         [
-            ("description", "", "missing_description"),
+            ("description", "", "missing_content"),
             ("owner", "", "missing_owner"),
         ],
     )

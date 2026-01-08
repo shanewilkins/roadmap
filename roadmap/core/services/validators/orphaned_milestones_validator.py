@@ -42,7 +42,7 @@ class OrphanedMilestonesValidator(BaseValidator):
                     orphaned.append(
                         {
                             "name": milestone.name,
-                            "description": milestone.description or "(no description)",
+                            "content": milestone.content or "(no description)",
                             "status": milestone.status.value,
                             "created": milestone.created.isoformat()
                             if milestone.created

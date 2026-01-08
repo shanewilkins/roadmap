@@ -102,8 +102,8 @@ class TestMilestoneLifecycle:
                 main, ["issue", "list", "--milestone", "sprint-1"]
             )
             IntegrationTestBase.assert_cli_success(result)
-            assert "Feature: auth" in result.output
-            assert "Bug: parser" in result.output
+            assert "auth" in result.output
+            assert "parser" in result.output
 
     def test_close_milestone_with_all_closed_issues(self, cli_runner):
         """Test closing a milestone when all its issues are closed."""

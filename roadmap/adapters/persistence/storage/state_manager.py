@@ -378,7 +378,7 @@ class StateManager:
             conn = self._get_connection()
             rows = conn.execute(
                 """
-                SELECT issue_id, status, assignee, milestone, description, labels, synced_at
+                SELECT issue_id, status, assignee, milestone, description, headline, content, labels, synced_at
                 FROM sync_base_state
                 ORDER BY synced_at DESC
             """
@@ -394,7 +394,9 @@ class StateManager:
                     "status": row["status"],
                     "assignee": row["assignee"],
                     "milestone": row["milestone"],
-                    "headline": row["description"],
+                    "description": row["description"],
+                    "headline": row["headline"],
+                    "content": row["content"],
                     "labels": json.loads(row["labels"]) if row["labels"] else [],
                     "synced_at": row["synced_at"],
                 }
@@ -422,7 +424,7 @@ class StateManager:
 
         Args:
             baseline: Dictionary mapping issue_id to state dict with keys:
-                     status, assignee, milestone, headline, labels
+                     status, assignee, milestone, headline, content, labels
 
         Returns:
             True if saved successfully, False otherwise
@@ -441,15 +443,17 @@ class StateManager:
                     conn.execute(
                         """
                         INSERT INTO sync_base_state
-                        (issue_id, status, assignee, milestone, description, labels, synced_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        (issue_id, status, assignee, milestone, description, headline, content, labels, synced_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                         (
                             issue_id,
                             state.get("status"),
                             state.get("assignee"),
                             state.get("milestone"),
+                            state.get("description"),  # Keep for backwards compat
                             state.get("headline"),
+                            state.get("content"),
                             json.dumps(state.get("labels", [])),
                             now,
                         ),

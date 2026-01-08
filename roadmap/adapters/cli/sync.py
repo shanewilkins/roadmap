@@ -262,6 +262,7 @@ def sync(
                         "assignee": issue_state.assignee,
                         "milestone": issue_state.milestone,
                         "headline": issue_state.headline,
+                        "content": issue_state.content,
                         "labels": issue_state.labels,
                     }
 
@@ -1037,7 +1038,8 @@ def sync(
                         ),
                         "assignee": issue.assignee,
                         "milestone": issue.milestone,
-                        "description": issue.content,
+                        "headline": issue.headline,
+                        "content": issue.content,
                         "labels": sorted_labels,  # Store labels sorted for consistency
                     }
 
