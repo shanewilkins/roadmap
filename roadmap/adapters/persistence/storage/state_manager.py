@@ -394,7 +394,7 @@ class StateManager:
                     "status": row["status"],
                     "assignee": row["assignee"],
                     "milestone": row["milestone"],
-                    "description": row["description"],
+                    "headline": row["description"],
                     "labels": json.loads(row["labels"]) if row["labels"] else [],
                     "synced_at": row["synced_at"],
                 }
@@ -422,7 +422,7 @@ class StateManager:
 
         Args:
             baseline: Dictionary mapping issue_id to state dict with keys:
-                     status, assignee, milestone, description, labels
+                     status, assignee, milestone, headline, labels
 
         Returns:
             True if saved successfully, False otherwise
@@ -449,7 +449,7 @@ class StateManager:
                             state.get("status"),
                             state.get("assignee"),
                             state.get("milestone"),
-                            state.get("description"),
+                            state.get("headline"),
                             json.dumps(state.get("labels", [])),
                             now,
                         ),
