@@ -97,14 +97,14 @@ class SyncStateManager:
             for issue_id, base_state in state.issues.items():
                 conn.execute(
                     """INSERT OR REPLACE INTO sync_base_state
-                       (issue_id, status, assignee, milestone, description, labels, synced_at)
+                       (issue_id, status, assignee, milestone, headline, labels, synced_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?)""",
                     (
                         issue_id,
                         base_state.status,
                         base_state.assignee,
                         base_state.milestone,
-                        base_state.description,
+                        base_state.headline,
                         json.dumps(base_state.labels or []),
                         datetime.utcnow(),
                     ),
@@ -222,7 +222,7 @@ class SyncStateManager:
             title=issue.title,  # Include title since it's synced to remote
             assignee=issue.assignee,
             milestone=issue.milestone if hasattr(issue, "milestone") else None,
-            description=issue.content or "",
+            headline=issue.content or "",
             labels=issue.labels or [],
             updated_at=datetime.utcnow(),
         )

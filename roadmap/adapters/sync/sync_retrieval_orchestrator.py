@@ -168,7 +168,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         "status": state.status,
                         "assignee": state.assignee,
                         "milestone": state.milestone,
-                        "description": state.description or "",
+                        "headline": state.headline or "",
                         "labels": state.labels or [],
                     }
                     for issue_id, state in baseline.issues.items()
@@ -224,7 +224,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         title=remote_issue.title or "Untitled",
                         assignee=remote_issue.assignee,
                         milestone=remote_issue.milestone,
-                        description=remote_issue.headline or "",
+                        headline=remote_issue.headline or "",
                         labels=remote_issue.labels or [],
                         updated_at=datetime.now(),
                     )
@@ -242,7 +242,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     "status": base_state.status,
                     "assignee": base_state.assignee,
                     "milestone": base_state.milestone,
-                    "description": base_state.description,
+                    "headline": base_state.headline,
                     "labels": base_state.labels or [],
                 }
                 for issue_id, base_state in baseline.issues.items()
@@ -574,7 +574,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         title="",  # Title not stored in baseline, will come from issue
                         assignee=data.get("assignee"),
                         milestone=data.get("milestone"),
-                        description=data.get("description", ""),
+                        headline=data.get("headline", ""),
                         labels=data.get("labels", []),
                     )
 

@@ -261,7 +261,7 @@ def sync(
                         "status": issue_state.status,
                         "assignee": issue_state.assignee,
                         "milestone": issue_state.milestone,
-                        "description": issue_state.description,
+                        "headline": issue_state.headline,
                         "labels": issue_state.labels,
                     }
 

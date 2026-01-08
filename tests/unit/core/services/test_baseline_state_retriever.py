@@ -146,7 +146,7 @@ class TestGetRemoteBaseline:
             assert baseline.title == "Test Issue"
             assert baseline.status == "open"  # From remote
             assert baseline.assignee == "jane@example.com"  # From remote
-            assert baseline.description == "Remote description"
+            assert baseline.headline == "Remote description"
 
     def test_get_remote_baseline_not_present(self):
         """Test when sync_metadata is not present."""
