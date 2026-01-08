@@ -5,12 +5,12 @@ headline: '# Project template customization and scaffolding'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
   github: 35
 created: '2025-10-14T14:18:34.926585+00:00'
-updated: '2026-01-08T23:46:37.065135+00:00'
+updated: '2026-01-08T23:57:34.681016+00:00'
 assignee: null
 estimated_hours: 3.0
 due_date: null

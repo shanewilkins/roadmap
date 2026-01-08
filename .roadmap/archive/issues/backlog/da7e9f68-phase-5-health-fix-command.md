@@ -1,12 +1,14 @@
 ---
 id: da7e9f68
 title: 'Phase 5: Health Fix Command'
+headline: '# Phase 5: Health Fix Command'
 priority: high
 status: closed
 issue_type: feature
 milestone: backlog
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '271'
 created: '2025-12-25T14:55:32.928132+00:00'
 updated: '2025-12-30T16:02:46.962889+00:00'
 assignee: shanewilkins
@@ -24,6 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: '271'
 ---
 
 # Phase 5: Health Fix Command

@@ -1,12 +1,14 @@
 ---
 id: b54ea22d
 title: Simplify CLI Commands Structure
+headline: '## Overview'
 priority: low
 status: closed
 issue_type: other
 milestone: v.0.6.0
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '295'
 created: '2025-11-17T17:47:51.993249+00:00'
 updated: '2025-12-03T15:21:37.254830+00:00'
 assignee: shanewilkins
@@ -23,6 +25,8 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: null
+comments: []
+github_issue: '295'
 ---
 
 ## Overview

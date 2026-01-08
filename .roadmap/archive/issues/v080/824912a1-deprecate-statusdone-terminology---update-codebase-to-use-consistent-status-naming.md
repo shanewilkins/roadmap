@@ -2,12 +2,15 @@
 id: 824912a1
 title: Deprecate Status.DONE terminology - update codebase to use consistent status
   naming
+headline: Deprecate Status.DONE terminology - update codebase to use consistent status
+  naming
 priority: high
 status: closed
 issue_type: other
 milestone: v080
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '281'
 created: '2025-12-21T21:33:17.836668+00:00'
 updated: '2025-12-25T19:51:02.748544+00:00'
 assignee: shanewilkins
@@ -25,6 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: '281'
 ---
 
 Deprecate Status.DONE terminology - update codebase to use consistent status naming

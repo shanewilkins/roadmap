@@ -1,12 +1,15 @@
 ---
 id: 681e4fe2
 title: Enhance health command with entity-level diagnostics
+headline: Implement comprehensive health scanning to identify problematic entities
+  and their issues.
 priority: high
 status: closed
 issue_type: feature
 milestone: backlog
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '288'
 created: '2025-12-20T19:32:19.562077+00:00'
 updated: '2025-12-25T19:51:02.688469+00:00'
 assignee: shane
@@ -24,6 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: '288'
 ---
 
 Implement comprehensive health scanning to identify problematic entities and their issues.

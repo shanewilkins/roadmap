@@ -5,14 +5,14 @@ headline: '# Test git integration workflow'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:medium
 - status:done
 remote_ids:
   github: 70
 created: '2026-01-02T19:20:51.725404+00:00'
-updated: '2026-01-08T23:46:06.838116+00:00'
+updated: '2026-01-08T23:57:17.059819+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

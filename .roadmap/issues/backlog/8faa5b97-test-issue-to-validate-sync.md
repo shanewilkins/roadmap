@@ -5,7 +5,7 @@ headline: '# test issue to validate sync'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:medium
 - status:todo

@@ -5,12 +5,12 @@ headline: '# final test of validator refactor'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
   github: 105
 created: '2026-01-05T21:58:24.619134+00:00'
-updated: '2026-01-08T23:46:34.158975+00:00'
+updated: '2026-01-08T23:57:32.940541+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

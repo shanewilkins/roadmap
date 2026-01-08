@@ -5,12 +5,12 @@ headline: '# Team workload analysis and capacity planning'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
   github: 31
 created: '2025-10-14T14:18:29.392002+00:00'
-updated: '2026-01-08T23:46:37.197076+00:00'
+updated: '2026-01-08T23:57:34.758483+00:00'
 assignee: null
 estimated_hours: 4.0
 due_date: null

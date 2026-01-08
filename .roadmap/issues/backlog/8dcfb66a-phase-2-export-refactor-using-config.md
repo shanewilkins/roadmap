@@ -5,12 +5,12 @@ headline: '# Phase 2: Export Refactor (Using Config)'
 priority: medium
 status: todo
 issue_type: feature
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
   github: 53
 created: '2025-12-25T14:55:25.733371+00:00'
-updated: '2026-01-08T23:46:38.634227+00:00'
+updated: '2026-01-08T23:57:35.601248+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

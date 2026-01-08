@@ -174,9 +174,10 @@ def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) 
     help="Preview changes without applying (default: disabled)",
 )
 @click.option(
-    "--force",
+    "--yes",
+    "-y",
     is_flag=True,
-    help="Apply fixes without confirmation prompts",
+    help="Auto-accept all suggestions without prompts",
 )
 @click.option(
     "--format",
@@ -187,7 +188,7 @@ def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) 
 )
 @click.pass_context
 def fix_health(
-    ctx: click.Context, fix_type: str, dry_run: bool, force: bool, format: str
+    ctx: click.Context, fix_type: str, dry_run: bool, yes: bool, format: str
 ) -> None:
     """Apply automatic fixes for health issues.
 
@@ -199,7 +200,7 @@ def fix_health(
       roadmap health fix --fix-type old_backups # Apply backup cleanup
       roadmap health fix --dry-run              # Preview all fixes
       roadmap health fix --fix-type old_backups --dry-run  # Preview backups
-      roadmap health fix --force                # Apply all fixes without prompts
+      roadmap health fix --yes                  # Apply all fixes without confirmation
     """
     log = logger.bind(operation="health_fix")
     log.info("starting_health_fix", fix_type=fix_type, dry_run=dry_run)
@@ -234,7 +235,7 @@ def fix_health(
             if dry_run:
                 result = orchestrator.dry_run_fix(fix_t)
             else:
-                result = orchestrator.apply_fix(fix_t, force=force)
+                result = orchestrator.apply_fix(fix_t, force=yes)
 
             if result:
                 results.append(result)

@@ -5,14 +5,14 @@ headline: '# Implement CI/CD integration for automatic issue branch and commit t
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:high
 - status:todo
 remote_ids:
   github: 86
 created: '2026-01-02T19:20:53.068871+00:00'
-updated: '2026-01-08T23:46:07.504815+00:00'
+updated: '2026-01-08T23:57:17.481557+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

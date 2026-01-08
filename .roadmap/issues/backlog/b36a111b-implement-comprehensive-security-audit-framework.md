@@ -1,24 +1,26 @@
 ---
-id: be1245fc
-title: add_id_to_success_msg_after_issue_creation
-headline: '# add_id_to_success_msg_after_issue_creation'
+id: b36a111b
+title: Implement comprehensive security audit framework
+headline: '# Implement comprehensive security audit framework'
 priority: medium
-status: closed
+status: todo
 issue_type: other
 milestone: backlog
-labels: []
+labels:
+- priority:high
+- status:todo
 remote_ids:
-  github: '269'
-created: '2025-12-23T23:42:51.672668+00:00'
-updated: '2025-12-26T15:48:26.694761+00:00'
-assignee: shanewilkins
+  github: 18
+created: '2026-01-02T19:20:52.294664+00:00'
+updated: '2026-01-08T23:57:17.145682+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: 100.0
+progress_percentage: null
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '269'
+github_issue: 18
 ---
 
-# add_id_to_success_msg_after_issue_creation
+# Implement comprehensive security audit framework
 
 ## Description
 
@@ -40,3 +42,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

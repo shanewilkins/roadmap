@@ -5,14 +5,14 @@ headline: '# Test sync validation fix without assignee'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:medium
 - status:todo
 remote_ids:
   github: 62
 created: '2026-01-02T19:20:51.019599+00:00'
-updated: '2026-01-08T23:46:07.635640+00:00'
+updated: '2026-01-08T23:57:17.564406+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

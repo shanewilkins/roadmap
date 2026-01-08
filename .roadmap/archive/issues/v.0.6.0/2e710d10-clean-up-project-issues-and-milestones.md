@@ -1,12 +1,14 @@
 ---
 id: 2e710d10
 title: Clean Up Project Issues and Milestones
+headline: '# Clean Up Project Issues and Milestones'
 priority: low
 status: closed
 issue_type: other
 milestone: v.0.6.0
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '291'
 created: '2025-11-17T17:47:56.417434+00:00'
 updated: '2025-12-04T18:56:48.503685+00:00'
 assignee: shanewilkins
@@ -23,6 +25,8 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: null
+comments: []
+github_issue: '291'
 ---
 
 # Clean Up Project Issues and Milestones

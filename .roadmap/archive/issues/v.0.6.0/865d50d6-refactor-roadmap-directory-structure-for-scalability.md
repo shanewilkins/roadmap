@@ -1,12 +1,14 @@
 ---
 id: 865d50d6
 title: Refactor .roadmap directory structure for scalability
+headline: '# Refactor .roadmap directory structure for scalability'
 priority: high
 status: closed
 issue_type: feature
 milestone: v.0.6.0
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '283'
 created: '2025-11-26T19:23:01.575872+00:00'
 updated: '2025-12-04T19:12:33.538038+00:00'
 assignee: shanewilkins
@@ -23,6 +25,8 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: null
+comments: []
+github_issue: '283'
 ---
 
 # Refactor .roadmap directory structure for scalability

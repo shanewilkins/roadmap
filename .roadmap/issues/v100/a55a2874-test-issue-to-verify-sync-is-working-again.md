@@ -5,12 +5,12 @@ headline: let's make sure this is good.
 priority: medium
 status: todo
 issue_type: other
-milestone: v.1.0.0
+milestone: v100
 labels: []
 remote_ids:
   github: 52
 created: '2026-01-02T19:20:50.938842+00:00'
-updated: '2026-01-08T23:46:38.765880+00:00'
+updated: '2026-01-08T23:57:35.679709+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

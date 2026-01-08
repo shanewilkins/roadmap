@@ -1,12 +1,14 @@
 ---
 id: dd56c000
 title: Review and Optimize Tech Stack
+headline: '# Review and Optimize Tech Stack'
 priority: medium
 status: closed
 issue_type: other
 milestone: v.0.6.0
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '285'
 created: '2025-11-17T17:47:50.915196+00:00'
 updated: '2025-12-04T19:16:16.459901+00:00'
 assignee: shanewilkins
@@ -23,6 +25,8 @@ handoff_date: null
 git_branches: []
 git_commits: []
 completed_date: null
+comments: []
+github_issue: '285'
 ---
 
 # Review and Optimize Tech Stack

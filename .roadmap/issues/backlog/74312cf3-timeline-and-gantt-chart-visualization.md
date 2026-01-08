@@ -5,12 +5,12 @@ headline: '# Timeline and Gantt chart visualization'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
   github: 30
 created: '2025-10-14T14:18:18.947332+00:00'
-updated: '2026-01-08T23:46:37.325629+00:00'
+updated: '2026-01-08T23:57:34.831649+00:00'
 assignee: null
 estimated_hours: 5.0
 due_date: null

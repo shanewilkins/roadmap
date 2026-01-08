@@ -221,28 +221,19 @@ class SyncReport:
                 console.print(f"   Pulled: {self.issues_pulled}", style="green")
 
     def display_verbose(self) -> None:
-        """Display concise verbose output: just list issue and milestone IDs being synced."""
+        """Display verbose output: show brief summary plus detailed issue IDs being synced."""
         if self.error:
             console.print(f"❌ Sync failed: {self.error}", style="bold red")
             return
 
-        console.print("\n📊 Sync Summary", style="bold cyan")
+        # First, show the brief output (tables and summary)
+        self.display_brief()
 
-        # Show sync analysis summary
-        console.print(f"   ✓ Up-to-date: {self.issues_up_to_date}", style="green")
-        console.print(f"   📤 Needs Push: {self.issues_needs_push}", style="blue")
-        console.print(f"   📥 Needs Pull: {self.issues_needs_pull}", style="magenta")
-
-        if self.conflicts_detected > 0:
-            console.print(
-                f"   ⚠️  Conflicts: {self.conflicts_detected}",
-                style="bold red",
-            )
-
-        # Extract and display issue IDs being synced
+        # Then add detailed lists of issue IDs being synced
         if not self.changes:
-            console.print("   No changes", style="dim")
             return
+
+        console.print("\n📋 Detailed Issue Changes", style="bold cyan")
 
         # Categorize changes by type
         needs_push = [c for c in self.changes if c.local_changes]

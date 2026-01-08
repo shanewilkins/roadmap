@@ -5,14 +5,14 @@ headline: '# Implement Git hooks automation system'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:high
 - status:todo
 remote_ids:
   github: 84
 created: '2026-01-02T19:20:52.817566+00:00'
-updated: '2026-01-08T23:46:05.409216+00:00'
+updated: '2026-01-08T23:57:16.105074+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

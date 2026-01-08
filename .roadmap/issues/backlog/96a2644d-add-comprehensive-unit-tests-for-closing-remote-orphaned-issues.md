@@ -5,12 +5,12 @@ headline: '# Add comprehensive unit tests for closing remote orphaned issues'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
   github: 97
 created: '2026-01-02T19:20:54.126964+00:00'
-updated: '2026-01-08T23:46:35.626929+00:00'
+updated: '2026-01-08T23:57:33.822929+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

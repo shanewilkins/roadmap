@@ -1,12 +1,14 @@
 ---
 id: be1245fc
 title: add_id_to_success_msg_after_issue_creation
+headline: '# add_id_to_success_msg_after_issue_creation'
 priority: medium
 status: closed
 issue_type: other
 milestone: backlog
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '269'
 created: '2025-12-23T23:42:51.672668+00:00'
 updated: '2025-12-26T15:48:26.694761+00:00'
 assignee: shanewilkins
@@ -24,6 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: '269'
 ---
 
 # add_id_to_success_msg_after_issue_creation

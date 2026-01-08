@@ -5,12 +5,12 @@ headline: '# test with validator abstraction'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels: []
 remote_ids:
   github: 106
 created: '2026-01-05T21:55:12.807283+00:00'
-updated: '2026-01-08T23:46:34.032707+00:00'
+updated: '2026-01-08T23:57:32.865654+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

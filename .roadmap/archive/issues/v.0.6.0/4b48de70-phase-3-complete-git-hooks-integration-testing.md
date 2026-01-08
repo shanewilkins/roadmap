@@ -1,14 +1,16 @@
 ---
 id: 4b48de70
 title: 'Phase 3: Complete git hooks integration testing'
+headline: '# Phase 3: Complete git hooks integration testing'
 priority: high
 status: closed
 issue_type: other
 milestone: v.0.6.0
 labels: []
-remote_ids: {}
+remote_ids:
+  github: 278
 created: '2025-11-17T19:21:44.086738+00:00'
-updated: '2025-11-26T18:22:06.751547+00:00'
+updated: '2026-01-08T23:46:32.211654+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -26,6 +28,8 @@ git_commits:
   message: '4b48de70: Test git hooks integration [progress:50%]'
   date: '2025-11-17T13:21:48.529027'
 completed_date: null
+comments: []
+github_issue: 278
 ---
 
 # Phase 3: Complete git hooks integration testing

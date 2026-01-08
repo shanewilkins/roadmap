@@ -5,7 +5,7 @@ headline: '# GitHub sync not preserving milestone relationships for existing iss
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - bug
 - priority:high
@@ -16,7 +16,7 @@ labels:
 remote_ids:
   github: 74
 created: '2026-01-02T19:20:51.957433+00:00'
-updated: '2026-01-08T23:46:04.875897+00:00'
+updated: '2026-01-08T23:57:13.659598+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

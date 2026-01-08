@@ -5,13 +5,13 @@ headline: '# Create production deployment and operations guide'
 priority: medium
 status: todo
 issue_type: feature
-milestone: null
+milestone: backlog
 labels:
 - documentation,deployment
 remote_ids:
   github: 103
 created: '2025-12-20T18:33:29.195197+00:00'
-updated: '2026-01-08T23:46:00.747458+00:00'
+updated: '2026-01-08T23:57:14.477415+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

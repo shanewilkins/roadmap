@@ -5,14 +5,14 @@ headline: '# Rename project commands and templates to roadmap for clearer termin
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:medium
 - status:done
 remote_ids:
   github: 69
 created: '2026-01-02T19:20:51.671790+00:00'
-updated: '2026-01-08T23:46:07.239934+00:00'
+updated: '2026-01-08T23:57:17.314625+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

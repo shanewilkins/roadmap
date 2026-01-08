@@ -1,14 +1,16 @@
 ---
 id: a13292a4
 title: Add GitHub issue ID cross-referencing and manual sync
+headline: Implement GitHub issue ID cross-referencing with manual sync capability
 priority: high
 status: closed
 issue_type: feature
 milestone: backlog
 labels: []
-remote_ids: {}
+remote_ids:
+  github: 290
 created: '2025-12-20T20:46:35.004272+00:00'
-updated: '2025-12-25T19:51:02.728179+00:00'
+updated: '2026-01-08T23:46:29.935998+00:00'
 assignee: shane
 estimated_hours: null
 due_date: null
@@ -24,6 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: 290
 ---
 
 Implement GitHub issue ID cross-referencing with manual sync capability

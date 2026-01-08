@@ -1,12 +1,14 @@
 ---
 id: 224f3405
 title: Implement automatic GitHub issue sync with bidirectional updates
+headline: '# Phase 2: Automatic GitHub Issue Sync with Bidirectional Updates'
 priority: medium
 status: closed
 issue_type: feature
 milestone: backlog
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '282'
 created: '2025-12-20T20:47:49.863886+00:00'
 updated: '2025-12-25T19:51:02.988571+00:00'
 assignee: shane
@@ -24,6 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
+github_issue: '282'
 ---
 
 # Phase 2: Automatic GitHub Issue Sync with Bidirectional Updates

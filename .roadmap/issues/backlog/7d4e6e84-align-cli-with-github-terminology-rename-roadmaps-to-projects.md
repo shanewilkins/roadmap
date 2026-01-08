@@ -5,14 +5,14 @@ headline: '# Align CLI with GitHub terminology: rename roadmaps to projects'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:high
 - status:done
 remote_ids:
   github: 73
 created: '2026-01-02T19:20:51.896529+00:00'
-updated: '2026-01-08T23:46:06.458138+00:00'
+updated: '2026-01-08T23:57:16.821049+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

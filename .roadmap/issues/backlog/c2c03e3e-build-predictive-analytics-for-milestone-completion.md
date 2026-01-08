@@ -5,14 +5,14 @@ headline: '# Build predictive analytics for milestone completion'
 priority: medium
 status: todo
 issue_type: other
-milestone: null
+milestone: backlog
 labels:
 - priority:high
 - status:todo
 remote_ids:
   github: 78
 created: '2026-01-02T19:20:52.363535+00:00'
-updated: '2026-01-08T23:46:06.712616+00:00'
+updated: '2026-01-08T23:57:16.982560+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
