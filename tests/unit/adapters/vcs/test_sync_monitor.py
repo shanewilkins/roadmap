@@ -215,7 +215,45 @@ class TestGitSyncMonitorSyncState:
     @pytest.fixture
     def monitor(self, tmp_path):
         """Create a GitSyncMonitor instance for testing."""
-        return GitSyncMonitor(repo_path=tmp_path)
+        from unittest.mock import MagicMock
+
+        # Create a mock state manager with a database connection
+        mock_state_manager = MagicMock()
+        mock_connection = MagicMock()
+        mock_cursor = MagicMock()
+
+        # Set up proper mock for database operations
+        mock_connection.cursor.return_value = mock_cursor
+        mock_connection.commit = MagicMock()
+        mock_state_manager._get_connection.return_value = mock_connection
+
+        # Store saved commits in a simple dict for testing
+        saved_commits = {}
+
+        def mock_execute(sql, params=None):
+            if "UPDATE" in sql:
+                # Simulate update - set rowcount to 0 so it will insert
+                mock_cursor.rowcount = 0
+            elif "INSERT" in sql and params:
+                # Save the commit for later retrieval
+                if len(params) >= 2 and params[0] == "last_synced_commit":
+                    saved_commits["last_synced_commit"] = params[1]
+            elif "SELECT" in sql:
+                # Return saved commit if it exists
+                if "last_synced_commit" in saved_commits:
+                    # Mock fetchone to return a tuple-like object
+                    mock_cursor.fetchone.return_value = (
+                        saved_commits["last_synced_commit"],
+                    )
+                else:
+                    mock_cursor.fetchone.return_value = None
+            return mock_cursor
+
+        mock_cursor.execute = mock_execute
+
+        monitor = GitSyncMonitor(repo_path=tmp_path, state_manager=mock_state_manager)
+        monitor.git_executor.is_git_repository = Mock(return_value=True)
+        return monitor
 
     def test_save_and_retrieve_last_synced_commit(self, monitor):
         """Should save and retrieve last synced commit from file."""
@@ -270,8 +308,17 @@ class TestGitSyncMonitorDatabaseSync:
     @pytest.fixture
     def monitor(self, tmp_path):
         """Create a GitSyncMonitor instance with mock state manager."""
-        monitor = GitSyncMonitor(repo_path=tmp_path)
-        monitor.state_manager = Mock()
+        from unittest.mock import MagicMock
+
+        # Create a mock state manager with a database connection
+        mock_state_manager = MagicMock()
+        mock_connection = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connection.cursor.return_value = mock_cursor
+        mock_state_manager._get_connection.return_value = mock_connection
+
+        monitor = GitSyncMonitor(repo_path=tmp_path, state_manager=mock_state_manager)
+        monitor.git_executor.is_git_repository = Mock(return_value=True)
         monitor.git_executor.run = Mock(return_value="abc123def456")
         return monitor
 

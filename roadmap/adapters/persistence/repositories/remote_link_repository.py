@@ -63,7 +63,10 @@ class RemoteLinkRepository:
                 "Failed to link issue",
                 issue_uuid=issue_uuid,
                 backend_name=backend_name,
-                error=str(e),
+                remote_id=str(remote_id),
+                error_type=type(e).__name__,
+                error_message=str(e),
+                error_details=repr(e),
             )
             return False
 
@@ -99,7 +102,8 @@ class RemoteLinkRepository:
                 "Failed to unlink issue",
                 issue_uuid=issue_uuid,
                 backend_name=backend_name,
-                error=str(e),
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             return False
 
@@ -135,7 +139,8 @@ class RemoteLinkRepository:
                 "Failed to get remote ID",
                 issue_uuid=issue_uuid,
                 backend_name=backend_name,
-                error=str(e),
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             return None
 
@@ -167,7 +172,8 @@ class RemoteLinkRepository:
                 "Failed to get issue UUID",
                 backend_name=backend_name,
                 remote_id=str(remote_id),
-                error=str(e),
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             return None
 
@@ -203,7 +209,8 @@ class RemoteLinkRepository:
             logger.warning(
                 "Failed to get all links for issue",
                 issue_uuid=issue_uuid,
-                error=str(e),
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             return {}
 
@@ -239,7 +246,8 @@ class RemoteLinkRepository:
             logger.warning(
                 "Failed to get all links for backend",
                 backend_name=backend_name,
-                error=str(e),
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             return {}
 
@@ -267,7 +275,8 @@ class RemoteLinkRepository:
                 "Failed to validate link",
                 issue_uuid=issue_uuid,
                 backend_name=backend_name,
-                error=str(e),
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             return False
 
@@ -308,14 +317,18 @@ class RemoteLinkRepository:
                                 "Failed to import link",
                                 issue_uuid=issue_uuid,
                                 backend_name=backend_name,
-                                error=str(e),
+                                remote_id=remote_id_str,
+                                error_type=type(e).__name__,
+                                error_message=str(e),
                             )
             logger.info("Bulk imported remote links", count=count)
             return count
         except Exception as e:
             logger.error(
                 "Bulk import of remote links failed",
-                error=str(e),
+                count_imported=count,
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             return count
 
@@ -331,5 +344,9 @@ class RemoteLinkRepository:
             logger.info("Cleared all remote links")
             return True
         except Exception as e:
-            logger.error("Failed to clear all remote links", error=str(e))
+            logger.error(
+                "Failed to clear all remote links",
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             return False

@@ -44,7 +44,14 @@ class TestGitSyncMonitorIntegration:
     @pytest.fixture
     def monitor_with_repo(self, git_repo):
         """Create a GitSyncMonitor for the test repository."""
-        return GitSyncMonitor(repo_path=git_repo)
+        from roadmap.adapters.persistence.storage.state_manager import StateManager
+
+        # Create a state manager with database in the test repo
+        db_path = git_repo / ".roadmap" / "state.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        state_manager = StateManager(db_path=db_path)
+
+        return GitSyncMonitor(repo_path=git_repo, state_manager=state_manager)
 
     def test_detect_changes_with_real_git_repo(self, git_repo, monitor_with_repo):
         """Should detect changes in a real git repository."""
@@ -286,8 +293,10 @@ class TestGitSyncMonitorIntegration:
         # Save sync state
         monitor_with_repo._save_last_synced_commit()
 
-        # Create a new monitor and verify it reads the saved state
-        new_monitor = GitSyncMonitor(repo_path=git_repo)
+        # Create a new monitor with the same state manager and verify it reads the saved state
+        new_monitor = GitSyncMonitor(
+            repo_path=git_repo, state_manager=monitor_with_repo.state_manager
+        )
         retrieved_commit = new_monitor._get_last_synced_commit()
 
         assert retrieved_commit == first_commit
