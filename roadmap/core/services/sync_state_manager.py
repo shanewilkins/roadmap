@@ -97,14 +97,15 @@ class SyncStateManager:
             for issue_id, base_state in state.issues.items():
                 conn.execute(
                     """INSERT OR REPLACE INTO sync_base_state
-                       (issue_id, status, assignee, milestone, headline, labels, synced_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                       (issue_id, status, assignee, milestone, headline, content, labels, synced_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         issue_id,
                         base_state.status,
                         base_state.assignee,
                         base_state.milestone,
                         base_state.headline,
+                        base_state.content,
                         json.dumps(base_state.labels or []),
                         datetime.utcnow(),
                     ),
@@ -266,8 +267,8 @@ class SyncStateManager:
             state.add_issue(issue.id, base_state)
             state.last_sync = datetime.utcnow()
 
-            # Save the updated state
-            success = self.save_sync_state(state)
+            # Save the updated state to database
+            success = self.save_sync_state_to_db(state)
             if success:
                 logger.info(
                     "base_state_updated_successfully",

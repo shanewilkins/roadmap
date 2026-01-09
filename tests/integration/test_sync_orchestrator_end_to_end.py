@@ -90,7 +90,11 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
 
         # Verify
         assert report.error is None
-        assert report.issues_needs_push == 1
+        # After push, the issue should be up-to-date (not needing push)
+        # The report shows current state, not what was pushed
+        assert report.issues_up_to_date == 1
+        assert report.issues_needs_push == 0
+        assert report.issues_pushed == 1
         self.backend.push_issue.assert_called_once_with(local_issue)
 
 

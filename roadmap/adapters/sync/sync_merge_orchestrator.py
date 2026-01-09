@@ -52,6 +52,55 @@ class SyncMergeOrchestrator:
         self.conflict_resolver = conflict_resolver or SyncConflictResolver()
         self.state_manager = SyncStateManager(core.roadmap_dir)
 
+    def _load_baseline_state(self):
+        """Load baseline state from database with fallback to manager.
+
+        Returns:
+            SyncState from database, or None if not found
+        """
+        try:
+            from datetime import datetime
+
+            from roadmap.core.models.sync_state import IssueBaseState, SyncState
+
+            # Load from database (preferred - fast)
+            db_baseline = self.core.db.get_sync_baseline()
+            if db_baseline:
+                logger.debug(
+                    "baseline_loaded_from_database",
+                    issue_count=len(db_baseline),
+                )
+                issues = {}
+                for issue_id, data in db_baseline.items():
+                    issues[issue_id] = IssueBaseState(
+                        id=issue_id,
+                        status=data.get("status", "todo"),
+                        title="",  # Title not stored in baseline
+                        assignee=data.get("assignee"),
+                        milestone=data.get("milestone"),
+                        headline=data.get("headline", ""),
+                        content=data.get("content", ""),
+                        labels=data.get("labels", []),
+                    )
+
+                sync_state = SyncState(
+                    last_sync=datetime.utcnow(),
+                    backend="github",
+                    issues=issues,
+                )
+                return sync_state
+
+            logger.debug("baseline_not_found_in_database")
+            return None
+
+        except Exception as e:
+            logger.warning(
+                "baseline_load_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return None
+
     def _filter_unchanged_issues_from_base(
         self,
         issues: list,
@@ -736,7 +785,8 @@ class SyncMergeOrchestrator:
             # 4. Load previous sync state (base state for three-way merge)
             try:
                 logger.debug("loading_sync_state")
-                base_state = self.state_manager.load_sync_state()
+                # Load baseline using database (preferred) or git history fallback
+                base_state = self._load_baseline_state()
                 if base_state:
                     logger.info(
                         "previous_sync_state_loaded",
@@ -889,6 +939,7 @@ class SyncMergeOrchestrator:
                     updates,
                     resolved_issues,
                     pulls,
+                    dry_run=dry_run,
                     push_only=push_only,
                     pull_only=pull_only,
                 )
@@ -915,6 +966,7 @@ class SyncMergeOrchestrator:
         updates: list,
         resolved_issues: list,
         pulls: list,
+        dry_run: bool = False,
         push_only: bool = False,
         pull_only: bool = False,
     ) -> SyncReport:
@@ -987,7 +1039,7 @@ class SyncMergeOrchestrator:
                                     self.state_manager.save_base_state(
                                         issue, remote_version=True
                                     )
-                                    pushed_count = 1
+                                    pushed_count += 1
                                     logger.debug(
                                         "single_issue_sync_state_updated",
                                         issue_id=issue.id,
@@ -1103,6 +1155,57 @@ class SyncMergeOrchestrator:
                 push_errors=len(push_errors),
                 pull_errors=len(pull_errors),
             )
+
+            # After applying changes, update report to reflect what was applied
+            # Don't re-fetch from remote as state might not be updated yet on remote server
+            if (pushed_count > 0 or pulled_count > 0) and not dry_run:
+                try:
+                    logger.debug(
+                        "updating_report_after_apply",
+                        pushed=pushed_count,
+                        pulled=pulled_count,
+                    )
+
+                    # Since baseline was just updated via save_base_state() calls during push/pull,
+                    # the pushed issues should now be in baseline matching local state.
+                    # Update the report to reflect this without re-fetching (remote might have latency)
+
+                    if pushed_count > 0:
+                        # Issues we pushed are now in baseline matching local state
+                        # Reduce needs_push count by pushed amount
+                        report.issues_needs_push = max(
+                            0, report.issues_needs_push - pushed_count
+                        )
+                        # Add them to up_to_date
+                        report.issues_up_to_date = (
+                            report.issues_up_to_date + pushed_count
+                        )
+
+                    if pulled_count > 0:
+                        # Issues we pulled were remote-only, now local matches remote and baseline
+                        # Reduce needs_pull count
+                        report.issues_needs_pull = max(
+                            0, report.issues_needs_pull - pulled_count
+                        )
+                        # Add them to up_to_date
+                        report.issues_up_to_date = (
+                            report.issues_up_to_date + pulled_count
+                        )
+
+                    logger.info(
+                        "report_updated_after_apply",
+                        up_to_date=report.issues_up_to_date,
+                        needs_push=report.issues_needs_push,
+                        needs_pull=report.issues_needs_pull,
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "report_update_after_apply_failed",
+                        error=str(e),
+                        error_type=type(e).__name__,
+                    )
+                    # Don't fail - just return the original report
+
             return report
 
         except Exception as e:
