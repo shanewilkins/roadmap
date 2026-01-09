@@ -5,14 +5,14 @@ title: Deprecate Status.DONE terminology - update codebase to use consistent sta
 headline: '# Deprecate Status.DONE terminology - update codebase to use consistent
   status naming'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '172'
+  github: '281'
 created: '2026-01-09T21:31:55.905916+00:00'
-updated: '2026-01-09T21:34:14.264589+00:00'
+updated: '2026-01-09T22:52:06.155086+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '172'
+github_issue: '281'
 ---
 
 Deprecate Status.DONE terminology - update codebase to use consistent status naming

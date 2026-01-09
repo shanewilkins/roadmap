@@ -1,18 +1,18 @@
 ---
 id: '18743285'
 title: Test assignee validation improved
-headline: ''
+headline: '# Test assignee validation improved'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels:
 - priority:low
 - status:todo
 remote_ids:
-  github: '63'
+  github: '34'
 created: '2026-01-09T21:33:15.836590+00:00'
-updated: '2026-01-09T21:33:15.836591+00:00'
+updated: '2026-01-09T22:51:29.035627+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '63'
+github_issue: '34'
 ---
 
 # Test assignee validation improved
@@ -42,3 +42,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

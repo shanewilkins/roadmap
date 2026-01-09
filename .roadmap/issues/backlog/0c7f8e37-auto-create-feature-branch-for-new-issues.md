@@ -5,7 +5,7 @@ headline: '# Auto-create feature branch for new issues'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels:
 - priority:medium
 - status:done
@@ -13,9 +13,9 @@ labels:
 - git-integration
 - workflow
 remote_ids:
-  github: 66
+  github: '66'
 created: '2026-01-02T19:20:51.462978+00:00'
-updated: '2026-01-09T00:36:33.578215+00:00'
+updated: '2026-01-09T22:51:38.171928+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -31,7 +31,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 66
+github_issue: '66'
 ---
 
 # Auto-create feature branch for new issues

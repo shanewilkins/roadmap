@@ -1,18 +1,18 @@
 ---
-id: 58f6a00a
-title: Implement Git hooks automation system
-headline: '# Implement Git hooks automation system'
+id: c2c03e3e
+title: Build predictive analytics for milestone completion
+headline: '# Build predictive analytics for milestone completion'
 priority: medium
-status: todo
+status: closed
 issue_type: other
-milestone: null
+milestone: v.0.3.0
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '84'
-created: '2026-01-02T19:20:52.817566+00:00'
-updated: '2026-01-09T21:41:00.787502+00:00'
+  github: '17'
+created: '2026-01-02T19:20:52.363535+00:00'
+updated: '2026-01-09T22:53:03.055580+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '84'
+github_issue: '17'
 ---
 
-# Implement Git hooks automation system
+# Build predictive analytics for milestone completion
 
 ## Description
 
@@ -42,3 +42,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

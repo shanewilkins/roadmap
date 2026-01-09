@@ -1,9 +1,9 @@
 ---
 id: a79519a5
 title: Implement AI-powered project insights and recommendations
-headline: ''
+headline: '# Implement AI-powered project insights and recommendations'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels:
@@ -12,7 +12,7 @@ labels:
 remote_ids:
   github: '16'
 created: '2026-01-09T21:33:27.071084+00:00'
-updated: '2026-01-09T21:33:27.071085+00:00'
+updated: '2026-01-09T22:50:46.805370+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -42,3 +42,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

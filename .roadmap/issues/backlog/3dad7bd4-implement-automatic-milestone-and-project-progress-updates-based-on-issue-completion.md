@@ -1,18 +1,19 @@
 ---
-id: 0a0c4889
-title: Test backward compatibility
-headline: '# Test backward compatibility'
+id: 3dad7bd4
+title: Implement automatic milestone and project progress updates based on issue completion
+headline: '# Implement automatic milestone and project progress updates based on issue
+  completion'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels:
-- priority:medium
-- status:done
+- priority:high
+- status:todo
 remote_ids:
-  github: '27'
-created: '2026-01-09T21:31:03.078537+00:00'
-updated: '2026-01-09T22:51:43.592452+00:00'
+  github: '87'
+created: '2026-01-09T22:50:41.417586+00:00'
+updated: '2026-01-09T22:52:53.622312+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +29,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '27'
+github_issue: '87'
 ---
 
-# Test backward compatibility
+# Implement automatic milestone and project progress updates based on issue completion
 
 ## Description
 
@@ -42,7 +43,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

@@ -1,16 +1,16 @@
 ---
 id: f6828213
 title: fix_the_test_suite
-headline: ''
+headline: '# fix_the_test_suite'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
   github: '276'
 created: '2026-01-09T21:33:46.977888+00:00'
-updated: '2026-01-09T21:33:46.977889+00:00'
+updated: '2026-01-09T22:52:36.552902+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

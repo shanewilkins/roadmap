@@ -3,14 +3,14 @@ id: c2e62a22
 title: Remove Deprecated and Backup Code
 headline: '# Remove Deprecated and Backup Code'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '220'
+  github: '293'
 created: '2026-01-09T21:30:50.173390+00:00'
-updated: '2026-01-09T21:33:51.546502+00:00'
+updated: '2026-01-09T22:52:38.447640+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '220'
+github_issue: '293'
 ---
 
 # Remove Deprecated and Backup Code

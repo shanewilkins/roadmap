@@ -3,14 +3,14 @@ id: af9d7c0c
 title: Clean Up Project Issues and Milestones
 headline: '# Clean Up Project Issues and Milestones'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '183'
+  github: '291'
 created: '2026-01-09T21:31:52.484645+00:00'
-updated: '2026-01-09T21:33:17.465355+00:00'
+updated: '2026-01-09T22:52:41.287263+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '183'
+github_issue: '291'
 ---
 
 # Clean Up Project Issues and Milestones

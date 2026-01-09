@@ -1,18 +1,18 @@
 ---
-id: c2c03e3e
-title: Build predictive analytics for milestone completion
-headline: '# Build predictive analytics for milestone completion'
+id: 34d623ec
+title: Interactive project dashboard with real-time updates
+headline: '# Interactive project dashboard with real-time updates'
 priority: medium
-status: todo
-issue_type: other
-milestone: backlog
+status: closed
+issue_type: feature
+milestone: v.0.3.0
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: 78
-created: '2026-01-02T19:20:52.363535+00:00'
-updated: '2026-01-09T00:36:35.079759+00:00'
+  github: '13'
+created: '2026-01-09T21:33:56.043174+00:00'
+updated: '2026-01-09T22:51:03.942801+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 78
+github_issue: '13'
 ---
 
-# Build predictive analytics for milestone completion
+# Interactive project dashboard with real-time updates
 
 ## Description
 
@@ -42,3 +42,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

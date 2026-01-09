@@ -1,18 +1,18 @@
 ---
-id: 0a0c4889
-title: Test backward compatibility
-headline: '# Test backward compatibility'
+id: b36a111b
+title: Implement comprehensive security audit framework
+headline: '# Implement comprehensive security audit framework'
 priority: medium
-status: closed
-issue_type: feature
-milestone: null
+status: todo
+issue_type: other
+milestone: v.0.3.0
 labels:
-- priority:medium
-- status:done
+- priority:high
+- status:todo
 remote_ids:
-  github: '27'
-created: '2026-01-09T21:31:03.078537+00:00'
-updated: '2026-01-09T22:51:43.592452+00:00'
+  github: '18'
+created: '2026-01-02T19:20:52.294664+00:00'
+updated: '2026-01-09T22:51:58.251792+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '27'
+github_issue: '18'
 ---
 
-# Test backward compatibility
+# Implement comprehensive security audit framework
 
 ## Description
 

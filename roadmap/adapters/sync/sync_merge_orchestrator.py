@@ -1102,26 +1102,39 @@ class SyncMergeOrchestrator:
                     count=len(pulls),
                 )
                 try:
-                    # Use batch pull for performance (vs looping single pulls)
-                    pull_report = self.backend.pull_issues()
-                    if pull_report and pull_report.errors:
-                        logger.warning(
-                            "pull_batch_had_errors",
-                            error_count=len(pull_report.errors),
-                            errors=str(pull_report.errors)[:200],
-                        )
-                        pull_errors = list(pull_report.errors.keys())
+                    successful_pulls = 0
+                    failed_pulls = 0
+                    for pull_issue_id in pulls:
+                        try:
+                            logger.debug(
+                                "pulling_single_issue",
+                                issue_id=pull_issue_id,
+                            )
+                            success = self.backend.pull_issue(pull_issue_id)
+                            if not success:
+                                logger.warning(
+                                    "pull_single_issue_failed",
+                                    issue_id=pull_issue_id,
+                                )
+                                pull_errors.append(pull_issue_id)
+                                failed_pulls += 1
+                            else:
+                                successful_pulls += 1
+                        except Exception as e:
+                            logger.warning(
+                                "pull_issue_exception",
+                                issue_id=pull_issue_id,
+                                error=str(e),
+                                error_type=type(e).__name__,
+                            )
+                            pull_errors.append(pull_issue_id)
+                            failed_pulls += 1
 
-                    # Count successful pulls
-                    if pull_report and pull_report.pulled:
-                        pulled_count = len(pull_report.pulled)
-                    else:
-                        pulled_count = 0
-
+                    pulled_count = successful_pulls
                     logger.info(
                         "pulling_complete",
-                        successful_count=pulled_count,
-                        failed_count=len(pull_errors) if pull_errors else 0,
+                        successful_count=successful_pulls,
+                        failed_count=failed_pulls,
                     )
                 except Exception as e:
                     report.error = f"Error during pull operation: {str(e)}"

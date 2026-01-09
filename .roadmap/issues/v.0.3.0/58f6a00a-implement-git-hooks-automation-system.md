@@ -1,18 +1,18 @@
 ---
-id: b36a111b
-title: Implement comprehensive security audit framework
-headline: '# Implement comprehensive security audit framework'
+id: 58f6a00a
+title: Implement Git hooks automation system
+headline: '# Implement Git hooks automation system'
 priority: medium
-status: todo
+status: closed
 issue_type: other
-milestone: null
+milestone: v.0.3.0
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '77'
-created: '2026-01-02T19:20:52.294664+00:00'
-updated: '2026-01-09T21:33:36.838966+00:00'
+  github: '12'
+created: '2026-01-02T19:20:52.817566+00:00'
+updated: '2026-01-09T22:52:45.051442+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '77'
+github_issue: '12'
 ---
 
-# Implement comprehensive security audit framework
+# Implement Git hooks automation system
 
 ## Description
 
@@ -42,3 +42,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

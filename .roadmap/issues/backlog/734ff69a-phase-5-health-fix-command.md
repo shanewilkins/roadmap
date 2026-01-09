@@ -3,14 +3,14 @@ id: 734ff69a
 title: 'Phase 5: Health Fix Command'
 headline: '# Phase 5: Health Fix Command'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '224'
+  github: '271'
 created: '2026-01-09T21:31:59.562133+00:00'
-updated: '2026-01-09T21:40:58.824548+00:00'
+updated: '2026-01-09T22:52:32.582461+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '224'
+github_issue: '271'
 ---
 
 # Phase 5: Health Fix Command

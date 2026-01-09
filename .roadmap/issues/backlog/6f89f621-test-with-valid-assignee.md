@@ -1,18 +1,18 @@
 ---
-id: 0a0c4889
-title: Test backward compatibility
-headline: '# Test backward compatibility'
+id: 6f89f621
+title: Test with valid assignee
+headline: '# Test with valid assignee'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels:
-- priority:medium
-- status:done
+- priority:low
+- status:todo
 remote_ids:
-  github: '27'
-created: '2026-01-09T21:31:03.078537+00:00'
-updated: '2026-01-09T22:51:43.592452+00:00'
+  github: '61'
+created: '2026-01-09T22:51:45.392472+00:00'
+updated: '2026-01-09T22:52:48.923192+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '27'
+github_issue: '61'
 ---
 
-# Test backward compatibility
+# Test with valid assignee
 
 ## Description
 
@@ -42,7 +42,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

@@ -3,14 +3,14 @@ id: 37d3b44d
 title: Review Missing Critical 1.0 Functionality
 headline: '# Review Missing Critical 1.0 Functionality'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '121'
+  github: '279'
 created: '2026-01-09T21:32:32.368875+00:00'
-updated: '2026-01-09T21:41:10.387757+00:00'
+updated: '2026-01-09T22:52:19.399126+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '121'
+github_issue: '279'
 ---
 
 # Review Missing Critical 1.0 Functionality

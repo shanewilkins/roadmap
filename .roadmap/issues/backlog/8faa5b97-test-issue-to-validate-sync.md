@@ -3,16 +3,16 @@ id: 8faa5b97
 title: test issue to validate sync
 headline: '# test issue to validate sync'
 priority: medium
-status: closed
+status: todo
 issue_type: other
 milestone: null
 labels:
 - priority:medium
 - status:todo
 remote_ids:
-  github: '5'
+  github: '71'
 created: '2026-01-02T19:20:51.780622+00:00'
-updated: '2026-01-09T21:33:30.933499+00:00'
+updated: '2026-01-09T22:51:51.116109+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,17 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '5'
+github_issue: '71'
 ---
 
-lorem ipsum etc. etc. etc.
+# test issue to validate sync
+
+## Description
+
+Brief description of the issue or feature request.
+
+## Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

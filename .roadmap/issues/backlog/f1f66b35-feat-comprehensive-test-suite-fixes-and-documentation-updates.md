@@ -1,18 +1,16 @@
 ---
-id: 34d623ec
-title: Interactive project dashboard with real-time updates
+id: f1f66b35
+title: 'feat: comprehensive test suite fixes and documentation updates'
 headline: ''
 priority: medium
 status: todo
 issue_type: feature
 milestone: null
-labels:
-- priority:high
-- status:todo
+labels: []
 remote_ids:
-  github: '82'
-created: '2026-01-09T21:33:56.043174+00:00'
-updated: '2026-01-09T21:33:56.043175+00:00'
+  github: '1'
+created: '2026-01-09T22:52:43.309706+00:00'
+updated: '2026-01-09T22:52:43.309707+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '82'
+github_issue: '1'
 ---
 
-# Interactive project dashboard with real-time updates
+# feat: comprehensive test suite fixes and documentation updates
 
 ## Description
 

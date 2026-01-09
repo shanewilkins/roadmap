@@ -5,13 +5,13 @@ headline: '# Cross-platform compatibility testing (macOS, Linux, Windows)'
 priority: medium
 status: todo
 issue_type: feature
-milestone: backlog
+milestone: null
 labels:
 - testing,compatibility
 remote_ids:
-  github: 102
+  github: '102'
 created: '2025-12-20T18:33:28.214417+00:00'
-updated: '2026-01-09T00:36:32.192741+00:00'
+updated: '2026-01-09T22:51:49.180418+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 102
+github_issue: '102'
 ---
 
 # Cross-platform compatibility testing (macOS, Linux, Windows)

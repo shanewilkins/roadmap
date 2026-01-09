@@ -5,14 +5,14 @@ headline: '# Complete comprehensive API documentation and freeze API design'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: 20
+  github: '20'
 created: '2026-01-02T19:20:52.158921+00:00'
-updated: '2026-01-09T00:36:35.723833+00:00'
+updated: '2026-01-09T22:50:56.331386+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 20
+github_issue: '20'
 ---
 
 # Complete comprehensive API documentation and freeze API design

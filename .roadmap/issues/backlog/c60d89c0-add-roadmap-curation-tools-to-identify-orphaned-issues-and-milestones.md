@@ -3,7 +3,7 @@ id: c60d89c0
 title: Add roadmap curation tools to identify orphaned issues and milestones
 headline: '# Add roadmap curation tools to identify orphaned issues and milestones'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels:
@@ -11,9 +11,9 @@ labels:
 - curation
 - orphaned
 remote_ids:
-  github: '245'
+  github: '273'
 created: '2026-01-09T21:30:30.118533+00:00'
-updated: '2026-01-09T21:33:32.984753+00:00'
+updated: '2026-01-09T22:50:48.856206+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -29,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '245'
+github_issue: '273'
 ---
 
 # Add roadmap curation tools to identify orphaned issues and milestones

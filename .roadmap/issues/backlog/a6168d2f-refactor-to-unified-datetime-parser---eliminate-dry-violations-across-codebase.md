@@ -4,14 +4,14 @@ title: Refactor to unified datetime parser - eliminate DRY violations across cod
 headline: '# Refactor to unified datetime parser - eliminate DRY violations across
   codebase'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '166'
+  github: '286'
 created: '2026-01-09T21:32:24.771402+00:00'
-updated: '2026-01-09T21:41:06.572816+00:00'
+updated: '2026-01-09T22:52:04.045172+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '166'
+github_issue: '286'
 ---
 
 # Refactor to unified datetime parser - eliminate DRY violations across codebase
