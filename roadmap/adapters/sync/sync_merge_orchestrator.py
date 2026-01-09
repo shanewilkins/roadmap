@@ -334,6 +334,7 @@ class SyncMergeOrchestrator:
         self,
         local_issues_dict: dict,
         remote_issues_data: dict,
+        dry_run: bool = False,
     ) -> dict[str, list[Any]]:
         """Match unlinked remote issues to local issues and establish links.
 
@@ -343,6 +344,7 @@ class SyncMergeOrchestrator:
         Args:
             local_issues_dict: Dict of local Issue objects keyed by ID
             remote_issues_data: Dict of remote issue dicts keyed by ID
+            dry_run: If True, don't actually save changes to files
 
         Returns:
             Dict with keys 'auto_linked', 'potential_duplicates', 'new_remote'
@@ -409,9 +411,11 @@ class SyncMergeOrchestrator:
                         )
                         if "potential-duplicate" not in labels:
                             labels.append("potential-duplicate")
-                            self.core.issues.update(
-                                issue_id=matched_issue.id, updates={"labels": labels}
-                            )
+                            if not dry_run:
+                                self.core.issues.update(
+                                    issue_id=matched_issue.id,
+                                    updates={"labels": labels},
+                                )
                         logger.info(
                             "remote_issue_potential_duplicate",
                             remote_id=remote_id,
@@ -742,7 +746,7 @@ class SyncMergeOrchestrator:
             # 3b. Match and link unlinked remote issues to local issues (if pulling)
             # This establishes connections before three-way merge analysis
             _ = self._match_and_link_remote_issues(  # noqa: F841
-                local_issues_dict, remote_issues_data
+                local_issues_dict, remote_issues_data, dry_run=dry_run
             )
 
             # 4. Use state comparator for three-way merge analysis

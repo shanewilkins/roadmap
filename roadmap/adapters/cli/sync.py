@@ -379,7 +379,7 @@ def sync(
 
         # Clear existing baseline from database
         try:
-            db_path = core.roadmap_dir / ".roadmap" / "db" / "state.db"
+            db_path = core.db_dir / "state.db"
             if db_path.exists():
                 conn = sqlite3.connect(str(db_path))
                 cursor = conn.cursor()
@@ -411,85 +411,138 @@ def sync(
                 style="yellow",
             )
 
-        # Create fresh baseline from current local state
+        # Create fresh baseline from current local state with progress feedback
         orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
-        new_baseline = orchestrator._create_initial_baseline()
 
-        if new_baseline and len(new_baseline.issues) > 0:
-            try:
-                db_path = core.roadmap_dir / ".roadmap" / "db" / "state.db"
-                db_path.parent.mkdir(parents=True, exist_ok=True)
+        console_inst.print(
+            "\n📊 Creating baseline from current local state...", style="cyan"
+        )
 
-                import json
-                from datetime import datetime
+        try:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                transient=True,
+            ) as progress:
+                task = progress.add_task("Loading issues from disk...", total=None)
+                new_baseline = orchestrator._create_initial_baseline()
+                progress.update(task, completed=True)
 
-                conn = sqlite3.connect(str(db_path))
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    """
-                    INSERT OR REPLACE INTO sync_base_state (last_sync, data, created_at)
-                    VALUES (?, ?, ?)
-                    """,
-                    (
-                        datetime.now().isoformat(),
-                        json.dumps(new_baseline.to_dict()),
-                        datetime.now().isoformat(),
-                    ),
-                )
-                conn.commit()
-                conn.close()
+                if not new_baseline or len(new_baseline.issues) == 0:
+                    logger.warning(
+                        "baseline_reset_no_issues",
+                        operation="reset_baseline",
+                    )
+                    console_inst.print(
+                        "❌ No local issues found. Create issues first with `roadmap issue create`.",
+                        style="bold red",
+                    )
+                    return
 
                 console_inst.print(
-                    "✅ Baseline reset successfully!",
-                    style="bold green",
-                )
-                console_inst.print(
-                    f"   Backend: {backend_type}",
-                )
-                console_inst.print(
-                    f"   Issues in baseline: {len(new_baseline.issues)}",
+                    f"✅ Loaded {len(new_baseline.issues)} issues",
+                    style="green",
                 )
 
-                if verbose and new_baseline.issues:
-                    console_inst.print("\n   Issues in new baseline:", style="bold")
-                    for issue_id, issue_state in sorted(new_baseline.issues.items()):
-                        console_inst.print(
-                            f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
-                        )
-
-            except OSError as e:
-                logger.error(
-                    "baseline_save_failed",
-                    operation="reset_baseline",
-                    error_type=type(e).__name__,
-                    error=str(e),
-                    is_recoverable=True,
-                    suggested_action="check_disk_space",
-                )
-                console_inst.print(
-                    f"❌ Failed to save new baseline: {str(e)}",
-                    style="bold red",
-                )
-                sys.exit(1)
-            except Exception as e:
-                logger.error(
-                    "baseline_save_failed",
-                    operation="reset_baseline",
-                    error_type=type(e).__name__,
-                    error=str(e),
-                    error_classification="sync_error",
-                )
-                console_inst.print(
-                    f"❌ Failed to save new baseline: {str(e)}",
-                    style="bold red",
-                )
-                sys.exit(1)
-        else:
+        except Exception as e:
+            logger.error(
+                "baseline_creation_failed",
+                operation="reset_baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+                error_classification="sync_error",
+            )
             console_inst.print(
-                "❌ No local issues found. Create issues first with `roadmap issue create`.",
+                f"❌ Failed to load issues: {str(e)}",
                 style="bold red",
             )
+            sys.exit(1)
+
+        # Save baseline to database
+        console_inst.print("💾 Saving baseline to database...", style="cyan")
+
+        try:
+            # Use the corrected save_sync_baseline method that preserves updated_at
+            baseline_dict = {
+                issue_id: {
+                    "status": state.status,
+                    "assignee": state.assignee,
+                    "milestone": state.milestone,
+                    "headline": state.headline or "",
+                    "content": state.content or "",
+                    "labels": state.labels or [],
+                    "updated_at": state.updated_at.isoformat()
+                    if hasattr(state.updated_at, "isoformat")
+                    else str(state.updated_at),
+                }
+                for issue_id, state in new_baseline.issues.items()
+            }
+
+            if not core.db.save_sync_baseline(baseline_dict):
+                logger.error(
+                    "baseline_database_save_returned_false",
+                    operation="reset_baseline",
+                    issue_count=len(baseline_dict),
+                )
+                console_inst.print(
+                    "❌ Failed to save baseline to database (database operation failed)",
+                    style="bold red",
+                )
+                sys.exit(1)
+
+            console_inst.print(
+                "✅ Baseline reset successfully!",
+                style="bold green",
+            )
+            console_inst.print(
+                f"   Backend: {backend_type}",
+            )
+            console_inst.print(
+                f"   Issues in baseline: {len(new_baseline.issues)}",
+            )
+
+            if verbose and new_baseline.issues:
+                console_inst.print("\n   Issues in new baseline:", style="bold")
+                for issue_id, issue_state in sorted(new_baseline.issues.items()):
+                    console_inst.print(
+                        f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
+                    )
+
+            logger.info(
+                "baseline_reset_successful",
+                operation="reset_baseline",
+                backend=backend_type,
+                issue_count=len(new_baseline.issues),
+            )
+
+        except OSError as e:
+            logger.error(
+                "baseline_save_failed",
+                operation="reset_baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+                is_recoverable=True,
+                suggested_action="check_disk_space",
+            )
+            console_inst.print(
+                f"❌ Failed to save baseline (disk error): {str(e)}",
+                style="bold red",
+            )
+            sys.exit(1)
+        except Exception as e:
+            logger.error(
+                "baseline_save_failed",
+                operation="reset_baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+                error_classification="sync_error",
+            )
+            console_inst.print(
+                f"❌ Failed to save baseline: {str(e)}",
+                style="bold red",
+            )
+            sys.exit(1)
+
         return
 
     # Handle --clear-baseline flag to clear baseline without syncing

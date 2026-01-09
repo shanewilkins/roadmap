@@ -10,7 +10,7 @@ labels: []
 remote_ids:
   github: 21
 created: '2025-10-14T15:46:46.825403+00:00'
-updated: '2026-01-08T23:57:34.443408+00:00'
+updated: '2026-01-09T00:36:51.653099+00:00'
 assignee: shanewilkins
 estimated_hours: 24.0
 due_date: null
