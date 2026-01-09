@@ -1,21 +1,16 @@
 ---
-id: 29d069a9
-title: Add milestone-level kanban board with status columns
-headline: '# Add milestone-level kanban board with status columns'
+id: e485acb8
+title: add_id_to_success_msg_after_issue_creation
+headline: '# add_id_to_success_msg_after_issue_creation'
 priority: medium
 status: todo
-issue_type: other
-milestone: backlog
-labels:
-- priority:high
-- status:todo
-- kanban
-- milestone
-- ui
+issue_type: feature
+milestone: null
+labels: []
 remote_ids:
-  github: 83
-created: '2026-01-02T19:20:52.737054+00:00'
-updated: '2026-01-09T00:36:31.586118+00:00'
+  github: '251'
+created: '2026-01-09T21:31:39.027980+00:00'
+updated: '2026-01-09T21:41:04.637078+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -31,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 83
+github_issue: '251'
 ---
 
-# Add milestone-level kanban board with status columns
+# add_id_to_success_msg_after_issue_creation
 
 ## Description
 

@@ -5,12 +5,12 @@ headline: '# Phase 6: End-to-End Tests'
 priority: medium
 status: todo
 issue_type: feature
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 56
+  github: '56'
 created: '2025-12-25T14:55:48.000595+00:00'
-updated: '2026-01-09T00:36:52.600314+00:00'
+updated: '2026-01-09T21:40:54.952970+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 56
+github_issue: '56'
 ---
 
 # Phase 6: End-to-End Tests

@@ -5,12 +5,12 @@ headline: '# feat: implement comprehensive project template system'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 101
+  github: '101'
 created: '2026-01-02T19:20:54.572056+00:00'
-updated: '2026-01-09T00:36:53.375013+00:00'
+updated: '2026-01-09T21:34:51.362640+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 101
+github_issue: '101'
 ---
 
 # feat: implement comprehensive project template system

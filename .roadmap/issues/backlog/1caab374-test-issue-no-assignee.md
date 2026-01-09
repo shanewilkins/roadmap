@@ -5,12 +5,12 @@ headline: '# test issue no assignee'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 107
+  github: '107'
 created: '2026-01-05T21:44:38.394653+00:00'
-updated: '2026-01-09T00:36:49.952798+00:00'
+updated: '2026-01-09T21:34:47.546573+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 107
+github_issue: '107'
 ---
 
 # test issue no assignee

@@ -1,18 +1,16 @@
 ---
-id: 7d4e6e84
-title: 'Align CLI with GitHub terminology: rename roadmaps to projects'
-headline: '# Align CLI with GitHub terminology: rename roadmaps to projects'
+id: 8dcc6214
+title: Review and Simplify Core Architecture
+headline: '# Review and Simplify Core Architecture'
 priority: medium
-status: todo
-issue_type: other
-milestone: backlog
-labels:
-- priority:high
-- status:done
+status: closed
+issue_type: feature
+milestone: null
+labels: []
 remote_ids:
-  github: 73
-created: '2026-01-02T19:20:51.896529+00:00'
-updated: '2026-01-09T00:36:34.930206+00:00'
+  github: '270'
+created: '2026-01-09T21:31:17.733049+00:00'
+updated: '2026-01-09T21:32:39.644678+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 73
+github_issue: '270'
 ---
 
-# Align CLI with GitHub terminology: rename roadmaps to projects
+# Review and Simplify Core Architecture
 
 ## Description
 

@@ -1,22 +1,19 @@
 ---
-id: f7e2d76d
-title: Validate assignee is team member
-headline: '# Validate assignee is team member'
+id: a79519a5
+title: Implement AI-powered project insights and recommendations
+headline: ''
 priority: medium
 status: todo
-issue_type: other
-milestone: backlog
+issue_type: feature
+milestone: null
 labels:
 - priority:high
-- status:done
-- security
-- validation
-- github-integration
+- status:todo
 remote_ids:
-  github: 85
-created: '2026-01-02T19:20:52.900884+00:00'
-updated: '2026-01-09T00:36:35.002631+00:00'
-assignee: null
+  github: '16'
+created: '2026-01-09T21:33:27.071084+00:00'
+updated: '2026-01-09T21:33:27.071085+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -31,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 85
+github_issue: '16'
 ---
 
-# Validate assignee is team member
+# Implement AI-powered project insights and recommendations
 
 ## Description
 

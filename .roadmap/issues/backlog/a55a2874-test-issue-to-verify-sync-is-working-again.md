@@ -5,13 +5,13 @@ headline: let's make sure this is good.
 priority: medium
 status: todo
 issue_type: other
-milestone: v100
+milestone: null
 labels: []
 remote_ids:
-  github: 52
+  github: '60'
 created: '2026-01-02T19:20:50.938842+00:00'
-updated: '2026-01-09T00:36:52.909471+00:00'
-assignee: shanewilkins
+updated: '2026-01-09T21:34:45.557459+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -26,7 +26,17 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 52
+github_issue: '60'
 ---
 
-let's make sure this is good.
+# TEST ISSUE TO VERIFY SYNC IS WORKING AGAIN!
+
+## Description
+
+Brief description of the issue or feature request.
+
+## Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

@@ -5,12 +5,12 @@ headline: '# Advanced branch management and merging strategies'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 29
+  github: '29'
 created: '2025-10-14T14:17:51.110415+00:00'
-updated: '2026-01-09T00:36:52.129023+00:00'
+updated: '2026-01-09T21:34:37.984518+00:00'
 assignee: null
 estimated_hours: 4.0
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 29
+github_issue: '29'
 ---
 
 # Advanced branch management and merging strategies

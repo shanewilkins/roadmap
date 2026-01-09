@@ -5,14 +5,14 @@ headline: '# Implement comprehensive security audit framework'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: 18
+  github: '77'
 created: '2026-01-02T19:20:52.294664+00:00'
-updated: '2026-01-09T00:36:35.239085+00:00'
+updated: '2026-01-09T21:33:36.838966+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 18
+github_issue: '77'
 ---
 
 # Implement comprehensive security audit framework
@@ -42,7 +42,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins
