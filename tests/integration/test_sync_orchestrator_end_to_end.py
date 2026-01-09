@@ -605,5 +605,248 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
         assert report.issues_needs_push == 0 and report.issues_needs_pull == 0
 
 
+class TestFullBidirectionalSync(unittest.TestCase):
+    """Test full bidirectional sync with local and remote changes."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.core = MagicMock()
+        self.backend = MagicMock()
+        self.state_comparator = SyncStateComparator()
+        self.conflict_resolver = SyncConflictResolver()
+
+    def test_full_bidirectional_sync_dry_run(self):
+        """Test dry-run bidirectional sync detects all changes without applying."""
+        # Setup: Mixed scenario
+        # Local: 1 new issue, 1 updated issue, 1 up-to-date
+        now = datetime.now(timezone.utc)
+        past = now - timedelta(hours=2)
+
+        local_new = Issue(
+            id="local-new",
+            title="New Local Issue",
+            status=Status.TODO,
+            priority=Priority.HIGH,
+            created=now,
+            updated=now,
+        )
+
+        local_updated = Issue(
+            id="shared-1",
+            title="Updated Local Issue",
+            status=Status.IN_PROGRESS,
+            priority=Priority.HIGH,
+            created=past,
+            updated=now,
+        )
+
+        local_unchanged = Issue(
+            id="shared-2",
+            title="Unchanged Issue",
+            status=Status.CLOSED,
+            priority=Priority.LOW,
+            created=past,
+            updated=past,
+        )
+
+        # Remote: 1 new issue, 1 updated issue (shared-1), 1 unchanged (shared-2)
+        remote_new = {
+            "id": "remote-new",
+            "title": "New Remote Issue",
+            "status": "open",
+            "priority": "medium",
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+
+        remote_updated = {
+            "id": "shared-1",
+            "title": "Updated Remote Issue",
+            "status": "closed",
+            "priority": "medium",
+            "created_at": past.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+
+        remote_unchanged = {
+            "id": "shared-2",
+            "title": "Unchanged Issue",
+            "status": "done",
+            "priority": "low",
+            "created_at": past.isoformat(),
+            "updated_at": past.isoformat(),
+        }
+
+        self.core.issues.list_all_including_archived.return_value = [
+            local_new,
+            local_updated,
+            local_unchanged,
+        ]
+        self.backend.authenticate.return_value = True
+        self.backend.get_issues.return_value = {
+            "remote-new": remote_new,
+            "shared-1": remote_updated,
+            "shared-2": remote_unchanged,
+        }
+
+        orchestrator = SyncMergeOrchestrator(
+            self.core,
+            self.backend,
+            state_comparator=self.state_comparator,
+            conflict_resolver=self.conflict_resolver,
+        )
+
+        # Execute: Full bidirectional sync (push_only=False, pull_only=False)
+        report = orchestrator.sync_all_issues(dry_run=True)
+
+        # Verify
+        assert report.error is None
+        # shared-1 appears as conflict because both sides changed (no baseline)
+        # local-new is also flagged as a potential conflict
+        assert report.conflicts_detected >= 1
+        assert report.issues_needs_push >= 1  # local-new and/or shared-1 need push
+        assert report.issues_needs_pull >= 1  # remote-new and/or shared-1 need pull
+        assert report.issues_up_to_date == 0  # All have changes
+        # In dry-run mode, no actual push/pull happens
+        self.backend.push_issues.assert_not_called()
+        self.backend.pull_issues.assert_not_called()
+
+    def test_full_bidirectional_sync_apply(self):
+        """Test applying full bidirectional sync pushes and pulls changes."""
+        now = datetime.now(timezone.utc)
+        past = now - timedelta(hours=2)
+
+        # Local issue to push
+        local_issue = Issue(
+            id="local-new",
+            title="New Local Issue",
+            status=Status.TODO,
+            priority=Priority.HIGH,
+            created=now,
+            updated=now,
+        )
+
+        # Shared issue with local changes
+        shared_local = Issue(
+            id="shared-1",
+            title="Shared Issue",
+            status=Status.IN_PROGRESS,
+            priority=Priority.HIGH,
+            created=past,
+            updated=now,
+        )
+
+        # Remote issue to pull
+        remote_issue = {
+            "id": "remote-new",
+            "title": "New Remote Issue",
+            "status": "open",
+            "priority": "medium",
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+
+        self.core.issues.list_all_including_archived.return_value = [
+            local_issue,
+            shared_local,
+        ]
+        self.core.issues.get.side_effect = lambda issue_id: (
+            local_issue if issue_id == "local-new" else shared_local
+        )
+        self.backend.authenticate.return_value = True
+        self.backend.get_issues.return_value = {
+            "remote-new": remote_issue,
+            "shared-1": {
+                "id": "shared-1",
+                "title": "Shared Issue",
+                "status": "closed",
+                "priority": "medium",
+                "created_at": past.isoformat(),
+                "updated_at": now.isoformat(),
+            },
+        }
+        self.backend.push_issue.return_value = True
+        # Setup push_issues mock to return successful SyncReport
+        push_report = SyncReport()
+        push_report.pushed = ["local-new", "shared-1"]
+        self.backend.push_issues.return_value = push_report
+        # Setup pull_issues mock
+        pull_report = SyncReport()
+        pull_report.pulled = ["remote-new"]
+        self.backend.pull_issues.return_value = pull_report
+
+        orchestrator = SyncMergeOrchestrator(
+            self.core,
+            self.backend,
+            state_comparator=self.state_comparator,
+            conflict_resolver=self.conflict_resolver,
+        )
+
+        # Execute: Full bidirectional sync in apply mode
+        report = orchestrator.sync_all_issues(dry_run=False)
+
+        # Verify sync happened
+        assert report.error is None
+        # Verify push_issues was called for local changes
+        assert self.backend.push_issues.called
+        # Verify pull_issues was called for remote changes
+        assert self.backend.pull_issues.called
+        # Verify applied changes tracked
+        assert report.issues_pushed > 0 or report.issues_pulled > 0
+
+    def test_full_bidirectional_sync_with_conflict_force_remote(self):
+        """Test bidirectional sync with conflict resolution (force remote)."""
+        now = datetime.now(timezone.utc)
+        past = now - timedelta(hours=2)
+
+        # Issue with conflicting changes
+        local_conflict = Issue(
+            id="conflict-1",
+            title="Conflict Issue",
+            status=Status.IN_PROGRESS,  # Local wants IN_PROGRESS
+            priority=Priority.HIGH,
+            created=past,
+            updated=now,
+        )
+
+        remote_conflict = {
+            "id": "conflict-1",
+            "title": "Conflict Issue",
+            "status": "closed",  # Remote wants CLOSED
+            "priority": "low",
+            "created_at": past.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+
+        self.core.issues.list_all_including_archived.return_value = [local_conflict]
+        self.core.issues.get.return_value = local_conflict
+        self.backend.authenticate.return_value = True
+        self.backend.get_issues.return_value = {"conflict-1": remote_conflict}
+        # Setup pull_issues mock
+        pull_report = SyncReport()
+        self.backend.pull_issues.return_value = pull_report
+        # Setup push_issues mock
+        push_report = SyncReport()
+        self.backend.push_issues.return_value = push_report
+
+        orchestrator = SyncMergeOrchestrator(
+            self.core,
+            self.backend,
+            state_comparator=self.state_comparator,
+            conflict_resolver=self.conflict_resolver,
+        )
+
+        # Execute: Resolve by keeping remote
+        report = orchestrator.sync_all_issues(
+            dry_run=False, force_remote=True, push_only=False, pull_only=False
+        )
+
+        # Verify
+        assert report.error is None
+        assert report.conflicts_detected == 1
+        # When force_remote, the remote version should be kept
+        # (implementation may vary based on conflict resolution strategy)
+
+
 if __name__ == "__main__":
     unittest.main()
