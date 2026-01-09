@@ -107,10 +107,13 @@ class VanillaGitSyncBackend:
         """
         return SyncReport()
 
-    def pull_issues(self) -> SyncReport:
-        """No-op: Pull all remote issues.
+    def pull_issues(self, issue_ids: list[str]) -> SyncReport:
+        """No-op: Pull specified remote issues.
 
         For self-hosting, the user is responsible for git operations.
+
+        Args:
+            issue_ids: List of issue IDs to pull (unused)
 
         Returns:
             Empty SyncReport (no-op)

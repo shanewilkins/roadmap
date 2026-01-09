@@ -44,6 +44,7 @@ class SyncReport:
         self.pulled: list[str] = []  # Issue IDs successfully pulled
         self.conflicts: list[SyncConflict] = []  # Issues with conflicts
         self.errors: dict[str, str] = {}  # Issue ID -> error message
+        self.error: str | None = None  # Overall sync error (if fatal)
 
 
 class SyncBackendInterface(Protocol):
@@ -126,8 +127,11 @@ class SyncBackendInterface(Protocol):
         """
         ...
 
-    def pull_issues(self) -> SyncReport:
-        """Pull all remote issues to local.
+    def pull_issues(self, issue_ids: list[str]) -> SyncReport:
+        """Pull specified remote issues to local.
+
+        Args:
+            issue_ids: List of remote issue IDs to pull. Empty list means pull nothing.
 
         Returns:
             SyncReport with pulled, conflicts, and errors.
@@ -137,6 +141,7 @@ class SyncBackendInterface(Protocol):
             - Populate report.pulled with issue IDs successfully integrated
             - Populate report.conflicts with conflicting issues
             - Populate report.errors with issue_id -> error_message
+            - Backend can optimize this (batch API calls, parallel processing, etc.)
         """
         ...
 

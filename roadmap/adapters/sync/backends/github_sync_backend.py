@@ -568,20 +568,71 @@ class GitHubSyncBackend:
 
         return report
 
-    def pull_issues(self) -> SyncReport:
-        """Pull all remote GitHub issues to local.
+    def pull_issues(self, issue_ids: list[str]) -> SyncReport:
+        """Pull specified remote GitHub issues to local.
+
+        Args:
+            issue_ids: List of remote issue IDs to pull
 
         Returns:
             SyncReport with pulled, conflicts, and errors.
 
         Notes:
-            - This method is for bulk pulls. Individual pulls are handled by pull_issue.
-            - Delegates to orchestrator for determining which issues to pull.
+            - Each ID should correspond to a remote issue
+            - Updates or creates local files as needed
         """
-        # This is handled by the orchestrator calling pull_issue for specific issues
-        # Keeping this stub for interface compatibility
+        from structlog import get_logger
+
+        logger = get_logger()
         report = SyncReport()
-        return report
+
+        if not issue_ids:
+            return report
+
+        try:
+            logger.info(
+                "pull_issues_starting",
+                issue_count=len(issue_ids),
+            )
+
+            successful_pulls = []
+            failed_pulls = {}
+
+            # Pull each specified remote issue
+            for issue_id in issue_ids:
+                try:
+                    success = self.pull_issue(issue_id)
+                    if success:
+                        successful_pulls.append(issue_id)
+                    else:
+                        failed_pulls[issue_id] = "Pull failed"
+                except Exception as e:
+                    logger.warning(
+                        "pull_issue_exception",
+                        issue_id=issue_id,
+                        error=str(e),
+                    )
+                    failed_pulls[issue_id] = str(e)
+
+            report.pulled = successful_pulls
+            report.errors = failed_pulls
+
+            logger.info(
+                "pull_issues_complete",
+                successful=len(successful_pulls),
+                failed=len(failed_pulls),
+            )
+
+            return report
+
+        except Exception as e:
+            logger.error(
+                "pull_issues_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            report.error = f"Failed to pull issues: {str(e)}"
+            return report
 
     def pull_issue(self, issue_id: str) -> bool:
         """Pull a single remote GitHub issue to local.
