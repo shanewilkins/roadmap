@@ -350,6 +350,16 @@ class SyncMergeOrchestrator:
             Dict with keys 'auto_linked', 'potential_duplicates', 'new_remote'
             containing lists of remote issue IDs
         """
+        from roadmap.common.logging import get_stack_trace
+
+        logger.debug(
+            "match_and_link_remote_issues_start",
+            remote_count=len(remote_issues_data),
+            local_count=len(local_issues_dict),
+            dry_run=dry_run,
+            stack=get_stack_trace(depth=3),
+        )
+
         results = {
             "auto_linked": [],
             "potential_duplicates": [],
@@ -412,6 +422,12 @@ class SyncMergeOrchestrator:
                         if "potential-duplicate" not in labels:
                             labels.append("potential-duplicate")
                             if not dry_run:
+                                logger.debug(
+                                    "updating_issue_labels",
+                                    issue_id=matched_issue.id,
+                                    labels=labels,
+                                    stack=get_stack_trace(depth=2),
+                                )
                                 self.core.issues.update(
                                     issue_id=matched_issue.id,
                                     updates={"labels": labels},
@@ -523,6 +539,8 @@ class SyncMergeOrchestrator:
         Returns:
             SyncReport with detected changes and conflicts
         """
+        from roadmap.common.logging import get_stack_trace
+
         report = SyncReport()
 
         try:
@@ -532,6 +550,10 @@ class SyncMergeOrchestrator:
                 force_local=force_local,
                 force_remote=force_remote,
                 sync_mode="analysis" if dry_run else "apply",
+            )
+            logger.debug(
+                "sync_triggered_from",
+                stack=get_stack_trace(depth=4),
             )
 
             # 1. Authenticate with backend
@@ -914,6 +936,8 @@ class SyncMergeOrchestrator:
         Returns:
             Updated SyncReport with applied changes
         """
+        from roadmap.common.logging import get_stack_trace
+
         logger.info(
             "applying_changes_starting",
             updates=len(updates),
@@ -921,6 +945,10 @@ class SyncMergeOrchestrator:
             pulls=len(pulls),
             push_only=push_only,
             pull_only=pull_only,
+        )
+        logger.debug(
+            "apply_changes_triggered_from",
+            stack=get_stack_trace(depth=3),
         )
 
         pushed_count = 0

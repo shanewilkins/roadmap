@@ -291,6 +291,36 @@ def get_presentation_logger(name: str) -> structlog.stdlib.BoundLogger:
     return get_logger(f"roadmap.presentation.{name}")
 
 
+def get_stack_trace(depth: int = 5) -> str:
+    """Get a formatted stack trace for DEBUG logging.
+
+    This utility makes it easy to add rich context to DEBUG logs without
+    cluttering the normal code path. Stack traces help with troubleshooting
+    unexpected behavior and finding where operations are triggered from.
+
+    Args:
+        depth: Number of stack frames to include (default 5)
+
+    Returns:
+        Formatted multi-line stack trace suitable for log output
+
+    Example:
+        logger = get_logger(__name__)
+        logger.debug(
+            "operation_triggered",
+            operation="sync",
+            stack=get_stack_trace()
+        )
+    """
+    import traceback
+
+    stack_lines = traceback.format_stack()[:-1]  # Exclude this function
+    # Get the last 'depth' frames
+    relevant_lines = stack_lines[-depth:]
+    formatted = "\n  ".join([line.strip() for line in relevant_lines])
+    return formatted
+
+
 @contextmanager
 def log_operation_timing(operation: str, logger=None, **context):
     """Context manager for timing and logging operations.

@@ -48,6 +48,16 @@ class FrontmatterParser:
         cls, frontmatter: dict[str, Any], content: str, file_path: Path
     ) -> None:
         """Write frontmatter and content to a markdown file."""
+        from roadmap.common.logging import get_logger, get_stack_trace
+
+        logger = get_logger(__name__)
+
+        logger.debug(
+            "serializing_file",
+            file_path=str(file_path),
+            stack=get_stack_trace(depth=3),
+        )
+
         ensure_directory_exists(file_path.parent)
 
         # Convert datetime objects to ISO format strings
