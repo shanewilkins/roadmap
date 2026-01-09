@@ -1066,16 +1066,12 @@ def sync(
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
-                TextColumn(
-                    "[progress.percentage]{task.fields[current]}/{task.fields[total]}"
-                ),
                 console=console_inst,
                 transient=True,
             ) as progress:
                 task = progress.add_task(
-                    "Building baseline...",
+                    f"Building baseline... (0/{len(all_local_issues)})",
                     total=len(all_local_issues),
-                    current=0,
                 )
 
                 for idx, issue in enumerate(all_local_issues):
@@ -1097,7 +1093,11 @@ def sync(
                     }
 
                     # Update progress
-                    progress.update(task, current=idx + 1)
+                    progress.update(
+                        task,
+                        description=f"Building baseline... ({idx + 1}/{len(all_local_issues)})",
+                        advance=1,
+                    )
 
             post_sync_issue_count = len(baseline_dict)
 

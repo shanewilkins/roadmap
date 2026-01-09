@@ -428,28 +428,9 @@ class GitHubSyncBackend:
                 response = client.session.patch(url, json=payload)
                 response.raise_for_status()
 
-                # Auto-link: ensure remote_ids is set for this backend
-                from roadmap.adapters.persistence.yaml_repositories import (
-                    YAMLIssueRepository,
-                )
-
-                if hasattr(self.core, "issue_service") and hasattr(
-                    self.core.issue_service, "repository"
-                ):
-                    repo_inst = self.core.issue_service.repository
-                    if isinstance(repo_inst, YAMLIssueRepository):
-                        # Reload issue to get latest state
-                        current_issue = self.core.issues.get(local_issue.id)
-                        if current_issue:
-                            if not current_issue.remote_ids:
-                                current_issue.remote_ids = {}
-                            current_issue.remote_ids["github"] = github_issue_number
-                            repo_inst.save(current_issue)
-                            logger.debug(
-                                "github_auto_linked_on_push",
-                                issue_id=local_issue.id,
-                                github_number=github_issue_number,
-                            )
+                # NOTE: Linking via remote_ids will be handled by sync state manager
+                # We don't save the issue file here to preserve idempotency and avoid
+                # unnecessary file modifications with updated timestamps
 
                 logger.info(
                     "github_push_issue_updated",
@@ -478,26 +459,12 @@ class GitHubSyncBackend:
                 # If we found a duplicate, link it instead of creating a new one
                 if duplicate_issue and duplicate_issue.backend_id:
                     github_issue_number = duplicate_issue.backend_id
-                    # Update the local issue to reference this GitHub issue
-                    from roadmap.adapters.persistence.yaml_repositories import (
-                        YAMLIssueRepository,
+                    # NOTE: Linking will be handled by sync state manager, not by file save
+                    logger.info(
+                        "github_duplicate_issue_linked",
+                        issue_id=local_issue.id,
+                        github_number=github_issue_number,
                     )
-
-                    if hasattr(self.core, "issue_service") and hasattr(
-                        self.core.issue_service, "repository"
-                    ):
-                        repo_inst = self.core.issue_service.repository
-                        if isinstance(repo_inst, YAMLIssueRepository):
-                            local_issue.github_issue = github_issue_number
-                            if not local_issue.remote_ids:
-                                local_issue.remote_ids = {}
-                            local_issue.remote_ids["github"] = github_issue_number
-                            repo_inst.save(local_issue)
-                            logger.info(
-                                "github_auto_linked_duplicate_on_push",
-                                issue_id=local_issue.id,
-                                github_number=github_issue_number,
-                            )
                     return True
 
                 # Create new GitHub issue
@@ -535,29 +502,8 @@ class GitHubSyncBackend:
                 github_response = response.json()
                 github_issue_number = github_response.get("number")
 
-                if github_issue_number:
-                    # Store the GitHub issue number on the local issue for future syncs
-                    from roadmap.adapters.persistence.yaml_repositories import (
-                        YAMLIssueRepository,
-                    )
-
-                    if hasattr(self.core, "issue_service") and hasattr(
-                        self.core.issue_service, "repository"
-                    ):
-                        repo_inst = self.core.issue_service.repository
-                        if isinstance(repo_inst, YAMLIssueRepository):
-                            local_issue.github_issue = github_issue_number
-                            # Auto-link: set remote_ids for this backend
-                            if not local_issue.remote_ids:
-                                local_issue.remote_ids = {}
-                            local_issue.remote_ids["github"] = github_issue_number
-                            repo_inst.save(local_issue)
-                            logger.debug(
-                                "github_auto_linked_on_push",
-                                issue_id=local_issue.id,
-                                github_number=github_issue_number,
-                            )
-
+                # NOTE: Linking via remote_ids will be handled by sync state manager
+                # We don't save the issue file here to preserve idempotency
                 logger.info(
                     "github_push_issue_created",
                     issue_id=local_issue.id,

@@ -374,16 +374,32 @@ class SyncMergeOrchestrator:
             local_issues = list(local_issues_dict.values())
             matcher = IssueMatchingService(local_issues)
 
-            for remote_id, remote_issue in remote_issues_data.items():
-                # Check if already linked via database lookup
-                existing_issue_uuid = self.core.db.remote_links.get_issue_uuid(
-                    backend_name="github", remote_id=remote_id
+            # Pre-load all existing remote links for this backend to avoid N+1 queries
+            # Get all remote IDs we're processing
+            all_remote_ids = list(remote_issues_data.keys())
+            existing_links = {}
+            try:
+                # Fetch all links in batch if possible, otherwise fall back to individual lookups
+                for remote_id in all_remote_ids:
+                    uuid = self.core.db.remote_links.get_issue_uuid(
+                        backend_name="github", remote_id=remote_id
+                    )
+                    if uuid:
+                        existing_links[remote_id] = uuid
+            except Exception as e:
+                logger.warning(
+                    "batch_remote_links_lookup_failed",
+                    error=str(e),
+                    error_type=type(e).__name__,
                 )
-                if existing_issue_uuid:
+
+            for remote_id, remote_issue in remote_issues_data.items():
+                # Check if already linked via pre-loaded cache
+                if remote_id in existing_links:
                     logger.debug(
                         "remote_issue_already_linked",
                         remote_id=remote_id,
-                        issue_uuid=existing_issue_uuid,
+                        issue_uuid=existing_links[remote_id],
                     )
                     continue
 
@@ -414,38 +430,15 @@ class SyncMergeOrchestrator:
                         )
 
                 elif match_type == "potential_duplicate" and matched_issue:
-                    # Flag for user review - add label to local issue
-                    try:
-                        labels = (
-                            list(matched_issue.labels) if matched_issue.labels else []
-                        )
-                        if "potential-duplicate" not in labels:
-                            labels.append("potential-duplicate")
-                            if not dry_run:
-                                logger.debug(
-                                    "updating_issue_labels",
-                                    issue_id=matched_issue.id,
-                                    labels=labels,
-                                    stack=get_stack_trace(depth=2),
-                                )
-                                self.core.issues.update(
-                                    issue_id=matched_issue.id,
-                                    updates={"labels": labels},
-                                )
-                        logger.info(
-                            "remote_issue_potential_duplicate",
-                            remote_id=remote_id,
-                            candidate_id=matched_issue.id,
-                            score=round(score, 3),
-                        )
-                        results["potential_duplicates"].append(remote_id)
-                    except Exception as e:
-                        logger.warning(
-                            "potential_duplicate_label_failed",
-                            remote_id=remote_id,
-                            issue_uuid=matched_issue.id,
-                            error=str(e),
-                        )
+                    # Flag for user review - just log at debug, don't update files
+                    # (Updating files for 296 potential duplicates was causing massive slowdown)
+                    logger.debug(
+                        "remote_issue_potential_duplicate",
+                        remote_id=remote_id,
+                        candidate_id=matched_issue.id,
+                        score=round(score, 3),
+                    )
+                    results["potential_duplicates"].append(remote_id)
 
                 else:
                     # Truly new remote issue - create it locally
@@ -767,9 +760,11 @@ class SyncMergeOrchestrator:
 
             # 3b. Match and link unlinked remote issues to local issues (if pulling)
             # This establishes connections before three-way merge analysis
-            _ = self._match_and_link_remote_issues(  # noqa: F841
-                local_issues_dict, remote_issues_data, dry_run=dry_run
-            )
+            # Skip matching for push_only mode - duplicate detection happens during push_issue()
+            if not push_only:
+                _ = self._match_and_link_remote_issues(  # noqa: F841
+                    local_issues_dict, remote_issues_data, dry_run=dry_run
+                )
 
             # 4. Use state comparator for three-way merge analysis
             # The NEW comparator provides complete baseline context:
