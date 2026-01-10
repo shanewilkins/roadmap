@@ -14,6 +14,7 @@ from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.services.issue_matching_service import IssueMatchingService
+from roadmap.core.services.remote_fetcher import RemoteFetcher
 from roadmap.core.services.sync_conflict_resolver import (
     Conflict,
     ConflictField,
@@ -1248,35 +1249,44 @@ class SyncMergeOrchestrator:
                         pushed_count = 0
             # Pull remote updates (skip if push_only or dry_run)
             if not push_only and not dry_run and pulls:
-                logger.info(
-                    "pulling_remote_updates_start",
-                    count=len(pulls),
-                )
+                logger.info("pulling_remote_updates_start", count=len(pulls))
                 try:
-                    # Use batch pull with explicit issue list
-                    pull_report = self.backend.pull_issues(pulls)
-                    if pull_report and pull_report.errors:
-                        logger.warning(
-                            "pull_batch_had_errors",
-                            error_count=len(pull_report.errors),
-                            errors=str(pull_report.errors)[:200],
-                        )
-                        pull_errors = list(pull_report.errors.keys())
+                    # Prefer adapter batch API via RemoteFetcher to allow adapters
+                    # with different return shapes to be supported.
+                    fetched = RemoteFetcher.fetch_issues(self.backend, pulls)
 
-                    # Count successful pulls
-                    if pull_report and pull_report.pulled:
-                        pulled_count = len(pull_report.pulled)
+                    # If adapter returned a list of items
+                    if isinstance(fetched, list):
+                        # Count non-empty results
+                        pulled_items = [r for r in fetched if r]
+                        pulled_count = len(pulled_items)
                     else:
-                        pulled_count = 0
+                        # Adapter returned a report-like object
+                        pull_report = fetched
+                        if getattr(pull_report, "errors", None):
+                            try:
+                                err_keys = (
+                                    list(pull_report.errors.keys())
+                                    if isinstance(pull_report.errors, dict)
+                                    else []
+                                )
+                            except Exception:
+                                err_keys = []
+                            pull_errors = err_keys
+                            logger.warning(
+                                "pull_batch_had_errors",
+                                error_count=len(pull_errors),
+                                errors=str(pull_report.errors)[:200],
+                            )
+
+                        if getattr(pull_report, "pulled", None):
+                            pulled_count = len(pull_report.pulled or [])
+                        else:
+                            pulled_count = 0
 
                     # Update sync baseline state for all successfully pulled issues
-                    # TODO: implement proper baseline tracking for pulled issues
-                    # Currently: baseline is updated when issues are pushed, but not
-                    # when pulled. This means next sync will re-pull the same issues.
-                    # Need to:  1) Modify pull_issue to return local issue ID
-                    #           2) Track mapping of remote -> local IDs in pull_report
-                    #           3) Update baseline sequentially here after pull completes
-
+                    # Note: baseline update for pulled issues is TODO; pushing still
+                    # updates baseline via `state_manager.save_base_state`.
                     logger.info(
                         "pulling_complete",
                         successful_count=pulled_count,
