@@ -1291,13 +1291,17 @@ class SyncMergeOrchestrator:
                                 errors=str(pull_report.errors)[:200],
                             )
 
-                        if getattr(pull_report, "pulled", None):
-                            pulled_remote_ids = [
-                                str(i) for i in (pull_report.pulled or [])
-                            ]
-                            pulled_count = len(pulled_remote_ids)
-                        else:
+                        pulled_raw = getattr(pull_report, "pulled", None)
+                        if pulled_raw is None:
                             pulled_count = 0
+                            pulled_remote_ids = []
+                        else:
+                            try:
+                                pulled_iter = list(pulled_raw)
+                            except Exception:
+                                pulled_iter = [pulled_raw]
+                            pulled_remote_ids = [str(i) for i in pulled_iter]
+                            pulled_count = len(pulled_remote_ids)
 
                     # Update sync baseline state for all successfully pulled issues
                     # Map remote IDs to local issue UUIDs via remote_links and
