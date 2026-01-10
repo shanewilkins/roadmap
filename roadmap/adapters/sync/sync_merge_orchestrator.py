@@ -21,11 +21,13 @@ from roadmap.core.services.sync_conflict_resolver import (
     SyncConflictResolver,
 )
 from roadmap.core.services.sync_plan import (
+    Action,
     PullAction,
     PushAction,
     ResolveConflictAction,
     SyncPlan,
 )
+from roadmap.core.services.sync_plan_executor import SyncPlanExecutor
 from roadmap.core.services.sync_report import SyncReport
 from roadmap.core.services.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync_state_manager import SyncStateManager
@@ -1045,15 +1047,54 @@ class SyncMergeOrchestrator:
             )
 
             if should_apply:
-                report = self._apply_changes(
-                    report,
-                    updates,
-                    resolved_issues,
-                    pulls,
-                    dry_run=dry_run,
-                    push_only=push_only,
-                    pull_only=pull_only,
+                # Build a SyncPlan from detected changes and delegate application
+                plan = SyncPlan()
+
+                # Push local updates and resolved issues. Batch when multiple.
+                issues_to_push = updates + resolved_issues
+                if issues_to_push:
+                    if len(issues_to_push) == 1:
+                        issue = issues_to_push[0]
+                        plan.add(PushAction(issue_id=issue.id, issue_payload=issue))
+                    else:
+                        # Add a single batch push action with list of Issue objects
+                        plan.add(
+                            Action(
+                                action_type="push", payload={"issues": issues_to_push}
+                            )
+                        )
+
+                # Pull remote changes
+                if pulls:
+                    # Use a single batch pull action (matching previous behavior of calling pull_issues)
+                    plan.add(Action(action_type="pull", payload={"issue_ids": pulls}))
+
+                # Execute the plan via the executor
+                executor = SyncPlanExecutor(
+                    transport_adapter=self.backend,
+                    db_session=self.core.db if hasattr(self.core, "db") else None,
+                    core=self.core,
                 )
+                exec_report = executor.execute(plan, dry_run=dry_run)
+
+                # Merge executor report into our report
+                pushed_count = getattr(exec_report, "issues_pushed", 0)
+                pulled_count = getattr(exec_report, "issues_pulled", 0)
+                report.issues_pushed = pushed_count
+                report.issues_pulled = pulled_count
+                if getattr(exec_report, "error", None):
+                    report.error = exec_report.error
+
+                # Update report counters similar to previous behavior
+                if (pushed_count > 0 or pulled_count > 0) and not dry_run:
+                    report.issues_needs_push = max(
+                        0, report.issues_needs_push - pushed_count
+                    )
+                    report.issues_up_to_date = report.issues_up_to_date + pushed_count
+                    report.issues_needs_pull = max(
+                        0, report.issues_needs_pull - pulled_count
+                    )
+                    report.issues_up_to_date = report.issues_up_to_date + pulled_count
             elif dry_run:
                 logger.info("sync_dry_run_mode", skip_apply=True)
 

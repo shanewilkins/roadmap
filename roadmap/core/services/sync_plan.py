@@ -27,7 +27,7 @@ class Action:
 
 @dataclass
 class PushAction(Action):
-    def __init__(self, issue_id: str, issue_payload: dict[str, Any] | None = None):
+    def __init__(self, issue_id: str, issue_payload: Any = None):
         super().__init__(
             action_type="push",
             payload={"issue_id": issue_id, "issue": issue_payload or {}},
@@ -36,7 +36,7 @@ class PushAction(Action):
 
 @dataclass
 class PullAction(Action):
-    def __init__(self, issue_id: str, remote_payload: dict[str, Any] | None = None):
+    def __init__(self, issue_id: str, remote_payload: Any = None):
         super().__init__(
             action_type="pull",
             payload={"issue_id": issue_id, "remote": remote_payload or {}},
@@ -45,7 +45,7 @@ class PullAction(Action):
 
 @dataclass
 class CreateLocalAction(Action):
-    def __init__(self, remote_id: str, remote_payload: dict[str, Any] | None = None):
+    def __init__(self, remote_id: str, remote_payload: Any = None):
         super().__init__(
             action_type="create_local",
             payload={"remote_id": remote_id, "remote": remote_payload or {}},
