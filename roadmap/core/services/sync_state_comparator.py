@@ -630,10 +630,7 @@ class SyncStateComparator:
                 # Get title (use local, then remote, then baseline, then default)
                 remote_title = None
                 if remote_issue:
-                    if isinstance(remote_issue, dict):
-                        remote_title = remote_issue.get("title")
-                    else:
-                        remote_title = getattr(remote_issue, "title", None)
+                    remote_title = remote_issue.title
 
                 title = (
                     local_issue.title
@@ -681,11 +678,7 @@ class SyncStateComparator:
                     # Treat as "no_change" only if they have identical content
 
                     local_status = getattr(local_issue, "status", None)
-                    remote_status = (
-                        remote_issue.get("status")
-                        if isinstance(remote_issue, dict)
-                        else getattr(remote_issue, "status", None)
-                    )
+                    remote_status = remote_issue.status
 
                     # Normalize status values for comparison
                     local_status_str = (
@@ -696,11 +689,7 @@ class SyncStateComparator:
                     remote_status_str = str(remote_status).lower()
 
                     local_title = getattr(local_issue, "title", "")
-                    remote_title = (
-                        remote_issue.get("title", "")
-                        if isinstance(remote_issue, dict)
-                        else getattr(remote_issue, "title", "")
-                    )
+                    remote_title = remote_issue.title or ""
 
                     # Only treat as no_change if status and title are identical
                     # Otherwise, both_changed (real conflict)
@@ -825,13 +814,13 @@ class SyncStateComparator:
     def _compute_changes_remote(
         self,
         baseline: IssueBaseState,
-        remote: SyncIssue | dict[str, Any],
+        remote: SyncIssue,
     ) -> dict[str, Any]:
         """Compute what changed between baseline and remote issue.
 
         Args:
             baseline: The baseline state
-            remote: The current remote SyncIssue or dict
+            remote: The current remote SyncIssue
 
         Returns:
             Dict of field → value for changed fields
@@ -842,10 +831,8 @@ class SyncStateComparator:
 
         # Helper to get field value from remote (handles both SyncIssue and dict)
         def get_remote_field(field_name: str, default: Any = None) -> Any:
-            if isinstance(remote, dict):
-                return remote.get(field_name, default)
-            else:
-                return getattr(remote, field_name, default)
+            # Remote is always SyncIssue, use getattr for consistency
+            return getattr(remote, field_name, default)
 
         # Map of field names to compare
         # Remote (SyncIssue or dict) field names

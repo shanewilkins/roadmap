@@ -6,7 +6,7 @@ using git history and YAML sync_metadata instead of database state tables.
 Enforces explicit baseline creation during first sync via interactive selection.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -581,7 +581,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     )
 
                 sync_state = SyncState(
-                    last_sync=datetime.utcnow(),
+                    last_sync=datetime.now(UTC),
                     backend="github",
                     issues=issues,
                 )

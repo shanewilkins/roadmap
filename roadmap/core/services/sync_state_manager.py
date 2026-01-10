@@ -1,6 +1,6 @@
 """Manages persistence of sync state via git-based baselines."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from structlog import get_logger
@@ -86,11 +86,11 @@ class SyncStateManager:
             # Save metadata
             conn.execute(
                 "INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) VALUES (?, ?, ?)",
-                ("last_sync", state.last_sync.isoformat(), datetime.utcnow()),
+                ("last_sync", state.last_sync.isoformat(), datetime.now(UTC)),
             )
             conn.execute(
                 "INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) VALUES (?, ?, ?)",
-                ("backend", state.backend, datetime.utcnow()),
+                ("backend", state.backend, datetime.now(UTC)),
             )
 
             # Save each issue's base state
@@ -107,7 +107,7 @@ class SyncStateManager:
                         base_state.headline,
                         base_state.content,
                         json.dumps(base_state.labels or []),
-                        datetime.utcnow(),
+                        datetime.now(UTC),
                     ),
                 )
 
@@ -225,7 +225,7 @@ class SyncStateManager:
             milestone=issue.milestone if hasattr(issue, "milestone") else None,
             headline=issue.content or "",
             labels=issue.labels or [],
-            updated_at=datetime.utcnow(),
+            updated_at=datetime.now(UTC),
         )
 
     def save_base_state(self, issue: Issue, remote_version: bool = False) -> bool:
@@ -258,14 +258,14 @@ class SyncStateManager:
                     reason="no_existing_state",
                 )
                 state = SyncState(
-                    last_sync=datetime.utcnow(),
+                    last_sync=datetime.now(UTC),
                     backend="github",  # Default, will be overridden if state file exists
                 )
 
             # Create new base state for this issue
             base_state = self.create_base_state_from_issue(issue)
             state.add_issue(issue.id, base_state)
-            state.last_sync = datetime.utcnow()
+            state.last_sync = datetime.now(UTC)
 
             # Save the updated state to database
             success = self.save_sync_state_to_db(state)
@@ -321,7 +321,7 @@ class SyncStateManager:
             )
 
             state = SyncState(
-                last_sync=datetime.utcnow(),
+                last_sync=datetime.now(UTC),
                 backend=backend,
             )
 
@@ -354,7 +354,7 @@ class SyncStateManager:
             )
             # Return empty state as fallback
             return SyncState(
-                last_sync=datetime.utcnow(),
+                last_sync=datetime.now(UTC),
                 backend=backend,
             )
 

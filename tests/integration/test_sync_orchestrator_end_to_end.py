@@ -16,6 +16,7 @@ from roadmap.core.services.sync_conflict_resolver import (
     SyncConflictResolver,
 )
 from roadmap.core.services.sync_state_comparator import SyncStateComparator
+from tests.factories import SyncIssueFactory
 
 
 class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
@@ -111,12 +112,11 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
     def test_sync_new_remote_issue_dry_run(self):
         """Test dry-run mode detects new remote issues without applying changes."""
         # Setup: no local issues, 1 remote issue
-        remote_issue = {
-            "id": "remote-1",
-            "title": "New Remote Issue",
-            "status": "TODO",
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
+        remote_issue = SyncIssueFactory.create_github(
+            number=1,
+            title="New Remote Issue",
+            status="open",
+        )
 
         self.core.issues.list_all_including_archived.return_value = []
         self.backend.authenticate.return_value = True
@@ -140,12 +140,11 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
     def test_sync_new_remote_issue_apply(self):
         """Test applying changes pulls new remote issues."""
         # Setup: no local issues, 1 remote issue
-        remote_issue = {
-            "id": "remote-1",
-            "title": "New Remote Issue",
-            "status": "TODO",
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
+        remote_issue = SyncIssueFactory.create_github(
+            number=1,
+            title="New Remote Issue",
+            status="open",
+        )
 
         self.core.issues.list_all_including_archived.return_value = []
         self.backend.authenticate.return_value = True
@@ -198,12 +197,12 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             updated=earlier,  # Older
         )
 
-        remote_issue = {
-            "id": "conflict-1",
-            "title": "Remote Title",
-            "status": "TODO",
-            "updated_at": later.isoformat(),  # Newer
-        }
+        remote_issue = SyncIssueFactory.create_github(
+            number=1,
+            title="Remote Title",
+            status="open",
+            updated_at=later,  # Newer
+        )
 
         self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.core.issues.get.return_value = local_issue
@@ -240,13 +239,12 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             updated=earlier,
         )
 
-        remote_issue = {
-            "id": "conflict-1",
-            "title": "Remote Title",
-            "status": "closed",
-            "priority": "medium",
-            "updated_at": now.isoformat(),
-        }
+        remote_issue = SyncIssueFactory.create_github(
+            number=1,
+            title="Remote Title",
+            status="closed",
+            updated_at=now,
+        )
 
         self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.core.issues.get.return_value = local_issue
@@ -287,13 +285,12 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             updated=earlier,
         )
 
-        remote_issue = {
-            "id": "conflict-1",
-            "title": "Remote Title",
-            "status": "closed",
-            "priority": "medium",
-            "updated_at": now.isoformat(),
-        }
+        remote_issue = SyncIssueFactory.create_github(
+            number=1,
+            title="Remote Title",
+            status="closed",
+            updated_at=now,
+        )
 
         self.core.issues.list_all_including_archived.return_value = [local_issue]
         self.backend.authenticate.return_value = True
@@ -375,20 +372,18 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
         # 1. Updated local issue (older version)
         # 2. Conflicting issue (different version)
         remote_issues = {
-            "updated": {
-                "id": "updated",
-                "title": "Updated Remote",
-                "status": "todo",
-                "priority": "high",
-                "updated_at": older.isoformat(),  # Older than local
-            },
-            "conflict": {
-                "id": "conflict",
-                "title": "Remote Conflict Title",
-                "status": "closed",
-                "priority": "low",
-                "updated_at": now.isoformat(),  # Newer than local
-            },
+            "updated": SyncIssueFactory.create(
+                id="updated",
+                title="Updated Remote",
+                status="todo",
+                updated_at=older,  # Older than local
+            ),
+            "conflict": SyncIssueFactory.create(
+                id="conflict",
+                title="Remote Conflict Title",
+                status="closed",
+                updated_at=now,  # Newer than local
+            ),
         }
 
         self.backend.get_issues.return_value = remote_issues
@@ -455,13 +450,12 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
 
         # Remote: 1 issue (conflicting)
         remote_issues = {
-            "conflict": {
-                "id": "conflict",
-                "title": "Remote Conflict Title",
-                "status": "closed",
-                "priority": "low",
-                "updated_at": now.isoformat(),
-            }
+            "conflict": SyncIssueFactory.create(
+                id="conflict",
+                title="Remote Conflict Title",
+                status="closed",
+                updated_at=now,
+            )
         }
 
         self.backend.get_issues.return_value = remote_issues
@@ -576,13 +570,12 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
             updated=now,
         )
 
-        remote_issue = {
-            "id": "same-1",
-            "title": "Same Issue",
-            "status": "todo",
-            "priority": "medium",
-            "updated_at": now.isoformat(),
-        }
+        remote_issue = SyncIssueFactory.create(
+            id="same-1",
+            title="Same Issue",
+            status="todo",
+            updated_at=now,
+        )
 
         self.core.issues.list_all_including_archived.return_value = [issue]
         self.backend.authenticate.return_value = True
@@ -650,32 +643,27 @@ class TestFullBidirectionalSync(unittest.TestCase):
         )
 
         # Remote: 1 new issue, 1 updated issue (shared-1), 1 unchanged (shared-2)
-        remote_new = {
-            "id": "remote-new",
-            "title": "New Remote Issue",
-            "status": "open",
-            "priority": "medium",
-            "created_at": now.isoformat(),
-            "updated_at": now.isoformat(),
-        }
+        remote_new = SyncIssueFactory.create_github(
+            number=100,
+            title="New Remote Issue",
+            status="open",
+        )
 
-        remote_updated = {
-            "id": "shared-1",
-            "title": "Updated Remote Issue",
-            "status": "closed",
-            "priority": "medium",
-            "created_at": past.isoformat(),
-            "updated_at": now.isoformat(),
-        }
+        remote_updated = SyncIssueFactory.create(
+            id="shared-1",
+            title="Updated Remote Issue",
+            status="closed",
+            created_at=past,
+            updated_at=now,
+        )
 
-        remote_unchanged = {
-            "id": "shared-2",
-            "title": "Unchanged Issue",
-            "status": "done",
-            "priority": "low",
-            "created_at": past.isoformat(),
-            "updated_at": past.isoformat(),
-        }
+        remote_unchanged = SyncIssueFactory.create(
+            id="shared-2",
+            title="Unchanged Issue",
+            status="closed",
+            created_at=past,
+            updated_at=past,
+        )
 
         self.core.issues.list_all_including_archived.return_value = [
             local_new,
@@ -702,11 +690,11 @@ class TestFullBidirectionalSync(unittest.TestCase):
         # Verify
         assert report.error is None
         # shared-1 appears as conflict because both sides changed (no baseline)
-        # local-new is also flagged as a potential conflict
+        # local-new needs push, remote-new needs pull, shared-2 is up to date
         assert report.conflicts_detected >= 1
         assert report.issues_needs_push >= 1  # local-new and/or shared-1 need push
         assert report.issues_needs_pull >= 1  # remote-new and/or shared-1 need pull
-        assert report.issues_up_to_date == 0  # All have changes
+        assert report.issues_up_to_date >= 1  # shared-2 should be up to date
         # In dry-run mode, no actual push/pull happens
         self.backend.push_issues.assert_not_called()
         self.backend.pull_issues.assert_not_called()
@@ -737,14 +725,11 @@ class TestFullBidirectionalSync(unittest.TestCase):
         )
 
         # Remote issue to pull
-        remote_issue = {
-            "id": "remote-new",
-            "title": "New Remote Issue",
-            "status": "open",
-            "priority": "medium",
-            "created_at": now.isoformat(),
-            "updated_at": now.isoformat(),
-        }
+        remote_issue = SyncIssueFactory.create_github(
+            number=100,
+            title="New Remote Issue",
+            status="open",
+        )
 
         self.core.issues.list_all_including_archived.return_value = [
             local_issue,
@@ -756,14 +741,13 @@ class TestFullBidirectionalSync(unittest.TestCase):
         self.backend.authenticate.return_value = True
         self.backend.get_issues.return_value = {
             "remote-new": remote_issue,
-            "shared-1": {
-                "id": "shared-1",
-                "title": "Shared Issue",
-                "status": "closed",
-                "priority": "medium",
-                "created_at": past.isoformat(),
-                "updated_at": now.isoformat(),
-            },
+            "shared-1": SyncIssueFactory.create(
+                id="shared-1",
+                title="Shared Issue",
+                status="closed",
+                created_at=past,
+                updated_at=now,
+            ),
         }
         self.backend.push_issue.return_value = True
         # Setup push_issues mock to return successful SyncReport
@@ -809,14 +793,13 @@ class TestFullBidirectionalSync(unittest.TestCase):
             updated=now,
         )
 
-        remote_conflict = {
-            "id": "conflict-1",
-            "title": "Conflict Issue",
-            "status": "closed",  # Remote wants CLOSED
-            "priority": "low",
-            "created_at": past.isoformat(),
-            "updated_at": now.isoformat(),
-        }
+        remote_conflict = SyncIssueFactory.create(
+            id="conflict-1",
+            title="Conflict Issue",
+            status="closed",  # Remote wants CLOSED
+            created_at=past,
+            updated_at=now,
+        )
 
         self.core.issues.list_all_including_archived.return_value = [local_conflict]
         self.core.issues.get.return_value = local_conflict

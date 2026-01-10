@@ -4,7 +4,7 @@ This module integrates OptimizedBaselineBuilder with the sync pipeline,
 providing intelligent change detection, database caching, and progress feedback.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
@@ -142,7 +142,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 (
                     baseline.last_sync.isoformat(),
                     json.dumps(baseline.to_dict()),
-                    datetime.now().isoformat(),
+                    datetime.now(UTC).isoformat(),
                 ),
             )
             conn.commit()

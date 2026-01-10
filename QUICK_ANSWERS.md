@@ -2,10 +2,10 @@
 
 ## Q1: Can dataclasses help fix the type mismatch?
 
-**YES, absolutely.** 
+**YES, absolutely.**
 
 The real issue is we have `SyncIssue` dataclass (strongly typed) but:
-- `pull_issue()` returns it as `SyncIssue` 
+- `pull_issue()` returns it as `SyncIssue`
 - `orchestrator._create_issue_from_remote()` expects dict and calls `.get()`
 - Comparator tries to handle both SyncIssue and dict inconsistently
 
@@ -37,7 +37,7 @@ The missing pieces:
 # After successful pull_issue:
 self.core.db.remote_links.link_issue(
     issue_uuid=updated_issue.id,
-    backend_name="github", 
+    backend_name="github",
     remote_id=github_issue_number  # e.g., 188
 )
 ```
@@ -114,7 +114,7 @@ class IssueLinker:
     def link_issue_locally(issue, backend, remote_id) → bool
     def update_remote_ids(issue, backend, remote_id) → None
 
-# roadmap/core/services/label_normalizer.py  
+# roadmap/core/services/label_normalizer.py
 class LabelNormalizer:
     def normalize(labels) → list[str]
     def parse_comma_separated(label_str) → list[str]
@@ -165,11 +165,10 @@ Your questions point to **real architectural debt**:
 
 **But the GOOD news**: These are all fixable without major rewrites.
 
-**The BEST approach**: 
+**The BEST approach**:
 1. Wire the linking calls (Phase 2) - 1 day
 2. Extract services (Phase 3) - 1-2 days
 3. Add collection + batch baseline update (Phase 4) - 1-2 days
 4. Type consistency/cleanup (Phase 1) - if time permits
 
 This gives you working baseline tracking + cleaner code.
-

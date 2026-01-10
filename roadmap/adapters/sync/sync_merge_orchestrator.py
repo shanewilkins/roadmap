@@ -12,6 +12,7 @@ from structlog import get_logger
 from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
+from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.services.issue_matching_service import IssueMatchingService
 from roadmap.core.services.sync_conflict_resolver import (
     Conflict,
@@ -59,7 +60,7 @@ class SyncMergeOrchestrator:
             SyncState from database, or None if not found
         """
         try:
-            from datetime import datetime
+            from datetime import UTC, datetime
 
             from roadmap.core.models.sync_state import IssueBaseState, SyncState
 
@@ -84,7 +85,7 @@ class SyncMergeOrchestrator:
                     )
 
                 sync_state = SyncState(
-                    last_sync=datetime.utcnow(),
+                    last_sync=datetime.now(UTC),
                     backend="github",
                     issues=issues,
                 )
@@ -312,9 +313,9 @@ class SyncMergeOrchestrator:
         return conflicts
 
     def _create_issue_from_remote(
-        self, remote_id: str | int, remote_issue: dict[str, Any]
+        self, remote_id: str | int, remote_issue: SyncIssue
     ) -> Issue:
-        """Create a local Issue from remote issue data.
+        """Create a local Issue from remote SyncIssue data.
 
         Extracts relevant fields from remote issue and creates a local Issue object.
         Adds "synced:from-github" label to mark as synced from remote.
@@ -322,42 +323,39 @@ class SyncMergeOrchestrator:
 
         Args:
             remote_id: Remote issue ID (number)
-            remote_issue: Remote issue data dict with keys:
+            remote_issue: SyncIssue object with remote data including:
                 - title: Issue title
-                - body: Issue description
-                - state: 'open' or 'closed'
+                - headline: Short description
+                - status: 'open', 'closed', etc.
                 - labels: List of label names
                 - assignee: Assignee login
                 - milestone: Milestone title or None
-                - url: GitHub issue URL
-                - number: GitHub issue number
+                - backend_id: GitHub issue number
 
         Returns:
             New Issue object ready to be created
         """
         # Extract title and description
-        title = remote_issue.get("title", f"GitHub #{remote_issue.get('number')}")
-        body = remote_issue.get("body", "")
+        backend_id = remote_issue.backend_id or remote_id
+        title = remote_issue.title or f"GitHub #{backend_id}"
+        body = remote_issue.headline or ""
 
-        # Add GitHub issue URL as metadata in content if there's body content
-        github_url = remote_issue.get("url", "")
-        if body and github_url:
-            content = f"{body}\n\n---\n*Synced from GitHub: {github_url}*"
-        elif github_url:
-            content = f"*Synced from GitHub: {github_url}*"
+        # Add GitHub issue reference as metadata in content
+        if body:
+            content = f"{body}\n\n---\n*Synced from GitHub: #{backend_id}*"
         else:
-            content = body
+            content = f"*Synced from GitHub: #{backend_id}*"
 
-        # Determine status from GitHub state
-        status = Status.CLOSED if remote_issue.get("state") == "closed" else Status.TODO
+        # Determine status from remote state
+        status = Status.CLOSED if remote_issue.status == "closed" else Status.TODO
 
         # Get labels and add sync marker
-        labels = list(remote_issue.get("labels", []))
+        labels = list(remote_issue.labels or [])
         if "synced:from-github" not in labels:
             labels.append("synced:from-github")
 
         # Get milestone (will be None for backlog)
-        milestone = remote_issue.get("milestone")
+        milestone = remote_issue.milestone
 
         # Create the Issue object
         issue = Issue(
@@ -366,7 +364,7 @@ class SyncMergeOrchestrator:
             status=status,
             labels=labels,
             milestone=milestone,
-            assignee=remote_issue.get("assignee"),
+            assignee=remote_issue.assignee,
         )
 
         logger.debug(

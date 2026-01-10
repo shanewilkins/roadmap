@@ -1,7 +1,7 @@
 """State manager and database errors for persistence layer."""
 
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -385,7 +385,7 @@ class StateManager:
             ).fetchall()
 
             if not rows:
-                logger.debug("no_sync_baseline_found")
+                logger.info("sync_baseline_not_found_empty_database")
                 return None
 
             baseline = {}
@@ -420,8 +420,8 @@ class StateManager:
                         "synced_at": row["synced_at"],
                     }
 
-            logger.debug(
-                "loaded_sync_baseline",
+            logger.info(
+                "sync_baseline_retrieved_from_database",
                 issue_count=len(baseline),
                 synced_at=rows[0]["synced_at"] if rows else None,
             )
@@ -432,11 +432,7 @@ class StateManager:
                 "error_loading_sync_baseline",
                 error=str(e),
                 error_type=type(e).__name__,
-            )
-            import traceback
-
-            logger.error(
-                "sync_baseline_error_traceback", traceback=traceback.format_exc()
+                exc_info=True,
             )
             return None
 
@@ -456,11 +452,17 @@ class StateManager:
         try:
             import json
 
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(UTC).isoformat()
+
+            logger.debug(
+                "saving_sync_baseline_to_database",
+                issue_count=len(baseline),
+            )
 
             with self.transaction() as conn:
                 # Clear old baseline
                 conn.execute("DELETE FROM sync_base_state")
+                logger.debug("cleared_old_sync_baseline_from_database")
 
                 # Insert new baseline
                 for issue_id, state in baseline.items():
@@ -483,8 +485,10 @@ class StateManager:
                         ),
                     )
 
-            logger.debug(
-                "saved_sync_baseline", issue_count=len(baseline), synced_at=now
+            logger.info(
+                "sync_baseline_saved_to_database",
+                issue_count=len(baseline),
+                synced_at=now,
             )
             return True
 
@@ -493,6 +497,8 @@ class StateManager:
                 "error_saving_sync_baseline",
                 error=str(e),
                 error_type=type(e).__name__,
+                issue_count=len(baseline),
+                exc_info=True,
             )
             return False
 
@@ -503,15 +509,19 @@ class StateManager:
             True if cleared successfully
         """
         try:
+            logger.debug("clearing_sync_baseline_from_database")
+
             with self.transaction() as conn:
                 conn.execute("DELETE FROM sync_base_state")
-            logger.debug("cleared_sync_baseline")
+
+            logger.info("sync_baseline_cleared_from_database")
             return True
         except Exception as e:
             logger.error(
                 "error_clearing_sync_baseline",
                 error=str(e),
                 error_type=type(e).__name__,
+                exc_info=True,
             )
             return False
 
