@@ -5,7 +5,7 @@ for three-way merge during the next sync.
 """
 
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -25,7 +25,7 @@ class IssueBaseState:
     headline: str = ""
     content: str = ""
     labels: list[str] = field(default_factory=list)
-    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to JSON-serializable dict."""
@@ -84,7 +84,7 @@ class SyncState:
     def update_issue(self, issue_id: str, issue_state: IssueBaseState) -> None:
         """Update the base state for a single issue."""
         self.issues[issue_id] = issue_state
-        self.last_sync = datetime.now(UTC)
+        self.last_sync = datetime.now(timezone.utc)
 
     def add_issue(self, issue_id: str, issue_state: IssueBaseState) -> None:
         """Add a new issue to the base state."""

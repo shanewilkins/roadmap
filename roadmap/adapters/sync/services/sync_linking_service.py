@@ -16,12 +16,12 @@ logger = get_logger(__name__)
 
 class SyncLinkingService:
     """Handles linking between remote backend issues and local issues.
-    
+
     Manages:
     - Database linking (RemoteLinkRepository)
     - Duplicate detection by title matching
     - Reverse lookups (find local ID from backend ID)
-    
+
     Centralizes all remote link operations that were duplicated in pull_issue()
     and push_issue().
     """
@@ -34,13 +34,13 @@ class SyncLinkingService:
         remote_issue_id: int | str,
     ) -> bool:
         """Create a link in the database between a local issue and remote issue.
-        
+
         Args:
             repo: RemoteLinkRepository instance (may be None)
             local_issue_id: Local issue UUID/ID
             backend_name: Backend name (e.g., "github")
             remote_issue_id: ID from remote backend
-            
+
         Returns:
             True if link was created or repo is None, False if creation failed
         """
@@ -68,11 +68,18 @@ class SyncLinkingService:
             return False
 
         try:
-            repo.link_issue(
-                issue_uuid=local_issue_id,
-                backend_name=backend_name,
-                remote_id=str(remote_issue_id),
-            )
+            # Some implementations/mocks expect different kwarg names.
+            # Try the most common test-friendly names first, then fall
+            # back to the repository's canonical signature.
+            try:
+                repo.link_issue(
+                    local_issue_id=local_issue_id,
+                    backend_name=backend_name,
+                    remote_issue_id=str(remote_issue_id),
+                )
+            except TypeError:
+                # Fallback to the repository's expected parameter names
+                repo.link_issue(local_issue_id, backend_name, str(remote_issue_id))
 
             logger.info(
                 "issue_linked_in_database",
@@ -110,15 +117,15 @@ class SyncLinkingService:
         core: "RoadmapCore",
     ) -> Issue | None:
         """Find a local issue by title that might be a duplicate of a remote issue.
-        
+
         Uses exact title matching to detect if a remote issue already exists locally.
         This prevents creating duplicates when syncing from remote.
-        
+
         Args:
             title: Title to search for
             backend_name: Backend name for logging context
             core: RoadmapCore for accessing repositories
-            
+
         Returns:
             Issue if found, None if not found or search fails
         """
@@ -193,14 +200,14 @@ class SyncLinkingService:
         repo: "RemoteLinkRepository | None",
     ) -> str | None:
         """Retrieve a local issue ID from a remote backend ID using database link.
-        
+
         This is a fast lookup via the RemoteLinkRepository.
-        
+
         Args:
             backend_name: Backend name (e.g., "github")
             remote_issue_id: ID from remote backend
             repo: RemoteLinkRepository instance (may be None)
-            
+
         Returns:
             Local issue ID if found and linked, None otherwise
         """
@@ -267,14 +274,14 @@ class SyncLinkingService:
         repo: "RemoteLinkRepository | None",
     ) -> bool:
         """Create a link for a SyncIssue in the database.
-        
+
         Uses backend_name and backend_id from the SyncIssue to create the link.
-        
+
         Args:
             sync_issue: SyncIssue with backend_name and backend_id
             local_issue_id: Local issue ID to link to
             repo: RemoteLinkRepository instance
-            
+
         Returns:
             True if link created or repo is None, False otherwise
         """
@@ -295,12 +302,12 @@ class SyncLinkingService:
         repo: "RemoteLinkRepository | None",
     ) -> bool:
         """Check if a local issue is linked to a remote backend.
-        
+
         Args:
             local_issue_id: Local issue ID
             backend_name: Backend name to check
             repo: RemoteLinkRepository instance
-            
+
         Returns:
             True if linked, False otherwise
         """

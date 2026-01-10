@@ -191,7 +191,8 @@ class ProjectService:
         # Map status string to ProjectStatus enum if provided
 
         status_str = status if status else "planning"
-        project_status = ProjectStatus(status_str)
+        # Ensure static type checkers understand this is a ProjectStatus
+        project_status: ProjectStatus = ProjectStatus(status_str)
 
         project = Project(
             name=name,

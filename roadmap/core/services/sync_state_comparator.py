@@ -5,6 +5,7 @@ what needs to be pushed, pulled, or resolved. Backend-agnostic.
 Supports both two-way (legacy) and three-way merge analysis.
 """
 
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
@@ -62,8 +63,8 @@ class SyncStateComparator:
     def _normalize_remote_keys(
         self,
         local: dict[str, Issue],
-        remote: dict[str, SyncIssue],
-    ) -> tuple[dict[str, Issue], dict[str, SyncIssue]]:
+        remote: Mapping[str, Any],
+    ) -> tuple[dict[str, Issue], Mapping[str, Any]]:
         """Normalize remote issue keys to match local issue keys.
 
         Local issues are keyed by UUID (e.g., "7e99d67b").
@@ -461,7 +462,7 @@ class SyncStateComparator:
     def _detect_field_conflicts(
         self,
         local: Issue,
-        remote: dict[str, Any],
+        remote: dict[str, Any] | object,
     ) -> list[ConflictField]:
         """Detect field-level conflicts between local and remote issues.
 
@@ -486,7 +487,11 @@ class SyncStateComparator:
         for field_name in self.fields_to_sync:
             try:
                 local_val = getattr(local, field_name, None)
-                remote_val = remote.get(field_name)
+                # remote may be a dict or an object (SyncIssue). Handle both.
+                if isinstance(remote, dict):
+                    remote_val = remote.get(field_name)
+                else:
+                    remote_val = getattr(remote, field_name, None)
 
                 # Normalize enum values for comparison
                 if field_name == "status" and remote_val is not None:
@@ -540,7 +545,7 @@ class SyncStateComparator:
 
     def _extract_timestamp(
         self,
-        data: dict[str, Any],
+        data: dict[str, Any] | object,
         timestamp_field: str = "updated_at",
     ) -> datetime | None:
         """Extract and parse a timestamp from remote issue data.
@@ -556,7 +561,11 @@ class SyncStateComparator:
             ValueError: If timestamp format is invalid
         """
         try:
-            ts = data.get(timestamp_field)
+            # Support dict-like or object remote representations
+            if isinstance(data, dict):
+                ts = data.get(timestamp_field)
+            else:
+                ts = getattr(data, timestamp_field, None)
 
             if ts is None:
                 return None
@@ -585,7 +594,7 @@ class SyncStateComparator:
     def analyze_three_way(
         self,
         local: dict[str, Issue],
-        remote: dict[str, SyncIssue],
+        remote: Mapping[str, Any],
         baseline: dict[str, IssueBaseState] | None = None,
     ) -> list[IssueChange]:
         """Analyze changes using three-way merge context.
@@ -630,7 +639,11 @@ class SyncStateComparator:
                 # Get title (use local, then remote, then baseline, then default)
                 remote_title = None
                 if remote_issue:
-                    remote_title = remote_issue.title
+                    # remote_issue may be a SyncIssue object or a dict
+                    if isinstance(remote_issue, dict):
+                        remote_title = remote_issue.get("title")
+                    else:
+                        remote_title = getattr(remote_issue, "title", None)
 
                 title = (
                     local_issue.title
@@ -678,7 +691,11 @@ class SyncStateComparator:
                     # Treat as "no_change" only if they have identical content
 
                     local_status = getattr(local_issue, "status", None)
-                    remote_status = remote_issue.status
+                    # remote_status may be attribute or dict entry
+                    if isinstance(remote_issue, dict):
+                        remote_status = remote_issue.get("status")
+                    else:
+                        remote_status = getattr(remote_issue, "status", None)
 
                     # Normalize status values for comparison
                     local_status_str = (
@@ -689,7 +706,11 @@ class SyncStateComparator:
                     remote_status_str = str(remote_status).lower()
 
                     local_title = getattr(local_issue, "title", "")
-                    remote_title = remote_issue.title or ""
+                    remote_title = (
+                        remote_issue.get("title")
+                        if isinstance(remote_issue, dict)
+                        else getattr(remote_issue, "title", "")
+                    ) or ""
 
                     # Only treat as no_change if status and title are identical
                     # Otherwise, both_changed (real conflict)
@@ -715,8 +736,11 @@ class SyncStateComparator:
                 # Handle both Issue objects and dicts for remote_state
                 remote_state_dict: dict[str, Any] | None = None
                 if remote_issue:
-                    if hasattr(remote_issue, "to_dict"):
-                        remote_state_dict = remote_issue.to_dict()
+                    to_dict = getattr(remote_issue, "to_dict", None)
+                    if callable(to_dict):
+                        result = to_dict()
+                        if isinstance(result, dict):
+                            remote_state_dict = result
                     elif isinstance(remote_issue, dict):
                         remote_state_dict = remote_issue
 
@@ -814,7 +838,7 @@ class SyncStateComparator:
     def _compute_changes_remote(
         self,
         baseline: IssueBaseState,
-        remote: SyncIssue,
+        remote: SyncIssue | dict[str, Any],
     ) -> dict[str, Any]:
         """Compute what changed between baseline and remote issue.
 
@@ -831,7 +855,9 @@ class SyncStateComparator:
 
         # Helper to get field value from remote (handles both SyncIssue and dict)
         def get_remote_field(field_name: str, default: Any = None) -> Any:
-            # Remote is always SyncIssue, use getattr for consistency
+            # Remote may be a SyncIssue object or a dict; handle both.
+            if isinstance(remote, dict):
+                return remote.get(field_name, default)
             return getattr(remote, field_name, default)
 
         # Map of field names to compare

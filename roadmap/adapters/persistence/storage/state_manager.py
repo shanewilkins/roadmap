@@ -1,7 +1,7 @@
 """State manager and database errors for persistence layer."""
 
 import sqlite3
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -452,7 +452,7 @@ class StateManager:
         try:
             import json
 
-            now = datetime.now(UTC).isoformat()
+            now = datetime.now(timezone.utc).isoformat()
 
             logger.debug(
                 "saving_sync_baseline_to_database",

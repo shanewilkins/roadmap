@@ -20,6 +20,12 @@ from roadmap.core.services.sync_conflict_resolver import (
     ConflictStrategy,
     SyncConflictResolver,
 )
+from roadmap.core.services.sync_plan import (
+    PullAction,
+    PushAction,
+    ResolveConflictAction,
+    SyncPlan,
+)
 from roadmap.core.services.sync_report import SyncReport
 from roadmap.core.services.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync_state_manager import SyncStateManager
@@ -60,7 +66,7 @@ class SyncMergeOrchestrator:
             SyncState from database, or None if not found
         """
         try:
-            from datetime import UTC, datetime
+            from datetime import datetime, timezone
 
             from roadmap.core.models.sync_state import IssueBaseState, SyncState
 
@@ -85,7 +91,7 @@ class SyncMergeOrchestrator:
                     )
 
                 sync_state = SyncState(
-                    last_sync=datetime.now(UTC),
+                    last_sync=datetime.now(timezone.utc),
                     backend="github",
                     issues=issues,
                 )
@@ -101,6 +107,113 @@ class SyncMergeOrchestrator:
                 error_type=type(e).__name__,
             )
             return None
+
+    def analyze_all_issues(
+        self,
+        push_only: bool = False,
+        pull_only: bool = False,
+    ) -> tuple[SyncPlan, SyncReport]:
+        """Pure analysis pass that returns a SyncPlan and SyncReport without side-effects.
+
+        This method performs authentication and data retrieval (reads only),
+        runs the three-way analysis, and converts the result into a list of
+        `Action`s bundled into a `SyncPlan`. No database or file writes are
+        performed here — actions are merely declared for an Executor to apply.
+        """
+        report = SyncReport()
+        plan = SyncPlan()
+
+        try:
+            # Authenticate with backend (read-only call to validate access)
+            try:
+                if not self.backend.authenticate():
+                    report.error = "Backend authentication failed"
+                    return plan, report
+            except Exception as e:
+                report.error = f"Backend authentication error: {str(e)}"
+                return plan, report
+
+            # Fetch remote snapshot (read-only)
+            try:
+                remote_issues_data = self.backend.get_issues() or {}
+            except Exception as e:
+                report.error = f"Failed to fetch remote issues: {str(e)}"
+                return plan, report
+
+            # Load local issues (read-only)
+            try:
+                local_issues = self.core.issues.list_all_including_archived() or []
+            except Exception as e:
+                report.error = f"Failed to fetch local issues: {str(e)}"
+                return plan, report
+
+            local_issues_dict = {issue.id: issue for issue in local_issues}
+
+            # Load baseline (read-only)
+            try:
+                base_state = self._load_baseline_state()
+            except Exception:
+                base_state = None
+
+            # Run three-way analysis using the comparator
+            changes = self.state_comparator.analyze_three_way(
+                local_issues_dict,
+                remote_issues_data,
+                base_state.issues if base_state else None,
+            )
+
+            # Derive high-level actions from changes (declarative only)
+            conflicts = [c for c in changes if c.has_conflict]
+            local_only_changes = [c for c in changes if c.is_local_only_change()]
+            remote_only_changes = [c for c in changes if c.is_remote_only_change()]
+            no_changes = [c for c in changes if c.conflict_type == "no_change"]
+
+            # Create push actions for local-only changes (unless pull_only)
+            if not pull_only:
+                for c in local_only_changes:
+                    if c.local_state:
+                        plan.add(
+                            PushAction(
+                                issue_id=c.issue_id,
+                                issue_payload=c.local_state.__dict__,
+                            )
+                        )
+
+            # Create pull actions for remote-only changes (unless push_only)
+            if not push_only:
+                for c in remote_only_changes:
+                    plan.add(
+                        PullAction(
+                            issue_id=c.issue_id,
+                            remote_payload=c.remote_state
+                            if hasattr(c, "remote_state")
+                            else {},
+                        )
+                    )
+
+            # Represent conflicts as resolve actions (executor will persist resolution)
+            for c in conflicts:
+                # Create a placeholder resolution payload (resolver will be run in executor if needed)
+                plan.add(
+                    ResolveConflictAction(
+                        issue_id=c.issue_id,
+                        resolution={"conflict_fields": c.local_changes or {}},
+                    )
+                )
+
+            # Fill report metadata similar to existing sync flow
+            report.total_issues = len(local_issues)
+            report.conflicts_detected = len(conflicts)
+            report.issues_up_to_date = len(no_changes)
+            report.issues_needs_push = len(local_only_changes)
+            report.issues_needs_pull = len(remote_only_changes)
+            report.changes = changes
+
+            return plan, report
+
+        except Exception as e:
+            report.error = str(e)
+            return plan, report
 
     def _filter_unchanged_issues_from_base(
         self,
@@ -1003,7 +1116,7 @@ class SyncMergeOrchestrator:
 
         try:
             # Push local updates and resolved conflicts (skip if pull_only)
-            if not pull_only:
+            if not pull_only and not dry_run:
                 issues_to_push = updates + resolved_issues
                 if issues_to_push:
                     issue_ids = [issue.id for issue in issues_to_push]
@@ -1092,9 +1205,8 @@ class SyncMergeOrchestrator:
                             error_type=type(e).__name__,
                         )
                         pushed_count = 0
-
-            # Pull remote updates (skip if push_only)
-            if not push_only and pulls:
+            # Pull remote updates (skip if push_only or dry_run)
+            if not push_only and not dry_run and pulls:
                 logger.info(
                     "pulling_remote_updates_start",
                     count=len(pulls),
