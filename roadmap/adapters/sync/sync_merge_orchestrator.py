@@ -1255,11 +1255,23 @@ class SyncMergeOrchestrator:
                     # with different return shapes to be supported.
                     fetched = RemoteFetcher.fetch_issues(self.backend, pulls)
 
-                    # If adapter returned a list of items
+                    pulled_remote_ids: list[str] = []
+
+                    # If adapter returned a list of items (likely SyncIssue objects)
                     if isinstance(fetched, list):
-                        # Count non-empty results
+                        # Count non-empty results and extract remote ids when possible
                         pulled_items = [r for r in fetched if r]
                         pulled_count = len(pulled_items)
+                        for item in pulled_items:
+                            try:
+                                # Prefer backend-native id, fall back to canonical id
+                                rid = getattr(item, "backend_id", None) or getattr(
+                                    item, "id", None
+                                )
+                                if rid is not None:
+                                    pulled_remote_ids.append(str(rid))
+                            except Exception:
+                                continue
                     else:
                         # Adapter returned a report-like object
                         pull_report = fetched
@@ -1280,13 +1292,51 @@ class SyncMergeOrchestrator:
                             )
 
                         if getattr(pull_report, "pulled", None):
-                            pulled_count = len(pull_report.pulled or [])
+                            pulled_remote_ids = [
+                                str(i) for i in (pull_report.pulled or [])
+                            ]
+                            pulled_count = len(pulled_remote_ids)
                         else:
                             pulled_count = 0
 
                     # Update sync baseline state for all successfully pulled issues
-                    # Note: baseline update for pulled issues is TODO; pushing still
-                    # updates baseline via `state_manager.save_base_state`.
+                    # Map remote IDs to local issue UUIDs via remote_links and
+                    # persist base state so they won't be re-pulled next sync.
+                    try:
+                        backend_name = (
+                            self.backend.get_backend_name()
+                            if hasattr(self.backend, "get_backend_name")
+                            else "github"
+                        )
+                        for remote_id in pulled_remote_ids:
+                            try:
+                                local_uuid = self.core.db.remote_links.get_issue_uuid(
+                                    backend_name=backend_name, remote_id=remote_id
+                                )
+                                if not local_uuid:
+                                    continue
+                                local_issue = self.core.issues.get(local_uuid)
+                                if not local_issue:
+                                    continue
+                                # Save baseline reflecting the pulled state
+                                try:
+                                    self.state_manager.save_base_state(
+                                        local_issue, remote_version=True
+                                    )
+                                except Exception:
+                                    logger.debug(
+                                        "save_base_state_for_pulled_failed",
+                                        remote_id=remote_id,
+                                        local_uuid=local_uuid,
+                                    )
+                            except Exception:
+                                continue
+                    except Exception:
+                        logger.debug(
+                            "pull_baseline_update_skipped",
+                            reason="baseline_update_error",
+                        )
+
                     logger.info(
                         "pulling_complete",
                         successful_count=pulled_count,
