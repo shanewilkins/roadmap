@@ -21,7 +21,6 @@ from roadmap.core.models.sync_models import (
     SyncMilestone,
     SyncProject,
 )
-from roadmap.adapters.sync.services.issue_state_service import IssueStateService
 from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
 from roadmap.core.services.github_issue_client import GitHubIssueClient
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
@@ -735,7 +734,7 @@ class GitHubSyncBackend:
             # Convert to local Issue and prepare updates
             # Normalize status from GitHub format to local Status enum
             normalized_status = IssueStateService.normalize_status(remote_issue.status)
-            
+
             updates = {
                 "title": remote_issue.title,
                 "status": normalized_status,
