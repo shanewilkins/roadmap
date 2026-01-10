@@ -1118,6 +1118,38 @@ class SyncMergeOrchestrator:
                     else:
                         pulled_count = 0
 
+                    # Update sync baseline state for all successfully pulled issues
+                    # This is done AFTER pull completes to avoid database contention
+                    # from parallel pull_issue() calls trying to update baseline
+                    if pull_report and pull_report.pulled:
+                        state_update_failures = 0
+                        for pulled_issue_id in pull_report.pulled:
+                            try:
+                                # Fetch the pulled issue to get its current state
+                                pulled_issue = self.core.issues.get(pulled_issue_id)
+                                if pulled_issue:
+                                    self.state_manager.save_base_state(
+                                        pulled_issue, remote_version=True
+                                    )
+                                else:
+                                    logger.warning(
+                                        "pulled_issue_not_found_for_baseline",
+                                        issue_id=pulled_issue_id,
+                                    )
+                            except Exception as e:
+                                logger.warning(
+                                    "pulled_issue_baseline_update_failed",
+                                    issue_id=pulled_issue_id,
+                                    error=str(e),
+                                )
+                                state_update_failures += 1
+
+                        logger.info(
+                            "pulled_issues_baseline_updated",
+                            pulled_count=pulled_count,
+                            state_update_failures=state_update_failures,
+                        )
+
                     logger.info(
                         "pulling_complete",
                         successful_count=pulled_count,

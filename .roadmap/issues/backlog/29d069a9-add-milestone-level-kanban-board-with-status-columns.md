@@ -1,22 +1,21 @@
 ---
-id: 0839a0e9
-title: GitHub sync not preserving milestone relationships for existing issues
-headline: '# GitHub sync not preserving milestone relationships for existing issues'
+id: 29d069a9
+title: Add milestone-level kanban board with status columns
+headline: '# Add milestone-level kanban board with status columns'
 priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels:
-- bug
 - priority:high
-- status:done
-- github-integration
-- sync
-- milestone-tracking
+- status:todo
+- kanban
+- milestone
+- ui
 remote_ids:
-  github: '74'
-created: '2026-01-02T19:20:51.957433+00:00'
-updated: '2026-01-10T00:10:21.408410+00:00'
+  github: '83'
+created: '2026-01-02T19:20:52.737054+00:00'
+updated: '2026-01-10T13:48:24.125663+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -32,10 +31,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '74'
+github_issue: '83'
 ---
 
-# GitHub sync not preserving milestone relationships for existing issues
+# Add milestone-level kanban board with status columns
 
 ## Description
 

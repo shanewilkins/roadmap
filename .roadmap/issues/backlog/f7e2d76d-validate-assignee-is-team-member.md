@@ -1,18 +1,21 @@
 ---
-id: 20912d31
-title: Increase test coverage to 95% across core modules
-headline: '# Increase test coverage to 95% across core modules'
+id: f7e2d76d
+title: Validate assignee is team member
+headline: '# Validate assignee is team member'
 priority: medium
-status: closed
-issue_type: feature
+status: todo
+issue_type: other
 milestone: null
 labels:
-- testing
-- quality
+- priority:high
+- status:done
+- security
+- validation
+- github-integration
 remote_ids:
-  github: '294'
-created: '2026-01-09T21:32:22.812637+00:00'
-updated: '2026-01-10T13:48:41.852406+00:00'
+  github: '85'
+created: '2026-01-02T19:20:52.900884+00:00'
+updated: '2026-01-10T13:48:44.977502+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +31,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '294'
+github_issue: '85'
 ---
 
-# Increase test coverage to 95% across core modules
+# Validate assignee is team member
 
 ## Description
 
