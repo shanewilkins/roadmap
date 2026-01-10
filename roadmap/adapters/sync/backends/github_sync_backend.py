@@ -551,9 +551,10 @@ class GitHubSyncBackend:
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
+            "[progress.percentage]{task.percentage:>3.1f}%",
         ) as progress:
             task = progress.add_task(
-                f"Pushing {len(local_issues)} issues to GitHub...",
+                f"[cyan]📤 Pushing 0/{len(local_issues)} issues...",
                 total=len(local_issues),
             )
 
@@ -570,11 +571,18 @@ class GitHubSyncBackend:
                     try:
                         if future.result():
                             report.pushed.append(issue.id)
+                            status = "✓"
                         else:
                             report.errors[issue.id] = "Failed to push issue"
+                            status = "✗"
                     except Exception as e:
                         report.errors[issue.id] = str(e)
+                        status = "✗"
                     finally:
+                        progress.update(
+                            task,
+                            description=f"[cyan]📤 Pushing {len(report.pushed)}/{len(local_issues)} issues... {status} {issue.id[:8]}",
+                        )
                         progress.advance(task)
 
         return report
@@ -613,29 +621,48 @@ class GitHubSyncBackend:
             failed_pulls = {}
 
             # Use thread pool for parallel pulling (max 5 concurrent API calls)
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                # Submit all pull tasks
-                futures = {
-                    executor.submit(self.pull_issue, issue_id): issue_id
-                    for issue_id in issue_ids
-                }
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                "[progress.percentage]{task.percentage:>3.1f}%",
+            ) as progress:
+                task = progress.add_task(
+                    f"[magenta]📥 Pulling 0/{len(issue_ids)} issues...",
+                    total=len(issue_ids),
+                )
 
-                # Process results as they complete
-                for future in as_completed(futures):
-                    issue_id = futures[future]
-                    try:
-                        success = future.result()
-                        if success:
-                            successful_pulls.append(issue_id)
-                        else:
-                            failed_pulls[issue_id] = "Pull failed"
-                    except Exception as e:
-                        logger.warning(
-                            "pull_issue_exception",
-                            issue_id=issue_id,
-                            error=str(e),
-                        )
-                        failed_pulls[issue_id] = str(e)
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    # Submit all pull tasks
+                    futures = {
+                        executor.submit(self.pull_issue, issue_id): issue_id
+                        for issue_id in issue_ids
+                    }
+
+                    # Process results as they complete
+                    for future in as_completed(futures):
+                        issue_id = futures[future]
+                        try:
+                            success = future.result()
+                            if success:
+                                successful_pulls.append(issue_id)
+                                status = "✓"
+                            else:
+                                failed_pulls[issue_id] = "Pull failed"
+                                status = "✗"
+                        except Exception as e:
+                            logger.warning(
+                                "pull_issue_exception",
+                                issue_id=issue_id,
+                                error=str(e),
+                            )
+                            failed_pulls[issue_id] = str(e)
+                            status = "✗"
+                        finally:
+                            progress.update(
+                                task,
+                                description=f"[magenta]📥 Pulling {len(successful_pulls)}/{len(issue_ids)} issues... {status} {issue_id}",
+                            )
+                            progress.advance(task)
 
             report.pulled = successful_pulls
             report.errors = failed_pulls
