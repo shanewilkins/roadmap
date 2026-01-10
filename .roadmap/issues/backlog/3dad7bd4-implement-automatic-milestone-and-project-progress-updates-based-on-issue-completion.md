@@ -1,16 +1,19 @@
 ---
-id: e7e606da
-title: 'tests: add unit tests for closing remote orphaned issues'
-headline: '# tests: add unit tests for closing remote orphaned issues'
+id: 3dad7bd4
+title: Implement automatic milestone and project progress updates based on issue completion
+headline: '# Implement automatic milestone and project progress updates based on issue
+  completion'
 priority: medium
 status: todo
-issue_type: other
+issue_type: feature
 milestone: null
-labels: []
+labels:
+- priority:high
+- status:todo
 remote_ids:
-  github: '96'
-created: '2026-01-02T19:20:54.018875+00:00'
-updated: '2026-01-10T00:09:34.520536+00:00'
+  github: '87'
+created: '2026-01-09T22:50:41.417586+00:00'
+updated: '2026-01-10T00:10:37.952032+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,10 +29,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '96'
+github_issue: '87'
 ---
 
-# tests: add unit tests for closing remote orphaned issues
+# Implement automatic milestone and project progress updates based on issue completion
 
 ## Description
 

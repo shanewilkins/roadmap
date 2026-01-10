@@ -1,19 +1,19 @@
 ---
-id: a5a15071
-title: Automated testing pipeline and quality gates
-headline: '# Automated testing pipeline and quality gates'
+id: 58f6a00a
+title: Implement Git hooks automation system
+headline: '# Implement Git hooks automation system'
 priority: medium
-status: closed
-issue_type: feature
-milestone: v.0.3.0
+status: todo
+issue_type: other
+milestone: null
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '15'
-created: '2026-01-09T21:33:41.170167+00:00'
-updated: '2026-01-09T23:58:12.415983+00:00'
-assignee: shanewilkins
+  github: '84'
+created: '2026-01-02T19:20:52.817566+00:00'
+updated: '2026-01-10T00:10:16.317277+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '15'
+github_issue: '84'
 ---
 
-# Automated testing pipeline and quality gates
+# Implement Git hooks automation system
 
 ## Description
 
@@ -42,7 +42,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

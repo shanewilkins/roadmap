@@ -3,16 +3,16 @@ id: be12f79a
 title: Add description and comment history support to entities
 headline: '# Add description and comment history support to entities'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels:
 - documentation
 - feature
 remote_ids:
-  github: '274'
+  github: '132'
 created: '2026-01-09T21:30:21.129256+00:00'
-updated: '2026-01-09T23:58:04.274991+00:00'
+updated: '2026-01-10T00:10:31.636083+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '274'
+github_issue: '132'
 ---
 
 # Add description and comment history support to entities

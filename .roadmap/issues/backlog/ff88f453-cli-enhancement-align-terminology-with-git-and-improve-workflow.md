@@ -11,9 +11,9 @@ labels:
 - ux
 - 1.0-target
 remote_ids:
-  github: '209'
+  github: '123'
 created: '2026-01-09T21:31:08.517647+00:00'
-updated: '2026-01-09T23:57:43.833694+00:00'
+updated: '2026-01-10T00:11:00.756047+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -29,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '209'
+github_issue: '123'
 ---
 
 # CLI Enhancement: Align terminology with Git and improve workflow

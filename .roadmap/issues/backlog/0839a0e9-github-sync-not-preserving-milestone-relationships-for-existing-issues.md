@@ -1,21 +1,22 @@
 ---
-id: f7e2d76d
-title: Validate assignee is team member
-headline: '# Validate assignee is team member'
+id: 0839a0e9
+title: GitHub sync not preserving milestone relationships for existing issues
+headline: '# GitHub sync not preserving milestone relationships for existing issues'
 priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels:
+- bug
 - priority:high
 - status:done
-- security
-- validation
 - github-integration
+- sync
+- milestone-tracking
 remote_ids:
-  github: '85'
-created: '2026-01-02T19:20:52.900884+00:00'
-updated: '2026-01-09T23:57:38.204523+00:00'
+  github: '74'
+created: '2026-01-02T19:20:51.957433+00:00'
+updated: '2026-01-10T00:10:21.408410+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -31,10 +32,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '85'
+github_issue: '74'
 ---
 
-# Validate assignee is team member
+# GitHub sync not preserving milestone relationships for existing issues
 
 ## Description
 

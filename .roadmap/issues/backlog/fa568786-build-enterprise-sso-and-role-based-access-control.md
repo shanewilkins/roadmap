@@ -5,12 +5,12 @@ headline: '# Build enterprise SSO and role-based access control'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 19
+  github: '19'
 created: '2025-10-14T15:46:20.506536+00:00'
-updated: '2026-01-09T00:36:51.810420+00:00'
+updated: '2026-01-10T00:09:29.853103+00:00'
 assignee: shanewilkins
 estimated_hours: 24.0
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 19
+github_issue: '19'
 ---
 
 # Build enterprise SSO and role-based access control

@@ -3,14 +3,14 @@ id: 0ab058fd
 title: 'Phase 3: Complete git hooks integration testing'
 headline: '# Phase 3: Complete git hooks integration testing'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '278'
+  github: '267'
 created: '2026-01-09T21:30:22.946966+00:00'
-updated: '2026-01-09T23:57:17.329483+00:00'
+updated: '2026-01-10T00:11:08.473695+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '278'
+github_issue: '267'
 ---
 
 # Phase 3: Complete git hooks integration testing

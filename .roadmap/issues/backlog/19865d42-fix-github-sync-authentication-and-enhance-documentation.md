@@ -3,14 +3,14 @@ id: 19865d42
 title: Fix GitHub sync authentication and enhance documentation
 headline: '# Fix GitHub sync authentication and enhance documentation'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '6'
+  github: '99'
 created: '2026-01-09T21:33:25.206743+00:00'
-updated: '2026-01-09T23:54:36.523506+00:00'
+updated: '2026-01-10T00:11:11.317327+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,45 +26,17 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '6'
+github_issue: '99'
 ---
 
-## Summary
+# Fix GitHub sync authentication and enhance documentation
 
-This PR resolves the broken GitHub sync functionality and provides comprehensive documentation for users.
+## Description
 
-## Changes Made
+Brief description of the issue or feature request.
 
-### 🔧 Technical Fixes
-- ✅ Implemented GitHub sync authentication system
-- ✅ Added secure credential management with keychain storage
-- ✅ Configured repository settings for bidirectional sync
-- ✅ Tested and validated sync functionality
+## Acceptance Criteria
 
-### 📖 Documentation Enhancements
-- ✅ Created comprehensive GitHub Integration Guide ()
-- ✅ Enhanced CLI Reference with detailed credential setup section
-- ✅ Added troubleshooting guide for common authentication issues
-- ✅ Included security best practices for token management
-- ✅ Added quick setup section to main documentation index
-- ✅ Provided multiple authentication options (keychain, env var, config)
-- ✅ Included examples for CI/CD integration and team workflows
-
-### 🎯 Issues Resolved
-- Closes #3 (GitHub sync broken)
-- Closes issue c0850c90 (Fix broken sync between GitHub issues and roadmap folder)
-- Closes issue ac64f265 (Add project-level template)
-
-## Testing
-- ✅ Verified authentication setup works
-- ✅ Tested bidirectional sync functionality
-- ✅ Validated issue synchronization (3 issues synced successfully)
-- ✅ Confirmed secure credential storage
-
-## Impact
-- Users can now reliably sync their roadmaps with GitHub
-- Comprehensive documentation prevents setup issues
-- Enhanced security with multiple authentication options
-- Better user experience with clear troubleshooting guides
-
-Ready for review and merge! 🚀
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

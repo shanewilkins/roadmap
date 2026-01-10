@@ -3,14 +3,14 @@ id: 9f751133
 title: 'Phase 3: Smart Table Layouts (Responsive)'
 headline: '# Phase 3: Smart Table Layouts (Responsive)'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '272'
+  github: '250'
 created: '2026-01-09T21:31:25.619404+00:00'
-updated: '2026-01-09T23:57:39.871173+00:00'
+updated: '2026-01-10T00:10:54.268272+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '272'
+github_issue: '250'
 ---
 
 # Phase 3: Smart Table Layouts (Responsive)

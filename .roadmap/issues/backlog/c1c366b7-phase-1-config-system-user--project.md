@@ -8,9 +8,9 @@ issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '134'
+  github: '216'
 created: '2026-01-09T21:31:01.214134+00:00'
-updated: '2026-01-10T00:00:37.297328+00:00'
+updated: '2026-01-10T00:10:39.954750+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '134'
+github_issue: '216'
 ---
 
 # Phase 1: Config System (User + Project)

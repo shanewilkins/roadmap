@@ -8,9 +8,9 @@ issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '141'
+  github: '230'
 created: '2026-01-09T21:30:52.005745+00:00'
-updated: '2026-01-10T00:00:53.846237+00:00'
+updated: '2026-01-10T00:11:11.309071+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '141'
+github_issue: '230'
 ---
 
 ## Overview

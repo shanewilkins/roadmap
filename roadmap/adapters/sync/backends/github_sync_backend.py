@@ -799,6 +799,26 @@ class GitHubSyncBackend:
                                 issue_id=updated_issue.id,
                                 github_number=github_issue_number,
                             )
+                            # Update sync baseline state for successfully pulled issue
+                            try:
+                                from roadmap.core.services.sync_state_manager import (
+                                    SyncStateManager,
+                                )
+
+                                state_manager = SyncStateManager(self.core.roadmap_dir)
+                                state_manager.save_base_state(
+                                    updated_issue, remote_version=True
+                                )
+                                logger.debug(
+                                    "pulled_issue_baseline_updated",
+                                    issue_id=updated_issue.id,
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    "pulled_issue_baseline_update_failed",
+                                    issue_id=matching_local_issue.id,
+                                    error=str(e),
+                                )
 
                 logger.debug(
                     "github_pull_issue_updated",
@@ -832,6 +852,26 @@ class GitHubSyncBackend:
                                 issue_id=updated_issue.id,
                                 github_number=github_issue_number,
                             )
+                            # Update sync baseline state for successfully pulled issue
+                            try:
+                                from roadmap.core.services.sync_state_manager import (
+                                    SyncStateManager,
+                                )
+
+                                state_manager = SyncStateManager(self.core.roadmap_dir)
+                                state_manager.save_base_state(
+                                    updated_issue, remote_version=True
+                                )
+                                logger.debug(
+                                    "pulled_issue_baseline_updated",
+                                    issue_id=updated_issue.id,
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    "pulled_issue_baseline_update_failed",
+                                    issue_id=issue_id,
+                                    error=str(e),
+                                )
 
                 logger.debug("github_pull_issue_updated", issue_id=issue_id)
             else:
@@ -870,6 +910,26 @@ class GitHubSyncBackend:
                                 issue_id=created_issue.id,
                                 github_number=github_issue_number,
                             )
+                            # Update sync baseline state for successfully pulled issue
+                            try:
+                                from roadmap.core.services.sync_state_manager import (
+                                    SyncStateManager,
+                                )
+
+                                state_manager = SyncStateManager(self.core.roadmap_dir)
+                                state_manager.save_base_state(
+                                    created_issue, remote_version=True
+                                )
+                                logger.debug(
+                                    "pulled_issue_baseline_updated",
+                                    issue_id=created_issue.id,
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    "pulled_issue_baseline_update_failed",
+                                    issue_id=created_issue.id,
+                                    error=str(e),
+                                )
 
                 logger.debug(
                     "github_pull_issue_created",

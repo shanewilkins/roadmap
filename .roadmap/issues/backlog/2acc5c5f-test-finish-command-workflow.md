@@ -3,16 +3,16 @@ id: 2acc5c5f
 title: Test finish command workflow
 headline: '# Test finish command workflow'
 priority: medium
-status: todo
+status: closed
 issue_type: other
 milestone: null
 labels:
 - priority:medium
 - status:done
 remote_ids:
-  github: '68'
+  github: '25'
 created: '2026-01-02T19:20:51.619153+00:00'
-updated: '2026-01-09T23:53:56.385229+00:00'
+updated: '2026-01-10T00:11:05.529004+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '68'
+github_issue: '25'
 ---
 
 # Test finish command workflow
@@ -42,3 +42,9 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+**Finished:** Successfully unified done and complete commands
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

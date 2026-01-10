@@ -1,7 +1,7 @@
 ---
 id: f4a4c22f
 title: Implement GitHub Sync Authentication Flow
-headline: ''
+headline: '# Implement GitHub Sync Authentication Flow'
 priority: medium
 status: todo
 issue_type: feature
@@ -10,7 +10,7 @@ labels: []
 remote_ids:
   github: '58'
 created: '2026-01-09T23:58:16.618696+00:00'
-updated: '2026-01-09T23:58:16.618697+00:00'
+updated: '2026-01-10T00:11:11.214436+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

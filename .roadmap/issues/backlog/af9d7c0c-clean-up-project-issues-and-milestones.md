@@ -8,9 +8,9 @@ issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '143'
+  github: '218'
 created: '2026-01-09T21:31:52.484645+00:00'
-updated: '2026-01-09T23:58:26.717364+00:00'
+updated: '2026-01-10T00:11:08.406625+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '143'
+github_issue: '218'
 ---
 
 # Clean Up Project Issues and Milestones

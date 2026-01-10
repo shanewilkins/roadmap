@@ -5,12 +5,12 @@ headline: '# Advanced reporting and analytics engine'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 28
+  github: '28'
 created: '2025-10-14T14:18:13.540775+00:00'
-updated: '2026-01-09T00:36:52.206767+00:00'
+updated: '2026-01-10T00:11:08.700431+00:00'
 assignee: null
 estimated_hours: 6.0
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 28
+github_issue: '28'
 ---
 
 # Advanced reporting and analytics engine

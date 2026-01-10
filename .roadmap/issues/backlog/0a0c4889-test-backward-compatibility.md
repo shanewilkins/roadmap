@@ -3,16 +3,16 @@ id: 0a0c4889
 title: Test backward compatibility
 headline: '# Test backward compatibility'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels:
 - priority:medium
 - status:done
 remote_ids:
-  github: '26'
+  github: '67'
 created: '2026-01-09T21:31:03.078537+00:00'
-updated: '2026-01-09T23:58:28.491825+00:00'
+updated: '2026-01-10T00:10:39.768810+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '26'
+github_issue: '67'
 ---
 
 # Test backward compatibility
@@ -42,8 +42,6 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
-**Finished:** Testing backward compatibility
 
 ---
 *Created by roadmap CLI*

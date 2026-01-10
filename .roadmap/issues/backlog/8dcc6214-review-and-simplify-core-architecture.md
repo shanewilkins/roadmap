@@ -3,14 +3,14 @@ id: 8dcc6214
 title: Review and Simplify Core Architecture
 headline: '# Review and Simplify Core Architecture'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '167'
+  github: '270'
 created: '2026-01-09T21:31:17.733049+00:00'
-updated: '2026-01-09T23:56:40.748015+00:00'
+updated: '2026-01-10T00:11:08.342547+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '167'
+github_issue: '270'
 ---
 
 # Review and Simplify Core Architecture

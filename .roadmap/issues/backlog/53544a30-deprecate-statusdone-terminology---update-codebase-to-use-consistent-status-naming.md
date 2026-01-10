@@ -10,9 +10,9 @@ issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '128'
+  github: '265'
 created: '2026-01-09T21:31:55.905916+00:00'
-updated: '2026-01-09T23:57:33.058960+00:00'
+updated: '2026-01-10T00:11:14.178819+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '128'
+github_issue: '265'
 ---
 
 Deprecate Status.DONE terminology - update codebase to use consistent status naming
