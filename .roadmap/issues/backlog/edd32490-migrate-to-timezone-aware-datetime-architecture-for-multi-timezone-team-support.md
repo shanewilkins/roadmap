@@ -4,14 +4,14 @@ title: Migrate to timezone-aware datetime architecture for multi-timezone team s
 headline: '# Migrate to timezone-aware datetime architecture for multi-timezone team
   support'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '289'
+  github: '239'
 created: '2026-01-09T21:30:48.185715+00:00'
-updated: '2026-01-09T22:52:17.478487+00:00'
+updated: '2026-01-10T00:00:58.141973+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '289'
+github_issue: '239'
 ---
 
 # Migrate to timezone-aware datetime architecture for multi-timezone team support

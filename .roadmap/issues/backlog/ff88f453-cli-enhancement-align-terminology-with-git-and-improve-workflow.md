@@ -3,7 +3,7 @@ id: ff88f453
 title: 'CLI Enhancement: Align terminology with Git and improve workflow'
 headline: '# CLI Enhancement: Align terminology with Git and improve workflow'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels:
@@ -11,9 +11,9 @@ labels:
 - ux
 - 1.0-target
 remote_ids:
-  github: '268'
+  github: '209'
 created: '2026-01-09T21:31:08.517647+00:00'
-updated: '2026-01-09T22:50:43.212352+00:00'
+updated: '2026-01-09T23:57:43.833694+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -29,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '268'
+github_issue: '209'
 ---
 
 # CLI Enhancement: Align terminology with Git and improve workflow

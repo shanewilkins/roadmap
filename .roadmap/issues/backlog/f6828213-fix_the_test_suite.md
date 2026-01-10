@@ -3,14 +3,14 @@ id: f6828213
 title: fix_the_test_suite
 headline: '# fix_the_test_suite'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '276'
+  github: '147'
 created: '2026-01-09T21:33:46.977888+00:00'
-updated: '2026-01-09T22:52:36.552902+00:00'
+updated: '2026-01-09T23:56:42.794656+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '276'
+github_issue: '147'
 ---
 
 # fix_the_test_suite

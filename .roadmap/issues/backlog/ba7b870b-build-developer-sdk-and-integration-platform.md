@@ -5,12 +5,12 @@ headline: '# Build developer SDK and integration platform'
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 32
+  github: '32'
 created: '2025-10-14T15:46:35.942526+00:00'
-updated: '2026-01-09T00:36:51.730133+00:00'
+updated: '2026-01-09T23:56:49.505997+00:00'
 assignee: null
 estimated_hours: 24.0
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 32
+github_issue: '32'
 ---
 
 # Build developer SDK and integration platform

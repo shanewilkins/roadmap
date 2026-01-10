@@ -1,18 +1,18 @@
 ---
-id: c97197d9
-title: Investigate GitHub sync inconsistencies and status updates
-headline: '# Investigate GitHub sync inconsistencies and status updates'
+id: 809acc5d
+title: Smart notification system with configurable alerts
+headline: '# Smart notification system with configurable alerts'
 priority: medium
 status: todo
-issue_type: other
+issue_type: feature
 milestone: null
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '89'
-created: '2026-01-02T19:20:53.336462+00:00'
-updated: '2026-01-09T22:51:34.469916+00:00'
+  github: '81'
+created: '2026-01-09T21:31:54.304144+00:00'
+updated: '2026-01-09T23:55:35.880488+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '89'
+github_issue: '81'
 ---
 
-# Investigate GitHub sync inconsistencies and status updates
+# Smart notification system with configurable alerts
 
 ## Description
 

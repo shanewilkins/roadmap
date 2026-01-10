@@ -3,14 +3,14 @@ id: 524ef79f
 title: Refactor .roadmap directory structure for scalability
 headline: '# Refactor .roadmap directory structure for scalability'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '283'
+  github: '205'
 created: '2026-01-09T21:33:08.158968+00:00'
-updated: '2026-01-09T22:52:13.578967+00:00'
+updated: '2026-01-10T00:00:49.491925+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '283'
+github_issue: '205'
 ---
 
 # Refactor .roadmap directory structure for scalability

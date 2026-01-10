@@ -3,14 +3,14 @@ id: 96677d9f
 title: Simplify CLI Commands Structure
 headline: '# Simplify CLI Commands Structure'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '295'
+  github: '141'
 created: '2026-01-09T21:30:52.005745+00:00'
-updated: '2026-01-09T22:52:15.552853+00:00'
+updated: '2026-01-10T00:00:53.846237+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '295'
+github_issue: '141'
 ---
 
 ## Overview

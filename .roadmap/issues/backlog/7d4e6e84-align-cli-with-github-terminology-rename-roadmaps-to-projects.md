@@ -1,18 +1,18 @@
 ---
-id: 6c13e4ea
-title: Implement CI/CD integration for automatic issue branch and commit tracking
-headline: '# Implement CI/CD integration for automatic issue branch and commit tracking'
+id: 7d4e6e84
+title: 'Align CLI with GitHub terminology: rename roadmaps to projects'
+headline: '# Align CLI with GitHub terminology: rename roadmaps to projects'
 priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels:
 - priority:high
-- status:todo
+- status:done
 remote_ids:
-  github: '86'
-created: '2026-01-02T19:20:53.068871+00:00'
-updated: '2026-01-09T22:51:30.937718+00:00'
+  github: '73'
+created: '2026-01-02T19:20:51.896529+00:00'
+updated: '2026-01-09T23:50:35.813474+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '86'
+github_issue: '73'
 ---
 
-# Implement CI/CD integration for automatic issue branch and commit tracking
+# Align CLI with GitHub terminology: rename roadmaps to projects
 
 ## Description
 

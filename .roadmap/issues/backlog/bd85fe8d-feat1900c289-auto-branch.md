@@ -1,16 +1,16 @@
 ---
 id: bd85fe8d
 title: Feat/1900c289 auto branch
-headline: ''
+headline: '# Feat/1900c289 auto branch'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '93'
+  github: '46'
 created: '2026-01-09T21:34:35.991328+00:00'
-updated: '2026-01-09T21:34:35.991329+00:00'
+updated: '2026-01-09T23:57:05.258996+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -26,17 +26,5 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '93'
+github_issue: '46'
 ---
-
-# Feat/1900c289 auto branch
-
-## Description
-
-Brief description of the issue or feature request.
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3

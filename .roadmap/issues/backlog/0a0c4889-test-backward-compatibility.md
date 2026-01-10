@@ -10,9 +10,9 @@ labels:
 - priority:medium
 - status:done
 remote_ids:
-  github: '27'
+  github: '26'
 created: '2026-01-09T21:31:03.078537+00:00'
-updated: '2026-01-09T22:51:43.592452+00:00'
+updated: '2026-01-09T23:58:28.491825+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '27'
+github_issue: '26'
 ---
 
 # Test backward compatibility
@@ -42,6 +42,8 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+**Finished:** Testing backward compatibility
 
 ---
 *Created by roadmap CLI*

@@ -1,18 +1,16 @@
 ---
-id: 34d623ec
-title: Interactive project dashboard with real-time updates
-headline: '# Interactive project dashboard with real-time updates'
+id: f4a4c22f
+title: Implement GitHub Sync Authentication Flow
+headline: ''
 priority: medium
-status: closed
+status: todo
 issue_type: feature
-milestone: v.0.3.0
-labels:
-- priority:high
-- status:todo
+milestone: null
+labels: []
 remote_ids:
-  github: '13'
-created: '2026-01-09T21:33:56.043174+00:00'
-updated: '2026-01-09T22:51:03.942801+00:00'
+  github: '58'
+created: '2026-01-09T23:58:16.618696+00:00'
+updated: '2026-01-09T23:58:16.618697+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '13'
+github_issue: '58'
 ---
 
-# Interactive project dashboard with real-time updates
+# Implement GitHub Sync Authentication Flow
 
 ## Description
 
@@ -42,7 +40,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

@@ -7,12 +7,12 @@ headline: '# docs: add comprehensive documentation for `issue start` command wit
 priority: medium
 status: todo
 issue_type: other
-milestone: backlog
+milestone: null
 labels: []
 remote_ids:
-  github: 98
+  github: '98'
 created: '2026-01-02T19:20:54.235023+00:00'
-updated: '2026-01-09T00:36:50.950113+00:00'
+updated: '2026-01-09T23:57:13.201378+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 98
+github_issue: '98'
 ---
 
 # docs: add comprehensive documentation for `issue start` command with git-branch flags

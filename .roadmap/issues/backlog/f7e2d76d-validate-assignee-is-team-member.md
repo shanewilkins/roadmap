@@ -1,18 +1,21 @@
 ---
-id: c2c03e3e
-title: Build predictive analytics for milestone completion
-headline: '# Build predictive analytics for milestone completion'
+id: f7e2d76d
+title: Validate assignee is team member
+headline: '# Validate assignee is team member'
 priority: medium
-status: closed
+status: todo
 issue_type: other
-milestone: v.0.3.0
+milestone: null
 labels:
 - priority:high
-- status:todo
+- status:done
+- security
+- validation
+- github-integration
 remote_ids:
-  github: '17'
-created: '2026-01-02T19:20:52.363535+00:00'
-updated: '2026-01-09T22:53:03.055580+00:00'
+  github: '85'
+created: '2026-01-02T19:20:52.900884+00:00'
+updated: '2026-01-09T23:57:38.204523+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +31,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '17'
+github_issue: '85'
 ---
 
-# Build predictive analytics for milestone completion
+# Validate assignee is team member
 
 ## Description
 
@@ -42,7 +45,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

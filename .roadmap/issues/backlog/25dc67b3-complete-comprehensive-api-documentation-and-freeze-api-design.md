@@ -10,10 +10,10 @@ labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '20'
+  github: '76'
 created: '2026-01-02T19:20:52.158921+00:00'
-updated: '2026-01-09T22:50:56.331386+00:00'
-assignee: shanewilkins
+updated: '2026-01-09T23:56:20.365110+00:00'
+assignee: null
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '20'
+github_issue: '76'
 ---
 
 # Complete comprehensive API documentation and freeze API design
@@ -42,7 +42,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

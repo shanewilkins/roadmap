@@ -1,19 +1,18 @@
 ---
-id: 3dad7bd4
-title: Implement automatic milestone and project progress updates based on issue completion
-headline: '# Implement automatic milestone and project progress updates based on issue
-  completion'
+id: c2c03e3e
+title: Build predictive analytics for milestone completion
+headline: '# Build predictive analytics for milestone completion'
 priority: medium
 status: todo
-issue_type: feature
+issue_type: other
 milestone: null
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '87'
-created: '2026-01-09T22:50:41.417586+00:00'
-updated: '2026-01-09T22:52:53.622312+00:00'
+  github: '78'
+created: '2026-01-02T19:20:52.363535+00:00'
+updated: '2026-01-09T23:53:24.850953+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -29,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '87'
+github_issue: '78'
 ---
 
-# Implement automatic milestone and project progress updates based on issue completion
+# Build predictive analytics for milestone completion
 
 ## Description
 

@@ -1,7 +1,7 @@
 ---
 id: ec9fd415
 title: Test assignee validation
-headline: ''
+headline: '# Test assignee validation'
 priority: medium
 status: todo
 issue_type: feature
@@ -12,7 +12,7 @@ labels:
 remote_ids:
   github: '33'
 created: '2026-01-09T22:51:00.248893+00:00'
-updated: '2026-01-09T22:51:00.248894+00:00'
+updated: '2026-01-09T23:56:32.830685+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

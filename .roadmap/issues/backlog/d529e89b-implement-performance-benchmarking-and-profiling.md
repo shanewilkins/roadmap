@@ -3,16 +3,16 @@ id: d529e89b
 title: Implement performance benchmarking and profiling
 headline: '# Implement performance benchmarking and profiling'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
 milestone: null
 labels:
 - testing
 - performance
 remote_ids:
-  github: '277'
+  github: '131'
 created: '2026-01-09T21:31:22.093976+00:00'
-updated: '2026-01-09T22:50:50.639335+00:00'
+updated: '2026-01-09T23:54:49.654905+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '277'
+github_issue: '131'
 ---
 
 # Implement performance benchmarking and profiling

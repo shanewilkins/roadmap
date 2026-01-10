@@ -1,21 +1,16 @@
 ---
-id: 1bc45263
-title: Enhance backup system with management, cleanup, and user control features
-headline: '# Enhance backup system with management, cleanup, and user control features'
+id: aa58ab48
+title: '[WIP] Add semantic versioning support to project'
+headline: ''
 priority: medium
 status: todo
 issue_type: feature
 milestone: null
-labels:
-- priority:medium
-- status:done
-- backup
-- data-management
-- cleanup
+labels: []
 remote_ids:
-  github: '65'
-created: '2026-01-09T21:31:44.497736+00:00'
-updated: '2026-01-09T22:52:46.808826+00:00'
+  github: '94'
+created: '2026-01-09T23:54:34.388642+00:00'
+updated: '2026-01-09T23:54:34.388643+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -31,10 +26,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '65'
+github_issue: '94'
 ---
 
-# Enhance backup system with management, cleanup, and user control features
+# [WIP] Add semantic versioning support to project
 
 ## Description
 

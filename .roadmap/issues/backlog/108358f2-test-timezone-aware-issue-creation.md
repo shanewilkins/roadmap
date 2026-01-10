@@ -1,7 +1,7 @@
 ---
 id: 108358f2
 title: Test timezone-aware issue creation
-headline: ''
+headline: '# Test timezone-aware issue creation'
 priority: medium
 status: todo
 issue_type: feature
@@ -10,7 +10,7 @@ labels: []
 remote_ids:
   github: '296'
 created: '2026-01-09T22:50:39.666974+00:00'
-updated: '2026-01-09T22:50:39.666977+00:00'
+updated: '2026-01-09T23:55:51.885472+00:00'
 assignee: null
 estimated_hours: null
 due_date: null

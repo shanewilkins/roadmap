@@ -1,18 +1,18 @@
 ---
-id: 809acc5d
-title: Smart notification system with configurable alerts
-headline: '# Smart notification system with configurable alerts'
+id: 34d623ec
+title: Interactive project dashboard with real-time updates
+headline: '# Interactive project dashboard with real-time updates'
 priority: medium
-status: closed
+status: todo
 issue_type: feature
-milestone: v.0.3.0
+milestone: null
 labels:
 - priority:high
 - status:todo
 remote_ids:
-  github: '14'
-created: '2026-01-09T21:31:54.304144+00:00'
-updated: '2026-01-09T22:51:02.046735+00:00'
+  github: '82'
+created: '2026-01-09T21:33:56.043174+00:00'
+updated: '2026-01-09T23:52:31.933011+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '14'
+github_issue: '82'
 ---
 
-# Smart notification system with configurable alerts
+# Interactive project dashboard with real-time updates
 
 ## Description
 
@@ -42,7 +42,3 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins

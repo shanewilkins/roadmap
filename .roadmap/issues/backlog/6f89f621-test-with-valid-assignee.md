@@ -3,16 +3,16 @@ id: 6f89f621
 title: Test with valid assignee
 headline: '# Test with valid assignee'
 priority: medium
-status: todo
+status: closed
 issue_type: feature
 milestone: null
 labels:
 - priority:low
 - status:todo
 remote_ids:
-  github: '61'
+  github: '36'
 created: '2026-01-09T22:51:45.392472+00:00'
-updated: '2026-01-09T22:52:48.923192+00:00'
+updated: '2026-01-09T23:57:03.459569+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '61'
+github_issue: '36'
 ---
 
 # Test with valid assignee
@@ -42,3 +42,7 @@ Brief description of the issue or feature request.
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+
+---
+*Created by roadmap CLI*
+Assignee: @shanewilkins

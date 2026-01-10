@@ -540,8 +540,14 @@ class GitHubSyncBackend:
         Returns:
             SyncReport with pushed, conflicts, and errors.
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         report = SyncReport()
 
+        if not local_issues:
+            return report
+
+        # Use thread pool for parallel pushing (max 5 concurrent API calls)
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -551,20 +557,25 @@ class GitHubSyncBackend:
                 total=len(local_issues),
             )
 
-            for i, issue in enumerate(local_issues, 1):
-                try:
-                    progress.update(
-                        task,
-                        description=f"Pushing issue {i}/{len(local_issues)}: {issue.id}",
-                    )
-                    if self.push_issue(issue):
-                        report.pushed.append(issue.id)
-                    else:
-                        report.errors[issue.id] = "Failed to push issue"
-                except Exception as e:
-                    report.errors[issue.id] = str(e)
-                finally:
-                    progress.advance(task)
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                # Submit all push tasks
+                futures = {
+                    executor.submit(self.push_issue, issue): issue
+                    for issue in local_issues
+                }
+
+                # Process results as they complete
+                for future in as_completed(futures):
+                    issue = futures[future]
+                    try:
+                        if future.result():
+                            report.pushed.append(issue.id)
+                        else:
+                            report.errors[issue.id] = "Failed to push issue"
+                    except Exception as e:
+                        report.errors[issue.id] = str(e)
+                    finally:
+                        progress.advance(task)
 
         return report
 
@@ -580,7 +591,10 @@ class GitHubSyncBackend:
         Notes:
             - Each ID should correspond to a remote issue
             - Updates or creates local files as needed
+            - Uses parallel execution with thread pool for performance
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         from structlog import get_logger
 
         logger = get_logger()
@@ -598,21 +612,30 @@ class GitHubSyncBackend:
             successful_pulls = []
             failed_pulls = {}
 
-            # Pull each specified remote issue
-            for issue_id in issue_ids:
-                try:
-                    success = self.pull_issue(issue_id)
-                    if success:
-                        successful_pulls.append(issue_id)
-                    else:
-                        failed_pulls[issue_id] = "Pull failed"
-                except Exception as e:
-                    logger.warning(
-                        "pull_issue_exception",
-                        issue_id=issue_id,
-                        error=str(e),
-                    )
-                    failed_pulls[issue_id] = str(e)
+            # Use thread pool for parallel pulling (max 5 concurrent API calls)
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                # Submit all pull tasks
+                futures = {
+                    executor.submit(self.pull_issue, issue_id): issue_id
+                    for issue_id in issue_ids
+                }
+
+                # Process results as they complete
+                for future in as_completed(futures):
+                    issue_id = futures[future]
+                    try:
+                        success = future.result()
+                        if success:
+                            successful_pulls.append(issue_id)
+                        else:
+                            failed_pulls[issue_id] = "Pull failed"
+                    except Exception as e:
+                        logger.warning(
+                            "pull_issue_exception",
+                            issue_id=issue_id,
+                            error=str(e),
+                        )
+                        failed_pulls[issue_id] = str(e)
 
             report.pulled = successful_pulls
             report.errors = failed_pulls
