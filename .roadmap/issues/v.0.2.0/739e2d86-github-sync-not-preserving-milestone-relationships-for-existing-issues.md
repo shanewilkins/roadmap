@@ -14,7 +14,7 @@ labels:
 - sync
 - milestone-tracking
 remote_ids:
-  github: '42'
+  github: '74'
 created: '2026-01-10T13:53:20.274852+00:00'
 updated: '2026-01-10T13:53:27.909203+00:00'
 assignee: shanewilkins
@@ -32,7 +32,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '42'
+github_issue: '74'
 ---
 
 # GitHub sync not preserving milestone relationships for existing issues

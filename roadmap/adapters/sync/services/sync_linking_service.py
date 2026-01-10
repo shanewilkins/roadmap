@@ -69,9 +69,9 @@ class SyncLinkingService:
 
         try:
             repo.link_issue(
-                local_issue_id=local_issue_id,
+                issue_uuid=local_issue_id,
                 backend_name=backend_name,
-                remote_issue_id=str(remote_issue_id),
+                remote_id=str(remote_issue_id),
             )
 
             logger.info(

@@ -10,7 +10,7 @@ labels:
 - testing
 - quality
 remote_ids:
-  github: '122'
+  github: '248'
 created: '2026-01-10T13:53:20.244450+00:00'
 updated: '2026-01-10T13:53:33.659754+00:00'
 assignee: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '122'
+github_issue: '248'
 ---
 
 # Increase test coverage to 95% across core modules

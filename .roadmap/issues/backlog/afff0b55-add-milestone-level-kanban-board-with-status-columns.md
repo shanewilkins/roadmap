@@ -11,7 +11,7 @@ labels:
 - milestone
 - ui
 remote_ids:
-  github: '83'
+  github: '39'
 created: '2026-01-10T13:53:21.559727+00:00'
 updated: '2026-01-10T13:53:26.978750+00:00'
 assignee: null
@@ -29,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '83'
+github_issue: '39'
 ---
 
 # Add milestone-level kanban board with status columns
