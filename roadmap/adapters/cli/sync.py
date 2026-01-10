@@ -927,98 +927,107 @@ def sync(
         pre_sync_baseline = orchestrator._get_baseline_with_optimization()
         pre_sync_issue_count = len(pre_sync_baseline.issues) if pre_sync_baseline else 0
 
-        # PREVIEW PHASE: Run sync in dry-run mode first to show what will happen
+        # ANALYSIS PHASE: Run sync in dry-run mode first to show analysis
         console_inst.print(
-            "\n📋 Generating sync preview...",
+            "\n📊 Analyzing sync status...",
             style="bold cyan",
         )
-        preview_report = orchestrator.sync_all_issues(
-            dry_run=True,
-            force_local=force_local,
-            force_remote=force_remote,
-            show_progress=False,
-            push_only=push,
-            pull_only=pull,
-        )
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console_inst,
+            transient=True,
+        ) as progress:
+            task = progress.add_task("Comparing local, remote, and baseline...", total=None)
+            
+            analysis_report = orchestrator.sync_all_issues(
+                dry_run=True,
+                force_local=force_local,
+                force_remote=force_remote,
+                show_progress=False,
+                push_only=push,
+                pull_only=pull,
+            )
+            
+            progress.update(task, description="Analysis complete")
 
-        # Display preview
+        # Display sync analysis BEFORE applying changes
         console_inst.print(
-            "\n[bold cyan]PREVIEW - Changes that will be applied:[/bold cyan]"
+            "\n[bold cyan]📈 Sync Analysis[/bold cyan]"
         )
-        if verbose:
-            preview_report.display_verbose()
+        console_inst.print(f"   ✓ Up-to-date: {analysis_report.issues_up_to_date}")
+        if push:
+            console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
+        elif pull:
+            console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
         else:
-            preview_report.display_brief()
+            console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
+            console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
+        console_inst.print(f"   ✓ Potential Conflicts: {analysis_report.conflicts_detected}")
 
-        # If dry-run, stop here
+        # If dry-run, stop here and show what would be applied
         if dry_run:
             console_inst.print(
-                "\n[bold yellow]⚠️  Dry-run mode: No changes applied[/bold yellow]"
+                "\n[bold yellow]⚠️  Dry-run mode - Preview of changes:[/bold yellow]"
+            )
+            if verbose:
+                analysis_report.display_verbose()
+            else:
+                analysis_report.display_brief()
+            console_inst.print(
+                "\n[bold yellow]⚠️  No changes applied (dry-run mode)[/bold yellow]"
             )
             return
 
-        # ACTUAL SYNC PHASE: Run sync
+        # APPLY PHASE: Show what will be applied
+        if analysis_report.issues_needs_push > 0 or analysis_report.issues_needs_pull > 0 or analysis_report.conflicts_detected > 0:
+            console_inst.print(
+                "\n✨ [bold cyan]Applied Changes[/bold cyan]"
+            )
+        else:
+            console_inst.print(
+                "\n[bold green]✓ Already up-to-date, no changes needed[/bold green]"
+            )
+            return
+
+        # ACTUAL SYNC PHASE: Run sync with progress bars
         console_inst.print(
-            "\n🔄 Applying changes...",
+            "[bold cyan]Syncing with remote...[/bold cyan]",
             style="bold cyan",
         )
         report = orchestrator.sync_all_issues(
-            dry_run=dry_run,
+            dry_run=False,
             force_local=force_local,
             force_remote=force_remote,
-            show_progress=not dry_run,
+            show_progress=True,  # Always show progress during actual sync
             push_only=push,
             pull_only=pull,
         )
 
         if report.error:
-            console_inst.print(f"❌ Sync error: {report.error}", style="bold red")
+            console_inst.print(f"\n❌ Sync error: {report.error}", style="bold red")
             sys.exit(1)
 
-        # Keep full changes list for verbose reporting
-        all_changes = report.changes.copy()
-
-        # Filter report for push/pull operations (for display only)
-        if push:
-            # Only show issues with local changes (being pushed)
-            report.changes = [c for c in report.changes if c.local_changes]
-            if report.changes:
-                console_inst.print(
-                    f"📤 Pushing {len(report.changes)} local change(s) to remote",
-                    style="bold cyan",
-                )
-            else:
-                console_inst.print(
-                    "ℹ️  No local changes to push",
-                    style="dim",
-                )
-        elif pull:
-            # Only show issues with remote changes (being pulled)
-            report.changes = [c for c in report.changes if c.github_changes]
-            if report.changes:
-                console_inst.print(
-                    f"📥 Pulling {len(report.changes)} remote change(s) and merging locally",
-                    style="bold cyan",
-                )
-            else:
-                console_inst.print(
-                    "ℹ️  No remote changes to pull",
-                    style="dim",
-                )
-
-        # Display sync results report
-        console_inst.print("\n[bold cyan]SYNC RESULTS:[/bold cyan]")
-        if verbose:
-            # Restore full changes list for verbose display (so we can show all issues including up-to-date ones)
-            report.changes = all_changes
-            report.display_verbose()
-        else:
-            report.display_brief()
+        # Display sync results with summary
+        console_inst.print("\n[bold cyan]✅ Sync Results[/bold cyan]")
+        
+        # Show counts
+        pushed = analysis_report.issues_needs_push
+        pulled = analysis_report.issues_needs_pull
+        
+        if pushed > 0:
+            console_inst.print(f"   📤 Pushed: {pushed}")
+        if pulled > 0:
+            console_inst.print(f"   📥 Pulled: {pulled}")
+        
+        if pushed == 0 and pulled == 0:
+            console_inst.print(f"   ✓ Everything up-to-date")
 
         console_inst.print()
 
         # Explain the baseline concept for confused users
-        if report.issues_needs_pull > 0 or report.issues_needs_push > 0:
+        if analysis_report.issues_needs_pull > 0 or analysis_report.issues_needs_push > 0:
             console_inst.print(
                 "[dim]💡 Tip: The baseline is the 'agreed-upon state' from the last sync.[/dim]"
             )

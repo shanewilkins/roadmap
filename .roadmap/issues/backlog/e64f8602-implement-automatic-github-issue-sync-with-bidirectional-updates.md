@@ -8,7 +8,7 @@ issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: '221'
+  github: '282'
 created: '2026-01-10T14:51:08.229479+00:00'
 updated: '2026-01-10T14:51:08.229480+00:00'
 assignee: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '221'
+github_issue: '282'
 ---
 
 # Implement automatic GitHub issue sync with bidirectional updates

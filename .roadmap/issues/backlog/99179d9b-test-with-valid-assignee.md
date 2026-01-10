@@ -10,7 +10,7 @@ labels:
 - priority:low
 - status:todo
 remote_ids:
-  github: '61'
+  github: '36'
 created: '2026-01-10T14:50:57.051098+00:00'
 updated: '2026-01-10T14:50:57.051103+00:00'
 assignee: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '61'
+github_issue: '36'
 ---
 
 # Test with valid assignee

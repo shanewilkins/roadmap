@@ -8,7 +8,7 @@ issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: '258'
+  github: '174'
 created: '2026-01-10T14:50:47.439349+00:00'
 updated: '2026-01-10T14:50:47.439350+00:00'
 assignee: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '258'
+github_issue: '174'
 ---
 
 # Simplify CLI Commands Structure

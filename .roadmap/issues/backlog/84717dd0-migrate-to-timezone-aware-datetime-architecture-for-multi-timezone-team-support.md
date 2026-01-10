@@ -9,7 +9,7 @@ issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: '201'
+  github: '154'
 created: '2026-01-10T14:50:38.122245+00:00'
 updated: '2026-01-10T14:50:38.122246+00:00'
 assignee: null
@@ -27,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '201'
+github_issue: '154'
 ---
 
 # Migrate to timezone-aware datetime architecture for multi-timezone team support

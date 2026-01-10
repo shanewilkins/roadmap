@@ -10,7 +10,7 @@ labels:
 - documentation
 - feature
 remote_ids:
-  github: '253'
+  github: '274'
 created: '2026-01-10T14:50:38.115581+00:00'
 updated: '2026-01-10T14:50:38.115582+00:00'
 assignee: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '253'
+github_issue: '274'
 ---
 
 # Add description and comment history support to entities

@@ -8,7 +8,7 @@ issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: '195'
+  github: '225'
 created: '2026-01-10T14:50:42.658874+00:00'
 updated: '2026-01-10T14:50:42.658876+00:00'
 assignee: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '195'
+github_issue: '225'
 ---
 
 # Eliminate Redundant Sync Functions

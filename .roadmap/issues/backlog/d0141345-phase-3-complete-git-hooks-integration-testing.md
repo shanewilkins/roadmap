@@ -8,7 +8,7 @@ issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: '192'
+  github: '119'
 created: '2026-01-10T14:50:51.957475+00:00'
 updated: '2026-01-10T14:50:51.957476+00:00'
 assignee: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '192'
+github_issue: '119'
 ---
 
 # Phase 3: Complete git hooks integration testing

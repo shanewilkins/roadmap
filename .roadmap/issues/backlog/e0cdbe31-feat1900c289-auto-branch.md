@@ -8,7 +8,7 @@ issue_type: other
 milestone: null
 labels: []
 remote_ids:
-  github: '46'
+  github: '93'
 created: '2026-01-10T14:50:58.449310+00:00'
 updated: '2026-01-10T14:50:58.449311+00:00'
 assignee: null
@@ -26,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '46'
+github_issue: '93'
 ---
 
 # Feat/1900c289 auto branch
