@@ -5,7 +5,7 @@ and can be reused across all sync backends (GitHub, Vanilla Git, etc.).
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -259,7 +259,7 @@ class SyncConflictResolver:
         Raises:
             ValueError: If remote data cannot be converted to Issue
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from roadmap.core.domain.issue import (
             Issue,
@@ -308,9 +308,9 @@ class SyncConflictResolver:
                     else:
                         updated = updated_at_str
                 except (ValueError, AttributeError):
-                    updated = datetime.now(timezone.utc)
+                    updated = datetime.now(UTC)
             else:
-                updated = datetime.now(timezone.utc)
+                updated = datetime.now(UTC)
 
             created_at_str = remote_issue.get("created_at")
             if created_at_str:

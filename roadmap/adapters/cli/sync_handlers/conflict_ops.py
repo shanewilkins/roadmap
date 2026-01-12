@@ -1,4 +1,5 @@
 """Conflict detection and link/unlink operations."""
+
 from __future__ import annotations
 
 import sys
@@ -17,7 +18,9 @@ from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 logger = get_logger(__name__)
 
 
-def show_conflicts(core: Any, backend: str | None, verbose: bool, console_inst: Any) -> bool:
+def show_conflicts(
+    core: Any, backend: str | None, verbose: bool, console_inst: Any
+) -> bool:
     """Handle the `--conflicts` flag to analyze and present conflicts."""
     config_file = core.roadmap_dir / "config.yaml"
     full_config: dict = {}

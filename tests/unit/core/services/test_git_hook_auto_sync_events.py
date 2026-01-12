@@ -12,7 +12,7 @@ from tests.unit.domain.test_data_factory_generation import TestDataFactory
 class TestGitHookAutoSyncEventHandling:
     """Test event-based sync triggering."""
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_disabled(self, mock_sync_service):
         """Test should_sync_on_event returns False when disabled."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -23,7 +23,7 @@ class TestGitHookAutoSyncEventHandling:
         assert not service.should_sync_on_event("checkout")
         assert not service.should_sync_on_event("merge")
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_enabled_all(self, mock_sync_service):
         """Test should_sync_on_event with all triggers enabled."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -41,7 +41,7 @@ class TestGitHookAutoSyncEventHandling:
         assert service.should_sync_on_event("checkout")
         assert service.should_sync_on_event("merge")
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_selective(self, mock_sync_service):
         """Test should_sync_on_event with selective triggers."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -59,7 +59,7 @@ class TestGitHookAutoSyncEventHandling:
         assert not service.should_sync_on_event("checkout")
         assert service.should_sync_on_event("merge")
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_unknown_event(self, mock_sync_service):
         """Test should_sync_on_event with unknown event type."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -71,7 +71,7 @@ class TestGitHookAutoSyncEventHandling:
         # Unknown event should return False
         assert not service.should_sync_on_event("unknown")
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_should_sync_on_event_auto_sync_disabled_overrides(self, mock_sync_service):
         """Test that auto_sync_enabled=False overrides specific triggers."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -94,7 +94,7 @@ class TestGitHookAutoSyncEventHandling:
 class TestGitHookAutoSyncCommit:
     """Test auto-sync on commit events."""
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_disabled(self, mock_sync_service):
         """Test auto_sync_on_commit when sync is disabled."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -104,7 +104,7 @@ class TestGitHookAutoSyncCommit:
         result = service.auto_sync_on_commit()
         assert not result
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_enabled_no_linked_issues(self, mock_sync_service):
         """Test auto_sync_on_commit with no linked issues."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -119,7 +119,7 @@ class TestGitHookAutoSyncCommit:
         # Verify service was called without error
         assert True
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_with_sha(self, mock_sync_service):
         """Test auto_sync_on_commit with commit SHA."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -134,7 +134,7 @@ class TestGitHookAutoSyncCommit:
         # Verify execution succeeded
         assert True
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_commit_confirm_parameter(self, mock_sync_service):
         """Test auto_sync_on_commit respects confirm parameter."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -155,7 +155,7 @@ class TestGitHookAutoSyncCommit:
 class TestGitHookAutoSyncCheckout:
     """Test auto-sync on checkout events."""
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_checkout_disabled(self, mock_sync_service):
         """Test auto_sync_on_checkout when disabled."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -164,7 +164,7 @@ class TestGitHookAutoSyncCheckout:
         result = service.auto_sync_on_checkout()
         assert not result
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_checkout_enabled(self, mock_sync_service):
         """Test auto_sync_on_checkout when enabled."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -178,7 +178,7 @@ class TestGitHookAutoSyncCheckout:
         # Verify execution without error
         assert True
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_checkout_with_branch(self, mock_sync_service):
         """Test auto_sync_on_checkout with branch name."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -196,7 +196,7 @@ class TestGitHookAutoSyncCheckout:
 class TestGitHookAutoSyncMerge:
     """Test auto-sync on merge events."""
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_merge_disabled(self, mock_sync_service):
         """Test auto_sync_on_merge when disabled."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -205,7 +205,7 @@ class TestGitHookAutoSyncMerge:
         result = service.auto_sync_on_merge()
         assert not result
 
-    @patch("roadmap.core.services.git_hook_auto_sync_service.SyncMetadataService")
+    @patch("roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService")
     def test_auto_sync_on_merge_enabled(self, mock_sync_service):
         """Test auto_sync_on_merge when enabled."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)

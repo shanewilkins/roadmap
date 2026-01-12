@@ -38,7 +38,7 @@ class TestGitHubIntegrationService:
     def test_get_github_config_not_configured(self, service):
         """Test get_github_config when GitHub is not configured."""
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_config.load.return_value = Mock(github=None)
@@ -49,7 +49,7 @@ class TestGitHubIntegrationService:
     def test_get_github_config_configured(self, service):
         """Test get_github_config when GitHub is configured."""
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_config.load.return_value = Mock(
@@ -58,7 +58,7 @@ class TestGitHubIntegrationService:
             mock_config_cls.return_value = mock_config
 
             with patch(
-                "roadmap.core.services.github_integration_service.get_credential_manager"
+                "roadmap.core.services.github.github_integration_service.get_credential_manager"
             ) as mock_cred:
                 mock_cred.return_value.get_token.return_value = "test-token"
                 token, owner, repo = service.get_github_config()
@@ -69,7 +69,7 @@ class TestGitHubIntegrationService:
     def test_get_github_config_from_env(self, service):
         """Test get_github_config retrieves token from environment."""
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             mock_config.load.return_value = Mock(
@@ -78,11 +78,11 @@ class TestGitHubIntegrationService:
             mock_config_cls.return_value = mock_config
 
             with patch(
-                "roadmap.core.services.github_integration_service.get_credential_manager"
+                "roadmap.core.services.github.github_integration_service.get_credential_manager"
             ) as mock_cred:
                 mock_cred.return_value.get_token.return_value = None
                 with patch(
-                    "roadmap.core.services.github_integration_service.os.getenv",
+                    "roadmap.core.services.github.github_integration_service.os.getenv",
                     return_value="env-token",
                 ):
                     token, owner, repo = service.get_github_config()
@@ -116,7 +116,7 @@ class TestGitHubIntegrationService:
         else:
             with patch.object(service, "get_github_config", return_value=config_return):
                 with patch(
-                    "roadmap.core.services.github_integration_service.GitHubClient"
+                    "roadmap.core.services.github.github_integration_service.GitHubClient"
                 ) as mock_client_cls:
                     mock_client = Mock()
                     mock_client.get_team_members.return_value = expected_result
@@ -138,7 +138,7 @@ class TestGitHubIntegrationService:
     ):
         """Test get_current_user in various scenarios."""
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_config_cls:
             mock_config = Mock()
             if user_configured:

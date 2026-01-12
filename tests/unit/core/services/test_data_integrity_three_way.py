@@ -4,7 +4,7 @@ Comprehensive tests ensuring the three-way merge implementation maintains
 data integrity across baseline, local, and remote states.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -34,7 +34,7 @@ class TestDataIntegrityThreeWayMerge:
             headline="Original description",
             content="Original description",
             labels=["bug"],
-            updated_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(UTC),
         )
 
     def test_no_changes_maintains_integrity(self, comparator, baseline_state):
@@ -90,7 +90,7 @@ class TestDataIntegrityThreeWayMerge:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -143,7 +143,7 @@ class TestDataIntegrityThreeWayMerge:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -173,7 +173,7 @@ class TestDataIntegrityThreeWayMerge:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -184,7 +184,7 @@ class TestDataIntegrityThreeWayMerge:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -227,7 +227,7 @@ class TestDataIntegrityThreeWayMerge:
             id="issue-1",
             title="Issue 1",
             status=Status.TODO,
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
         remote_1 = {"id": "issue-1", "title": "Issue 1", "status": "todo"}
 
@@ -241,7 +241,7 @@ class TestDataIntegrityThreeWayMerge:
             id="issue-2",
             title="Issue 2",
             status=Status.IN_PROGRESS,
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
         remote_2 = {"id": "issue-2", "title": "Issue 2", "status": "todo"}
 
@@ -255,7 +255,7 @@ class TestDataIntegrityThreeWayMerge:
             id="issue-3",
             title="Issue 3",
             status=Status.TODO,
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
         remote_3 = {"id": "issue-3", "title": "Issue 3", "status": "closed"}
 
@@ -289,7 +289,7 @@ class TestDataIntegrityThreeWayMerge:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -300,7 +300,7 @@ class TestDataIntegrityThreeWayMerge:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -355,7 +355,7 @@ class TestDataIntegrityThreeWayMerge:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -366,7 +366,7 @@ class TestDataIntegrityThreeWayMerge:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(

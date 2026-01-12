@@ -7,7 +7,7 @@ This module replaces the previous DB-based baseline approach with:
 This enables idempotent syncs without complex database state management.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -205,7 +205,7 @@ class BaselineStateRetriever:
             frontmatter, _ = FrontmatterParser.parse_content(content)
 
             # Parse updated datetime
-            updated_at = datetime.now(timezone.utc)
+            updated_at = datetime.now(UTC)
             if frontmatter.get("updated"):
                 updated_value = frontmatter["updated"]
                 if isinstance(updated_value, datetime):
@@ -248,7 +248,7 @@ class BaselineStateRetriever:
         """
         try:
             # Parse datetime if present
-            updated_at = datetime.now(timezone.utc)
+            updated_at = datetime.now(UTC)
             if "updated_at" in remote_state:
                 if isinstance(remote_state["updated_at"], str):
                     updated_at = datetime.fromisoformat(remote_state["updated_at"])

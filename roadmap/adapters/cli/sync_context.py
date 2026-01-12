@@ -4,7 +4,6 @@ This module contains initialization and baseline helpers extracted from
 `sync.py` to reduce its size and improve maintainability.
 """
 
-
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 

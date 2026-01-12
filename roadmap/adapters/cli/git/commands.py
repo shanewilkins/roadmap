@@ -19,7 +19,9 @@ from roadmap.adapters.cli.git.handlers.git_hooks_handler import GitHooksHandler
 from roadmap.adapters.cli.git.hooks_config import hooks_config
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
-from roadmap.core.services.github.github_integration_service import GitHubIntegrationService
+from roadmap.core.services.github.github_integration_service import (
+    GitHubIntegrationService,
+)
 
 from .status_display import GitStatusDisplay
 
@@ -271,7 +273,9 @@ def sync_git(
 
         # Use generic orchestrator with the backend
         from roadmap.adapters.sync import SyncMergeOrchestrator
-        from roadmap.core.services.sync.sync_conflict_resolver import SyncConflictResolver
+        from roadmap.core.services.sync.sync_conflict_resolver import (
+            SyncConflictResolver,
+        )
         from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
         # Create service instances

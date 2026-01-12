@@ -1,6 +1,6 @@
 """Unit tests for ProjectService - project operations and management."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -55,8 +55,8 @@ def sample_project():
         name="Test Project",
         content="A test project",
         status=ProjectStatus.ACTIVE,
-        created=datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc),
-        updated=datetime(2025, 1, 15, 12, 0, tzinfo=timezone.utc),
+        created=datetime(2025, 1, 1, 12, 0, tzinfo=UTC),
+        updated=datetime(2025, 1, 15, 12, 0, tzinfo=UTC),
         milestones=["Milestone 1", "Milestone 2"],
     )
 
@@ -351,7 +351,7 @@ class TestProjectServiceProgress:
 
         # Mock FileEnumerationService.enumerate_and_parse to return our milestones
         with patch(
-            "roadmap.core.services.project_service.FileEnumerationService.enumerate_and_parse",
+            "roadmap.core.services.project.project_service.FileEnumerationService.enumerate_and_parse",
             return_value=[milestone1, milestone2],
         ):
             progress = project_service.calculate_progress("PROJ-001")
@@ -391,7 +391,7 @@ class TestProjectServiceProgress:
 
         # Mock FileEnumerationService.enumerate_and_parse to return our milestones
         with patch(
-            "roadmap.core.services.project_service.FileEnumerationService.enumerate_and_parse",
+            "roadmap.core.services.project.project_service.FileEnumerationService.enumerate_and_parse",
             return_value=[milestone1, milestone2],
         ):
             progress = project_service.calculate_progress("PROJ-001")

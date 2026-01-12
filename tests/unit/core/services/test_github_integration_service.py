@@ -45,7 +45,7 @@ class TestGitHubIntegrationService:
 
     def test_get_github_config_missing_config_file(self, service):
         """Test getting GitHub config when file doesn't exist."""
-        with patch("roadmap.core.services.github_integration_service.ConfigManager"):
+        with patch("roadmap.core.services.github.github_integration_service.ConfigManager"):
             result = service.get_github_config()
 
         # Should return None, None, None on error
@@ -57,7 +57,7 @@ class TestGitHubIntegrationService:
         mock_config.github = None
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
@@ -73,7 +73,7 @@ class TestGitHubIntegrationService:
         mock_config.github = {"repo": "my-repo"}
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
@@ -89,7 +89,7 @@ class TestGitHubIntegrationService:
         mock_config.github = {"owner": "my-owner"}
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
@@ -105,10 +105,10 @@ class TestGitHubIntegrationService:
         mock_config.github = {"owner": "my-owner", "repo": "my-repo"}
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             with patch(
-                "roadmap.core.services.github_integration_service.get_credential_manager"
+                "roadmap.core.services.github.github_integration_service.get_credential_manager"
             ) as mock_cred_manager_func:
                 mock_manager = Mock()
                 mock_manager.load.return_value = mock_config
@@ -129,10 +129,10 @@ class TestGitHubIntegrationService:
         mock_config.github = {"owner": "my-owner", "repo": "my-repo"}
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             with patch(
-                "roadmap.core.services.github_integration_service.get_credential_manager"
+                "roadmap.core.services.github.github_integration_service.get_credential_manager"
             ) as mock_cred_manager_func:
                 mock_manager = Mock()
                 mock_manager.load.return_value = mock_config
@@ -162,7 +162,7 @@ class TestGitHubIntegrationService:
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
             with patch(
-                "roadmap.core.services.github_integration_service.GitHubClient"
+                "roadmap.core.services.github.github_integration_service.GitHubClient"
             ) as mock_client_class:
                 mock_client = Mock()
                 mock_client.get_team_members.return_value = ["user1", "user2", "user3"]
@@ -178,7 +178,7 @@ class TestGitHubIntegrationService:
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
             with patch(
-                "roadmap.core.services.github_integration_service.GitHubClient"
+                "roadmap.core.services.github.github_integration_service.GitHubClient"
             ) as mock_client_class:
                 mock_client = Mock()
                 mock_client.get_team_members.side_effect = Exception("API error")
@@ -191,7 +191,7 @@ class TestGitHubIntegrationService:
     def test_get_current_user_no_config_file(self, service):
         """Test getting current user when config file doesn't exist."""
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.load.side_effect = Exception("File not found")
@@ -206,7 +206,7 @@ class TestGitHubIntegrationService:
         mock_config = Mock(spec=[])
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
@@ -224,7 +224,7 @@ class TestGitHubIntegrationService:
         mock_config.user = mock_user
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
@@ -245,7 +245,7 @@ class TestGitHubIntegrationService:
         mock_config.user = mock_user
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
@@ -344,7 +344,7 @@ class TestGitHubIntegrationService:
         ):
             with patch.object(service, "get_cached_team_members", return_value=[]):
                 with patch(
-                    "roadmap.core.services.github_integration_service.GitHubClient"
+                    "roadmap.core.services.github.github_integration_service.GitHubClient"
                 ) as mock_client_class:
                     mock_client = Mock()
                     mock_client.validate_assignee.return_value = (True, "")
@@ -387,10 +387,10 @@ class TestGitHubIntegrationService:
         mock_config.github = {"owner": "my-owner", "repo": "my-repo"}
 
         with patch(
-            "roadmap.core.services.github_integration_service.ConfigManager"
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             with patch(
-                "roadmap.core.services.github_integration_service.get_credential_manager"
+                "roadmap.core.services.github.github_integration_service.get_credential_manager"
             ) as mock_cred_manager_func:
                 mock_manager = Mock()
                 mock_manager.load.return_value = mock_config

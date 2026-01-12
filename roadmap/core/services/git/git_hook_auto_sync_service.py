@@ -14,7 +14,9 @@ from typing import Any
 from roadmap.adapters.sync.backend_factory import get_sync_backend
 from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
 from roadmap.common.console import get_console
-from roadmap.core.services.github.github_integration_service import GitHubIntegrationService
+from roadmap.core.services.github.github_integration_service import (
+    GitHubIntegrationService,
+)
 from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
 
 

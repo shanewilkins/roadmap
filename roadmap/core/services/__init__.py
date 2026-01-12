@@ -25,72 +25,104 @@ Module structure after Phase 5 Stage 2 refactoring:
 - helpers/: Helper functions
 """
 
-# Import from subdirectories
 from .baseline.baseline_retriever import BaselineRetriever
 from .baseline.baseline_selector import BaselineStrategy
 from .baseline.baseline_state_retriever import BaselineStateRetriever
 from .baseline.optimized_baseline_builder import OptimizedBaselineBuilder
 from .comment.comment_service import CommentService
-from .git.git_hook_auto_sync_service import (
-    GitHookAutoSyncConfig,
-    GitHookAutoSyncService,
-)
-from .github.github_change_detector import GitHubChangeDetector
-from .github.github_config_validator import GitHubConfigValidator
-from .github.github_conflict_detector import GitHubConflictDetector
-from .github.github_entity_classifier import GitHubEntityClassifier
-from .github.github_integration_service import GitHubIntegrationService
-from .github.github_issue_client import GitHubIssueClient
-from .health.backup_cleanup_service import BackupCleanupService
-from .health.data_integrity_validator_service import DataIntegrityValidatorService
-from .health.entity_health_scanner import EntityHealthScanner
-from .health.file_repair_service import FileRepairResult, FileRepairService
-from .health.health_check_service import HealthCheckService
-from .health.infrastructure_validator_service import InfrastructureValidator
-from .health.issue_health_scanner import IssueHealthScanner
-from .issue.issue_creation_service import IssueCreationService
+from .github.github_change_detector import GitHubChangeDetector  # noqa: F401
+from .github.github_config_validator import GitHubConfigValidator  # noqa: F401
+from .github.github_conflict_detector import GitHubConflictDetector  # noqa: F401
+from .github.github_entity_classifier import GitHubEntityClassifier  # noqa: F401
+from .github.github_integration_service import GitHubIntegrationService  # noqa: F401
+from .github.github_issue_client import GitHubIssueClient  # noqa: F401
+from .health.backup_cleanup_service import BackupCleanupService  # noqa: F401
+from .health.entity_health_scanner import EntityHealthScanner  # noqa: F401
+from .health.file_repair_service import FileRepairResult, FileRepairService  # noqa: F401
+from .health.issue_health_scanner import IssueHealthScanner  # noqa: F401
+from .issue.issue_creation_service import IssueCreationService  # noqa: F401
 from .issue.issue_filter_service import (
-    IssueFilterValidator,
-    IssueQueryService,
-    WorkloadCalculator,
+    IssueFilterValidator,  # noqa: F401
+    IssueQueryService,  # noqa: F401
+    WorkloadCalculator,  # noqa: F401
 )
-from .issue.issue_matching_service import IssueMatchingService
-from .issue.issue_service import IssueService
-from .issue.issue_update_service import IssueUpdateService
-from .issue.start_issue_service import StartIssueService
-from .milestone_service import MilestoneService
-from .project.project_service import ProjectService
-from .project.project_status_service import ProjectStatusService
+from .issue.issue_matching_service import IssueMatchingService  # noqa: F401
+from .issue.issue_service import IssueService  # noqa: F401
+from .issue.issue_update_service import IssueUpdateService  # noqa: F401
+from .issue.start_issue_service import StartIssueService  # noqa: F401
+from .milestone_service import MilestoneService  # noqa: F401
 from .status_change_service import (
-    extract_issue_status_update,
-    extract_milestone_status_update,
-    parse_status_change,
+    extract_issue_status_update,  # noqa: F401
+    extract_milestone_status_update,  # noqa: F401
+    parse_status_change,  # noqa: F401
 )
-from .sync.sync_change_computer import compute_changes, compute_changes_remote
-from .sync.sync_conflict_detector import detect_field_conflicts
-from .sync.sync_conflict_resolver import Conflict, ConflictField, SyncConflictResolver
-from .sync.sync_key_normalizer import normalize_remote_keys
-from .sync.sync_metadata_service import SyncMetadata, SyncMetadataService, SyncRecord
-from .sync.sync_plan import (
-    CreateLocalAction,
-    LinkAction,
-    PullAction,
-    PushAction,
-    ResolveConflictAction,
-    SyncPlan,
-    UpdateBaselineAction,
-)
-from .sync.sync_plan_executor import SyncPlanExecutor
-from .sync.sync_report import IssueChange, SyncReport
-from .sync.sync_state_comparator import SyncStateComparator
-from .sync.sync_state_manager import SyncStateManager
-from .utils.configuration_service import ConfigurationService
-from .utils.critical_path_calculator import CriticalPathCalculator, CriticalPathResult
-from .utils.dependency_analyzer import DependencyAnalysisResult, DependencyAnalyzer
-from .utils.field_conflict_detector import FieldConflictDetector
-from .utils.remote_fetcher import RemoteFetcher
-from .utils.remote_state_normalizer import RemoteStateNormalizer
-from .utils.retry_policy import RetryPolicy
+from .utils.configuration_service import ConfigurationService  # noqa: F401
+from .utils.critical_path_calculator import CriticalPathCalculator, CriticalPathResult  # noqa: F401
+from .utils.dependency_analyzer import DependencyAnalysisResult, DependencyAnalyzer  # noqa: F401
+from .utils.field_conflict_detector import FieldConflictDetector  # noqa: F401
+from .utils.remote_fetcher import RemoteFetcher  # noqa: F401
+from .utils.remote_state_normalizer import RemoteStateNormalizer  # noqa: F401
+from .utils.retry_policy import RetryPolicy  # noqa: F401
+
+# Lazy imports for all services that cause circular dependencies
+# These services import from adapters/infrastructure/validators that eventually import RoadmapCore
+_lazy_modules = {
+    "GitHookAutoSyncService": (
+        "git.git_hook_auto_sync_service",
+        "GitHookAutoSyncService",
+    ),
+    "GitHookAutoSyncConfig": (
+        "git.git_hook_auto_sync_service",
+        "GitHookAutoSyncConfig",
+    ),
+    "DataIntegrityValidatorService": (
+        "health.data_integrity_validator_service",
+        "DataIntegrityValidatorService",
+    ),
+    "HealthCheckService": ("health.health_check_service", "HealthCheckService"),
+    "InfrastructureValidator": (
+        "health.infrastructure_validator_service",
+        "InfrastructureValidator",
+    ),
+    "ProjectService": ("project.project_service", "ProjectService"),
+    "ProjectStatusService": ("project.project_status_service", "ProjectStatusService"),
+    # Sync services that depend on adapters
+    "compute_changes": ("sync.sync_change_computer", "compute_changes"),
+    "compute_changes_remote": ("sync.sync_change_computer", "compute_changes_remote"),
+    "detect_field_conflicts": ("sync.sync_conflict_detector", "detect_field_conflicts"),
+    "SyncConflictResolver": ("sync.sync_conflict_resolver", "SyncConflictResolver"),
+    "Conflict": ("sync.sync_conflict_resolver", "Conflict"),
+    "ConflictField": ("sync.sync_conflict_resolver", "ConflictField"),
+    "normalize_remote_keys": ("sync.sync_key_normalizer", "normalize_remote_keys"),
+    "SyncMetadataService": ("sync.sync_metadata_service", "SyncMetadataService"),
+    "SyncRecord": ("sync.sync_metadata_service", "SyncRecord"),
+    "SyncMetadata": ("sync.sync_metadata_service", "SyncMetadata"),
+    "SyncPlan": ("sync.sync_plan", "SyncPlan"),
+    "PushAction": ("sync.sync_plan", "PushAction"),
+    "PullAction": ("sync.sync_plan", "PullAction"),
+    "CreateLocalAction": ("sync.sync_plan", "CreateLocalAction"),
+    "LinkAction": ("sync.sync_plan", "LinkAction"),
+    "UpdateBaselineAction": ("sync.sync_plan", "UpdateBaselineAction"),
+    "ResolveConflictAction": ("sync.sync_plan", "ResolveConflictAction"),
+    "SyncPlanExecutor": ("sync.sync_plan_executor", "SyncPlanExecutor"),
+    "SyncReport": ("sync.sync_report", "SyncReport"),
+    "IssueChange": ("sync.sync_report", "IssueChange"),
+    "SyncStateComparator": ("sync.sync_state_comparator", "SyncStateComparator"),
+    "SyncStateManager": ("sync.sync_state_manager", "SyncStateManager"),
+}
+
+
+def __getattr__(name: str):  # noqa: ANN001, ANN201
+    """Lazy load services to avoid circular imports."""
+    if name in _lazy_modules:
+        module_path, class_name = _lazy_modules[name]
+        module = __import__(
+            f"roadmap.core.services.{module_path}", fromlist=[class_name]
+        )
+        return getattr(module, class_name)
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
 
 __all__ = [
     # Baseline
@@ -100,34 +132,7 @@ __all__ = [
     "OptimizedBaselineBuilder",
     # Comment
     "CommentService",
-    # Git
-    "GitHookAutoSyncService",
-    "GitHookAutoSyncConfig",
-    # GitHub
-    "GitHubChangeDetector",
-    "GitHubConfigValidator",
-    "GitHubConflictDetector",
-    "GitHubEntityClassifier",
-    "GitHubIntegrationService",
-    "GitHubIssueClient",
-    # Health
-    "BackupCleanupService",
-    "DataIntegrityValidatorService",
-    "EntityHealthScanner",
-    "FileRepairService",
-    "FileRepairResult",
-    "HealthCheckService",
-    "InfrastructureValidator",
-    "IssueHealthScanner",
-    # Issue
-    "IssueCreationService",
-    "IssueFilterValidator",
-    "IssueQueryService",
-    "WorkloadCalculator",
-    "IssueMatchingService",
-    "IssueService",
-    "IssueUpdateService",
-    "StartIssueService",
+    # Git (lazy loaded)
     # Project
     "ProjectService",
     "ProjectStatusService",

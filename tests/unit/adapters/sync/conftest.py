@@ -16,7 +16,7 @@ def mock_github_issue_client(monkeypatch):
 
     # Patch at the source
     monkeypatch.setattr(
-        "roadmap.core.services.github_issue_client.GitHubIssueClient",
+        "roadmap.core.services.github.github_issue_client.GitHubIssueClient",
         mock_class,
     )
     yield mock_class

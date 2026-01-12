@@ -184,7 +184,7 @@ class TestSyncReport:
         assert report.conflicts_detected == 1
         assert report.changes[0].has_conflict
 
-    @patch("roadmap.core.services.sync_report.console")
+    @patch("roadmap.core.services.sync.sync_report.console")
     def test_display_brief_with_error(self, mock_console):
         """Test displaying brief report with error."""
         report = SyncReport(error="Sync failed")

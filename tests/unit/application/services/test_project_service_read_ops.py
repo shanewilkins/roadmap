@@ -1,6 +1,6 @@
 """Unit tests for ProjectService - project operations and management."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -54,8 +54,8 @@ def sample_project():
         name="Test Project",
         content="A test project",
         status=ProjectStatus.ACTIVE,
-        created=datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc),
-        updated=datetime(2025, 1, 15, 12, 0, tzinfo=timezone.utc),
+        created=datetime(2025, 1, 1, 12, 0, tzinfo=UTC),
+        updated=datetime(2025, 1, 15, 12, 0, tzinfo=UTC),
         milestones=["Milestone 1", "Milestone 2"],
     )
 
@@ -103,13 +103,13 @@ class TestProjectServiceList:
         project1 = Project(
             id="PROJ-001",
             name="Project 1",
-            created=datetime(2025, 1, 2, tzinfo=timezone.utc),
+            created=datetime(2025, 1, 2, tzinfo=UTC),
             content="",
         )
         project2 = Project(
             id="PROJ-002",
             name="Project 2",
-            created=datetime(2025, 1, 1, tzinfo=timezone.utc),
+            created=datetime(2025, 1, 1, tzinfo=UTC),
             content="",
         )
 

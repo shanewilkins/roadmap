@@ -22,7 +22,6 @@ from roadmap.adapters.sync.services.sync_state_update_service import (
 )
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
-from roadmap.core.services.utils.remote_fetcher import RemoteFetcher
 from roadmap.core.services.sync.sync_conflict_resolver import (
     ConflictStrategy,
     SyncConflictResolver,
@@ -36,6 +35,7 @@ from roadmap.core.services.sync.sync_plan_executor import SyncPlanExecutor
 from roadmap.core.services.sync.sync_report import SyncReport
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
+from roadmap.core.services.utils.remote_fetcher import RemoteFetcher
 
 logger = get_logger(__name__)
 

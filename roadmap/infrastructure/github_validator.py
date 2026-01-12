@@ -6,7 +6,9 @@ core services directly to GitHub adapter.
 
 from roadmap.adapters.github.github import GitHubClient
 from roadmap.common.logging import get_logger
-from roadmap.core.services.issue.assignee_validation_service import AssigneeValidationResult
+from roadmap.core.services.issue.assignee_validation_service import (
+    AssigneeValidationResult,
+)
 
 logger = get_logger(__name__)
 

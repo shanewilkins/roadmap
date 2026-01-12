@@ -19,7 +19,9 @@ from roadmap.core.services.baseline.baseline_selector import (
     BaselineStrategy,
     InteractiveBaselineSelector,
 )
-from roadmap.core.services.baseline.baseline_state_retriever import BaselineStateRetriever
+from roadmap.core.services.baseline.baseline_state_retriever import (
+    BaselineStateRetriever,
+)
 
 logger = get_logger(__name__)
 

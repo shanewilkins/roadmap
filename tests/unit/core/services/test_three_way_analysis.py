@@ -4,7 +4,7 @@ Tests the new three-way analysis methods that produce IssueChange objects
 with complete baseline context for proper conflict understanding.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -34,7 +34,7 @@ class TestThreeWayAnalysis:
             headline="Original description",
             content="Original description",
             labels=["bug"],
-            updated_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(UTC),
         )
 
     @pytest.fixture
@@ -48,7 +48,7 @@ class TestThreeWayAnalysis:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
     @pytest.fixture
@@ -62,7 +62,7 @@ class TestThreeWayAnalysis:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
     def test_analyze_three_way_both_changed(
@@ -97,7 +97,7 @@ class TestThreeWayAnalysis:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -108,7 +108,7 @@ class TestThreeWayAnalysis:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -135,7 +135,7 @@ class TestThreeWayAnalysis:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -146,7 +146,7 @@ class TestThreeWayAnalysis:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -173,7 +173,7 @@ class TestThreeWayAnalysis:
             milestone="v1.0",
             content="Original description",
             labels=["bug"],
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -184,7 +184,7 @@ class TestThreeWayAnalysis:
             "milestone": "v1.0",
             "description": "Original description",
             "labels": ["bug"],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -207,7 +207,7 @@ class TestThreeWayAnalysis:
             title="New Issue",
             status=Status.TODO,
             assignee="alice",
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         changes = comparator.analyze_three_way(
@@ -229,7 +229,7 @@ class TestThreeWayAnalysis:
             "title": "New Remote Issue",
             "status": "todo",
             "assignee": "bob",
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -254,7 +254,7 @@ class TestThreeWayAnalysis:
             title="Issue 2",
             status=Status.IN_PROGRESS,
             assignee="charlie",
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         baseline_state_2 = IssueBaseState(
@@ -284,7 +284,7 @@ class TestThreeWayAnalysis:
             title="New Issue",
             status=Status.TODO,
             assignee="alice",
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {
@@ -292,7 +292,7 @@ class TestThreeWayAnalysis:
             "title": "New Issue",
             "status": "closed",
             "assignee": "bob",
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -317,7 +317,7 @@ class TestThreeWayAnalysis:
             "assignee": "alice",
             "description": "Original description",
             "labels": ["bug"],  # Same as baseline
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         changes = comparator.analyze_three_way(
@@ -347,7 +347,7 @@ class TestThreeWayAnalysis:
             title="Test",
             status=Status.TODO,
             labels=["bug", "feature"],  # Same but different order
-            updated=datetime.now(timezone.utc),
+            updated=datetime.now(UTC),
         )
 
         remote_issue = {

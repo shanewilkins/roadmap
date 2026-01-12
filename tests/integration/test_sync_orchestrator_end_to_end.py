@@ -5,7 +5,7 @@ and SyncConflictResolver to verify they work together correctly.
 """
 
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
@@ -37,8 +37,8 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
             title="New Local Issue",
             status=Status.TODO,
             priority=Priority.MEDIUM,
-            created=datetime.now(timezone.utc),
-            updated=datetime.now(timezone.utc),
+            created=datetime.now(UTC),
+            updated=datetime.now(UTC),
         )
 
         self.core.issues.list_all_including_archived.return_value = [local_issue]
@@ -69,8 +69,8 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
             title="New Local Issue",
             status=Status.TODO,
             priority=Priority.MEDIUM,
-            created=datetime.now(timezone.utc),
-            updated=datetime.now(timezone.utc),
+            created=datetime.now(UTC),
+            updated=datetime.now(UTC),
         )
 
         self.core.issues.list_all_including_archived.return_value = [local_issue]
@@ -184,7 +184,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
     def test_sync_conflict_auto_merge_remote_newer(self):
         """Test auto-merge chooses remote when it's newer."""
         # Setup: conflicting issue, remote is newer
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
         later = now
 
@@ -227,7 +227,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
     def test_sync_conflict_force_local(self):
         """Test force_local resolution keeps local changes."""
         # Setup: conflicting issue
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
 
         local_issue = Issue(
@@ -273,7 +273,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
     def test_sync_conflict_force_remote(self):
         """Test force_remote resolution keeps remote changes."""
         # Setup: conflicting issue
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
 
         local_issue = Issue(
@@ -326,7 +326,7 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
 
     def test_sync_mixed_scenario_dry_run(self):
         """Test dry-run with multiple issue types."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
         older = now - timedelta(hours=2)
 
@@ -409,7 +409,7 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
 
     def test_sync_mixed_scenario_apply(self):
         """Test applying mixed scenario changes."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
         older = now - timedelta(hours=2)
 
@@ -558,7 +558,7 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
 
     def test_sync_everything_up_to_date(self):
         """Test sync with no changes needed."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Local and remote have the same issue
         issue = Issue(
@@ -612,7 +612,7 @@ class TestFullBidirectionalSync(unittest.TestCase):
         """Test dry-run bidirectional sync detects all changes without applying."""
         # Setup: Mixed scenario
         # Local: 1 new issue, 1 updated issue, 1 up-to-date
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         past = now - timedelta(hours=2)
 
         local_new = Issue(
@@ -701,7 +701,7 @@ class TestFullBidirectionalSync(unittest.TestCase):
 
     def test_full_bidirectional_sync_apply(self):
         """Test applying full bidirectional sync pushes and pulls changes."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         past = now - timedelta(hours=2)
 
         # Local issue to push
@@ -780,7 +780,7 @@ class TestFullBidirectionalSync(unittest.TestCase):
 
     def test_full_bidirectional_sync_with_conflict_force_remote(self):
         """Test bidirectional sync with conflict resolution (force remote)."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         past = now - timedelta(hours=2)
 
         # Issue with conflicting changes

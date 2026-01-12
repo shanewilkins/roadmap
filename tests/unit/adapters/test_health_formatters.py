@@ -10,16 +10,16 @@ from roadmap.adapters.cli.health.formatters import (
     PlainTextFormatter,
     get_formatter,
 )
-from roadmap.core.services.utils.dependency_analyzer import (
-    DependencyAnalysisResult,
-    DependencyIssue,
-    DependencyIssueType,
-)
 from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthReport,
     EntityType,
     HealthIssue,
     HealthSeverity,
+)
+from roadmap.core.services.utils.dependency_analyzer import (
+    DependencyAnalysisResult,
+    DependencyIssue,
+    DependencyIssueType,
 )
 
 

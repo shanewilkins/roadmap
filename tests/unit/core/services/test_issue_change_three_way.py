@@ -1,6 +1,6 @@
 """Tests for three-way IssueChange functionality."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -35,7 +35,7 @@ def local_issue():
         milestone="v1.0",
         content="Original description",
         labels=["bug"],
-        updated=datetime.now(timezone.utc),
+        updated=datetime.now(UTC),
     )
 
 
@@ -50,7 +50,7 @@ def remote_issue():
         "milestone": "v1.0",
         "description": "Original description",
         "labels": ["bug"],
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -191,7 +191,7 @@ class TestIssueChangeThreeWay:
         self, baseline_state, local_issue, remote_issue
     ):
         """Should support legacy github_changes and last_sync_time fields."""
-        last_sync = datetime.now(timezone.utc)
+        last_sync = datetime.now(UTC)
         change = IssueChange(
             issue_id="issue-1",
             title="Test Issue",

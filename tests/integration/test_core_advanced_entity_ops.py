@@ -163,7 +163,7 @@ class TestRoadmapCoreTeamManagement:
         """Test getting team members from GitHub API."""
         # Mock GitHub client since get_team_members calls GitHub API
         with patch(
-            "roadmap.core.services.github_integration_service.GitHubClient"
+            "roadmap.core.services.github.github_integration_service.GitHubClient"
         ) as mock_github_client:
             mock_client = Mock()
             mock_client.get_team_members.return_value = [
@@ -209,7 +209,7 @@ class TestRoadmapCoreTeamManagement:
             mock_config.user = mock_user
 
             with patch(
-                "roadmap.core.services.github_integration_service.ConfigManager"
+                "roadmap.core.services.github.github_integration_service.ConfigManager"
             ) as mock_cm_class:
                 mock_cm_instance = Mock()
                 mock_cm_instance.load.return_value = mock_config
@@ -220,7 +220,7 @@ class TestRoadmapCoreTeamManagement:
 
         elif mock_config_setup == "config_not_found":
             with patch(
-                "roadmap.core.services.github_integration_service.ConfigManager"
+                "roadmap.core.services.github.github_integration_service.ConfigManager"
             ) as mock_cm_class:
                 mock_cm_class.side_effect = Exception("Config not found")
                 current_user = core.team.get_current_user()

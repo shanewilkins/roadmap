@@ -45,7 +45,7 @@ class TestLinkCommandBasic:
             mock_gh_client.return_value = mock_client_instance
 
             with patch(
-                "roadmap.core.services.github_integration_service.GitHubIntegrationService"
+                "roadmap.core.services.github.github_integration_service.GitHubIntegrationService"
             ) as mock_gh_service:
                 mock_service_instance = MagicMock()
                 mock_service_instance.get_github_config.return_value = (
@@ -141,7 +141,7 @@ class TestLinkCommandBasic:
             mock_gh_client.return_value = mock_client_instance
 
             with patch(
-                "roadmap.core.services.github_integration_service.GitHubIntegrationService"
+                "roadmap.core.services.github.github_integration_service.GitHubIntegrationService"
             ) as mock_gh_service:
                 mock_service_instance = MagicMock()
                 mock_service_instance.get_github_config.return_value = (
@@ -209,7 +209,7 @@ class TestLinkCommandBasic:
             mock_gh_client.return_value = mock_client_instance
 
             with patch(
-                "roadmap.core.services.github_integration_service.GitHubIntegrationService"
+                "roadmap.core.services.github.github_integration_service.GitHubIntegrationService"
             ) as mock_gh_service:
                 mock_service_instance = MagicMock()
                 mock_service_instance.get_github_config.return_value = (
@@ -235,7 +235,7 @@ class TestLinkCommandBasic:
         mock_core.issues.get_by_id.return_value = mock_issue
 
         with patch(
-            "roadmap.core.services.github_integration_service.GitHubIntegrationService"
+            "roadmap.core.services.github.github_integration_service.GitHubIntegrationService"
         ) as mock_gh_service:
             mock_service_instance = MagicMock()
             mock_service_instance.get_github_config.return_value = (None, None, None)

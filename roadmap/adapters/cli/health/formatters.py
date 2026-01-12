@@ -10,11 +10,11 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any
 
-from roadmap.core.services.utils.dependency_analyzer import DependencyAnalysisResult
 from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthReport,
     HealthSeverity,
 )
+from roadmap.core.services.utils.dependency_analyzer import DependencyAnalysisResult
 
 
 class HealthFormatter(ABC):
