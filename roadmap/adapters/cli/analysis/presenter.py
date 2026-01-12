@@ -1,6 +1,6 @@
 """Presenter for critical path analysis output."""
 
-from roadmap.core.services.critical_path_calculator import CriticalPathResult
+from roadmap.core.services.utils.critical_path_calculator import CriticalPathResult
 
 
 class CriticalPathPresenter:

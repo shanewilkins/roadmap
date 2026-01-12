@@ -4,8 +4,8 @@ from datetime import datetime
 from typing import Any
 
 from roadmap.core.domain import Issue
-from roadmap.core.services.github_issue_client import GitHubIssueClient
-from roadmap.core.services.sync_report import IssueChange
+from roadmap.core.services.github.github_issue_client import GitHubIssueClient
+from roadmap.core.services.sync.sync_report import IssueChange
 
 
 class GitHubChangeDetector:

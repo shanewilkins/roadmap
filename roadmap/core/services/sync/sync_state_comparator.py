@@ -14,27 +14,27 @@ from structlog import get_logger
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.models.sync_state import IssueBaseState
-from roadmap.core.services.sync_change_computer import (
+from roadmap.core.services.sync.sync_change_computer import (
     compute_changes as _compute_changes_helper,
 )
-from roadmap.core.services.sync_change_computer import (
+from roadmap.core.services.sync.sync_change_computer import (
     compute_changes_remote as _compute_changes_remote_helper,
 )
-from roadmap.core.services.sync_conflict_detector import (
+from roadmap.core.services.sync.sync_conflict_detector import (
     detect_field_conflicts as _detect_field_conflicts_helper,
 )
-from roadmap.core.services.sync_conflict_resolver import Conflict, ConflictField
-from roadmap.core.services.sync_key_normalizer import (
+from roadmap.core.services.sync.sync_conflict_resolver import Conflict, ConflictField
+from roadmap.core.services.sync.sync_key_normalizer import (
     normalize_remote_keys as _normalize_remote_keys_helper,
 )
-from roadmap.core.services.sync_report import IssueChange
-from roadmap.core.services.sync_state_normalizer import (
+from roadmap.core.services.sync.sync_report import IssueChange
+from roadmap.core.services.sync.sync_state_normalizer import (
     extract_timestamp as _extract_timestamp_helper,
 )
-from roadmap.core.services.sync_state_normalizer import (
+from roadmap.core.services.sync.sync_state_normalizer import (
     normalize_remote_state as _normalize_remote_state_helper,
 )
-from roadmap.core.services.sync_three_way import (
+from roadmap.core.services.sync.sync_three_way import (
     build_issue_change as _build_issue_change_helper,
 )
 

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 import requests
 
-from roadmap.core.services.github_config_validator import GitHubConfigValidator
+from roadmap.core.services.github.github_config_validator import GitHubConfigValidator
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "GitHub token not set" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_token_valid(self, mock_get, validator, mock_service):
         """Test token validation with valid token."""
         mock_service.get_github_config.return_value = (
@@ -102,7 +102,7 @@ class TestGitHubConfigValidator:
         assert error is None
         mock_get.assert_called_once()
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_token_invalid(self, mock_get, validator, mock_service):
         """Test token validation with invalid token."""
         mock_service.get_github_config.return_value = (
@@ -118,7 +118,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "invalid or expired" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_token_insufficient_permissions(
         self, mock_get, validator, mock_service
     ):
@@ -136,7 +136,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "insufficient permissions" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_token_api_error(self, mock_get, validator, mock_service):
         """Test token validation with API error."""
         mock_service.get_github_config.return_value = (
@@ -152,7 +152,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "GitHub API error" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_token_network_error(self, mock_get, validator, mock_service):
         """Test token validation with network error."""
         mock_service.get_github_config.return_value = (
@@ -166,7 +166,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "Failed to reach GitHub" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_repo_access_incomplete_config(
         self, mock_get, validator, mock_service
     ):
@@ -176,7 +176,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "incomplete" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_repo_access_valid(self, mock_get, validator, mock_service):
         """Test repo access validation with valid access."""
         mock_service.get_github_config.return_value = (
@@ -192,7 +192,7 @@ class TestGitHubConfigValidator:
         assert is_valid
         assert error is None
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_repo_access_denied(self, mock_get, validator, mock_service):
         """Test repo access validation with access denied."""
         mock_service.get_github_config.return_value = (
@@ -208,7 +208,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "Access denied" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_repo_access_not_found(self, mock_get, validator, mock_service):
         """Test repo access validation with repo not found."""
         mock_service.get_github_config.return_value = (
@@ -224,7 +224,7 @@ class TestGitHubConfigValidator:
         assert not is_valid
         assert "not found" in error
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_all_success(self, mock_get, validator, mock_service):
         """Test validate_all with all checks passing."""
         mock_service.get_github_config.return_value = (
@@ -242,7 +242,7 @@ class TestGitHubConfigValidator:
         # Should call requests 2 times (token and repo)
         assert mock_get.call_count == 2
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_all_fails_on_config(self, mock_get, validator, mock_service):
         """Test validate_all fails on config validation."""
         mock_service.get_github_config.return_value = (None, "owner", "repo")
@@ -253,7 +253,7 @@ class TestGitHubConfigValidator:
         # Should not call requests
         mock_get.assert_not_called()
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_all_fails_on_token(self, mock_get, validator, mock_service):
         """Test validate_all fails on token validation."""
         mock_service.get_github_config.return_value = (
@@ -271,7 +271,7 @@ class TestGitHubConfigValidator:
         # Should call requests 1 time (token check)
         assert mock_get.call_count == 1
 
-    @patch("roadmap.core.services.github_config_validator.requests.get")
+    @patch("roadmap.core.services.github.github_config_validator.requests.get")
     def test_validate_all_fails_on_repo(self, mock_get, validator, mock_service):
         """Test validate_all fails on repo validation."""
         mock_service.get_github_config.return_value = (

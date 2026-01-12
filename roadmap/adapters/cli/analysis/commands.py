@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 
 from roadmap.common.console import get_console
-from roadmap.core.services.critical_path_calculator import CriticalPathCalculator
+from roadmap.core.services.utils.critical_path_calculator import CriticalPathCalculator
 from roadmap.core.services.issue_helpers.issue_filters import IssueQueryService
 from roadmap.infrastructure.logging import verbose_output
 

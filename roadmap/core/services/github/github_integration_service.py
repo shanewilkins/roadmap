@@ -239,7 +239,7 @@ class GitHubIntegrationService:
             # If we can't determine backend, continue with validation
 
         try:
-            from roadmap.core.services.assignee_validation_service import (
+            from roadmap.core.services.issue.assignee_validation_service import (
                 AssigneeValidationStrategy,
             )
 

@@ -14,8 +14,8 @@ from __future__ import annotations
 from typing import Any
 
 from roadmap.adapters.sync.services.sync_linking_service import SyncLinkingService
-from roadmap.core.services.sync_plan import SyncPlan
-from roadmap.core.services.sync_report import SyncReport
+from roadmap.core.services.sync.sync_plan import SyncPlan
+from roadmap.core.services.sync.sync_report import SyncReport
 
 
 class SyncPlanExecutor:

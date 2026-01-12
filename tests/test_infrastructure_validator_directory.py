@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.core.services.infrastructure_validator_service import (
+from roadmap.core.services.health.infrastructure_validator_service import (
     HealthStatus,
     RoadmapDirectoryValidator,
     StateFileValidator,
@@ -25,7 +25,7 @@ from roadmap.core.services.infrastructure_validator_service import (
 class TestRoadmapDirectoryValidator:
     """Tests for RoadmapDirectoryValidator."""
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     @pytest.mark.parametrize(
         "mock_setup,expected_status,expected_message_part",
         [
@@ -78,7 +78,7 @@ class TestRoadmapDirectoryValidator:
 class TestStateFileValidator:
     """Tests for StateFileValidator."""
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     @patch("builtins.open", create=True)
     def test_check_state_file_healthy(self, mock_open_func, mock_path):
         """Test healthy state.db file."""
@@ -109,7 +109,7 @@ class TestStateFileValidator:
         assert status == HealthStatus.HEALTHY
         assert "accessible" in message.lower()
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     def test_check_state_file_not_exists(self, mock_path):
         """Test missing state.db file."""
         mock_file = MagicMock()
@@ -121,7 +121,7 @@ class TestStateFileValidator:
         assert status == HealthStatus.DEGRADED
         assert "not found" in message.lower()
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     def test_check_state_file_empty(self, mock_path):
         """Test empty state.db file."""
         mock_file = MagicMock()
@@ -135,7 +135,7 @@ class TestStateFileValidator:
         assert "empty" in message.lower()
 
     @patch("builtins.open", side_effect=OSError("Permission denied"))
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     def test_check_state_file_not_readable(self, mock_path, mock_open):
         """Test state.db file is not readable."""
         mock_file = MagicMock()
@@ -148,7 +148,7 @@ class TestStateFileValidator:
         assert status == HealthStatus.UNHEALTHY
         assert "Cannot read state.db" in message
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     def test_check_state_file_exception(self, mock_path):
         """Test exception handling in state file check."""
         mock_path.side_effect = Exception("Unexpected error")

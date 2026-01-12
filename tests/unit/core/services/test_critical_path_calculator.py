@@ -6,7 +6,7 @@ import pytest
 
 from roadmap.common.constants import Priority
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.critical_path_calculator import (
+from roadmap.core.services.utils.critical_path_calculator import (
     CriticalPathCalculator,
     PathNode,
 )

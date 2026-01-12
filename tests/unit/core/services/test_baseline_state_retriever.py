@@ -16,7 +16,7 @@ import pytest
 
 from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.core.domain import Issue, IssueType, Priority, Status
-from roadmap.core.services.baseline_state_retriever import (
+from roadmap.core.services.baseline.baseline_state_retriever import (
     BaselineRetrievalError,
     BaselineStateRetriever,
 )
@@ -25,7 +25,7 @@ from roadmap.core.services.baseline_state_retriever import (
 class TestGetLocalBaseline:
     """Test local baseline retrieval from git history."""
 
-    @patch("roadmap.core.services.baseline_state_retriever.get_file_at_timestamp")
+    @patch("roadmap.core.services.baseline.baseline_state_retriever.get_file_at_timestamp")
     def test_get_local_baseline_success(self, mock_get_file):
         """Test successfully retrieving local baseline."""
         with TemporaryDirectory() as tmpdir:
@@ -65,7 +65,7 @@ Issue content here"""
             assert baseline.milestone == "v1.0"
             assert "bug" in baseline.labels
 
-    @patch("roadmap.core.services.baseline_state_retriever.get_file_at_timestamp")
+    @patch("roadmap.core.services.baseline.baseline_state_retriever.get_file_at_timestamp")
     def test_get_local_baseline_file_not_found(self, mock_get_file):
         """Test when file didn't exist at baseline time."""
         from roadmap.adapters.persistence.git_history import FileNotFound
@@ -83,7 +83,7 @@ Issue content here"""
 
             assert result is None
 
-    @patch("roadmap.core.services.baseline_state_retriever.get_file_at_timestamp")
+    @patch("roadmap.core.services.baseline.baseline_state_retriever.get_file_at_timestamp")
     def test_get_local_baseline_git_error(self, mock_get_file):
         """Test handling of git errors."""
         from roadmap.adapters.persistence.git_history import GitHistoryError

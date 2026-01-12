@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from roadmap.core.services.backup_cleanup_service import (
+from roadmap.core.services.health.backup_cleanup_service import (
     BackupCleanupService,
 )
 

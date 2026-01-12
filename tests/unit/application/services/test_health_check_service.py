@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from roadmap.core.domain.health import HealthStatus
-from roadmap.core.services.health_check_service import HealthCheckService
+from roadmap.core.services.health.health_check_service import HealthCheckService
 from roadmap.infrastructure.health import HealthCheck
 
 

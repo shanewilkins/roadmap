@@ -10,7 +10,7 @@ from rich.text import Text
 from roadmap.adapters.cli.helpers import ensure_entity_exists
 from roadmap.common.console import get_console
 from roadmap.common.datetime_parser import UnifiedDateTimeParser
-from roadmap.core.services.sync_metadata_service import SyncMetadataService
+from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
 
 
 def _get_console():

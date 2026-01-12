@@ -4,7 +4,7 @@ from pathlib import Path
 
 import requests
 
-from roadmap.core.services.github_integration_service import GitHubIntegrationService
+from roadmap.core.services.github.github_integration_service import GitHubIntegrationService
 
 
 class GitHubConfigValidator:

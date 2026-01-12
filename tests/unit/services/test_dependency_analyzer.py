@@ -1,6 +1,6 @@
 """Tests for DependencyAnalyzer service."""
 
-from roadmap.core.services.dependency_analyzer import (
+from roadmap.core.services.utils.dependency_analyzer import (
     DependencyAnalyzer,
     DependencyIssueType,
 )

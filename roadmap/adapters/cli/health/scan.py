@@ -15,8 +15,8 @@ from structlog import get_logger
 
 from roadmap.adapters.cli.health.formatters import get_formatter
 from roadmap.adapters.cli.helpers import require_initialized
-from roadmap.core.services.dependency_analyzer import DependencyAnalyzer
-from roadmap.core.services.entity_health_scanner import (
+from roadmap.core.services.utils.dependency_analyzer import DependencyAnalyzer
+from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthScanner,
 )
 

@@ -19,19 +19,19 @@ from roadmap.adapters.sync.sync_merge_engine import SyncMergeEngine
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.models.sync_models import SyncIssue
-from roadmap.core.services.sync_conflict_resolver import (
+from roadmap.core.services.sync.sync_conflict_resolver import (
     Conflict,
     SyncConflictResolver,
 )
-from roadmap.core.services.sync_plan import (
+from roadmap.core.services.sync.sync_plan import (
     PullAction,
     PushAction,
     ResolveConflictAction,
     SyncPlan,
 )
-from roadmap.core.services.sync_report import SyncReport
-from roadmap.core.services.sync_state_comparator import SyncStateComparator
-from roadmap.core.services.sync_state_manager import SyncStateManager
+from roadmap.core.services.sync.sync_report import SyncReport
+from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
+from roadmap.core.services.sync.sync_state_manager import SyncStateManager
 from roadmap.infrastructure.core import RoadmapCore
 
 logger = get_logger(__name__)

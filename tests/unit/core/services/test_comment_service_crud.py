@@ -7,7 +7,7 @@ import pytest
 
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.core.domain import Comment
-from roadmap.core.services.comment_service import CommentService
+from roadmap.core.services.comment.comment_service import CommentService
 
 
 class TestCommentService:

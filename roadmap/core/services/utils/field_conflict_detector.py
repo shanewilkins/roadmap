@@ -8,7 +8,7 @@ from typing import Any
 from structlog import get_logger
 
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.sync_conflict_resolver import ConflictField
+from roadmap.core.services.sync.sync_conflict_resolver import ConflictField
 
 logger = get_logger(__name__)
 

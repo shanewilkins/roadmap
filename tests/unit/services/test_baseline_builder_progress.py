@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from roadmap.core.models.sync_state import SyncState
-from roadmap.core.services.baseline_builder_progress import (
+from roadmap.core.services.baseline.baseline_builder_progress import (
     ProgressTrackingBaselineBuilder,
     create_progress_builder,
 )

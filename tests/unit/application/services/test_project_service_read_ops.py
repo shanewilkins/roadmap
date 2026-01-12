@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 
 from roadmap.core.domain.project import Project, ProjectStatus
-from roadmap.core.services.project_service import ProjectService
+from roadmap.core.services.project.project_service import ProjectService
 
 
 @pytest.fixture

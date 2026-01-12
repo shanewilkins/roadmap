@@ -2,7 +2,7 @@
 
 from datetime import UTC
 
-from roadmap.core.services.sync_state_manager import SyncStateManager
+from roadmap.core.services.sync.sync_state_manager import SyncStateManager
 
 
 class SyncStateUpdateService:

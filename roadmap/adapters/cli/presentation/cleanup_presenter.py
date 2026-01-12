@@ -5,10 +5,10 @@ from typing import Any
 
 import click
 
-from roadmap.core.services.backup_cleanup_service import (
+from roadmap.core.services.health.backup_cleanup_service import (
     BackupCleanupResult as BackupResult,
 )
-from roadmap.core.services.file_repair_service import FileRepairResult
+from roadmap.core.services.health.file_repair_service import FileRepairResult
 
 
 class CleanupPresenter:

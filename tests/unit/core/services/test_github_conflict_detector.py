@@ -7,7 +7,7 @@ import pytest
 
 from roadmap.common.constants import Priority, Status
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
+from roadmap.core.services.github.github_conflict_detector import GitHubConflictDetector
 
 
 class TestGitHubConflictDetector:

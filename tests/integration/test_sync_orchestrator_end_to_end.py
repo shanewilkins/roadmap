@@ -12,10 +12,10 @@ from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 from roadmap.common.constants import Priority, Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncReport
-from roadmap.core.services.sync_conflict_resolver import (
+from roadmap.core.services.sync.sync_conflict_resolver import (
     SyncConflictResolver,
 )
-from roadmap.core.services.sync_state_comparator import SyncStateComparator
+from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from tests.factories import SyncIssueFactory
 
 

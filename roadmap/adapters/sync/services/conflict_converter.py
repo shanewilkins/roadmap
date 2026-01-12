@@ -5,7 +5,7 @@ Extracted from SyncMergeEngine to separate conflict conversion logic.
 
 from structlog import get_logger
 
-from roadmap.core.services.sync_conflict_resolver import Conflict, ConflictField
+from roadmap.core.services.sync.sync_conflict_resolver import Conflict, ConflictField
 
 logger = get_logger(__name__)
 

@@ -6,7 +6,7 @@ import click
 
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
-from roadmap.core.services.git_hook_auto_sync_service import (
+from roadmap.core.services.git.git_hook_auto_sync_service import (
     GitHookAutoSyncConfig,
     GitHookAutoSyncService,
 )

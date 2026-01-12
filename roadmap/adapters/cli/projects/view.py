@@ -88,7 +88,7 @@ def view_project(ctx: click.Context, project_id: str):
     # Prepare comments if any
     comments_text = None
     if project.comments:
-        from roadmap.core.services.comment_service import CommentService
+        from roadmap.core.services.comment.comment_service import CommentService
 
         threads = CommentService.build_comment_threads(project.comments)
         comment_text = ""

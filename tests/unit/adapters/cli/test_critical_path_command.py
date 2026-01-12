@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from roadmap.adapters.cli.analysis.commands import critical_path
 from roadmap.adapters.cli.analysis.presenter import CriticalPathPresenter
 from roadmap.core.domain.issue import Issue, Priority, Status
-from roadmap.core.services.critical_path_calculator import (
+from roadmap.core.services.utils.critical_path_calculator import (
     CriticalPathResult,
     PathNode,
 )

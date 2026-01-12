@@ -11,8 +11,8 @@ from roadmap.adapters.cli.services.sync_service import get_sync_backend
 from roadmap.adapters.sync.sync_retrieval_orchestrator import (
     SyncRetrievalOrchestrator,
 )
-from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
-from roadmap.core.services.sync_state_comparator import SyncStateComparator
+from roadmap.core.services.sync.sync_conflict_resolver import SyncConflictResolver
+from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
 logger = get_logger(__name__)
 

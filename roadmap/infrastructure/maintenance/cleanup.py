@@ -7,8 +7,8 @@ import click
 from roadmap.adapters.cli.presentation.cleanup_presenter import CleanupPresenter
 from roadmap.common.cli_models import CleanupParams
 from roadmap.common.console import get_console
-from roadmap.core.services.backup_cleanup_service import BackupCleanupService
-from roadmap.core.services.file_repair_service import FileRepairService
+from roadmap.core.services.health.backup_cleanup_service import BackupCleanupService
+from roadmap.core.services.health.file_repair_service import FileRepairService
 from roadmap.core.services.validators import (
     DataIntegrityValidator,
     DuplicateIssuesValidator,

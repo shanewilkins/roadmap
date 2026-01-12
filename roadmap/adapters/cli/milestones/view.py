@@ -105,7 +105,7 @@ def view_milestone(
     # Prepare comments if any
     comments_text = None
     if milestone.comments:
-        from roadmap.core.services.comment_service import CommentService
+        from roadmap.core.services.comment.comment_service import CommentService
 
         threads = CommentService.build_comment_threads(milestone.comments)
         comment_text = ""

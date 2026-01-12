@@ -5,7 +5,7 @@ Tests cover YAML parsing, git data normalization, and file repair operations.
 
 import pytest
 
-from roadmap.core.services.file_repair_service import (
+from roadmap.core.services.health.file_repair_service import (
     FileRepairResult,
     FileRepairService,
 )

@@ -5,7 +5,7 @@ from structlog import get_logger
 from roadmap.adapters.sync.backends.github_backend_helpers import GitHubBackendHelpers
 from roadmap.adapters.sync.backends.github_client import GitHubClientWrapper
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.sync_report import SyncReport
+from roadmap.core.services.sync.sync_report import SyncReport
 
 logger = get_logger()
 

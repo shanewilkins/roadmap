@@ -7,7 +7,7 @@ from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
-from roadmap.core.services.entity_health_scanner import (
+from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthScanner,
 )
 

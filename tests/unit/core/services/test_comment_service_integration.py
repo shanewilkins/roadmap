@@ -1,6 +1,6 @@
 """Comprehensive test suite for comment service."""
 
-from roadmap.core.services.comment_service import CommentService
+from roadmap.core.services.comment.comment_service import CommentService
 
 
 class TestCommentServiceIntegration:

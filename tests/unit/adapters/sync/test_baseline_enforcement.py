@@ -14,7 +14,7 @@ from roadmap.adapters.sync.sync_retrieval_orchestrator import (
     SyncRetrievalOrchestrator,
 )
 from roadmap.core.models.sync_state import IssueBaseState, SyncState
-from roadmap.core.services.baseline_selector import BaselineStrategy
+from roadmap.core.services.baseline.baseline_selector import BaselineStrategy
 
 
 class TestBaselineEnforcement:

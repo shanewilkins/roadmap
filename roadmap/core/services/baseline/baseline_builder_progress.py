@@ -11,7 +11,7 @@ from time import time
 from structlog import get_logger
 
 from roadmap.core.models.sync_state import SyncState
-from roadmap.core.services.optimized_baseline_builder import (
+from roadmap.core.services.baseline.optimized_baseline_builder import (
     CachedBaselineState,
     OptimizedBaselineBuilder,
 )

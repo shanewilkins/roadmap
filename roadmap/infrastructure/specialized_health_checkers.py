@@ -15,7 +15,7 @@ class DirectoryHealthChecker:
     @staticmethod
     def check_roadmap_directory() -> tuple[HealthStatus, str]:
         """Check if .roadmap directory exists and is accessible."""
-        from roadmap.core.services.infrastructure_validator_service import (
+        from roadmap.core.services.health.infrastructure_validator_service import (
             RoadmapDirectoryValidator,
         )
 
@@ -25,7 +25,7 @@ class DirectoryHealthChecker:
     @staticmethod
     def check_state_file() -> tuple[HealthStatus, str]:
         """Check if state database exists and is readable."""
-        from roadmap.core.services.infrastructure_validator_service import (
+        from roadmap.core.services.health.infrastructure_validator_service import (
             StateFileValidator,
         )
 
@@ -35,7 +35,7 @@ class DirectoryHealthChecker:
     @staticmethod
     def check_issues_directory() -> tuple[HealthStatus, str]:
         """Check if issues directory exists and is accessible."""
-        from roadmap.core.services.infrastructure_validator_service import (
+        from roadmap.core.services.health.infrastructure_validator_service import (
             IssuesDirectoryValidator,
         )
 
@@ -45,7 +45,7 @@ class DirectoryHealthChecker:
     @staticmethod
     def check_milestones_directory() -> tuple[HealthStatus, str]:
         """Check if milestones directory exists and is accessible."""
-        from roadmap.core.services.infrastructure_validator_service import (
+        from roadmap.core.services.health.infrastructure_validator_service import (
             MilestonesDirectoryValidator,
         )
 
@@ -55,7 +55,7 @@ class DirectoryHealthChecker:
     @staticmethod
     def check_folder_structure(core) -> tuple[HealthStatus, str]:
         """Check if issues are in correct milestone folders."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             FolderStructureValidator,
         )
 
@@ -65,7 +65,7 @@ class DirectoryHealthChecker:
     @staticmethod
     def check_old_backups() -> tuple[HealthStatus, str]:
         """Check for old backup files that could be cleaned up."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             BackupValidator,
         )
 
@@ -79,7 +79,7 @@ class DataHealthChecker:
     @staticmethod
     def check_git_repository() -> tuple[HealthStatus, str]:
         """Check if Git repository exists and is accessible."""
-        from roadmap.core.services.infrastructure_validator_service import (
+        from roadmap.core.services.health.infrastructure_validator_service import (
             GitRepositoryValidator,
         )
 
@@ -89,7 +89,7 @@ class DataHealthChecker:
     @staticmethod
     def check_database_integrity() -> tuple[HealthStatus, str]:
         """Check SQLite database integrity."""
-        from roadmap.core.services.infrastructure_validator_service import (
+        from roadmap.core.services.health.infrastructure_validator_service import (
             DatabaseIntegrityValidator,
         )
 
@@ -99,7 +99,7 @@ class DataHealthChecker:
     @staticmethod
     def check_data_integrity() -> tuple[HealthStatus, str]:
         """Run comprehensive data integrity checks."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             DataIntegrityValidator,
         )
 
@@ -113,7 +113,7 @@ class EntityHealthChecker:
     @staticmethod
     def check_duplicate_issues(core) -> tuple[HealthStatus, str]:
         """Check for duplicate issues."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             DuplicateIssuesValidator,
         )
 
@@ -123,7 +123,7 @@ class EntityHealthChecker:
     @staticmethod
     def check_archivable_issues(core) -> tuple[HealthStatus, str]:
         """Check for closed issues that could be archived."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             ArchivableIssuesValidator,
         )
 
@@ -133,7 +133,7 @@ class EntityHealthChecker:
     @staticmethod
     def check_archivable_milestones(core) -> tuple[HealthStatus, str]:
         """Check for closed milestones that could be archived."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             ArchivableMilestonesValidator,
         )
 
@@ -145,7 +145,7 @@ class EntityHealthChecker:
     @staticmethod
     def check_orphaned_issues(core) -> tuple[HealthStatus, str]:
         """Check for issues not assigned to any milestone."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             OrphanedIssuesValidator,
         )
 
@@ -155,7 +155,7 @@ class EntityHealthChecker:
     @staticmethod
     def check_orphaned_milestones(core) -> tuple[HealthStatus, str]:
         """Check for empty milestones with no issues."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             OrphanedMilestonesValidator,
         )
 
@@ -165,7 +165,7 @@ class EntityHealthChecker:
     @staticmethod
     def check_duplicate_milestones(core) -> tuple[HealthStatus, str]:
         """Check for duplicate milestone names."""
-        from roadmap.core.services.data_integrity_validator_service import (
+        from roadmap.core.services.health.data_integrity_validator_service import (
             DuplicateMilestonesValidator,
         )
 
@@ -177,7 +177,7 @@ class EntityHealthChecker:
         """Check for remote issues not linked to local issues."""
         # Note: UnlinkedIssuesValidator may not exist - skip if not available
         try:
-            from roadmap.core.services.data_integrity_validator_service import (
+            from roadmap.core.services.health.data_integrity_validator_service import (
                 UnlinkedIssuesValidator,  # type: ignore[attr-defined]
             )
 

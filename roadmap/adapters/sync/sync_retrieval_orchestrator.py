@@ -15,11 +15,11 @@ from structlog import get_logger
 from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 from roadmap.core.models.sync_state import IssueBaseState, SyncState
-from roadmap.core.services.baseline_selector import (
+from roadmap.core.services.baseline.baseline_selector import (
     BaselineStrategy,
     InteractiveBaselineSelector,
 )
-from roadmap.core.services.baseline_state_retriever import BaselineStateRetriever
+from roadmap.core.services.baseline.baseline_state_retriever import BaselineStateRetriever
 
 logger = get_logger(__name__)
 

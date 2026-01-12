@@ -209,8 +209,8 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
     )
 
     # Local imports for services used by the helper
-    from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
-    from roadmap.core.services.sync_state_comparator import SyncStateComparator
+    from roadmap.core.services.sync.sync_conflict_resolver import SyncConflictResolver
+    from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
     # Load config
     config_file = core.roadmap_dir / "config.yaml"

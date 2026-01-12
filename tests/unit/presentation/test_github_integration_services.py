@@ -8,9 +8,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core.services.github_config_validator import GitHubConfigValidator
-from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
-from roadmap.core.services.github_integration_service import GitHubIntegrationService
+from roadmap.core.services.github.github_config_validator import GitHubConfigValidator
+from roadmap.core.services.github.github_conflict_detector import GitHubConflictDetector
+from roadmap.core.services.github.github_integration_service import GitHubIntegrationService
 from tests.unit.shared.test_helpers import create_mock_issue
 
 # ============================================================================

@@ -1,4 +1,4 @@
-from roadmap.core.services.sync_plan import (
+from roadmap.core.services.sync.sync_plan import (
     CreateLocalAction,
     LinkAction,
     PullAction,

@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.core.services.infrastructure_validator_service import (
+from roadmap.core.services.health.infrastructure_validator_service import (
     DatabaseIntegrityValidator,
     GitRepositoryValidator,
     HealthStatus,
@@ -30,7 +30,7 @@ from roadmap.core.services.infrastructure_validator_service import (
 class TestIssuesDirectoryValidator:
     """Tests for IssuesDirectoryValidator."""
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     @pytest.mark.parametrize(
         "mock_setup,expected_status,expected_message_part",
         [
@@ -80,7 +80,7 @@ class TestIssuesDirectoryValidator:
 class TestMilestonesDirectoryValidator:
     """Tests for MilestonesDirectoryValidator."""
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     @pytest.mark.parametrize(
         "mock_setup,expected_status,expected_message_part",
         [
@@ -130,7 +130,7 @@ class TestMilestonesDirectoryValidator:
 class TestGitRepositoryValidator:
     """Tests for GitRepositoryValidator."""
 
-    @patch("roadmap.core.services.infrastructure_validator_service.Path")
+    @patch("roadmap.core.services.health.infrastructure_validator_service.Path")
     @pytest.mark.parametrize(
         "mock_setup,expected_status,expected_message_part",
         [

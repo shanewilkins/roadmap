@@ -10,7 +10,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from roadmap.core.services.sync_conflict_resolver import ConflictField
+from roadmap.core.services.sync.sync_conflict_resolver import ConflictField
 
 
 def detect_field_conflicts(

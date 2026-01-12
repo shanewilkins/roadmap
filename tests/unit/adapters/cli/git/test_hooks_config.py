@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 from roadmap.adapters.cli.git.hooks_config import hooks_config
-from roadmap.core.services.git_hook_auto_sync_service import GitHookAutoSyncConfig
+from roadmap.core.services.git.git_hook_auto_sync_service import GitHookAutoSyncConfig
 
 
 class TestHooksConfigCommand:

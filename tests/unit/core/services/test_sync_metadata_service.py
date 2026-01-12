@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.core.services.sync_metadata_service import (
+from roadmap.core.services.sync.sync_metadata_service import (
     SyncMetadata,
     SyncRecord,
 )

@@ -5,8 +5,8 @@ from typing import Any
 
 from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.github_integration_service import GitHubIntegrationService
-from roadmap.core.services.github_issue_client import GitHubIssueClient
+from roadmap.core.services.github.github_integration_service import GitHubIntegrationService
+from roadmap.core.services.github.github_issue_client import GitHubIssueClient
 
 
 class GitHubConflictDetector:

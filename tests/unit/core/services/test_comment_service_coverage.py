@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from roadmap.core.domain import Comment
-from roadmap.core.services.comment_service import CommentService
+from roadmap.core.services.comment.comment_service import CommentService
 
 
 class TestCommentServiceFormatting:

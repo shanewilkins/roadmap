@@ -101,10 +101,10 @@ def test_workflow_isolation():
 
 def test_github_integration_imports():
     """Test that GitHub integration modules can be imported."""
-    from roadmap.core.services.github_integration_service import (
+    from roadmap.core.services.github.github_integration_service import (
         GitHubIntegrationService,
     )
-    from roadmap.core.services.github_issue_client import GitHubIssueClient
+    from roadmap.core.services.github.github_issue_client import GitHubIssueClient
 
     # Just verify imports work
     assert GitHubIssueClient is not None

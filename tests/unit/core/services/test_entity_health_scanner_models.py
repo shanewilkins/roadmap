@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.core.services.entity_health_scanner import (
+from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthReport,
     EntityType,
     HealthIssue,

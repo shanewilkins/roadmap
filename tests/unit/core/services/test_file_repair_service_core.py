@@ -6,7 +6,7 @@ Tests cover YAML parsing, git data normalization, and file repair operations.
 from pathlib import Path
 from unittest.mock import patch
 
-from roadmap.core.services.file_repair_service import (
+from roadmap.core.services.health.file_repair_service import (
     FileRepairService,
 )
 

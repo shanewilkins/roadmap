@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from unittest.mock import patch
 
-from roadmap.core.services.sync_report import IssueChange, SyncReport
+from roadmap.core.services.sync.sync_report import IssueChange, SyncReport
 
 
 class TestIssueChange:

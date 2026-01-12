@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core.services.assignee_validation_service import (
+from roadmap.core.services.issue.assignee_validation_service import (
     AssigneeValidationResult,
     AssigneeValidationStrategy,
     IdentitySystemValidator,

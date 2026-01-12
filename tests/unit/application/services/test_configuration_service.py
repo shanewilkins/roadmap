@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core.services.configuration_service import ConfigurationService
+from roadmap.core.services.utils.configuration_service import ConfigurationService
 
 
 @pytest.fixture

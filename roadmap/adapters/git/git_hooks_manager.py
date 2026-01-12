@@ -365,7 +365,7 @@ class GitHookManager:
             commit_sha: Git commit SHA for logging
         """
         try:
-            from roadmap.core.services.git_hook_auto_sync_service import (
+            from roadmap.core.services.git.git_hook_auto_sync_service import (
                 GitHookAutoSyncService,
             )
 
@@ -396,7 +396,7 @@ class GitHookManager:
             branch: Branch name for logging
         """
         try:
-            from roadmap.core.services.git_hook_auto_sync_service import (
+            from roadmap.core.services.git.git_hook_auto_sync_service import (
                 GitHookAutoSyncService,
             )
 
@@ -427,7 +427,7 @@ class GitHookManager:
             commit_sha: Merge commit SHA for logging
         """
         try:
-            from roadmap.core.services.git_hook_auto_sync_service import (
+            from roadmap.core.services.git.git_hook_auto_sync_service import (
                 GitHookAutoSyncService,
             )
 

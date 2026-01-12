@@ -7,7 +7,7 @@ the database, including complex scenarios like threading and metadata.
 import pytest
 
 from roadmap.common.constants import Priority
-from roadmap.core.services.comment_service import CommentService
+from roadmap.core.services.comment.comment_service import CommentService
 from roadmap.infrastructure.core import RoadmapCore
 
 

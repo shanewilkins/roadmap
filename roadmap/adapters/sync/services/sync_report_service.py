@@ -1,6 +1,6 @@
 """Service for populating and managing sync reports."""
 
-from roadmap.core.services.sync_report import SyncReport
+from roadmap.core.services.sync.sync_report import SyncReport
 
 
 class SyncReportService:

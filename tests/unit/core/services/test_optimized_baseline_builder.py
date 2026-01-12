@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from roadmap.core.models.sync_state import IssueBaseState, SyncState
-from roadmap.core.services.optimized_baseline_builder import (
+from roadmap.core.services.baseline.optimized_baseline_builder import (
     CachedBaselineState,
     OptimizedBaselineBuilder,
 )

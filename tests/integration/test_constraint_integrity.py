@@ -7,7 +7,7 @@ constraints work correctly, especially for complex operations.
 import pytest
 
 from roadmap.common.constants import Priority, Status
-from roadmap.core.services.comment_service import CommentService
+from roadmap.core.services.comment.comment_service import CommentService
 from roadmap.infrastructure.core import RoadmapCore
 
 

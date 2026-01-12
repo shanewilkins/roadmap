@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from roadmap.core.services.git_hook_auto_sync_service import (
+from roadmap.core.services.git.git_hook_auto_sync_service import (
     GitHookAutoSyncConfig,
     GitHookAutoSyncService,
 )

@@ -7,7 +7,7 @@ import click
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
-from roadmap.core.services.github_issue_client import GitHubIssueClient
+from roadmap.core.services.github.github_issue_client import GitHubIssueClient
 from roadmap.infrastructure.logging import (
     log_command,
 )
@@ -198,7 +198,7 @@ def _resolve_github_config(
         try:
             from pathlib import Path
 
-            from roadmap.core.services.github_integration_service import (
+            from roadmap.core.services.github.github_integration_service import (
                 GitHubIntegrationService,
             )
 

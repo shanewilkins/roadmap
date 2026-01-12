@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.core.services.project_status_service import ProjectStatusService
+from roadmap.core.services.project.project_status_service import ProjectStatusService
 
 
 class TestProjectStatusService:

@@ -11,14 +11,14 @@ from structlog import get_logger
 
 from roadmap.adapters.sync.sync_retrieval_orchestrator import SyncRetrievalOrchestrator
 from roadmap.core.models.sync_state import SyncState
-from roadmap.core.services.baseline_builder_progress import (
+from roadmap.core.services.baseline.baseline_builder_progress import (
     ProgressTrackingBaselineBuilder,
     create_progress_builder,
 )
-from roadmap.core.services.optimized_baseline_builder import (
+from roadmap.core.services.baseline.optimized_baseline_builder import (
     OptimizedBaselineBuilder,
 )
-from roadmap.core.services.sync_report import SyncReport
+from roadmap.core.services.sync.sync_report import SyncReport
 
 logger = get_logger(__name__)
 

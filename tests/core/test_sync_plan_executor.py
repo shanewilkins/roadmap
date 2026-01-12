@@ -1,6 +1,6 @@
 from typing import Any
 
-from roadmap.core.services.sync_plan import (
+from roadmap.core.services.sync.sync_plan import (
     CreateLocalAction,
     LinkAction,
     PullAction,
@@ -9,7 +9,7 @@ from roadmap.core.services.sync_plan import (
     SyncPlan,
     UpdateBaselineAction,
 )
-from roadmap.core.services.sync_plan_executor import SyncPlanExecutor
+from roadmap.core.services.sync.sync_plan_executor import SyncPlanExecutor
 
 
 class FakeAdapter:

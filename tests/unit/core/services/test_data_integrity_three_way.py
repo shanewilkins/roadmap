@@ -11,7 +11,7 @@ import pytest
 from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_state import IssueBaseState
-from roadmap.core.services.sync_state_comparator import SyncStateComparator
+from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
 
 class TestDataIntegrityThreeWayMerge:

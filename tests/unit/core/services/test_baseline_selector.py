@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.core.services.baseline_selector import (
+from roadmap.core.services.baseline.baseline_selector import (
     BaselineSelectionResult,
     BaselineStrategy,
     InteractiveBaselineSelector,

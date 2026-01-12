@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core.services.github_integration_service import (
+from roadmap.core.services.github.github_integration_service import (
     GitHubIntegrationService,
 )
 

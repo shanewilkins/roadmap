@@ -9,9 +9,9 @@ from unittest.mock import MagicMock
 
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 from roadmap.core.models.sync_state import IssueBaseState, SyncState
-from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
-from roadmap.core.services.sync_report import SyncReport
-from roadmap.core.services.sync_state_comparator import SyncStateComparator
+from roadmap.core.services.sync.sync_conflict_resolver import SyncConflictResolver
+from roadmap.core.services.sync.sync_report import SyncReport
+from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
 
 class TestLoadBaselineState(unittest.TestCase):

@@ -10,7 +10,7 @@ from typing import Any
 
 from roadmap.common.constants import Status
 from roadmap.core.models.sync_models import SyncIssue
-from roadmap.core.services.sync_state_comparator import SyncStateComparator
+from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from tests.factories import IssueBuilder
 
 

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from roadmap.adapters.github.handlers.base import GitHubAPIError
-from roadmap.core.services.github_issue_client import GitHubIssueClient
+from roadmap.core.services.github.github_issue_client import GitHubIssueClient
 
 
 class TestGitHubIssueClientInitialization:

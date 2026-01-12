@@ -4,7 +4,7 @@ from typing import Any
 
 from structlog import get_logger
 
-from roadmap.core.services.retry_policy import RetryPolicy
+from roadmap.core.services.utils.retry_policy import RetryPolicy
 
 logger = get_logger(__name__)
 

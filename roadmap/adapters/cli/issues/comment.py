@@ -4,7 +4,7 @@ import click
 
 from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
-from roadmap.core.services.comment_service import CommentService
+from roadmap.core.services.comment.comment_service import CommentService
 from roadmap.infrastructure.logging import log_command, verbose_output
 
 

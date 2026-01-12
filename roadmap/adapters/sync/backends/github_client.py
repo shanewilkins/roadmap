@@ -26,7 +26,7 @@ class GitHubClientWrapper:
         if token:
             try:
                 # delayed import to reduce module import cost
-                from roadmap.core.services.github_issue_client import (
+                from roadmap.core.services.github.github_issue_client import (
                     GitHubIssueClient,
                 )
 

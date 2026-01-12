@@ -11,7 +11,7 @@ import pytest
 
 from roadmap.common.constants import Priority, Status
 from roadmap.common.timezone_utils import now_utc
-from roadmap.core.services.sync_conflict_resolver import (
+from roadmap.core.services.sync.sync_conflict_resolver import (
     Conflict,
     ConflictField,
     ConflictStrategy,
