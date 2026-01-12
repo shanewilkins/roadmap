@@ -1,15 +1,14 @@
 """Unit tests for sync service layer (IssueStateService, IssuePersistenceService, SyncLinkingService)."""
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import Mock
 
 from roadmap.adapters.sync.services import (
-    IssueStateService,
     IssuePersistenceService,
+    IssueStateService,
     SyncLinkingService,
 )
-from roadmap.common.constants import Priority, Status, IssueType
+from roadmap.common.constants import Priority, Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 
@@ -38,7 +37,7 @@ class TestIssueStateService:
 
     def test_sync_issue_to_issue_with_timestamps(self):
         """Test timestamp handling in conversion."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         sync_issue = SyncIssue(
             id="remote-42",
             title="Test",
@@ -233,9 +232,7 @@ class TestIssuePersistenceService:
         issue = Issue(id="local-123", title="Test")
         issue.remote_ids = {}
 
-        IssuePersistenceService.update_issue_with_remote_id(
-            issue, "github", 42
-        )
+        IssuePersistenceService.update_issue_with_remote_id(issue, "github", 42)
 
         assert issue.remote_ids["github"] == "42"
 
@@ -244,9 +241,7 @@ class TestIssuePersistenceService:
         issue = Issue(id="local-123", title="Test")
         issue.remote_ids = {"gitlab": "100"}
 
-        IssuePersistenceService.update_issue_with_remote_id(
-            issue, "github", 42
-        )
+        IssuePersistenceService.update_issue_with_remote_id(issue, "github", 42)
 
         assert issue.remote_ids["gitlab"] == "100"
         assert issue.remote_ids["github"] == "42"
@@ -256,9 +251,7 @@ class TestIssuePersistenceService:
         issue = Issue(id="local-123", title="Test")
         issue.remote_ids = {}
 
-        IssuePersistenceService.update_issue_with_remote_id(
-            issue, "github", 42
-        )
+        IssuePersistenceService.update_issue_with_remote_id(issue, "github", 42)
 
         assert issue.remote_ids is not None
         assert issue.remote_ids["github"] == "42"
@@ -307,9 +300,7 @@ class TestIssuePersistenceService:
         mock_core = Mock()
         mock_core.issue_service.repository = mock_repo
 
-        result = IssuePersistenceService.get_issue_from_repo(
-            "local-123", mock_core
-        )
+        result = IssuePersistenceService.get_issue_from_repo("local-123", mock_core)
 
         assert result == issue
         mock_repo.get.assert_called_once_with("local-123")
@@ -322,9 +313,7 @@ class TestIssuePersistenceService:
         mock_core = Mock()
         mock_core.issue_service.repository = mock_repo
 
-        result = IssuePersistenceService.get_issue_from_repo(
-            "nonexistent", mock_core
-        )
+        result = IssuePersistenceService.get_issue_from_repo("nonexistent", mock_core)
 
         assert result is None
 
@@ -336,9 +325,7 @@ class TestIssuePersistenceService:
         mock_core = Mock()
         mock_core.issue_service.repository = mock_repo
 
-        result = IssuePersistenceService.get_issue_from_repo(
-            "local-123", mock_core
-        )
+        result = IssuePersistenceService.get_issue_from_repo("local-123", mock_core)
 
         assert result is None
 
@@ -361,9 +348,7 @@ class TestIssuePersistenceService:
             backend_id=42,
         )
 
-        IssuePersistenceService.apply_sync_issue_to_local(
-            local_issue, sync_issue
-        )
+        IssuePersistenceService.apply_sync_issue_to_local(local_issue, sync_issue)
 
         assert local_issue.title == "New Title"
         assert local_issue.assignee == "new@example.com"
@@ -381,9 +366,7 @@ class TestIssuePersistenceService:
             backend_id=42,
         )
 
-        IssuePersistenceService.apply_sync_issue_to_local(
-            local_issue, sync_issue
-        )
+        IssuePersistenceService.apply_sync_issue_to_local(local_issue, sync_issue)
 
         assert local_issue.id == "local-123"
 
@@ -438,9 +421,9 @@ class TestSyncLinkingService:
 
         assert result is True
         mock_repo.link_issue.assert_called_once_with(
-            local_issue_id="local-123",
+            issue_uuid="local-123",
             backend_name="github",
-            remote_issue_id="42",
+            remote_id="42",
         )
 
     def test_link_issue_in_database_with_none_repo(self):
@@ -527,9 +510,7 @@ class TestSyncLinkingService:
         mock_core = Mock()
         mock_core.issue_service.repository = mock_repo
 
-        result = SyncLinkingService.find_duplicate_by_title(
-            "Test", "github", mock_core
-        )
+        result = SyncLinkingService.find_duplicate_by_title("Test", "github", mock_core)
 
         assert result is None
 
@@ -538,13 +519,11 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.get_issue_uuid = Mock(return_value="local-123")
 
-        result = SyncLinkingService.get_local_id_from_remote(
-            "github", 42, mock_repo
-        )
+        result = SyncLinkingService.get_local_id_from_remote("github", 42, mock_repo)
 
         assert result == "local-123"
         mock_repo.get_issue_uuid.assert_called_once_with(
-            backend_name="github", remote_issue_id="42"
+            backend_name="github", remote_id="42"
         )
 
     def test_get_local_id_from_remote_not_found(self):
@@ -552,17 +531,13 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.get_issue_uuid = Mock(return_value=None)
 
-        result = SyncLinkingService.get_local_id_from_remote(
-            "github", 42, mock_repo
-        )
+        result = SyncLinkingService.get_local_id_from_remote("github", 42, mock_repo)
 
         assert result is None
 
     def test_get_local_id_from_remote_with_none_repo(self):
         """Test retrieval when repo is None."""
-        result = SyncLinkingService.get_local_id_from_remote(
-            "github", 42, None
-        )
+        result = SyncLinkingService.get_local_id_from_remote("github", 42, None)
 
         assert result is None
 
@@ -571,9 +546,7 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.get_issue_uuid = Mock(side_effect=Exception("Lookup failed"))
 
-        result = SyncLinkingService.get_local_id_from_remote(
-            "github", 42, mock_repo
-        )
+        result = SyncLinkingService.get_local_id_from_remote("github", 42, mock_repo)
 
         assert result is None
 
@@ -589,9 +562,7 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.link_issue = Mock(return_value=None)
 
-        result = SyncLinkingService.link_sync_issue(
-            sync_issue, "local-123", mock_repo
-        )
+        result = SyncLinkingService.link_sync_issue(sync_issue, "local-123", mock_repo)
 
         assert result is True
         mock_repo.link_issue.assert_called_once()
@@ -607,9 +578,7 @@ class TestSyncLinkingService:
         )
         mock_repo = Mock()
 
-        result = SyncLinkingService.link_sync_issue(
-            sync_issue, "local-123", mock_repo
-        )
+        result = SyncLinkingService.link_sync_issue(sync_issue, "local-123", mock_repo)
 
         assert result is False
         mock_repo.link_issue.assert_not_called()
@@ -619,9 +588,7 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.get_remote_id = Mock(return_value="42")
 
-        result = SyncLinkingService.is_linked(
-            "local-123", "github", mock_repo
-        )
+        result = SyncLinkingService.is_linked("local-123", "github", mock_repo)
 
         assert result is True
 
@@ -630,9 +597,7 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.get_remote_id = Mock(return_value=None)
 
-        result = SyncLinkingService.is_linked(
-            "local-123", "github", mock_repo
-        )
+        result = SyncLinkingService.is_linked("local-123", "github", mock_repo)
 
         assert result is False
 
@@ -647,8 +612,6 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.get_remote_id = Mock(side_effect=Exception("Lookup failed"))
 
-        result = SyncLinkingService.is_linked(
-            "local-123", "github", mock_repo
-        )
+        result = SyncLinkingService.is_linked("local-123", "github", mock_repo)
 
         assert result is False

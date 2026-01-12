@@ -1,16 +1,19 @@
-"""Extracted merge engine helpers used by SyncMergeOrchestrator.
+"""Orchestrates sync merge operations with extracted service components.
 
-This class holds helper implementations moved out of the large
-`sync_merge_orchestrator.py` to make that file smaller and easier to
-navigate. The orchestrator delegates to this engine for pure logic and
-operations that depend on core/backend/state_manager.
+This class coordinates the sync process by delegating to specialized services
+for baseline management, pull processing, change filtering, and conflict conversion.
 """
 
-from datetime import UTC, datetime
 from typing import Any
 
 from structlog import get_logger
 
+from roadmap.adapters.sync.services.baseline_state_handler import (
+    BaselineStateHandler,
+)
+from roadmap.adapters.sync.services.conflict_converter import ConflictConverter
+from roadmap.adapters.sync.services.local_change_filter import LocalChangeFilter
+from roadmap.adapters.sync.services.pull_result_processor import PullResultProcessor
 from roadmap.adapters.sync.services.remote_issue_creation_service import (
     RemoteIssueCreationService,
 )
@@ -21,7 +24,6 @@ from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.services.remote_fetcher import RemoteFetcher
 from roadmap.core.services.sync_conflict_resolver import (
-    Conflict,
     ConflictStrategy,
     SyncConflictResolver,
 )
@@ -39,6 +41,8 @@ logger = get_logger(__name__)
 
 
 class SyncMergeEngine:
+    """Orchestrates sync merge operations using specialized service components."""
+
     def __init__(
         self,
         core: Any,
@@ -53,261 +57,35 @@ class SyncMergeEngine:
         self.conflict_resolver = conflict_resolver
         self.state_manager = state_manager
 
-        # Initialize delegated services
+        # Initialize delegated services for specific concerns
         self._issue_creation_service = RemoteIssueCreationService(core)
         self._state_update_service = SyncStateUpdateService(state_manager)
+        self._baseline_handler = BaselineStateHandler(core, self._state_update_service)
+        self._conflict_converter = ConflictConverter(state_comparator)
 
     def _load_baseline_state(self):
-        try:
-            from roadmap.core.models.sync_state import IssueBaseState, SyncState
-
-            db_baseline = self.core.db.get_sync_baseline()
-            if db_baseline:
-                logger.debug(
-                    "baseline_loaded_from_database", issue_count=len(db_baseline)
-                )
-                issues = {}
-                for issue_id, data in db_baseline.items():
-                    issues[issue_id] = IssueBaseState(
-                        id=issue_id,
-                        status=data.get("status", "todo"),
-                        title="",
-                        assignee=data.get("assignee"),
-                        milestone=data.get("milestone"),
-                        headline=data.get("headline", ""),
-                        content=data.get("content", ""),
-                        labels=data.get("labels", []),
-                    )
-
-                sync_state = SyncState(
-                    last_sync=datetime.now(UTC),
-                    backend="github",
-                    issues=issues,
-                )
-                return sync_state
-
-            logger.debug("baseline_not_found_in_database")
-            return None
-
-        except Exception as e:
-            logger.warning(
-                "baseline_load_failed", error=str(e), error_type=type(e).__name__
-            )
-            return None
+        """Load baseline state using the baseline handler."""
+        return self._baseline_handler.load_baseline_state()
 
     def _process_fetched_pull_result(self, fetched):
-        pulled_count = 0
-        pull_errors = []
-        pulled_remote_ids = []
-
-        if isinstance(fetched, list):
-            pulled_items = [r for r in fetched if r]
-            pulled_count = len(pulled_items)
-            for item in pulled_items:
-                try:
-                    rid = getattr(item, "backend_id", None) or getattr(item, "id", None)
-                    if rid is not None:
-                        pulled_remote_ids.append(str(rid))
-                except Exception:
-                    continue
-        else:
-            pull_report = fetched
-            if getattr(pull_report, "errors", None):
-                try:
-                    err_keys = (
-                        list(pull_report.errors.keys())
-                        if isinstance(pull_report.errors, dict)
-                        else []
-                    )
-                except Exception:
-                    err_keys = []
-                pull_errors = err_keys
-                logger.warning(
-                    "pull_batch_had_errors",
-                    error_count=len(pull_errors),
-                    errors=str(pull_report.errors)[:200],
-                )
-
-            pulled_raw = getattr(pull_report, "pulled", None)
-            if pulled_raw is None:
-                pulled_count = 0
-                pulled_remote_ids = []
-            else:
-                try:
-                    pulled_iter = list(pulled_raw)
-                except Exception:
-                    pulled_iter = [pulled_raw]
-                pulled_remote_ids = [str(i) for i in pulled_iter]
-                pulled_count = len(pulled_remote_ids)
-
-        return pulled_count, pull_errors, pulled_remote_ids
+        """Process pull result using the pull result processor."""
+        return PullResultProcessor.process_pull_result(fetched)
 
     def _update_baseline_for_pulled(self, pulled_remote_ids: list[str]) -> None:
-        self._state_update_service.update_baseline_for_pulled(pulled_remote_ids)
+        """Update baseline after pulling using the baseline handler."""
+        self._baseline_handler.update_baseline_for_pulled(pulled_remote_ids)
 
     def _filter_unchanged_issues_from_base(
         self, issues: list, current_local: dict, base_state_issues: dict
     ) -> list:
-        if not base_state_issues:
-            logger.debug(
-                "filter_no_base_state",
-                input_count=len(issues),
-                reason="first_sync_no_previous_state",
-            )
-            return issues
-
-        filtered = []
-        skipped_count = 0
-        new_count = 0
-        changed_count = 0
-
-        for issue in issues:
-            issue_id = issue.id if hasattr(issue, "id") else issue
-            if issue_id not in current_local:
-                logger.debug(
-                    "filter_issue_not_in_local",
-                    issue_id=issue_id,
-                    reason="might_be_stale",
-                )
-                continue
-            if issue_id not in base_state_issues:
-                logger.debug(
-                    "filter_new_local_issue",
-                    issue_id=issue_id,
-                    reason="not_in_previous_sync",
-                )
-                new_count += 1
-                filtered.append(issue)
-                continue
-
-            local_issue = current_local[issue_id]
-            base_state = base_state_issues[issue_id]
-
-            fields_to_check = {
-                "status": lambda obj: obj.status.value
-                if hasattr(obj.status, "value")
-                else str(obj.status),
-                "assignee": lambda obj: obj.assignee,
-                "content": lambda obj: obj.content,
-                "labels": lambda obj: sorted(obj.labels or []),
-            }
-
-            has_local_changes = False
-            changed_fields = []
-
-            for field_name, getter in fields_to_check.items():
-                try:
-                    local_value = getter(local_issue)
-                except Exception as e:
-                    logger.warning(
-                        "filter_field_extraction_failed",
-                        issue_id=issue_id,
-                        field=field_name,
-                        error=str(e),
-                    )
-                    local_value = None
-
-                if field_name == "content":
-                    base_value = base_state.content
-                else:
-                    base_value = getattr(base_state, field_name, None)
-
-                if local_value != base_value:
-                    logger.debug(
-                        "filter_local_change_detected",
-                        issue_id=issue_id,
-                        field=field_name,
-                        base_value=base_value,
-                        local_value=local_value,
-                    )
-                    changed_fields.append(field_name)
-                    has_local_changes = True
-
-            if has_local_changes:
-                logger.debug(
-                    "filter_issue_has_local_changes",
-                    issue_id=issue_id,
-                    changed_fields=changed_fields,
-                )
-                changed_count += 1
-                filtered.append(issue)
-            else:
-                logger.debug(
-                    "filter_issue_unchanged_since_sync",
-                    issue_id=issue_id,
-                    reason="no_local_modifications",
-                )
-                skipped_count += 1
-
-        logger.info(
-            "filter_complete",
-            input_count=len(issues),
-            output_count=len(filtered),
-            skipped_count=skipped_count,
-            new_count=new_count,
-            changed_count=changed_count,
-            filtered_out_percentage=round((skipped_count / len(issues) * 100), 1)
-            if len(issues) > 0
-            else 0,
+        """Filter unchanged issues using the local change filter."""
+        return LocalChangeFilter.filter_unchanged_from_base(
+            issues, current_local, base_state_issues
         )
-        return filtered
 
     def _convert_issue_changes_to_conflicts(self, issue_changes: list) -> list:
-        from roadmap.core.services.sync_conflict_resolver import ConflictField
-
-        conflicts: list[Conflict] = []
-
-        for change in issue_changes:
-            if (
-                not change.has_conflict
-                or not change.local_state
-                or not change.remote_state
-            ):
-                continue
-            try:
-                conflicting_fields = []
-                if change.local_changes:
-                    for field_name, _change_info in change.local_changes.items():
-                        if field_name in change.remote_changes:
-                            conflict_field = ConflictField(
-                                field_name=field_name,
-                                local_value=change.local_state.__dict__.get(
-                                    field_name, None
-                                ),
-                                remote_value=change.remote_state.get(field_name),
-                                local_updated=change.local_state.updated,
-                                remote_updated=self.state_comparator._extract_timestamp(
-                                    change.remote_state, "updated_at"
-                                ),
-                            )
-                            conflicting_fields.append(conflict_field)
-
-                if conflicting_fields:
-                    conflict = Conflict(
-                        issue_id=change.issue_id,
-                        local_issue=change.local_state,
-                        remote_issue=change.remote_state,
-                        fields=conflicting_fields,
-                        local_updated=change.local_state.updated,
-                        remote_updated=self.state_comparator._extract_timestamp(
-                            change.remote_state, "updated_at"
-                        ),
-                    )
-                    conflicts.append(conflict)
-
-            except Exception as e:
-                logger.warning(
-                    "conflict_conversion_failed",
-                    issue_id=change.issue_id,
-                    operation="analyze_conflicts",
-                    error_type=type(e).__name__,
-                    error=str(e),
-                    is_recoverable=True,
-                    suggested_action="skip_issue",
-                )
-                continue
-
-        return conflicts
+        """Convert issue changes to conflicts using the conflict converter."""
+        return self._conflict_converter.convert_changes_to_conflicts(issue_changes)
 
     def _create_issue_from_remote(
         self, remote_id: str | int, remote_issue: SyncIssue
@@ -384,8 +162,8 @@ class SyncMergeEngine:
         resolved_issues,
         pulls,
         dry_run,
-        push_only,
-        pull_only,
+        push_only,  # noqa: F841
+        pull_only,  # noqa: F841
         report: SyncReport,
     ):
         plan = SyncPlan()

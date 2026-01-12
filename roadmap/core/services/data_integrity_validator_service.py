@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 _exported_validators: list[str] = (
     list(_validators_all) if isinstance(_validators_all, list | tuple) else []
 )
-__all__: list[str] = ["DataIntegrityValidatorService"] + _exported_validators
+__all__ = ["DataIntegrityValidatorService"] + _exported_validators  # type: ignore[operator]
 
 
 class DataIntegrityValidatorService:

@@ -50,6 +50,7 @@ class TestAssertionQualityIssueStatusChanges:
         )
 
         result = extract_issue_status_update(change["status_change"])
+        assert result is not None
 
         # GOOD: Verify the exact status enum value (business logic)
         assert result["status_enum"] == Status.IN_PROGRESS
@@ -63,6 +64,7 @@ class TestAssertionQualityIssueStatusChanges:
         change = IssueChangeTestBuilder().with_status_change("review", "closed").build()
 
         result = extract_issue_status_update(change["status_change"])
+        assert result is not None
 
         # GOOD: Specific status value assertion
         assert result["status_enum"] == Status.CLOSED
@@ -70,6 +72,7 @@ class TestAssertionQualityIssueStatusChanges:
         assert result["github_state"] == "closed"
         # GOOD: Verify this is the only state that maps to "closed"
         non_closed_result = extract_issue_status_update("todo -> in-progress")
+        assert non_closed_result is not None
         assert non_closed_result["github_state"] == "open"
 
     @pytest.mark.parametrize(
@@ -89,6 +92,7 @@ class TestAssertionQualityIssueStatusChanges:
         # Execute: Process status change through service
         change_str = f"todo -> {status.value}"
         result = extract_issue_status_update(change_str)
+        assert result is not None
 
         # GOOD: Verify correct enum value
         assert result["status_enum"] == status, f"Wrong enum for {status.value}"
@@ -114,6 +118,7 @@ class TestAssertionQualityIssueStatusChanges:
         assert issue["title"] == "Urgent fix", "Issue title should not change"
         assert issue["github_number"] == 99, "GitHub number should not change"
         # GOOD: Verify status extraction is correct
+        assert result is not None
         assert result["status_enum"] == Status.IN_PROGRESS
         assert result["github_state"] == "open"
 
@@ -134,6 +139,7 @@ class TestAssertionQualityMilestoneStatusChanges:
         result = extract_milestone_status_update(milestone["status_change"])
 
         # GOOD: Verify exact status enum (not just "closed" string)
+        assert result is not None
         assert result["status_enum"] == MilestoneStatus.CLOSED
         # GOOD: Verify GitHub state mapping is correct
         assert result["github_state"] == "closed"
@@ -157,6 +163,7 @@ class TestAssertionQualityMilestoneStatusChanges:
         result = extract_milestone_status_update(change_str)
 
         # GOOD: Verify correct status enum
+        assert result is not None
         assert (
             result["status_enum"] == status_enum
         ), f"Wrong enum for {status_enum.value}"
@@ -189,13 +196,15 @@ class TestAssertionQualityBatchOperations:
         assert len(results) == 5
         # GOOD: Verify all processed successfully
         assert all(r is not None for r in results)
+        # Type guard: filter out None values for subscripting
+        non_none_results = [r for r in results if r is not None]
         # GOOD: Verify each has correct status
         assert all(
-            r["status_enum"] == Status.IN_PROGRESS for r in results
+            r["status_enum"] == Status.IN_PROGRESS for r in non_none_results
         ), "All should transition to in-progress"
         # GOOD: Verify each has correct GitHub state
         assert all(
-            r["github_state"] == "open" for r in results
+            r["github_state"] == "open" for r in non_none_results
         ), "in-progress maps to open"
 
     def test_assertion_quality_for_batch_milestone_processing(self):
@@ -217,13 +226,15 @@ class TestAssertionQualityBatchOperations:
         # GOOD: Verify batch completion
         assert len(results) == 3
         assert all(r is not None for r in results)
+        # Type guard: filter out None values for subscripting
+        non_none_results = [r for r in results if r is not None]
         # GOOD: Verify all transitions are correct
         assert all(
-            r["status_enum"] == MilestoneStatus.CLOSED for r in results
+            r["status_enum"] == MilestoneStatus.CLOSED for r in non_none_results
         ), "All should close"
         # GOOD: Verify all map to GitHub closed state
         assert all(
-            r["github_state"] == "closed" for r in results
+            r["github_state"] == "closed" for r in non_none_results
         ), "Closed maps to closed"
 
 

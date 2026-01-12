@@ -45,6 +45,7 @@ class TestSyncBackendInterface:
 
         assert conflict.issue_id == "test123"
         assert conflict.local_version == issue
+        assert conflict.remote_version is not None
         assert conflict.remote_version["title"] == "Remote Issue"
         assert conflict.conflict_type == "both_modified"
 

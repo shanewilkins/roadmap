@@ -180,6 +180,8 @@ This is the issue content."""
         issue_file.write_text(content)
 
         success, issue, error = IssueParser.parse_issue_file_safe(issue_file)
+        assert success
+        assert issue is not None
         assert issue.id == "a1b2c3d4"
         assert issue.title == "Test Issue"
         assert issue.priority == Priority.HIGH
@@ -225,6 +227,7 @@ Missing required fields"""
         # Verify we can load it back
         success, loaded_issue, error = IssueParser.parse_issue_file_safe(issue_file)
         assert success
+        assert loaded_issue is not None
         assert loaded_issue.id == issue.id
         assert loaded_issue.title == issue.title
 
@@ -270,5 +273,6 @@ This is the milestone content."""
             milestone_file
         )
         assert success
+        assert loaded_milestone is not None
         assert loaded_milestone.name == milestone.name
         assert loaded_milestone.status == milestone.status

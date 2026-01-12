@@ -342,6 +342,7 @@ class TestProjectCreationService:
             "basic",
         )
 
+        assert result is not None
         assert result["filename"] == f"{result['id']}-test-project.md"
 
         # Verify file was created
@@ -368,6 +369,7 @@ class TestProjectCreationService:
             "basic",
         )
 
+        assert result is not None
         # Verify file content
         project_file = mock_core.roadmap_dir / "projects" / result["filename"]
         content = project_file.read_text()

@@ -108,6 +108,7 @@ class TestPerformanceProfiler:
         profiler.end_operation("test_op", error=True)
 
         profile = profiler.get_profile("test_op")
+        assert profile is not None
         assert profile.errors == 1
         assert profile.count == 1
 

@@ -8,20 +8,19 @@ from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 
 if TYPE_CHECKING:
-    from roadmap.core.ports.issue_repository import IssueRepository
-    from roadmap.core.services.core import RoadmapCore
+    from roadmap.infrastructure.core import RoadmapCore  # noqa: F401
 
 logger = get_logger(__name__)
 
 
 class IssuePersistenceService:
     """Handles persistence of issues to local storage (YAML files).
-    
+
     Centralizes all operations for:
     - Updating the github_issue field on Issue objects
     - Managing remote_ids dictionaries
     - Saving issues to YAML repository
-    
+
     This eliminates the duplication of save patterns in pull_issue() and push_issue().
     """
 
@@ -32,7 +31,7 @@ class IssuePersistenceService:
         backend_id: int | str,
     ) -> None:
         """Update an issue's remote_ids dictionary with a new backend mapping.
-        
+
         Args:
             issue: Issue to update
             backend_name: Backend name (e.g., "github")
@@ -53,9 +52,9 @@ class IssuePersistenceService:
     @staticmethod
     def update_github_issue_number(issue: Issue, github_number: int) -> None:
         """Update the github_issue field on an Issue object.
-        
+
         This field is used for quick GitHub lookups without querying remote_ids.
-        
+
         Args:
             issue: Issue to update
             github_number: GitHub issue number to set
@@ -71,11 +70,11 @@ class IssuePersistenceService:
     @staticmethod
     def save_issue(issue: Issue, core: "RoadmapCore") -> bool:
         """Save an issue to local YAML repository.
-        
+
         Args:
             issue: Issue to save
             core: RoadmapCore for accessing repositories
-            
+
         Returns:
             True if save succeeded, False otherwise
         """
@@ -87,7 +86,7 @@ class IssuePersistenceService:
                 )
                 return False
 
-            repo: "IssueRepository" = core.issue_service.repository
+            repo = core.issue_service.repository
             if not repo:
                 logger.error(
                     "issue_repository_not_available",
@@ -128,10 +127,10 @@ class IssuePersistenceService:
         sync_issue: SyncIssue,
     ) -> None:
         """Apply data from a SyncIssue to update a local Issue object.
-        
+
         Used when pulling changes from remote backend to update local state.
         Preserves local ID while updating fields from remote.
-        
+
         Args:
             local_issue: Local issue to update (ID preserved)
             sync_issue: Remote sync_issue with new data
@@ -171,23 +170,25 @@ class IssuePersistenceService:
         core: "RoadmapCore",
     ) -> Issue | None:
         """Retrieve an issue from the local repository.
-        
+
         Args:
             issue_id: Issue ID to retrieve
             core: RoadmapCore for accessing repositories
-            
+
         Returns:
             Issue if found, None otherwise
         """
         try:
-            repo: "IssueRepository" = core.issue_service.repository
+            repo = core.issue_service.repository
             issue = repo.get(issue_id)
 
             if issue:
                 logger.debug(
                     "retrieved_issue_from_repo",
                     issue_id=issue_id,
-                    title=issue.title,
+                    title=issue.get("title")
+                    if isinstance(issue, dict)
+                    else issue.title,
                 )
             else:
                 logger.debug("issue_not_found_in_repo", issue_id=issue_id)
@@ -205,10 +206,10 @@ class IssuePersistenceService:
     @staticmethod
     def is_github_linked(issue: Issue) -> bool:
         """Check if an issue is already linked to GitHub.
-        
+
         Args:
             issue: Issue to check
-            
+
         Returns:
             True if issue has github_issue set or github in remote_ids
         """
@@ -223,12 +224,12 @@ class IssuePersistenceService:
     @staticmethod
     def get_github_issue_number(issue: Issue) -> int | str | None:
         """Extract the GitHub issue number from an Issue.
-        
+
         Checks both github_issue field and remote_ids dict.
-        
+
         Args:
             issue: Issue to extract from
-            
+
         Returns:
             GitHub issue number if found, None otherwise
         """

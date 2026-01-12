@@ -8,8 +8,10 @@ from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 
 if TYPE_CHECKING:
-    from roadmap.core.ports.remote_link_repository import RemoteLinkRepository
-    from roadmap.core.services.core import RoadmapCore
+    from roadmap.adapters.persistence.repositories.remote_link_repository import (  # noqa: F401
+        RemoteLinkRepository,
+    )
+    from roadmap.infrastructure.core import RoadmapCore  # noqa: F401
 
 logger = get_logger(__name__)
 
@@ -73,9 +75,9 @@ class SyncLinkingService:
             # back to the repository's canonical signature.
             try:
                 repo.link_issue(
-                    local_issue_id=local_issue_id,
+                    issue_uuid=local_issue_id,
                     backend_name=backend_name,
-                    remote_issue_id=str(remote_issue_id),
+                    remote_id=str(remote_issue_id),
                 )
             except TypeError:
                 # Fallback to the repository's expected parameter names
@@ -229,7 +231,7 @@ class SyncLinkingService:
         try:
             local_id = repo.get_issue_uuid(
                 backend_name=backend_name,
-                remote_issue_id=str(remote_issue_id),
+                remote_id=str(remote_issue_id),
             )
 
             if local_id:
@@ -317,7 +319,7 @@ class SyncLinkingService:
         try:
             # Try to get any remote ID for this local issue + backend
             remote_id = repo.get_remote_id(
-                local_issue_id=local_issue_id,
+                issue_uuid=local_issue_id,
                 backend_name=backend_name,
             )
             return bool(remote_id)

@@ -24,7 +24,7 @@ class TestGitHubSyncBackendInitialization:
         }
 
         with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+            "roadmap.adapters.sync.backends.github_sync_backend.GitHubClientWrapper"
         ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
 

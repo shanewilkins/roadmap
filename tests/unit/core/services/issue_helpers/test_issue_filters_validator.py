@@ -90,6 +90,7 @@ class TestIssueFilterValidator:
         )
 
         assert is_valid is False
+        assert error is not None
         assert "assignee" in error.lower() and "my-issues" in error.lower()
 
     def test_validate_filters_backlog_and_unassigned_conflict(self):

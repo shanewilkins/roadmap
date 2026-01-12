@@ -160,6 +160,7 @@ class TestEndToEndWorkflows:
 
         # Verify status update via database
         updated_issue = core.issues.get(issue_objects[0].id)
+        assert updated_issue is not None
         assert str(updated_issue.status.value) == "in-progress"
 
         # Step 7: List issues with filters

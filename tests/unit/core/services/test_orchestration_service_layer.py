@@ -367,6 +367,7 @@ class TestGitHubDataMappingService:
 
         # Execute: Process while preserving context
         result = extract_issue_status_update(issue["status_change"])
+        assert result is not None
 
         # Verify: All context preserved and status extracted
         assert issue["number"] == 100

@@ -395,6 +395,7 @@ class TestGitHooksIntegration:
 
         # Check if the issue was updated with git information
         updated_issue = automation.core.issues.get(issue.id)
+        assert updated_issue is not None
 
         # The key test is that the issue was properly tracked and updated
         # Test the git integration is working even if sync count is 0 due to prior processing

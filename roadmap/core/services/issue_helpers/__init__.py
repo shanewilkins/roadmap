@@ -1,10 +1,11 @@
 """Issue-related helper utilities for filtering, updating, and management.
 
-Provides services and helpers for issue filtering, querying, updates,
-and kanban board operations.
+DEPRECATED: This module is deprecated. Import directly from issue_filter_service instead.
+Example: from roadmap.core.services.issue_filter_service import IssueQueryService
 """
 
-from roadmap.core.services.issue_helpers.issue_filters import (
+# Backward compatibility re-exports
+from roadmap.core.services.issue_filter_service import (
     IssueFilterValidator,
     IssueQueryService,
     WorkloadCalculator,

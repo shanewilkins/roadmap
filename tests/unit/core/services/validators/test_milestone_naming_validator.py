@@ -132,6 +132,7 @@ class TestValidateWithFeedback:
         """Test empty name validation."""
         valid, error = MilestoneNamingValidator.validate_with_feedback("")
         assert valid is False
+        assert error is not None
         assert "empty" in error.lower()
 
     def test_name_too_long(self):
@@ -146,18 +147,21 @@ class TestValidateWithFeedback:
         """Test invalid character detection."""
         valid, error = MilestoneNamingValidator.validate_with_feedback("sprint#1")
         assert valid is False
+        assert error is not None
         assert "alphanumeric" in error.lower() or "characters" in error.lower()
 
     def test_consecutive_hyphens(self):
         """Test consecutive hyphen detection."""
         valid, error = MilestoneNamingValidator.validate_with_feedback("sprint--1")
         assert valid is False
+        assert error is not None
         assert "consecutive" in error.lower()
 
     def test_consecutive_underscores(self):
         """Test consecutive underscore detection."""
         valid, error = MilestoneNamingValidator.validate_with_feedback("phase__beta")
         assert valid is False
+        assert error is not None
         assert "consecutive" in error.lower()
 
     def test_name_with_space_suggests_safe_name(self):

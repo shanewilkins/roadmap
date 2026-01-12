@@ -223,6 +223,7 @@ class TestBuildCommitObject:
                 "hash123", "Test Author", date, "Test commit message", files, 50, 20
             )
 
+            assert commit is not None
             assert commit.files_changed == files
             assert len(commit.files_changed) == 3
 

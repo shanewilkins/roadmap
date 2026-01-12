@@ -68,12 +68,12 @@ class FrontmatterParser:
         )
 
         # Strip trailing whitespace from frontmatter to prevent ruff errors
-        frontmatter_str = frontmatter_str.rstrip()
+        frontmatter_str_stripped = frontmatter_str.rstrip() if frontmatter_str else ""
 
         # Ensure content doesn't have trailing whitespace
         content_stripped = content.rstrip()
 
-        full_content = f"---\n{frontmatter_str}\n---\n\n{content_stripped}\n"
+        full_content = f"---\n{frontmatter_str_stripped}\n---\n\n{content_stripped}\n"
 
         file_path.write_text(full_content, encoding="utf-8")
 
