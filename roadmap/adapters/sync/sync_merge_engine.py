@@ -11,7 +11,12 @@ from typing import Any
 
 from structlog import get_logger
 
-from roadmap.common.constants import Status
+from roadmap.adapters.sync.services.remote_issue_creation_service import (
+    RemoteIssueCreationService,
+)
+from roadmap.adapters.sync.services.sync_state_update_service import (
+    SyncStateUpdateService,
+)
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.services.remote_fetcher import RemoteFetcher
@@ -47,6 +52,10 @@ class SyncMergeEngine:
         self.state_comparator = state_comparator
         self.conflict_resolver = conflict_resolver
         self.state_manager = state_manager
+
+        # Initialize delegated services
+        self._issue_creation_service = RemoteIssueCreationService(core)
+        self._state_update_service = SyncStateUpdateService(state_manager)
 
     def _load_baseline_state(self):
         try:
@@ -134,31 +143,7 @@ class SyncMergeEngine:
         return pulled_count, pull_errors, pulled_remote_ids
 
     def _update_baseline_for_pulled(self, pulled_remote_ids: list[str]) -> None:
-        backend_name = (
-            self.backend.get_backend_name()
-            if hasattr(self.backend, "get_backend_name")
-            else "github"
-        )
-        for remote_id in pulled_remote_ids:
-            try:
-                local_uuid = self.core.db.remote_links.get_issue_uuid(
-                    backend_name=backend_name, remote_id=remote_id
-                )
-                if not local_uuid:
-                    continue
-                local_issue = self.core.issues.get(local_uuid)
-                if not local_issue:
-                    continue
-                try:
-                    self.state_manager.save_base_state(local_issue, remote_version=True)
-                except Exception:
-                    logger.debug(
-                        "save_base_state_for_pulled_failed",
-                        remote_id=remote_id,
-                        local_uuid=local_uuid,
-                    )
-            except Exception:
-                continue
+        self._state_update_service.update_baseline_for_pulled(pulled_remote_ids)
 
     def _filter_unchanged_issues_from_base(
         self, issues: list, current_local: dict, base_state_issues: dict
@@ -327,34 +312,9 @@ class SyncMergeEngine:
     def _create_issue_from_remote(
         self, remote_id: str | int, remote_issue: SyncIssue
     ) -> Issue:
-        backend_id = remote_issue.backend_id or remote_id
-        title = remote_issue.title or f"GitHub #{backend_id}"
-        body = remote_issue.headline or ""
-
-        if body:
-            content = f"{body}\n\n---\n*Synced from GitHub: #{backend_id}*"
-        else:
-            content = f"*Synced from GitHub: #{backend_id}*"
-
-        status = Status.CLOSED if remote_issue.status == "closed" else Status.TODO
-
-        labels = list(remote_issue.labels or [])
-        if "synced:from-github" not in labels:
-            labels.append("synced:from-github")
-
-        milestone = remote_issue.milestone
-
-        issue = Issue(
-            title=title,
-            headline=remote_issue.headline or None,
-            content=content,
-            labels=labels,
-            assignee=remote_issue.assignee,
-            milestone=milestone,
-            status=status,
+        return self._issue_creation_service.create_issue_from_remote(
+            remote_id, remote_issue
         )
-
-        return issue
 
     def _analyze_changes(self, local_issues_dict, remote_issues_data, base_state):
         return self.state_comparator.analyze_three_way(

@@ -9,6 +9,12 @@ from typing import Any
 
 from structlog import get_logger
 
+from roadmap.adapters.sync.services.sync_analysis_service import SyncAnalysisService
+from roadmap.adapters.sync.services.sync_authentication_service import (
+    SyncAuthenticationService,
+)
+from roadmap.adapters.sync.services.sync_data_fetch_service import SyncDataFetchService
+from roadmap.adapters.sync.services.sync_report_service import SyncReportService
 from roadmap.adapters.sync.sync_merge_engine import SyncMergeEngine
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
@@ -55,6 +61,14 @@ class SyncMergeOrchestrator:
         self.state_comparator = state_comparator or SyncStateComparator(backend=backend)
         self.conflict_resolver = conflict_resolver or SyncConflictResolver()
         self.state_manager = SyncStateManager(core.roadmap_dir)
+
+        # Initialize delegated services
+        self._auth_service = SyncAuthenticationService(backend)
+        self._fetch_service = SyncDataFetchService(core, backend)
+        self._analysis_service = SyncAnalysisService(
+            self.state_comparator, self.state_manager
+        )
+
         # Extraction: delegate helper implementations to a dedicated engine
         self._engine = SyncMergeEngine(
             core=self.core,
@@ -66,134 +80,22 @@ class SyncMergeOrchestrator:
 
     # Helper extraction to reduce complexity of sync_all_issues
     def _ensure_authenticated(self, report: SyncReport) -> bool:
-        try:
-            if not self.backend.authenticate():
-                report.error = "Backend authentication failed"
-                logger.error(
-                    "backend_authentication_failed",
-                    operation="authenticate",
-                    backend_type=type(self.backend).__name__,
-                    suggested_action="check_credentials",
-                )
-                return False
-            logger.info("backend_authenticated_successfully")
-            return True
-        except (ConnectionError, TimeoutError) as e:
-            report.error = f"Backend authentication error: {str(e)}"
-            logger.error(
-                "backend_authentication_error",
-                operation="authenticate",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=True,
-                suggested_action="retry_connection",
-            )
-            return False
-        except Exception as e:
-            report.error = f"Backend authentication error: {str(e)}"
-            logger.error(
-                "backend_authentication_error",
-                operation="authenticate",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=False,
-                suggested_action="check_backend_status",
-            )
-            return False
+        return self._auth_service.ensure_authenticated(report)
 
     def _fetch_remote_issues(self, report: SyncReport):
-        try:
-            logger.debug("fetching_remote_issues")
-            remote_issues_data = self.backend.get_issues()
-            if remote_issues_data is None:
-                report.error = "Failed to fetch remote issues"
-                logger.error(
-                    "remote_issues_fetch_returned_none",
-                    operation="fetch_remote_issues",
-                    suggested_action="check_backend_connectivity",
-                )
-                return None
-            logger.info("remote_issues_fetched", remote_count=len(remote_issues_data))
-            return remote_issues_data
-        except (ConnectionError, TimeoutError) as e:
-            report.error = f"Failed to fetch remote issues: {str(e)}"
-            logger.error(
-                "remote_issues_fetch_error",
-                operation="fetch_remote_issues",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=True,
-                suggested_action="retry_after_delay",
-            )
-            return None
-        except Exception as e:
-            report.error = f"Failed to fetch remote issues: {str(e)}"
-            logger.error(
-                "remote_issues_fetch_error",
-                operation="fetch_remote_issues",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=False,
-                suggested_action="check_backend_configuration",
-            )
-            return None
+        return self._fetch_service.fetch_remote_issues(report)
 
     def _fetch_local_issues(self, report: SyncReport):
-        try:
-            logger.debug("fetching_local_issues")
-            local_issues = self.core.issues.list_all_including_archived() or []
-            logger.info("local_issues_fetched", local_count=len(local_issues))
-            return local_issues
-        except OSError as e:
-            report.error = f"Failed to fetch local issues: {str(e)}"
-            logger.error(
-                "local_issues_fetch_error",
-                operation="fetch_local_issues",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=False,
-                suggested_action="check_file_permissions",
-            )
-            return None
-        except Exception as e:
-            report.error = f"Failed to fetch local issues: {str(e)}"
-            logger.error(
-                "local_issues_fetch_error",
-                operation="fetch_local_issues",
-                error_type=type(e).__name__,
-                error=str(e),
-                error_classification="sync_error",
-            )
-            return None
+        return self._fetch_service.fetch_local_issues(report)
 
     def _count_active_archived(self, local_issues):
-        active_issues_count = 0
-        archived_issues_count = 0
-        for issue in local_issues:
-            if issue.file_path and "archive" in issue.file_path:
-                archived_issues_count += 1
-            else:
-                active_issues_count += 1
-        return active_issues_count, archived_issues_count
+        return self._fetch_service.count_active_archived(local_issues)
 
     def _count_milestones(self):
-        try:
-            all_milestones = self.core.milestones.list()
-            active_milestones_count = 0
-            archived_milestones_count = 0
-            for milestone in all_milestones:
-                if (
-                    hasattr(milestone, "file_path")
-                    and milestone.file_path
-                    and "archive" in milestone.file_path
-                ):
-                    archived_milestones_count += 1
-                else:
-                    active_milestones_count += 1
-            return all_milestones, active_milestones_count, archived_milestones_count
-        except Exception as e:
-            logger.debug("milestone_count_failed", error=str(e))
-            return [], 0, 0
+        return self._fetch_service.count_milestones()
+
+    def _count_remote_stats(self, remote_issues_data):
+        return self._fetch_service.count_remote_stats(remote_issues_data)
 
     def _analyze_changes(self, local_issues_dict, remote_issues_data, base_state):
         return self._engine._analyze_changes(
@@ -453,66 +355,14 @@ class SyncMergeOrchestrator:
             local_issues_dict, remote_issues_data, dry_run=dry_run
         )
 
-    def _count_remote_stats(self, remote_issues_data):
-        """Return counts for remote issues and milestones in a safe way."""
-        return self._engine._count_remote_stats(remote_issues_data)
-
     def _load_baseline_safe(self):
         """Load baseline state but swallow errors and return None on failure."""
-        try:
-            logger.debug("loading_sync_state")
-            base_state = self._load_baseline_state()
-            if base_state:
-                logger.info(
-                    "previous_sync_state_loaded",
-                    base_issues_count=len(base_state.issues),
-                    last_sync=base_state.last_sync.isoformat()
-                    if base_state.last_sync
-                    else None,
-                )
-            else:
-                logger.info(
-                    "no_previous_sync_state_found", reason="first_sync_or_state_cleared"
-                )
-        except Exception:
-            logger.warning("sync_state_load_warning", reason="will_treat_as_first_sync")
-            base_state = None
-
-        return base_state
+        return self._analysis_service.load_baseline_safe()
 
     def _analyze_and_classify(self, local_issues_dict, remote_issues_data, base_state):
         """Run comparator and classify changes into categories used by sync flow."""
-        changes = self._analyze_changes(
+        return self._analysis_service.analyze_and_classify(
             local_issues_dict, remote_issues_data, base_state
-        )
-
-        conflicts = [c for c in changes if c.has_conflict]
-        local_only_changes = [c for c in changes if c.is_local_only_change()]
-        remote_only_changes = [c for c in changes if c.is_remote_only_change()]
-        no_changes = [c for c in changes if c.conflict_type == "no_change"]
-
-        updates = [c.local_state for c in local_only_changes if c.local_state]
-        pulls = [c.issue_id for c in remote_only_changes]
-        up_to_date = [c.issue_id for c in no_changes]
-
-        logger.debug(
-            "three_way_analysis_complete",
-            total_changes=len(changes),
-            conflicts=len(conflicts),
-            local_only=len(local_only_changes),
-            remote_only=len(remote_only_changes),
-            no_change=len(no_changes),
-        )
-
-        return (
-            changes,
-            conflicts,
-            local_only_changes,
-            remote_only_changes,
-            no_changes,
-            updates,
-            pulls,
-            up_to_date,
         )
 
     def _populate_report_fields(
@@ -535,21 +385,24 @@ class SyncMergeOrchestrator:
         changes,
     ):
         """Populate the SyncReport fields from computed values."""
-        report.total_issues = len(local_issues)
-        report.active_issues = active_issues_count
-        report.archived_issues = archived_issues_count
-        report.total_milestones = len(all_milestones)
-        report.active_milestones = active_milestones_count
-        report.archived_milestones = archived_milestones_count
-        report.remote_total_issues = remote_issues_count
-        report.remote_open_issues = remote_open_count
-        report.remote_closed_issues = remote_closed_count
-        report.remote_total_milestones = remote_milestones_count
-        report.conflicts_detected = len(conflicts)
-        report.issues_up_to_date = len(up_to_date)
-        report.issues_needs_push = len(local_only_changes)
-        report.issues_needs_pull = len(remote_only_changes)
-        report.changes = changes
+        SyncReportService.populate_report_fields(
+            report,
+            local_issues,
+            active_issues_count,
+            archived_issues_count,
+            all_milestones,
+            active_milestones_count,
+            archived_milestones_count,
+            remote_issues_count,
+            remote_open_count,
+            remote_closed_count,
+            remote_milestones_count,
+            conflicts,
+            up_to_date,
+            local_only_changes,
+            remote_only_changes,
+            changes,
+        )
 
     def sync_all_issues(
         self,
