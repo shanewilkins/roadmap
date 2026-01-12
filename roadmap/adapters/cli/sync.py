@@ -152,14 +152,8 @@ def _show_baseline(core, backend, verbose, console_inst) -> bool:
 
 def _reset_baseline(core, backend, verbose, console_inst) -> bool:
     """Handle the `--reset-baseline` flag: force recalculation of baseline."""
-    import sqlite3
-
-    import yaml
 
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.adapters.sync.sync_retrieval_orchestrator import (
-        SyncRetrievalOrchestrator,
-    )
 
     console_inst.print(
         "⚠️  WARNING: Resetting baseline will:",
@@ -175,207 +169,21 @@ def _reset_baseline(core, backend, verbose, console_inst) -> bool:
         return True
 
     # Determine backend
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_type = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_type = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_type = "git"
-
-    # Prepare config for backend
-    if backend_type == "github":
-        github_config = full_config.get("github", {})
-        from roadmap.infrastructure.security.credentials import CredentialManager
-
-        cred_manager = CredentialManager()  # type: ignore[call-arg]
-        token = cred_manager.get_token()
-
-        config_dict = {
-            "owner": github_config.get("owner"),
-            "repo": github_config.get("repo"),
-            "token": token,
-        }
-    else:
-        config_dict = {}
-
-    sync_backend = get_sync_backend(backend_type, core, config_dict)  # type: ignore
+    backend_type, sync_backend = _resolve_backend_and_init(
+        core, backend, get_sync_backend
+    )
     if not sync_backend:
         console_inst.print("❌ Failed to initialize backend", style="bold red")
         sys.exit(1)
 
     # Clear existing baseline from database
-    try:
-        db_path = core.db_dir / "state.db"
-        if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM sync_base_state")
-            conn.commit()
-            conn.close()
-            console_inst.print("✅ Cleared existing baseline from database")
-    except OSError as e:
-        logger.warning(
-            "baseline_clear_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            is_recoverable=True,
-        )
-        console_inst.print(
-            f"⚠️  Warning: Could not clear old baseline: {str(e)}",
-            style="yellow",
-        )
-    except Exception as e:
-        logger.warning(
-            "baseline_clear_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-        )
-        console_inst.print(
-            f"⚠️  Warning: Could not clear old baseline: {str(e)}",
-            style="yellow",
-        )
+    _clear_baseline_db(core, console_inst)
 
-    # Create fresh baseline from current local state with progress feedback
-    orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
-
-    console_inst.print(
-        "\n📊 Creating baseline from current local state...", style="cyan"
+    # Create fresh baseline from current local state and save
+    success = _create_and_save_baseline(
+        core, sync_backend, backend_type, console_inst, verbose
     )
-
-    try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            transient=True,
-        ) as progress:
-            task = progress.add_task("Loading issues from disk...", total=None)
-            new_baseline = orchestrator._create_initial_baseline()
-            progress.update(task, completed=True)
-
-            if not new_baseline or len(new_baseline.issues) == 0:
-                logger.warning(
-                    "baseline_reset_no_issues",
-                    operation="reset_baseline",
-                )
-                console_inst.print(
-                    "❌ No local issues found. Create issues first with `roadmap issue create`.",
-                    style="bold red",
-                )
-                return True
-
-            console_inst.print(
-                f"✅ Loaded {len(new_baseline.issues)} issues",
-                style="green",
-            )
-
-    except Exception as e:
-        logger.error(
-            "baseline_creation_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            error_classification="sync_error",
-        )
-        console_inst.print(
-            f"❌ Failed to load issues: {str(e)}",
-            style="bold red",
-        )
-        sys.exit(1)
-
-    # Save baseline to database
-    console_inst.print("💾 Saving baseline to database...", style="cyan")
-
-    try:
-        baseline_dict = {
-            issue_id: {
-                "status": state.status,
-                "assignee": state.assignee,
-                "milestone": state.milestone,
-                "headline": state.headline or "",
-                "content": state.content or "",
-                "labels": state.labels or [],
-                "updated_at": state.updated_at.isoformat()
-                if hasattr(state.updated_at, "isoformat")
-                else str(state.updated_at),
-            }
-            for issue_id, state in new_baseline.issues.items()
-        }
-
-        if not core.db.save_sync_baseline(baseline_dict):
-            logger.error(
-                "baseline_database_save_returned_false",
-                operation="reset_baseline",
-                issue_count=len(baseline_dict),
-            )
-            console_inst.print(
-                "❌ Failed to save baseline to database (database operation failed)",
-                style="bold red",
-            )
-            sys.exit(1)
-
-        console_inst.print(
-            "✅ Baseline reset successfully!",
-            style="bold green",
-        )
-        console_inst.print(
-            f"   Backend: {backend_type}",
-        )
-        console_inst.print(
-            f"   Issues in baseline: {len(new_baseline.issues)}",
-        )
-
-        if verbose and new_baseline.issues:
-            console_inst.print("\n   Issues in new baseline:", style="bold")
-            for issue_id, issue_state in sorted(new_baseline.issues.items()):
-                console_inst.print(
-                    f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
-                )
-
-        logger.info(
-            "baseline_reset_successful",
-            operation="reset_baseline",
-            backend=backend_type,
-            issue_count=len(new_baseline.issues),
-        )
-
-    except OSError as e:
-        logger.error(
-            "baseline_save_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            is_recoverable=True,
-            suggested_action="check_disk_space",
-        )
-        console_inst.print(
-            f"❌ Failed to save baseline (disk error): {str(e)}",
-            style="bold red",
-        )
-        sys.exit(1)
-    except Exception as e:
-        logger.error(
-            "baseline_save_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            error_classification="sync_error",
-        )
-        console_inst.print(
-            f"❌ Failed to save baseline: {str(e)}",
-            style="bold red",
-        )
+    if not success:
         sys.exit(1)
 
     return True
@@ -509,6 +317,449 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
         state_comparator,
         conflict_resolver,
     )
+
+
+def _resolve_backend_and_init(core, backend, get_sync_backend_callable):
+    """Resolve backend_type and initialize the sync backend instance.
+
+    Returns tuple `(backend_type, sync_backend)` where `sync_backend` may
+    be None if initialization failed.
+    """
+    import yaml
+
+    config_file = core.roadmap_dir / "config.yaml"
+    full_config: dict = {}
+    if config_file.exists():
+        with open(config_file) as f:
+            loaded = yaml.safe_load(f)
+            if isinstance(loaded, dict):
+                full_config = loaded
+
+    if backend:
+        backend_type = backend.lower()
+    else:
+        if full_config.get("github", {}).get("sync_backend"):
+            backend_type = str(full_config["github"]["sync_backend"]).lower()
+        else:
+            backend_type = "git"
+
+    # Prepare config for backend
+    if backend_type == "github":
+        github_config = full_config.get("github", {})
+        from roadmap.infrastructure.security.credentials import CredentialManager
+
+        cred_manager = CredentialManager()  # type: ignore[call-arg]
+        token = cred_manager.get_token()
+
+        config_dict = {
+            "owner": github_config.get("owner"),
+            "repo": github_config.get("repo"),
+            "token": token,
+        }
+    else:
+        config_dict = {}
+
+    sync_backend = get_sync_backend_callable(backend_type, core, config_dict)  # type: ignore[arg-type]
+    return backend_type, sync_backend
+
+
+def _clear_baseline_db(core, console_inst):
+    """Clear baseline entries from the SQLite DB if present.
+
+    Logs warnings but does not raise on failure.
+    """
+    import sqlite3
+
+    try:
+        db_path = core.db_dir / "state.db"
+        if db_path.exists():
+            conn = sqlite3.connect(str(db_path))
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM sync_base_state")
+            conn.commit()
+            conn.close()
+            console_inst.print("✅ Cleared existing baseline from database")
+    except OSError as e:
+        logger.warning(
+            "baseline_clear_failed",
+            operation="reset_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+            is_recoverable=True,
+        )
+        console_inst.print(
+            f"⚠️  Warning: Could not clear old baseline: {str(e)}", style="yellow"
+        )
+    except Exception as e:
+        logger.warning(
+            "baseline_clear_failed",
+            operation="reset_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+        )
+        console_inst.print(
+            f"⚠️  Warning: Could not clear old baseline: {str(e)}", style="yellow"
+        )
+
+
+def _create_and_save_baseline(
+    core, sync_backend, backend_type, console_inst, verbose
+) -> bool:
+    """Create an initial baseline from local issues and save it to DB.
+
+    Returns True on success, False otherwise.
+    """
+    from roadmap.adapters.sync.sync_retrieval_orchestrator import (
+        SyncRetrievalOrchestrator,
+    )
+
+    orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
+
+    console_inst.print(
+        "\n📊 Creating baseline from current local state...", style="cyan"
+    )
+
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True,
+        ) as progress:
+            task = progress.add_task("Loading issues from disk...", total=None)
+            new_baseline = orchestrator._create_initial_baseline()
+            progress.update(task, completed=True)
+
+            if not new_baseline or len(new_baseline.issues) == 0:
+                logger.warning("baseline_reset_no_issues", operation="reset_baseline")
+                console_inst.print(
+                    "❌ No local issues found. Create issues first with `roadmap issue create`.",
+                    style="bold red",
+                )
+                return False
+
+            console_inst.print(
+                f"✅ Loaded {len(new_baseline.issues)} issues", style="green"
+            )
+
+    except Exception as e:
+        logger.error(
+            "baseline_creation_failed",
+            operation="reset_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+            error_classification="sync_error",
+        )
+        console_inst.print(f"❌ Failed to load issues: {str(e)}", style="bold red")
+        return False
+
+    # Save baseline to database
+    console_inst.print("💾 Saving baseline to database...", style="cyan")
+
+    try:
+        baseline_dict = {
+            issue_id: {
+                "status": state.status,
+                "assignee": state.assignee,
+                "milestone": state.milestone,
+                "headline": state.headline or "",
+                "content": state.content or "",
+                "labels": state.labels or [],
+                "updated_at": state.updated_at.isoformat()
+                if hasattr(state.updated_at, "isoformat")
+                else str(state.updated_at),
+            }
+            for issue_id, state in new_baseline.issues.items()
+        }
+
+        if not core.db.save_sync_baseline(baseline_dict):
+            logger.error(
+                "baseline_database_save_returned_false",
+                operation="reset_baseline",
+                issue_count=len(baseline_dict),
+            )
+            console_inst.print(
+                "❌ Failed to save baseline to database (database operation failed)",
+                style="bold red",
+            )
+            return False
+
+        console_inst.print("✅ Baseline reset successfully!", style="bold green")
+        console_inst.print(f"   Backend: {backend_type}")
+        console_inst.print(f"   Issues in baseline: {len(new_baseline.issues)}")
+
+        if verbose and new_baseline.issues:
+            console_inst.print("\n   Issues in new baseline:", style="bold")
+            for issue_id, issue_state in sorted(new_baseline.issues.items()):
+                console_inst.print(
+                    f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
+                )
+
+        logger.info(
+            "baseline_reset_successful",
+            operation="reset_baseline",
+            backend=backend_type,
+            issue_count=len(new_baseline.issues),
+        )
+        return True
+
+    except OSError as e:
+        logger.error(
+            "baseline_save_failed",
+            operation="reset_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+            is_recoverable=True,
+            suggested_action="check_disk_space",
+        )
+        console_inst.print(
+            f"❌ Failed to save baseline (disk error): {str(e)}", style="bold red"
+        )
+        return False
+    except Exception as e:
+        logger.error(
+            "baseline_save_failed",
+            operation="reset_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+            error_classification="sync_error",
+        )
+        console_inst.print(f"❌ Failed to save baseline: {str(e)}", style="bold red")
+        return False
+
+
+def _capture_and_save_post_sync_baseline(
+    core, console_inst, pre_sync_issue_count, verbose
+):
+    """Capture local issues and save them as the post-sync baseline.
+
+    This helper isolates the baseline capture / save control flow from
+    the main `sync()` command to reduce cyclomatic complexity.
+    """
+    try:
+        baseline_dict = {}
+
+        all_local_issues = core.issues.list_all_including_archived()
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console_inst,
+            transient=True,
+        ) as progress:
+            task = progress.add_task(
+                f"Building baseline... (0/{len(all_local_issues)})",
+                total=len(all_local_issues),
+            )
+
+            for idx, issue in enumerate(all_local_issues):
+                labels = issue.labels or []
+                sorted_labels = sorted(labels) if labels else []
+
+                baseline_dict[issue.id] = {
+                    "status": (
+                        issue.status.value
+                        if hasattr(issue.status, "value")
+                        else str(issue.status)
+                    ),
+                    "assignee": issue.assignee,
+                    "milestone": issue.milestone,
+                    "headline": issue.headline,
+                    "content": issue.content,
+                    "labels": sorted_labels,
+                }
+
+                progress.update(
+                    task,
+                    description=f"Building baseline... ({idx + 1}/{len(all_local_issues)})",
+                    advance=1,
+                )
+
+        post_sync_issue_count = len(baseline_dict)
+
+        try:
+            result = core.db.save_sync_baseline(baseline_dict)
+            if result:
+                console_inst.print(
+                    f"   After:  {post_sync_issue_count} issues in baseline"
+                )
+            if post_sync_issue_count != pre_sync_issue_count:
+                diff = post_sync_issue_count - pre_sync_issue_count
+                symbol = "+" if diff > 0 else ""
+                console_inst.print(
+                    f"   Change: {symbol}{diff} issue(s)",
+                    style="green" if diff > 0 else "yellow",
+                )
+            if verbose:
+                console_inst.print(
+                    "✅ Baseline updated with post-sync state", style="dim"
+                )
+        except OSError as e:
+            logger.error(
+                "post_sync_baseline_save_exception",
+                operation="save_post_sync_baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+                is_recoverable=True,
+                suggested_action="check_disk_space",
+            )
+            if verbose:
+                console_inst.print(
+                    f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
+                )
+        except Exception as e:
+            logger.error(
+                "post_sync_baseline_save_exception",
+                operation="save_post_sync_baseline",
+                error_type=type(e).__name__,
+                error=str(e),
+                error_classification="sync_error",
+            )
+            if verbose:
+                console_inst.print(
+                    f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
+                )
+    except Exception as e:
+        logger.error(
+            "post_sync_baseline_capture_exception",
+            operation="capture_post_sync_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+            error_classification="sync_error",
+        )
+        if verbose:
+            console_inst.print(
+                f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
+            )
+
+
+def _perform_apply_phase(
+    core,
+    orchestrator,
+    console_inst,
+    analysis_report,
+    force_local,
+    force_remote,
+    push,
+    pull,
+    verbose,
+):
+    """Run the actual apply phase: perform sync and display summary.
+
+    Returns the sync report produced by the orchestrator.
+    """
+    console_inst.print(
+        "[bold cyan]Syncing with remote...[/bold cyan]", style="bold cyan"
+    )
+    report = orchestrator.sync_all_issues(
+        dry_run=False,
+        force_local=force_local,
+        force_remote=force_remote,
+        show_progress=True,
+        push_only=push,
+        pull_only=pull,
+    )
+
+    if report.error:
+        console_inst.print(f"\n❌ Sync error: {report.error}", style="bold red")
+        sys.exit(1)
+
+    # Display sync results with summary
+    console_inst.print("\n[bold cyan]✅ Sync Results[/bold cyan]")
+
+    # Show counts
+    pushed = analysis_report.issues_needs_push
+    pulled = analysis_report.issues_needs_pull
+
+    if pushed > 0:
+        console_inst.print(f"   📤 Pushed: {pushed}")
+    if pulled > 0:
+        console_inst.print(f"   📥 Pulled: {pulled}")
+
+    if pushed == 0 and pulled == 0:
+        console_inst.print("   ✓ Everything up-to-date")
+
+    console_inst.print()
+
+    # Explain the baseline concept for confused users
+    if analysis_report.issues_needs_pull > 0 or analysis_report.issues_needs_push > 0:
+        console_inst.print(
+            "[dim]💡 Tip: The baseline is the 'agreed-upon state' from the last sync.[/dim]"
+        )
+        console_inst.print(
+            "[dim]   After this sync completes, the baseline updates. The next sync should[/dim]"
+        )
+        console_inst.print(
+            "[dim]   show these same issues as 'up-to-date' (all three states match).[/dim]"
+        )
+
+    return report
+
+
+def _present_apply_intent(analysis_report, console_inst) -> bool:
+    """Present whether there are changes to apply and return True if apply is needed."""
+    if (
+        analysis_report.issues_needs_push > 0
+        or analysis_report.issues_needs_pull > 0
+        or analysis_report.conflicts_detected > 0
+    ):
+        console_inst.print("\n✨ [bold cyan]Applied Changes[/bold cyan]")
+        return True
+    else:
+        console_inst.print(
+            "\n[bold green]✓ Already up-to-date, no changes needed[/bold green]"
+        )
+        return False
+
+
+def _confirm_and_apply(
+    core,
+    orchestrator,
+    console_inst,
+    analysis_report,
+    force_local,
+    force_remote,
+    push,
+    pull,
+    verbose,
+):
+    """Ask for confirmation and run the apply phase if confirmed.
+
+    Returns the apply `report` if applied, or None if cancelled.
+    """
+    from roadmap.adapters.cli.sync_presenter import confirm_apply
+
+    # Ask for confirmation before applying
+    if not confirm_apply():
+        console_inst.print("Aborting sync (user cancelled)")
+        return None
+
+    report = _perform_apply_phase(
+        core,
+        orchestrator,
+        console_inst,
+        analysis_report,
+        force_local,
+        force_remote,
+        push,
+        pull,
+        verbose,
+    )
+
+    return report
+
+
+def _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose):
+    """Finalize sync run: capture post-sync baseline and print completion messages."""
+    # For real sync: capture and display BEFORE/AFTER
+    console_inst.print("[bold]BASELINE CHANGES:[/bold]")
+    console_inst.print(f"   Before: {pre_sync_issue_count} issues in baseline")
+
+    _capture_and_save_post_sync_baseline(
+        core, console_inst, pre_sync_issue_count, verbose
+    )
+
+    console_inst.print()
+    console_inst.print("✅ Sync completed successfully", style="bold green")
 
 
 def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst):
@@ -792,6 +1043,46 @@ def _handle_link_unlink(core, backend, link, unlink, issue_id, console_inst) -> 
     return True
 
 
+def _handle_pre_sync_actions(
+    core,
+    backend,
+    base: bool,
+    reset_baseline: bool,
+    clear_baseline: bool,
+    conflicts: bool,
+    link: str | None,
+    unlink: bool,
+    issue_id: str | None,
+    verbose: bool,
+    console_inst,
+) -> bool:
+    """Handle pre-sync CLI actions that may short-circuit the main sync flow.
+
+    Returns True when an action was handled and the caller should exit.
+    """
+    # Show baseline
+    if base:
+        return _show_baseline(core, backend, verbose, console_inst)
+
+    # Reset baseline
+    if reset_baseline:
+        return _reset_baseline(core, backend, verbose, console_inst)
+
+    # Clear baseline
+    if clear_baseline:
+        return _clear_baseline(core, backend, console_inst)
+
+    # Show conflicts
+    if conflicts:
+        return _show_conflicts(core, backend, verbose, console_inst)
+
+    # Link/unlink operations
+    if link or unlink:
+        return _handle_link_unlink(core, backend, link, unlink, issue_id, console_inst)
+
+    return False
+
+
 @click.command(name="sync")
 @click.option(
     "--dry-run",
@@ -950,30 +1241,21 @@ def sync(
             style="bold red",
         )
         sys.exit(1)
-
-    # Handle --base flag to show baseline state
-    if base:
-        if _show_baseline(core, backend, verbose, console_inst):
-            return
-
-    if reset_baseline:
-        if _reset_baseline(core, backend, verbose, console_inst):
-            return
-
-    # Handle --clear-baseline flag to clear baseline without syncing
-    if clear_baseline:
-        if _clear_baseline(core, backend, console_inst):
-            return
-
-    # Handle --conflicts flag to show conflict information
-    if conflicts:
-        if _show_conflicts(core, backend, verbose, console_inst):
-            return
-
-    # Handle --link and --unlink flags for manual remote ID management
-    if link or unlink:
-        if _handle_link_unlink(core, backend, link, unlink, issue_id, console_inst):
-            return
+    # Handle early pre-sync actions (baseline display/reset/clear, conflicts, link/unlink)
+    if _handle_pre_sync_actions(
+        core,
+        backend,
+        base,
+        reset_baseline,
+        clear_baseline,
+        conflicts,
+        link,
+        unlink,
+        issue_id,
+        verbose,
+        console_inst,
+    ):
+        return
 
     try:
         (
@@ -987,7 +1269,6 @@ def sync(
         ) = _init_sync_context(core, backend, baseline, dry_run, verbose, console_inst)
 
         # ANALYSIS PHASE: Run sync analyzer and present results
-        from roadmap.adapters.cli.sync_presenter import confirm_apply
 
         plan, analysis_report = _run_analysis_phase(
             orchestrator, push, pull, dry_run, verbose, console_inst
@@ -1000,72 +1281,26 @@ def sync(
             )
             return
 
-        # APPLY PHASE: Show what will be applied
-        if (
-            analysis_report.issues_needs_push > 0
-            or analysis_report.issues_needs_pull > 0
-            or analysis_report.conflicts_detected > 0
-        ):
-            console_inst.print("\n✨ [bold cyan]Applied Changes[/bold cyan]")
-        else:
-            console_inst.print(
-                "\n[bold green]✓ Already up-to-date, no changes needed[/bold green]"
-            )
+        # Determine whether there is anything to apply
+        if not _present_apply_intent(analysis_report, console_inst):
             return
 
-        # Ask for confirmation before applying
-        if not confirm_apply():
-            console_inst.print("Aborting sync (user cancelled)")
+        # Confirm and run apply phase
+        report = _confirm_and_apply(
+            core,
+            orchestrator,
+            console_inst,
+            analysis_report,
+            force_local,
+            force_remote,
+            push,
+            pull,
+            verbose,
+        )
+
+        # User cancelled
+        if report is None:
             return
-
-        # ACTUAL SYNC PHASE: Run sync with progress bars
-        console_inst.print(
-            "[bold cyan]Syncing with remote...[/bold cyan]", style="bold cyan"
-        )
-        report = orchestrator.sync_all_issues(
-            dry_run=False,
-            force_local=force_local,
-            force_remote=force_remote,
-            show_progress=True,  # Always show progress during actual sync
-            push_only=push,
-            pull_only=pull,
-        )
-
-        if report.error:
-            console_inst.print(f"\n❌ Sync error: {report.error}", style="bold red")
-            sys.exit(1)
-
-        # Display sync results with summary
-        console_inst.print("\n[bold cyan]✅ Sync Results[/bold cyan]")
-
-        # Show counts
-        pushed = analysis_report.issues_needs_push
-        pulled = analysis_report.issues_needs_pull
-
-        if pushed > 0:
-            console_inst.print(f"   📤 Pushed: {pushed}")
-        if pulled > 0:
-            console_inst.print(f"   📥 Pulled: {pulled}")
-
-        if pushed == 0 and pulled == 0:
-            console_inst.print("   ✓ Everything up-to-date")
-
-        console_inst.print()
-
-        # Explain the baseline concept for confused users
-        if (
-            analysis_report.issues_needs_pull > 0
-            or analysis_report.issues_needs_push > 0
-        ):
-            console_inst.print(
-                "[dim]💡 Tip: The baseline is the 'agreed-upon state' from the last sync.[/dim]"
-            )
-            console_inst.print(
-                "[dim]   After this sync completes, the baseline updates. The next sync should[/dim]"
-            )
-            console_inst.print(
-                "[dim]   show these same issues as 'up-to-date' (all three states match).[/dim]"
-            )
 
         # If dry-run flag, note that no changes were applied
         if dry_run:
@@ -1084,129 +1319,8 @@ def sync(
                 )
             return
 
-        # For real sync: capture and display BEFORE/AFTER
-        console_inst.print("[bold]BASELINE CHANGES:[/bold]")
-        console_inst.print(f"   Before: {pre_sync_issue_count} issues in baseline")
-
-        # Capture and save the post-sync baseline
-        # This updates the agreed-upon state to reflect the synced changes
-        # OPTIMIZATION: Build baseline from all local issues
-        # The baseline represents the full agreed state after sync
-        try:
-            # Build baseline from ALL local issues, not just changed ones
-            # This ensures the baseline includes the complete local state
-            baseline_dict = {}
-
-            # Get all local issues to include in baseline
-            all_local_issues = core.issues.list_all_including_archived()
-
-            # Show progress while building baseline
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                console=console_inst,
-                transient=True,
-            ) as progress:
-                task = progress.add_task(
-                    f"Building baseline... (0/{len(all_local_issues)})",
-                    total=len(all_local_issues),
-                )
-
-                for idx, issue in enumerate(all_local_issues):
-                    # Normalize labels: sort alphabetically for consistency
-                    labels = issue.labels or []
-                    sorted_labels = sorted(labels) if labels else []
-
-                    baseline_dict[issue.id] = {
-                        "status": (
-                            issue.status.value
-                            if hasattr(issue.status, "value")
-                            else str(issue.status)
-                        ),
-                        "assignee": issue.assignee,
-                        "milestone": issue.milestone,
-                        "headline": issue.headline,
-                        "content": issue.content,
-                        "labels": sorted_labels,  # Store labels sorted for consistency
-                    }
-
-                    # Update progress
-                    progress.update(
-                        task,
-                        description=f"Building baseline... ({idx + 1}/{len(all_local_issues)})",
-                        advance=1,
-                    )
-
-            post_sync_issue_count = len(baseline_dict)
-
-            # Save directly to database using state manager
-            try:
-                result = core.db.save_sync_baseline(baseline_dict)
-                if result:
-                    console_inst.print(
-                        f"   After:  {post_sync_issue_count} issues in baseline",
-                    )
-                if post_sync_issue_count != pre_sync_issue_count:
-                    diff = post_sync_issue_count - pre_sync_issue_count
-                    symbol = "+" if diff > 0 else ""
-                    console_inst.print(
-                        f"   Change: {symbol}{diff} issue(s)",
-                        style="green" if diff > 0 else "yellow",
-                    )
-                if verbose:
-                    console_inst.print(
-                        "✅ Baseline updated with post-sync state",
-                        style="dim",
-                    )
-            except OSError as e:
-                logger.error(
-                    "post_sync_baseline_save_exception",
-                    operation="save_post_sync_baseline",
-                    error_type=type(e).__name__,
-                    error=str(e),
-                    is_recoverable=True,
-                    suggested_action="check_disk_space",
-                )
-                # Don't fail the sync just because baseline save failed
-                if verbose:
-                    console_inst.print(
-                        f"⚠️  Warning: Could not update baseline: {str(e)}",
-                        style="yellow",
-                    )
-            except Exception as e:
-                logger.error(
-                    "post_sync_baseline_save_exception",
-                    operation="save_post_sync_baseline",
-                    error_type=type(e).__name__,
-                    error=str(e),
-                    error_classification="sync_error",
-                )
-                # Don't fail the sync just because baseline save failed
-                if verbose:
-                    console_inst.print(
-                        f"⚠️  Warning: Could not update baseline: {str(e)}",
-                        style="yellow",
-                    )
-        except Exception as e:
-            logger.error(
-                "post_sync_baseline_capture_exception",
-                operation="capture_post_sync_baseline",
-                error_type=type(e).__name__,
-                error=str(e),
-                error_classification="sync_error",
-            )
-            # Don't fail the sync just because baseline save failed
-            if verbose:
-                console_inst.print(
-                    f"⚠️  Warning: Could not update baseline: {str(e)}",
-                    style="yellow",
-                )
-
-        console_inst.print()
-        console_inst.print(
-            "✅ Sync completed successfully",
-            style="bold green",
-        )
+        # Finalize the real sync
+        _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)
 
     except Exception as exc:
         logger.error(

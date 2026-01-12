@@ -671,9 +671,7 @@ class GitHubSyncBackend:
         from structlog import get_logger
 
         from roadmap.adapters.sync.services import (
-            IssuePersistenceService,
             IssueStateService,
-            SyncLinkingService,
         )
 
         logger = get_logger()
@@ -699,37 +697,9 @@ class GitHubSyncBackend:
             # Convert remote SyncIssue to local Issue object
             github_issue_number = remote_issue.backend_id
 
-            # Check if issue exists locally - match by GitHub number or title
-            matching_local_issue = None
-
-            # First priority: match by remote_ids["github"] (already synced)
-            for local_issue in self.core.issues.list():
-                remote_github_id = (
-                    local_issue.remote_ids.get("github")
-                    if local_issue.remote_ids
-                    else None
-                )
-                if remote_github_id and int(remote_github_id) == github_issue_number:
-                    matching_local_issue = local_issue
-                    logger.debug(
-                        "github_pull_found_existing_by_github_number",
-                        github_number=github_issue_number,
-                        local_id=local_issue.id,
-                    )
-                    break
-
-            # Second priority: match by title (first-time sync of existing local issue)
-            if not matching_local_issue:
-                matching_local_issue = SyncLinkingService.find_duplicate_by_title(
-                    title, "github", self.core
-                )
-                if matching_local_issue:
-                    logger.debug(
-                        "github_pull_found_matching_by_title",
-                        github_number=github_issue_number,
-                        local_id=matching_local_issue.id,
-                        title=title,
-                    )
+            matching_local_issue = self._find_matching_local_issue(
+                title, github_issue_number
+            )
 
             # Convert to local Issue and prepare updates
             # Normalize status from GitHub format to local Status enum
@@ -744,82 +714,13 @@ class GitHubSyncBackend:
             }
 
             # Update/create locally and link
-            if matching_local_issue:
-                # Update existing issue
-                self.core.issues.update(matching_local_issue.id, **updates)
-
-                # Link in database and persist remote_ids
-                if github_issue_number is not None:
-                    IssuePersistenceService.update_issue_with_remote_id(
-                        matching_local_issue, "github", github_issue_number
-                    )
-                    IssuePersistenceService.save_issue(matching_local_issue, self.core)
-                    SyncLinkingService.link_issue_in_database(
-                        self.remote_link_repo,
-                        matching_local_issue.id,
-                        "github",
-                        github_issue_number,
-                    )
-
-                logger.debug(
-                    "github_pull_issue_updated",
-                    github_number=github_issue_number,
-                    local_id=matching_local_issue.id,
-                )
-
-            elif self.core.issues.get(issue_id):
-                # Update if it already exists with same ID
-                self.core.issues.update(issue_id, **updates)
-
-                # Link in database and persist remote_ids
-                if github_issue_number is not None:
-                    local_issue = self.core.issues.get(issue_id)
-                    if local_issue:
-                        IssuePersistenceService.update_issue_with_remote_id(
-                            local_issue, "github", github_issue_number
-                        )
-                        IssuePersistenceService.save_issue(local_issue, self.core)
-                        SyncLinkingService.link_issue_in_database(
-                            self.remote_link_repo,
-                            issue_id,
-                            "github",
-                            github_issue_number,
-                        )
-
-                logger.debug("github_pull_issue_updated", issue_id=issue_id)
-
-            else:
-                # Create new issue
-                issue = IssueStateService.sync_issue_to_issue(issue_id, remote_issue)
-                created_issue = self.core.issues.create(
-                    title=issue.title,
-                    status=issue.status,
-                    priority=issue.priority,
-                    assignee=issue.assignee,
-                    milestone=issue.milestone,
-                    issue_type=issue.issue_type,
-                    labels=issue.labels,
-                    estimated_hours=issue.estimated_hours,
-                )
-
-                # Link in database and persist remote_ids
-                if created_issue and github_issue_number is not None:
-                    IssuePersistenceService.update_issue_with_remote_id(
-                        created_issue, "github", github_issue_number
-                    )
-                    IssuePersistenceService.save_issue(created_issue, self.core)
-                    SyncLinkingService.link_issue_in_database(
-                        self.remote_link_repo,
-                        created_issue.id,
-                        "github",
-                        github_issue_number,
-                    )
-
-                logger.debug(
-                    "github_pull_issue_created",
-                    github_number=github_issue_number,
-                    local_id=created_issue.id if created_issue else "unknown",
-                )
+            self._apply_or_create_local_issue(
+                issue_id,
+                matching_local_issue,
+                updates,
+                github_issue_number,
+                remote_issue,
+            )
 
             logger.info("github_pull_issue_completed", issue_id=issue_id)
             return True
@@ -1080,12 +981,186 @@ class GitHubSyncBackend:
             return False
 
     def get_milestones(self) -> dict[str, SyncMilestone]:
-        """Fetch all milestones from GitHub.
-
-        Currently returns empty dict as detailed milestone fetching is not yet implemented.
-        """
+        """Fetch all milestones from GitHub."""
         # TODO: Implement full milestone fetching from GitHub API
         return {}
+
+    # --- Helper methods for pull/create matching and persistence ---
+    def _find_matching_local_issue(
+        self, title: str, github_issue_number: str | int | None
+    ):
+        """Find a matching local issue by GitHub number or by title.
+
+        Accepts either numeric or string GitHub IDs; comparison is done
+        by normalizing both sides to string.
+        """
+        matching_local_issue = None
+
+        # First priority: match by remote_ids["github"]
+        for local_issue in self.core.issues.list():
+            remote_github_id = (
+                local_issue.remote_ids.get("github") if local_issue.remote_ids else None
+            )
+            try:
+                if (
+                    remote_github_id
+                    and github_issue_number is not None
+                    and str(remote_github_id) == str(github_issue_number)
+                ):
+                    matching_local_issue = local_issue
+                    logger.debug(
+                        "github_pull_found_existing_by_github_number",
+                        github_number=github_issue_number,
+                        local_id=local_issue.id,
+                    )
+                    break
+            except Exception:
+                continue
+
+        # Second priority: match by title
+        if not matching_local_issue:
+            from roadmap.adapters.sync.services import SyncLinkingService
+
+            matching_local_issue = SyncLinkingService.find_duplicate_by_title(
+                title, "github", self.core
+            )
+            if matching_local_issue:
+                logger.debug(
+                    "github_pull_found_matching_by_title",
+                    github_number=github_issue_number,
+                    local_id=matching_local_issue.id,
+                    title=title,
+                )
+
+        return matching_local_issue
+
+    def _apply_or_create_local_issue(
+        self,
+        issue_id: str,
+        matching_local_issue,
+        updates: dict,
+        github_issue_number: str | int | None,
+        remote_issue: SyncIssue | None = None,
+    ) -> None:
+        """Apply updates to an existing local issue or create a new one, and ensure linking/persistence.
+
+        Args:
+            issue_id: remote issue id (e.g. 'gh-123') used as fallback local id
+            matching_local_issue: existing local Issue object or None
+            updates: dict of fields to update on local issue
+            github_issue_number: numeric GitHub issue number if available
+            remote_issue: original SyncIssue object from GitHub (used when creating)
+        """
+        from roadmap.adapters.sync.services import (
+            IssuePersistenceService,
+            SyncLinkingService,
+        )
+
+        if matching_local_issue:
+            # Update existing issue
+            self.core.issues.update(matching_local_issue.id, **updates)
+
+            # Link in database and persist remote_ids
+            if github_issue_number is not None:
+                IssuePersistenceService.update_issue_with_remote_id(
+                    matching_local_issue, "github", github_issue_number
+                )
+                IssuePersistenceService.save_issue(matching_local_issue, self.core)
+                SyncLinkingService.link_issue_in_database(
+                    self.remote_link_repo,
+                    matching_local_issue.id,
+                    "github",
+                    github_issue_number,
+                )
+
+            logger.debug(
+                "github_pull_issue_updated",
+                github_number=github_issue_number,
+                local_id=matching_local_issue.id,
+            )
+
+        elif self.core.issues.get(issue_id):
+            # Update if it already exists with same ID
+            self.core.issues.update(issue_id, **updates)
+
+            # Link in database and persist remote_ids
+            if github_issue_number is not None:
+                local_issue = self.core.issues.get(issue_id)
+                if local_issue:
+                    IssuePersistenceService.update_issue_with_remote_id(
+                        local_issue, "github", github_issue_number
+                    )
+                    IssuePersistenceService.save_issue(local_issue, self.core)
+                    SyncLinkingService.link_issue_in_database(
+                        self.remote_link_repo, issue_id, "github", github_issue_number
+                    )
+
+            logger.debug("github_pull_issue_updated", issue_id=issue_id)
+
+        else:
+            # Create new issue
+            # Use provided SyncIssue to construct local Issue
+            if remote_issue is not None:
+                issue_obj = self._convert_sync_to_issue(issue_id, remote_issue)
+            else:
+                # Fallback: construct minimal Issue-like dict from updates
+                from roadmap.core.domain.issue import (
+                    Issue as DomainIssue,
+                )
+                from roadmap.core.domain.issue import (
+                    IssueType,
+                    Priority,
+                    Status,
+                )
+
+                issue_obj = DomainIssue(
+                    id=issue_id,
+                    title=updates.get("title") or "Untitled",
+                    content=updates.get("content") or "",
+                    status=updates.get("status") or Status.TODO,
+                    priority=Priority.MEDIUM,
+                    issue_type=IssueType.FEATURE,
+                    labels=updates.get("labels", []),
+                    assignee=updates.get("assignee"),
+                    milestone=updates.get("milestone"),
+                )
+
+            # Coerce values for repository create call to expected types/defaults
+            status_val = getattr(issue_obj, "status", None) or Status.TODO
+            priority_val = getattr(issue_obj, "priority", None) or Priority.MEDIUM
+            issue_type_val = getattr(issue_obj, "issue_type", None) or IssueType.FEATURE
+            labels_val = getattr(issue_obj, "labels", []) or []
+            assignee_val = getattr(issue_obj, "assignee", None)
+            milestone_val = getattr(issue_obj, "milestone", None)
+
+            created_issue = self.core.issues.create(
+                title=issue_obj.title,
+                status=status_val,
+                priority=priority_val,
+                assignee=assignee_val,
+                milestone=milestone_val,
+                issue_type=issue_type_val,
+                labels=labels_val,
+            )
+
+            # Link in database and persist remote_ids
+            if created_issue and github_issue_number is not None:
+                IssuePersistenceService.update_issue_with_remote_id(
+                    created_issue, "github", str(github_issue_number)
+                )
+                IssuePersistenceService.save_issue(created_issue, self.core)
+                SyncLinkingService.link_issue_in_database(
+                    self.remote_link_repo,
+                    created_issue.id,
+                    "github",
+                    github_issue_number,
+                )
+
+            logger.debug(
+                "github_pull_issue_created",
+                github_number=github_issue_number,
+                local_id=created_issue.id if created_issue else "unknown",
+            )
 
     def get_projects(self) -> dict[str, SyncProject]:
         """Fetch all projects from GitHub.

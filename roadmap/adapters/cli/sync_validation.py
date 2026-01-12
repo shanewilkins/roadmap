@@ -98,24 +98,9 @@ def validate_links(
         unparseable_files = []
 
         # First pass: load all YAML remote_ids
-        for file_path in issue_files:
-            try:
-                issue = IssueParser.parse_issue_file(file_path)
-                if issue.remote_ids:
-                    yaml_remote_ids[issue.id] = issue.remote_ids
-                    validation_report["files_with_remote_ids"] += 1
-                    if verbose:
-                        console.print(
-                            f"  📄 {issue.id}: {', '.join(issue.remote_ids.keys())}",
-                            style="cyan",
-                        )
-            except Exception as e:
-                logger.warning(
-                    "failed_to_parse_issue_file",
-                    file_path=str(file_path),
-                    error=str(e),
-                )
-                unparseable_files.append((str(file_path), str(e)))
+        yaml_remote_ids, unparseable_files = _load_yaml_remote_ids(
+            issue_files, IssueParser, console, verbose
+        )
 
         # Get all database links for GitHub (main backend)
         db_links = state_manager.remote_link_repo.get_all_links_for_backend("github")
@@ -209,6 +194,33 @@ def validate_links(
         )
         console.print(f"❌ Validation failed: {str(e)}", style="bold red")
         sys.exit(1)
+
+
+def _load_yaml_remote_ids(issue_files, IssueParser, console, verbose):
+    """Load remote_ids from a list of issue files.
+
+    Returns a tuple `(yaml_remote_ids, unparseable_files)`.
+    """
+    yaml_remote_ids = {}
+    unparseable_files = []
+
+    for file_path in issue_files:
+        try:
+            issue = IssueParser.parse_issue_file(file_path)
+            if issue.remote_ids:
+                yaml_remote_ids[issue.id] = issue.remote_ids
+                if verbose:
+                    console.print(
+                        f"  📄 {issue.id}: {', '.join(issue.remote_ids.keys())}",
+                        style="cyan",
+                    )
+        except Exception as e:
+            logger.warning(
+                "failed_to_parse_issue_file", file_path=str(file_path), error=str(e)
+            )
+            unparseable_files.append((str(file_path), str(e)))
+
+    return yaml_remote_ids, unparseable_files
 
 
 def _apply_auto_fix(

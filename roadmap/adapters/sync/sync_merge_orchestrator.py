@@ -379,78 +379,13 @@ class SyncMergeOrchestrator:
         logger.info("pulling_remote_updates_start", count=len(pulls))
         try:
             fetched = RemoteFetcher.fetch_issues(self.backend, pulls)
-
-            if isinstance(fetched, list):
-                pulled_items = [r for r in fetched if r]
-                pulled_count = len(pulled_items)
-                for item in pulled_items:
-                    try:
-                        rid = getattr(item, "backend_id", None) or getattr(
-                            item, "id", None
-                        )
-                        if rid is not None:
-                            pulled_remote_ids.append(str(rid))
-                    except Exception:
-                        continue
-            else:
-                pull_report = fetched
-                if getattr(pull_report, "errors", None):
-                    try:
-                        err_keys = (
-                            list(pull_report.errors.keys())
-                            if isinstance(pull_report.errors, dict)
-                            else []
-                        )
-                    except Exception:
-                        err_keys = []
-                    pull_errors = err_keys
-                    logger.warning(
-                        "pull_batch_had_errors",
-                        error_count=len(pull_errors),
-                        errors=str(pull_report.errors)[:200],
-                    )
-
-                pulled_raw = getattr(pull_report, "pulled", None)
-                if pulled_raw is None:
-                    pulled_count = 0
-                    pulled_remote_ids = []
-                else:
-                    try:
-                        pulled_iter = list(pulled_raw)
-                    except Exception:
-                        pulled_iter = [pulled_raw]
-                    pulled_remote_ids = [str(i) for i in pulled_iter]
-                    pulled_count = len(pulled_remote_ids)
+            pulled_count, pull_errors, pulled_remote_ids = (
+                self._process_fetched_pull_result(fetched)
+            )
 
             # Update sync baseline state for pulled issues
             try:
-                backend_name = (
-                    self.backend.get_backend_name()
-                    if hasattr(self.backend, "get_backend_name")
-                    else "github"
-                )
-                for remote_id in pulled_remote_ids:
-                    try:
-                        local_uuid = self.core.db.remote_links.get_issue_uuid(
-                            backend_name=backend_name, remote_id=remote_id
-                        )
-                        if not local_uuid:
-                            continue
-                        local_issue = self.core.issues.get(local_uuid)
-                        if not local_issue:
-                            continue
-                        try:
-                            self.state_manager.save_base_state(
-                                local_issue, remote_version=True
-                            )
-                        except Exception:
-                            logger.debug(
-                                "save_base_state_for_pulled_failed",
-                                remote_id=remote_id,
-                                local_uuid=local_uuid,
-                            )
-                    except Exception:
-                        continue
+                self._update_baseline_for_pulled(pulled_remote_ids)
             except Exception:
                 logger.debug(
                     "pull_baseline_update_skipped", reason="baseline_update_error"
@@ -518,6 +453,81 @@ class SyncMergeOrchestrator:
             )
             return None
 
+    def _process_fetched_pull_result(self, fetched):
+        """Normalize the result of RemoteFetcher.fetch_issues into counts, errors, and remote ids."""
+        pulled_count = 0
+        pull_errors = []
+        pulled_remote_ids = []
+
+        if isinstance(fetched, list):
+            pulled_items = [r for r in fetched if r]
+            pulled_count = len(pulled_items)
+            for item in pulled_items:
+                try:
+                    rid = getattr(item, "backend_id", None) or getattr(item, "id", None)
+                    if rid is not None:
+                        pulled_remote_ids.append(str(rid))
+                except Exception:
+                    continue
+        else:
+            pull_report = fetched
+            if getattr(pull_report, "errors", None):
+                try:
+                    err_keys = (
+                        list(pull_report.errors.keys())
+                        if isinstance(pull_report.errors, dict)
+                        else []
+                    )
+                except Exception:
+                    err_keys = []
+                pull_errors = err_keys
+                logger.warning(
+                    "pull_batch_had_errors",
+                    error_count=len(pull_errors),
+                    errors=str(pull_report.errors)[:200],
+                )
+
+            pulled_raw = getattr(pull_report, "pulled", None)
+            if pulled_raw is None:
+                pulled_count = 0
+                pulled_remote_ids = []
+            else:
+                try:
+                    pulled_iter = list(pulled_raw)
+                except Exception:
+                    pulled_iter = [pulled_raw]
+                pulled_remote_ids = [str(i) for i in pulled_iter]
+                pulled_count = len(pulled_remote_ids)
+
+        return pulled_count, pull_errors, pulled_remote_ids
+
+    def _update_baseline_for_pulled(self, pulled_remote_ids: list[str]) -> None:
+        backend_name = (
+            self.backend.get_backend_name()
+            if hasattr(self.backend, "get_backend_name")
+            else "github"
+        )
+        for remote_id in pulled_remote_ids:
+            try:
+                local_uuid = self.core.db.remote_links.get_issue_uuid(
+                    backend_name=backend_name, remote_id=remote_id
+                )
+                if not local_uuid:
+                    continue
+                local_issue = self.core.issues.get(local_uuid)
+                if not local_issue:
+                    continue
+                try:
+                    self.state_manager.save_base_state(local_issue, remote_version=True)
+                except Exception:
+                    logger.debug(
+                        "save_base_state_for_pulled_failed",
+                        remote_id=remote_id,
+                        local_uuid=local_uuid,
+                    )
+            except Exception:
+                continue
+
     def analyze_all_issues(
         self,
         push_only: bool = False,
@@ -534,27 +544,36 @@ class SyncMergeOrchestrator:
         plan = SyncPlan()
 
         try:
-            # Authenticate with backend (read-only call to validate access)
-            try:
-                if not self.backend.authenticate():
-                    report.error = "Backend authentication failed"
-                    return plan, report
-            except Exception as e:
-                report.error = f"Backend authentication error: {str(e)}"
+            # Helper: authenticate and fetch remote issues
+            def _auth_and_fetch_remote():
+                try:
+                    if not self.backend.authenticate():
+                        report.error = "Backend authentication failed"
+                        return None
+                except Exception as e:
+                    report.error = f"Backend authentication error: {str(e)}"
+                    return None
+
+                try:
+                    return self.backend.get_issues() or {}
+                except Exception as e:
+                    report.error = f"Failed to fetch remote issues: {str(e)}"
+                    return None
+
+            # Helper: fetch local issues safely
+            def _fetch_local_safe():
+                try:
+                    return self.core.issues.list_all_including_archived() or []
+                except Exception as e:
+                    report.error = f"Failed to fetch local issues: {str(e)}"
+                    return None
+
+            remote_issues_data = _auth_and_fetch_remote()
+            if remote_issues_data is None:
                 return plan, report
 
-            # Fetch remote snapshot (read-only)
-            try:
-                remote_issues_data = self.backend.get_issues() or {}
-            except Exception as e:
-                report.error = f"Failed to fetch remote issues: {str(e)}"
-                return plan, report
-
-            # Load local issues (read-only)
-            try:
-                local_issues = self.core.issues.list_all_including_archived() or []
-            except Exception as e:
-                report.error = f"Failed to fetch local issues: {str(e)}"
+            local_issues = _fetch_local_safe()
+            if local_issues is None:
                 return plan, report
 
             local_issues_dict = {issue.id: issue for issue in local_issues}
@@ -565,51 +584,67 @@ class SyncMergeOrchestrator:
             except Exception:
                 base_state = None
 
-            # Run three-way analysis using the comparator
-            changes = self.state_comparator.analyze_three_way(
-                local_issues_dict,
-                remote_issues_data,
-                base_state.issues if base_state else None,
-            )
+            # Helper: run comparator and classify changes
+            def _run_analysis(local_dict, remote_data, base_state):
+                changes = self.state_comparator.analyze_three_way(
+                    local_dict, remote_data, base_state.issues if base_state else None
+                )
+                conflicts = [c for c in changes if c.has_conflict]
+                local_only_changes = [c for c in changes if c.is_local_only_change()]
+                remote_only_changes = [c for c in changes if c.is_remote_only_change()]
+                no_changes = [c for c in changes if c.conflict_type == "no_change"]
+                return (
+                    changes,
+                    conflicts,
+                    local_only_changes,
+                    remote_only_changes,
+                    no_changes,
+                )
 
-            # Derive high-level actions from changes (declarative only)
-            conflicts = [c for c in changes if c.has_conflict]
-            local_only_changes = [c for c in changes if c.is_local_only_change()]
-            remote_only_changes = [c for c in changes if c.is_remote_only_change()]
-            no_changes = [c for c in changes if c.conflict_type == "no_change"]
+            (
+                changes,
+                conflicts,
+                local_only_changes,
+                remote_only_changes,
+                no_changes,
+            ) = _run_analysis(local_issues_dict, remote_issues_data, base_state)
 
-            # Create push actions for local-only changes (unless pull_only)
-            if not pull_only:
-                for c in local_only_changes:
-                    if c.local_state:
-                        plan.add(
-                            PushAction(
+            # Helper: build a plan from classified changes
+            def _build_plan_from_changes(
+                changes, local_only_changes, remote_only_changes, conflicts
+            ):
+                local_plan = SyncPlan()
+                if not pull_only:
+                    for c in local_only_changes:
+                        if c.local_state:
+                            local_plan.add(
+                                PushAction(
+                                    issue_id=c.issue_id,
+                                    issue_payload=c.local_state.__dict__,
+                                )
+                            )
+                if not push_only:
+                    for c in remote_only_changes:
+                        local_plan.add(
+                            PullAction(
                                 issue_id=c.issue_id,
-                                issue_payload=c.local_state.__dict__,
+                                remote_payload=c.remote_state
+                                if hasattr(c, "remote_state")
+                                else {},
                             )
                         )
-
-            # Create pull actions for remote-only changes (unless push_only)
-            if not push_only:
-                for c in remote_only_changes:
-                    plan.add(
-                        PullAction(
+                for c in conflicts:
+                    local_plan.add(
+                        ResolveConflictAction(
                             issue_id=c.issue_id,
-                            remote_payload=c.remote_state
-                            if hasattr(c, "remote_state")
-                            else {},
+                            resolution={"conflict_fields": c.local_changes or {}},
                         )
                     )
+                return local_plan
 
-            # Represent conflicts as resolve actions (executor will persist resolution)
-            for c in conflicts:
-                # Create a placeholder resolution payload (resolver will be run in executor if needed)
-                plan.add(
-                    ResolveConflictAction(
-                        issue_id=c.issue_id,
-                        resolution={"conflict_fields": c.local_changes or {}},
-                    )
-                )
+            plan = _build_plan_from_changes(
+                changes, local_only_changes, remote_only_changes, conflicts
+            )
 
             # Fill report metadata similar to existing sync flow
             report.total_issues = len(local_issues)
@@ -961,6 +996,137 @@ class SyncMergeOrchestrator:
 
         return results
 
+    def _count_remote_stats(self, remote_issues_data):
+        """Return counts for remote issues and milestones in a safe way."""
+        try:
+            remote_issues_count = len(remote_issues_data) if remote_issues_data else 0
+            remote_open_count = 0
+            remote_closed_count = 0
+            for issue_data in remote_issues_data.values() if remote_issues_data else []:
+                state = getattr(issue_data, "state", None) or getattr(
+                    issue_data, "status", "open"
+                )
+                if state and state.lower() == "closed":
+                    remote_closed_count += 1
+                else:
+                    remote_open_count += 1
+
+            remote_milestones = self.backend.get_milestones()
+            remote_milestones_count = len(remote_milestones) if remote_milestones else 0
+            logger.debug(
+                "remote_items_counted",
+                remote_issues=remote_issues_count,
+                remote_open=remote_open_count,
+                remote_closed=remote_closed_count,
+                remote_milestones=remote_milestones_count,
+            )
+        except Exception:
+            remote_issues_count = 0
+            remote_open_count = 0
+            remote_closed_count = 0
+            remote_milestones_count = 0
+
+        return (
+            remote_issues_count,
+            remote_open_count,
+            remote_closed_count,
+            remote_milestones_count,
+        )
+
+    def _load_baseline_safe(self):
+        """Load baseline state but swallow errors and return None on failure."""
+        try:
+            logger.debug("loading_sync_state")
+            base_state = self._load_baseline_state()
+            if base_state:
+                logger.info(
+                    "previous_sync_state_loaded",
+                    base_issues_count=len(base_state.issues),
+                    last_sync=base_state.last_sync.isoformat()
+                    if base_state.last_sync
+                    else None,
+                )
+            else:
+                logger.info(
+                    "no_previous_sync_state_found", reason="first_sync_or_state_cleared"
+                )
+        except Exception:
+            logger.warning("sync_state_load_warning", reason="will_treat_as_first_sync")
+            base_state = None
+
+        return base_state
+
+    def _analyze_and_classify(self, local_issues_dict, remote_issues_data, base_state):
+        """Run comparator and classify changes into categories used by sync flow."""
+        changes = self._analyze_changes(
+            local_issues_dict, remote_issues_data, base_state
+        )
+
+        conflicts = [c for c in changes if c.has_conflict]
+        local_only_changes = [c for c in changes if c.is_local_only_change()]
+        remote_only_changes = [c for c in changes if c.is_remote_only_change()]
+        no_changes = [c for c in changes if c.conflict_type == "no_change"]
+
+        updates = [c.local_state for c in local_only_changes if c.local_state]
+        pulls = [c.issue_id for c in remote_only_changes]
+        up_to_date = [c.issue_id for c in no_changes]
+
+        logger.debug(
+            "three_way_analysis_complete",
+            total_changes=len(changes),
+            conflicts=len(conflicts),
+            local_only=len(local_only_changes),
+            remote_only=len(remote_only_changes),
+            no_change=len(no_changes),
+        )
+
+        return (
+            changes,
+            conflicts,
+            local_only_changes,
+            remote_only_changes,
+            no_changes,
+            updates,
+            pulls,
+            up_to_date,
+        )
+
+    def _populate_report_fields(
+        self,
+        report,
+        local_issues,
+        active_issues_count,
+        archived_issues_count,
+        all_milestones,
+        active_milestones_count,
+        archived_milestones_count,
+        remote_issues_count,
+        remote_open_count,
+        remote_closed_count,
+        remote_milestones_count,
+        conflicts,
+        up_to_date,
+        local_only_changes,
+        remote_only_changes,
+        changes,
+    ):
+        """Populate the SyncReport fields from computed values."""
+        report.total_issues = len(local_issues)
+        report.active_issues = active_issues_count
+        report.archived_issues = archived_issues_count
+        report.total_milestones = len(all_milestones)
+        report.active_milestones = active_milestones_count
+        report.archived_milestones = archived_milestones_count
+        report.remote_total_issues = remote_issues_count
+        report.remote_open_issues = remote_open_count
+        report.remote_closed_issues = remote_closed_count
+        report.remote_total_milestones = remote_milestones_count
+        report.conflicts_detected = len(conflicts)
+        report.issues_up_to_date = len(up_to_date)
+        report.issues_needs_push = len(local_only_changes)
+        report.issues_needs_pull = len(remote_only_changes)
+        report.changes = changes
+
     def sync_all_issues(
         self,
         dry_run: bool = True,
@@ -1027,63 +1193,16 @@ class SyncMergeOrchestrator:
                 self._count_milestones()
             )
 
-            # Count remote open/closed and milestones (keep small inline logic)
-            try:
-                remote_issues_count = (
-                    len(remote_issues_data) if remote_issues_data else 0
-                )
-                remote_open_count = 0
-                remote_closed_count = 0
-                for issue_data in (
-                    remote_issues_data.values() if remote_issues_data else []
-                ):
-                    state = getattr(issue_data, "state", None) or getattr(
-                        issue_data, "status", "open"
-                    )
-                    if state and state.lower() == "closed":
-                        remote_closed_count += 1
-                    else:
-                        remote_open_count += 1
-
-                remote_milestones = self.backend.get_milestones()
-                remote_milestones_count = (
-                    len(remote_milestones) if remote_milestones else 0
-                )
-                logger.debug(
-                    "remote_items_counted",
-                    remote_issues=remote_issues_count,
-                    remote_open=remote_open_count,
-                    remote_closed=remote_closed_count,
-                    remote_milestones=remote_milestones_count,
-                )
-            except Exception:
-                remote_issues_count = 0
-                remote_open_count = 0
-                remote_closed_count = 0
-                remote_milestones_count = 0
+            # Count remote open/closed and milestones
+            (
+                remote_issues_count,
+                remote_open_count,
+                remote_closed_count,
+                remote_milestones_count,
+            ) = self._count_remote_stats(remote_issues_data)
 
             # 3. Baseline state
-            try:
-                logger.debug("loading_sync_state")
-                base_state = self._load_baseline_state()
-                if base_state:
-                    logger.info(
-                        "previous_sync_state_loaded",
-                        base_issues_count=len(base_state.issues),
-                        last_sync=base_state.last_sync.isoformat()
-                        if base_state.last_sync
-                        else None,
-                    )
-                else:
-                    logger.info(
-                        "no_previous_sync_state_found",
-                        reason="first_sync_or_state_cleared",
-                    )
-            except Exception:
-                logger.warning(
-                    "sync_state_load_warning", reason="will_treat_as_first_sync"
-                )
-                base_state = None
+            base_state = self._load_baseline_safe()
 
             # 4. Pre-match links when pulling
             if not push_only:
@@ -1091,28 +1210,19 @@ class SyncMergeOrchestrator:
                     local_issues_dict, remote_issues_data, dry_run=dry_run
                 )
 
-            # 5. Analyze changes via comparator
-            changes = self._analyze_changes(
+            # 5. Analyze changes via comparator and classify
+            (
+                changes,
+                conflicts,
+                local_only_changes,
+                remote_only_changes,
+                no_changes,
+                updates,
+                pulls,
+                up_to_date,
+            ) = self._analyze_and_classify(
                 local_issues_dict, remote_issues_data, base_state
             )
-
-            logger.debug(
-                "three_way_analysis_complete",
-                total_changes=len(changes),
-                conflicts=len([c for c in changes if c.has_conflict]),
-                local_only=len([c for c in changes if c.is_local_only_change()]),
-                remote_only=len([c for c in changes if c.is_remote_only_change()]),
-                no_change=len([c for c in changes if c.conflict_type == "no_change"]),
-            )
-
-            conflicts = [c for c in changes if c.has_conflict]
-            local_only_changes = [c for c in changes if c.is_local_only_change()]
-            remote_only_changes = [c for c in changes if c.is_remote_only_change()]
-            no_changes = [c for c in changes if c.conflict_type == "no_change"]
-
-            updates = [c.local_state for c in local_only_changes if c.local_state]
-            pulls = [c.issue_id for c in remote_only_changes]
-            up_to_date = [c.issue_id for c in no_changes]
 
             logger.debug(
                 "sync_analysis_complete",
@@ -1123,21 +1233,24 @@ class SyncMergeOrchestrator:
             )
 
             # 6. Reporting
-            report.total_issues = len(local_issues)
-            report.active_issues = active_issues_count
-            report.archived_issues = archived_issues_count
-            report.total_milestones = len(all_milestones)
-            report.active_milestones = active_milestones_count
-            report.archived_milestones = archived_milestones_count
-            report.remote_total_issues = remote_issues_count
-            report.remote_open_issues = remote_open_count
-            report.remote_closed_issues = remote_closed_count
-            report.remote_total_milestones = remote_milestones_count
-            report.conflicts_detected = len(conflicts)
-            report.issues_up_to_date = len(up_to_date)
-            report.issues_needs_push = len(local_only_changes)
-            report.issues_needs_pull = len(remote_only_changes)
-            report.changes = changes
+            self._populate_report_fields(
+                report,
+                local_issues,
+                active_issues_count,
+                archived_issues_count,
+                all_milestones,
+                active_milestones_count,
+                archived_milestones_count,
+                remote_issues_count,
+                remote_open_count,
+                remote_closed_count,
+                remote_milestones_count,
+                conflicts,
+                up_to_date,
+                local_only_changes,
+                remote_only_changes,
+                changes,
+            )
 
             # 7. Resolve conflicts
             resolved_issues = self._resolve_conflicts_if_needed(
