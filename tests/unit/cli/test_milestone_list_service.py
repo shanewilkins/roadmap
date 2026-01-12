@@ -8,7 +8,7 @@ Tests cover:
 - Error handling
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 from roadmap.adapters.cli.services.milestone_list_service import (
@@ -40,7 +40,7 @@ class TestMilestoneFilterService:
     def test_filter_overdue_milestones_future_due_date(self):
         """Test filtering milestones with future due dates."""
         mock_ms = MagicMock()
-        mock_ms.due_date = datetime.now() + timedelta(days=10)
+        mock_ms.due_date = datetime.now(UTC) + timedelta(days=10)
         mock_ms.status.value = "open"
 
         result = MilestoneFilterService.filter_overdue_milestones([mock_ms])
@@ -49,7 +49,7 @@ class TestMilestoneFilterService:
     def test_filter_overdue_milestones_past_due_date(self):
         """Test filtering milestones with past due dates."""
         mock_ms = MagicMock()
-        mock_ms.due_date = datetime.now() - timedelta(days=5)
+        mock_ms.due_date = datetime.now(UTC) - timedelta(days=5)
         mock_ms.status.value = "open"
 
         result = MilestoneFilterService.filter_overdue_milestones([mock_ms])
@@ -59,7 +59,7 @@ class TestMilestoneFilterService:
     def test_filter_overdue_milestones_closed_status(self):
         """Test filtering ignores closed milestones."""
         mock_ms = MagicMock()
-        mock_ms.due_date = datetime.now() - timedelta(days=5)
+        mock_ms.due_date = datetime.now(UTC) - timedelta(days=5)
         mock_ms.status.value = "closed"
 
         result = MilestoneFilterService.filter_overdue_milestones([mock_ms])
@@ -215,7 +215,7 @@ class TestMilestoneListService:
         mock_ms = MagicMock()
         mock_ms.name = "v1.0"
         mock_ms.description = "First release"
-        mock_ms.due_date = datetime.now() + timedelta(days=30)
+        mock_ms.due_date = datetime.now(UTC) + timedelta(days=30)
         mock_ms.status.value = "open"
         mock_ms.get_estimated_time_display.return_value = "40 hours"
 
@@ -240,12 +240,12 @@ class TestMilestoneListService:
 
         mock_ms_past = MagicMock()
         mock_ms_past.name = "v0.9"
-        mock_ms_past.due_date = datetime.now() - timedelta(days=10)
+        mock_ms_past.due_date = datetime.now(UTC) - timedelta(days=10)
         mock_ms_past.status.value = "open"
 
         mock_ms_future = MagicMock()
         mock_ms_future.name = "v1.0"
-        mock_ms_future.due_date = datetime.now() + timedelta(days=30)
+        mock_ms_future.due_date = datetime.now(UTC) + timedelta(days=30)
         mock_ms_future.status.value = "open"
 
         mock_core.milestones.list.return_value = [mock_ms_past, mock_ms_future]
@@ -275,7 +275,7 @@ class TestMilestoneListService:
         """Test due date status for overdue milestone."""
         service = MilestoneListService(MagicMock())
         mock_ms = MagicMock()
-        mock_ms.due_date = datetime.now() - timedelta(days=5)
+        mock_ms.due_date = datetime.now(UTC) - timedelta(days=5)
         mock_ms.status.value = "open"
 
         result = service.get_milestone_due_date_status(mock_ms)
@@ -286,7 +286,7 @@ class TestMilestoneListService:
         """Test due date status for milestone due soon."""
         service = MilestoneListService(MagicMock())
         mock_ms = MagicMock()
-        mock_ms.due_date = datetime.now() + timedelta(days=3)
+        mock_ms.due_date = datetime.now(UTC) + timedelta(days=3)
         mock_ms.status.value = "open"
 
         result = service.get_milestone_due_date_status(mock_ms)
@@ -297,7 +297,7 @@ class TestMilestoneListService:
         """Test due date status for normal milestone."""
         service = MilestoneListService(MagicMock())
         mock_ms = MagicMock()
-        mock_ms.due_date = datetime.now() + timedelta(days=30)
+        mock_ms.due_date = datetime.now(UTC) + timedelta(days=30)
         mock_ms.status.value = "open"
 
         result = service.get_milestone_due_date_status(mock_ms)

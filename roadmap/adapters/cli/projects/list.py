@@ -1,5 +1,7 @@
 """List projects command."""
 
+from datetime import UTC
+
 import click
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
@@ -79,7 +81,7 @@ def _apply_overdue_filter(metadata):
             end_date = target_end
 
         end_date = end_date.replace(tzinfo=None) if end_date.tzinfo else end_date
-        now = datetime.now()
+        now = datetime.now(UTC)
 
         project_status = metadata.get("status", "")
         if project_status in ["completed", "cancelled"]:

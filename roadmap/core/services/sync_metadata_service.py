@@ -1,7 +1,7 @@
 """Sync metadata service for tracking issue sync history and statistics."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from roadmap.core.domain import Issue
@@ -163,7 +163,7 @@ class SyncMetadataService:
         metadata = self.get_metadata(issue)
 
         record = SyncRecord(
-            sync_timestamp=datetime.now().isoformat(),
+            sync_timestamp=datetime.now(UTC).isoformat(),
             success=success,
             local_changes=local_changes,
             github_changes=github_changes,

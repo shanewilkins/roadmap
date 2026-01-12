@@ -1,7 +1,7 @@
 """High-level workflow automation for Git integration."""
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -99,7 +99,7 @@ class WorkflowAutomation:
             # Initialize progress tracking state
             tracking_state = {
                 "enabled": True,
-                "last_sync": datetime.now().isoformat(),
+                "last_sync": datetime.now(UTC).isoformat(),
                 "tracked_metrics": [
                     "commit_frequency",
                     "issue_completion_rate",
@@ -259,7 +259,7 @@ class WorkflowAutomation:
         # Update status based on completion and progress
         if is_completed and issue.status != Status.CLOSED:
             issue.status = Status.CLOSED
-            issue.completed_date = datetime.now().isoformat()
+            issue.completed_date = datetime.now(UTC).isoformat()
             updated = True
         elif highest_progress and highest_progress > 0 and issue.status == Status.TODO:
             issue.status = Status.IN_PROGRESS

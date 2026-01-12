@@ -1,6 +1,6 @@
 """Milestone domain model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ except ImportError:
         Returns:
             Current datetime in UTC timezone.
         """
-        return datetime.now()
+        return datetime.now(UTC)
 
 
 class Milestone(BaseModel):
@@ -150,17 +150,17 @@ class Milestone(BaseModel):
             method: Calculation method ('effort_weighted' or 'count_based')
         """
         self.calculated_progress = self.get_completion_percentage(all_issues, method)
-        self.last_progress_update = datetime.now()
-        self.updated = datetime.now()
+        self.last_progress_update = datetime.now(UTC)
+        self.updated = datetime.now(UTC)
 
         # Update status based on progress
         if self.calculated_progress >= 100.0:
             self.status = MilestoneStatus.CLOSED
             if not self.actual_end_date:
-                self.actual_end_date = datetime.now()
+                self.actual_end_date = datetime.now(UTC)
         elif self.calculated_progress > 0:
             if self.status == MilestoneStatus.OPEN and not self.actual_start_date:
-                self.actual_start_date = datetime.now()
+                self.actual_start_date = datetime.now(UTC)
 
     @property
     def filename(self) -> str:

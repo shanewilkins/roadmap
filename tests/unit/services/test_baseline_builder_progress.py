@@ -4,7 +4,7 @@ Tests verify that progress tracking works correctly during
 baseline rebuilding and doesn't break existing functionality.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -37,7 +37,7 @@ def cached_state():
     from roadmap.core.models.sync_state import IssueBaseState
 
     return SyncState(
-        last_sync=datetime.now(),
+        last_sync=datetime.now(UTC),
         backend="test",
         issues={
             "123": IssueBaseState(

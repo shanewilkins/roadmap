@@ -3,7 +3,7 @@
 import os
 import subprocess
 import tempfile
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -120,14 +120,14 @@ class TestWorkflowAutomation:
         commit1.extract_progress_info.return_value = 75.0
         commit1.hash = "abc123"
         commit1.message = f"Work on issue 1 [roadmap:{issue1.id}] [progress:75%]"
-        commit1.date = datetime.now()
+        commit1.date = datetime.now(UTC)
 
         commit2 = Mock()
         commit2.extract_roadmap_references.return_value = [issue2.id]
         commit2.extract_progress_info.return_value = None
         commit2.hash = "def456"
         commit2.message = f"Complete issue 2 [closes roadmap:{issue2.id}]"
-        commit2.date = datetime.now()
+        commit2.date = datetime.now(UTC)
 
         mock_git.get_recent_commits.return_value = [commit1, commit2]
         mock_git_integration.return_value = mock_git
@@ -177,7 +177,7 @@ class TestWorkflowAutomation:
             commit.message = (
                 f"Progress update {i} [roadmap:{issue.id}] [progress:{progress}%]"
             )
-            commit.date = datetime.now()
+            commit.date = datetime.now(UTC)
             commit.extract_roadmap_references.return_value = [issue.id]
             commit.extract_progress_info.return_value = float(progress)
             commits.append(commit)
@@ -251,7 +251,7 @@ class TestWorkflowAutomation:
             hash="abc123",
             message=f"Fix for issue [roadmap:{issue.id}]",
             author="test",
-            date=datetime.now(),
+            date=datetime.now(UTC),
             files_changed=["test.py"],
         )
 

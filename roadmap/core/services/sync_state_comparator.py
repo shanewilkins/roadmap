@@ -14,8 +14,29 @@ from structlog import get_logger
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync_change_computer import (
+    compute_changes as _compute_changes_helper,
+)
+from roadmap.core.services.sync_change_computer import (
+    compute_changes_remote as _compute_changes_remote_helper,
+)
+from roadmap.core.services.sync_conflict_detector import (
+    detect_field_conflicts as _detect_field_conflicts_helper,
+)
 from roadmap.core.services.sync_conflict_resolver import Conflict, ConflictField
+from roadmap.core.services.sync_key_normalizer import (
+    normalize_remote_keys as _normalize_remote_keys_helper,
+)
 from roadmap.core.services.sync_report import IssueChange
+from roadmap.core.services.sync_state_normalizer import (
+    extract_timestamp as _extract_timestamp_helper,
+)
+from roadmap.core.services.sync_state_normalizer import (
+    normalize_remote_state as _normalize_remote_state_helper,
+)
+from roadmap.core.services.sync_three_way import (
+    build_issue_change as _build_issue_change_helper,
+)
 
 logger = get_logger()
 
@@ -83,91 +104,9 @@ class SyncStateComparator:
             Tuple of (local, normalized_remote) where normalized_remote is keyed
             by local issue UUIDs for proper matching.
         """
-        if not self.backend:
-            # Without backend info, can't normalize keys
-            return local, remote
-
-        backend_name = self.backend.get_backend_name()
-        normalized_remote = {}
-
-        # Build reverse mapping: remote_id → local_uuid
-        # Priority 1: Try database lookups (fast)
-        remote_id_to_local_uuid = {}
-        db_lookup_available = False
-
-        # Check if backend has access to RemoteLinkRepository
-        remote_link_repo = getattr(self.backend, "remote_link_repo", None)
-        if remote_link_repo:
-            db_lookup_available = True
-            # Use database for reverse lookup: remote_id → issue_uuid
-            db_links = remote_link_repo.get_all_links_for_backend(backend_name)
-            for issue_uuid, remote_id in db_links.items():
-                remote_id_key = str(remote_id)
-                remote_id_to_local_uuid[remote_id_key] = issue_uuid
-            self.logger.debug(
-                "loaded_remote_links_from_database",
-                backend=backend_name,
-                link_count=len(remote_id_to_local_uuid),
-            )
-
-        # Priority 2: If database not available or incomplete, supplement from YAML
-        # (for backward compatibility or if database is out of sync)
-        if not db_lookup_available or len(remote_id_to_local_uuid) < len(local):
-            for local_uuid, local_issue in local.items():
-                if local_issue.remote_ids and backend_name in local_issue.remote_ids:
-                    remote_id = local_issue.remote_ids[backend_name]
-                    # Normalize remote_id to string for matching
-                    remote_id_key = str(remote_id)
-                    # Only add if not already in database mapping
-                    if remote_id_key not in remote_id_to_local_uuid:
-                        remote_id_to_local_uuid[remote_id_key] = local_uuid
-                        self.logger.debug(
-                            "loaded_remote_id_from_yaml",
-                            remote_id=remote_id_key,
-                            local_uuid=local_uuid,
-                            backend=backend_name,
-                        )
-
-        # Remap remote issues using the combined mapping
-        unmatched_remote = []
-        for remote_key, remote_issue in remote.items():
-            remote_key_str = str(remote_key)
-            if remote_key_str in remote_id_to_local_uuid:
-                # Found matching local issue - use its UUID as key
-                local_uuid = remote_id_to_local_uuid[remote_key_str]
-                normalized_remote[local_uuid] = remote_issue
-                self.logger.debug(
-                    "normalized_remote_key",
-                    original_key=remote_key_str,
-                    normalized_to=local_uuid,
-                    source="database" if db_lookup_available else "yaml",
-                )
-            else:
-                # No matching local issue found - keep original key
-                # This represents a new issue from remote
-                unmatched_remote.append((remote_key, remote_issue))
-
-        # Add unmatched remote issues with prefixed keys to distinguish from local UUIDs
-        for remote_key, remote_issue in unmatched_remote:
-            prefixed_key = f"_remote_{remote_key}"
-            normalized_remote[prefixed_key] = remote_issue
-            self.logger.debug(
-                "new_remote_issue",
-                remote_key=str(remote_key),
-                prefixed_key=prefixed_key,
-            )
-
-        self.logger.info(
-            "remote_keys_normalized",
-            original_remote_count=len(remote),
-            normalized_count=len(normalized_remote),
-            matched=len(remote) - len(unmatched_remote),
-            unmatched=len(unmatched_remote),
-            backend=backend_name,
-            db_lookup_used=db_lookup_available,
+        return _normalize_remote_keys_helper(
+            local, remote, self.backend, logger=self.logger
         )
-
-        return local, normalized_remote
 
     def identify_conflicts(
         self,
@@ -480,68 +419,13 @@ class SyncStateComparator:
         Raises:
             ValueError: If field data is invalid
         """
-        from roadmap.common.constants import Priority, Status
-
-        conflicts = []
-
-        for field_name in self.fields_to_sync:
-            try:
-                local_val = getattr(local, field_name, None)
-                # remote may be a dict or an object (SyncIssue). Handle both.
-                if isinstance(remote, dict):
-                    remote_val = remote.get(field_name)
-                else:
-                    remote_val = getattr(remote, field_name, None)
-
-                # Normalize enum values for comparison
-                if field_name == "status" and remote_val is not None:
-                    if isinstance(remote_val, str):
-                        try:
-                            # Try exact match first, then try lowercase
-                            try:
-                                remote_val = Status(remote_val)
-                            except (ValueError, KeyError):
-                                remote_val = Status(remote_val.lower())
-                        except (ValueError, KeyError, AttributeError):
-                            # If conversion fails, keep original value
-                            pass
-
-                if field_name == "priority" and remote_val is not None:
-                    if isinstance(remote_val, str):
-                        try:
-                            # Try exact match first, then try lowercase
-                            try:
-                                remote_val = Priority(remote_val)
-                            except (ValueError, KeyError):
-                                remote_val = Priority(remote_val.lower())
-                        except (ValueError, KeyError, AttributeError):
-                            # If conversion fails, keep original value
-                            pass
-
-                # Skip if both are None/empty
-                if not local_val and not remote_val:
-                    continue
-
-                # Check for conflict
-                if local_val != remote_val:
-                    conflict_field = ConflictField(
-                        field_name=field_name,
-                        local_value=local_val,
-                        remote_value=remote_val,
-                        local_updated=local.updated,
-                        remote_updated=self._extract_timestamp(remote, "updated_at"),
-                    )
-                    conflicts.append(conflict_field)
-
-            except Exception as e:
-                self.logger.debug(
-                    "field_conflict_check_error",
-                    field=field_name,
-                    error=str(e),
-                )
-                continue
-
-        return conflicts
+        return _detect_field_conflicts_helper(
+            local,
+            remote,
+            self.fields_to_sync,
+            extract_timestamp=self._extract_timestamp,
+            logger=self.logger,
+        )
 
     def _extract_timestamp(
         self,
@@ -560,35 +444,7 @@ class SyncStateComparator:
         Raises:
             ValueError: If timestamp format is invalid
         """
-        try:
-            # Support dict-like or object remote representations
-            if isinstance(data, dict):
-                ts = data.get(timestamp_field)
-            else:
-                ts = getattr(data, timestamp_field, None)
-
-            if ts is None:
-                return None
-            # Already a datetime?
-            if isinstance(ts, datetime):
-                return ts
-
-            # String timestamp? Try parsing ISO format
-            if isinstance(ts, str):
-                # Handle ISO format with and without timezone
-                if ts.endswith("Z"):
-                    ts = ts[:-1] + "+00:00"
-                return datetime.fromisoformat(ts)
-
-            return None
-
-        except Exception as e:
-            self.logger.debug(
-                "timestamp_extraction_error",
-                field=timestamp_field,
-                error=str(e),
-            )
-            return None
+        return _extract_timestamp_helper(data, timestamp_field, logger=self.logger)
 
     def _resolve_issue_title(
         self,
@@ -613,21 +469,7 @@ class SyncStateComparator:
 
     def _normalize_remote_state(self, remote: Any) -> dict[str, Any] | None:
         """Normalize remote representations into a plain dict for comparison."""
-        if isinstance(remote, dict) or remote is None:
-            return remote
-
-        return {
-            "id": getattr(remote, "id", None),
-            "title": getattr(remote, "title", None),
-            "status": getattr(remote, "status", None),
-            "assignee": getattr(remote, "assignee", None),
-            "milestone": getattr(remote, "milestone", None),
-            "description": getattr(remote, "headline", None)
-            or getattr(remote, "description", None),
-            "labels": list(getattr(remote, "labels", []) or []),
-            "updated_at": getattr(remote, "updated_at", None)
-            or getattr(remote, "updated", None),
-        }
+        return _normalize_remote_state_helper(remote, logger=self.logger)
 
     def _handle_first_sync_semantics(
         self,
@@ -728,55 +570,21 @@ class SyncStateComparator:
         This centralizes the logic of computing local/remote changes, detecting
         field-level conflicts, and setting conflict metadata for the analyzer.
         """
-        # Resolve title from available sources
-        title = self._resolve_issue_title(issue_id, local, remote, baseline)
-        change = IssueChange(issue_id=issue_id, title=title)
-        change.baseline_state = baseline
-        change.local_state = local
-
-        # Normalize remote state to a dict for downstream consumers
-        remote_state = self._normalize_remote_state(remote)
-
-        change.remote_state = remote_state
-
-        # Compute changes relative to baseline
-        change.local_changes = (
-            self._compute_changes(baseline, local) if local is not None else {}
+        return _build_issue_change_helper(
+            issue_id,
+            local,
+            remote,
+            baseline,
+            resolve_title=self._resolve_issue_title,
+            normalize_remote_state=self._normalize_remote_state,
+            compute_changes=self._compute_changes,
+            compute_changes_remote=self._compute_changes_remote,
+            handle_first_sync_semantics=self._handle_first_sync_semantics,
+            detect_and_flag_conflicts=self._detect_and_flag_conflicts,
+            extract_timestamp=self._extract_timestamp,
+            fields_to_sync=self.fields_to_sync,
+            logger=self.logger,
         )
-        change.remote_changes = (
-            self._compute_changes_remote(baseline, remote_state)
-            if remote_state is not None
-            else {}
-        )
-
-        # If no baseline exists, prefer timestamp-based equality to avoid
-        # flagging superficial metadata differences as conflicts.
-        if baseline is None:
-            self._handle_first_sync_semantics(change, local, remote_state, baseline)
-        else:
-            # Detect field-level conflicts (useful for detailed reporting)
-            self._detect_and_flag_conflicts(change, local, remote_state)
-
-            # Determine conflict type and flags
-            if change.local_changes and change.remote_changes:
-                change.conflict_type = "both_changed"
-                change.has_conflict = True
-            elif change.local_changes:
-                change.conflict_type = "local_only"
-            elif change.remote_changes:
-                change.conflict_type = "remote_only"
-            else:
-                change.conflict_type = "no_change"
-
-        # Populate last_sync_time from baseline or remote timestamp
-        last_sync = None
-        if baseline is not None and getattr(baseline, "updated_at", None):
-            last_sync = baseline.updated_at
-        elif remote is not None:
-            last_sync = self._extract_timestamp(remote, "updated_at")
-        change.last_sync_time = last_sync
-
-        return change
 
     def analyze_three_way(
         self,
@@ -860,48 +668,7 @@ class SyncStateComparator:
         Returns:
             Dict of field → value for changed fields
         """
-        changes = {}
-
-        # Map of field names to compare
-        field_map = {
-            "status": (
-                "status",
-                lambda x: x.status.value
-                if hasattr(x.status, "value")
-                else str(x.status),
-            ),
-            "assignee": ("assignee", lambda x: x.assignee),
-            "content": ("content", lambda x: x.content),
-            "labels": ("labels", lambda x: sorted(x.labels or [])),
-        }
-
-        for field_name, (baseline_attr, local_getter) in field_map.items():
-            try:
-                baseline_value = getattr(baseline, baseline_attr, None)
-                local_value = local_getter(local)
-
-                if baseline_value != local_value:
-                    changes[field_name] = {
-                        "from": baseline_value,
-                        "to": local_value,
-                    }
-                    self.logger.debug(
-                        "field_changed_detected",
-                        source=source,
-                        field=field_name,
-                        baseline=baseline_value,
-                        current=local_value,
-                    )
-            except Exception as e:
-                self.logger.warning(
-                    "field_change_detection_error",
-                    source=source,
-                    field=field_name,
-                    error=str(e),
-                )
-                continue
-
-        return changes
+        return _compute_changes_helper(baseline, local, logger=self.logger)
 
     def _compute_changes_remote(
         self,
@@ -917,81 +684,4 @@ class SyncStateComparator:
         Returns:
             Dict of field → value for changed fields
         """
-        from roadmap.common.constants import Priority, Status
-
-        changes = {}
-
-        # Helper to get field value from remote (handles both SyncIssue and dict)
-        def get_remote_field(field_name: str, default: Any = None) -> Any:
-            # Remote may be a SyncIssue object or a dict; handle both.
-            if isinstance(remote, dict):
-                return remote.get(field_name, default)
-            return getattr(remote, field_name, default)
-
-        # Map of field names to compare
-        # Remote (SyncIssue or dict) field names
-        # Support both 'content' and 'description' keys for backwards compatibility
-        field_map = {
-            "status": ("status", lambda: get_remote_field("status")),
-            "assignee": ("assignee", lambda: get_remote_field("assignee")),
-            "content": (
-                "content",
-                lambda: get_remote_field("content")
-                or get_remote_field("description")
-                or "",
-            ),
-            "labels": (
-                "labels",
-                lambda: sorted(get_remote_field("labels", []))
-                if get_remote_field("labels")
-                else [],
-            ),
-        }
-
-        for field_name, (baseline_attr, remote_getter) in field_map.items():
-            try:
-                baseline_value = getattr(baseline, baseline_attr, None)
-                remote_value = remote_getter()
-
-                # Normalize enum values for comparison
-                if field_name == "status" and remote_value is not None:
-                    if isinstance(remote_value, str):
-                        try:
-                            remote_value = Status(remote_value)
-                        except (ValueError, KeyError):
-                            try:
-                                remote_value = Status(remote_value.lower())
-                            except (ValueError, KeyError):
-                                pass
-
-                if field_name == "priority" and remote_value is not None:
-                    if isinstance(remote_value, str):
-                        try:
-                            remote_value = Priority(remote_value)
-                        except (ValueError, KeyError):
-                            try:
-                                remote_value = Priority(remote_value.lower())
-                            except (ValueError, KeyError):
-                                pass
-
-                if baseline_value != remote_value:
-                    changes[field_name] = {
-                        "from": baseline_value,
-                        "to": remote_value,
-                    }
-                    self.logger.debug(
-                        "field_changed_detected",
-                        source="remote",
-                        field=field_name,
-                        baseline=baseline_value,
-                        current=remote_value,
-                    )
-            except Exception as e:
-                self.logger.warning(
-                    "field_change_detection_error_remote",
-                    field=field_name,
-                    error=str(e),
-                )
-                continue
-
-        return changes
+        return _compute_changes_remote_helper(baseline, remote, logger=self.logger)

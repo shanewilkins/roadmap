@@ -1,7 +1,7 @@
 """Comprehensive tests for core roadmap functionality - targeting 85%+ coverage."""
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -98,7 +98,7 @@ class TestRoadmapCoreMilestoneOperations:
         milestone = core.milestones.create(
             name="Test Milestone",
             headline="Original description",
-            due_date=datetime.now() + timedelta(days=30),
+            due_date=datetime.now(UTC) + timedelta(days=30),
         )
         assert milestone is not None
 
@@ -121,7 +121,7 @@ class TestRoadmapCoreMilestoneOperations:
         milestone = core.milestones.create(
             name="Test Milestone",
             headline="Description",
-            due_date=datetime.now() + timedelta(days=30),
+            due_date=datetime.now(UTC) + timedelta(days=30),
         )
         assert milestone.due_date is not None
 

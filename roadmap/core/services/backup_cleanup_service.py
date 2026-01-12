@@ -1,6 +1,6 @@
 """Service for cleaning up old backup files."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TypedDict
 
@@ -129,7 +129,7 @@ class BackupCleanupService:
             backups_by_issue[issue_key].append(
                 {
                     "path": backup_file,
-                    "mtime": datetime.fromtimestamp(stat.st_mtime),
+                    "mtime": datetime.fromtimestamp(stat.st_mtime, tz=UTC),
                     "size": stat.st_size,
                 }
             )
@@ -184,7 +184,7 @@ class BackupCleanupService:
 
         # Determine files to delete
         files_to_delete: list[BackupInfo] = []
-        cutoff_date = datetime.now() - timedelta(days=days) if days else None
+        cutoff_date = datetime.now(UTC) - timedelta(days=days) if days else None
 
         for _issue_key, backups in backups_by_issue.items():
             backups.sort(key=lambda x: x["mtime"], reverse=True)

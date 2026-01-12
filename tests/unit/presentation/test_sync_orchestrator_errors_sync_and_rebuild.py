@@ -7,7 +7,7 @@ Currently sync_orchestrator.py has 40% coverage.
 Target after Phase 10a: 85%+ coverage
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
@@ -197,7 +197,7 @@ class TestRebuildStrategyDecision:
                     ) as mock_tracker_class:
                         mock_tracker = Mock()
                         mock_tracker.get_last_incremental_sync.return_value = (
-                            datetime.now()
+                            datetime.now(UTC)
                         )
                         mock_tracker_class.return_value = mock_tracker
 
@@ -244,7 +244,7 @@ class TestRebuildStrategyDecision:
                     ) as mock_tracker_class:
                         mock_tracker = Mock()
                         mock_tracker.get_last_incremental_sync.return_value = (
-                            datetime.now()
+                            datetime.now(UTC)
                         )
                         mock_tracker_class.return_value = mock_tracker
 

@@ -1,6 +1,6 @@
 """Fixer for old backup files."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
@@ -66,11 +66,11 @@ class OldBackupsFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:
+    def apply(self, _force: bool = False) -> FixResult:
         """Delete old backup files.
 
         Args:
-            force: Ignored (SAFE fixers apply automatically)
+            _force: Ignored (SAFE fixers apply automatically)
 
         Returns:
             FixResult with results of deletion
@@ -110,7 +110,7 @@ class OldBackupsFixer(HealthFixer):
         if not backup_dir.exists():
             return old_backups
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         threshold = now - timedelta(days=self.BACKUP_THRESHOLD_DAYS)
 
         for backup_file in backup_dir.glob("*.db"):
@@ -130,5 +130,5 @@ class OldBackupsFixer(HealthFixer):
             Age in days
         """
         mtime = datetime.fromtimestamp(path.stat().st_mtime)
-        age = datetime.now() - mtime
+        age = datetime.now(UTC) - mtime
         return age.days

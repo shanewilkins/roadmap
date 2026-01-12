@@ -6,6 +6,7 @@ Supports Rich (interactive), plain-text (POSIX), JSON (machine-readable), and CS
 
 import csv
 import json
+from datetime import UTC
 from io import StringIO
 from typing import Any
 
@@ -315,7 +316,7 @@ class OutputFormatter:
         # Footer with timestamp
         from datetime import datetime
 
-        now = datetime.now().isoformat()
+        now = datetime.now(UTC).isoformat()
         html_lines.append(f"<p class='footer'>Generated {now}</p>")
 
         # Close HTML

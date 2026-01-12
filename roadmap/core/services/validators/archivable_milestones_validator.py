@@ -1,6 +1,6 @@
 """Validator for archivable milestones."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.common.logging import get_logger
 from roadmap.core.services.base_validator import HealthStatus
@@ -21,7 +21,7 @@ class ArchivableMilestonesValidator:
 
         try:
             milestones = core.milestone_service.list_milestones()
-            now = datetime.now()
+            now = datetime.now(UTC)
 
             for milestone in milestones:
                 if milestone.status.value == "closed" and milestone.closed_at:

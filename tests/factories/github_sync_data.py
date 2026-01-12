@@ -5,10 +5,8 @@ GitHub sync testing, following the factory pattern for maintainability and
 reusability across the test suite.
 """
 
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime
-
-from roadmap.common.constants import Status, MilestoneStatus
 
 
 class IssueChangeTestBuilder:
@@ -105,7 +103,7 @@ class SyncReportTestBuilder:
         self.detected_changes: list[dict] = []
         self.applied_changes: list[dict] = []
         self.conflicted_changes: list[dict] = []
-        self.sync_timestamp: datetime = datetime.now()
+        self.sync_timestamp: datetime = datetime.now(UTC)
         self.backend_type: str = "github"
         self.repo_owner: str = "test-owner"
         self.repo_name: str = "test-repo"
@@ -209,7 +207,9 @@ class GitHubIssueTestBuilder:
         self.assignees = list(assignees)
         return self
 
-    def with_milestone(self, milestone_number: int, title: str) -> "GitHubIssueTestBuilder":
+    def with_milestone(
+        self, milestone_number: int, title: str
+    ) -> "GitHubIssueTestBuilder":
         """Set issue milestone."""
         self.milestone = {"number": milestone_number, "title": title}
         return self
@@ -254,7 +254,9 @@ class GitHubMilestoneTestBuilder:
         self.state = state
         return self
 
-    def with_issue_counts(self, open_count: int, closed_count: int) -> "GitHubMilestoneTestBuilder":
+    def with_issue_counts(
+        self, open_count: int, closed_count: int
+    ) -> "GitHubMilestoneTestBuilder":
         """Set issue counts."""
         self.open_issues = open_count
         self.closed_issues = closed_count

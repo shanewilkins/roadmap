@@ -3,7 +3,7 @@
 This command is syntactic sugar for: roadmap issue update <ID> --status closed
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import click
 
@@ -86,7 +86,7 @@ def close_issue(
                     )
                     return
             else:
-                end_date = datetime.now()
+                end_date = datetime.now(UTC)
 
         # Build update kwargs with status and progress
         update_kwargs = {

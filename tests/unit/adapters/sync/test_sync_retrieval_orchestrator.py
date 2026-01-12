@@ -1,6 +1,6 @@
 """Tests for SyncRetrievalOrchestrator with git-based baselines."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -119,7 +119,7 @@ class TestBuildBaselineStateFromGit:
     def test_reconstructs_baseline_from_git(self, enhanced_orchestrator, tmp_path):
         """Should reconstruct baseline from git history."""
         # Setup
-        last_synced = datetime.now() - timedelta(hours=1)
+        last_synced = datetime.now(UTC) - timedelta(hours=1)
         issue_id = "TASK-123"
 
         # Mock core.issues.list() - use list_all_including_archived for baseline
@@ -173,7 +173,7 @@ class TestGetBaselineState:
     def test_uses_git_baseline_when_available(self, enhanced_orchestrator):
         """Should use git-based baseline when sync_metadata is available."""
         issue_id = "TASK-123"
-        last_synced = datetime.now() - timedelta(hours=1)
+        last_synced = datetime.now(UTC) - timedelta(hours=1)
 
         # Create mock baselines
         remote_baseline = IssueBaseState(

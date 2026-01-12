@@ -3,7 +3,7 @@
 import os
 import subprocess
 import tempfile
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -25,7 +25,7 @@ class TestGitCommit:
         commit = GitCommit(
             hash="abc123def456789",
             author="Test Author",
-            date=datetime.now(),
+            date=datetime.now(UTC),
             message="feat: implement user auth [roadmap:abc12345] [progress:50%]",
             files_changed=["src/auth.py", "tests/test_auth.py"],
         )
@@ -60,7 +60,7 @@ class TestGitCommit:
     )
     def test_extract_roadmap_references(self, message, expected):
         """Test extracting roadmap references from commit messages."""
-        commit = GitCommit("hash", "author", datetime.now(), message, [])
+        commit = GitCommit("hash", "author", datetime.now(UTC), message, [])
         assert set(commit.extract_roadmap_references()) == set(expected)
 
     @pytest.mark.parametrize(
@@ -74,7 +74,7 @@ class TestGitCommit:
     )
     def test_extract_progress_info(self, message, expected):
         """Test extracting progress information from commit messages."""
-        commit = GitCommit("hash", "author", datetime.now(), message, [])
+        commit = GitCommit("hash", "author", datetime.now(UTC), message, [])
         assert commit.extract_progress_info() == expected
 
 
@@ -410,7 +410,7 @@ class TestGitIntegrationCore:
         mock_commit = GitCommit(
             hash="abc123",
             author="Test User",
-            date=datetime.now(),
+            date=datetime.now(UTC),
             message=f"feat: implement feature [roadmap:{issue.id}] [progress:75%]",
             files_changed=["test.py"],
         )
@@ -453,7 +453,11 @@ class TestGitIntegrationErrorHandling:
         """Test handling of malformed commit data."""
         # Test that malformed input data is handled gracefully
         commit = GitCommit(
-            hash="", author="", date=datetime.now(), message="", files_changed=[]
+            hash="",
+            author="",
+            date=datetime.now(UTC),
+            message="",
+            files_changed=[],
         )
         assert commit.hash == ""
         assert commit.message == ""

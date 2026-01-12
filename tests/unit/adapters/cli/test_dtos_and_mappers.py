@@ -1,6 +1,6 @@
 """Tests for CLI DTOs and mappers."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from roadmap.adapters.cli.dtos import IssueDTO, MilestoneDTO, ProjectDTO
 from roadmap.adapters.cli.mappers import IssueMapper, MilestoneMapper, ProjectMapper
@@ -72,7 +72,7 @@ class TestMilestoneDTO:
 
     def test_milestone_dto_creation(self):
         """Test creating a MilestoneDTO."""
-        due_date = datetime.now() + timedelta(days=10)
+        due_date = datetime.now(UTC) + timedelta(days=10)
         dto = MilestoneDTO(
             id="v1.0",
             name="v1.0",
@@ -143,7 +143,7 @@ class TestIssueMapper:
 
     def test_domain_to_dto_preserves_fields(self):
         """Test that domain_to_dto preserves all important fields - basic."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         issue = Issue(
             id="issue-2",
             title="Feature",
@@ -165,7 +165,7 @@ class TestIssueMapper:
 
     def test_domain_to_dto_preserves_fields_milestone(self):
         """Test that domain_to_dto preserves all important fields - milestone."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         issue = Issue(
             id="issue-2",
             title="Feature",
@@ -187,7 +187,7 @@ class TestIssueMapper:
 
     def test_domain_to_dto_preserves_fields_content(self):
         """Test that domain_to_dto preserves all important fields - content."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         issue = Issue(
             id="issue-2",
             title="Feature",
@@ -298,7 +298,7 @@ class TestMilestoneMapper:
         milestone = Milestone(
             name="v1.0",
             status=MilestoneStatus.OPEN,
-            due_date=datetime.now(),
+            due_date=datetime.now(UTC),
         )
 
         dto = MilestoneMapper.domain_to_dto(milestone)

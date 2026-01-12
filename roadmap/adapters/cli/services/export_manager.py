@@ -1,7 +1,7 @@
 """Export management service for handling data exports with config integration."""
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -95,7 +95,7 @@ class ExportManager:
         Returns:
             Filename with timestamp
         """
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d-%H%M%S")
         return f"{entity_type}-{timestamp}.{format_type}"
 
     def get_export_path(self, entity_type: str, format_type: str | None = None) -> Path:

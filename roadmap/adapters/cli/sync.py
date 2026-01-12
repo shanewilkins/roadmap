@@ -194,129 +194,9 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
 
     Returns tuple: (backend_type, sync_backend, orchestrator, pre_sync_baseline, pre_sync_issue_count, state_comparator, conflict_resolver)
     """
-    import yaml
+    from roadmap.adapters.cli.sync_context import _init_sync_context as _ctx
 
-    from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.adapters.sync.sync_retrieval_orchestrator import (
-        SyncRetrievalOrchestrator,
-    )
-
-    # Local imports for services used by the helper
-    from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
-    from roadmap.core.services.sync_state_comparator import SyncStateComparator
-
-    # Load config
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_type = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_type = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_type = "git"
-
-    console_inst.print(
-        f"🔄 Syncing with {backend_type.upper()} backend", style="bold cyan"
-    )
-
-    # Prepare config for backend
-    if backend_type == "github":
-        github_config = full_config.get("github", {})
-        from roadmap.infrastructure.security.credentials import CredentialManager
-
-        cred_manager = CredentialManager()  # type: ignore[call-arg]
-        token = cred_manager.get_token()
-
-        config = {
-            "owner": github_config.get("owner"),
-            "repo": github_config.get("repo"),
-            "token": token,
-        }
-    else:
-        config = {}
-
-    sync_backend = get_sync_backend(backend_type, core, config)  # type: ignore
-    if not sync_backend:
-        console_inst.print(
-            f"❌ Failed to initialize {backend_type} backend", style="bold red"
-        )
-        if backend_type == "git":
-            console_inst.print("   Ensure you're in a Git repository", style="yellow")
-        elif backend_type == "github":
-            console_inst.print(
-                "   GitHub config may be missing or incomplete", style="yellow"
-            )
-        sys.exit(1)
-
-    # Enforce baseline requirement - Phase 5 integration
-
-    retrieval_orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
-
-    if not retrieval_orchestrator.has_baseline():
-        console_inst.print("\n⚠️  Baseline required for first sync", style="bold yellow")
-        console_inst.print(
-            "   This establishes the agreed-upon starting state between local and remote."
-        )
-
-        from roadmap.core.services.baseline_selector import BaselineStrategy
-
-        if baseline_option:
-            baseline_lower = baseline_option.lower()
-            if baseline_lower == "local":
-                strategy = BaselineStrategy.LOCAL
-            elif baseline_lower == "interactive":
-                strategy = BaselineStrategy.INTERACTIVE
-            else:
-                strategy = BaselineStrategy.REMOTE
-        else:
-            strategy = BaselineStrategy.REMOTE
-
-        if not retrieval_orchestrator.ensure_baseline(strategy=strategy):
-            console_inst.print("❌ Baseline creation failed", style="bold red")
-            sys.exit(1)
-
-        console_inst.print("✅ Baseline created successfully", style="bold green")
-    else:
-        console_inst.print(
-            "✓ Using existing baseline for three-way merge", style="bold green"
-        )
-
-    # Create service instances
-    state_comparator = SyncStateComparator()
-    conflict_resolver = SyncConflictResolver()
-
-    # Create cached orchestrator with progress support
-    from roadmap.adapters.sync.sync_cache_orchestrator import (
-        SyncCacheOrchestrator,
-    )
-
-    orchestrator = SyncCacheOrchestrator(
-        core,
-        sync_backend,
-        state_comparator=state_comparator,
-        conflict_resolver=conflict_resolver,
-        show_progress=not dry_run,
-    )
-
-    pre_sync_baseline = orchestrator._get_baseline_with_optimization()
-    pre_sync_issue_count = len(pre_sync_baseline.issues) if pre_sync_baseline else 0
-
-    return (
-        backend_type,
-        sync_backend,
-        orchestrator,
-        pre_sync_baseline,
-        pre_sync_issue_count,
-        state_comparator,
-        conflict_resolver,
-    )
+    return _ctx(core, backend, baseline_option, dry_run, verbose, console_inst)
 
 
 def _resolve_backend_and_init(core, backend, get_sync_backend_callable):
@@ -325,42 +205,9 @@ def _resolve_backend_and_init(core, backend, get_sync_backend_callable):
     Returns tuple `(backend_type, sync_backend)` where `sync_backend` may
     be None if initialization failed.
     """
-    import yaml
+    from roadmap.adapters.cli.sync_context import _resolve_backend_and_init as _ctx
 
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_type = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_type = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_type = "git"
-
-    # Prepare config for backend
-    if backend_type == "github":
-        github_config = full_config.get("github", {})
-        from roadmap.infrastructure.security.credentials import CredentialManager
-
-        cred_manager = CredentialManager()  # type: ignore[call-arg]
-        token = cred_manager.get_token()
-
-        config_dict = {
-            "owner": github_config.get("owner"),
-            "repo": github_config.get("repo"),
-            "token": token,
-        }
-    else:
-        config_dict = {}
-
-    sync_backend = get_sync_backend_callable(backend_type, core, config_dict)  # type: ignore[arg-type]
-    return backend_type, sync_backend
+    return _ctx(core, backend, get_sync_backend_callable)
 
 
 def _clear_baseline_db(core, console_inst):
@@ -368,38 +215,9 @@ def _clear_baseline_db(core, console_inst):
 
     Logs warnings but does not raise on failure.
     """
-    import sqlite3
+    from roadmap.adapters.cli.sync_context import _clear_baseline_db as _ctx
 
-    try:
-        db_path = core.db_dir / "state.db"
-        if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM sync_base_state")
-            conn.commit()
-            conn.close()
-            console_inst.print("✅ Cleared existing baseline from database")
-    except OSError as e:
-        logger.warning(
-            "baseline_clear_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            is_recoverable=True,
-        )
-        console_inst.print(
-            f"⚠️  Warning: Could not clear old baseline: {str(e)}", style="yellow"
-        )
-    except Exception as e:
-        logger.warning(
-            "baseline_clear_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-        )
-        console_inst.print(
-            f"⚠️  Warning: Could not clear old baseline: {str(e)}", style="yellow"
-        )
+    return _ctx(core, console_inst)
 
 
 def _create_and_save_baseline(
@@ -409,122 +227,9 @@ def _create_and_save_baseline(
 
     Returns True on success, False otherwise.
     """
-    from roadmap.adapters.sync.sync_retrieval_orchestrator import (
-        SyncRetrievalOrchestrator,
-    )
+    from roadmap.adapters.cli.sync_context import _create_and_save_baseline as _ctx
 
-    orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
-
-    console_inst.print(
-        "\n📊 Creating baseline from current local state...", style="cyan"
-    )
-
-    try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            transient=True,
-        ) as progress:
-            task = progress.add_task("Loading issues from disk...", total=None)
-            new_baseline = orchestrator._create_initial_baseline()
-            progress.update(task, completed=True)
-
-            if not new_baseline or len(new_baseline.issues) == 0:
-                logger.warning("baseline_reset_no_issues", operation="reset_baseline")
-                console_inst.print(
-                    "❌ No local issues found. Create issues first with `roadmap issue create`.",
-                    style="bold red",
-                )
-                return False
-
-            console_inst.print(
-                f"✅ Loaded {len(new_baseline.issues)} issues", style="green"
-            )
-
-    except Exception as e:
-        logger.error(
-            "baseline_creation_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            error_classification="sync_error",
-        )
-        console_inst.print(f"❌ Failed to load issues: {str(e)}", style="bold red")
-        return False
-
-    # Save baseline to database
-    console_inst.print("💾 Saving baseline to database...", style="cyan")
-
-    try:
-        baseline_dict = {
-            issue_id: {
-                "status": state.status,
-                "assignee": state.assignee,
-                "milestone": state.milestone,
-                "headline": state.headline or "",
-                "content": state.content or "",
-                "labels": state.labels or [],
-                "updated_at": state.updated_at.isoformat()
-                if hasattr(state.updated_at, "isoformat")
-                else str(state.updated_at),
-            }
-            for issue_id, state in new_baseline.issues.items()
-        }
-
-        if not core.db.save_sync_baseline(baseline_dict):
-            logger.error(
-                "baseline_database_save_returned_false",
-                operation="reset_baseline",
-                issue_count=len(baseline_dict),
-            )
-            console_inst.print(
-                "❌ Failed to save baseline to database (database operation failed)",
-                style="bold red",
-            )
-            return False
-
-        console_inst.print("✅ Baseline reset successfully!", style="bold green")
-        console_inst.print(f"   Backend: {backend_type}")
-        console_inst.print(f"   Issues in baseline: {len(new_baseline.issues)}")
-
-        if verbose and new_baseline.issues:
-            console_inst.print("\n   Issues in new baseline:", style="bold")
-            for issue_id, issue_state in sorted(new_baseline.issues.items()):
-                console_inst.print(
-                    f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
-                )
-
-        logger.info(
-            "baseline_reset_successful",
-            operation="reset_baseline",
-            backend=backend_type,
-            issue_count=len(new_baseline.issues),
-        )
-        return True
-
-    except OSError as e:
-        logger.error(
-            "baseline_save_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            is_recoverable=True,
-            suggested_action="check_disk_space",
-        )
-        console_inst.print(
-            f"❌ Failed to save baseline (disk error): {str(e)}", style="bold red"
-        )
-        return False
-    except Exception as e:
-        logger.error(
-            "baseline_save_failed",
-            operation="reset_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            error_classification="sync_error",
-        )
-        console_inst.print(f"❌ Failed to save baseline: {str(e)}", style="bold red")
-        return False
+    return _ctx(core, sync_backend, backend_type, console_inst, verbose)
 
 
 def _capture_and_save_post_sync_baseline(

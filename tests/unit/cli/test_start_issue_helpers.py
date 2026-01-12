@@ -2,7 +2,7 @@
 Tests for start issue helpers.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import Mock
 
 from roadmap.core.domain import Status
@@ -20,7 +20,7 @@ class TestStartDateParser:
         assert result is not None
         assert isinstance(result, datetime)
         # Check it's recent (within last 5 seconds)
-        assert (datetime.now() - result).total_seconds() < 5
+        assert (datetime.now(UTC) - result).total_seconds() < 5
 
     def test_parse_empty_string_returns_now(self):
         """Parse empty string should return current datetime."""
@@ -28,7 +28,7 @@ class TestStartDateParser:
         result = service.parse_start_date("")
         assert result is not None
         assert isinstance(result, datetime)
-        assert (datetime.now() - result).total_seconds() < 5
+        assert (datetime.now(UTC) - result).total_seconds() < 5
 
     def test_parse_date_only_format(self):
         """Parse YYYY-MM-DD format successfully."""
@@ -92,7 +92,7 @@ class TestStartIssueWorkflow:
         mock_core.issues.update.return_value = None
         service = StartIssueService(mock_core)
 
-        result = service.start_work("ISS-123", datetime.now())
+        result = service.start_work("ISS-123", datetime.now(UTC))
 
         assert result is None
 

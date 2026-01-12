@@ -1,7 +1,7 @@
 """Comment management service for entities (Issues, Projects, Milestones)."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.common.errors.exceptions import ValidationError
 from roadmap.core.domain import Comment
@@ -73,7 +73,7 @@ class CommentService:
             )
             raise error
 
-        now = datetime.now()
+        now = datetime.now(UTC)
 
         return Comment(
             id=CommentService.generate_comment_id(),

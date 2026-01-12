@@ -11,7 +11,7 @@ Validates:
 5. Error handling and edge cases
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 from roadmap.adapters.cli.mappers import MilestoneMapper, ProjectMapper
@@ -132,8 +132,8 @@ class TestMilestonePresenterIntegrationWithMapper:
             status=MilestoneStatus.CLOSED,
             due_date=None,
             content="",  # Changed from None to empty string
-            created=datetime.now(),
-            updated=datetime.now(),
+            created=datetime.now(UTC),
+            updated=datetime.now(UTC),
             comments=[],
         )
 
@@ -160,14 +160,14 @@ class TestProjectPresenterIntegrationWithMapper:
             status=ProjectStatus.ACTIVE,
             content="Redesign the main website\n\n## Objectives\n- Improve UX",
             owner="alice",
-            target_end_date=datetime.now() + timedelta(days=60),
+            target_end_date=datetime.now(UTC) + timedelta(days=60),
             actual_end_date=None,
-            start_date=datetime.now() - timedelta(days=10),
+            start_date=datetime.now(UTC) - timedelta(days=10),
             estimated_hours=320.0,
             actual_hours=240.0,
             milestones=["Design", "Development", "Testing"],
-            created=datetime.now(),
-            updated=datetime.now(),
+            created=datetime.now(UTC),
+            updated=datetime.now(UTC),
             comments=[],
         )
 
@@ -200,8 +200,8 @@ class TestProjectPresenterIntegrationWithMapper:
             estimated_hours=None,
             actual_hours=None,
             milestones=[],
-            created=datetime.now(),
-            updated=datetime.now(),
+            created=datetime.now(UTC),
+            updated=datetime.now(UTC),
             comments=[],
         )
 

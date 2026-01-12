@@ -4,7 +4,7 @@ Tests the detailed view commands that display formatted information about indivi
 """
 
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -28,7 +28,7 @@ def roadmap_with_data(cli_runner):
             cli_runner,
             name="v1.0.0",
             headline="First release",
-            due_date=(datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
+            due_date=(datetime.now(UTC) + timedelta(days=30)).strftime("%Y-%m-%d"),
         )
 
         # Create an issue

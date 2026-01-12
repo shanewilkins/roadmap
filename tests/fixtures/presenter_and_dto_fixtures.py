@@ -4,7 +4,7 @@ This module provides common fixtures used across multiple integration test files
 particularly for testing view presenters and CLI DTOs.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,12 +24,12 @@ def milestone_dto():
         name="v1.0.0",
         status="open",
         headline="Release version 1.0",
-        due_date=datetime.now() + timedelta(days=30),
+        due_date=datetime.now(UTC) + timedelta(days=30),
         progress_percentage=75,
         issue_count=4,
         completed_count=3,
-        created=datetime.now(),
-        updated=datetime.now(),
+        created=datetime.now(UTC),
+        updated=datetime.now(UTC),
     )
 
 
@@ -42,8 +42,8 @@ def milestone_dto_minimal():
         status="closed",
         headline="",
         due_date=None,
-        created=datetime.now(),
-        updated=datetime.now(),
+        created=datetime.now(UTC),
+        updated=datetime.now(UTC),
     )
 
 
@@ -55,9 +55,9 @@ def milestone_dto_overdue():
         name="v0.9.0",
         status="open",
         headline="Overdue milestone",
-        due_date=datetime.now() - timedelta(days=5),
-        created=datetime.now() - timedelta(days=30),
-        updated=datetime.now(),
+        due_date=datetime.now(UTC) - timedelta(days=5),
+        created=datetime.now(UTC) - timedelta(days=30),
+        updated=datetime.now(UTC),
     )
 
 
@@ -75,10 +75,10 @@ def project_dto():
         status="active",
         headline="Redesign the main website",
         owner="alice",
-        target_end_date=datetime.now() + timedelta(days=60),
+        target_end_date=datetime.now(UTC) + timedelta(days=60),
         actual_end_date=None,
-        created=datetime.now(),
-        updated=datetime.now(),
+        created=datetime.now(UTC),
+        updated=datetime.now(UTC),
     )
 
 
@@ -93,8 +93,8 @@ def project_dto_minimal():
         owner=None,
         target_end_date=None,
         actual_end_date=None,
-        created=datetime.now(),
-        updated=datetime.now(),
+        created=datetime.now(UTC),
+        updated=datetime.now(UTC),
     )
 
 
@@ -107,12 +107,12 @@ def project_dto_with_large_effort():
         status="active",
         headline="Large undertaking",
         owner="bob",
-        target_end_date=datetime.now() + timedelta(days=120),
+        target_end_date=datetime.now(UTC) + timedelta(days=120),
         actual_end_date=None,
         milestone_count=5,
         issue_count=50,
-        created=datetime.now(),
-        updated=datetime.now(),
+        created=datetime.now(UTC),
+        updated=datetime.now(UTC),
     )
 
 

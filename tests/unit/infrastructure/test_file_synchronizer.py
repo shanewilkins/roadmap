@@ -4,7 +4,7 @@ Tests for file synchronization operations.
 
 import hashlib
 import tempfile
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -161,7 +161,7 @@ invalid: yaml: content: here
         parser = FileParser()
         file_hash = parser.calculate_file_hash(test_file)
         file_size = test_file.stat().st_size
-        last_modified = datetime.now()
+        last_modified = datetime.now(UTC)
 
         file_synchronizer.update_file_sync_status(
             str(test_file), file_hash, file_size, last_modified
@@ -181,7 +181,7 @@ invalid: yaml: content: here
         parser = FileParser()
         file_hash1 = parser.calculate_file_hash(test_file)
         file_size1 = test_file.stat().st_size
-        last_modified1 = datetime.now()
+        last_modified1 = datetime.now(UTC)
 
         file_synchronizer.update_file_sync_status(
             str(test_file), file_hash1, file_size1, last_modified1
@@ -191,7 +191,7 @@ invalid: yaml: content: here
         test_file.write_text("updated content")
         file_hash2 = parser.calculate_file_hash(test_file)
         file_size2 = test_file.stat().st_size
-        last_modified2 = datetime.now()
+        last_modified2 = datetime.now(UTC)
 
         file_synchronizer.update_file_sync_status(
             str(test_file), file_hash2, file_size2, last_modified2
@@ -210,7 +210,7 @@ invalid: yaml: content: here
         parser = FileParser()
         file_hash1 = parser.calculate_file_hash(test_file)
         file_size1 = test_file.stat().st_size
-        last_modified1 = datetime.now()
+        last_modified1 = datetime.now(UTC)
 
         file_synchronizer.update_file_sync_status(
             str(test_file), file_hash1, file_size1, last_modified1
@@ -230,7 +230,7 @@ invalid: yaml: content: here
         parser = FileParser()
         file_hash = parser.calculate_file_hash(test_file)
         file_size = test_file.stat().st_size
-        last_modified = datetime.now()
+        last_modified = datetime.now(UTC)
 
         file_synchronizer.update_file_sync_status(
             str(test_file), file_hash, file_size, last_modified

@@ -1,6 +1,6 @@
 """Tests for issue filters module."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock
 
 import pytest
@@ -122,7 +122,7 @@ class TestIssueQueryService:
 
     def test_get_filtered_issues_overdue(self, service, mock_core):
         """Test getting overdue issues."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         overdue_issue = Issue(
             id="overdue",
             title="Overdue",
@@ -246,7 +246,7 @@ class TestIssueQueryService:
 
     def test_apply_additional_filters_overdue(self, service):
         """Test filtering to overdue issues."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         overdue = Issue(
             id="overdue",
             title="Overdue",

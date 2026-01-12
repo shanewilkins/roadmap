@@ -3,7 +3,7 @@
 Tests the display and rendering logic for daily workflow summary output.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -26,7 +26,7 @@ def mock_console():
 @pytest.fixture
 def sample_data():
     """Provide sample daily summary data for testing."""
-    today = datetime.now()
+    today = datetime.now(UTC)
     milestone = Milestone(
         name="v1.0",
         content="First release",
@@ -163,7 +163,7 @@ class TestDailySummaryPresenterHeader:
             name="v1.0",
             content="Test milestone",
             status=MilestoneStatus.OPEN,
-            due_date=datetime.now() + timedelta(days=10),
+            due_date=datetime.now(UTC) + timedelta(days=10),
         )
 
         data = {
@@ -184,7 +184,7 @@ class TestDailySummaryPresenterHeader:
         """Test that header includes milestone information."""
         milestone = MagicMock()
         milestone.name = "v1.0"
-        milestone.due_date = datetime.now() + timedelta(days=10)
+        milestone.due_date = datetime.now(UTC) + timedelta(days=10)
 
         data = {
             "user": "alice",
@@ -227,7 +227,7 @@ class TestDailySummaryPresenterSections:
             status=Status.TODO,
             assignee="alice",
             priority=Priority.HIGH,
-            due_date=datetime.now() - timedelta(days=3),
+            due_date=datetime.now(UTC) - timedelta(days=3),
         )
 
         DailySummaryPresenter._render_overdue([overdue_issue])
@@ -277,7 +277,7 @@ class TestDailySummaryPresenterSections:
             status=Status.CLOSED,
             assignee="alice",
             priority=Priority.MEDIUM,
-            actual_end_date=datetime.now(),
+            actual_end_date=datetime.now(UTC),
         )
 
         DailySummaryPresenter._render_completed_today([completed_issue])
@@ -401,7 +401,7 @@ class TestDailySummaryPresenterIntegration:
             name="v1.0",
             content="Test milestone",
             status=MilestoneStatus.OPEN,
-            due_date=datetime.now() + timedelta(days=10),
+            due_date=datetime.now(UTC) + timedelta(days=10),
         )
 
         data = {

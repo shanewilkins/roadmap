@@ -11,7 +11,7 @@ Usage:
 import json
 import platform
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -116,7 +116,7 @@ def establish_baseline(profile_file: str | None, iterations: int):
         perf_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate timestamp-based filename
-        timestamp = datetime.now().strftime("%Y-%m-%d")
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d")
         profile_file = str(perf_dir / f"performance_baseline_{timestamp}.json")
     else:
         # Ensure parent directory exists
@@ -213,7 +213,7 @@ def establish_baseline(profile_file: str | None, iterations: int):
     # Save detailed results
     output_path = Path(profile_file)
     results_dict = report.get_dict()
-    results_dict["baseline_timestamp"] = datetime.now().isoformat()
+    results_dict["baseline_timestamp"] = datetime.now(UTC).isoformat()
     results_dict["iterations_run"] = iterations
 
     # Add system information metadata

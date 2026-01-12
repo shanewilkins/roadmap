@@ -4,7 +4,7 @@ Tests the baseline enforcement mechanisms that ensure explicit baseline
 creation during first sync.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -64,7 +64,7 @@ class TestBaselineEnforcement:
     def test_has_baseline_returns_false_when_empty_state(self, orchestrator):
         """Test has_baseline returns False when sync state has no issues."""
         empty_state = SyncState(
-            last_sync=datetime.now(timezone.utc),
+            last_sync=datetime.now(UTC),
             backend="test",
         )
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=empty_state)
@@ -78,7 +78,7 @@ class TestBaselineEnforcement:
             title="Test",
         )
         state = SyncState(
-            last_sync=datetime.now(timezone.utc),
+            last_sync=datetime.now(UTC),
             backend="test",
         )
         state.issues["issue-1"] = baseline_state
@@ -93,7 +93,7 @@ class TestBaselineEnforcement:
             title="Test",
         )
         state = SyncState(
-            last_sync=datetime.now(timezone.utc),
+            last_sync=datetime.now(UTC),
             backend="test",
         )
         state.issues["issue-1"] = baseline_state
@@ -143,7 +143,7 @@ class TestBaselineEnforcement:
             title="Test Issue",
         )
         mock_sync_state = SyncState(
-            last_sync=datetime.now(timezone.utc),
+            last_sync=datetime.now(UTC),
             backend="test",
         )
         mock_sync_state.issues["issue-1"] = baseline_state
@@ -160,7 +160,7 @@ class TestBaselineEnforcement:
     def test_create_baseline_from_local_fails_when_empty(self, orchestrator):
         """Test creating baseline from local fails with empty state."""
         empty_state = SyncState(
-            last_sync=datetime.now(timezone.utc),
+            last_sync=datetime.now(UTC),
             backend="test",
         )
 
@@ -187,8 +187,8 @@ class TestBaselineEnforcement:
                 headline="Test",
                 backend_name="mock",
                 backend_id="1",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
         }
 
@@ -259,7 +259,7 @@ class TestBaselineEnforcement:
             title="Test",
         )
         state = SyncState(
-            last_sync=datetime.now(timezone.utc),
+            last_sync=datetime.now(UTC),
             backend="test",
         )
         state.issues["issue-1"] = baseline_state

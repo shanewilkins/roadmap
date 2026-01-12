@@ -1,6 +1,6 @@
 """Comprehensive test suite for comment service."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 
 import pytest
@@ -144,8 +144,8 @@ class TestCommentService:
             issue_id="issue-1",
             author="author2",
             body="Comment 2",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread([comment1, comment2])
@@ -159,7 +159,7 @@ class TestCommentService:
             author="author",
             body="Body",
             created_at=cast(datetime, "not-a-datetime"),
-            updated_at=datetime.now(),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -172,7 +172,7 @@ class TestCommentService:
             issue_id="issue-1",
             author="author",
             body="Body",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
             updated_at=cast(datetime, "not-a-datetime"),
         )
 
@@ -186,8 +186,8 @@ class TestCommentService:
             issue_id="issue-1",
             author="",
             body="Body",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -200,8 +200,8 @@ class TestCommentService:
             issue_id="issue-1",
             author="author",
             body="",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -219,8 +219,8 @@ class TestCommentService:
             issue_id="issue-1",
             author="author2",
             body="Comment 2",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=9999,  # Non-existent ID
         )
 
@@ -235,7 +235,7 @@ class TestCommentService:
             author="",  # Error 1: empty author
             body="",  # Error 2: empty body
             created_at=cast(datetime, "invalid"),
-            updated_at=datetime.now(),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread([comment1])
@@ -249,8 +249,8 @@ class TestCommentService:
             issue_id="issue-1",
             author="author1",
             body="Comment 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=2,  # Points to comment2
         )
         comment2 = Comment(
@@ -258,8 +258,8 @@ class TestCommentService:
             issue_id="issue-1",
             author="author2",
             body="Comment 2",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=1,  # Points back to comment1 - circular!
         )
 
@@ -311,7 +311,7 @@ class TestCommentService:
 
     def test_build_comment_threads_sorted_by_timestamp(self):
         """Test that comments in threads are sorted by created_at."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         comment1 = Comment(
             id=1,
             issue_id="issue-1",

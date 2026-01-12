@@ -1,6 +1,6 @@
 """Tests for GitHub integration service."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
@@ -258,7 +258,7 @@ class TestGitHubIntegrationService:
     def test_get_cached_team_members_cache_hit(self, service):
         """Test getting cached team members when cache is valid."""
         service._team_members_cache = ["user1", "user2"]
-        service._cache_timestamp = datetime.now()
+        service._cache_timestamp = datetime.now(UTC)
 
         members = service.get_cached_team_members()
 
@@ -267,7 +267,7 @@ class TestGitHubIntegrationService:
     def test_get_cached_team_members_cache_expired(self, service):
         """Test cache expiration after 5 minutes."""
         service._team_members_cache = ["old_user"]
-        service._cache_timestamp = datetime.now() - timedelta(minutes=6)
+        service._cache_timestamp = datetime.now(UTC) - timedelta(minutes=6)
 
         with patch.object(
             service, "get_team_members", return_value=["new_user1", "new_user2"]
@@ -323,7 +323,7 @@ class TestGitHubIntegrationService:
     def test_clear_cache(self, service):
         """Test clearing the team members cache."""
         service._team_members_cache = ["user1", "user2"]
-        service._cache_timestamp = datetime.now()
+        service._cache_timestamp = datetime.now(UTC)
 
         service.clear_cache()
 
@@ -369,7 +369,9 @@ class TestGitHubIntegrationService:
     ):
         """Test cache expiration boundary conditions."""
         service._team_members_cache = ["cached_user"]
-        service._cache_timestamp = datetime.now() - timedelta(minutes=cache_age_minutes)
+        service._cache_timestamp = datetime.now(UTC) - timedelta(
+            minutes=cache_age_minutes
+        )
 
         with patch.object(service, "get_team_members", return_value=["fresh_user"]):
             members = service.get_cached_team_members()

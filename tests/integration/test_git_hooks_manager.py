@@ -3,7 +3,7 @@
 import os
 import subprocess
 import tempfile
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -133,7 +133,7 @@ class TestGitHookManager:
         mock_commit.extract_progress_info.return_value = 50.0
         mock_commit.hash = "abc123"
         mock_commit.message = f"Test commit [roadmap:{issue.id}] [progress:50%]"
-        mock_commit.date = datetime.now()
+        mock_commit.date = datetime.now(UTC)
 
         mock_git.get_recent_commits.return_value = [mock_commit]
         mock_git.auto_update_issues_from_commits.return_value = {

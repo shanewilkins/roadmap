@@ -1,7 +1,7 @@
 """Sync report data model and formatting."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from roadmap.common.console import get_console
@@ -127,7 +127,7 @@ class SyncReport:
     issues_pulled: int = 0  # Issues successfully pulled from remote
 
     changes: list[IssueChange] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     error: str | None = None
 
     def display_brief(self) -> None:

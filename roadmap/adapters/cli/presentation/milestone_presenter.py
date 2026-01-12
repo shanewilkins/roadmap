@@ -1,6 +1,6 @@
 """CLI presenter for Milestone DTOs."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from rich.markdown import Markdown
 from rich.panel import Panel
@@ -96,23 +96,31 @@ class MilestonePresenter(BasePresenter):
                 if hasattr(milestone_dto.due_date, "strftime")
                 else milestone_dto.due_date
             )
-            now = datetime.now()
+            now = datetime.now(UTC)
 
             due_date_obj = (
                 milestone_dto.due_date
                 if hasattr(milestone_dto.due_date, "replace")
                 else datetime.fromisoformat(str(milestone_dto.due_date))
             )
-            due_date_naive = (
-                due_date_obj.replace(tzinfo=None)
-                if due_date_obj.tzinfo
-                else due_date_obj
-            )
-            is_overdue = due_date_naive < now and milestone_dto.status == "open"
+
+            # Normalize due date to an aware datetime in UTC so comparisons
+            # between now (UTC-aware) and the due date are consistent.
+            if isinstance(due_date_obj, datetime):
+                if due_date_obj.tzinfo:
+                    due_date_aware = due_date_obj.astimezone(UTC)
+                else:
+                    due_date_aware = due_date_obj.replace(tzinfo=UTC)
+            else:
+                due_date_aware = datetime.fromisoformat(str(due_date_obj)).replace(
+                    tzinfo=UTC
+                )
+
+            is_overdue = due_date_aware < now and milestone_dto.status == "open"
 
             header.append(" • ", style="dim")
             if is_overdue:
-                days_overdue = (now - due_date_naive).days
+                days_overdue = (now - due_date_aware).days
                 header.append(f"⚠️  OVERDUE by {days_overdue} days", style="bold red")
                 header.append(f" (Due: {due_date_str})", style="red")
             else:

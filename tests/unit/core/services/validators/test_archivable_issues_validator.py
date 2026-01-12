@@ -1,6 +1,6 @@
 """Tests for archivable issues validator."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -44,7 +44,7 @@ class TestArchivableIssuesValidator:
 
     def test_scan_for_archivable_issues_recently_closed(self, mock_core):
         """Test scan ignores recently closed issues."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         yesterday = now - timedelta(days=1)
 
         issue = MagicMock()
@@ -65,7 +65,7 @@ class TestArchivableIssuesValidator:
 
     def test_scan_for_archivable_issues_old_closed_issues(self, mock_core):
         """Test scan finds issues closed beyond threshold."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         old_date = now - timedelta(days=40)
 
         issue = MagicMock()
@@ -91,7 +91,7 @@ class TestArchivableIssuesValidator:
 
     def test_scan_for_archivable_issues_custom_threshold(self, mock_core):
         """Test scan respects custom threshold."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         old_date = now - timedelta(days=50)
 
         issue = MagicMock()
@@ -120,7 +120,7 @@ class TestArchivableIssuesValidator:
 
     def test_scan_for_archivable_issues_multiple_issues(self, mock_core):
         """Test scan finds multiple archivable issues."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         old_date_1 = now - timedelta(days=35)
         old_date_2 = now - timedelta(days=45)
         recent_date = now - timedelta(days=5)

@@ -4,7 +4,7 @@ This module provides progress bar integration for sync state rebuilding,
 allowing users to see real-time feedback during optimization phases.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from time import time
 
@@ -119,7 +119,7 @@ class ProgressTrackingBaselineBuilder:
                 None,
                 None,
                 CachedBaselineState(
-                    SyncState(last_sync=datetime.now(), backend="error", issues={}),
+                    SyncState(last_sync=datetime.now(UTC), backend="error", issues={}),
                     from_cache=False,
                     rebuilt_issues=0,
                     reused_issues=0,
@@ -170,7 +170,7 @@ class ProgressTrackingBaselineBuilder:
             [],
             CachedBaselineState(
                 SyncState(
-                    last_sync=datetime.now(),
+                    last_sync=datetime.now(UTC),
                     backend="git",
                     issues={},
                 ),

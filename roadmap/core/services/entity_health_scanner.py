@@ -4,8 +4,6 @@ Provides detailed diagnostics on individual entities (Issues, Milestones, Projec
 including validation of descriptions, comments, dependencies, and other metadata.
 """
 
-from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any
 
 from roadmap.common.constants import Status
@@ -14,81 +12,18 @@ from roadmap.core.domain.comment import Comment
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
+
+# Re-export shared models for backward compatibility
+from roadmap.core.services.health_models import (
+    EntityHealthReport,
+    EntityType,
+    HealthIssue,
+    HealthSeverity,
+)
+from roadmap.core.services.issue_health_scanner import IssueHealthScanner
 from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
-
-
-class EntityType(str, Enum):
-    """Types of entities that can be scanned."""
-
-    ISSUE = "issue"
-    MILESTONE = "milestone"
-    PROJECT = "project"
-
-
-class HealthSeverity(str, Enum):
-    """Severity levels for health issues."""
-
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-
-
-@dataclass
-class HealthIssue:
-    """A single health issue found during scanning."""
-
-    code: str  # Machine-readable code (e.g., "missing_description", "empty_comment")
-    message: str  # Human-readable message
-    severity: HealthSeverity  # How serious this issue is
-    category: str  # Category (e.g., "content", "dependency", "structure")
-    details: dict[str, Any] = field(default_factory=dict)  # Additional context
-
-
-@dataclass
-class EntityHealthReport:
-    """Health report for a single entity."""
-
-    entity_id: str
-    entity_type: EntityType
-    entity_title: str  # Title or name of the entity
-    status: str  # Current status (todo, in-progress, done, etc.)
-    issues: list[HealthIssue] = field(default_factory=list)
-
-    @property
-    def issue_count(self) -> int:
-        """Get count of all issues."""
-        return len(self.issues)
-
-    @property
-    def error_count(self) -> int:
-        """Get count of errors."""
-        return sum(1 for i in self.issues if i.severity == HealthSeverity.ERROR)
-
-    @property
-    def warning_count(self) -> int:
-        """Get count of warnings."""
-        return sum(1 for i in self.issues if i.severity == HealthSeverity.WARNING)
-
-    @property
-    def info_count(self) -> int:
-        """Get count of info messages."""
-        return sum(1 for i in self.issues if i.severity == HealthSeverity.INFO)
-
-    @property
-    def is_healthy(self) -> bool:
-        """Check if entity is healthy (no errors or critical issues)."""
-        return not any(
-            i.severity in (HealthSeverity.ERROR, HealthSeverity.CRITICAL)
-            for i in self.issues
-        )
-
-    @property
-    def is_degraded(self) -> bool:
-        """Check if entity is degraded (has warnings)."""
-        return any(i.severity == HealthSeverity.WARNING for i in self.issues)
 
 
 class EntityHealthScanner:
@@ -117,43 +52,13 @@ class EntityHealthScanner:
 
     @traced("scan_issue")
     def scan_issue(self, issue: Issue) -> EntityHealthReport:
-        """Scan a single issue for health problems.
+        """Delegate issue scanning to the extracted `IssueHealthScanner`.
 
-        Args:
-            issue: The issue to scan
-
-        Returns:
-            EntityHealthReport with all issues found
+        This keeps the original public API while the implementation lives in
+        `issue_health_scanner.IssueHealthScanner` for easier maintenance.
         """
-        report = EntityHealthReport(
-            entity_id=issue.id,
-            entity_type=EntityType.ISSUE,
-            entity_title=issue.title,
-            status=issue.status.value,
-        )
-
-        # Check description/content
-        self._check_issue_description(issue, report)
-
-        # Check comments
-        self._check_issue_comments(issue, report)
-
-        # Check estimates
-        self._check_issue_estimates(issue, report)
-
-        # Check dates
-        self._check_issue_dates(issue, report)
-
-        # Check assignee
-        self._check_issue_assignee(issue, report)
-
-        # Check progress tracking
-        self._check_issue_progress(issue, report)
-
-        # Check status consistency
-        self._check_issue_status_consistency(issue, report)
-
-        return report
+        scanner = IssueHealthScanner(core=self.core)
+        return scanner.scan_issue(issue)
 
     @traced("scan_milestone")
     def scan_milestone(self, milestone: Milestone) -> EntityHealthReport:

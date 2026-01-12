@@ -7,7 +7,7 @@ Tests cover:
 - Edge cases (empty repo, file not found, etc.)
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
@@ -71,7 +71,7 @@ class TestFindCommitAtTime:
         # Second call returns first commit
         mock_git.side_effect = ["", "first000"]
 
-        result = find_commit_at_time(datetime.now())
+        result = find_commit_at_time(datetime.now(UTC))
 
         assert result == "first000"
         assert mock_git.call_count == 2
@@ -141,7 +141,7 @@ class TestGetFileAtTimestamp:
         mock_get.side_effect = FileNotFound("File not found")
 
         with pytest.raises(FileNotFound):
-            get_file_at_timestamp("missing.md", datetime.now())
+            get_file_at_timestamp("missing.md", datetime.now(UTC))
 
     @patch("roadmap.adapters.persistence.git_history.get_file_at_commit")
     @patch("roadmap.adapters.persistence.git_history.find_commit_at_time")
@@ -271,7 +271,7 @@ class TestErrorHandling:
         mock_run.side_effect = GitHistoryError("Git not found in PATH")
 
         with pytest.raises(GitHistoryError):
-            find_commit_at_time(datetime.now())
+            find_commit_at_time(datetime.now(UTC))
 
     @patch("roadmap.adapters.persistence.git_history._run_git_command")
     def test_not_git_repository_error(self, mock_run):
@@ -279,7 +279,7 @@ class TestErrorHandling:
         mock_run.side_effect = NotAGitRepository("Not in a repo")
 
         with pytest.raises(NotAGitRepository):
-            get_file_at_timestamp("file.md", datetime.now())
+            get_file_at_timestamp("file.md", datetime.now(UTC))
 
     def test_git_history_error_creation(self):
         """Test GitHistoryError exception."""

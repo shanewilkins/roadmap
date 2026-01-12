@@ -1,6 +1,6 @@
 """Unit tests for kanban board functionality."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import cast
 from unittest.mock import Mock, patch
 
@@ -75,7 +75,7 @@ class TestKanbanOrganizer:
 
     def test_categorize_issues_overdue(self):
         """categorize_issues should categorize overdue issues."""
-        yesterday = datetime.now() - timedelta(days=1)
+        yesterday = datetime.now(UTC) - timedelta(days=1)
         issue = self.create_issue(status=Status.TODO, due_date=yesterday)
 
         result = KanbanOrganizer.categorize_issues([issue])
@@ -85,7 +85,7 @@ class TestKanbanOrganizer:
 
     def test_categorize_issues_not_overdue_if_done(self):
         """categorize_issues should not mark done issues as overdue."""
-        yesterday = datetime.now() - timedelta(days=1)
+        yesterday = datetime.now(UTC) - timedelta(days=1)
         issue = self.create_issue(status=Status.CLOSED, due_date=yesterday)
 
         result = KanbanOrganizer.categorize_issues([issue])
@@ -95,7 +95,7 @@ class TestKanbanOrganizer:
 
     def test_categorize_issues_future_due_date_not_overdue(self):
         """categorize_issues should not mark future due dates as overdue."""
-        tomorrow = datetime.now() + timedelta(days=1)
+        tomorrow = datetime.now(UTC) + timedelta(days=1)
         issue = self.create_issue(status=Status.TODO, due_date=tomorrow)
 
         result = KanbanOrganizer.categorize_issues([issue])
@@ -105,7 +105,7 @@ class TestKanbanOrganizer:
 
     def test_categorize_issues_multiple(self):
         """categorize_issues should handle multiple issues correctly."""
-        yesterday = datetime.now() - timedelta(days=1)
+        yesterday = datetime.now(UTC) - timedelta(days=1)
         issues = [
             self.create_issue(status=Status.CLOSED, title="Done issue"),
             self.create_issue(status=Status.BLOCKED, title="Blocked issue"),

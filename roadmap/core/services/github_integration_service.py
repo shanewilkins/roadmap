@@ -5,7 +5,7 @@ team member queries, assignee validation, and GitHub configuration management.
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from roadmap.adapters.github.github import GitHubClient
@@ -175,7 +175,7 @@ class GitHubIntegrationService:
         if (
             self._team_members_cache is not None
             and self._cache_timestamp is not None
-            and datetime.now() - self._cache_timestamp < timedelta(minutes=5)
+            and datetime.now(UTC) - self._cache_timestamp < timedelta(minutes=5)
         ):
             logger.debug("using_cached_team_members")
             return self._team_members_cache
@@ -183,7 +183,7 @@ class GitHubIntegrationService:
         # Refresh cache
         team_members = self.get_team_members()
         self._team_members_cache = team_members
-        self._cache_timestamp = datetime.now()
+        self._cache_timestamp = datetime.now(UTC)
         logger.debug("team_members_cache_refreshed", count=len(team_members))
 
         return team_members

@@ -1,7 +1,7 @@
 """Service for generating project templates."""
 
 import getpass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -145,7 +145,7 @@ class ProjectTemplateService:
         Returns:
             Project content as markdown string
         """
-        current_date = datetime.now().isoformat()
+        current_date = datetime.now(UTC).isoformat()
         owner = detected_info.get("git_user", getpass.getuser())
 
         # Base project content

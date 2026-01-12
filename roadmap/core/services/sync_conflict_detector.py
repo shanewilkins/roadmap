@@ -1,0 +1,102 @@
+"""Field-level conflict detection helpers.
+
+Extracted from SyncStateComparator._detect_field_conflicts to allow focused
+testing and reuse.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
+
+from roadmap.core.services.sync_conflict_resolver import ConflictField
+
+
+def detect_field_conflicts(
+    local: object,
+    remote: dict[str, Any] | object,
+    fields_to_sync: list[str],
+    extract_timestamp: Callable[[object, str], datetime | None] | None = None,
+    logger: Any | None = None,
+) -> list[ConflictField]:
+    """Detect field-level conflicts between local and remote issues.
+
+    Args:
+        local: local Issue-like object
+        remote: remote dict or object
+        fields_to_sync: list of field names to compare
+        extract_timestamp: optional callable to extract timestamps from remote
+        logger: optional logger for debug/info
+
+    Returns:
+        list of ConflictField
+    """
+    conflicts: list[ConflictField] = []
+
+    for field_name in fields_to_sync:
+        try:
+            local_val = getattr(local, field_name, None)
+            if isinstance(remote, dict):
+                remote_val = remote.get(field_name)
+            else:
+                remote_val = getattr(remote, field_name, None)
+
+            if field_name == "status" and remote_val is not None:
+                if isinstance(remote_val, str):
+                    try:
+                        from roadmap.common.constants import Status
+
+                        try:
+                            remote_val = Status(remote_val)
+                        except (ValueError, KeyError):
+                            remote_val = Status(remote_val.lower())
+                    except Exception:
+                        pass
+
+            if field_name == "priority" and remote_val is not None:
+                if isinstance(remote_val, str):
+                    try:
+                        from roadmap.common.constants import Priority
+
+                        try:
+                            remote_val = Priority(remote_val)
+                        except (ValueError, KeyError):
+                            remote_val = Priority(remote_val.lower())
+                    except Exception:
+                        pass
+
+            if not local_val and not remote_val:
+                continue
+
+            if local_val != remote_val:
+                local_updated = getattr(local, "updated", None)
+                remote_updated: datetime | None = None
+                if extract_timestamp is not None:
+                    try:
+                        remote_updated = extract_timestamp(remote, "updated_at")
+                    except Exception:
+                        remote_updated = None
+
+                conflict_field = ConflictField(
+                    field_name=field_name,
+                    local_value=local_val,
+                    remote_value=remote_val,
+                    local_updated=local_updated,
+                    remote_updated=remote_updated,
+                )
+                conflicts.append(conflict_field)
+
+        except Exception as e:
+            if logger is not None:
+                try:
+                    logger.debug(
+                        "field_conflict_check_error",
+                        field=field_name,
+                        error=str(e),
+                    )
+                except Exception:
+                    pass
+            continue
+
+    return conflicts

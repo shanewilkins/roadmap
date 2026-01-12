@@ -1,7 +1,7 @@
 """Project domain model."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -108,14 +108,14 @@ class Project(BaseModel):
             all_issues: List of all issues in the system
         """
         self.calculated_progress = self.calculate_progress(all_milestones, all_issues)
-        self.last_progress_update = datetime.now()
-        self.updated = datetime.now()
+        self.last_progress_update = datetime.now(UTC)
+        self.updated = datetime.now(UTC)
 
         # Update status based on progress
         if self.calculated_progress >= 100.0:
             self.status = ProjectStatus.COMPLETED
             if not self.actual_end_date:
-                self.actual_end_date = datetime.now()
+                self.actual_end_date = datetime.now(UTC)
         elif self.calculated_progress > 0:
             if self.status == ProjectStatus.PLANNING:
                 self.status = ProjectStatus.ACTIVE

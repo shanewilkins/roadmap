@@ -3,7 +3,7 @@
 Tests the overdue filtering functionality for issues, milestones, and projects.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
@@ -18,7 +18,7 @@ class TestOverdueIssueFiltering:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create an overdue milestone
-            overdue_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+            overdue_date = (datetime.now(UTC) - timedelta(days=5)).strftime("%Y-%m-%d")
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",
@@ -27,7 +27,7 @@ class TestOverdueIssueFiltering:
             )
 
             # Create a future milestone
-            future_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+            future_date = (datetime.now(UTC) + timedelta(days=30)).strftime("%Y-%m-%d")
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="future-milestone",
@@ -129,7 +129,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create an overdue milestone
-            overdue_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+            overdue_date = (datetime.now(UTC) - timedelta(days=5)).strftime("%Y-%m-%d")
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",
@@ -138,7 +138,7 @@ class TestOverdueMilestoneFiltering:
             )
 
             # Create a future milestone
-            future_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+            future_date = (datetime.now(UTC) + timedelta(days=30)).strftime("%Y-%m-%d")
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="future-milestone",
@@ -161,7 +161,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create an overdue milestone
-            overdue_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+            overdue_date = (datetime.now(UTC) - timedelta(days=5)).strftime("%Y-%m-%d")
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",
@@ -170,7 +170,7 @@ class TestOverdueMilestoneFiltering:
             )
 
             # Create a future milestone
-            future_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+            future_date = (datetime.now(UTC) + timedelta(days=30)).strftime("%Y-%m-%d")
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="future-milestone",
@@ -192,7 +192,7 @@ class TestOverdueMilestoneFiltering:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create an overdue milestone
-            overdue_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+            overdue_date = (datetime.now(UTC) - timedelta(days=5)).strftime("%Y-%m-%d")
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="overdue-milestone",

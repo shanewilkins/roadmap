@@ -1,6 +1,6 @@
 """Tests for progress calculation engine."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -159,7 +159,7 @@ class TestUpdateProjectTimeline:
             target_end_date=None,
         )
 
-        future_date = datetime.now() + timedelta(days=30)
+        future_date = datetime.now(UTC) + timedelta(days=30)
 
         with patch.object(engine, "_calculate_completion_velocity", return_value=2.5):
             with patch.object(
@@ -173,7 +173,7 @@ class TestUpdateProjectTimeline:
         """Test that timeline update calculates schedule variance."""
         engine = ProgressCalculationEngine()
         milestone = Mock()
-        target_date = datetime.now()
+        target_date = datetime.now(UTC)
         project = Mock(
             get_milestones=Mock(return_value=[milestone]),
             target_end_date=target_date,
@@ -202,7 +202,7 @@ class TestUpdateProjectTimeline:
         """Test that timeline update sets risk level correctly."""
         engine = ProgressCalculationEngine()
         milestone = Mock()
-        target_date = datetime.now()
+        target_date = datetime.now(UTC)
         project = Mock(
             get_milestones=Mock(return_value=[milestone]),
             target_end_date=target_date,
@@ -246,7 +246,7 @@ class TestCalculateCompletionVelocity:
     def test_velocity_completed_milestone(self):
         """Test velocity with completed milestone."""
         engine = ProgressCalculationEngine()
-        recent_date = datetime.now() - timedelta(days=10)
+        recent_date = datetime.now(UTC) - timedelta(days=10)
         milestone = Mock(
             actual_end_date=recent_date,
             status=MilestoneStatus.CLOSED,
@@ -263,7 +263,7 @@ class TestCalculateCompletionVelocity:
     def test_velocity_old_completed_milestone(self):
         """Test velocity ignores old completed milestones."""
         engine = ProgressCalculationEngine()
-        old_date = datetime.now() - timedelta(days=100)
+        old_date = datetime.now(UTC) - timedelta(days=100)
         milestone = Mock(
             actual_end_date=old_date,
             status=MilestoneStatus.CLOSED,
@@ -279,7 +279,7 @@ class TestCalculateCompletionVelocity:
         """Test velocity with custom time window."""
         engine = ProgressCalculationEngine()
         milestone = Mock(
-            actual_end_date=datetime.now() - timedelta(weeks=1),
+            actual_end_date=datetime.now(UTC) - timedelta(weeks=1),
             status=MilestoneStatus.CLOSED,
         )
 

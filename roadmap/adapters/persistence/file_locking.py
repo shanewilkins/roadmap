@@ -7,7 +7,7 @@ import os
 import tempfile
 import time
 from contextlib import AbstractContextManager
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -43,7 +43,7 @@ class FileLock:
         # Lock metadata
         self.lock_info = {
             "pid": os.getpid(),
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "file": str(file_path),
             "host": os.uname().nodename if hasattr(os, "uname") else "unknown",
         }
@@ -200,7 +200,7 @@ class LockManager:
         """Clean up stale lock files older than max_age_hours."""
         cleaned = 0
         max_age = timedelta(hours=max_age_hours)
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
 
         # Find all .lock files
         for lock_file in Path(".").rglob("*.lock"):

@@ -1,6 +1,6 @@
 """Unit tests for milestone kanban board command."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,7 +22,7 @@ def sample_milestone():
     return Milestone(
         name="v1.0",
         content="First release",
-        due_date=datetime.now() + timedelta(days=30),
+        due_date=datetime.now(UTC) + timedelta(days=30),
         status=MilestoneStatus.OPEN,
     )
 

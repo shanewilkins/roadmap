@@ -1,7 +1,7 @@
 """Enhanced YAML validation utilities for roadmap persistence."""
 
 import shutil
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +24,7 @@ class YAMLRecoveryManager:
         if not file_path.exists():
             raise FileNotFoundError(f"Cannot backup non-existent file: {file_path}")
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_name = f"{file_path.stem}_{timestamp}.backup{file_path.suffix}"
         backup_path = self.backup_dir / backup_name
 

@@ -1,6 +1,6 @@
 """Tests for SyncState model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.core.models import IssueBaseState, SyncState
 
@@ -96,7 +96,7 @@ class TestSyncState:
 
     def test_add_issue_to_sync_state(self):
         """Test adding issues to sync state."""
-        sync_state = SyncState(last_sync=datetime.now(), backend="github")
+        sync_state = SyncState(last_sync=datetime.now(UTC), backend="github")
         issue_state = IssueBaseState(
             id="issue-1", status="todo", title="Test", headline="Test"
         )
@@ -108,7 +108,7 @@ class TestSyncState:
 
     def test_update_issue_in_sync_state(self):
         """Test updating an issue in sync state."""
-        sync_state = SyncState(last_sync=datetime.now(), backend="github")
+        sync_state = SyncState(last_sync=datetime.now(UTC), backend="github")
         issue_state = IssueBaseState(
             id="issue-1", status="todo", title="Test", headline="Test"
         )
@@ -123,7 +123,7 @@ class TestSyncState:
 
     def test_remove_issue_from_sync_state(self):
         """Test removing an issue from sync state."""
-        sync_state = SyncState(last_sync=datetime.now(), backend="github")
+        sync_state = SyncState(last_sync=datetime.now(UTC), backend="github")
         issue_state = IssueBaseState(
             id="issue-1", status="todo", title="Test", headline="Test"
         )

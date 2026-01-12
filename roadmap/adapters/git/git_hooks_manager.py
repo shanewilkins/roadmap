@@ -1,7 +1,7 @@
 """Git hook installation and management for roadmap integration."""
 
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -191,7 +191,7 @@ class GitHookManager:
         """
         try:
             log_file = Path(".git/roadmap-hooks.log")
-            timestamp = datetime.now().isoformat()
+            timestamp = datetime.now(UTC).isoformat()
             log_entry = f"{timestamp} - {activity_type}: {activity_detail}\n"
 
             with open(log_file, "a") as f:
@@ -249,7 +249,7 @@ class GitHookManager:
             if issue.status != Status.CLOSED:
                 issue.status = Status.CLOSED
                 issue.progress_percentage = 100.0
-                issue.completed_date = datetime.now().isoformat()
+                issue.completed_date = datetime.now(UTC).isoformat()
 
                 # Add completion commit reference
                 if not hasattr(issue, "git_commits"):
@@ -329,7 +329,7 @@ class GitHookManager:
         if progress >= 100 and milestone.status != MilestoneStatus.CLOSED:
             milestone.status = MilestoneStatus.CLOSED
             if hasattr(milestone, "actual_end_date"):
-                milestone.actual_end_date = datetime.now()
+                milestone.actual_end_date = datetime.now(UTC)
 
     def _save_milestone(self, milestone) -> None:
         """Save updated milestone to storage.

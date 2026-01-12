@@ -3,7 +3,7 @@
 Phase 1C refactoring: Using mock factories and service-specific fixtures to reduce DRY.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -161,14 +161,13 @@ class TestConflictDetector:
 
     def test_conflict_detector_github_modified(self):
         """Test detection of GitHub-side modifications."""
-        from datetime import timezone
 
         service = Mock(spec=GitHubIntegrationService)
         service.get_github_config.return_value = ("token", "owner", "repo")
         detector = GitHubConflictDetector(service)
 
         # Create issue with proper datetime for updated field
-        last_sync = datetime.now(timezone.utc) - timedelta(hours=1)
+        last_sync = datetime.now(UTC) - timedelta(hours=1)
         issue = create_mock_issue(github_issue=123, updated=last_sync)
 
         detector.client = Mock()
@@ -187,7 +186,7 @@ class TestConflictDetector:
         detector = GitHubConflictDetector(service)
 
         issue = create_mock_issue(github_issue=123)
-        last_sync = datetime.now() - timedelta(hours=1)
+        last_sync = datetime.now(UTC) - timedelta(hours=1)
 
         with patch.object(detector, "_get_last_sync_time", return_value=last_sync):
             with patch.object(
@@ -207,13 +206,15 @@ class TestConflictDetector:
         with patch.object(
             detector,
             "_get_last_sync_time",
-            return_value=datetime.now() - timedelta(hours=1),
+            return_value=datetime.now(UTC) - timedelta(hours=1),
         ):
             with patch.object(
                 detector, "_is_local_modified_after_sync", return_value=True
             ):
                 with patch.object(
-                    detector, "_parse_github_timestamp", return_value=datetime.now()
+                    detector,
+                    "_parse_github_timestamp",
+                    return_value=datetime.now(UTC),
                 ):
                     result = detector.detect_conflicts(issue, 123)
                     # Verify conflict detection was performed

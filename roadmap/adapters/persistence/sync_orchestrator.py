@@ -1,6 +1,6 @@
 """Orchestrates file synchronization across the .roadmap directory."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -89,7 +89,7 @@ class SyncOrchestrator:
             "files_changed": 0,
             "files_synced": 0,
             "files_failed": 0,
-            "sync_time": datetime.now(),
+            "sync_time": datetime.now(UTC),
         }
 
         try:
@@ -167,7 +167,7 @@ class SyncOrchestrator:
             "files_changed": 0,
             "files_synced": 0,
             "files_failed": 0,
-            "rebuild_time": datetime.now(),
+            "rebuild_time": datetime.now(UTC),
         }
 
         try:

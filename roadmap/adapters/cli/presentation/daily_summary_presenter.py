@@ -4,7 +4,7 @@ Handles all display formatting for the daily summary, including
 table rendering and output styling.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from rich.panel import Panel
 from rich.table import Table
@@ -70,7 +70,7 @@ class DailySummaryPresenter(BasePresenter):
                 style="dim",
             )
 
-        header.append(f"\n{datetime.now().strftime('%A, %B %d, %Y')}", style="dim")
+        header.append(f"\n{datetime.now(UTC).strftime('%A, %B %d, %Y')}", style="dim")
 
         console.print(Panel(header, border_style="cyan"))
 
@@ -126,13 +126,23 @@ class DailySummaryPresenter(BasePresenter):
             overdue_table.add_column("Priority", width=10)
 
             for issue in issues:
-                days_overdue = (
-                    datetime.now() - issue.due_date.replace(tzinfo=None)
-                ).days
+                due_date_obj = issue.due_date
+                # Normalize issue due_date to UTC-aware datetime
+                if isinstance(due_date_obj, datetime):
+                    if due_date_obj.tzinfo:
+                        due_date_aware = due_date_obj.astimezone(UTC)
+                    else:
+                        due_date_aware = due_date_obj.replace(tzinfo=UTC)
+                else:
+                    due_date_aware = datetime.fromisoformat(str(due_date_obj)).replace(
+                        tzinfo=UTC
+                    )
+
+                days_overdue = (datetime.now(UTC) - due_date_aware).days
                 overdue_table.add_row(
                     issue.id,
                     issue.title[:50] + "..." if len(issue.title) > 50 else issue.title,
-                    f"{issue.due_date.strftime('%Y-%m-%d')} ({days_overdue}d)",
+                    f"{due_date_aware.strftime('%Y-%m-%d')} ({days_overdue}d)",
                     issue.priority.value,
                 )
 

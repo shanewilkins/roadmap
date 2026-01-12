@@ -10,7 +10,7 @@ Tests cover:
 
 import sqlite3
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -488,7 +488,7 @@ class TestStateManagerFileSync:
             file_path="new/file.txt",
             content_hash="xyz789",
             file_size=2048,
-            last_modified=datetime.now(),
+            last_modified=datetime.now(UTC),
         )
 
         result = state_manager.get_file_sync_status("new/file.txt")
@@ -504,7 +504,7 @@ class TestStateManagerFileSync:
             file_path="existing/file.txt",
             content_hash="old_hash",
             file_size=1024,
-            last_modified=datetime.now(),
+            last_modified=datetime.now(UTC),
         )
 
         # Update the record
@@ -512,7 +512,7 @@ class TestStateManagerFileSync:
             file_path="existing/file.txt",
             content_hash="new_hash",
             file_size=2048,
-            last_modified=datetime.now(),
+            last_modified=datetime.now(UTC),
         )
 
         result = state_manager.get_file_sync_status("existing/file.txt")
@@ -576,7 +576,7 @@ class TestStateManagerFileHashing:
             # Calculate hash and update sync status
             content_hash = parser.calculate_file_hash(file_path)
             file_size = file_path.stat().st_size
-            last_modified = datetime.now(timezone.utc)
+            last_modified = datetime.now(UTC)
 
             state_manager.update_file_sync_status(
                 str(file_path), content_hash, file_size, last_modified
@@ -599,7 +599,7 @@ class TestStateManagerFileHashing:
             # Sync initial state
             content_hash = parser.calculate_file_hash(file_path)
             state_manager.update_file_sync_status(
-                str(file_path), content_hash, 100, datetime.now(timezone.utc)
+                str(file_path), content_hash, 100, datetime.now(UTC)
             )
 
             # Modify file

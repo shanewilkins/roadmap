@@ -2,6 +2,8 @@
 Issue filtering logic extracted from complex CLI command.
 """
 
+from datetime import UTC
+
 from roadmap.core.domain import Issue, Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
 
@@ -90,11 +92,24 @@ class IssueQueryService:
         from datetime import datetime
 
         all_issues = self.core.issues.list()
-        overdue_issues = [
-            issue
-            for issue in all_issues
-            if issue.due_date and issue.due_date.replace(tzinfo=None) < datetime.now()
-        ]
+        now = datetime.now(UTC)
+        overdue_issues: list[Issue] = []
+        for issue in all_issues:
+            if not issue.due_date:
+                continue
+
+            due = issue.due_date
+            if isinstance(due, datetime):
+                if due.tzinfo:
+                    due_aware = due.astimezone(UTC)
+                else:
+                    due_aware = due.replace(tzinfo=UTC)
+            else:
+                due_aware = datetime.fromisoformat(str(due)).replace(tzinfo=UTC)
+
+            if due_aware < now:
+                overdue_issues.append(issue)
+
         return overdue_issues, "overdue"
 
     def get_filtered_issues(
@@ -224,11 +239,24 @@ class IssueQueryService:
         """Filter to only overdue issues."""
         from datetime import datetime
 
-        filtered = [
-            i
-            for i in issues
-            if i.due_date and i.due_date.replace(tzinfo=None) < datetime.now()
-        ]
+        now = datetime.now(UTC)
+        filtered: list[Issue] = []
+        for i in issues:
+            if not i.due_date:
+                continue
+
+            due = i.due_date
+            if isinstance(due, datetime):
+                if due.tzinfo:
+                    due_aware = due.astimezone(UTC)
+                else:
+                    due_aware = due.replace(tzinfo=UTC)
+            else:
+                due_aware = datetime.fromisoformat(str(due)).replace(tzinfo=UTC)
+
+            if due_aware < now:
+                filtered.append(i)
+
         return filtered, description + " overdue"
 
 

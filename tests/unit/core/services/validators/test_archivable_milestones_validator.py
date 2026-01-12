@@ -1,6 +1,6 @@
 """Tests for archivable milestones validator."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -44,7 +44,7 @@ class TestArchivableMilestonesValidator:
 
     def test_scan_for_archivable_milestones_recently_closed(self, mock_core):
         """Test scan ignores recently closed milestones."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         recently_closed = now - timedelta(days=5)
 
         milestone = MagicMock()
@@ -60,7 +60,7 @@ class TestArchivableMilestonesValidator:
 
     def test_scan_for_archivable_milestones_old_closed(self, mock_core):
         """Test scan finds old closed milestones."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         old_closed = now - timedelta(days=30)
 
         milestone = MagicMock()
@@ -79,7 +79,7 @@ class TestArchivableMilestonesValidator:
 
     def test_scan_for_archivable_milestones_custom_threshold(self, mock_core):
         """Test scan respects custom threshold."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         old_closed = now - timedelta(days=20)
 
         milestone = MagicMock()
@@ -109,7 +109,7 @@ class TestArchivableMilestonesValidator:
 
     def test_scan_for_archivable_milestones_multiple(self, mock_core):
         """Test scan finds multiple archivable milestones."""
-        now = datetime.now()
+        now = datetime.now(UTC)
 
         milestones = []
         for i, days_ago in enumerate([20, 30, 5, 40], 1):

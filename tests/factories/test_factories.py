@@ -4,7 +4,7 @@ Ensures that all builders create valid objects and that the fluent
 interface works correctly.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -150,13 +150,13 @@ class TestIssueBuilder:
 
     def test_builder_with_due_date(self):
         """Test setting due date."""
-        due_date = datetime.now()
+        due_date = datetime.now(UTC)
         issue = IssueBuilder().with_due_date(due_date).build()
         assert issue.due_date == due_date
 
     def test_builder_with_dates(self):
         """Test setting created and updated dates."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         later = now + timedelta(hours=1)
 
         issue = IssueBuilder().with_created_date(now).with_updated_date(later).build()
@@ -241,7 +241,7 @@ class TestMilestoneBuilder:
 
     def test_builder_with_due_date(self):
         """Test setting due date."""
-        due_date = datetime.now()
+        due_date = datetime.now(UTC)
         milestone = MilestoneBuilder().with_due_date(due_date).build()
         assert milestone.due_date == due_date
 
@@ -268,7 +268,7 @@ class TestMilestoneBuilder:
 
     def test_builder_with_dates(self):
         """Test setting created and updated dates."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         later = now + timedelta(days=1)
 
         milestone = (
@@ -280,7 +280,7 @@ class TestMilestoneBuilder:
 
     def test_builder_with_start_and_end_dates(self):
         """Test setting actual start and end dates."""
-        start = datetime.now()
+        start = datetime.now(UTC)
         end = start + timedelta(days=30)
 
         milestone = MilestoneBuilder().with_start_date(start).with_end_date(end).build()
@@ -400,7 +400,7 @@ class TestProjectBuilder:
 
     def test_builder_with_dates(self):
         """Test setting start and target end dates."""
-        start = datetime.now()
+        start = datetime.now(UTC)
         end = start + timedelta(days=90)
 
         project = (
@@ -412,7 +412,7 @@ class TestProjectBuilder:
 
     def test_builder_with_actual_end_date(self):
         """Test setting actual end date."""
-        actual_end = datetime.now()
+        actual_end = datetime.now(UTC)
         project = ProjectBuilder().with_actual_end_date(actual_end).build()
         assert project.actual_end_date == actual_end
 
@@ -424,7 +424,7 @@ class TestProjectBuilder:
 
     def test_builder_with_dates_metadata(self):
         """Test setting created and updated dates."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         later = now + timedelta(hours=2)
 
         project = (

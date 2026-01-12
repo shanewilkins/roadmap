@@ -5,7 +5,7 @@ Consolidates business logic for updating issue status, setting start dates,
 and optionally creating Git branches.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
@@ -42,7 +42,7 @@ class StartIssueService:
             ValueError: If date string is invalid
         """
         if not date_str:
-            return datetime.now()
+            return datetime.now(UTC)
 
         # Try full datetime format first
         try:

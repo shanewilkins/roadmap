@@ -1,6 +1,6 @@
 """Tests for entity health scanner service."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 from roadmap.common.constants import Status
@@ -58,9 +58,9 @@ class TestEntityHealthScannerIntegration:
         issue.content = "Content"
         issue.comments = []
         issue.estimated_hours = 5
-        issue.actual_start_date = datetime.now() - timedelta(days=5)
-        issue.actual_end_date = datetime.now()
-        issue.due_date = datetime.now() + timedelta(days=1)
+        issue.actual_start_date = datetime.now(UTC) - timedelta(days=5)
+        issue.actual_end_date = datetime.now(UTC)
+        issue.due_date = datetime.now(UTC) + timedelta(days=1)
         issue.previous_assignee = None
         issue.handoff_date = None
         issue.progress_percentage = 100
@@ -69,8 +69,8 @@ class TestEntityHealthScannerIntegration:
         milestone.name = "v1.0"
         milestone.content = "Release 1.0"
         milestone.status = Status.CLOSED
-        milestone.created = datetime.now() - timedelta(days=30)
-        milestone.due_date = datetime.now()
+        milestone.created = datetime.now(UTC) - timedelta(days=30)
+        milestone.due_date = datetime.now(UTC)
         milestone.calculated_progress = 100
 
         project = MagicMock(spec=Project)

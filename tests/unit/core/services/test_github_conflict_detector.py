@@ -1,6 +1,6 @@
 """Tests for GitHub conflict detector service."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -70,7 +70,7 @@ class TestGitHubConflictDetector:
         )
         detector = GitHubConflictDetector(mock_integration_service)
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         sample_issue.github_sync_metadata = {"sync_timestamp": now}
 
         conflicts = detector.detect_conflicts(sample_issue, 42)
@@ -83,7 +83,7 @@ class TestGitHubConflictDetector:
 
     def test_detect_conflicts_only_local_modified(self, detector, sample_issue):
         """Test detecting when only local issue was modified."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sync_time = now - timedelta(hours=2)
 
         sample_issue.github_sync_metadata = {"sync_timestamp": sync_time}
@@ -101,7 +101,7 @@ class TestGitHubConflictDetector:
 
     def test_detect_conflicts_only_github_modified(self, detector, sample_issue):
         """Test detecting when only GitHub issue was modified."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sync_time = now - timedelta(hours=2)
         github_update = now - timedelta(minutes=30)
 
@@ -126,7 +126,7 @@ class TestGitHubConflictDetector:
 
     def test_detect_conflicts_both_modified(self, detector, sample_issue):
         """Test detecting when both local and GitHub were modified."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sync_time = now - timedelta(hours=2)
 
         sample_issue.github_sync_metadata = {"sync_timestamp": sync_time}
@@ -154,7 +154,7 @@ class TestGitHubConflictDetector:
 
     def test_detect_conflicts_no_modifications(self, detector, sample_issue):
         """Test detecting when neither was modified."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sync_time = now - timedelta(hours=2)
 
         sample_issue.github_sync_metadata = {"sync_timestamp": sync_time}
@@ -171,7 +171,7 @@ class TestGitHubConflictDetector:
 
     def test_detect_conflicts_github_fetch_error(self, detector, sample_issue):
         """Test handling GitHub fetch errors gracefully."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sync_time = now - timedelta(hours=2)
 
         sample_issue.github_sync_metadata = {"sync_timestamp": sync_time}
@@ -187,7 +187,7 @@ class TestGitHubConflictDetector:
 
     def test_detect_conflicts_invalid_github_timestamp(self, detector, sample_issue):
         """Test handling invalid GitHub timestamps."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sync_time = now - timedelta(hours=2)
 
         sample_issue.github_sync_metadata = {"sync_timestamp": sync_time}
@@ -203,7 +203,7 @@ class TestGitHubConflictDetector:
 
     def test_detect_conflicts_uses_updated_at_as_fallback(self, detector, sample_issue):
         """Test using issue.updated as fallback for sync time."""
-        now = datetime.now()
+        now = datetime.now(UTC)
 
         sample_issue.github_sync_metadata = None
         sample_issue.updated = now
@@ -220,7 +220,7 @@ class TestGitHubConflictDetector:
 
     def test_get_last_sync_time_from_metadata(self, detector, sample_issue):
         """Test extracting sync time from metadata."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sample_issue.github_sync_metadata = {"sync_timestamp": now}
 
         sync_time = detector._get_last_sync_time(sample_issue)
@@ -229,7 +229,7 @@ class TestGitHubConflictDetector:
 
     def test_get_last_sync_time_fallback_to_updated(self, detector, sample_issue):
         """Test falling back to issue.updated for sync time."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sample_issue.github_sync_metadata = None
         sample_issue.updated = now
 
@@ -257,7 +257,7 @@ class TestGitHubConflictDetector:
     )
     def test_is_local_modified_after_sync(self, detector, updated, sync_time, expected):
         """Test checking if local issue was modified after sync."""
-        base_time = datetime.now()
+        base_time = datetime.now(UTC)
 
         if updated == "now":
             issue_updated = base_time
@@ -364,7 +364,7 @@ class TestGitHubConflictDetector:
 
     def test_conflict_detection_workflow(self, detector, sample_issue):
         """Test complete conflict detection workflow."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sync_time = now - timedelta(hours=1)
         github_update = now + timedelta(minutes=30)
 
@@ -421,7 +421,7 @@ class TestGitHubConflictDetector:
         self, detector, sample_issue
     ):
         """Test conflict detection with complete sync metadata."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         sample_issue.github_sync_metadata = {
             "sync_timestamp": now - timedelta(hours=1),
             "sync_count": 5,

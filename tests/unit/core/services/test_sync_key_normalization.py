@@ -5,7 +5,7 @@ using the Issue.remote_ids field, enabling proper matching between local and
 remote issues even when they use different ID formats.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from roadmap.common.constants import Status
@@ -44,8 +44,8 @@ def dict_to_sync_issue(remote_id: int | str, issue_dict: dict[str, Any]) -> Sync
         assignee=issue_dict.get("assignee"),
         milestone=issue_dict.get("milestone"),
         labels=issue_dict.get("labels", []),
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         backend_name="github",
         backend_id=remote_id,
         remote_ids={"github": remote_id},
@@ -267,7 +267,7 @@ class TestSyncKeyNormalization:
             assignee=None,
             milestone=None,
             labels=[],
-            updated_at=datetime.now(),
+            updated_at=datetime.now(UTC),
         )
 
         # Analyze - should recognize these as the same issue
@@ -320,7 +320,7 @@ class TestSyncKeyNormalization:
                 assignee=None,
                 milestone=None,
                 labels=[],
-                updated_at=datetime.now(),
+                updated_at=datetime.now(UTC),
             )
         }
 

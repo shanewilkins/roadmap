@@ -1,7 +1,7 @@
 """Sync state models for tracking local and remote state."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -114,4 +114,4 @@ class SyncState:
     def mark_synced(self) -> None:
         """Mark sync as complete."""
         self.sync_in_progress = False
-        self.last_sync_time = datetime.now()
+        self.last_sync_time = datetime.now(UTC)

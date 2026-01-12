@@ -8,7 +8,7 @@ Handles all business logic related to:
 - Aggregating milestone data
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.common.logging import get_logger
 from roadmap.infrastructure.core import RoadmapCore
@@ -30,7 +30,7 @@ class MilestoneFilterService:
             List of overdue milestones (past due date, status='open')
         """
         try:
-            now = datetime.now().replace(tzinfo=None)
+            now = datetime.now(UTC).replace(tzinfo=None)
             filtered = []
 
             for ms in milestones:
@@ -236,7 +236,7 @@ class MilestoneListService:
             return ("-", None)
 
         try:
-            now = datetime.now().replace(tzinfo=None)
+            now = datetime.now(UTC).replace(tzinfo=None)
             ms_due_date = (
                 milestone.due_date.replace(tzinfo=None)
                 if milestone.due_date.tzinfo

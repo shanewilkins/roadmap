@@ -1,6 +1,6 @@
 """Additional comprehensive tests for CommentService formatting and edge cases."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.core.domain import Comment
 from roadmap.core.services.comment_service import CommentService
@@ -230,8 +230,8 @@ class TestCommentServiceEdgeCases:
             issue_id="issue-1",
             author="   ",
             body="Valid body",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -244,8 +244,8 @@ class TestCommentServiceEdgeCases:
             issue_id="issue-1",
             author="author",
             body="   ",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -287,8 +287,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author1",
             body="Root",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=None,
         )
         reply1 = Comment(
@@ -296,8 +296,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author2",
             body="Reply 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=100,
         )
         reply2 = Comment(
@@ -305,8 +305,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author3",
             body="Reply 2",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=101,
         )
         reply3 = Comment(
@@ -314,8 +314,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author4",
             body="Reply 3",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=102,
         )
 
@@ -330,8 +330,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author1",
             body="Comment 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=None,
         )
         # Reply to non-existent comment
@@ -340,8 +340,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author2",
             body="Comment 2",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=999,  # Non-existent
         )
 
@@ -359,8 +359,8 @@ class TestCommentServiceCircularReferenceDetection:
                 issue_id="issue-1",
                 author=f"author{i}",
                 body=f"Comment {i}",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
                 in_reply_to=None,
             )
             comments.append(comment)
@@ -376,8 +376,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="valid_author",
             body="Valid body",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         invalid_author = Comment(
@@ -385,8 +385,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="",
             body="Valid body",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         invalid_body = Comment(
@@ -394,8 +394,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="valid_author",
             body="",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         errors = CommentService.validate_comment_thread(
@@ -411,8 +411,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author",
             body="Body",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=400,  # Replies to itself
         )
 
@@ -427,8 +427,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author1",
             body="Comment 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=None,
         )
         comment2 = Comment(
@@ -436,8 +436,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author2",
             body="Comment 2",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=502,  # Points to comment3
         )
         comment3 = Comment(
@@ -445,8 +445,8 @@ class TestCommentServiceCircularReferenceDetection:
             issue_id="issue-1",
             author="author3",
             body="Comment 3",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             in_reply_to=501,  # Points back to comment2 - cycle!
         )
 

@@ -1,6 +1,6 @@
 """Additional comprehensive tests for core roadmap functionality - targeting remaining uncovered areas."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -110,8 +110,11 @@ class TestRoadmapCoreAdvancedIssueOperations:
         [
             (
                 [
-                    ("Next Milestone", datetime.now() + timedelta(days=10)),
-                    ("Later Milestone", datetime.now() + timedelta(days=20)),
+                    ("Next Milestone", datetime.now(UTC) + timedelta(days=10)),
+                    (
+                        "Later Milestone",
+                        datetime.now(UTC) + timedelta(days=20),
+                    ),
                 ],
                 "Next Milestone",
             ),

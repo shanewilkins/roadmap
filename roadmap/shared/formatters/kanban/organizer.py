@@ -1,6 +1,6 @@
 """Kanban board organization."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.core.domain import Issue
 
@@ -16,7 +16,7 @@ class KanbanOrganizer:
         Returns:
             Dictionary with keys: overdue, blocked, in_progress, not_started, done
         """
-        now = datetime.now()
+        now = datetime.now(UTC)
 
         categories = {
             "overdue": [],

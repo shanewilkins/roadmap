@@ -1,6 +1,6 @@
 """Tests for sync report model and formatting."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 from roadmap.core.services.sync_report import IssueChange, SyncReport
@@ -156,9 +156,9 @@ class TestSyncReport:
 
     def test_timestamp_is_recent(self):
         """Test that timestamp is set to recent time."""
-        before = datetime.now()
+        before = datetime.now(UTC)
         report = SyncReport()
-        after = datetime.now()
+        after = datetime.now(UTC)
         assert before <= report.timestamp <= after
 
     def test_custom_timestamp(self):

@@ -1,6 +1,6 @@
 """Tests for optimized baseline builder with incremental updates."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -25,7 +25,7 @@ def builder(tmp_path):
 def mock_sync_state():
     """Create mock sync state."""
     return SyncState(
-        last_sync=datetime.now() - timedelta(hours=2),
+        last_sync=datetime.now(UTC) - timedelta(hours=2),
         backend="git",
         issues={
             "TASK-123": IssueBaseState(
@@ -276,7 +276,7 @@ class TestCachedBaselineState:
     def test_tracks_cache_metadata(self):
         """Should track cache metadata."""
         state = SyncState(
-            last_sync=datetime.now(),
+            last_sync=datetime.now(UTC),
             backend="git",
             issues={},
         )
@@ -295,7 +295,7 @@ class TestCachedBaselineState:
     def test_identifies_full_rebuild(self):
         """Should identify full rebuild."""
         state = SyncState(
-            last_sync=datetime.now(),
+            last_sync=datetime.now(UTC),
             backend="git",
             issues={},
         )
@@ -312,7 +312,7 @@ class TestCachedBaselineState:
     def test_identifies_incremental_update(self):
         """Should identify incremental update."""
         state = SyncState(
-            last_sync=datetime.now(),
+            last_sync=datetime.now(UTC),
             backend="git",
             issues={},
         )
@@ -329,7 +329,7 @@ class TestCachedBaselineState:
     def test_converts_to_dict_for_logging(self):
         """Should convert to dictionary for logging."""
         state = SyncState(
-            last_sync=datetime.now(),
+            last_sync=datetime.now(UTC),
             backend="git",
             issues={"TASK-1": Mock(), "TASK-2": Mock()},
         )

@@ -5,7 +5,7 @@ user resolution, milestone selection, and issue categorization.
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -59,7 +59,7 @@ class TestDailySummaryServiceMilestoneSelection:
     def test_get_upcoming_milestone_returns_open_milestone_with_due_date(self):
         """Test that open milestone with nearest due date is selected."""
         core = MagicMock()
-        today = datetime.now()
+        today = datetime.now(UTC)
 
         milestones = [
             Milestone(
@@ -102,7 +102,7 @@ class TestDailySummaryServiceMilestoneSelection:
     def test_get_upcoming_milestone_prefers_milestones_with_due_date(self):
         """Test that milestones with due dates are preferred over those without."""
         core = MagicMock()
-        today = datetime.now()
+        today = datetime.now(UTC)
 
         milestones = [
             Milestone(
@@ -161,7 +161,7 @@ class TestDailySummaryServiceIssueCategorization:
             status=Status.TODO,
             assignee="alice",
             priority=Priority.HIGH,
-            due_date=datetime.now() - timedelta(days=2),
+            due_date=datetime.now(UTC) - timedelta(days=2),
         )
         current_issue = Issue(
             id="TASK-2",
@@ -169,7 +169,7 @@ class TestDailySummaryServiceIssueCategorization:
             status=Status.TODO,
             assignee="alice",
             priority=Priority.HIGH,
-            due_date=datetime.now() + timedelta(days=2),
+            due_date=datetime.now(UTC) + timedelta(days=2),
         )
 
         service = DailySummaryService(MagicMock())
@@ -221,7 +221,7 @@ class TestDailySummaryServiceIssueCategorization:
 
     def test_categorize_issues_completed_today(self):
         """Test that today's completed issues are correctly categorized."""
-        today = datetime.now()
+        today = datetime.now(UTC)
         completed_today = Issue(
             id="TASK-1",
             title="Completed today",
@@ -281,7 +281,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         core = MagicMock()
         core.team.get_current_user.return_value = "alice"
 
-        today = datetime.now()
+        today = datetime.now(UTC)
         milestone = Milestone(
             name="v1.0",
             headline="First release",
@@ -314,7 +314,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         core = MagicMock()
         core.team.get_current_user.return_value = "alice"
 
-        today = datetime.now()
+        today = datetime.now(UTC)
         milestone = Milestone(
             name="v1.0",
             headline="First release",
@@ -334,7 +334,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         core = MagicMock()
         core.team.get_current_user.return_value = "alice"
 
-        today = datetime.now()
+        today = datetime.now(UTC)
         milestone = Milestone(
             name="v1.0",
             headline="First release",
@@ -354,7 +354,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         core = MagicMock()
         core.team.get_current_user.return_value = "alice"
 
-        today = datetime.now()
+        today = datetime.now(UTC)
         milestone = Milestone(
             name="v1.0",
             headline="First release",

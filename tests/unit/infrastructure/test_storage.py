@@ -4,6 +4,7 @@ Tests for storage infrastructure.
 
 import sqlite3
 import tempfile
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -414,7 +415,7 @@ class TestStateManagerFileSync:
             file_path="new/file.txt",
             content_hash="xyz789",
             file_size=2048,
-            last_modified=datetime.now(),
+            last_modified=datetime.now(UTC),
         )
 
         result = state_manager.get_file_sync_status("new/file.txt")
@@ -430,7 +431,7 @@ class TestStateManagerFileSync:
             file_path="existing/file.txt",
             content_hash="old_hash",
             file_size=1024,
-            last_modified=datetime.now(),
+            last_modified=datetime.now(UTC),
         )
 
         # Update the record
@@ -438,7 +439,7 @@ class TestStateManagerFileSync:
             file_path="existing/file.txt",
             content_hash="new_hash",
             file_size=2048,
-            last_modified=datetime.now(),
+            last_modified=datetime.now(UTC),
         )
 
         result = state_manager.get_file_sync_status("existing/file.txt")

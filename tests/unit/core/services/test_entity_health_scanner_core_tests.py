@@ -1,6 +1,6 @@
 """Tests for entity health scanner service."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -51,8 +51,8 @@ class TestEntityHealthScanner:
         milestone.name = "v1.0.0"
         milestone.content = "Test milestone"
         milestone.status = Status.TODO
-        milestone.created = datetime.now()
-        milestone.due_date = datetime.now() + timedelta(days=30)
+        milestone.created = datetime.now(UTC)
+        milestone.due_date = datetime.now(UTC) + timedelta(days=30)
         milestone.calculated_progress = 0
         return milestone
 
@@ -82,7 +82,7 @@ class TestEntityHealthScanner:
         """Test scanning a healthy issue."""
         mock_issue.status = Status.CLOSED
         mock_issue.progress_percentage = 100
-        mock_issue.actual_end_date = datetime.now()
+        mock_issue.actual_end_date = datetime.now(UTC)
 
         report = scanner.scan_issue(mock_issue)
 
@@ -186,7 +186,7 @@ class TestEntityHealthScanner:
     def test_scan_issue_inconsistent_status(self, scanner, mock_issue):
         """Test scanning issue with start date but TODO status."""
         mock_issue.status = Status.TODO
-        mock_issue.actual_start_date = datetime.now()
+        mock_issue.actual_start_date = datetime.now(UTC)
         report = scanner.scan_issue(mock_issue)
         found_issue = next(
             (i for i in report.issues if i.code == "inconsistent_status"), None
@@ -357,7 +357,7 @@ class TestEntityHealthScanner:
                         id="comment-1",
                         body="Test",
                         author="user",
-                        created_at=datetime.now(),
+                        created_at=datetime.now(UTC),
                         in_reply_to=None,
                     )
                 ],
@@ -371,7 +371,7 @@ class TestEntityHealthScanner:
                         id="comment-1",
                         body="",
                         author="user",
-                        created_at=datetime.now(),
+                        created_at=datetime.now(UTC),
                         in_reply_to=None,
                     )
                 ],
@@ -385,7 +385,7 @@ class TestEntityHealthScanner:
                         id="comment-1",
                         body="Test",
                         author="",
-                        created_at=datetime.now(),
+                        created_at=datetime.now(UTC),
                         in_reply_to=None,
                     )
                 ],
@@ -410,14 +410,14 @@ class TestEntityHealthScanner:
         comment1.id = "comment-1"
         comment1.body = "Test"
         comment1.author = "user"
-        comment1.created_at = datetime.now()
+        comment1.created_at = datetime.now(UTC)
         comment1.in_reply_to = None
 
         comment2 = MagicMock(spec=Comment)
         comment2.id = "comment-1"  # Duplicate ID
         comment2.body = "Test"
         comment2.author = "user"
-        comment2.created_at = datetime.now()
+        comment2.created_at = datetime.now(UTC)
         comment2.in_reply_to = None
 
         errors = EntityHealthScanner._validate_comment_thread([comment1, comment2])
@@ -429,14 +429,14 @@ class TestEntityHealthScanner:
         comment1.id = "comment-1"
         comment1.body = "Test 1"
         comment1.author = "user"
-        comment1.created_at = datetime.now()
+        comment1.created_at = datetime.now(UTC)
         comment1.in_reply_to = "comment-2"
 
         comment2 = MagicMock(spec=Comment)
         comment2.id = "comment-2"
         comment2.body = "Test 2"
         comment2.author = "user"
-        comment2.created_at = datetime.now()
+        comment2.created_at = datetime.now(UTC)
         comment2.in_reply_to = "comment-1"
 
         errors = EntityHealthScanner._validate_comment_thread([comment1, comment2])
@@ -448,7 +448,7 @@ class TestEntityHealthScanner:
         comment.id = "comment-1"
         comment.body = ""
         comment.author = "user"
-        comment.created_at = datetime.now()
+        comment.created_at = datetime.now(UTC)
         comment.in_reply_to = None
 
         mock_issue.comments = [comment]

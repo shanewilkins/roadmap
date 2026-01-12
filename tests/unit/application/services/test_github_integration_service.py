@@ -1,5 +1,6 @@
 """Tests for GitHubIntegrationService."""
 
+from datetime import UTC
 from unittest.mock import Mock, patch
 
 import pytest
@@ -163,7 +164,7 @@ class TestGitHubIntegrationService:
         from datetime import datetime
 
         service._team_members_cache = ["cached_user"]
-        service._cache_timestamp = datetime.now()
+        service._cache_timestamp = datetime.now(UTC)
 
         with patch.object(service, "get_team_members") as mock_get:
             result = service.get_cached_team_members()
@@ -260,7 +261,7 @@ class TestGitHubIntegrationService:
         from datetime import datetime
 
         service._team_members_cache = ["user1"]
-        service._cache_timestamp = datetime.now()
+        service._cache_timestamp = datetime.now(UTC)
 
         service.clear_cache()
         assert service._team_members_cache is None

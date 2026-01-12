@@ -1,7 +1,7 @@
 """Issue domain model."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
@@ -240,7 +240,7 @@ class Issue(BaseModel):
             return bool(actual_hours and actual_hours > self.estimated_hours)
 
         # Still in progress, check if it's taking longer than estimated
-        elapsed = datetime.now() - self.actual_start_date
+        elapsed = datetime.now(UTC) - self.actual_start_date
         elapsed_hours = elapsed.total_seconds() / 3600
         return elapsed_hours > self.estimated_hours
 

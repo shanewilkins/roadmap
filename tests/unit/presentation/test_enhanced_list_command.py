@@ -2,7 +2,7 @@
 
 import os
 import tempfile
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from click.testing import CliRunner
@@ -36,7 +36,7 @@ def temp_roadmap():
             core.move_issue_to_milestone(issue2.id, "Test Sprint")
             core.move_issue_to_milestone(issue3.id, "Test Sprint")
 
-            future_date = datetime.now() + timedelta(days=30)
+            future_date = datetime.now(UTC) + timedelta(days=30)
             future_milestone = Milestone(
                 name="Future Sprint",
                 headline="Future sprint",

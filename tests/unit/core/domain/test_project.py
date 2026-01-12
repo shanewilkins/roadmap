@@ -1,6 +1,6 @@
 """Tests for Project domain model."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -24,7 +24,7 @@ class TestProjectInitialization:
 
     def test_project_with_all_fields(self):
         """Test creating project with all fields."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         project = Project(
             id="proj001",
             name="Test Project",
@@ -232,7 +232,7 @@ class TestUpdateAutomaticFields:
 
     def test_update_automatic_fields_already_completed(self):
         """Test that actual_end_date is not reset if already set."""
-        end_date = datetime.now() - timedelta(days=10)
+        end_date = datetime.now(UTC) - timedelta(days=10)
         project = Project(
             name="Project", milestones=["v1.0.0"], actual_end_date=end_date
         )

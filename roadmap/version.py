@@ -6,7 +6,7 @@ checking, and automated version bumping with changelog integration.
 
 import re
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -304,7 +304,7 @@ class VersionManager:
         self, version: SemanticVersion, issues: list[Issue], milestones: list[Milestone]
     ) -> str:
         """Generate changelog entry for a version."""
-        date_str = datetime.now().strftime("%Y-%m-%d")
+        date_str = datetime.now(UTC).strftime("%Y-%m-%d")
         entry = f"\n## [{version}] - {date_str}\n\n"
 
         features, bugfixes, other = self._group_issues_by_type(issues)

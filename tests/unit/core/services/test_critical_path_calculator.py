@@ -1,6 +1,6 @@
 """Tests for critical path calculator."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -163,7 +163,7 @@ class TestCriticalPathCalculator:
 
         assert result.project_end_date is not None
         # Should be after now
-        assert result.project_end_date > datetime.now()
+        assert result.project_end_date > datetime.now(UTC)
 
     def test_find_blocking_issues(self, calculator, simple_issues):
         """Test finding issues that block a specific issue."""

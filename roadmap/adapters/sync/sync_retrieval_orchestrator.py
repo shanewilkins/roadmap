@@ -6,7 +6,7 @@ using git history and YAML sync_metadata instead of database state tables.
 Enforces explicit baseline creation during first sync via interactive selection.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -210,7 +210,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             # Create baseline from remote
             baseline = SyncState(
-                last_sync=datetime.now(),
+                last_sync=datetime.now(UTC),
                 backend=self.backend.__class__.__name__.lower(),
             )
 
@@ -227,7 +227,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         milestone=remote_issue.milestone,
                         headline=remote_issue.headline or "",
                         labels=remote_issue.labels or [],
-                        updated_at=datetime.now(),
+                        updated_at=datetime.now(UTC),
                     )
                     baseline.issues[issue_id] = baseline_state
                 except Exception as e:
@@ -504,7 +504,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         logger.info("creating_initial_baseline_from_local_state")
 
         baseline = SyncState(
-            last_sync=datetime.now(),
+            last_sync=datetime.now(UTC),
             backend=self.backend.__class__.__name__.lower(),
         )
 
@@ -581,7 +581,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     )
 
                 sync_state = SyncState(
-                    last_sync=datetime.now(timezone.utc),
+                    last_sync=datetime.now(UTC),
                     backend="github",
                     issues=issues,
                 )

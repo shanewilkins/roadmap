@@ -6,7 +6,7 @@ and data aggregation for display.
 """
 
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from roadmap.common.constants import MilestoneStatus, Status
@@ -92,13 +92,25 @@ class DailySummaryService:
         Returns:
             List of overdue issues
         """
-        return [
-            i
-            for i in issues
-            if i.due_date
-            and i.due_date.replace(tzinfo=None) < datetime.now()
-            and i.status != Status.CLOSED
-        ]
+        overdue = []
+        now = datetime.now(UTC)
+        for i in issues:
+            if not i.due_date or i.status == Status.CLOSED:
+                continue
+
+            due = i.due_date
+            if isinstance(due, datetime):
+                if due.tzinfo:
+                    due_aware = due.astimezone(UTC)
+                else:
+                    due_aware = due.replace(tzinfo=UTC)
+            else:
+                due_aware = datetime.fromisoformat(str(due)).replace(tzinfo=UTC)
+
+            if due_aware < now:
+                overdue.append(i)
+
+        return overdue
 
     def _get_blocked_issues(self, issues: list) -> list:
         """Get blocked issues.
@@ -135,7 +147,7 @@ class DailySummaryService:
         Returns:
             List of issues closed today
         """
-        today = datetime.now().date()
+        today = datetime.now(UTC).date()
         return [
             i
             for i in issues

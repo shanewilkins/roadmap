@@ -4,7 +4,7 @@ Builders provide a clean, readable way to create domain objects for testing.
 They support sensible defaults while allowing flexible customization.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from roadmap.common.constants import (
     IssueType,
@@ -386,7 +386,7 @@ class CommentBuilder:
 
     def __init__(self):
         """Initialize builder with sensible defaults."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         self._comment = Comment(
             id=1,
             issue_id="TEST-1",

@@ -3,7 +3,7 @@
 Tests cover backup selection, grouping, deletion, and cleanup operations.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -53,12 +53,12 @@ class TestCleanupBackups:
         backups = [
             {
                 "path": Path("/tmp/test1.backup.md"),
-                "mtime": datetime.now(),
+                "mtime": datetime.now(UTC),
                 "size": 1024,
             },
             {
                 "path": Path("/tmp/test2.backup.md"),
-                "mtime": datetime.now(),
+                "mtime": datetime.now(UTC),
                 "size": 2048,
             },
         ]
@@ -84,7 +84,7 @@ class TestCleanupBackups:
         backups = [
             {
                 "path": Path("/tmp/test1.backup.md"),
-                "mtime": datetime.now(),
+                "mtime": datetime.now(UTC),
                 "size": 1024,
             },
         ]
@@ -109,7 +109,7 @@ class TestCleanupBackups:
         backups = [
             {
                 "path": Path("/tmp/test.backup.md"),
-                "mtime": datetime.now(),
+                "mtime": datetime.now(UTC),
                 "size": 1024,
             },
         ]
@@ -178,7 +178,7 @@ class TestBackupCleanupIntegration:
         """Test complete cleanup workflow."""
         mock_exists.return_value = True
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         backup_files = [
             Path("backups/issue-123_v1.backup.md"),
             Path("backups/issue-123_v2.backup.md"),
@@ -208,7 +208,7 @@ class TestBackupCleanupIntegration:
         """Test cleanup with mixed success and failure."""
         mock_exists.return_value = True
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         backups = [
             {
                 "path": Path("/tmp/test1.backup.md"),

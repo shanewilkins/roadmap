@@ -3,7 +3,7 @@
 Tests cover backup selection, grouping, deletion, and cleanup operations.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -19,7 +19,7 @@ class TestBackupInfo:
 
     def test_backup_info_creation(self):
         """Test creating BackupInfo."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         backup: BackupInfo = {
             "path": Path("/tmp/test.backup.md"),
             "mtime": now,
@@ -116,7 +116,9 @@ class TestGroupBackupsByIssue:
     @patch("pathlib.Path.stat")
     def test_group_single_issue(self, mock_stat):
         """Test grouping backups for single issue."""
-        mock_stat.return_value = Mock(st_mtime=datetime.now().timestamp(), st_size=1024)
+        mock_stat.return_value = Mock(
+            st_mtime=datetime.now(UTC).timestamp(), st_size=1024
+        )
 
         backup_files = [
             Path("backups/issue-123_v1.backup.md"),
@@ -133,7 +135,9 @@ class TestGroupBackupsByIssue:
     @patch("pathlib.Path.stat")
     def test_group_multiple_issues(self, mock_stat):
         """Test grouping backups for multiple issues."""
-        mock_stat.return_value = Mock(st_mtime=datetime.now().timestamp(), st_size=1024)
+        mock_stat.return_value = Mock(
+            st_mtime=datetime.now(UTC).timestamp(), st_size=1024
+        )
 
         backup_files = [
             Path("backups/issue-123_v1.backup.md"),
@@ -158,7 +162,7 @@ class TestGroupBackupsByIssue:
     @patch("pathlib.Path.stat")
     def test_group_preserves_metadata(self, mock_stat):
         """Test that grouping preserves file metadata."""
-        mtime = datetime.now().timestamp()
+        mtime = datetime.now(UTC).timestamp()
         size = 2048
         mock_stat.return_value = Mock(st_mtime=mtime, st_size=size)
 
@@ -176,7 +180,7 @@ class TestShouldDeleteBackup:
 
     def test_delete_beyond_keep_count(self):
         """Test deletion when beyond keep count."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         backup: BackupInfo = {
             "path": Path("test.backup.md"),
             "mtime": now,
@@ -188,7 +192,7 @@ class TestShouldDeleteBackup:
 
     def test_keep_within_count(self):
         """Test preservation when within keep count."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         backup: BackupInfo = {
             "path": Path("test.backup.md"),
             "mtime": now,
@@ -200,13 +204,13 @@ class TestShouldDeleteBackup:
 
     def test_delete_older_than_cutoff(self):
         """Test deletion when older than cutoff date."""
-        old_date = datetime.now() - timedelta(days=30)
+        old_date = datetime.now(UTC) - timedelta(days=30)
         backup: BackupInfo = {
             "path": Path("test.backup.md"),
             "mtime": old_date,
             "size": 1024,
         }
-        cutoff = datetime.now() - timedelta(days=7)
+        cutoff = datetime.now(UTC) - timedelta(days=7)
 
         # Backup older than cutoff should be deleted
         assert (
@@ -215,13 +219,13 @@ class TestShouldDeleteBackup:
 
     def test_keep_newer_than_cutoff(self):
         """Test preservation when newer than cutoff date."""
-        new_date = datetime.now() - timedelta(days=2)
+        new_date = datetime.now(UTC) - timedelta(days=2)
         backup: BackupInfo = {
             "path": Path("test.backup.md"),
             "mtime": new_date,
             "size": 1024,
         }
-        cutoff = datetime.now() - timedelta(days=7)
+        cutoff = datetime.now(UTC) - timedelta(days=7)
 
         # Backup newer than cutoff should be kept
         assert (
@@ -230,13 +234,13 @@ class TestShouldDeleteBackup:
 
     def test_both_conditions_met(self):
         """Test deletion when both conditions are met."""
-        old_date = datetime.now() - timedelta(days=30)
+        old_date = datetime.now(UTC) - timedelta(days=30)
         backup: BackupInfo = {
             "path": Path("test.backup.md"),
             "mtime": old_date,
             "size": 1024,
         }
-        cutoff = datetime.now() - timedelta(days=7)
+        cutoff = datetime.now(UTC) - timedelta(days=7)
 
         # Beyond keep count AND older than cutoff
         assert BackupCleanupService._should_delete_backup(10, backup, 5, cutoff)
@@ -249,7 +253,7 @@ class TestSelectBackupsForDeletion:
     @patch("pathlib.Path.stat")
     def test_select_by_keep_count(self, mock_stat, mock_glob):
         """Test selection based on keep count."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         mock_stat.return_value = Mock(st_mtime=now.timestamp(), st_size=1024)
 
         backup_files = [
@@ -283,7 +287,7 @@ class TestSelectBackupsForDeletion:
     @patch("pathlib.Path.stat")
     def test_select_by_age(self, mock_stat, mock_glob):
         """Test selection based on age."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         old_date = now - timedelta(days=30)
 
         backup_files = [

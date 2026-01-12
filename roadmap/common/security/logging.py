@@ -1,6 +1,7 @@
 """Security event logging utilities."""
 
 import logging
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,7 @@ def log_security_event(event_type: str, details: dict[str, Any] | None = None) -
         # Add timestamp and event type to details
         log_data = {
             "event_type": event_type,
-            "timestamp": __import__("datetime").datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             **details,
         }
 

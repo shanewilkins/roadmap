@@ -8,7 +8,7 @@ Tests cover:
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -120,8 +120,11 @@ class TestRoadmapCoreAdvancedIssueOperations:
         [
             (
                 [
-                    ("Next Milestone", datetime.now() + timedelta(days=10)),
-                    ("Later Milestone", datetime.now() + timedelta(days=20)),
+                    ("Next Milestone", datetime.now(UTC) + timedelta(days=10)),
+                    (
+                        "Later Milestone",
+                        datetime.now(UTC) + timedelta(days=20),
+                    ),
                 ],
                 "Next Milestone",
             ),
@@ -420,7 +423,7 @@ class TestRoadmapCoreMilestoneOperations:
         milestone = core.milestones.create(
             name="Test Milestone",
             headline="Original description",
-            due_date=datetime.now() + timedelta(days=30),
+            due_date=datetime.now(UTC) + timedelta(days=30),
         )
         assert milestone is not None
 
@@ -443,7 +446,7 @@ class TestRoadmapCoreMilestoneOperations:
         milestone = core.milestones.create(
             name="Test Milestone",
             headline="Description",
-            due_date=datetime.now() + timedelta(days=30),
+            due_date=datetime.now(UTC) + timedelta(days=30),
         )
         assert milestone.due_date is not None
 

@@ -4,7 +4,7 @@ Tests verify that the optimized sync orchestrator correctly integrates
 baseline building, database caching, and progress tracking.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -152,7 +152,7 @@ class TestSyncCacheOrchestrator:
     def test_save_baseline_to_cache(self, cached_orchestrator):
         """Test saving baseline to cache."""
         baseline = SyncState(
-            last_sync=datetime.now(),
+            last_sync=datetime.now(UTC),
             backend="github",
             issues={},
         )
@@ -220,7 +220,7 @@ class TestOptimizedSyncIntegration:
 
         # Create baseline
         baseline = SyncState(
-            last_sync=datetime.now(),
+            last_sync=datetime.now(UTC),
             backend="github",
             issues={
                 "test-1": IssueBaseState(

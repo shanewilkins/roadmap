@@ -4,7 +4,7 @@ Tests the _load_baseline_state(), _apply_changes() report updates, and error han
 """
 
 import unittest
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
@@ -454,7 +454,7 @@ class TestSchemaValidation(unittest.TestCase):
         )
 
         sync_state = SyncState(
-            last_sync=datetime.utcnow(),
+            last_sync=datetime.now(UTC),
             backend="github",
         )
         sync_state.add_issue("issue-1", issue_state)
@@ -485,7 +485,7 @@ class TestSchemaValidation(unittest.TestCase):
 
         # Simulate save: convert to IssueBaseState
         state = SyncState(
-            last_sync=datetime.utcnow(),
+            last_sync=datetime.now(UTC),
             backend="github",
         )
         for issue_id, data in original_data.items():

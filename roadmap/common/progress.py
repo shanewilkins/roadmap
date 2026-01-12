@@ -7,7 +7,7 @@ the requirements from issue 515a927c.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from roadmap.common.constants import MilestoneStatus, RiskLevel
@@ -238,7 +238,7 @@ class ProgressCalculationEngine:
         Returns:
             Milestones completed per week, or None if insufficient data
         """
-        cutoff_date = datetime.now() - timedelta(weeks=window_weeks)
+        cutoff_date = datetime.now(UTC) - timedelta(weeks=window_weeks)
 
         # Count milestones completed in the time window
         completed_in_window = 0
@@ -278,12 +278,12 @@ class ProgressCalculationEngine:
 
         if not incomplete_milestones:
             # All milestones complete
-            return datetime.now()
+            return datetime.now(UTC)
 
         # Calculate weeks needed to complete remaining milestones
         weeks_needed = len(incomplete_milestones) / project.completion_velocity
 
-        return datetime.now() + timedelta(weeks=weeks_needed)
+        return datetime.now(UTC) + timedelta(weeks=weeks_needed)
 
 
 class ProgressEventSystem:

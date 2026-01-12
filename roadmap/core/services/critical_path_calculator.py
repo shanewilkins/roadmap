@@ -4,7 +4,7 @@ Calculates which issues are on the critical path and impact project timeline.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
@@ -161,8 +161,8 @@ class CriticalPathCalculator:
         # Calculate all start times
         for issue_id in nodes:
             start_time = calculate_start_time(issue_id)
-            nodes[issue_id].start_date = datetime.now() + timedelta(hours=start_time)
-            nodes[issue_id].end_date = datetime.now() + timedelta(
+            nodes[issue_id].start_date = datetime.now(UTC) + timedelta(hours=start_time)
+            nodes[issue_id].end_date = datetime.now(UTC) + timedelta(
                 hours=start_time + nodes[issue_id].duration_hours
             )
 
@@ -194,7 +194,7 @@ class CriticalPathCalculator:
             # If no clear leaf, use nodes with latest end dates
             leaf_nodes = sorted(
                 nodes.keys(),
-                key=lambda x: nodes[x].end_date or datetime.now(),
+                key=lambda x: nodes[x].end_date or datetime.now(UTC),
                 reverse=True,
             )[:1]
 
@@ -279,7 +279,7 @@ class CriticalPathCalculator:
 
         if critical_path:
             max_end_time = max(
-                (node.end_date or datetime.now()) for node in critical_path
+                (node.end_date or datetime.now(UTC)) for node in critical_path
             )
 
             for node_id, node in nodes.items():

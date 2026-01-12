@@ -3,7 +3,7 @@
 import json
 import os
 import shutil
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from roadmap.common.console import get_console
@@ -23,7 +23,7 @@ class InitializationLock:
             return False
         try:
             self.lock_path.write_text(
-                f"pid:{os.getpid()}\nstarted:{datetime.now().isoformat()}\n"
+                f"pid:{os.getpid()}\nstarted:{datetime.now(UTC).isoformat()}\n"
             )
             return True
         except Exception:

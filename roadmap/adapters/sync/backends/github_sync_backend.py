@@ -8,9 +8,10 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any, TypeVar
 
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
+from roadmap.adapters.sync.backends.github_backend_helpers import GitHubBackendHelpers
+from roadmap.adapters.sync.backends.github_client import GitHubClientWrapper
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces import (
     SyncConflict,
@@ -22,7 +23,18 @@ from roadmap.core.models.sync_models import (
     SyncProject,
 )
 from roadmap.core.services.github_conflict_detector import GitHubConflictDetector
-from roadmap.core.services.github_issue_client import GitHubIssueClient
+
+# Backwards compatibility: some tests and call sites patch or reference
+# `GitHubIssueClient` on this module. Keep a module-level name pointing to
+# the original implementation when available so `unittest.mock.patch` targets
+# remain valid.
+try:
+    # prefer importing the original client class when available
+    from roadmap.core.services.github_issue_client import (
+        GitHubIssueClient,  # type: ignore
+    )
+except Exception:
+    GitHubIssueClient = None  # type: ignore
 from roadmap.core.services.sync_metadata_service import SyncMetadataService
 from roadmap.infrastructure.core import RoadmapCore
 
@@ -65,8 +77,8 @@ class GitHubSyncBackend:
         # Initialize GitHub client if token is provided, otherwise defer to authenticate()
         token = config.get("token")
         self.github_client = self._safe_init(
-            lambda: GitHubIssueClient(token) if token else None,
-            "GitHubIssueClient",
+            lambda: GitHubClientWrapper(token) if token else None,
+            "GitHubClientWrapper",
         )
 
         # Initialize metadata service if available
@@ -92,6 +104,11 @@ class GitHubSyncBackend:
             and hasattr(core.db, "remote_links")
         ):
             self.remote_link_repo = core.db.remote_links
+
+        # Helper utilities extracted for mapping and local persistence
+        self._helpers = GitHubBackendHelpers(
+            core=self.core, remote_link_repo=self.remote_link_repo
+        )
 
     def _safe_init(self, factory: Callable[[], T], name: str) -> T | None:
         """Safely initialize a component, returning None on failure.
@@ -149,7 +166,7 @@ class GitHubSyncBackend:
             # Initialize client if not already done
             if self.github_client is None:
                 try:
-                    self.github_client = GitHubIssueClient(token)
+                    self.github_client = GitHubClientWrapper(token)
                 except (ImportError, TypeError) as e:
                     logger.error(
                         "github_client_init_failed",
@@ -511,52 +528,11 @@ class GitHubSyncBackend:
         Returns:
             SyncReport with pushed, conflicts, and errors.
         """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        # Delegate orchestration to helper class
+        from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
 
-        report = SyncReport()
-
-        if not local_issues:
-            return report
-
-        # Use thread pool for parallel pushing (max 5 concurrent API calls)
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            "[progress.percentage]{task.percentage:>3.1f}%",
-        ) as progress:
-            task = progress.add_task(
-                f"[cyan]📤 Pushing 0/{len(local_issues)} issues...",
-                total=len(local_issues),
-            )
-
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                # Submit all push tasks
-                futures = {
-                    executor.submit(self.push_issue, issue): issue
-                    for issue in local_issues
-                }
-
-                # Process results as they complete
-                for future in as_completed(futures):
-                    issue = futures[future]
-                    try:
-                        if future.result():
-                            report.pushed.append(issue.id)
-                            status = "✓"
-                        else:
-                            report.errors[issue.id] = "Failed to push issue"
-                            status = "✗"
-                    except Exception as e:
-                        report.errors[issue.id] = str(e)
-                        status = "✗"
-                    finally:
-                        progress.update(
-                            task,
-                            description=f"[cyan]📤 Pushing {len(report.pushed)}/{len(local_issues)} issues... {status} {issue.id[:8]}",
-                        )
-                        progress.advance(task)
-
-        return report
+        ops = GitHubSyncOps(self)
+        return ops.push_issues(local_issues)
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
         """Pull specified remote GitHub issues to local.
@@ -572,88 +548,10 @@ class GitHubSyncBackend:
             - Updates or creates local files as needed
             - Uses parallel execution with thread pool for performance
         """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
 
-        from structlog import get_logger
-
-        logger = get_logger()
-        report = SyncReport()
-
-        if not issue_ids:
-            return report
-
-        try:
-            logger.info(
-                "pull_issues_starting",
-                issue_count=len(issue_ids),
-            )
-
-            successful_pulls = []
-            failed_pulls = {}
-
-            # Use thread pool for parallel pulling (max 5 concurrent API calls)
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                "[progress.percentage]{task.percentage:>3.1f}%",
-            ) as progress:
-                task = progress.add_task(
-                    f"[magenta]📥 Pulling 0/{len(issue_ids)} issues...",
-                    total=len(issue_ids),
-                )
-
-                with ThreadPoolExecutor(max_workers=5) as executor:
-                    # Submit all pull tasks
-                    futures = {
-                        executor.submit(self.pull_issue, issue_id): issue_id
-                        for issue_id in issue_ids
-                    }
-
-                    # Process results as they complete
-                    for future in as_completed(futures):
-                        issue_id = futures[future]
-                        try:
-                            success = future.result()
-                            if success:
-                                successful_pulls.append(issue_id)
-                                status = "✓"
-                            else:
-                                failed_pulls[issue_id] = "Pull failed"
-                                status = "✗"
-                        except Exception as e:
-                            logger.warning(
-                                "pull_issue_exception",
-                                issue_id=issue_id,
-                                error=str(e),
-                            )
-                            failed_pulls[issue_id] = str(e)
-                            status = "✗"
-                        finally:
-                            progress.update(
-                                task,
-                                description=f"[magenta]📥 Pulling {len(successful_pulls)}/{len(issue_ids)} issues... {status} {issue_id}",
-                            )
-                            progress.advance(task)
-
-            report.pulled = successful_pulls
-            report.errors = failed_pulls
-
-            logger.info(
-                "pull_issues_complete",
-                successful=len(successful_pulls),
-                failed=len(failed_pulls),
-            )
-
-            return report
-
-        except Exception as e:
-            logger.error(
-                "pull_issues_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-            )
-            report.error = f"Failed to pull issues: {str(e)}"
-            return report
+        ops = GitHubSyncOps(self)
+        return ops.pull_issues(issue_ids)
 
     def pull_issue(self, issue_id: str) -> bool:
         """Pull a single remote GitHub issue to local.
@@ -747,62 +645,7 @@ class GitHubSyncBackend:
         Raises:
             ValueError: If conversion fails
         """
-        from datetime import datetime, timezone
-
-        from roadmap.core.domain.issue import (
-            Issue,
-            IssueType,
-            Priority,
-            Status,
-        )
-
-        # Map GitHub state to local Status
-        github_state = sync_issue.status or "open"
-        status_map = {"open": Status.TODO, "closed": Status.CLOSED}
-        status = status_map.get(github_state, Status.TODO)
-
-        # Default priority to medium (GitHub doesn't have priority in issues)
-        priority = Priority.MEDIUM
-
-        # Extract timestamps - sync_issue already has datetime objects
-        created = sync_issue.created_at or datetime.now(timezone.utc)
-        updated = sync_issue.updated_at or datetime.now(timezone.utc)
-
-        # Extract labels
-        labels = sync_issue.labels or []
-
-        # Extract assignee
-        assignee = sync_issue.assignee
-
-        # Extract milestone
-        milestone = sync_issue.milestone
-
-        # Get the headline
-        content = sync_issue.headline or ""
-
-        # Remote IDs mapping - ensure all values are str | int
-        if sync_issue.remote_ids:
-            remote_ids: dict[str, str | int] = sync_issue.remote_ids
-        else:
-            # Ensure backend_id is not None for the remote_ids dict
-            remote_ids = (
-                {"github": str(sync_issue.backend_id)} if sync_issue.backend_id else {}
-            )
-
-        return Issue(
-            id=issue_id,
-            title=sync_issue.title or "Untitled",
-            content=content,
-            status=status,
-            priority=priority,
-            issue_type=IssueType.FEATURE,  # Default to feature
-            labels=labels,
-            assignee=assignee,
-            milestone=milestone,
-            created=created,
-            updated=updated,
-            remote_ids=remote_ids,
-        )
+        return self._helpers._convert_sync_to_issue(issue_id, sync_issue)
 
     def _convert_github_to_issue(
         self, issue_id: str, remote_data: dict[str, Any]
@@ -819,91 +662,7 @@ class GitHubSyncBackend:
         Raises:
             ValueError: If conversion fails
         """
-        from datetime import timezone
-
-        from roadmap.core.domain.issue import (
-            Issue,
-            IssueType,
-            Priority,
-            Status,
-        )
-
-        # Map GitHub state to local Status
-        github_state = remote_data.get("state", "open")
-        status_map = {"open": Status.TODO, "closed": Status.CLOSED}
-        status = status_map.get(github_state, Status.TODO)
-
-        # Default priority to medium (GitHub doesn't have priority in issues)
-        priority = Priority.MEDIUM
-
-        # Extract timestamps
-        created_at_str = remote_data.get("created_at")
-        created = self._parse_timestamp(created_at_str) or datetime.now(timezone.utc)
-
-        updated_at_str = remote_data.get("updated_at")
-        updated = self._parse_timestamp(updated_at_str) or datetime.now(timezone.utc)
-
-        # Extract labels as list of label names
-        labels = []
-        if "labels" in remote_data:
-            # GitHub returns labels as list of dicts with 'name' key
-            labels_data = remote_data.get("labels", [])
-            if isinstance(labels_data, list):
-                labels = (
-                    [
-                        label["name"] if isinstance(label, dict) else str(label)
-                        for label in labels_data
-                    ]
-                    if labels_data
-                    else []
-                )
-
-        # Extract assignee (first assignee if multiple)
-        assignee = None
-        assignees = remote_data.get("assignees", [])
-        if assignees and isinstance(assignees, list):
-            first_assignee = assignees[0]
-            assignee = (
-                first_assignee.get("login")
-                if isinstance(first_assignee, dict)
-                else str(first_assignee)
-            )
-        elif "assignee" in remote_data and remote_data["assignee"]:
-            assignee_data = remote_data["assignee"]
-            assignee = (
-                assignee_data.get("login")
-                if isinstance(assignee_data, dict)
-                else str(assignee_data)
-            )
-
-        # Extract milestone
-        milestone = None
-        milestone_data = remote_data.get("milestone")
-        if milestone_data:
-            milestone = (
-                milestone_data.get("title")
-                if isinstance(milestone_data, dict)
-                else str(milestone_data)
-            )
-
-        # Create Issue object
-        issue = Issue(
-            id=issue_id,
-            title=remote_data.get("title", ""),
-            status=status,
-            priority=priority,
-            issue_type=IssueType.OTHER,  # GitHub doesn't have issue types
-            created=created,
-            updated=updated,
-            milestone=milestone,
-            assignee=assignee,
-            labels=labels,
-            content=remote_data.get("body") or "",  # Handle None body
-            # Don't set estimated_hours - GitHub doesn't have this
-            # Don't set due_date - GitHub doesn't have this in basic API
-        )
-
-        return issue
+        return self._helpers._convert_github_to_issue(issue_id, remote_data)
 
     def _parse_timestamp(self, timestamp_str: str | None) -> "datetime | None":
         """Parse ISO format timestamp string.
@@ -914,18 +673,7 @@ class GitHubSyncBackend:
         Returns:
             datetime object or None if parsing fails
         """
-        if not timestamp_str:
-            return None
-
-        try:
-            if isinstance(timestamp_str, str):
-                # Handle 'Z' timezone suffix
-                if timestamp_str.endswith("Z"):
-                    timestamp_str = timestamp_str[:-1] + "+00:00"
-                return datetime.fromisoformat(timestamp_str)
-            return timestamp_str  # Already a datetime
-        except (ValueError, AttributeError):
-            return None
+        return self._helpers._parse_timestamp(timestamp_str)
 
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Get available resolution strategies for a conflict.
@@ -994,45 +742,7 @@ class GitHubSyncBackend:
         Accepts either numeric or string GitHub IDs; comparison is done
         by normalizing both sides to string.
         """
-        matching_local_issue = None
-
-        # First priority: match by remote_ids["github"]
-        for local_issue in self.core.issues.list():
-            remote_github_id = (
-                local_issue.remote_ids.get("github") if local_issue.remote_ids else None
-            )
-            try:
-                if (
-                    remote_github_id
-                    and github_issue_number is not None
-                    and str(remote_github_id) == str(github_issue_number)
-                ):
-                    matching_local_issue = local_issue
-                    logger.debug(
-                        "github_pull_found_existing_by_github_number",
-                        github_number=github_issue_number,
-                        local_id=local_issue.id,
-                    )
-                    break
-            except Exception:
-                continue
-
-        # Second priority: match by title
-        if not matching_local_issue:
-            from roadmap.adapters.sync.services import SyncLinkingService
-
-            matching_local_issue = SyncLinkingService.find_duplicate_by_title(
-                title, "github", self.core
-            )
-            if matching_local_issue:
-                logger.debug(
-                    "github_pull_found_matching_by_title",
-                    github_number=github_issue_number,
-                    local_id=matching_local_issue.id,
-                    title=title,
-                )
-
-        return matching_local_issue
+        return self._helpers._find_matching_local_issue(title, github_issue_number)
 
     def _apply_or_create_local_issue(
         self,
@@ -1051,116 +761,9 @@ class GitHubSyncBackend:
             github_issue_number: numeric GitHub issue number if available
             remote_issue: original SyncIssue object from GitHub (used when creating)
         """
-        from roadmap.adapters.sync.services import (
-            IssuePersistenceService,
-            SyncLinkingService,
+        return self._helpers._apply_or_create_local_issue(
+            issue_id, matching_local_issue, updates, github_issue_number, remote_issue
         )
-
-        if matching_local_issue:
-            # Update existing issue
-            self.core.issues.update(matching_local_issue.id, **updates)
-
-            # Link in database and persist remote_ids
-            if github_issue_number is not None:
-                IssuePersistenceService.update_issue_with_remote_id(
-                    matching_local_issue, "github", github_issue_number
-                )
-                IssuePersistenceService.save_issue(matching_local_issue, self.core)
-                SyncLinkingService.link_issue_in_database(
-                    self.remote_link_repo,
-                    matching_local_issue.id,
-                    "github",
-                    github_issue_number,
-                )
-
-            logger.debug(
-                "github_pull_issue_updated",
-                github_number=github_issue_number,
-                local_id=matching_local_issue.id,
-            )
-
-        elif self.core.issues.get(issue_id):
-            # Update if it already exists with same ID
-            self.core.issues.update(issue_id, **updates)
-
-            # Link in database and persist remote_ids
-            if github_issue_number is not None:
-                local_issue = self.core.issues.get(issue_id)
-                if local_issue:
-                    IssuePersistenceService.update_issue_with_remote_id(
-                        local_issue, "github", github_issue_number
-                    )
-                    IssuePersistenceService.save_issue(local_issue, self.core)
-                    SyncLinkingService.link_issue_in_database(
-                        self.remote_link_repo, issue_id, "github", github_issue_number
-                    )
-
-            logger.debug("github_pull_issue_updated", issue_id=issue_id)
-
-        else:
-            # Create new issue
-            # Use provided SyncIssue to construct local Issue
-            if remote_issue is not None:
-                issue_obj = self._convert_sync_to_issue(issue_id, remote_issue)
-            else:
-                # Fallback: construct minimal Issue-like dict from updates
-                from roadmap.core.domain.issue import (
-                    Issue as DomainIssue,
-                )
-                from roadmap.core.domain.issue import (
-                    IssueType,
-                    Priority,
-                    Status,
-                )
-
-                issue_obj = DomainIssue(
-                    id=issue_id,
-                    title=updates.get("title") or "Untitled",
-                    content=updates.get("content") or "",
-                    status=updates.get("status") or Status.TODO,
-                    priority=Priority.MEDIUM,
-                    issue_type=IssueType.FEATURE,
-                    labels=updates.get("labels", []),
-                    assignee=updates.get("assignee"),
-                    milestone=updates.get("milestone"),
-                )
-
-            # Coerce values for repository create call to expected types/defaults
-            status_val = getattr(issue_obj, "status", None) or Status.TODO
-            priority_val = getattr(issue_obj, "priority", None) or Priority.MEDIUM
-            issue_type_val = getattr(issue_obj, "issue_type", None) or IssueType.FEATURE
-            labels_val = getattr(issue_obj, "labels", []) or []
-            assignee_val = getattr(issue_obj, "assignee", None)
-            milestone_val = getattr(issue_obj, "milestone", None)
-
-            created_issue = self.core.issues.create(
-                title=issue_obj.title,
-                status=status_val,
-                priority=priority_val,
-                assignee=assignee_val,
-                milestone=milestone_val,
-                issue_type=issue_type_val,
-                labels=labels_val,
-            )
-
-            # Link in database and persist remote_ids
-            if created_issue and github_issue_number is not None:
-                IssuePersistenceService.update_issue_with_remote_id(
-                    created_issue, "github", str(github_issue_number)
-                )
-                IssuePersistenceService.save_issue(created_issue, self.core)
-                SyncLinkingService.link_issue_in_database(
-                    self.remote_link_repo,
-                    created_issue.id,
-                    "github",
-                    github_issue_number,
-                )
-
-            logger.debug(
-                "github_pull_issue_created",
-                github_number=github_issue_number,
-                local_id=created_issue.id if created_issue else "unknown",
-            )
 
     def get_projects(self) -> dict[str, SyncProject]:
         """Fetch all projects from GitHub.
@@ -1181,19 +784,6 @@ class GitHubSyncBackend:
         Returns:
             SyncIssue instance
         """
-        issue_id = issue_dict.get("id", issue_dict.get("number", ""))
-        return SyncIssue(
-            id=str(issue_id),
-            title=issue_dict.get("title", ""),
-            status=issue_dict.get("state", "open"),
-            headline=issue_dict.get("body", ""),
-            assignee=issue_dict.get("assignee"),
-            milestone=issue_dict.get("milestone"),
-            labels=issue_dict.get("labels", []),
-            created_at=issue_dict.get("created_at"),
-            updated_at=issue_dict.get("updated_at"),
-            backend_name="github",
-            backend_id=str(issue_dict.get("number", "")),
-            remote_ids={"github": str(issue_dict.get("number", ""))},
-            raw_response=issue_dict,
-        )
+        # Delegate to helpers for consistent conversion
+        helpers = GitHubBackendHelpers(core=None)
+        return helpers._dict_to_sync_issue(issue_dict)
