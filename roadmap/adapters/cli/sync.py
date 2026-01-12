@@ -381,6 +381,136 @@ def _reset_baseline(core, backend, verbose, console_inst) -> bool:
     return True
 
 
+def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console_inst):
+    """Initialize backend, orchestrator, and required services for sync command.
+
+    Returns tuple: (backend_type, sync_backend, orchestrator, pre_sync_baseline, pre_sync_issue_count, state_comparator, conflict_resolver)
+    """
+    import yaml
+
+    from roadmap.adapters.cli.services.sync_service import get_sync_backend
+    from roadmap.adapters.sync.sync_retrieval_orchestrator import (
+        SyncRetrievalOrchestrator,
+    )
+
+    # Local imports for services used by the helper
+    from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
+    from roadmap.core.services.sync_state_comparator import SyncStateComparator
+
+    # Load config
+    config_file = core.roadmap_dir / "config.yaml"
+    full_config: dict = {}
+    if config_file.exists():
+        with open(config_file) as f:
+            loaded = yaml.safe_load(f)
+            if isinstance(loaded, dict):
+                full_config = loaded
+
+    if backend:
+        backend_type = backend.lower()
+    else:
+        if full_config.get("github", {}).get("sync_backend"):
+            backend_type = str(full_config["github"]["sync_backend"]).lower()
+        else:
+            backend_type = "git"
+
+    console_inst.print(
+        f"🔄 Syncing with {backend_type.upper()} backend", style="bold cyan"
+    )
+
+    # Prepare config for backend
+    if backend_type == "github":
+        github_config = full_config.get("github", {})
+        from roadmap.infrastructure.security.credentials import CredentialManager
+
+        cred_manager = CredentialManager()  # type: ignore[call-arg]
+        token = cred_manager.get_token()
+
+        config = {
+            "owner": github_config.get("owner"),
+            "repo": github_config.get("repo"),
+            "token": token,
+        }
+    else:
+        config = {}
+
+    sync_backend = get_sync_backend(backend_type, core, config)  # type: ignore
+    if not sync_backend:
+        console_inst.print(
+            f"❌ Failed to initialize {backend_type} backend", style="bold red"
+        )
+        if backend_type == "git":
+            console_inst.print("   Ensure you're in a Git repository", style="yellow")
+        elif backend_type == "github":
+            console_inst.print(
+                "   GitHub config may be missing or incomplete", style="yellow"
+            )
+        sys.exit(1)
+
+    # Enforce baseline requirement - Phase 5 integration
+
+    retrieval_orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
+
+    if not retrieval_orchestrator.has_baseline():
+        console_inst.print("\n⚠️  Baseline required for first sync", style="bold yellow")
+        console_inst.print(
+            "   This establishes the agreed-upon starting state between local and remote."
+        )
+
+        from roadmap.core.services.baseline_selector import BaselineStrategy
+
+        if baseline_option:
+            baseline_lower = baseline_option.lower()
+            if baseline_lower == "local":
+                strategy = BaselineStrategy.LOCAL
+            elif baseline_lower == "interactive":
+                strategy = BaselineStrategy.INTERACTIVE
+            else:
+                strategy = BaselineStrategy.REMOTE
+        else:
+            strategy = BaselineStrategy.REMOTE
+
+        if not retrieval_orchestrator.ensure_baseline(strategy=strategy):
+            console_inst.print("❌ Baseline creation failed", style="bold red")
+            sys.exit(1)
+
+        console_inst.print("✅ Baseline created successfully", style="bold green")
+    else:
+        console_inst.print(
+            "✓ Using existing baseline for three-way merge", style="bold green"
+        )
+
+    # Create service instances
+    state_comparator = SyncStateComparator()
+    conflict_resolver = SyncConflictResolver()
+
+    # Create cached orchestrator with progress support
+    from roadmap.adapters.sync.sync_cache_orchestrator import (
+        SyncCacheOrchestrator,
+    )
+
+    orchestrator = SyncCacheOrchestrator(
+        core,
+        sync_backend,
+        state_comparator=state_comparator,
+        conflict_resolver=conflict_resolver,
+        show_progress=not dry_run,
+    )
+
+    pre_sync_baseline = orchestrator._get_baseline_with_optimization()
+    pre_sync_issue_count = len(pre_sync_baseline.issues) if pre_sync_baseline else 0
+
+    return (
+        backend_type,
+        sync_backend,
+        orchestrator,
+        pre_sync_baseline,
+        pre_sync_issue_count,
+        state_comparator,
+        conflict_resolver,
+    )
+
+
 def _clear_baseline(core, backend, console_inst) -> bool:
     """Handle the `--clear-baseline` flag to clear baseline without syncing."""
     import sqlite3
@@ -768,9 +898,6 @@ def sync(
         # Override backend selection
         roadmap sync --backend=github
     """
-    from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
-    from roadmap.core.services.sync_state_comparator import SyncStateComparator
 
     core = ctx.obj["core"]
     console_inst = get_console()
@@ -808,146 +935,15 @@ def sync(
             return
 
     try:
-        import yaml
-
-        # Load full config from file
-        config_file = core.roadmap_dir / "config.yaml"
-        full_config: dict = {}
-
-        if config_file.exists():
-            with open(config_file) as f:
-                loaded = yaml.safe_load(f)
-                if isinstance(loaded, dict):
-                    full_config = loaded
-
-        # Determine backend to use
-        if backend:
-            backend_type = backend.lower()
-        else:
-            # Check if backend is explicitly set in config
-            if full_config.get("github", {}).get("sync_backend"):
-                backend_type = str(full_config["github"]["sync_backend"]).lower()
-            else:
-                # Default to git backend for self-hosting
-                backend_type = "git"
-
-        console_inst.print(
-            f"🔄 Syncing with {backend_type.upper()} backend",
-            style="bold cyan",
-        )
-
-        # Prepare config for backend
-        if backend_type == "github":
-            # GitHub backend expects owner, repo, token at top level
-            github_config = full_config.get("github", {})
-
-            # Get token from secure credentials storage
-            from roadmap.infrastructure.security.credentials import CredentialManager
-
-            cred_manager = CredentialManager()  # type: ignore[call-arg]
-            token = cred_manager.get_token()
-
-            config = {
-                "owner": github_config.get("owner"),
-                "repo": github_config.get("repo"),
-                "token": token,
-            }
-        else:
-            # Git backend doesn't need config
-            config = {}
-
-        # Create backend
-        sync_backend = get_sync_backend(backend_type, core, config)  # type: ignore
-        if not sync_backend:
-            console_inst.print(
-                f"❌ Failed to initialize {backend_type} backend",
-                style="bold red",
-            )
-            if backend_type == "git":
-                console_inst.print(
-                    "   Ensure you're in a Git repository",
-                    style="yellow",
-                )
-            elif backend_type == "github":
-                console_inst.print(
-                    "   GitHub config may be missing or incomplete",
-                    style="yellow",
-                )
-            sys.exit(1)
-
-        # Enforce baseline requirement - Phase 5 integration
-        from roadmap.adapters.sync.sync_retrieval_orchestrator import (
-            SyncRetrievalOrchestrator,
-        )
-
-        retrieval_orchestrator = SyncRetrievalOrchestrator(
-            core,
+        (
+            backend_type,
             sync_backend,
-        )
-
-        # Check if baseline exists
-        if not retrieval_orchestrator.has_baseline():
-            console_inst.print(
-                "\n⚠️  Baseline required for first sync",
-                style="bold yellow",
-            )
-            console_inst.print(
-                "   This establishes the agreed-upon starting state between local and remote."
-            )
-
-            # Use baseline strategy from option or default to REMOTE
-            from roadmap.core.services.baseline_selector import BaselineStrategy
-
-            if baseline:
-                baseline_lower = baseline.lower()
-                if baseline_lower == "local":
-                    strategy = BaselineStrategy.LOCAL
-                elif baseline_lower == "interactive":
-                    strategy = BaselineStrategy.INTERACTIVE
-                else:  # remote
-                    strategy = BaselineStrategy.REMOTE
-            else:
-                # Default to REMOTE if not specified
-                strategy = BaselineStrategy.REMOTE
-
-            # Ensure baseline with selected strategy
-            if not retrieval_orchestrator.ensure_baseline(strategy=strategy):
-                console_inst.print(
-                    "❌ Baseline creation failed",
-                    style="bold red",
-                )
-                sys.exit(1)
-
-            console_inst.print(
-                "✅ Baseline created successfully",
-                style="bold green",
-            )
-        else:
-            console_inst.print(
-                "✓ Using existing baseline for three-way merge",
-                style="bold green",
-            )
-
-        # Create service instances
-        state_comparator = SyncStateComparator()
-        conflict_resolver = SyncConflictResolver()
-
-        # Create cached orchestrator with progress support
-        from roadmap.adapters.sync.sync_cache_orchestrator import (
-            SyncCacheOrchestrator,
-        )
-
-        orchestrator = SyncCacheOrchestrator(
-            core,
-            sync_backend,
-            state_comparator=state_comparator,
-            conflict_resolver=conflict_resolver,
-            show_progress=not dry_run,  # Show progress during real sync, not dry-run
-        )
-
-        # Capture baseline BEFORE sync
-        pre_sync_baseline = orchestrator._get_baseline_with_optimization()
-        pre_sync_issue_count = len(pre_sync_baseline.issues) if pre_sync_baseline else 0
+            orchestrator,
+            pre_sync_baseline,
+            pre_sync_issue_count,
+            state_comparator,
+            conflict_resolver,
+        ) = _init_sync_context(core, backend, baseline, dry_run, verbose, console_inst)
 
         # ANALYSIS PHASE: Run sync in dry-run mode first to show analysis
         console_inst.print(
