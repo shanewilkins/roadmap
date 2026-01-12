@@ -8,7 +8,6 @@ The backend is automatically detected from configuration.
 import sys
 
 import click
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
 from roadmap.adapters.cli.helpers import require_initialized
@@ -19,141 +18,20 @@ logger = get_logger(__name__)
 
 def _show_baseline(core, backend, verbose, console_inst) -> bool:
     """Handle the `--base` flag: show or create baseline state."""
-    import yaml
+    from roadmap.adapters.cli.sync_handlers import show_baseline
 
-    from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.adapters.sync.sync_retrieval_orchestrator import (
-        SyncRetrievalOrchestrator,
-    )
-
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_type = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_type = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_type = "git"
-
-    # Prepare config for backend
-    if backend_type == "github":
-        github_config = full_config.get("github", {})
-        from roadmap.infrastructure.security.credentials import CredentialManager
-
-        cred_manager = CredentialManager()  # type: ignore[call-arg]
-        token = cred_manager.get_token()
-
-        config_dict = {
-            "owner": github_config.get("owner"),
-            "repo": github_config.get("repo"),
-            "token": token,
-        }
-    else:
-        config_dict = {}
-
-    sync_backend = get_sync_backend(backend_type, core, config_dict)  # type: ignore
-    if not sync_backend:
-        console_inst.print("❌ Failed to initialize backend", style="bold red")
-        sys.exit(1)
-
-    # Create orchestrator to get baseline
-    orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
-    baseline_state = orchestrator.get_baseline_state()
-
-    if baseline_state:
-        console_inst.print("\n📋 Baseline State (from database):", style="bold cyan")
-        console_inst.print(f"   Last Sync: {baseline_state.last_sync}")
-        console_inst.print(f"   Backend: {baseline_state.backend}")
-        console_inst.print(f"   Issues in baseline: {len(baseline_state.issues)}")
-
-        if verbose and baseline_state.issues:
-            console_inst.print("\n   Issues:", style="bold")
-            for issue_id, issue_state in sorted(baseline_state.issues.items()):
-                console_inst.print(
-                    f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
-                )
-    else:
-        console_inst.print(
-            "ℹ️  No baseline state found. Creating initial baseline from local state...",
-            style="bold yellow",
-        )
-
-        # Create initial baseline from current local state
-        initial_baseline = orchestrator._create_initial_baseline()
-
-        if initial_baseline and len(initial_baseline.issues) > 0:
-            # Convert SyncState to baseline dict for saving
-            baseline_dict = {}
-            for issue_id, issue_state in initial_baseline.issues.items():
-                baseline_dict[issue_id] = {
-                    "status": issue_state.status,
-                    "assignee": issue_state.assignee,
-                    "milestone": issue_state.milestone,
-                    "headline": issue_state.headline,
-                    "content": issue_state.content,
-                    "labels": issue_state.labels,
-                }
-
-            try:
-                # Use the StateManager to save baseline (properly formatted)
-                result = core.db.save_sync_baseline(baseline_dict)
-
-                if result:
-                    console_inst.print(
-                        "\n✅ Initial baseline created and saved to database:",
-                        style="bold green",
-                    )
-                    console_inst.print(
-                        f"   Last Sync: {initial_baseline.last_sync}",
-                    )
-                    console_inst.print(
-                        f"   Backend: {initial_baseline.backend}",
-                    )
-                    console_inst.print(
-                        f"   Issues in baseline: {len(initial_baseline.issues)}",
-                    )
-
-                    if verbose and initial_baseline.issues:
-                        console_inst.print("\n   Issues:", style="bold")
-                        for issue_id, issue_state in sorted(
-                            initial_baseline.issues.items()
-                        ):
-                            console_inst.print(
-                                f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
-                            )
-                else:
-                    console_inst.print(
-                        "❌ Failed to save baseline to database",
-                        style="bold red",
-                    )
-                    sys.exit(1)
-
-            except Exception as e:
-                console_inst.print(
-                    f"❌ Failed to save baseline to database: {str(e)}",
-                    style="bold red",
-                )
-                sys.exit(1)
-        else:
-            console_inst.print(
-                "❌ No local issues found. Create some issues first with `roadmap create`.",
-                style="bold red",
-            )
-    return True
+    return show_baseline(core, backend, verbose, console_inst)
 
 
 def _reset_baseline(core, backend, verbose, console_inst) -> bool:
     """Handle the `--reset-baseline` flag: force recalculation of baseline."""
 
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
+    from roadmap.adapters.cli.sync_context import (
+        _clear_baseline_db,
+        _create_and_save_baseline,
+        _resolve_backend_and_init,
+    )
 
     console_inst.print(
         "⚠️  WARNING: Resetting baseline will:",
@@ -235,106 +113,12 @@ def _create_and_save_baseline(
 def _capture_and_save_post_sync_baseline(
     core, console_inst, pre_sync_issue_count, verbose
 ):
-    """Capture local issues and save them as the post-sync baseline.
+    """Capture local issues and save them as the post-sync baseline."""
+    from roadmap.adapters.cli.sync_handlers import capture_and_save_post_sync_baseline
 
-    This helper isolates the baseline capture / save control flow from
-    the main `sync()` command to reduce cyclomatic complexity.
-    """
-    try:
-        baseline_dict = {}
-
-        all_local_issues = core.issues.list_all_including_archived()
-
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console_inst,
-            transient=True,
-        ) as progress:
-            task = progress.add_task(
-                f"Building baseline... (0/{len(all_local_issues)})",
-                total=len(all_local_issues),
-            )
-
-            for idx, issue in enumerate(all_local_issues):
-                labels = issue.labels or []
-                sorted_labels = sorted(labels) if labels else []
-
-                baseline_dict[issue.id] = {
-                    "status": (
-                        issue.status.value
-                        if hasattr(issue.status, "value")
-                        else str(issue.status)
-                    ),
-                    "assignee": issue.assignee,
-                    "milestone": issue.milestone,
-                    "headline": issue.headline,
-                    "content": issue.content,
-                    "labels": sorted_labels,
-                }
-
-                progress.update(
-                    task,
-                    description=f"Building baseline... ({idx + 1}/{len(all_local_issues)})",
-                    advance=1,
-                )
-
-        post_sync_issue_count = len(baseline_dict)
-
-        try:
-            result = core.db.save_sync_baseline(baseline_dict)
-            if result:
-                console_inst.print(
-                    f"   After:  {post_sync_issue_count} issues in baseline"
-                )
-            if post_sync_issue_count != pre_sync_issue_count:
-                diff = post_sync_issue_count - pre_sync_issue_count
-                symbol = "+" if diff > 0 else ""
-                console_inst.print(
-                    f"   Change: {symbol}{diff} issue(s)",
-                    style="green" if diff > 0 else "yellow",
-                )
-            if verbose:
-                console_inst.print(
-                    "✅ Baseline updated with post-sync state", style="dim"
-                )
-        except OSError as e:
-            logger.error(
-                "post_sync_baseline_save_exception",
-                operation="save_post_sync_baseline",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=True,
-                suggested_action="check_disk_space",
-            )
-            if verbose:
-                console_inst.print(
-                    f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
-                )
-        except Exception as e:
-            logger.error(
-                "post_sync_baseline_save_exception",
-                operation="save_post_sync_baseline",
-                error_type=type(e).__name__,
-                error=str(e),
-                error_classification="sync_error",
-            )
-            if verbose:
-                console_inst.print(
-                    f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
-                )
-    except Exception as e:
-        logger.error(
-            "post_sync_baseline_capture_exception",
-            operation="capture_post_sync_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            error_classification="sync_error",
-        )
-        if verbose:
-            console_inst.print(
-                f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
-            )
+    return capture_and_save_post_sync_baseline(
+        core, console_inst, pre_sync_issue_count, verbose
+    )
 
 
 def _perform_apply_phase(
@@ -410,40 +194,9 @@ def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst
 
     Returns: tuple(plan, analysis_report)
     """
-    from roadmap.adapters.cli.sync_presenter import present_analysis
+    from roadmap.adapters.cli.sync_handlers import run_analysis_phase
 
-    console_inst.print("\n📊 Analyzing sync status...", style="bold cyan")
-
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console_inst,
-        transient=True,
-    ) as progress:
-        task = progress.add_task("Comparing local, remote, and baseline...", total=None)
-
-        plan, analysis_report = orchestrator.analyze_all_issues(
-            push_only=push, pull_only=pull
-        )
-
-        progress.update(task, description="Analysis complete")
-
-    console_inst.print("\n[bold cyan]📈 Sync Analysis[/bold cyan]")
-    console_inst.print(f"   ✓ Up-to-date: {analysis_report.issues_up_to_date}")
-    if push:
-        console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
-    elif pull:
-        console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
-    else:
-        console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
-        console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
-    console_inst.print(
-        f"   ✓ Potential Conflicts: {analysis_report.conflicts_detected}"
-    )
-
-    present_analysis(analysis_report, verbose=verbose)
-
-    return plan, analysis_report
+    return run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst)
 
 
 def _clear_baseline(core, backend, console_inst) -> bool:
