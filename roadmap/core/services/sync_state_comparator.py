@@ -569,7 +569,6 @@ class SyncStateComparator:
 
             if ts is None:
                 return None
-
             # Already a datetime?
             if isinstance(ts, datetime):
                 return ts
@@ -590,6 +589,171 @@ class SyncStateComparator:
                 error=str(e),
             )
             return None
+
+    def _build_issue_change(
+        self,
+        issue_id: str,
+        local: Issue | None,
+        remote: dict[str, Any] | None,
+        baseline: IssueBaseState | None = None,
+    ) -> IssueChange:
+        """Construct an IssueChange for a single issue using three-way context.
+
+        This centralizes the logic of computing local/remote changes, detecting
+        field-level conflicts, and setting conflict metadata for the analyzer.
+        """
+        # Resolve title from available sources
+        title = None
+        if local is not None:
+            title = getattr(local, "title", None)
+        if not title and remote is not None:
+            title = (
+                remote.get("title")
+                if isinstance(remote, dict)
+                else getattr(remote, "title", None)
+            )
+        if not title and baseline is not None:
+            title = getattr(baseline, "title", issue_id)
+
+        change = IssueChange(issue_id=issue_id, title=title or issue_id)
+        change.baseline_state = baseline
+        change.local_state = local
+
+        # Normalize remote state to a dict for downstream consumers
+        if isinstance(remote, dict) or remote is None:
+            remote_state = remote
+        else:
+            # Best-effort extraction of common fields from SyncIssue-like objects
+            remote_state = {
+                "id": getattr(remote, "id", None),
+                "title": getattr(remote, "title", None),
+                "status": getattr(remote, "status", None),
+                "assignee": getattr(remote, "assignee", None),
+                "milestone": getattr(remote, "milestone", None),
+                "description": getattr(remote, "headline", None)
+                or getattr(remote, "description", None),
+                "labels": list(getattr(remote, "labels", []) or []),
+                "updated_at": getattr(remote, "updated_at", None)
+                or getattr(remote, "updated", None),
+            }
+
+        change.remote_state = remote_state
+
+        # Compute changes relative to baseline
+        change.local_changes = (
+            self._compute_changes(baseline, local) if local is not None else {}
+        )
+        change.remote_changes = (
+            self._compute_changes_remote(baseline, remote_state)
+            if remote_state is not None
+            else {}
+        )
+
+        # If no baseline exists, prefer timestamp-based equality to avoid
+        # flagging superficial metadata differences as conflicts.
+        if baseline is None:
+            # Handle three cases for first-sync semantics:
+            # 1) local only (new local issue)
+            # 2) remote only (new remote issue)
+            # 3) both present (compare status for conflict detection)
+            if local is not None and remote_state is None:
+                # New local issue
+                change.local_changes = (
+                    self._compute_changes(baseline, local) if local is not None else {}
+                )
+                change.local_changes["_new"] = True
+                change.conflict_type = "local_only"
+                change.has_conflict = False
+            elif remote_state is not None and local is None:
+                # New remote issue
+                change.remote_changes = (
+                    self._compute_changes_remote(baseline, remote_state)
+                    if remote_state is not None
+                    else {}
+                )
+                change.remote_changes["_new"] = True
+                change.conflict_type = "remote_only"
+                change.has_conflict = False
+            elif local is not None and remote_state is not None:
+                # Both present: simplified rule - differing status => conflict
+                from roadmap.common.constants import Status
+
+                # Normalize remote status
+                remote_status = (
+                    remote_state.get("status")
+                    if isinstance(remote_state, dict)
+                    else None
+                )
+                try:
+                    if isinstance(remote_status, str):
+                        try:
+                            remote_status = Status(remote_status)
+                        except Exception:
+                            remote_status = Status(remote_status.lower())
+                except Exception:
+                    pass
+
+                local_status = getattr(local, "status", None)
+
+                # Compare status values (handle enums)
+                def status_value(s):
+                    if s is None:
+                        return None
+                    return s.value if hasattr(s, "value") else str(s).lower()
+
+                # Mark both sides as new for first sync
+                change.local_changes.setdefault("_new", True)
+                change.remote_changes.setdefault("_new", True)
+
+                if status_value(local_status) == status_value(remote_status):
+                    change.local_changes = {}
+                    change.remote_changes = {}
+                    change.conflict_type = "no_change"
+                    change.has_conflict = False
+                else:
+                    mutual_conflicts = self._detect_field_conflicts(local, remote_state)
+                    flagged = {}
+                    for c in mutual_conflicts:
+                        flagged[c.field_name] = {
+                            "local": c.local_value,
+                            "remote": c.remote_value,
+                        }
+                    change.flagged_conflicts = flagged
+                    change.conflict_type = "both_changed"
+                    change.has_conflict = True
+        else:
+            # Detect field-level conflicts (useful for detailed reporting)
+            if local is not None and remote_state is not None:
+                conflicts = self._detect_field_conflicts(local, remote_state)
+                if conflicts:
+                    flagged = {}
+                    for c in conflicts:
+                        flagged[c.field_name] = {
+                            "local": c.local_value,
+                            "remote": c.remote_value,
+                        }
+                    change.flagged_conflicts = flagged
+
+            # Determine conflict type and flags
+            if change.local_changes and change.remote_changes:
+                change.conflict_type = "both_changed"
+                change.has_conflict = True
+            elif change.local_changes:
+                change.conflict_type = "local_only"
+            elif change.remote_changes:
+                change.conflict_type = "remote_only"
+            else:
+                change.conflict_type = "no_change"
+
+        # Populate last_sync_time from baseline or remote timestamp
+        last_sync = None
+        if baseline is not None and getattr(baseline, "updated_at", None):
+            last_sync = baseline.updated_at
+        elif remote is not None:
+            last_sync = self._extract_timestamp(remote, "updated_at")
+        change.last_sync_time = last_sync
+
+        return change
 
     def analyze_three_way(
         self,
@@ -632,137 +796,18 @@ class SyncStateComparator:
 
         for issue_id in all_issue_ids:
             try:
-                local_issue = local.get(issue_id)
-                remote_issue = remote.get(issue_id)
-                baseline_state = baseline.get(issue_id)
-
-                # Get title (use local, then remote, then baseline, then default)
-                remote_title = None
-                if remote_issue:
-                    # remote_issue may be a SyncIssue object or a dict
-                    if isinstance(remote_issue, dict):
-                        remote_title = remote_issue.get("title")
-                    else:
-                        remote_title = getattr(remote_issue, "title", None)
-
-                title = (
-                    local_issue.title
-                    if local_issue
-                    else (
-                        remote_title
-                        if remote_title
-                        else (baseline_state.title if baseline_state else None)
-                    )
-                ) or "Unknown"
-
-                # Analyze local changes (baseline → local)
-                local_changes = {}
-                if baseline_state and local_issue:
-                    local_changes = self._compute_changes(
-                        baseline_state, local_issue, "local"
-                    )
-                elif not baseline_state and local_issue:
-                    # New issue (not in baseline)
-                    local_changes = {"_new": True}
-
-                # Analyze remote changes (baseline → remote)
-                remote_changes = {}
-                if baseline_state and remote_issue:
-                    remote_changes = self._compute_changes_remote(
-                        baseline_state, remote_issue
-                    )
-                elif not baseline_state and remote_issue:
-                    # New issue (not in baseline)
-                    remote_changes = {"_new": True}
-
-                # Determine conflict type
-                conflict_type = "no_change"
-
-                # Special case: first sync with both local and remote new
-                # Check if they're actually the same issue with same content
-                if (
-                    not baseline_state
-                    and local_issue
-                    and remote_issue
-                    and local_changes == {"_new": True}
-                    and remote_changes == {"_new": True}
-                ):
-                    # Both sides are new and we don't have a baseline
-                    # Treat as "no_change" only if they have identical content
-
-                    local_status = getattr(local_issue, "status", None)
-                    # remote_status may be attribute or dict entry
-                    if isinstance(remote_issue, dict):
-                        remote_status = remote_issue.get("status")
-                    else:
-                        remote_status = getattr(remote_issue, "status", None)
-
-                    # Normalize status values for comparison
-                    local_status_str = (
-                        local_status.value
-                        if hasattr(local_status, "value")
-                        else str(local_status).lower()
-                    )
-                    remote_status_str = str(remote_status).lower()
-
-                    local_title = getattr(local_issue, "title", "")
-                    remote_title = (
-                        remote_issue.get("title")
-                        if isinstance(remote_issue, dict)
-                        else getattr(remote_issue, "title", "")
-                    ) or ""
-
-                    # Only treat as no_change if status and title are identical
-                    # Otherwise, both_changed (real conflict)
-                    if (
-                        local_status_str == remote_status_str
-                        and local_title == remote_title
-                    ):
-                        conflict_type = "no_change"
-                        # Clear the _new markers since they're identical
-                        local_changes = {}
-                        remote_changes = {}
-                    else:
-                        # Different content = conflict
-                        conflict_type = "both_changed"
-                elif local_changes and remote_changes:
-                    conflict_type = "both_changed"
-                elif local_changes:
-                    conflict_type = "local_only"
-                elif remote_changes:
-                    conflict_type = "remote_only"
-
-                # Create IssueChange with three-way context
-                # Handle both Issue objects and dicts for remote_state
-                remote_state_dict: dict[str, Any] | None = None
-                if remote_issue:
-                    to_dict = getattr(remote_issue, "to_dict", None)
-                    if callable(to_dict):
-                        result = to_dict()
-                        if isinstance(result, dict):
-                            remote_state_dict = result
-                    elif isinstance(remote_issue, dict):
-                        remote_state_dict = remote_issue
-
-                issue_change = IssueChange(
-                    issue_id=issue_id,
-                    title=title,
-                    baseline_state=baseline_state,
-                    local_state=local_issue,
-                    remote_state=remote_state_dict,
-                    local_changes=local_changes,
-                    remote_changes=remote_changes,
-                    conflict_type=conflict_type,
-                    has_conflict=(conflict_type == "both_changed"),
+                change = self._build_issue_change(
+                    issue_id,
+                    local.get(issue_id),
+                    remote.get(issue_id),
+                    baseline.get(issue_id) if baseline else None,
                 )
-
-                changes.append(issue_change)
+                changes.append(change)
                 self.logger.debug(
                     "three_way_analysis_complete",
                     issue_id=issue_id,
-                    conflict_type=conflict_type,
+                    conflict_type=change.conflict_type,
                 )
-
             except Exception as e:
                 self.logger.error(
                     "three_way_analysis_error",
@@ -778,7 +823,7 @@ class SyncStateComparator:
 
     def _compute_changes(
         self,
-        baseline: IssueBaseState,
+        baseline: IssueBaseState | None,
         local: Issue,
         source: str = "local",
     ) -> dict[str, Any]:
@@ -837,7 +882,7 @@ class SyncStateComparator:
 
     def _compute_changes_remote(
         self,
-        baseline: IssueBaseState,
+        baseline: IssueBaseState | None,
         remote: SyncIssue | dict[str, Any],
     ) -> dict[str, Any]:
         """Compute what changed between baseline and remote issue.

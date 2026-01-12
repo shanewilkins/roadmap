@@ -511,6 +511,47 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
     )
 
 
+def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst):
+    """Run analysis phase using orchestrator and present results.
+
+    Returns: tuple(plan, analysis_report)
+    """
+    from roadmap.adapters.cli.sync_presenter import present_analysis
+
+    console_inst.print("\n📊 Analyzing sync status...", style="bold cyan")
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console_inst,
+        transient=True,
+    ) as progress:
+        task = progress.add_task("Comparing local, remote, and baseline...", total=None)
+
+        plan, analysis_report = orchestrator.analyze_all_issues(
+            push_only=push, pull_only=pull
+        )
+
+        progress.update(task, description="Analysis complete")
+
+    console_inst.print("\n[bold cyan]📈 Sync Analysis[/bold cyan]")
+    console_inst.print(f"   ✓ Up-to-date: {analysis_report.issues_up_to_date}")
+    if push:
+        console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
+    elif pull:
+        console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
+    else:
+        console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
+        console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
+    console_inst.print(
+        f"   ✓ Potential Conflicts: {analysis_report.conflicts_detected}"
+    )
+
+    present_analysis(analysis_report, verbose=verbose)
+
+    return plan, analysis_report
+
+
 def _clear_baseline(core, backend, console_inst) -> bool:
     """Handle the `--clear-baseline` flag to clear baseline without syncing."""
     import sqlite3
@@ -945,47 +986,12 @@ def sync(
             conflict_resolver,
         ) = _init_sync_context(core, backend, baseline, dry_run, verbose, console_inst)
 
-        # ANALYSIS PHASE: Run sync in dry-run mode first to show analysis
-        console_inst.print(
-            "\n📊 Analyzing sync status...",
-            style="bold cyan",
+        # ANALYSIS PHASE: Run sync analyzer and present results
+        from roadmap.adapters.cli.sync_presenter import confirm_apply
+
+        plan, analysis_report = _run_analysis_phase(
+            orchestrator, push, pull, dry_run, verbose, console_inst
         )
-
-        from roadmap.adapters.cli.sync_presenter import confirm_apply, present_analysis
-
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console_inst,
-            transient=True,
-        ) as progress:
-            task = progress.add_task(
-                "Comparing local, remote, and baseline...", total=None
-            )
-
-            # Use the pure analyzer for preview (no side-effects)
-            plan, analysis_report = orchestrator.analyze_all_issues(
-                push_only=push, pull_only=pull
-            )
-
-            progress.update(task, description="Analysis complete")
-
-        # Display sync analysis BEFORE applying changes
-        console_inst.print("\n[bold cyan]📈 Sync Analysis[/bold cyan]")
-        console_inst.print(f"   ✓ Up-to-date: {analysis_report.issues_up_to_date}")
-        if push:
-            console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
-        elif pull:
-            console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
-        else:
-            console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
-            console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
-        console_inst.print(
-            f"   ✓ Potential Conflicts: {analysis_report.conflicts_detected}"
-        )
-
-        # Present analysis to the user
-        present_analysis(analysis_report, verbose=verbose)
 
         # If dry-run, stop here and show what would be applied
         if dry_run:
