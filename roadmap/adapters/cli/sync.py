@@ -348,72 +348,27 @@ def _perform_apply_phase(
     pull,
     verbose,
 ):
-    """Run the actual apply phase: perform sync and display summary.
+    """Run the actual apply phase: perform sync and display summary."""
+    from roadmap.adapters.cli.sync_handlers import perform_apply_phase
 
-    Returns the sync report produced by the orchestrator.
-    """
-    console_inst.print(
-        "[bold cyan]Syncing with remote...[/bold cyan]", style="bold cyan"
+    return perform_apply_phase(
+        core,
+        orchestrator,
+        console_inst,
+        analysis_report,
+        force_local,
+        force_remote,
+        push,
+        pull,
+        verbose,
     )
-    report = orchestrator.sync_all_issues(
-        dry_run=False,
-        force_local=force_local,
-        force_remote=force_remote,
-        show_progress=True,
-        push_only=push,
-        pull_only=pull,
-    )
-
-    if report.error:
-        console_inst.print(f"\n❌ Sync error: {report.error}", style="bold red")
-        sys.exit(1)
-
-    # Display sync results with summary
-    console_inst.print("\n[bold cyan]✅ Sync Results[/bold cyan]")
-
-    # Show counts
-    pushed = analysis_report.issues_needs_push
-    pulled = analysis_report.issues_needs_pull
-
-    if pushed > 0:
-        console_inst.print(f"   📤 Pushed: {pushed}")
-    if pulled > 0:
-        console_inst.print(f"   📥 Pulled: {pulled}")
-
-    if pushed == 0 and pulled == 0:
-        console_inst.print("   ✓ Everything up-to-date")
-
-    console_inst.print()
-
-    # Explain the baseline concept for confused users
-    if analysis_report.issues_needs_pull > 0 or analysis_report.issues_needs_push > 0:
-        console_inst.print(
-            "[dim]💡 Tip: The baseline is the 'agreed-upon state' from the last sync.[/dim]"
-        )
-        console_inst.print(
-            "[dim]   After this sync completes, the baseline updates. The next sync should[/dim]"
-        )
-        console_inst.print(
-            "[dim]   show these same issues as 'up-to-date' (all three states match).[/dim]"
-        )
-
-    return report
 
 
 def _present_apply_intent(analysis_report, console_inst) -> bool:
     """Present whether there are changes to apply and return True if apply is needed."""
-    if (
-        analysis_report.issues_needs_push > 0
-        or analysis_report.issues_needs_pull > 0
-        or analysis_report.conflicts_detected > 0
-    ):
-        console_inst.print("\n✨ [bold cyan]Applied Changes[/bold cyan]")
-        return True
-    else:
-        console_inst.print(
-            "\n[bold green]✓ Already up-to-date, no changes needed[/bold green]"
-        )
-        return False
+    from roadmap.adapters.cli.sync_handlers import present_apply_intent
+
+    return present_apply_intent(analysis_report, console_inst)
 
 
 def _confirm_and_apply(
@@ -427,18 +382,10 @@ def _confirm_and_apply(
     pull,
     verbose,
 ):
-    """Ask for confirmation and run the apply phase if confirmed.
+    """Ask for confirmation and run the apply phase if confirmed."""
+    from roadmap.adapters.cli.sync_handlers import confirm_and_apply
 
-    Returns the apply `report` if applied, or None if cancelled.
-    """
-    from roadmap.adapters.cli.sync_presenter import confirm_apply
-
-    # Ask for confirmation before applying
-    if not confirm_apply():
-        console_inst.print("Aborting sync (user cancelled)")
-        return None
-
-    report = _perform_apply_phase(
+    return confirm_and_apply(
         core,
         orchestrator,
         console_inst,
@@ -450,21 +397,12 @@ def _confirm_and_apply(
         verbose,
     )
 
-    return report
-
 
 def _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose):
     """Finalize sync run: capture post-sync baseline and print completion messages."""
-    # For real sync: capture and display BEFORE/AFTER
-    console_inst.print("[bold]BASELINE CHANGES:[/bold]")
-    console_inst.print(f"   Before: {pre_sync_issue_count} issues in baseline")
+    from roadmap.adapters.cli.sync_handlers import finalize_sync
 
-    _capture_and_save_post_sync_baseline(
-        core, console_inst, pre_sync_issue_count, verbose
-    )
-
-    console_inst.print()
-    console_inst.print("✅ Sync completed successfully", style="bold green")
+    finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)
 
 
 def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst):
@@ -510,242 +448,23 @@ def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst
 
 def _clear_baseline(core, backend, console_inst) -> bool:
     """Handle the `--clear-baseline` flag to clear baseline without syncing."""
-    import sqlite3
+    from roadmap.adapters.cli.sync_handlers import clear_baseline
 
-    console_inst.print(
-        "⚠️  WARNING: Clearing baseline will:",
-        style="bold yellow",
-    )
-    console_inst.print("  • Delete all sync history")
-    console_inst.print("  • Next sync will rebuild baseline from scratch")
-    console_inst.print()
-
-    if not click.confirm("Continue with baseline clear?"):
-        console_inst.print("Cancelled.", style="dim")
-        return True
-
-    try:
-        db_path = core.roadmap_dir / ".roadmap" / "db" / "state.db"
-        if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM sync_base_state")
-            conn.commit()
-            conn.close()
-            console_inst.print("✅ Baseline cleared successfully", style="bold green")
-        else:
-            console_inst.print(
-                "ℹ️  No baseline file found (already empty)",
-                style="dim",
-            )
-    except OSError as e:
-        logger.error(
-            "baseline_clear_failed",
-            operation="clear_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-            is_recoverable=True,
-        )
-        console_inst.print(
-            f"❌ Failed to clear baseline: {str(e)}",
-            style="bold red",
-        )
-        sys.exit(1)
-    except Exception as e:
-        logger.error(
-            "baseline_clear_failed",
-            operation="clear_baseline",
-            error_type=type(e).__name__,
-            error=str(e),
-        )
-        console_inst.print(
-            f"❌ Failed to clear baseline: {str(e)}",
-            style="bold red",
-        )
-        sys.exit(1)
-    return True
+    return clear_baseline(core, backend, console_inst)
 
 
 def _show_conflicts(core, backend, verbose, console_inst) -> bool:
     """Handle the `--conflicts` flag to analyze and present conflicts."""
-    import yaml
+    from roadmap.adapters.cli.sync_handlers import show_conflicts
 
-    from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.adapters.sync.sync_retrieval_orchestrator import (
-        SyncRetrievalOrchestrator,
-    )
-    from roadmap.core.services.sync_conflict_resolver import SyncConflictResolver
-    from roadmap.core.services.sync_state_comparator import SyncStateComparator
-
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_type = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_type = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_type = "git"
-
-    # Prepare config for backend
-    if backend_type == "github":
-        github_config = full_config.get("github", {})
-        from roadmap.infrastructure.security.credentials import CredentialManager
-
-        cred_manager = CredentialManager()  # type: ignore[call-arg]
-        token = cred_manager.get_token()
-
-        config_dict = {
-            "owner": github_config.get("owner"),
-            "repo": github_config.get("repo"),
-            "token": token,
-        }
-    else:
-        config_dict = {}
-
-    sync_backend = get_sync_backend(backend_type, core, config_dict)  # type: ignore
-    if not sync_backend:
-        console_inst.print("❌ Failed to initialize backend", style="bold red")
-        sys.exit(1)
-
-    # Run conflict detection via dry-run
-    state_comparator = SyncStateComparator()
-    conflict_resolver = SyncConflictResolver()
-
-    orchestrator = SyncRetrievalOrchestrator(
-        core,
-        sync_backend,
-        state_comparator=state_comparator,
-        conflict_resolver=conflict_resolver,
-    )
-
-    console_inst.print(
-        "\n🔍 Analyzing conflicts between local, remote, and baseline...",
-        style="bold cyan",
-    )
-    report = orchestrator.sync_all_issues(
-        dry_run=True, force_local=False, force_remote=False
-    )
-
-    if report.conflicts_detected > 0:
-        console_inst.print(
-            f"\n⚠️  Found {report.conflicts_detected} conflict(s):",
-            style="bold yellow",
-        )
-
-        for change in report.changes:
-            if change.has_conflict:
-                console_inst.print(
-                    f"\n   📌 {change.issue_id}: {change.title}",
-                    style="bold",
-                )
-
-                if change.local_changes:
-                    console_inst.print(
-                        f"      Local changes: {change.local_changes}",
-                        style="yellow",
-                    )
-
-                if change.github_changes:
-                    console_inst.print(
-                        f"      Remote changes: {change.github_changes}",
-                        style="blue",
-                    )
-
-                if change.flagged_conflicts:
-                    console_inst.print(
-                        f"      Flagged conflicts: {change.flagged_conflicts}",
-                        style="bold red",
-                    )
-
-                if verbose:
-                    console_inst.print(
-                        f"      Full conflict info: {change.get_conflict_description()}",
-                        style="dim",
-                    )
-    else:
-        console_inst.print(
-            "✅ No conflicts detected. Local and remote are in sync.",
-            style="bold green",
-        )
-
-    return True
+    return show_conflicts(core, backend, verbose, console_inst)
 
 
 def _handle_link_unlink(core, backend, link, unlink, issue_id, console_inst) -> bool:
     """Handle `--link`/`--unlink` operations for manual remote ID management."""
-    import yaml
+    from roadmap.adapters.cli.sync_handlers import handle_link_unlink
 
-    # Validate required --issue-id
-    if not issue_id:
-        console_inst.print(
-            "❌ --issue-id is required when using --link or --unlink",
-            style="bold red",
-        )
-        sys.exit(1)
-
-    # Determine backend name
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_name = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_name = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_name = "git"
-
-    # Load the issue
-    issue = core.issues.get(issue_id)
-
-    if not issue:
-        console_inst.print(
-            f"❌ Issue not found: {issue_id}",
-            style="bold red",
-        )
-        sys.exit(1)
-
-    # Perform link or unlink operation
-    if link:
-        # Link the issue to a remote ID
-        if issue.remote_ids is None:
-            issue.remote_ids = {}
-        issue.remote_ids[backend_name] = link
-        core.issues.update(issue_id, remote_ids=issue.remote_ids)
-        console_inst.print(
-            f"✅ Linked issue {issue_id} to {backend_name}:{link}",
-            style="bold green",
-        )
-    elif unlink:
-        # Unlink the issue from remote
-        if issue.remote_ids and backend_name in issue.remote_ids:
-            del issue.remote_ids[backend_name]
-            core.issues.update(issue_id, remote_ids=issue.remote_ids)
-            console_inst.print(
-                f"✅ Unlinked issue {issue_id} from {backend_name}",
-                style="bold green",
-            )
-        else:
-            console_inst.print(
-                f"⚠️  Issue {issue_id} is not linked to {backend_name}",
-                style="bold yellow",
-            )
-
-    return True
+    return handle_link_unlink(core, backend, link, unlink, issue_id, console_inst)
 
 
 def _handle_pre_sync_actions(
@@ -761,31 +480,22 @@ def _handle_pre_sync_actions(
     verbose: bool,
     console_inst,
 ) -> bool:
-    """Handle pre-sync CLI actions that may short-circuit the main sync flow.
+    """Handle pre-sync CLI actions that may short-circuit the main sync flow."""
+    from roadmap.adapters.cli.sync_handlers import handle_pre_sync_actions
 
-    Returns True when an action was handled and the caller should exit.
-    """
-    # Show baseline
-    if base:
-        return _show_baseline(core, backend, verbose, console_inst)
-
-    # Reset baseline
-    if reset_baseline:
-        return _reset_baseline(core, backend, verbose, console_inst)
-
-    # Clear baseline
-    if clear_baseline:
-        return _clear_baseline(core, backend, console_inst)
-
-    # Show conflicts
-    if conflicts:
-        return _show_conflicts(core, backend, verbose, console_inst)
-
-    # Link/unlink operations
-    if link or unlink:
-        return _handle_link_unlink(core, backend, link, unlink, issue_id, console_inst)
-
-    return False
+    return handle_pre_sync_actions(
+        core,
+        backend,
+        base,
+        reset_baseline,
+        clear_baseline,
+        conflicts,
+        link,
+        unlink,
+        issue_id,
+        verbose,
+        console_inst,
+    )
 
 
 @click.command(name="sync")
