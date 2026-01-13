@@ -38,7 +38,7 @@ class TestHooksInstallCommand:
 
     def test_hooks_install_command_in_group(self, cli_runner):
         """Test that hooks install command is in git group."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.install_hooks.return_value = True
@@ -49,7 +49,7 @@ class TestHooksInstallCommand:
 
     def test_hooks_install_command_success(self, cli_runner):
         """Test hooks install command success."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.install_hooks.return_value = True
@@ -59,7 +59,7 @@ class TestHooksInstallCommand:
 
     def test_hooks_install_command_failure(self, cli_runner):
         """Test hooks install command failure handling."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.install_hooks.side_effect = Exception("Install failed")
@@ -74,7 +74,7 @@ class TestHooksUninstallCommand:
 
     def test_hooks_uninstall_command_in_group(self, cli_runner):
         """Test that hooks uninstall command is in git group."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.uninstall_hooks.return_value = True
@@ -85,7 +85,7 @@ class TestHooksUninstallCommand:
 
     def test_hooks_uninstall_command_success(self, cli_runner):
         """Test hooks uninstall command success."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.uninstall_hooks.return_value = True
@@ -95,7 +95,7 @@ class TestHooksUninstallCommand:
 
     def test_hooks_uninstall_command_confirmed(self, cli_runner):
         """Test hooks uninstall command with confirmation."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.uninstall_hooks.return_value = True
@@ -109,7 +109,7 @@ class TestHooksStatusCommand:
 
     def test_hooks_status_command_in_group(self, cli_runner):
         """Test that hooks status command is in git group."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.get_hooks_status.return_value = {
@@ -123,7 +123,7 @@ class TestHooksStatusCommand:
 
     def test_hooks_status_command_success(self, cli_runner):
         """Test hooks status command success."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.get_hooks_status.return_value = {
@@ -136,7 +136,7 @@ class TestHooksStatusCommand:
 
     def test_hooks_status_all_installed(self, cli_runner):
         """Test hooks status when all are installed."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.get_hooks_status.return_value = {
@@ -150,7 +150,7 @@ class TestHooksStatusCommand:
 
     def test_hooks_status_none_installed(self, cli_runner):
         """Test hooks status when none are installed."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.get_hooks_status.return_value = {
@@ -163,7 +163,7 @@ class TestHooksStatusCommand:
 
     def test_hooks_status_partial(self, cli_runner):
         """Test hooks status when some are installed."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_manager:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_manager:
             mock_instance = MagicMock()
             mock_manager.return_value = mock_instance
             mock_instance.get_hooks_status.return_value = {
@@ -180,7 +180,7 @@ class TestCommandIntegration:
 
     def test_setup_then_hooks_install(self, cli_runner):
         """Test setup followed by hooks install."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_hooks:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_hooks:
             hooks_instance = MagicMock()
             mock_hooks.return_value = hooks_instance
             hooks_instance.install_hooks.return_value = True
@@ -190,7 +190,7 @@ class TestCommandIntegration:
 
     def test_install_then_status(self, cli_runner):
         """Test hooks install followed by status check."""
-        with patch("roadmap.adapters.cli.git.commands.GitHookManager") as mock_hooks:
+        with patch("roadmap.adapters.git.git_hooks_manager.GitHookManager") as mock_hooks:
             hooks_instance = MagicMock()
             mock_hooks.return_value = hooks_instance
             hooks_instance.install_hooks.return_value = True

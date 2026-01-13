@@ -314,7 +314,7 @@ class TestEntityHealthScanner:
         with pytest.raises(RuntimeError, match="Core must be initialized"):
             scanner.scan_all()
 
-    @patch("roadmap.core.services.entity_health_scanner.logger")
+    @patch("roadmap.core.services.health.entity_health_scanner.logger")
     def test_scan_all_with_core(self, mock_logger, scanner):
         """Test scan_all with initialized core."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -328,7 +328,7 @@ class TestEntityHealthScanner:
         assert reports == []
         mock_core.issue_repository.list.assert_called_once()
 
-    @patch("roadmap.core.services.entity_health_scanner.logger")
+    @patch("roadmap.core.services.health.entity_health_scanner.logger")
     def test_scan_all_with_multiple_entities(
         self, mock_logger, scanner, mock_issue, mock_milestone, mock_project
     ):

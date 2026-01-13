@@ -15,7 +15,7 @@ from roadmap.core.services.health.backup_cleanup_service import (
 class TestCleanupBackups:
     """Test cleanup_backups main method."""
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch("pathlib.Path.exists")
     def test_cleanup_no_backups_dir(self, mock_exists, mock_logger):
         """Test cleanup when backups directory doesn't exist."""
@@ -29,7 +29,7 @@ class TestCleanupBackups:
         assert result.failed_count == 0
         mock_logger.info.assert_called()
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch.object(BackupCleanupService, "_select_backups_for_deletion")
     @patch("pathlib.Path.exists")
     def test_cleanup_no_files_to_delete(self, mock_exists, mock_select, mock_logger):
@@ -44,7 +44,7 @@ class TestCleanupBackups:
         assert result.deleted_count == 0
         mock_logger.info.assert_called()
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch.object(BackupCleanupService, "_select_backups_for_deletion")
     @patch("pathlib.Path.exists")
     def test_cleanup_dry_run(self, mock_exists, mock_select, mock_logger):
@@ -72,7 +72,7 @@ class TestCleanupBackups:
         assert result.total_freed_bytes == 3072
         mock_logger.info.assert_called()
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch("pathlib.Path.unlink")
     @patch.object(BackupCleanupService, "_select_backups_for_deletion")
     @patch("pathlib.Path.exists")
@@ -97,7 +97,7 @@ class TestCleanupBackups:
         assert result.deleted_count == 1
         mock_unlink.assert_called_once()
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch("pathlib.Path.unlink")
     @patch.object(BackupCleanupService, "_select_backups_for_deletion")
     @patch("pathlib.Path.exists")
@@ -124,7 +124,7 @@ class TestCleanupBackups:
         assert result.failed_count == 1
         mock_logger.warning.assert_called()
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch("pathlib.Path.unlink")
     @patch.object(BackupCleanupService, "_select_backups_for_deletion")
     @patch("pathlib.Path.exists")
@@ -141,7 +141,7 @@ class TestCleanupBackups:
 
         mock_select.assert_called_once_with(roadmap_dir / "backups", 20, None)
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch("pathlib.Path.unlink")
     @patch.object(BackupCleanupService, "_select_backups_for_deletion")
     @patch("pathlib.Path.exists")
@@ -162,7 +162,7 @@ class TestCleanupBackups:
 class TestBackupCleanupIntegration:
     """Integration tests for backup cleanup."""
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch("pathlib.Path.unlink")
     @patch("pathlib.Path.stat")
     @patch("pathlib.Path.glob")
@@ -194,7 +194,7 @@ class TestBackupCleanupIntegration:
         # Should delete 2 backups (keeping only 1)
         assert result.deleted_count == 2
 
-    @patch("roadmap.core.services.backup_cleanup_service.logger")
+    @patch("roadmap.core.services.health.backup_cleanup_service.logger")
     @patch("pathlib.Path.unlink")
     @patch.object(BackupCleanupService, "_select_backups_for_deletion")
     @patch("pathlib.Path.exists")

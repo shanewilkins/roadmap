@@ -76,7 +76,7 @@ class TestGetChangedIssueFiles:
     def test_returns_empty_set_when_no_changes(self, builder):
         """Should return empty set when no files changed."""
         with patch(
-            "roadmap.core.services.optimized_baseline_builder.get_changed_files_since_commit",
+            "roadmap.core.services.baseline.optimized_baseline_builder.get_changed_files_since_commit",
             return_value=set(),
         ):
             result = builder.get_changed_issue_files("HEAD~1")
@@ -90,7 +90,7 @@ class TestGetChangedIssueFiles:
             "src/main.py",
         }
         with patch(
-            "roadmap.core.services.optimized_baseline_builder.get_changed_files_since_commit",
+            "roadmap.core.services.baseline.optimized_baseline_builder.get_changed_files_since_commit",
             return_value=changed,
         ):
             result = builder.get_changed_issue_files("HEAD~1")
@@ -104,7 +104,7 @@ class TestGetChangedIssueFiles:
             "issues/backlog/TASK-125.md",
         }
         with patch(
-            "roadmap.core.services.optimized_baseline_builder.get_changed_files_since_commit",
+            "roadmap.core.services.baseline.optimized_baseline_builder.get_changed_files_since_commit",
             return_value=changed,
         ):
             result = builder.get_changed_issue_files(

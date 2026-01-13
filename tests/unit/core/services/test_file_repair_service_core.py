@@ -167,7 +167,7 @@ description: A test issue
                 assert len(result.fixed_files) == 1
                 assert len(result.errors) == 0
 
-    @patch("roadmap.core.services.file_repair_service.logger")
+    @patch("roadmap.core.services.health.file_repair_service.logger")
     def test_repair_logs_success(self, mock_logger):
         """Test that successful repairs are logged."""
         content = """---
@@ -184,7 +184,7 @@ title: Test
 
                 mock_logger.info.assert_called()
 
-    @patch("roadmap.core.services.file_repair_service.logger")
+    @patch("roadmap.core.services.health.file_repair_service.logger")
     def test_repair_logs_error(self, mock_logger):
         """Test that repair errors are logged."""
         with patch("pathlib.Path.read_text", return_value="no frontmatter"):

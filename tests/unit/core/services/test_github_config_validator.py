@@ -26,7 +26,7 @@ def mock_service():
 def validator(mock_config_path, mock_service):
     """Create a validator with mocked service."""
     with patch(
-        "roadmap.core.services.github_config_validator.GitHubIntegrationService",
+        "roadmap.core.services.github.github_config_validator.GitHubIntegrationService",
         return_value=mock_service,
     ):
         validator = GitHubConfigValidator(mock_config_path)
@@ -40,7 +40,7 @@ class TestGitHubConfigValidator:
     def test_init(self, mock_config_path, mock_service):
         """Test validator initialization."""
         with patch(
-            "roadmap.core.services.github_config_validator.GitHubIntegrationService",
+            "roadmap.core.services.github.github_config_validator.GitHubIntegrationService",
             return_value=mock_service,
         ):
             validator = GitHubConfigValidator(mock_config_path)
