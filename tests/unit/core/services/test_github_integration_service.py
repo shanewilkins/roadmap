@@ -45,7 +45,9 @@ class TestGitHubIntegrationService:
 
     def test_get_github_config_missing_config_file(self, service):
         """Test getting GitHub config when file doesn't exist."""
-        with patch("roadmap.core.services.github.github_integration_service.ConfigManager"):
+        with patch(
+            "roadmap.core.services.github.github_integration_service.ConfigManager"
+        ):
             result = service.get_github_config()
 
         # Should return None, None, None on error

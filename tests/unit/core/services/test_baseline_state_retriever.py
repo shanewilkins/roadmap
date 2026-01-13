@@ -81,9 +81,7 @@ Issue content here"""
             mock_get_file.side_effect = FileNotFound("File not found")
 
             issue_file = issues_dir / "issue1.md"
-            result = retriever.get_local_baseline(
-                issue_file, datetime.now(UTC)
-            )
+            result = retriever.get_local_baseline(issue_file, datetime.now(UTC))
 
             assert result is None
 

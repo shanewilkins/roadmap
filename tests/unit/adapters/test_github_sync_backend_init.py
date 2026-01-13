@@ -53,7 +53,7 @@ class TestGitHubSyncBackendInitialization:
         config = {"token": "test-token", "owner": "test-owner", "repo": "test-repo"}
 
         with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
         ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
 
@@ -70,7 +70,7 @@ class TestGitHubSyncBackendInitialization:
         }
 
         with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
         ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
 
@@ -87,7 +87,7 @@ class TestGitHubSyncBackendInitialization:
         config = {"token": "invalid-token"}
 
         with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
         ) as mock_client:
             # Simulate invalid token error
             mock_client.side_effect = Exception("Invalid token")
@@ -110,7 +110,7 @@ class TestGitHubSyncBackendOperations:
         config = {"token": "test-token", "owner": "test-owner", "repo": "test-repo"}
 
         with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
         ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
             backend.github_client = MagicMock()
@@ -172,7 +172,7 @@ class TestGitHubSyncBackendErrorHandling:
         }
 
         with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
         ) as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_issues.side_effect = ConnectionError("Network error")
@@ -199,7 +199,7 @@ class TestGitHubSyncBackendErrorHandling:
         }
 
         with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueClient"
+            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
         ):
             backend = GitHubSyncBackend(core=mock_core, config=config)
             backend.github_client = MagicMock()

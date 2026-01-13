@@ -71,7 +71,9 @@ class TestGitHubAuthSetup:
 
     def test_auth_empty_token_rejected(self):
         """Test empty token is rejected."""
-        with patch("roadmap.adapters.cli.git.commands.CredentialManager") as MockCred:
+        with patch(
+            "roadmap.adapters.cli.git.handlers.git_authentication_handler.CredentialManager"
+        ) as MockCred:
             mock_cred = MagicMock()
             MockCred.return_value = mock_cred
             mock_cred.get_token.return_value = None
@@ -96,7 +98,9 @@ class TestGitHubAuthSetup:
 
     def test_auth_token_validation_success(self):
         """Test successful token validation."""
-        with patch("roadmap.adapters.cli.git.commands.CredentialManager") as MockCred:
+        with patch(
+            "roadmap.adapters.cli.git.handlers.git_authentication_handler.CredentialManager"
+        ) as MockCred:
             mock_cred = MagicMock()
             MockCred.return_value = mock_cred
             mock_cred.get_token.return_value = None
@@ -113,7 +117,7 @@ class TestGitHubAuthSetup:
                     mock_prompt.return_value = "ghu_valid123"
 
                     with patch(
-                        "roadmap.adapters.cli.git.commands.GitHubClient"
+                        "roadmap.adapters.cli.git.handlers.git_authentication_handler.GitHubClient"
                     ) as MockClient:
                         mock_client = MagicMock()
                         MockClient.return_value = mock_client
@@ -134,7 +138,9 @@ class TestGitHubAuthSetup:
 
     def test_auth_token_validation_failure(self):
         """Test failed token validation."""
-        with patch("roadmap.adapters.cli.git.commands.CredentialManager") as MockCred:
+        with patch(
+            "roadmap.adapters.cli.git.handlers.git_authentication_handler.CredentialManager"
+        ) as MockCred:
             mock_cred = MagicMock()
             MockCred.return_value = mock_cred
             mock_cred.get_token.return_value = None
@@ -150,7 +156,7 @@ class TestGitHubAuthSetup:
                     mock_prompt.return_value = "ghu_invalid456"
 
                     with patch(
-                        "roadmap.adapters.cli.git.commands.GitHubClient"
+                        "roadmap.adapters.cli.git.handlers.git_authentication_handler.GitHubClient"
                     ) as MockClient:
                         mock_client = MagicMock()
                         MockClient.return_value = mock_client
@@ -170,7 +176,9 @@ class TestGitHubAuthSetup:
 
     def test_auth_token_storage_failure(self):
         """Test token validation succeeds but storage fails."""
-        with patch("roadmap.adapters.cli.git.commands.CredentialManager") as MockCred:
+        with patch(
+            "roadmap.adapters.cli.git.handlers.git_authentication_handler.CredentialManager"
+        ) as MockCred:
             mock_cred = MagicMock()
             MockCred.return_value = mock_cred
             mock_cred.get_token.return_value = None
@@ -187,7 +195,7 @@ class TestGitHubAuthSetup:
                     mock_prompt.return_value = "ghu_valid789"
 
                     with patch(
-                        "roadmap.adapters.cli.git.commands.GitHubClient"
+                        "roadmap.adapters.cli.git.handlers.git_authentication_handler.GitHubClient"
                     ) as MockClient:
                         mock_client = MagicMock()
                         MockClient.return_value = mock_client
