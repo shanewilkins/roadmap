@@ -39,7 +39,7 @@ class TestTimedOperationDecorator:
 
     def test_timed_operation_with_custom_name(self):
         """Test timed operation with custom operation name."""
-        with patch("roadmap.common.performance.logger"):
+        with patch("roadmap.common.services.performance.logger"):
 
             @timed_operation("custom_operation", record_metric=False)
             def func():
@@ -50,7 +50,7 @@ class TestTimedOperationDecorator:
 
     def test_timed_operation_logs_execution(self):
         """Test timed operation logs execution."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
 
             @timed_operation("test_op", record_metric=False)
             def func():
@@ -62,7 +62,7 @@ class TestTimedOperationDecorator:
 
     def test_timed_operation_logs_error(self):
         """Test timed operation logs errors."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
 
             @timed_operation("test_op", record_metric=False)
             def func():
@@ -106,7 +106,7 @@ class TestTimedOperationDecorator:
 
     def test_timed_operation_uses_default_name(self):
         """Test timed operation uses function name when not provided."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
 
             @timed_operation(record_metric=False)
             def my_function():
@@ -131,7 +131,7 @@ class TestTimedOperationDecorator:
     def test_timed_operation_with_record_metric_true(self):
         """Test timed operation records metric when enabled."""
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             mock_instance = MagicMock()
             mock_collector.return_value = mock_instance
@@ -147,7 +147,7 @@ class TestTimedOperationDecorator:
     def test_timed_operation_records_success_metric(self):
         """Test timed operation records successful execution metric."""
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             mock_instance = MagicMock()
             mock_collector.return_value = mock_instance
@@ -166,7 +166,7 @@ class TestTimedOperationDecorator:
     def test_timed_operation_records_failure_metric(self):
         """Test timed operation records failure metric."""
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             mock_instance = MagicMock()
             mock_collector.return_value = mock_instance
@@ -213,7 +213,7 @@ class TestAsyncTimedOperationDecorator:
     @pytest.mark.asyncio
     async def test_async_timed_operation_logs_execution(self):
         """Test async timed operation logs."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
 
             @async_timed_operation("async_op", record_metric=False)
             async def func():
@@ -226,7 +226,7 @@ class TestAsyncTimedOperationDecorator:
     @pytest.mark.asyncio
     async def test_async_timed_operation_logs_error(self):
         """Test async timed operation logs errors."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
 
             @async_timed_operation("async_op", record_metric=False)
             async def func():
@@ -263,7 +263,7 @@ class TestAsyncTimedOperationDecorator:
     async def test_async_timed_operation_records_metric(self):
         """Test async timed operation records metric."""
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             mock_instance = MagicMock()
             mock_collector.return_value = mock_instance
@@ -311,7 +311,7 @@ class TestOperationTimer:
 
     def test_operation_timer_logs_start(self):
         """Test OperationTimer logs operation start."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
             with OperationTimer("test_op", record_metric=False):
                 pass
 
@@ -319,7 +319,7 @@ class TestOperationTimer:
 
     def test_operation_timer_logs_completion(self):
         """Test OperationTimer logs completion."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
             with OperationTimer("test_op", record_metric=False):
                 pass
 
@@ -328,7 +328,7 @@ class TestOperationTimer:
 
     def test_operation_timer_logs_error(self):
         """Test OperationTimer logs errors."""
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
             try:
                 with OperationTimer("test_op", record_metric=False):
                     raise ValueError("error")
@@ -340,7 +340,7 @@ class TestOperationTimer:
     def test_operation_timer_records_metric(self):
         """Test OperationTimer records metric."""
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             mock_instance = MagicMock()
             mock_collector.return_value = mock_instance
@@ -410,7 +410,7 @@ class TestPerformanceIntegration:
     def test_multiple_operations_with_metrics(self):
         """Test recording multiple operations with metrics."""
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             mock_instance = MagicMock()
             mock_collector.return_value = mock_instance

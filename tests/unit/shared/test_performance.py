@@ -49,7 +49,7 @@ class TestTimedOperation:
         def my_function():
             return "result"
 
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
             result = my_function()
             assert result == "result"
             # Check that logger was called with function name
@@ -75,7 +75,7 @@ class TestTimedOperation:
         def error_func():
             raise RuntimeError("Error")
 
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
             with pytest.raises(RuntimeError):
                 error_func()
             # Check that error was logged
@@ -89,7 +89,7 @@ class TestTimedOperation:
             return "result"
 
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             result = no_metric_func()
             assert result == "result"
@@ -99,7 +99,7 @@ class TestTimedOperation:
     def test_operation_records_metric(self):
         """Test that metrics are recorded."""
         with patch(
-            "roadmap.common.performance.get_metrics_collector"
+            "roadmap.common.services.performance.get_metrics_collector"
         ) as mock_collector:
             mock_instance = MagicMock()
             mock_collector.return_value = mock_instance
@@ -143,7 +143,7 @@ class TestTimedOperation:
             time.sleep(0.01)
             return "result"
 
-        with patch("roadmap.common.performance.logger") as mock_logger:
+        with patch("roadmap.common.services.performance.logger") as mock_logger:
             result = timed_func()
             assert result == "result"
             # Check that timing was logged

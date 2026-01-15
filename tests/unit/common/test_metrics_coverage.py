@@ -289,7 +289,7 @@ class TestGlobalMetricsCollector:
     def test_get_metrics_collector_returns_same_instance(self):
         """Test that get_metrics_collector returns the same instance."""
         # This test verifies singleton behavior
-        import roadmap.common.metrics as metrics_module
+        import roadmap.common.services.metrics as metrics_module
 
         # Reset global instance for test
         metrics_module._global_collector = None
@@ -301,7 +301,7 @@ class TestGlobalMetricsCollector:
 
     def test_global_collector_can_record_metrics(self):
         """Test that global collector can record metrics."""
-        import roadmap.common.metrics as metrics_module
+        import roadmap.common.services.metrics as metrics_module
 
         # Reset global instance
         metrics_module._global_collector = None

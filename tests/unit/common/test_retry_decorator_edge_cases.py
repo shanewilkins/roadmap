@@ -215,7 +215,7 @@ class TestRetryDecorator:
         callback_mock3 = Mock(side_effect=RuntimeError("callback failed"))
         mock_func3 = Mock(side_effect=[ValueError("fail"), "success"])
 
-        with patch("roadmap.common.retry.logger"):
+        with patch("roadmap.common.services.retry.logger"):
 
             @retry(
                 max_attempts=3,

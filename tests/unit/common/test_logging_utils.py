@@ -23,7 +23,7 @@ class TestLogOperation:
         self, level, should_call_debug, should_call_info, should_call_warning
     ):
         """Test log_operation with different log levels."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation("test_op", level=level):
                 pass
 
@@ -33,7 +33,7 @@ class TestLogOperation:
 
     def test_log_operation_basic(self):
         """Test basic log_operation context manager."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation("test_operation") as metrics:
                 assert isinstance(metrics, dict)
 
@@ -42,7 +42,7 @@ class TestLogOperation:
 
     def test_log_operation_with_context(self):
         """Test log_operation with additional context."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation("update_issue", entity_id=123, status="open"):
                 pass
 
@@ -51,7 +51,7 @@ class TestLogOperation:
 
     def test_log_operation_timing(self):
         """Test log_operation captures execution time."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation("slow_operation"):
                 time.sleep(0.01)  # Sleep for 10ms
 
@@ -60,7 +60,7 @@ class TestLogOperation:
 
     def test_log_operation_with_metrics(self):
         """Test log_operation allows metrics to be added."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation("process_items") as metrics:
                 metrics["items_processed"] = 42
                 metrics["errors"] = 0
@@ -71,7 +71,7 @@ class TestLogOperation:
         """Test log_operation logs exceptions and re-raises."""
         test_error = ValueError("Test error")
 
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             mock_logger.info = MagicMock()
             with pytest.raises(ValueError) as exc_info:
                 with log_operation("failing_operation"):
@@ -83,7 +83,7 @@ class TestLogOperation:
 
     def test_log_operation_multiple_context_fields(self):
         """Test log_operation with multiple context fields."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation(
                 "complex_operation",
                 entity_id=123,
@@ -102,7 +102,7 @@ class TestLogOperation:
     )
     def test_log_operation_metrics_handling(self, should_add_metrics):
         """Test log_operation with and without metrics."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation("test_op") as metrics:
                 if should_add_metrics:
                     metrics["count"] = 1
@@ -114,7 +114,7 @@ class TestLogOperation:
 
     def test_log_operation_yields_dict(self):
         """Test that log_operation yields a dict."""
-        with patch("roadmap.common.logging_utils.logger"):
+        with patch("roadmap.common.services.logging_utils.logger"):
             with log_operation("test") as metrics:
                 assert isinstance(metrics, dict)
                 assert hasattr(metrics, "__setitem__")
@@ -124,7 +124,7 @@ class TestLogOperation:
         """Test that exceptions are re-raised after logging."""
         test_error = RuntimeError("Test error")
 
-        with patch("roadmap.common.logging_utils.logger"):
+        with patch("roadmap.common.services.logging_utils.logger"):
             with pytest.raises(RuntimeError) as exc_info:
                 with log_operation("failing_op"):
                     raise test_error
@@ -133,7 +133,7 @@ class TestLogOperation:
 
     def test_log_operation_with_zero_sleep(self):
         """Test log_operation with no sleep (minimal execution time)."""
-        with patch("roadmap.common.logging_utils.logger") as mock_logger:
+        with patch("roadmap.common.services.logging_utils.logger") as mock_logger:
             with log_operation("instant_operation"):
                 pass  # No sleep
 
@@ -141,7 +141,7 @@ class TestLogOperation:
 
     def test_log_operation_context_isolation(self):
         """Test that context is isolated between operations."""
-        with patch("roadmap.common.logging_utils.logger"):
+        with patch("roadmap.common.services.logging_utils.logger"):
             with log_operation("op1", field1="value1") as metrics1:
                 metrics1["count"] = 1
 
@@ -161,13 +161,13 @@ class TestLogOperation:
     )
     def test_log_operation_parametrized_combo(self, operation_name, level, context):
         """Test log_operation with various parameter combinations."""
-        with patch("roadmap.common.logging_utils.logger"):
+        with patch("roadmap.common.services.logging_utils.logger"):
             with log_operation(operation_name, level=level, **context) as metrics:
                 assert isinstance(metrics, dict)
 
     def test_log_operation_metrics_accumulation(self):
         """Test that metrics can be accumulated during operation."""
-        with patch("roadmap.common.logging_utils.logger"):
+        with patch("roadmap.common.services.logging_utils.logger"):
             with log_operation("process") as metrics:
                 for i in range(5):
                     metrics[f"item_{i}"] = i * 10
