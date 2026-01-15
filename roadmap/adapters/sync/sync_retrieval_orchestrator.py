@@ -44,20 +44,34 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         """
         super().__init__(*args, **kwargs)
 
-        # Use provided interfaces or create defaults
+        # Use provided interfaces or create simple implementations
         if persistence is None:
-            from roadmap.infrastructure.adapters.persistence_adapter import (
-                GitPersistenceAdapter,
+            from roadmap.adapters.persistence.git_history import (
+                get_file_at_timestamp,
             )
+            from roadmap.core.interfaces.persistence import PersistenceInterface
 
-            persistence = GitPersistenceAdapter(self.core.root_path)
+            class SimplePersistence(PersistenceInterface):
+                def get_file_at_timestamp(self, file_path, timestamp):
+                    return get_file_at_timestamp(file_path, timestamp)
 
+                def list_files_in_directory(self, directory):
+                    from pathlib import Path
+
+                    target_dir = Path(directory)
+                    if not target_dir.exists():
+                        return []
+                    return [
+                        f.name
+                        for f in target_dir.iterdir()
+                        if f.is_file() and f.suffix == ".md"
+                    ]
+
+            persistence = SimplePersistence()
+
+        # Parser parameter is accepted but not used - stubbed out
         if parser is None:
-            from roadmap.infrastructure.adapters.persistence_adapter import (
-                IssueParserAdapter,
-            )
-
-            parser = IssueParserAdapter()
+            parser = None  # BaselineStateRetriever doesn't use it anyway
 
         self.baseline_retriever = BaselineStateRetriever(
             self.core.issues_dir, persistence, parser

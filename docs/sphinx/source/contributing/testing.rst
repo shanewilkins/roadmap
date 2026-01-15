@@ -67,7 +67,7 @@ Writing Unit Tests
     # tests/unit/core/services/test_issue_service.py
     import pytest
     from roadmap.core.services import IssueService
-    from roadmap.domain.models import Issue, Project
+    from roadmap.core.domain import Issue, Project
 
     @pytest.fixture
     def project():

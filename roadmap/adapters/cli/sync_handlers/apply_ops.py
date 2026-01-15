@@ -1,4 +1,5 @@
 """Apply phase orchestration: apply, present, confirm, finalize."""
+
 from __future__ import annotations
 
 import sys
@@ -22,7 +23,9 @@ def perform_apply_phase(
     verbose: bool,
 ) -> Any:
     """Run the actual apply phase: perform sync and display summary."""
-    console_inst.print("[bold cyan]Syncing with remote...[/bold cyan]", style="bold cyan")
+    console_inst.print(
+        "[bold cyan]Syncing with remote...[/bold cyan]", style="bold cyan"
+    )
     report = orchestrator.sync_all_issues(
         dry_run=False,
         force_local=force_local,
@@ -75,7 +78,9 @@ def present_apply_intent(analysis_report: Any, console_inst: Any) -> bool:
         console_inst.print("\n✨ [bold cyan]Applied Changes[/bold cyan]")
         return True
     else:
-        console_inst.print("\n[bold green]✓ Already up-to-date, no changes needed[/bold green]")
+        console_inst.print(
+            "\n[bold green]✓ Already up-to-date, no changes needed[/bold green]"
+        )
         return False
 
 
@@ -123,7 +128,9 @@ def finalize_sync(
     console_inst.print("[bold]BASELINE CHANGES:[/bold]")
     console_inst.print(f"   Before: {pre_sync_issue_count} issues in baseline")
 
-    capture_and_save_post_sync_baseline(core, console_inst, pre_sync_issue_count, verbose)
+    capture_and_save_post_sync_baseline(
+        core, console_inst, pre_sync_issue_count, verbose
+    )
 
     console_inst.print()
     console_inst.print("✅ Sync completed successfully", style="bold green")

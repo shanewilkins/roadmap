@@ -4,7 +4,7 @@ Provides sensible defaults and builder pattern for creating SyncIssue objects
 in tests without dealing with dict construction.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from roadmap.core.models.sync_models import SyncIssue
@@ -63,7 +63,7 @@ class SyncIssueFactory:
         Returns:
             SyncIssue instance
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         thirty_days_ago = now - timedelta(days=30)
 
         return SyncIssue(
@@ -75,7 +75,9 @@ class SyncIssueFactory:
             milestone=milestone or SyncIssueFactory.DEFAULT_MILESTONE,
             labels=labels or [],
             backend_name=backend_name or SyncIssueFactory.DEFAULT_BACKEND,
-            backend_id=backend_id if backend_id is not None else SyncIssueFactory.DEFAULT_BACKEND_ID,
+            backend_id=backend_id
+            if backend_id is not None
+            else SyncIssueFactory.DEFAULT_BACKEND_ID,
             remote_ids=remote_ids or {},
             created_at=created_at or thirty_days_ago,
             updated_at=updated_at or now,
@@ -179,7 +181,7 @@ class SyncIssueFactory:
         Returns:
             Tuple of (local_version, remote_version) with conflicting changes
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         local_issue = SyncIssueFactory.create(
             id=base_id,

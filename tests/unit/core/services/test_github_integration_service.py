@@ -163,13 +163,12 @@ class TestGitHubIntegrationService:
         with patch.object(
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
-            with patch(
-                "roadmap.core.services.github.github_integration_service.GitHubClient"
-            ) as mock_client_class:
-                mock_client = Mock()
-                mock_client.get_team_members.return_value = ["user1", "user2", "user3"]
-                mock_client_class.return_value = mock_client
-
+            with patch.object(service, "_get_github_backend") as mock_backend:
+                mock_backend.return_value.list_repositories.return_value = [
+                    "user1",
+                    "user2",
+                    "user3",
+                ]
                 members = service.get_team_members()
 
         assert members == ["user1", "user2", "user3"]
@@ -179,13 +178,10 @@ class TestGitHubIntegrationService:
         with patch.object(
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
-            with patch(
-                "roadmap.core.services.github.github_integration_service.GitHubClient"
-            ) as mock_client_class:
-                mock_client = Mock()
-                mock_client.get_team_members.side_effect = Exception("API error")
-                mock_client_class.return_value = mock_client
-
+            with patch.object(service, "_get_github_backend") as mock_backend:
+                mock_backend.return_value.list_repositories.side_effect = Exception(
+                    "API error"
+                )
                 members = service.get_team_members()
 
         assert members == []
@@ -345,13 +341,11 @@ class TestGitHubIntegrationService:
             service, "get_github_config", return_value=("token", "owner", "repo")
         ):
             with patch.object(service, "get_cached_team_members", return_value=[]):
-                with patch(
-                    "roadmap.core.services.github.github_integration_service.GitHubClient"
-                ) as mock_client_class:
-                    mock_client = Mock()
-                    mock_client.validate_assignee.return_value = (True, "")
-                    mock_client_class.return_value = mock_client
-
+                with patch.object(service, "_get_github_backend") as mock_backend:
+                    mock_backend.return_value.validate_credentials.return_value = (
+                        True,
+                        "",
+                    )
                     is_valid, error = service._legacy_validate_assignee("valid_user")
 
         assert is_valid is True

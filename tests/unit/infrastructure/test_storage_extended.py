@@ -1,7 +1,7 @@
 """Extended tests for storage.py - file sync, hashing, and advanced operations."""
 
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -131,7 +131,7 @@ class TestStateManagerFileHashing:
             # Calculate hash and update sync status
             content_hash = parser.calculate_file_hash(file_path)
             file_size = file_path.stat().st_size
-            last_modified = datetime.now(timezone.utc)
+            last_modified = datetime.now(UTC)
 
             state_manager.update_file_sync_status(
                 str(file_path), content_hash, file_size, last_modified
@@ -154,7 +154,7 @@ class TestStateManagerFileHashing:
             # Sync initial state
             content_hash = parser.calculate_file_hash(file_path)
             state_manager.update_file_sync_status(
-                str(file_path), content_hash, 100, datetime.now(timezone.utc)
+                str(file_path), content_hash, 100, datetime.now(UTC)
             )
 
             # Modify file

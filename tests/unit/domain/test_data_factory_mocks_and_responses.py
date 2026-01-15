@@ -1,6 +1,6 @@
 """Test data factories for consistent and reusable test data generation."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import Mock
 
@@ -160,7 +160,7 @@ class TestDataFactory:
         commit.sha = kwargs.get("sha", "abc123def456")
         commit.message = kwargs.get("message", "Test commit message")
         commit.author = kwargs.get("author", "Test Author")
-        commit.timestamp = kwargs.get("timestamp", datetime.now(timezone.utc))
+        commit.timestamp = kwargs.get("timestamp", datetime.now(UTC))
         commit.files = kwargs.get("files", ["file1.py", "file2.py"])
         return commit
 

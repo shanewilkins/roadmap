@@ -13,10 +13,11 @@ from typing import Any
 
 from structlog import get_logger
 
+from roadmap.adapters.persistence.parser.issue import IssueParser
+from roadmap.core.interfaces.parsers import IssueParserInterface
 from roadmap.core.interfaces.persistence import (
     FileNotFound,
     GitHistoryError,
-    IssueParserInterface,
     PersistenceInterface,
 )
 from roadmap.core.models.sync_state import IssueBaseState
@@ -37,14 +38,14 @@ class BaselineStateRetriever:
         self,
         issues_dir: Path,
         persistence: PersistenceInterface,
-        parser: IssueParserInterface,
+        parser: "IssueParserInterface | None" = None,
     ):
         """Initialize with issues directory and persistence interface.
 
         Args:
             issues_dir: Path to issues directory
             persistence: Interface for git history access
-            parser: Interface for issue file parsing
+            parser: Interface for issue file parsing (optional, not currently used)
         """
         self.issues_dir = issues_dir
         self.persistence = persistence

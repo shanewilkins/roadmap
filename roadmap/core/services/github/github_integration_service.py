@@ -7,8 +7,8 @@ team member queries, assignee validation, and GitHub configuration management.
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from roadmap.adapters.github.github import GitHubClient
 from roadmap.common.configuration import ConfigManager
 from roadmap.common.errors import (
     ErrorHandler,
@@ -25,34 +25,59 @@ from roadmap.infrastructure.logging.error_logging import (
 from roadmap.infrastructure.security.credentials import get_credential_manager
 from roadmap.shared.instrumentation import traced
 
+if TYPE_CHECKING:
+    from roadmap.core.interfaces import GitHubBackendInterface
+
 logger = get_logger(__name__)
 
 
 class GitHubIntegrationService:
     """Manages GitHub integration and team member operations."""
 
-    def __init__(self, root_path: Path, config_file: Path):
+    def __init__(
+        self,
+        root_path: Path,
+        config_file: Path,
+        github_backend: "GitHubBackendInterface | None" = None,
+    ):
         """Initialize GitHub integration service.
 
         Args:
             root_path: Root project path
             config_file: Path to config.yaml file
+            github_backend: Optional GitHub backend interface. If not provided,
+                           will create GitHubBackendAdapter instance when needed.
         """
         self.root_path = root_path
         self.config_file = config_file
+        self._github_backend = github_backend
         self._team_members_cache: list[str] | None = None
         self._cache_timestamp: datetime | None = None
         self._last_canonical_assignee: str | None = None
 
-    @traced("get_github_config")
-    @safe_operation(OperationType.READ, "GitHubAPI", retryable=True)
-    def get_github_config(self) -> tuple[str | None, str | None, str | None]:
-        """Get GitHub configuration from config file and credentials.
+    def _get_github_backend(self) -> "GitHubBackendInterface":
+        """Lazy-load GitHub backend interface.
+
+        Returns:
+            GitHubBackendInterface implementation
+        """
+        if self._github_backend is None:
+            from roadmap.infrastructure.adapters import GitHubBackendAdapter
+
+            token, owner, repo = self._get_credentials()
+            if not token or not owner or not repo:
+                raise ValueError("GitHub credentials not configured")
+            self._github_backend = GitHubBackendAdapter(
+                token=token, owner=owner, repo=repo
+            )
+        return self._github_backend
+
+    def _get_credentials(self) -> tuple[str | None, str | None, str | None]:
+        """Get GitHub credentials from config and environment.
 
         Returns:
             Tuple of (token, owner, repo) or (None, None, None) if not configured
         """
-        logger.info("getting_github_config")
         try:
             config_manager = ConfigManager(self.config_file)
             config = config_manager.load()
@@ -70,6 +95,30 @@ class GitHubIntegrationService:
                 owner = getattr(github_config, "owner", None)
                 repo = getattr(github_config, "repo", None)
 
+            # Get token from credentials manager or environment
+            credential_manager = get_credential_manager()
+            token = credential_manager.get_token()
+
+            if not token:
+                token = os.getenv("GITHUB_TOKEN")
+
+            return token, owner, repo
+        except Exception as e:
+            logger.debug("credentials_retrieval_failed", error=str(e))
+            return None, None, None
+
+    @traced("get_github_config")
+    @safe_operation(OperationType.READ, "GitHubAPI", retryable=True)
+    def get_github_config(self) -> tuple[str | None, str | None, str | None]:
+        """Get GitHub configuration from config file and credentials.
+
+        Returns:
+            Tuple of (token, owner, repo) or (None, None, None) if not configured
+        """
+        logger.info("getting_github_config")
+        try:
+            token, owner, repo = self._get_credentials()
+
             if not owner or not repo:
                 log_validation_error(
                     ValueError("Missing GitHub owner or repo in config"),
@@ -78,13 +127,6 @@ class GitHubIntegrationService:
                     proposed_value={"owner": owner, "repo": repo},
                 )
                 return None, None, None
-
-            # Get token from credentials manager or environment
-            credential_manager = get_credential_manager()
-            token = credential_manager.get_token()
-
-            if not token:
-                token = os.getenv("GITHUB_TOKEN")
 
             return token, owner, repo
 
@@ -113,12 +155,16 @@ class GitHubIntegrationService:
                 logger.debug("github_not_configured")
                 return []
 
-            # Get team members
+            # Get team members via backend interface
             try:
-                client = GitHubClient(token=token, owner=owner, repo=repo)
-                members = client.get_team_members()  # type: ignore[attr-defined]
+                backend = self._get_github_backend()
+                members = (
+                    backend.list_repositories()
+                    if hasattr(backend, "list_repositories")
+                    else []
+                )
                 logger.debug("team_members_retrieved", count=len(members))
-                return members
+                return members if isinstance(members, list) else []
             except Exception as api_error:
                 log_external_service_error(
                     api_error,

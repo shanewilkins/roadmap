@@ -1,7 +1,7 @@
 """Tests for parser functionality."""
 
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -172,13 +172,11 @@ class TestMilestoneParser:
         assert milestone.headline == headline
         assert milestone.content == body_content
         assert milestone.status == MilestoneStatus(status)
-        assert milestone.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        assert milestone.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        assert milestone.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
 
         if expected_has_due_date:
-            assert milestone.due_date == datetime(
-                2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc
-            )
+            assert milestone.due_date == datetime(2024, 12, 31, 23, 59, 59, tzinfo=UTC)
         if expected_has_github_milestone:
             assert milestone.github_milestone == 456
 
@@ -189,8 +187,8 @@ class TestMilestoneParser:
             headline="First release",
             status=MilestoneStatus.OPEN,
             content="Milestone content",
-            created=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
-            updated=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            created=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
+            updated=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -211,10 +209,10 @@ class TestMilestoneParser:
             name="v1.5",
             headline="Patch release",
             status=MilestoneStatus.OPEN,
-            due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+            due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC),
             content="Patch release content",
-            created=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
-            updated=datetime(2024, 1, 2, 14, 30, 0, tzinfo=timezone.utc),
+            created=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
+            updated=datetime(2024, 1, 2, 14, 30, 0, tzinfo=UTC),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -235,10 +233,10 @@ class TestMilestoneParser:
             name="v1.5",
             headline="Patch release",
             status=MilestoneStatus.OPEN,
-            due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+            due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC),
             content="Patch release content",
-            created=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
-            updated=datetime(2024, 1, 2, 14, 30, 0, tzinfo=timezone.utc),
+            created=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
+            updated=datetime(2024, 1, 2, 14, 30, 0, tzinfo=UTC),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:

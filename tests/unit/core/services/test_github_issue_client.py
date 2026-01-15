@@ -59,9 +59,7 @@ class TestFetchIssue:
             "updated_at": "2025-01-15T12:00:00Z",
         }
 
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.fetch_issue.return_value = expected_data
             mock_client.return_value = mock_instance
@@ -76,9 +74,7 @@ class TestFetchIssue:
 
     def test_fetch_issue_not_found(self, client):
         """Test fetching a non-existent GitHub issue."""
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.fetch_issue.side_effect = GitHubAPIError("Issue not found")
             mock_client.return_value = mock_instance
@@ -88,9 +84,7 @@ class TestFetchIssue:
 
     def test_fetch_issue_invalid_number(self, client):
         """Test fetching with invalid issue number."""
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.fetch_issue.side_effect = ValueError(
                 "Issue number must be positive"
@@ -102,9 +96,7 @@ class TestFetchIssue:
 
     def test_fetch_issue_api_error(self, client):
         """Test handling of GitHub API errors."""
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.fetch_issue.side_effect = GitHubAPIError("Rate limited")
             mock_client.return_value = mock_instance
@@ -123,9 +115,7 @@ class TestValidateToken:
 
     def test_validate_token_success(self, client):
         """Test successful token validation."""
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.validate_github_token.return_value = (
                 True,
@@ -140,26 +130,22 @@ class TestValidateToken:
 
     def test_validate_token_invalid(self, client):
         """Test invalid token validation."""
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.validate_github_token.return_value = (
                 False,
-                "GitHub token is invalid or expired",
+                "Token authentication failed",
             )
             mock_client.return_value = mock_instance
 
             is_valid, message = client.validate_token()
 
             assert not is_valid
-            assert "invalid" in message.lower()
+            assert "authentication" in message.lower()
 
     def test_validate_token_api_error(self, client):
         """Test handling of API errors during validation."""
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.validate_github_token.side_effect = GitHubAPIError(
                 "Connection error"
@@ -372,9 +358,7 @@ class TestEdgeCases:
             "updated_at": "2025-01-01T00:00:00Z",
         }
 
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.fetch_issue.return_value = issue_data
             mock_client.return_value = mock_instance
@@ -400,9 +384,7 @@ class TestEdgeCases:
             "updated_at": "2025-01-01T00:00:00Z",
         }
 
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubClient"
-        ) as mock_client:
+        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
             mock_instance = MagicMock()
             mock_instance.fetch_issue.return_value = issue_data
             mock_client.return_value = mock_instance

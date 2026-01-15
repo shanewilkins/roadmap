@@ -1,4 +1,5 @@
 """Baseline state operations: show, reset, clear, capture."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -17,7 +18,9 @@ from roadmap.adapters.sync.sync_retrieval_orchestrator import (
 logger = get_logger(__name__)
 
 
-def show_baseline(core: Any, backend: str | None, verbose: bool, console_inst: Any) -> bool:
+def show_baseline(
+    core: Any, backend: str | None, verbose: bool, console_inst: Any
+) -> bool:
     """Handle the `--base` flag: show or create baseline state."""
     import yaml
 
@@ -137,7 +140,9 @@ def show_baseline(core: Any, backend: str | None, verbose: bool, console_inst: A
     return True
 
 
-def reset_baseline(core: Any, backend: str | None, verbose: bool, console_inst: Any) -> bool:
+def reset_baseline(
+    core: Any, backend: str | None, verbose: bool, console_inst: Any
+) -> bool:
     """Handle the `--reset-baseline` flag: force recalculation of baseline."""
     from roadmap.adapters.cli.sync_context import (
         _clear_baseline_db,
@@ -280,7 +285,9 @@ def capture_and_save_post_sync_baseline(
         try:
             result = core.db.save_sync_baseline(baseline_dict)
             if result:
-                console_inst.print(f"   After:  {post_sync_issue_count} issues in baseline")
+                console_inst.print(
+                    f"   After:  {post_sync_issue_count} issues in baseline"
+                )
             if post_sync_issue_count != pre_sync_issue_count:
                 diff = post_sync_issue_count - pre_sync_issue_count
                 symbol = "+" if diff > 0 else ""
@@ -289,7 +296,9 @@ def capture_and_save_post_sync_baseline(
                     style="green" if diff > 0 else "yellow",
                 )
             if verbose:
-                console_inst.print("✅ Baseline updated with post-sync state", style="dim")
+                console_inst.print(
+                    "✅ Baseline updated with post-sync state", style="dim"
+                )
         except OSError as e:
             logger.error(
                 "post_sync_baseline_save_exception",

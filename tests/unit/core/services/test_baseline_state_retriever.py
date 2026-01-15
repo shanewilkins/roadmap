@@ -10,12 +10,14 @@ Tests cover:
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.core.domain import Issue, IssueType, Priority, Status
+from roadmap.core.interfaces.parsers import IssueParserInterface
+from roadmap.core.interfaces.persistence import PersistenceInterface
 from roadmap.core.services.baseline.baseline_state_retriever import (
     BaselineRetrievalError,
     BaselineStateRetriever,
@@ -25,17 +27,28 @@ from roadmap.core.services.baseline.baseline_state_retriever import (
 class TestGetLocalBaseline:
     """Test local baseline retrieval from git history."""
 
-    @patch(
-        "roadmap.core.services.baseline.baseline_state_retriever.get_file_at_timestamp"
-    )
-    def test_get_local_baseline_success(self, mock_get_file):
-        """Test successfully retrieving local baseline."""
+    def _make_retriever(self, mock_persistence=None, mock_parser=None):
+        """Create a BaselineStateRetriever with mock dependencies."""
+        if mock_persistence is None:
+            mock_persistence = MagicMock(spec=PersistenceInterface)
+        if mock_parser is None:
+            mock_parser = MagicMock(spec=IssueParserInterface)
+
         with TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
+            return (
+                BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
+                mock_persistence,
+                mock_parser,
+                issues_dir,
+            )
 
-            # Create file content with metadata
-            issue_content = """---
+    def test_get_local_baseline_success(self):
+        """Test successfully retrieving local baseline."""
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+
+        # Create file content with metadata
+        issue_content = """---
 id: issue1
 title: Test Issue
 status: in-progress
@@ -52,230 +65,239 @@ updated: 2026-01-02T11:00:00+00:00
 
 Issue content here"""
 
-            mock_get_file.return_value = issue_content
+        mock_persistence.get_file_at_timestamp.return_value = issue_content
 
-            issue_file = issues_dir / "issue1.md"
-            last_synced = datetime(2026, 1, 2, 10, 0, 0, tzinfo=UTC)
+        # Mock parser to return parsed issue
+        mock_issue = MagicMock()
+        mock_issue.id = "issue1"
+        mock_issue.title = "Test Issue"
+        mock_issue.status = Status.IN_PROGRESS
+        mock_issue.assignee = "john@example.com"
+        mock_issue.milestone = "v1.0"
+        mock_issue.labels = ["bug", "urgent"]
+        mock_issue.headline = None
+        mock_issue.content = "Issue content here"
 
-            baseline = retriever.get_local_baseline(issue_file, last_synced)
+        mock_parser.parse_issue_file.return_value = mock_issue
 
-            assert baseline is not None
-            assert baseline.id == "issue1"
-            assert baseline.title == "Test Issue"
-            assert baseline.status == "in-progress"
-            assert baseline.assignee == "john@example.com"
-            assert baseline.milestone == "v1.0"
-            assert "bug" in baseline.labels
+        issue_file = issues_dir / "issue1.md"
+        last_synced = datetime(2026, 1, 2, 10, 0, 0, tzinfo=UTC)
 
-    @patch(
-        "roadmap.core.services.baseline.baseline_state_retriever.get_file_at_timestamp"
-    )
-    def test_get_local_baseline_file_not_found(self, mock_get_file):
+        baseline = retriever.get_local_baseline(issue_file, last_synced)
+
+        assert baseline is not None
+        assert baseline.id == "issue1"
+        assert baseline.title == "Test Issue"
+        assert baseline.status == "in-progress"
+        assert baseline.assignee == "john@example.com"
+        assert baseline.milestone == "v1.0"
+        assert "bug" in baseline.labels
+
+    def test_get_local_baseline_file_not_found(self):
         """Test when file didn't exist at baseline time."""
-        from roadmap.adapters.persistence.git_history import FileNotFound
+        from roadmap.core.interfaces.persistence import FileNotFound
 
-        with TemporaryDirectory() as tmpdir:
-            issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
 
-            mock_get_file.side_effect = FileNotFound("File not found")
+        mock_persistence.get_file_at_timestamp.side_effect = FileNotFound(
+            "File not found"
+        )
 
-            issue_file = issues_dir / "issue1.md"
-            result = retriever.get_local_baseline(issue_file, datetime.now(UTC))
+        issue_file = issues_dir / "issue1.md"
+        result = retriever.get_local_baseline(issue_file, datetime.now(UTC))
 
-            assert result is None
+        assert result is None
 
-    @patch(
-        "roadmap.core.services.baseline.baseline_state_retriever.get_file_at_timestamp"
-    )
-    def test_get_local_baseline_git_error(self, mock_get_file):
+    def test_get_local_baseline_git_error(self):
         """Test handling of git errors."""
-        from roadmap.adapters.persistence.git_history import GitHistoryError
+        from roadmap.core.interfaces.persistence import GitHistoryError
 
-        with TemporaryDirectory() as tmpdir:
-            issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
 
-            mock_get_file.side_effect = GitHistoryError("Git command failed")
+        mock_persistence.get_file_at_timestamp.side_effect = GitHistoryError(
+            "Git command failed"
+        )
 
-            issue_file = issues_dir / "issue1.md"
+        issue_file = issues_dir / "issue1.md"
 
-            with pytest.raises(BaselineRetrievalError):
-                retriever.get_local_baseline(issue_file, datetime.now(UTC))
+        with pytest.raises(BaselineRetrievalError):
+            retriever.get_local_baseline(issue_file, datetime.now(UTC))
 
 
 class TestGetRemoteBaseline:
     """Test remote baseline retrieval from sync_metadata."""
 
+    def _make_retriever(self, mock_persistence=None, mock_parser=None):
+        """Create a BaselineStateRetriever with mock dependencies."""
+        if mock_persistence is None:
+            mock_persistence = MagicMock(spec=PersistenceInterface)
+        if mock_parser is None:
+            mock_parser = MagicMock(spec=IssueParserInterface)
+
+        with TemporaryDirectory() as tmpdir:
+            issues_dir = Path(tmpdir)
+            return (
+                BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
+                mock_persistence,
+                mock_parser,
+                issues_dir,
+            )
+
     def test_get_remote_baseline_success(self):
         """Test successfully retrieving remote baseline from sync_metadata."""
-        with TemporaryDirectory() as tmpdir:
-            issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
 
-            # Create issue with sync_metadata
-            issue = Issue(
-                id="issue1",
-                title="Test Issue",
-                status=Status.IN_PROGRESS,
-                priority=Priority.HIGH,
-                issue_type=IssueType.BUG,
-                assignee="john@example.com",
-                milestone="v1.0",
-                content="Local description",
-            )
+        # Create issue with sync_metadata
+        issue = Issue(
+            id="issue1",
+            title="Test Issue",
+            status=Status.IN_PROGRESS,
+            priority=Priority.HIGH,
+            issue_type=IssueType.BUG,
+            assignee="john@example.com",
+            milestone="v1.0",
+            content="Local description",
+        )
 
-            issue_file = issues_dir / "issue1.md"
+        issue_file = issues_dir / "issue1.md"
 
-            sync_metadata = {
-                "last_synced": "2026-01-02T10:00:00+00:00",
-                "remote_state": {
-                    "id": "issue1",
-                    "title": "Test Issue",
-                    "status": "open",  # Remote status
-                    "assignee": "jane@example.com",  # Different assignee
-                    "milestone": "v1.0",
-                    "headline": "Remote description",
-                    "labels": ["bug"],
-                    "updated_at": "2026-01-02T09:00:00+00:00",
-                },
-            }
+        sync_metadata = {
+            "last_synced": "2026-01-02T10:00:00+00:00",
+            "remote_state": {
+                "id": "issue1",
+                "title": "Test Issue",
+                "status": "open",  # Remote status
+                "assignee": "jane@example.com",  # Different assignee
+                "milestone": "v1.0",
+                "headline": "Remote description",
+                "labels": ["bug"],
+                "updated_at": "2026-01-02T09:00:00+00:00",
+            },
+        }
 
-            IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
+        IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
 
-            baseline = retriever.get_remote_baseline(issue_file)
+        baseline = retriever.get_remote_baseline(issue_file)
 
-            assert baseline is not None
-            assert baseline.id == "issue1"
-            assert baseline.title == "Test Issue"
-            assert baseline.status == "open"  # From remote
-            assert baseline.assignee == "jane@example.com"  # From remote
-            assert baseline.headline == "Remote description"
-
-    def test_get_remote_baseline_not_present(self):
-        """Test when sync_metadata is not present."""
-        with TemporaryDirectory() as tmpdir:
-            issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
-
-            # Create issue without sync_metadata
-            issue = Issue(
-                id="issue1",
-                title="Test Issue",
-                status=Status.TODO,
-                priority=Priority.MEDIUM,
-                issue_type=IssueType.FEATURE,
-            )
-
-            issue_file = issues_dir / "issue1.md"
-            IssueParser.save_issue_file(issue, issue_file)
-
-            baseline = retriever.get_remote_baseline(issue_file)
-
-            assert baseline is None
+        assert baseline is not None
+        assert baseline.id == "issue1"
+        assert baseline.title == "Test Issue"
+        assert baseline.status == "open"  # From remote
+        assert baseline.assignee == "jane@example.com"  # From remote
+        assert baseline.headline == "Remote description"
 
     def test_get_remote_baseline_no_remote_state(self):
         """Test when sync_metadata exists but no remote_state."""
-        with TemporaryDirectory() as tmpdir:
-            issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
 
-            issue = Issue(
-                id="issue1",
-                title="Test Issue",
-                status=Status.TODO,
-                priority=Priority.MEDIUM,
-                issue_type=IssueType.FEATURE,
-            )
+        issue = Issue(
+            id="issue1",
+            title="Test Issue",
+            status=Status.TODO,
+            priority=Priority.MEDIUM,
+            issue_type=IssueType.FEATURE,
+        )
 
-            issue_file = issues_dir / "issue1.md"
+        issue_file = issues_dir / "issue1.md"
 
-            # Metadata without remote_state
-            sync_metadata = {
-                "last_synced": "2026-01-02T10:00:00+00:00",
-            }
+        # Metadata without remote_state
+        sync_metadata = {
+            "last_synced": "2026-01-02T10:00:00+00:00",
+        }
 
-            IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
+        IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
 
-            baseline = retriever.get_remote_baseline(issue_file)
+        baseline = retriever.get_remote_baseline(issue_file)
 
-            assert baseline is None
+        assert baseline is None
 
     def test_get_remote_baseline_with_datetime_parsing(self):
         """Test remote baseline with datetime field parsing."""
-        with TemporaryDirectory() as tmpdir:
-            issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
 
-            issue = Issue(
-                id="issue1",
-                title="Test",
-                status=Status.TODO,
-                priority=Priority.MEDIUM,
-                issue_type=IssueType.FEATURE,
-            )
+        issue = Issue(
+            id="issue1",
+            title="Test",
+            status=Status.TODO,
+            priority=Priority.MEDIUM,
+            issue_type=IssueType.FEATURE,
+        )
 
-            issue_file = issues_dir / "issue1.md"
+        issue_file = issues_dir / "issue1.md"
 
-            # Remote state with datetime
-            sync_metadata = {
-                "last_synced": "2026-01-02T10:00:00+00:00",
-                "remote_state": {
-                    "id": "issue1",
-                    "title": "Test",
-                    "status": "open",
-                    "updated_at": "2026-01-02T09:00:00+00:00",
-                },
-            }
+        # Remote state with datetime
+        sync_metadata = {
+            "last_synced": "2026-01-02T10:00:00+00:00",
+            "remote_state": {
+                "id": "issue1",
+                "title": "Test",
+                "status": "open",
+                "updated_at": "2026-01-02T09:00:00+00:00",
+            },
+        }
 
-            IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
+        IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
 
-            baseline = retriever.get_remote_baseline(issue_file)
+        baseline = retriever.get_remote_baseline(issue_file)
 
-            assert baseline is not None
-            assert isinstance(baseline.updated_at, datetime)
+        assert baseline is not None
+        assert isinstance(baseline.updated_at, datetime)
 
 
 class TestBaselineComparison:
     """Test comparing local and remote baselines."""
 
-    def test_local_and_remote_baselines_differ(self):
-        """Test detecting differences between local and remote baselines."""
+    def _make_retriever(self, mock_persistence=None, mock_parser=None):
+        """Create a BaselineStateRetriever with mock dependencies."""
+        if mock_persistence is None:
+            mock_persistence = MagicMock(spec=PersistenceInterface)
+        if mock_parser is None:
+            mock_parser = MagicMock(spec=IssueParserInterface)
+
         with TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
-            retriever = BaselineStateRetriever(issues_dir)
-
-            issue = Issue(
-                id="issue1",
-                title="Test Issue",
-                status=Status.IN_PROGRESS,
-                priority=Priority.HIGH,
-                issue_type=IssueType.BUG,
-                assignee="john@example.com",
+            return (
+                BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
+                mock_persistence,
+                mock_parser,
+                issues_dir,
             )
 
-            issue_file = issues_dir / "issue1.md"
+    def test_local_and_remote_baselines_differ(self):
+        """Test detecting differences between local and remote baselines."""
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
 
-            # Save with remote baseline that differs
-            sync_metadata = {
-                "last_synced": "2026-01-02T10:00:00+00:00",
-                "remote_state": {
-                    "id": "issue1",
-                    "title": "Test Issue",
-                    "status": "open",  # Different from local
-                    "assignee": "jane@example.com",  # Different from local
-                },
-            }
+        issue = Issue(
+            id="issue1",
+            title="Test Issue",
+            status=Status.IN_PROGRESS,
+            priority=Priority.HIGH,
+            issue_type=IssueType.BUG,
+            assignee="john@example.com",
+        )
 
-            IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
+        issue_file = issues_dir / "issue1.md"
 
-            # Get remote baseline
-            remote_baseline = retriever.get_remote_baseline(issue_file)
+        # Save with remote baseline that differs
+        sync_metadata = {
+            "last_synced": "2026-01-02T10:00:00+00:00",
+            "remote_state": {
+                "id": "issue1",
+                "title": "Test Issue",
+                "status": "open",  # Different from local
+                "assignee": "jane@example.com",  # Different from local
+            },
+        }
 
-            assert remote_baseline is not None
-            assert remote_baseline.status == "open"
-            assert remote_baseline.assignee == "jane@example.com"
+        IssueParser.save_issue_file(issue, issue_file, sync_metadata=sync_metadata)
 
-            # Compare with current local
-            assert issue.status.value != remote_baseline.status
-            assert issue.assignee != remote_baseline.assignee
+        # Get remote baseline
+        remote_baseline = retriever.get_remote_baseline(issue_file)
+
+        assert remote_baseline is not None
+        assert remote_baseline.status == "open"
+        assert remote_baseline.assignee == "jane@example.com"
+
+        # Compare with current local
+        assert issue.status.value != remote_baseline.status
+        assert issue.assignee != remote_baseline.assignee

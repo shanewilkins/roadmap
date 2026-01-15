@@ -1,7 +1,7 @@
 """Tests for parser functionality."""
 
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -84,8 +84,8 @@ This is a test issue description.
             issue = IssueParser.parse_issue_file(Path(f.name))
 
         assert issue.content == "This is a test issue description."
-        assert issue.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        assert issue.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        assert issue.created == datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        assert issue.updated == datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
 
     def test_parse_issue_file_with_all_fields(self):
         """Test parsing issue file with all fields."""
@@ -215,8 +215,8 @@ More details here.
             priority=Priority.HIGH,
             status=Status.TODO,
             content="This is a test issue.",
-            created=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
-            updated=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            created=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
+            updated=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -241,8 +241,8 @@ More details here.
             milestone="v2.0",
             labels=["test"],
             content="Test description",
-            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=timezone.utc),
-            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=timezone.utc),
+            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=UTC),
+            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=UTC),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -267,8 +267,8 @@ More details here.
             milestone="v2.0",
             labels=["test"],
             content="Test description",
-            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=timezone.utc),
-            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=timezone.utc),
+            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=UTC),
+            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=UTC),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
@@ -289,8 +289,8 @@ More details here.
         original_issue = Issue(
             id="12345678",
             title="Roundtrip Test",
-            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=timezone.utc),
-            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=timezone.utc),
+            created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=UTC),
+            updated=datetime(2024, 1, 2, 15, 45, 30, tzinfo=UTC),
         )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:

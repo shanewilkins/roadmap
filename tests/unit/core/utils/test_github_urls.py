@@ -1,7 +1,5 @@
 """Tests for GitHub URL utilities."""
 
-import pytest
-
 from roadmap.core.utils.github_urls import (
     get_issue_url,
     get_milestone_url,

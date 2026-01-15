@@ -12,11 +12,7 @@ def get_issue_url(owner: str, repo: str, issue_number: int | str) -> str:
     Returns:
         Full GitHub issue URL
     """
-    issue_num = (
-        int(issue_number)
-        if isinstance(issue_number, str)
-        else issue_number
-    )
+    issue_num = int(issue_number) if isinstance(issue_number, str) else issue_number
     return f"https://github.com/{owner}/{repo}/issues/{issue_num}"
 
 
@@ -32,9 +28,7 @@ def get_milestone_url(owner: str, repo: str, milestone_number: int | str) -> str
         Full GitHub milestone URL
     """
     milestone_num = (
-        int(milestone_number)
-        if isinstance(milestone_number, str)
-        else milestone_number
+        int(milestone_number) if isinstance(milestone_number, str) else milestone_number
     )
     return f"https://github.com/{owner}/{repo}/milestone/{milestone_num}"
 

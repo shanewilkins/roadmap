@@ -6,9 +6,8 @@ GitHub repository to be configured.
 """
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from roadmap.adapters.github.github import GitHubClient
 from roadmap.adapters.github.handlers.base import GitHubAPIError
 from roadmap.common.logging import get_logger
 from roadmap.infrastructure.logging.error_logging import (
@@ -16,6 +15,9 @@ from roadmap.infrastructure.logging.error_logging import (
     log_validation_error,
 )
 from roadmap.shared.instrumentation import traced
+
+if TYPE_CHECKING:
+    from roadmap.core.interfaces import GitHubBackendInterface
 
 logger = get_logger(__name__)
 
@@ -28,12 +30,18 @@ class GitHubIssueClient:
     per-request or via environment variables.
     """
 
-    def __init__(self, token: str | None = None):
+    def __init__(
+        self,
+        token: str | None = None,
+        github_backend: "GitHubBackendInterface | None" = None,
+    ):
         """Initialize GitHub issue client.
 
         Args:
             token: Optional GitHub personal access token.
                   If not provided, will look for GITHUB_TOKEN environment variable.
+            github_backend: Optional GitHub backend interface. If not provided,
+                           will create GitHubBackendAdapter instances per-request.
 
         Raises:
             GitHubAPIError: If no token is available
@@ -44,6 +52,7 @@ class GitHubIssueClient:
                 "GitHub token is required. Set GITHUB_TOKEN environment variable "
                 "or provide token to GitHubIssueClient."
             )
+        self._github_backend = github_backend
         logger.debug("github_issue_client_initialized")
 
     @traced("fetch_issue")
@@ -77,10 +86,17 @@ class GitHubIssueClient:
         )
 
         try:
-            client = GitHubClient(token=self.token, owner=owner, repo=repo)
-            issue_data = client.fetch_issue(issue_number)
+            # Use injected backend or create adapter on-demand
+            if self._github_backend is None:
+                from roadmap.adapters.github.github import GitHubClient
+
+                client = GitHubClient(token=self.token, owner=owner, repo=repo)
+                issue_data = client.fetch_issue(issue_number)
+            else:
+                issue_data = self._github_backend.get_issue(str(issue_number))
+
             logger.debug("github_issue_fetched_successfully", number=issue_number)
-            return issue_data
+            return issue_data if isinstance(issue_data, dict) else {}
         except ValueError as e:
             log_validation_error(
                 e,
@@ -110,13 +126,15 @@ class GitHubIssueClient:
         """
         logger.info("validating_github_token")
         try:
-            # Create a client with minimal configuration (needs owner/repo for initialization)
+            # Create a backend adapter with minimal configuration (needs owner/repo for initialization)
             # We'll use a dummy repo for validation since we only care about authentication
+            from roadmap.adapters.github.github import GitHubClient
+
             client = GitHubClient(token=self.token, owner="dummy", repo="dummy")
             is_valid, message = client.validate_github_token()
 
             if is_valid:
-                logger.debug("github_token_validated", message=message)
+                logger.debug("github_token_validated", message="Token is valid")
             else:
                 log_validation_error(
                     ValueError("GitHub token validation failed"),
@@ -124,8 +142,10 @@ class GitHubIssueClient:
                     field_name="token",
                     proposed_value="***",
                 )
-                logger.warning("github_token_validation_failed", message=message)
-
+                logger.warning(
+                    "github_token_validation_failed",
+                    message="Token authentication failed",
+                )
             return is_valid, message
         except GitHubAPIError as e:
             log_external_service_error(

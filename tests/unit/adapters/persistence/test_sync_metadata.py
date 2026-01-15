@@ -7,7 +7,7 @@ Tests cover:
 - Round-trip serialization/deserialization
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -99,10 +99,8 @@ class TestFrontmatterSyncMetadata:
         frontmatter = {"id": "issue1"}
 
         sync_metadata = {
-            "last_synced": datetime(2026, 1, 3, 10, 0, 0, tzinfo=timezone.utc),
-            "remote_state": {
-                "updated_at": datetime(2026, 1, 3, 11, 0, 0, tzinfo=timezone.utc)
-            },
+            "last_synced": datetime(2026, 1, 3, 10, 0, 0, tzinfo=UTC),
+            "remote_state": {"updated_at": datetime(2026, 1, 3, 11, 0, 0, tzinfo=UTC)},
         }
         FrontmatterParser.update_sync_metadata(frontmatter, sync_metadata)
 

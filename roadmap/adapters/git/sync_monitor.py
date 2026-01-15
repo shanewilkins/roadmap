@@ -360,20 +360,20 @@ class GitSyncMonitor:
 
             conn = self.state_manager._get_connection()
             cursor = conn.cursor()
-            
+
             # Try to update first, then insert if not found
             cursor.execute(
                 "UPDATE sync_metadata SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?",
                 (current_commit, "last_synced_commit"),
             )
-            
+
             # If no rows were updated, insert new row
             if cursor.rowcount == 0:
                 cursor.execute(
                     "INSERT INTO sync_metadata (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
                     ("last_synced_commit", current_commit),
                 )
-            
+
             conn.commit()
 
             # Update cache

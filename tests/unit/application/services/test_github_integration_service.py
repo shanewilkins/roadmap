@@ -115,12 +115,10 @@ class TestGitHubIntegrationService:
                 assert result == expected_result
         else:
             with patch.object(service, "get_github_config", return_value=config_return):
-                with patch(
-                    "roadmap.core.services.github.github_integration_service.GitHubClient"
-                ) as mock_client_cls:
-                    mock_client = Mock()
-                    mock_client.get_team_members.return_value = expected_result
-                    mock_client_cls.return_value = mock_client
+                with patch.object(service, "_get_github_backend") as mock_backend:
+                    mock_backend.return_value.list_repositories.return_value = (
+                        expected_result
+                    )
                     result = service.get_team_members()
                     assert result == expected_result
 

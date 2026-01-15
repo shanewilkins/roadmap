@@ -1,6 +1,6 @@
 """Service for converting between SyncIssue and local Issue domain objects."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from structlog import get_logger
@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 class IssueStateService:
     """Handles conversion between SyncIssue (remote) and Issue (local) domain objects.
-    
+
     Centralizes field mapping, normalization, and type conversions to eliminate
     duplication between pull_issue() and push_issue() methods.
     """
@@ -22,14 +22,14 @@ class IssueStateService:
     @staticmethod
     def sync_issue_to_issue(issue_id: str, sync_issue: SyncIssue) -> Issue:
         """Convert a SyncIssue (from backend) to a local Issue domain object.
-        
+
         Args:
             issue_id: Local issue ID to assign
             sync_issue: Remote SyncIssue with backend data
-            
+
         Returns:
             Issue object ready for local storage/update
-            
+
         Raises:
             ValueError: If required fields are missing
         """
@@ -51,8 +51,8 @@ class IssueStateService:
 
         try:
             # Parse timestamps
-            created_at = sync_issue.created_at or datetime.now(timezone.utc)
-            updated_at = sync_issue.updated_at or datetime.now(timezone.utc)
+            created_at = sync_issue.created_at or datetime.now(UTC)
+            updated_at = sync_issue.updated_at or datetime.now(UTC)
 
             # Normalize status
             status = IssueStateService.normalize_status(sync_issue.status)
@@ -79,7 +79,7 @@ class IssueStateService:
             # Set remote_ids from sync_issue for tracking
             if sync_issue.remote_ids:
                 issue.remote_ids = sync_issue.remote_ids.copy()
-            
+
             # Track backend info in github_sync_metadata
             issue.github_sync_metadata = {
                 "backend_name": sync_issue.backend_name,
@@ -117,15 +117,15 @@ class IssueStateService:
     @staticmethod
     def issue_to_push_payload(issue: Issue) -> dict[str, Any]:
         """Convert a local Issue to a push payload for remote backend.
-        
+
         Extracts fields that are relevant for pushing to GitHub/remote.
-        
+
         Args:
             issue: Local Issue to convert
-            
+
         Returns:
             Dictionary with fields safe for remote API
-            
+
         Raises:
             ValueError: If issue is invalid or missing required fields
         """
@@ -200,10 +200,10 @@ class IssueStateService:
     @staticmethod
     def normalize_status(status_value: str | None) -> Status:
         """Normalize a status string from any backend to local Status enum.
-        
+
         Args:
             status_value: Status string from backend
-            
+
         Returns:
             Normalized Status enum value
         """

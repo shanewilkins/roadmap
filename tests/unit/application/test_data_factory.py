@@ -2,7 +2,7 @@
 
 import hashlib
 import hmac
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import Mock
 
@@ -88,8 +88,8 @@ class TestDataFactory:
         issue.assignee = kwargs.get("assignee", None)
         issue.milestone_id = kwargs.get("milestone_id", None)
         issue.estimated_hours = kwargs.get("estimated_hours", None)
-        issue.created_at = kwargs.get("created_at", datetime.now(timezone.utc))
-        issue.updated_at = kwargs.get("updated_at", datetime.now(timezone.utc))
+        issue.created_at = kwargs.get("created_at", datetime.now(UTC))
+        issue.updated_at = kwargs.get("updated_at", datetime.now(UTC))
         issue.github_issue_number = kwargs.get("github_issue_number", None)
 
         return issue
@@ -111,8 +111,8 @@ class TestDataFactory:
         milestone.content = kwargs.get("content", TestDataFactory.message())
         milestone.due_date = kwargs.get("due_date", None)
         milestone.status = kwargs.get("status", "active")
-        milestone.created_at = kwargs.get("created_at", datetime.now(timezone.utc))
-        milestone.updated_at = kwargs.get("updated_at", datetime.now(timezone.utc))
+        milestone.created_at = kwargs.get("created_at", datetime.now(UTC))
+        milestone.updated_at = kwargs.get("updated_at", datetime.now(UTC))
 
         return milestone
 

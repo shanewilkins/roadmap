@@ -38,7 +38,10 @@ from .github.github_integration_service import GitHubIntegrationService  # noqa:
 from .github.github_issue_client import GitHubIssueClient  # noqa: F401
 from .health.backup_cleanup_service import BackupCleanupService  # noqa: F401
 from .health.entity_health_scanner import EntityHealthScanner  # noqa: F401
-from .health.file_repair_service import FileRepairResult, FileRepairService  # noqa: F401
+from .health.file_repair_service import (  # noqa: F401
+    FileRepairResult,
+    FileRepairService,
+)
 from .health.issue_health_scanner import IssueHealthScanner  # noqa: F401
 from .issue.issue_creation_service import IssueCreationService  # noqa: F401
 from .issue.issue_filter_service import (
@@ -57,8 +60,14 @@ from .status_change_service import (
     parse_status_change,  # noqa: F401
 )
 from .utils.configuration_service import ConfigurationService  # noqa: F401
-from .utils.critical_path_calculator import CriticalPathCalculator, CriticalPathResult  # noqa: F401
-from .utils.dependency_analyzer import DependencyAnalysisResult, DependencyAnalyzer  # noqa: F401
+from .utils.critical_path_calculator import (  # noqa: F401
+    CriticalPathCalculator,
+    CriticalPathResult,
+)
+from .utils.dependency_analyzer import (  # noqa: F401
+    DependencyAnalysisResult,
+    DependencyAnalyzer,
+)
 from .utils.field_conflict_detector import FieldConflictDetector  # noqa: F401
 from .utils.remote_fetcher import RemoteFetcher  # noqa: F401
 from .utils.remote_state_normalizer import RemoteStateNormalizer  # noqa: F401

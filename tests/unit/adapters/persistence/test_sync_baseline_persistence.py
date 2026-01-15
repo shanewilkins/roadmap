@@ -8,9 +8,8 @@ import json
 import sqlite3
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 from roadmap.adapters.persistence.database_manager import DatabaseManager
 from roadmap.adapters.persistence.storage.state_manager import StateManager
@@ -103,7 +102,7 @@ class TestSyncBaselineSchema(unittest.TestCase):
                     "Headline",
                     "Content",
                     json.dumps(["feature", "bug"]),
-                    datetime.now(timezone.utc).isoformat(),
+                    datetime.now(UTC).isoformat(),
                 ),
             )
 
@@ -116,7 +115,7 @@ class TestSyncBaselineSchema(unittest.TestCase):
 
     def test_duplicate_issue_id_constraint(self):
         """Test that duplicate issue_id raises error."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         with self.db_manager.transaction() as conn:
             conn.execute(
@@ -125,7 +124,17 @@ class TestSyncBaselineSchema(unittest.TestCase):
                 (issue_id, status, assignee, milestone, description, headline, content, labels, synced_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                ("issue-1", "open", "alice", None, "Desc", "Head", "Content", "[]", now),
+                (
+                    "issue-1",
+                    "open",
+                    "alice",
+                    None,
+                    "Desc",
+                    "Head",
+                    "Content",
+                    "[]",
+                    now,
+                ),
             )
 
         # Try to insert duplicate
@@ -341,7 +350,7 @@ class TestSyncBaselinePersistence(unittest.TestCase):
                 "assignee": "alice+test@example.com",
                 "milestone": "v1.0-rc1",
                 "headline": "Fix: Bug with 'quotes' and \"double quotes\"",
-                "content": 'Test with unicode: café, 日本語, emoji 🚀',
+                "content": "Test with unicode: café, 日本語, emoji 🚀",
                 "labels": ["type/bug", "fix:urgent"],
             }
         }
@@ -354,7 +363,9 @@ class TestSyncBaselinePersistence(unittest.TestCase):
         assert isinstance(retrieved, dict)  # Type guard
         issue = retrieved["issue-1"]
         self.assertEqual(issue["assignee"], "alice+test@example.com")
-        self.assertEqual(issue["headline"], "Fix: Bug with 'quotes' and \"double quotes\"")
+        self.assertEqual(
+            issue["headline"], "Fix: Bug with 'quotes' and \"double quotes\""
+        )
         self.assertIn("café", issue["content"])
         self.assertIn("日本語", issue["content"])
         self.assertIn("🚀", issue["content"])
@@ -408,7 +419,7 @@ class TestSyncBaselineDataMigration(unittest.TestCase):
 
     def test_baseline_with_missing_optional_fields(self):
         """Test loading baseline with missing optional fields."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Insert baseline with missing headline and content
         with self.db_manager.transaction() as conn:
@@ -436,7 +447,7 @@ class TestSyncBaselineDataMigration(unittest.TestCase):
 
     def test_baseline_with_malformed_labels_json(self):
         """Test handling of malformed labels JSON."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Insert baseline with invalid JSON labels
         with self.db_manager.transaction() as conn:
@@ -446,7 +457,17 @@ class TestSyncBaselineDataMigration(unittest.TestCase):
                 (issue_id, status, assignee, milestone, description, headline, content, labels, synced_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                ("issue-1", "open", "alice", None, "Desc", "Head", "Content", "{invalid json}", now),
+                (
+                    "issue-1",
+                    "open",
+                    "alice",
+                    None,
+                    "Desc",
+                    "Head",
+                    "Content",
+                    "{invalid json}",
+                    now,
+                ),
             )
 
         # Create state manager and retrieve

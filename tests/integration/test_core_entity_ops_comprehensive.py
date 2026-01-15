@@ -172,15 +172,11 @@ class TestRoadmapCoreTeamManagement:
     def test_get_team_members(self, core):
         """Test getting team members from GitHub API."""
         # Mock GitHub client since get_team_members calls GitHub API
-        with patch(
-            "roadmap.core.services.github.github_integration_service.GitHubClient"
-        ) as mock_github_client:
-            mock_client = Mock()
-            mock_client.get_team_members.return_value = [
+        with patch.object(core.github_service, "_get_github_backend") as mock_backend:
+            mock_backend.return_value.list_repositories.return_value = [
                 "alice@example.com",
                 "bob@example.com",
             ]
-            mock_github_client.return_value = mock_client
 
             # Mock GitHub config in the service
             with patch.object(core.github_service, "get_github_config") as mock_config:

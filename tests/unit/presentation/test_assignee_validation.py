@@ -1,6 +1,5 @@
 """Tests for assignee validation functionality."""
 
-from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -11,8 +10,9 @@ class TestAssigneeValidation:
 
     def test_validate_assignee_string_type(self):
         """Test that validate_assignee method exists and returns expected tuple type."""
-        from roadmap.infrastructure.team_coordinator import TeamCoordinator
         from unittest.mock import Mock
+
+        from roadmap.infrastructure.team_coordinator import TeamCoordinator
 
         mock_ops = Mock()
         coordinator = TeamCoordinator(mock_ops)

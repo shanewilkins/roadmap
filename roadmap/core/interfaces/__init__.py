@@ -3,11 +3,23 @@
 from typing import Protocol
 
 from .assignee_validator import AssigneeValidator  # type: ignore[assignment]
+from .backend_factory import SyncBackendFactoryInterface, SyncBackendInterface
+from .github import GitHubBackendInterface
+from .parsers import (
+    FrontmatterParserInterface,
+    IssueParserInterface,
+    MilestoneParserInterface,
+    ProjectParserInterface,
+)
 from .persistence import (
     FileNotFound,
     GitHistoryError,
-    IssueParserInterface,
     PersistenceInterface,
+)
+from .repositories import (
+    IssueRepository,
+    MilestoneRepository,
+    ProjectRepository,
 )
 from .state_managers import (
     IssueStateManager,
@@ -16,11 +28,12 @@ from .state_managers import (
     QueryStateManager,
     SyncStateManager,
 )
+from .state_storage import SyncStateStorageInterface
 from .sync_backend import (
-    SyncBackendInterface,
     SyncConflict,
     SyncReport,
 )
+from .sync_services import SyncCacheServiceInterface, SyncLinkingServiceInterface
 
 __all__ = [
     "CredentialProvider",
@@ -31,10 +44,21 @@ __all__ = [
     "SyncStateManager",
     "QueryStateManager",
     "SyncBackendInterface",
+    "SyncBackendFactoryInterface",
     "SyncConflict",
     "SyncReport",
     "PersistenceInterface",
     "IssueParserInterface",
+    "FrontmatterParserInterface",
+    "MilestoneParserInterface",
+    "ProjectParserInterface",
+    "GitHubBackendInterface",
+    "SyncStateStorageInterface",
+    "SyncLinkingServiceInterface",
+    "SyncCacheServiceInterface",
+    "IssueRepository",
+    "MilestoneRepository",
+    "ProjectRepository",
     "FileNotFound",
     "GitHistoryError",
 ]
@@ -56,7 +80,7 @@ class CredentialProvider(Protocol):
         """
         ...
 
-    def store_token(self, token: str, repo_info: dict[str, str] | None = None) -> bool:
+    def store_token(self, token: str, repo_info: dict[str, str] | None = None) -> bool:  # noqa: F841
         """Store a token securely.
 
         Args:
