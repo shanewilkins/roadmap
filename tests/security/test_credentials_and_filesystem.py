@@ -150,11 +150,11 @@ class TestFileSystemSecurity:
 
     def test_safe_write_file_creates_atomic_operations(self):
         """Verify safe_write_file uses atomic writes by default."""
-        with patch("roadmap.common.file_utils.SecureFileManager") as mock_secure:
+        with patch("roadmap.common.utils.file_utils.SecureFileManager") as mock_secure:
             mock_secure.return_value.__enter__ = MagicMock()
             mock_secure.return_value.__exit__ = MagicMock(return_value=None)
 
-            with patch("roadmap.common.file_utils.ensure_directory_exists"):
+            with patch("roadmap.common.utils.file_utils.ensure_directory_exists"):
                 try:
                     safe_write_file(Path("/test/file.txt"), "content")
                     # SecureFileManager should be called (atomic operation)
@@ -246,7 +246,9 @@ class TestPermissionHandling:
 
     def test_secure_directory_creates_parent_ownership(self):
         """Verify secure directory creation doesn't expose sensitive paths."""
-        with patch("roadmap.common.file_utils.ensure_directory_exists") as mock_ensure:
+        with patch(
+            "roadmap.common.utils.file_utils.ensure_directory_exists"
+        ) as mock_ensure:
             try:
                 create_secure_directory(Path("/test/.roadmap/secure"))
                 # Should not expose full path in logs
