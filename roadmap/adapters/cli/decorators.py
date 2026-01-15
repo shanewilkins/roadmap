@@ -24,14 +24,14 @@ from functools import wraps
 import click
 
 from roadmap.adapters.cli.layout import SmartTableLayout
-from roadmap.common.cli_helpers import (
+from roadmap.common.console import get_console
+from roadmap.common.output_models import ColumnType, TableData
+from roadmap.common.utils.cli_helpers import (
     ColumnSelector,
     FilterSpecParser,
     OutputFormatHandler,
     SortSpecParser,
 )
-from roadmap.common.console import get_console
-from roadmap.common.output_models import ColumnType, TableData
 
 
 def with_output_support(

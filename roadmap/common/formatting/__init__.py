@@ -2,11 +2,6 @@
 
 from .helpers import OutputFormatHandler, format_output
 
-__all__ = [
-    "OutputFormatHandler",
-    "format_output",
-]
-
 
 def __getattr__(name):
     """Lazy load formatting modules to avoid circular dependencies."""

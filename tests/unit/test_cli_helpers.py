@@ -5,14 +5,14 @@ Tests for CLI helpers - format handling, column selection, sorting, filtering.
 import click
 import pytest
 
-from roadmap.common.cli_helpers import (
+from roadmap.common.output_models import ColumnDef, ColumnType, TableData
+from roadmap.common.utils.cli_helpers import (
     ColumnSelector,
     FilterSpec,
     FilterSpecParser,
     OutputFormatHandler,
     SortSpecParser,
 )
-from roadmap.common.output_models import ColumnDef, ColumnType, TableData
 
 
 class TestOutputFormatHandler:

@@ -6,11 +6,11 @@ across the roadmap CLI, eliminating duplication and ensuring consistent behavior
 """
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 # Import timezone utilities
-from .timezone_utils import (
+from .utils.timezone_utils import (
     ensure_timezone_aware,
     get_timezone_manager,
 )
@@ -143,7 +143,7 @@ class UnifiedDateTimeParser:
             ValueError: If timestamp cannot be parsed
         """
         if not github_timestamp:
-            return datetime.min.replace(tzinfo=timezone.utc)
+            return datetime.min.replace(tzinfo=UTC)
 
         # Handle malformed timestamps from tests (e.g., "2025-01-01T00:00:00+00:00Z")
         if github_timestamp.endswith("Z") and "+00:00" in github_timestamp:

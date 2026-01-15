@@ -13,7 +13,7 @@ Key Principles:
 
 import os
 import sys
-from datetime import datetime, timezone, tzinfo
+from datetime import UTC, datetime, tzinfo
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +31,6 @@ except ImportError:
     except ImportError:
         ZONEINFO_AVAILABLE = False
         # Use basic timezone handling as fallback
-        from datetime import timezone as _timezone
 
         class ZoneInfo(tzinfo):
             """Minimal ZoneInfo fallback for older Python versions."""
@@ -39,11 +38,11 @@ except ImportError:
             def __init__(self, name: str):
                 self.name = name
                 if name == "UTC":
-                    self._tz = _timezone.utc
+                    self._tz = UTC
                 else:
                     # For other timezones, we'll use UTC as fallback
                     # This is not ideal but maintains basic functionality
-                    self._tz = _timezone.utc
+                    self._tz = UTC
 
             def utcoffset(self, dt: datetime | None) -> Any:
                 """Get the UTC offset for this timezone.
@@ -176,7 +175,7 @@ class TimezoneManager:
 
     def now_utc(self) -> datetime:
         """Get current datetime in UTC with timezone information."""
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     def now_local(self) -> datetime:
         """Get current datetime in user's timezone."""
@@ -209,16 +208,12 @@ class TimezoneManager:
                 else:
                     # No timezone info, assume user timezone
                     naive_dt = datetime.fromisoformat(date_str)
-                    return naive_dt.replace(tzinfo=ZoneInfo(input_tz)).astimezone(
-                        timezone.utc
-                    )
+                    return naive_dt.replace(tzinfo=ZoneInfo(input_tz)).astimezone(UTC)
             else:
                 # Try to parse as date only: 2025-12-31
                 if date_str.count("-") == 2:
                     naive_dt = datetime.strptime(date_str, "%Y-%m-%d")
-                    return naive_dt.replace(tzinfo=ZoneInfo(input_tz)).astimezone(
-                        timezone.utc
-                    )
+                    return naive_dt.replace(tzinfo=ZoneInfo(input_tz)).astimezone(UTC)
 
                 # Try other common formats
                 formats = [
@@ -235,7 +230,7 @@ class TimezoneManager:
                     try:
                         naive_dt = datetime.strptime(date_str, fmt)
                         return naive_dt.replace(tzinfo=ZoneInfo(input_tz)).astimezone(
-                            timezone.utc
+                            UTC
                         )
                     except ValueError:
                         continue
@@ -257,7 +252,7 @@ class TimezoneManager:
         """
         if dt.tzinfo is None:
             # Handle naive datetimes by assuming UTC
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
 
         # Convert to user's timezone
         local_dt = dt.astimezone(ZoneInfo(self.user_timezone))
@@ -308,7 +303,7 @@ class TimezoneManager:
             Human-readable relative time string
         """
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
 
         now = self.now_utc()
         diff = dt - now
@@ -332,10 +327,10 @@ class TimezoneManager:
             Timezone-aware datetime in UTC
         """
         if self.is_timezone_aware(dt):
-            return dt.astimezone(timezone.utc)
+            return dt.astimezone(UTC)
 
         assumed_tz = tz or self.user_timezone
-        return dt.replace(tzinfo=ZoneInfo(assumed_tz)).astimezone(timezone.utc)
+        return dt.replace(tzinfo=ZoneInfo(assumed_tz)).astimezone(UTC)
 
     def get_common_timezones(self) -> list:
         """Get list of common timezone names."""
@@ -443,10 +438,10 @@ def migrate_naive_datetime(dt: datetime, assumed_timezone: str = "UTC") -> datet
     """
     if dt.tzinfo is not None:
         # Already timezone-aware, convert to UTC
-        return dt.astimezone(timezone.utc)
+        return dt.astimezone(UTC)
 
     # Assume the specified timezone and convert to UTC
-    return dt.replace(tzinfo=ZoneInfo(assumed_timezone)).astimezone(timezone.utc)
+    return dt.replace(tzinfo=ZoneInfo(assumed_timezone)).astimezone(UTC)
 
 
 def ensure_timezone_aware(dt: datetime, assumed_timezone: str = "UTC") -> datetime:
@@ -461,7 +456,7 @@ def ensure_timezone_aware(dt: datetime, assumed_timezone: str = "UTC") -> dateti
     """
     if dt.tzinfo is not None:
         # Already timezone-aware, convert to UTC for consistency
-        return dt.astimezone(timezone.utc)
+        return dt.astimezone(UTC)
 
     # Naive datetime - assume specified timezone and convert to UTC
-    return dt.replace(tzinfo=ZoneInfo(assumed_timezone)).astimezone(timezone.utc)
+    return dt.replace(tzinfo=ZoneInfo(assumed_timezone)).astimezone(UTC)
