@@ -1,0 +1,128 @@
+================================================================================
+LAYER VIOLATION ANALYSIS
+================================================================================
+
+❌ Found 685 layer violations
+
+
+Adapters (CLI) importing from forbidden layers (351 violations):
+--------------------------------------------------------------------------------
+  roadmap/adapters/cli/__init__.py:13
+    → from roadmap.adapters.cli.exception_handler
+  roadmap/adapters/cli/__init__.py:147
+    → from roadmap.adapters.cli.today
+  roadmap/adapters/cli/__init__.py:158
+    → from roadmap.adapters.cli.analysis
+  roadmap/adapters/cli/__init__.py:159
+    → from roadmap.adapters.cli.comment
+  roadmap/adapters/cli/__init__.py:160
+    → from roadmap.adapters.cli.config
+  roadmap/adapters/cli/__init__.py:161
+    → from roadmap.adapters.cli.data
+  roadmap/adapters/cli/__init__.py:162
+    → from roadmap.adapters.cli.git
+  roadmap/adapters/cli/__init__.py:163
+    → from roadmap.adapters.cli.issues
+  roadmap/adapters/cli/__init__.py:164
+    → from roadmap.adapters.cli.milestones
+  roadmap/adapters/cli/__init__.py:167
+    → from roadmap.adapters.cli.projects
+  ... and 341 more
+
+Common (Shared Utilities) importing from forbidden layers (54 violations):
+--------------------------------------------------------------------------------
+  roadmap/common/cli_errors.py:15
+    → from roadmap.common.console
+  roadmap/common/cli_errors.py:16
+    → from roadmap.common.logging
+  roadmap/common/configuration/__init__.py:4
+    → from roadmap.common.models.config_models
+  roadmap/common/configuration/config_loader.py:13
+    → from roadmap.common.models
+  roadmap/common/error_formatter.py:7
+    → from roadmap.common.console
+  roadmap/common/error_formatter.py:8
+    → from roadmap.common.errors.exceptions
+  roadmap/common/errors/__init__.py:16
+    → from roadmap.common.errors.error_base
+  roadmap/common/errors/__init__.py:21
+    → from roadmap.common.errors.error_file
+  roadmap/common/errors/__init__.py:31
+    → from roadmap.common.errors.error_git
+  roadmap/common/errors/__init__.py:32
+    → from roadmap.common.errors.error_handler
+  ... and 44 more
+
+Core (Application) importing from forbidden layers (126 violations):
+--------------------------------------------------------------------------------
+  roadmap/core/domain/issue.py:10
+    → from roadmap.core.domain.comment
+  roadmap/core/interfaces/sync_backend.py:10
+    → from roadmap.core.domain.issue
+  roadmap/core/interfaces/sync_backend.py:11
+    → from roadmap.core.models.sync_models
+  roadmap/core/repositories.py:11
+    → from roadmap.core.domain.issue
+  roadmap/core/repositories.py:12
+    → from roadmap.core.domain.milestone
+  roadmap/core/repositories.py:13
+    → from roadmap.core.domain.project
+  roadmap/core/services/baseline/baseline_builder_progress.py:13
+    → from roadmap.core.models.sync_state
+  roadmap/core/services/baseline/baseline_builder_progress.py:14
+    → from roadmap.core.services.baseline.optimized_baseline_builder
+  roadmap/core/services/baseline/baseline_state_retriever.py:16
+    → from roadmap.adapters.persistence.git_history
+  roadmap/core/services/baseline/baseline_state_retriever.py:21
+    → from roadmap.adapters.persistence.parser.issue
+  ... and 116 more
+
+Infrastructure importing from forbidden layers (125 violations):
+--------------------------------------------------------------------------------
+  roadmap/infrastructure/coordinator_params.py:11
+    → from roadmap.core.domain
+  roadmap/infrastructure/core.py:24
+    → from roadmap.adapters.git.git
+  roadmap/infrastructure/core.py:25
+    → from roadmap.adapters.persistence.storage
+  roadmap/infrastructure/core.py:26
+    → from roadmap.adapters.persistence.yaml_repositories
+  roadmap/infrastructure/core.py:27
+    → from roadmap.common.utils.path_utils
+  roadmap/infrastructure/core.py:28
+    → from roadmap.core.services
+  roadmap/infrastructure/core.py:35
+    → from roadmap.infrastructure.git_coordinator
+  roadmap/infrastructure/core.py:36
+    → from roadmap.infrastructure.git_integration_ops
+  roadmap/infrastructure/core.py:37
+    → from roadmap.infrastructure.initialization
+  roadmap/infrastructure/core.py:38
+    → from roadmap.infrastructure.issue_coordinator
+  ... and 115 more
+
+Shared (Infrastructure) importing from forbidden layers (29 violations):
+--------------------------------------------------------------------------------
+  roadmap/shared/formatters/__init__.py:12
+    → from roadmap.shared.formatters.text
+  roadmap/shared/formatters/__init__.py:13
+    → from roadmap.shared.formatters.output
+  roadmap/shared/formatters/__init__.py:14
+    → from roadmap.shared.formatters.tables
+  roadmap/shared/formatters/__init__.py:15
+    → from roadmap.shared.formatters.export
+  roadmap/shared/formatters/__init__.py:16
+    → from roadmap.shared.formatters.kanban
+  roadmap/shared/formatters/base_table_formatter.py:10
+    → from roadmap.common.console
+  roadmap/shared/formatters/base_table_formatter.py:11
+    → from roadmap.common.models
+  roadmap/shared/formatters/export/issue_exporter.py:8
+    → from roadmap.core.domain
+  roadmap/shared/formatters/export/issue_exporter.py:9
+    → from roadmap.shared.formatters.output
+  roadmap/shared/formatters/export/issue_exporter.py:10
+    → from roadmap.shared.formatters.tables
+  ... and 19 more
+
+================================================================================
