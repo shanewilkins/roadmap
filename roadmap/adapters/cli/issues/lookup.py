@@ -1,7 +1,5 @@
 """Lookup issue by GitHub ID command - find internal issue by GitHub issue number."""
 
-import sys
-
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
@@ -38,8 +36,9 @@ def lookup_github_issue(ctx: click.Context, github_id: int) -> None:
             "lookup GitHub issue", None, "Invalid GitHub issue number"
         )
         for line in lines:
-            console.print(line)
-        sys.exit(1)
+            # Use click.echo for proper output capture in Click's CliRunner
+            click.echo(line)
+        ctx.exit(1)
 
     # Get all issues and search for one with matching github_issue
     all_issues = core.issues.get_all()
@@ -57,8 +56,9 @@ def lookup_github_issue(ctx: click.Context, github_id: int) -> None:
             f"No issue found linked to GitHub issue #{github_id}",
         )
         for line in lines:
-            console.print(line)
-        sys.exit(1)
+            # Use click.echo for proper output capture in Click's CliRunner
+            click.echo(line)
+        ctx.exit(1)
 
     # Display issue details
     console.print(
