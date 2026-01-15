@@ -5,7 +5,7 @@ import click
 from roadmap.adapters.cli.crud import BaseCreate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
 from roadmap.adapters.cli.helpers import require_initialized
-from roadmap.common.cli_models import IssueCreateParams, IssueGitParams
+from roadmap.common.models import IssueCreateParams, IssueGitParams
 from roadmap.infrastructure.logging import (
     log_command,
     verbose_output,

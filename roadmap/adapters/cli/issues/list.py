@@ -10,10 +10,9 @@ from roadmap.adapters.cli.dtos import IssueDTO
 from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.adapters.cli.services.export_manager import ExportManager
-from roadmap.common.cli_models import IssueListParams
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
-from roadmap.common.output_models import ColumnType
+from roadmap.common.models import ColumnType, IssueListParams
 from roadmap.core.services.issue_helpers import (
     IssueFilterValidator,
     IssueQueryService,

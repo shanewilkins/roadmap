@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.common.output_models import (
+from roadmap.common.models import (
     ColumnDef,
     ColumnType,
     TableData,

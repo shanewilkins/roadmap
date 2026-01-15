@@ -4,7 +4,7 @@ This module centralizes column definitions to eliminate duplication
 across issue_table.py, milestone_table.py, and project_table.py.
 """
 
-from roadmap.common.output_models import ColumnDef, ColumnType
+from roadmap.common.models import ColumnDef, ColumnType
 from roadmap.core.domain import Priority, ProjectStatus, Status
 
 

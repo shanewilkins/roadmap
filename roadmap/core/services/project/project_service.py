@@ -17,7 +17,7 @@ from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.constants import MilestoneStatus, ProjectStatus
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
-from roadmap.common.logging_utils import (
+from roadmap.common.services import (
     log_collection_operation,
     log_event,
     log_metric,

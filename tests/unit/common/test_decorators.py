@@ -1,6 +1,6 @@
 """Unit tests for common decorators."""
 
-from roadmap.common.decorators import service_operation
+from roadmap.common.services import service_operation
 
 
 class MockService:

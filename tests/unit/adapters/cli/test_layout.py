@@ -5,7 +5,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from roadmap.adapters.cli.layout import LayoutConfig, SmartTableLayout
-from roadmap.common.output_models import ColumnDef, ColumnType, TableData
+from roadmap.common.models import ColumnDef, ColumnType, TableData
 
 
 @pytest.fixture

@@ -25,7 +25,7 @@ import click
 
 from roadmap.adapters.cli.layout import SmartTableLayout
 from roadmap.common.console import get_console
-from roadmap.common.output_models import ColumnType, TableData
+from roadmap.common.models import ColumnType, TableData
 from roadmap.common.utils.cli_helpers import (
     ColumnSelector,
     FilterSpecParser,

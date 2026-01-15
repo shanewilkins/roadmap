@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from roadmap.adapters.cli.output_manager import OutputManager
-from roadmap.common.output_models import TableData
+from roadmap.common.models import TableData
 
 
 class TestOutputManager:

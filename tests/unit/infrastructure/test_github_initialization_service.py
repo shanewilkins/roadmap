@@ -393,28 +393,28 @@ class TestSyncBackendValidation:
 
     def test_init_params_valid_github_backend(self):
         """Test InitParams with valid github backend."""
-        from roadmap.common.cli_models import InitParams
+        from roadmap.common.models import InitParams
 
         params = InitParams(name=".roadmap", sync_backend="github")
         assert params.sync_backend == "github"
 
     def test_init_params_valid_git_backend(self):
         """Test InitParams with valid git backend."""
-        from roadmap.common.cli_models import InitParams
+        from roadmap.common.models import InitParams
 
         params = InitParams(name=".roadmap", sync_backend="git")
         assert params.sync_backend == "git"
 
     def test_init_params_invalid_backend_raises_error(self):
         """Test InitParams with invalid backend raises ValueError."""
-        from roadmap.common.cli_models import InitParams
+        from roadmap.common.models import InitParams
 
         with pytest.raises(ValueError, match="Invalid sync_backend"):
             InitParams(name=".roadmap", sync_backend="invalid")
 
     def test_init_params_invalid_backend_lists_valid_options(self):
         """Test error message lists valid backend options."""
-        from roadmap.common.cli_models import InitParams
+        from roadmap.common.models import InitParams
 
         with pytest.raises(ValueError) as exc_info:
             InitParams(name=".roadmap", sync_backend="invalid")

@@ -12,7 +12,7 @@ from typing import Any
 
 from rich.table import Table  # type: ignore[import-not-found]
 
-from roadmap.common.output_models import TableData
+from roadmap.common.models import TableData
 
 
 class OutputFormatter:

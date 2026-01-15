@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
 from roadmap.common.console import get_console
-from roadmap.common.output_models import TableData
+from roadmap.common.models import TableData
 
 # Generic type for domain models
 T = TypeVar("T")

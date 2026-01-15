@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from roadmap.adapters.github.github import GitHubClient
-from roadmap.common.config_manager import ConfigManager
+from roadmap.common.configuration import ConfigManager
 from roadmap.common.errors import (
     ErrorHandler,
     ErrorSeverity,

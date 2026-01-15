@@ -254,7 +254,7 @@ def _setup_project_and_context(
 
     # Save default project ID if created
     if project_info and project_info.get("action") == "created":
-        from roadmap.common.config_manager import ConfigManager
+        from roadmap.common.configuration import ConfigManager
 
         config_manager = ConfigManager(custom_core.config_file)
         config = config_manager.load()
@@ -297,7 +297,7 @@ def _persist_sync_backend_config(
         return
 
     try:
-        from roadmap.common.config_manager import ConfigManager
+        from roadmap.common.configuration import ConfigManager
 
         config_manager = ConfigManager(custom_core.config_file)
         config = config_manager.load()
@@ -468,7 +468,7 @@ def init(
     template_path: str | None,
 ) -> None:
     """Initialize a new roadmap structure."""
-    from roadmap.common.cli_models import InitParams
+    from roadmap.common.models import InitParams
 
     # Create structured parameter object
     params = InitParams(

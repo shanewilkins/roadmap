@@ -50,7 +50,7 @@ def create_milestone(
     # Auto-detect project if not provided
     project_id = project
     if not project_id:
-        from roadmap.common.config_manager import ConfigManager
+        from roadmap.common.configuration import ConfigManager
 
         # Try to get default project from config
         config_manager = ConfigManager(core.config_file)

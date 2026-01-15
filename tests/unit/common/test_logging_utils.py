@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.common.logging_utils import log_operation
+from roadmap.common.services import log_operation
 
 
 class TestLogOperation:

@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from roadmap.common.config_manager import ConfigManager
-from roadmap.common.config_schema import (
+from roadmap.common.configuration import (
+    ConfigManager,
     GitHubConfig,
     PathsConfig,
     RoadmapConfig,

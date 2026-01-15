@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from roadmap.common.config_loader import ConfigLoader
-from roadmap.common.config_models import (
+from roadmap.common.configuration import ConfigLoader
+from roadmap.common.models import (
     BehaviorConfig,
     ExportConfig,
     GitConfig,

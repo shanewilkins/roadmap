@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from roadmap.common.metrics import (
+from roadmap.common.services import (
     MetricsCollector,
     OperationMetric,
     get_metrics_collector,

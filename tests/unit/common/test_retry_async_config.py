@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from roadmap.common.retry import (
+from roadmap.common.services import (
     API_RETRY,
     DATABASE_RETRY,
     NETWORK_RETRY,

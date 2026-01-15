@@ -8,13 +8,13 @@ import json
 
 import pytest
 
+from roadmap.common.models import ColumnDef, ColumnType, TableData
 from roadmap.common.output_formatter import (
     CSVOutputFormatter,
     JSONOutputFormatter,
     OutputFormatter,
     PlainTextOutputFormatter,
 )
-from roadmap.common.output_models import ColumnDef, ColumnType, TableData
 
 
 class TestColumnDef:

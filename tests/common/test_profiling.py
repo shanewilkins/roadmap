@@ -2,7 +2,7 @@
 
 import time
 
-from roadmap.common.profiling import (
+from roadmap.common.services import (
     OperationProfile,
     PerformanceProfiler,
     PerformanceReport,

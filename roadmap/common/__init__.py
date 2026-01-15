@@ -110,25 +110,7 @@ from .logging import (
     log_operation,
     setup_logging,
 )
-from .metrics import (
-    MetricsCollector,
-    OperationMetric,
-    get_metrics_collector,
-)
-from .performance import (
-    OperationTimer,
-    async_timed_operation,
-    timed_operation,
-)
 from .progress import ProgressCalculationEngine, ProgressEventSystem
-from .retry import (
-    API_RETRY,
-    DATABASE_RETRY,
-    NETWORK_RETRY,
-    RetryConfig,
-    async_retry,
-    retry,
-)
 from .security import (
     cleanup_old_backups,
     configure_security_logging,
@@ -140,6 +122,20 @@ from .security import (
     secure_file_permissions,
     validate_export_size,
     validate_path,
+)
+from .services import (
+    API_RETRY,
+    DATABASE_RETRY,
+    NETWORK_RETRY,
+    MetricsCollector,
+    OperationMetric,
+    OperationTimer,
+    RetryConfig,
+    async_retry,
+    async_timed_operation,
+    get_metrics_collector,
+    retry,
+    timed_operation,
 )
 from .utils import (
     SecureFileManager,

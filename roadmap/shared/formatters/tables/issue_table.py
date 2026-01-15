@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from rich.text import Text
 
 from roadmap.common.console import get_console
-from roadmap.common.output_models import TableData
+from roadmap.common.models import TableData
 from roadmap.common.status_style_manager import StatusStyleManager
 from roadmap.core.domain import Issue, Priority
 from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter

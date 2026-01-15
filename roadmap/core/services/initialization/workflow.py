@@ -102,7 +102,7 @@ class InitializationWorkflow:
         Args:
             user_name: User name to store in config, auto-detected if None
         """
-        from roadmap.common.config_manager import ConfigManager
+        from roadmap.common.configuration import ConfigManager
 
         # Auto-detect user if not provided
         if not user_name:

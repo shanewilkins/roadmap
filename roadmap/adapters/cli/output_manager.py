@@ -19,8 +19,8 @@ import click
 from rich.console import Console
 
 from roadmap.adapters.cli.layout import SmartTableLayout
+from roadmap.common.models import TableData
 from roadmap.common.output_formatter import OutputFormatter
-from roadmap.common.output_models import TableData
 
 
 class OutputManager:

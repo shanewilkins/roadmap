@@ -3,7 +3,7 @@
 import click
 from structlog import get_logger
 
-from roadmap.common.config_loader import ConfigLoader
+from roadmap.common.configuration import ConfigLoader
 from roadmap.common.console import get_console
 
 logger = get_logger()

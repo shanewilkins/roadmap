@@ -5,7 +5,7 @@ import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from .logging import get_logger
+from ..logging import get_logger
 from .metrics import OperationMetric, get_metrics_collector
 from .profiling import get_profiler
 

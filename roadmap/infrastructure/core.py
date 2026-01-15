@@ -188,7 +188,7 @@ class RoadmapCore:
         Returns:
             An assignee validator instance (implements AssigneeValidator protocol)
         """
-        from roadmap.common.config_manager import ConfigManager
+        from roadmap.common.configuration import ConfigManager
         from roadmap.infrastructure.github_assignee_validator import (
             GitHubAssigneeValidator,
         )

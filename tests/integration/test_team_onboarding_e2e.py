@@ -7,7 +7,7 @@ that's been validated in earlier phases (config management, project detection).
 
 from pathlib import Path
 
-from roadmap.common.config_manager import ConfigManager
+from roadmap.common.configuration import ConfigManager
 
 
 class TestTeamOnboardingE2EPatterns:

@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from roadmap.common.output_models import TableData
+from roadmap.common.models import TableData
 
 
 @dataclass

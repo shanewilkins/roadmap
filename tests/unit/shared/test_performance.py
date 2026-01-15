@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.common.performance import timed_operation
+from roadmap.common.services import timed_operation
 
 
 class TestTimedOperation:
@@ -159,7 +159,7 @@ class TestMetricsCollection:
 
     def test_operation_metric_recording(self):
         """Test that operation metrics are properly formatted."""
-        from roadmap.common.metrics import OperationMetric
+        from roadmap.common.services import OperationMetric
 
         metric = OperationMetric(
             operation="test_op",
@@ -174,7 +174,7 @@ class TestMetricsCollection:
 
     def test_operation_metric_with_error(self):
         """Test that operation metrics capture errors."""
-        from roadmap.common.metrics import OperationMetric
+        from roadmap.common.services import OperationMetric
 
         metric = OperationMetric(
             operation="failed_op",

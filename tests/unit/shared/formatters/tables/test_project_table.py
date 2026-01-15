@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.common.output_models import TableData
+from roadmap.common.models import TableData
 from roadmap.shared.formatters.tables.project_table import (
     ProjectTableFormatter,
 )

@@ -1,10 +1,10 @@
 """Metrics collection and reporting for monitoring operation performance."""
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from .logging import get_logger
+from ..logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,7 @@ class OperationMetric:
     duration_ms: float
     success: bool
     error: str | None = None
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

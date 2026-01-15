@@ -1,10 +1,10 @@
 """Comprehensive tests for metrics module."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from roadmap.common.metrics import (
+from roadmap.common.services import (
     MetricsCollector,
     OperationMetric,
     get_metrics_collector,
@@ -45,7 +45,7 @@ class TestOperationMetric:
     )
     def test_metric_timestamp_and_metadata(self, has_custom_timestamp, has_metadata):
         """Test timestamp and metadata handling."""
-        custom_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        custom_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         metadata = {"user_id": "123", "retry_count": 2}
 
         kwargs = {
@@ -60,9 +60,9 @@ class TestOperationMetric:
         if has_metadata:
             kwargs["metadata"] = metadata
 
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         metric = OperationMetric(**kwargs)
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         if has_custom_timestamp:
             assert metric.timestamp == custom_time
@@ -440,7 +440,7 @@ class TestMetricsIntegration:
         """Test that timestamps are properly recorded."""
         collector = MetricsCollector()
 
-        base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         for i in range(3):
             metric = OperationMetric(
                 operation="test",

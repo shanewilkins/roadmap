@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.common.performance import (
+from roadmap.common.services import (
     OperationTimer,
     async_timed_operation,
     timed_operation,

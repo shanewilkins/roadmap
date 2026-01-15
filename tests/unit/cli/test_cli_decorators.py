@@ -7,7 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.decorators import add_output_flags, with_output_support
-from roadmap.common.output_models import ColumnDef, ColumnType, TableData
+from roadmap.common.models import ColumnDef, ColumnType, TableData
 
 
 class TestWithOutputSupport:

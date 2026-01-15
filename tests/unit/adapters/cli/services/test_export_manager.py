@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.adapters.cli.services.export_manager import ExportManager
-from roadmap.common.config_models import RoadmapConfig
+from roadmap.common.models import RoadmapConfig
 
 
 @pytest.fixture

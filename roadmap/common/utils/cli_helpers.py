@@ -12,8 +12,8 @@ from typing import Any
 import click
 from rich.table import Table
 
+from roadmap.common.models import ColumnType, TableData
 from roadmap.common.output_formatter import OutputFormatter
-from roadmap.common.output_models import ColumnType, TableData
 
 
 class OutputFormatHandler:

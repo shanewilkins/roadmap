@@ -10,7 +10,7 @@ from typing import Any
 import yaml
 from structlog import get_logger
 
-from roadmap.common.config_models import RoadmapConfig
+from roadmap.common.models import RoadmapConfig
 
 logger = get_logger()
 

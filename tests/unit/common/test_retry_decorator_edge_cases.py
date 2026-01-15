@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.common.retry import (
+from roadmap.common.services import (
     retry,
 )
 

@@ -17,7 +17,7 @@ from pathlib import Path
 import click
 
 from roadmap.common.cache import clear_session_cache
-from roadmap.common.profiling import get_profiler
+from roadmap.common.services import get_profiler
 
 
 def simulate_operations():

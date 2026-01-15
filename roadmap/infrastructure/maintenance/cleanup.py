@@ -5,8 +5,8 @@ from pathlib import Path
 import click
 
 from roadmap.adapters.cli.presentation.cleanup_presenter import CleanupPresenter
-from roadmap.common.cli_models import CleanupParams
 from roadmap.common.console import get_console
+from roadmap.common.models import CleanupParams
 from roadmap.core.services.health.backup_cleanup_service import BackupCleanupService
 from roadmap.core.services.health.file_repair_service import FileRepairService
 from roadmap.core.services.validators import (

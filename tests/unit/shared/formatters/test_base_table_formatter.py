@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.common.output_models import ColumnDef, ColumnType, TableData
+from roadmap.common.models import ColumnDef, ColumnType, TableData
 from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 
 

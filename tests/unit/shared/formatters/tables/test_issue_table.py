@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.common.output_models import TableData
+from roadmap.common.models import TableData
 from roadmap.core.domain import Priority, Status
 from roadmap.shared.formatters.tables.issue_table import IssueTableFormatter
 
