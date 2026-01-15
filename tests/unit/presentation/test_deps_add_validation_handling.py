@@ -101,15 +101,18 @@ class TestAddDependencyCommand:
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
+        # Use patch as a decorator argument to ensure proper isolation with xdist
         with patch(
             "roadmap.adapters.cli.issues.deps.ensure_entity_exists"
         ) as mock_ensure:
+            # Raise exception immediately on first call (when looking up issue)
             mock_ensure.side_effect = Exception("Issue not found")
 
             result = runner.invoke(
                 add_dependency,
                 ["999", "456"],
                 obj=ctx_obj,
+                catch_exceptions=True,
             )
 
         # The command catches exceptions and prints error messages
@@ -126,16 +129,19 @@ class TestAddDependencyCommand:
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         ctx_obj = {"core": mock_core}
 
+        # Use patch as a context manager with proper isolation for xdist
         with patch(
             "roadmap.adapters.cli.issues.deps.ensure_entity_exists"
         ) as mock_ensure:
             # First call succeeds, second fails
+            # Each test gets its own mock instance to avoid xdist interference
             mock_ensure.side_effect = [mock_issue, Exception("Dependency not found")]
 
             result = runner.invoke(
                 add_dependency,
                 ["123", "999"],
                 obj=ctx_obj,
+                catch_exceptions=True,
             )
 
         # Error is caught and displayed but exit code is 0
@@ -254,18 +260,22 @@ class TestAddDependencyCommand:
         mock_dep_issue.id = "456"
 
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        # Set update to fail - use function to ensure fresh exception each time
         mock_core.issues.update.side_effect = Exception("Update failed")
         ctx_obj = {"core": mock_core}
 
+        # Use patch as a context manager with proper isolation for xdist
         with patch(
             "roadmap.adapters.cli.issues.deps.ensure_entity_exists"
         ) as mock_ensure:
+            # Each test execution gets fresh mock_ensure instance
             mock_ensure.side_effect = [mock_issue, mock_dep_issue]
 
             result = runner.invoke(
                 add_dependency,
                 ["123", "456"],
                 obj=ctx_obj,
+                catch_exceptions=True,
             )
 
         # Error is caught and displayed
