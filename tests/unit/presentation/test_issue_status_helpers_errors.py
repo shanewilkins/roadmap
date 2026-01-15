@@ -85,7 +85,7 @@ class TestApplyStatusChangeSuccess:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -111,7 +111,7 @@ class TestApplyStatusChangeSuccess:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -146,7 +146,7 @@ class TestApplyStatusChangePreCheck:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -174,7 +174,7 @@ class TestApplyStatusChangePreCheck:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -201,7 +201,7 @@ class TestApplyStatusChangeErrors:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.side_effect = click.Abort()
 
@@ -223,7 +223,7 @@ class TestApplyStatusChangeErrors:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -251,7 +251,7 @@ class TestApplyStatusChangeAllStatuses:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -275,7 +275,7 @@ class TestApplyStatusChangeAllStatuses:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -311,7 +311,7 @@ class TestStatusChangeIntegration:
         )
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 

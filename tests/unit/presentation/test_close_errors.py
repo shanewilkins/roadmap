@@ -75,7 +75,7 @@ class TestCloseIssueCommand:
                 ctx.obj = {"core": mock_core}
 
                 with mock.patch(
-                    "roadmap.adapters.cli.helpers.ensure_entity_exists"
+                    "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
                 ) as mock_ensure:
                     mock_ensure.return_value = mock_issue
 
@@ -103,7 +103,7 @@ class TestCloseIssueCommand:
         mock_core.issues.update.return_value = mock_issue
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -127,7 +127,7 @@ class TestCloseIssueCommand:
         mock_core.issues.update.return_value = mock_issue
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -145,7 +145,9 @@ class TestCloseIssueCommand:
         runner = CliRunner()
         mock_core = mock.MagicMock()
 
-        with mock.patch("roadmap.adapters.cli.helpers.ensure_entity_exists"):
+        with mock.patch(
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
+        ):
             with mock.patch("roadmap.adapters.cli.issues.close.console"):
                 result = runner.invoke(
                     close_issue,
@@ -166,7 +168,7 @@ class TestCloseIssueCommand:
         mock_core.issues.update.return_value = mock_issue
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -187,7 +189,7 @@ class TestCloseIssueErrors:
         mock_core = mock.MagicMock()
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.side_effect = click.Abort()
 
@@ -208,7 +210,7 @@ class TestCloseIssueErrors:
         mock_core.issues.update.return_value = None  # Update failed
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -234,7 +236,7 @@ class TestCloseIssueDurationCalculation:
         mock_core.issues.update.return_value = mock_issue
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -258,7 +260,7 @@ class TestCloseIssueDurationCalculation:
         mock_core.issues.update.return_value = mock_issue
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -282,7 +284,7 @@ class TestCloseIssueDurationCalculation:
         mock_core.issues.update.return_value = mock_issue
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 
@@ -306,7 +308,7 @@ class TestCloseIssueDurationCalculation:
         mock_core.issues.update.return_value = mock_issue
 
         with mock.patch(
-            "roadmap.adapters.cli.helpers.ensure_entity_exists"
+            "roadmap.adapters.cli.cli_command_helpers.ensure_entity_exists"
         ) as mock_ensure:
             mock_ensure.return_value = mock_issue
 

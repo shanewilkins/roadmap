@@ -22,7 +22,7 @@ class TestHandleArchiveParseError:
         error = ValueError("Test error")
         mock_console = MagicMock()
 
-        with patch("roadmap.adapters.cli.archive_utils.handle_cli_error"):
+        with patch("roadmap.adapters.cli.archive_operations.handle_cli_error"):
             handle_archive_parse_error(
                 error=error,
                 entity_type="issue",
@@ -39,9 +39,9 @@ class TestHandleArchiveParseError:
         error = ValueError("Test error")
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_archive_parse_error(
                     error=error,
                     entity_type="issue",
@@ -57,9 +57,9 @@ class TestHandleArchiveParseError:
         archive_dir = "/tmp/archive"
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_archive_parse_error(
                     error=error,
                     entity_type="issue",
@@ -78,9 +78,9 @@ class TestHandleArchiveParseError:
         extra_context = {"user": "test_user", "timestamp": "2025-12-26"}
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_archive_parse_error(
                     error=error,
                     entity_type="issue",
@@ -108,9 +108,9 @@ class TestHandleArchiveParseError:
         error = ValueError("Test error")
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_archive_parse_error(
                     error=error,
                     entity_type=entity_type,
@@ -127,9 +127,9 @@ class TestHandleArchiveParseError:
         error = ValueError("Test error")
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_archive_parse_error(
                     error=error,
                     entity_type="issue",
@@ -150,7 +150,7 @@ class TestHandleRestoreParseError:
         error = ValueError("Test error")
         mock_console = MagicMock()
 
-        with patch("roadmap.adapters.cli.archive_utils.handle_cli_error"):
+        with patch("roadmap.adapters.cli.archive_operations.handle_cli_error"):
             handle_restore_parse_error(
                 error=error,
                 entity_type="issue",
@@ -167,9 +167,9 @@ class TestHandleRestoreParseError:
         error = ValueError("Test error")
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_restore_parse_error(
                     error=error,
                     entity_type="issue",
@@ -185,9 +185,9 @@ class TestHandleRestoreParseError:
         archive_dir = "/tmp/archive"
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_restore_parse_error(
                     error=error,
                     entity_type="issue",
@@ -206,9 +206,9 @@ class TestHandleRestoreParseError:
         extra_context = {"user": "test_user", "attempt": 1}
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_restore_parse_error(
                     error=error,
                     entity_type="milestone",
@@ -236,9 +236,9 @@ class TestHandleRestoreParseError:
         error = ValueError("Test error")
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_restore_parse_error(
                     error=error,
                     entity_type=entity_type,
@@ -255,9 +255,9 @@ class TestHandleRestoreParseError:
         error = ValueError("Test error")
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_handle:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_restore_parse_error(
                     error=error,
                     entity_type="issue",
@@ -274,9 +274,9 @@ class TestHandleRestoreParseError:
         error = ValueError("Test error")
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_archive:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_archive_parse_error(
                     error=error,
                     entity_type="issue",
@@ -285,9 +285,9 @@ class TestHandleRestoreParseError:
                 )
 
         with patch(
-            "roadmap.adapters.cli.archive_utils.handle_cli_error"
+            "roadmap.adapters.cli.archive_operations.handle_cli_error"
         ) as mock_restore:
-            with patch("roadmap.adapters.cli.archive_utils.get_console"):
+            with patch("roadmap.adapters.cli.archive_operations.get_console"):
                 handle_restore_parse_error(
                     error=error,
                     entity_type="issue",
