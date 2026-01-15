@@ -24,7 +24,7 @@ from pathlib import Path
 from roadmap.adapters.git.git import GitIntegration
 from roadmap.adapters.persistence.storage import StateManager
 from roadmap.adapters.persistence.yaml_repositories import YAMLIssueRepository
-from roadmap.common.path_utils import build_roadmap_paths
+from roadmap.common.utils.path_utils import build_roadmap_paths
 from roadmap.core.services import (
     ConfigurationService,
     GitHubIntegrationService,

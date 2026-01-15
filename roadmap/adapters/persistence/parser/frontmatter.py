@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from roadmap.common.file_utils import ensure_directory_exists, file_exists_check
+from roadmap.common.utils.file_utils import ensure_directory_exists, file_exists_check
 
 
 class FrontmatterParser:

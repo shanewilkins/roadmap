@@ -16,7 +16,7 @@ from pathlib import Path
 
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.common.cache import SessionCache
-from roadmap.common.timezone_utils import now_utc
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain import (
     Issue,
     IssueType,

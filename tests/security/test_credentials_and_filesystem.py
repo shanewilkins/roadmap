@@ -6,13 +6,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.common.file_utils import (
+from roadmap.common.security import create_secure_directory, create_secure_file
+from roadmap.common.utils.file_utils import (
     SecureFileManager,
     ensure_directory_exists,
     safe_read_file,
     safe_write_file,
 )
-from roadmap.common.security import create_secure_directory, create_secure_file
 from roadmap.infrastructure.security.credentials import CredentialManager, mask_token
 
 
@@ -176,7 +176,7 @@ class TestFileSystemSecurity:
 
     def test_backup_file_creation_preserves_content(self):
         """Verify backup file creation preserves original content."""
-        from roadmap.common.file_utils import backup_file
+        from roadmap.common.utils.file_utils import backup_file
 
         with patch("shutil.copy2"):
             try:
@@ -204,7 +204,7 @@ class TestFileSystemSecurity:
 
     def test_file_operations_error_includes_path_info(self):
         """Verify file operation errors include path information."""
-        from roadmap.common.file_utils import FileOperationError
+        from roadmap.common.utils.file_utils import FileOperationError
 
         error = FileOperationError("Test error", Path("/test/file.txt"), "write")
 

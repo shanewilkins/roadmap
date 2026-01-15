@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.common.datetime_parser import parse_datetime
-from roadmap.common.timezone_utils import now_utc
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain import Priority, Project, ProjectStatus
 
 from .frontmatter import FrontmatterParser

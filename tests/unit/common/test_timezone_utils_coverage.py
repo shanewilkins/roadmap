@@ -1,10 +1,10 @@
 """Test coverage for timezone_utils module functions."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from roadmap.common.timezone_utils import (
+from roadmap.common.utils.timezone_utils import (
     TimezoneManager,
     ensure_timezone_aware,
     format_datetime,
@@ -57,9 +57,9 @@ class TestNowUtc:
 
     def test_now_utc_is_recent(self):
         """Test now_utc returns recent timestamp."""
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         result = now_utc()
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
         assert before <= result <= after
 
 
@@ -123,14 +123,14 @@ class TestFormatDatetime:
     )
     def test_format_datetime(self, tz_string, description):
         """Test formatting datetime with various timezones."""
-        dt = datetime.now(timezone.utc)
+        dt = datetime.now(UTC)
         result = format_datetime(dt, tz_string) if tz_string else format_datetime(dt)
         assert isinstance(result, str)
         assert len(result) > 0
 
     def test_format_datetime_contains_date(self):
         """Test formatted datetime contains recognizable date."""
-        dt = datetime(2025, 12, 16, 10, 30, 0, tzinfo=timezone.utc)
+        dt = datetime(2025, 12, 16, 10, 30, 0, tzinfo=UTC)
         result = format_datetime(dt)
         # Should contain year, month, day in some format
         assert any(
@@ -143,26 +143,26 @@ class TestFormatRelativeTime:
 
     def test_format_relative_time_returns_string(self):
         """Test format_relative_time returns string."""
-        dt = datetime.now(timezone.utc)
+        dt = datetime.now(UTC)
         result = format_relative_time(dt)
         assert isinstance(result, str)
         assert len(result) > 0
 
     def test_format_relative_time_future(self):
         """Test format_relative_time with future datetime."""
-        future_dt = datetime.now(timezone.utc) + timedelta(hours=2)
+        future_dt = datetime.now(UTC) + timedelta(hours=2)
         result = format_relative_time(future_dt)
         assert isinstance(result, str)
 
     def test_format_relative_time_past(self):
         """Test format_relative_time with past datetime."""
-        past_dt = datetime.now(timezone.utc) - timedelta(hours=2)
+        past_dt = datetime.now(UTC) - timedelta(hours=2)
         result = format_relative_time(past_dt)
         assert isinstance(result, str)
 
     def test_format_relative_time_now(self):
         """Test format_relative_time with current time."""
-        now_dt = datetime.now(timezone.utc)
+        now_dt = datetime.now(UTC)
         result = format_relative_time(now_dt)
         assert isinstance(result, str)
         # Should contain something like "now" or "ago" or similar
@@ -170,7 +170,7 @@ class TestFormatRelativeTime:
 
     def test_format_relative_time_with_timezone(self):
         """Test format_relative_time with specific timezone."""
-        dt = datetime.now(timezone.utc)
+        dt = datetime.now(UTC)
         result = format_relative_time(dt, "America/Los_Angeles")
         assert isinstance(result, str)
 
@@ -198,7 +198,7 @@ class TestMigrateNaiveDatetime:
 
     def test_migrate_aware_datetime_unchanged(self):
         """Test that aware datetime is not modified."""
-        aware_dt = datetime(2025, 12, 16, 10, 30, 0, tzinfo=timezone.utc)
+        aware_dt = datetime(2025, 12, 16, 10, 30, 0, tzinfo=UTC)
         result = migrate_naive_datetime(aware_dt)
         assert result.tzinfo is not None
 
@@ -235,7 +235,7 @@ class TestEnsureTimezoneAware:
 
     def test_ensure_timezone_aware_aware_input(self):
         """Test that aware datetime is not modified."""
-        aware_dt = datetime(2025, 12, 16, 10, 30, 0, tzinfo=timezone.utc)
+        aware_dt = datetime(2025, 12, 16, 10, 30, 0, tzinfo=UTC)
         result = ensure_timezone_aware(aware_dt)
         assert result.tzinfo is not None
 
@@ -258,7 +258,7 @@ class TestTimezoneConversionRoundtrip:
 
     def test_parse_and_format_roundtrip(self):
         """Test parsing and formatting preserves datetime."""
-        original_dt = datetime.now(timezone.utc)
+        original_dt = datetime.now(UTC)
         formatted = format_datetime(original_dt)
         # Verify formatted string is reasonable
         assert isinstance(formatted, str)
@@ -286,20 +286,20 @@ class TestTimezoneEdgeCases:
 
     def test_datetime_with_microseconds(self):
         """Test datetime with microseconds is preserved."""
-        dt = datetime(2025, 12, 16, 10, 30, 0, 123456, tzinfo=timezone.utc)
+        dt = datetime(2025, 12, 16, 10, 30, 0, 123456, tzinfo=UTC)
         result = format_datetime(dt)
         assert isinstance(result, str)
 
     def test_far_future_datetime(self):
         """Test handling of far future datetime."""
-        future_dt = datetime(2099, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        future_dt = datetime(2099, 12, 31, 23, 59, 59, tzinfo=UTC)
         result = format_datetime(future_dt)
         assert isinstance(result, str)
         assert "2099" in result or "99" in result
 
     def test_far_past_datetime(self):
         """Test handling of far past datetime."""
-        past_dt = datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        past_dt = datetime(1970, 1, 1, 0, 0, 0, tzinfo=UTC)
         result = format_datetime(past_dt)
         assert isinstance(result, str)
 
@@ -318,7 +318,7 @@ class TestTimezoneIntegration:
     def test_workflow_create_parse_format(self):
         """Test workflow: create datetime, format, verify format is string."""
         # Create
-        original = datetime.now(timezone.utc)
+        original = datetime.now(UTC)
         # Format
         formatted = format_datetime(original)
         assert isinstance(formatted, str)
@@ -338,7 +338,7 @@ class TestTimezoneIntegration:
 
     def test_workflow_multiple_timezones(self):
         """Test same UTC time displayed in multiple timezones."""
-        utc_time = datetime(2025, 12, 16, 12, 0, 0, tzinfo=timezone.utc)
+        utc_time = datetime(2025, 12, 16, 12, 0, 0, tzinfo=UTC)
 
         ny_display = format_datetime(utc_time, "America/New_York")
         la_display = format_datetime(utc_time, "America/Los_Angeles")

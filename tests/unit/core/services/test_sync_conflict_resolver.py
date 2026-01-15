@@ -10,7 +10,7 @@ from unittest import TestCase
 import pytest
 
 from roadmap.common.constants import Priority, Status
-from roadmap.common.timezone_utils import now_utc
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.services.sync.sync_conflict_resolver import (
     Conflict,
     ConflictField,

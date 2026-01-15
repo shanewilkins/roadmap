@@ -8,11 +8,11 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
-from roadmap.common.path_utils import build_roadmap_paths
 from roadmap.common.security import (
     create_secure_directory,
     create_secure_file,
 )
+from roadmap.common.utils.path_utils import build_roadmap_paths
 
 
 class InitializationManager:

@@ -3,7 +3,7 @@
 from contextlib import contextmanager
 from pathlib import Path
 
-from ..file_utils import ensure_directory_exists
+from ..utils.file_utils import ensure_directory_exists
 from .exceptions import SecurityError
 from .logging import log_security_event
 

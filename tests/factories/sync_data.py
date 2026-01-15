@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from roadmap.common.constants import Priority, Status
-from roadmap.common.timezone_utils import now_utc
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue
 
 

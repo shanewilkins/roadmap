@@ -22,7 +22,7 @@ from roadmap.common.logging_utils import (
     log_event,
     log_metric,
 )
-from roadmap.common.timezone_utils import now_utc
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.project import Project
 from roadmap.core.repositories import ProjectRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService

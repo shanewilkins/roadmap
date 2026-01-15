@@ -12,7 +12,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from roadmap.common.file_utils import ensure_directory_exists
+from roadmap.common.utils.file_utils import ensure_directory_exists
 
 
 class FileLockError(Exception):

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.common.file_utils import (
+from roadmap.common.utils.file_utils import (
     ensure_directory_exists,
     file_exists_check,
     safe_read_file,

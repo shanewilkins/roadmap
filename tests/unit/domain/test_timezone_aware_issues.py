@@ -9,11 +9,11 @@ ensuring that:
 5. Backward compatibility is maintained during timezone migration
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from roadmap.common.timezone_utils import TimezoneManager
+from roadmap.common.utils.timezone_utils import TimezoneManager
 from roadmap.core.domain import Issue, Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
 
@@ -47,7 +47,7 @@ class TestTimezoneManager:
         tz_manager = TimezoneManager()
 
         # UTC aware datetime
-        utc_aware = datetime.now(timezone.utc)
+        utc_aware = datetime.now(UTC)
         assert tz_manager.is_timezone_aware(utc_aware)
 
         # Naive datetime
@@ -62,7 +62,7 @@ class TestTimezoneManager:
         date_str = "2025-06-15"
         utc_time = tz_manager.parse_user_input(date_str)
 
-        assert utc_time.tzinfo == timezone.utc
+        assert utc_time.tzinfo == UTC
         # Should parse without error
         assert isinstance(utc_time, datetime)
 
@@ -71,7 +71,7 @@ class TestTimezoneManager:
         tz_manager = TimezoneManager("Europe/London")
 
         # Create UTC time
-        utc_time = datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+        utc_time = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
 
         # Format for user (London time in June is BST, UTC+1)
         formatted = tz_manager.format_for_user(utc_time)
@@ -93,7 +93,7 @@ class TestTimezoneManager:
 
         assert aware_dt.tzinfo is not None
         # Should be UTC after make_aware
-        assert aware_dt.tzinfo == timezone.utc
+        assert aware_dt.tzinfo == UTC
         # Tokyo is UTC+9, so 12:00 JST = 03:00 UTC
         assert aware_dt.hour == 3
 
@@ -121,12 +121,12 @@ class TestTimezoneAwareIssueCreation:
         core.initialize()
 
         # Create an issue
-        before_creation = datetime.now(timezone.utc)
+        before_creation = datetime.now(UTC)
         issue = core.issues.create("Test Issue", Priority.HIGH)
-        after_creation = datetime.now(timezone.utc)
+        after_creation = datetime.now(UTC)
 
         # Verify issue has UTC timestamp
-        assert issue.created.tzinfo == timezone.utc
+        assert issue.created.tzinfo == UTC
         assert before_creation <= issue.created <= after_creation
 
     def test_issue_created_with_utc_updated_timestamp(self, core):
@@ -134,12 +134,12 @@ class TestTimezoneAwareIssueCreation:
         core.initialize()
 
         # Create an issue
-        before_creation = datetime.now(timezone.utc)
+        before_creation = datetime.now(UTC)
         issue = core.issues.create("Test Issue", Priority.HIGH)
-        after_creation = datetime.now(timezone.utc)
+        after_creation = datetime.now(UTC)
 
         # Verify issue has UTC updated timestamp
-        assert issue.updated.tzinfo == timezone.utc
+        assert issue.updated.tzinfo == UTC
         assert before_creation <= issue.updated <= after_creation
 
     def test_issue_creation_timezone_consistency(self, core):
@@ -164,9 +164,9 @@ class TestTimezoneAwareIssueCreation:
         assert issue1.created <= issue2.created <= issue3.created
 
         # All should have UTC timezone
-        assert issue1.created.tzinfo == timezone.utc
-        assert issue2.created.tzinfo == timezone.utc
-        assert issue3.created.tzinfo == timezone.utc
+        assert issue1.created.tzinfo == UTC
+        assert issue2.created.tzinfo == UTC
+        assert issue3.created.tzinfo == UTC
 
     def test_issue_with_timezone_manager(self, core):
         """Test issue creation with timezone manager context."""
@@ -209,8 +209,8 @@ class TestTimezoneAwareIssueModification:
         updated_issue = core.issues.update(issue.id, title="Updated Title")
 
         # Verify timestamps
-        assert updated_issue.created.tzinfo == timezone.utc
-        assert updated_issue.updated.tzinfo == timezone.utc
+        assert updated_issue.created.tzinfo == UTC
+        assert updated_issue.updated.tzinfo == UTC
         assert original_created == updated_issue.created
         assert updated_issue.updated > updated_issue.created
 
@@ -225,8 +225,8 @@ class TestTimezoneAwareIssueModification:
         updated_issue = core.issues.update(issue.id, status=Status.IN_PROGRESS)
 
         # Verify timezone is preserved
-        assert updated_issue.created.tzinfo == timezone.utc
-        assert updated_issue.updated.tzinfo == timezone.utc
+        assert updated_issue.created.tzinfo == UTC
+        assert updated_issue.updated.tzinfo == UTC
         assert updated_issue.created == original_created
 
 
@@ -245,12 +245,12 @@ class TestTimezoneAwareDateFields:
         issue = core.issues.create("Test Issue", Priority.HIGH)
 
         # Set due date via update
-        due_date = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        due_date = datetime(2025, 12, 31, 23, 59, 59, tzinfo=UTC)
         updated_issue = core.issues.update(issue.id, due_date=due_date)
 
         # Verify due_date is set and has correct timezone
         assert updated_issue.due_date == due_date
-        assert updated_issue.due_date.tzinfo == timezone.utc
+        assert updated_issue.due_date.tzinfo == UTC
 
     def test_issue_actual_start_date_is_utc(self, core):
         """Test that actual_start_date is UTC when set."""
@@ -259,14 +259,14 @@ class TestTimezoneAwareDateFields:
         issue = core.issues.create("Test Issue", Priority.HIGH)
 
         # Set start date
-        start_date = datetime.now(timezone.utc)
+        start_date = datetime.now(UTC)
         updated_issue = core.issues.update(
             issue.id, actual_start_date=start_date, status=Status.IN_PROGRESS
         )
 
         # Verify start date is UTC
         assert updated_issue.actual_start_date is not None
-        assert updated_issue.actual_start_date.tzinfo == timezone.utc
+        assert updated_issue.actual_start_date.tzinfo == UTC
 
     def test_issue_actual_end_date_is_utc(self, core):
         """Test that actual_end_date is UTC when set."""
@@ -275,14 +275,14 @@ class TestTimezoneAwareDateFields:
         issue = core.issues.create("Test Issue", Priority.HIGH)
 
         # Set end date
-        end_date = datetime.now(timezone.utc)
+        end_date = datetime.now(UTC)
         updated_issue = core.issues.update(
             issue.id, actual_end_date=end_date, status=Status.CLOSED
         )
 
         # Verify end date is UTC
         assert updated_issue.actual_end_date is not None
-        assert updated_issue.actual_end_date.tzinfo == timezone.utc
+        assert updated_issue.actual_end_date.tzinfo == UTC
 
 
 class TestTimezoneAwareIssueSerialization:
@@ -351,8 +351,8 @@ class TestTimezoneAwareIssueFiltering:
 
         # Verify all issues have UTC timestamps
         for issue in issues:
-            assert issue.created.tzinfo == timezone.utc
-            assert issue.updated.tzinfo == timezone.utc
+            assert issue.created.tzinfo == UTC
+            assert issue.updated.tzinfo == UTC
 
     def test_filter_issues_by_created_date_range(self, core):
         """Test filtering issues by created date range."""
@@ -370,7 +370,7 @@ class TestTimezoneAwareIssueFiltering:
         core.issues.create("Late Issue", Priority.LOW)
 
         # Filter by date range
-        start_time = datetime.now(timezone.utc) - timedelta(seconds=10)
+        start_time = datetime.now(UTC) - timedelta(seconds=10)
         issues = core.issues.list()
 
         # Both should be created after start_time

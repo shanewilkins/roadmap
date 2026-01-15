@@ -16,7 +16,7 @@ from roadmap.common.constants import IssueType, Priority, Status
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.common.logging_utils import log_entry, log_event, log_exit, log_metric
-from roadmap.common.timezone_utils import now_utc
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models import (
     NOT_PROVIDED,

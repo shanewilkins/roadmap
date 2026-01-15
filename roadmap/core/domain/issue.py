@@ -12,7 +12,7 @@ from roadmap.core.domain.comment import Comment
 
 def now_utc():
     """Get current UTC datetime with timezone awareness."""
-    from roadmap.common.timezone_utils import now_utc as tz_now_utc
+    from roadmap.common.utils.timezone_utils import now_utc as tz_now_utc
 
     return tz_now_utc()
 

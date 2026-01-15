@@ -10,7 +10,7 @@ from .comment import Comment
 
 # Import timezone utilities with circular import protection
 try:
-    from roadmap.common.timezone_utils import now_utc
+    from roadmap.common.utils.timezone_utils import now_utc
 except ImportError:
     # Fallback during module loading
     def now_utc() -> datetime:

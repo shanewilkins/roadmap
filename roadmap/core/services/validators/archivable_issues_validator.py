@@ -1,7 +1,7 @@
 """Validator for archivable issues."""
 
 from roadmap.common.logging import get_logger
-from roadmap.common.timezone_utils import now_utc
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.services.base_validator import HealthStatus
 
 logger = get_logger(__name__)

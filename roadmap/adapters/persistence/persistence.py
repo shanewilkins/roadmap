@@ -8,7 +8,7 @@ from typing import Any
 import yaml
 
 from roadmap.common.datetime_parser import parse_datetime
-from roadmap.common.file_utils import ensure_directory_exists
+from roadmap.common.utils.file_utils import ensure_directory_exists
 from roadmap.common.validation import validate_frontmatter_structure
 
 
