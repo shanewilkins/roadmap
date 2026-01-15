@@ -1,7 +1,7 @@
 """Validator for missing headlines in issues, milestones, and projects."""
 
 from roadmap.common.logging import get_logger
-from roadmap.core.services.base_validator import BaseValidator, HealthStatus
+from roadmap.core.services.validator_base import BaseValidator, HealthStatus
 
 logger = get_logger(__name__)
 

@@ -5,7 +5,7 @@ Provides utilities for handling CLI output formatting, ANSI stripping, and outpu
 
 import pytest
 
-from tests.unit.shared.test_utils import (
+from tests.unit.shared.test_ansi_utilities import (
     assert_in_output,
     assert_output_contains,
     clean_cli_output,

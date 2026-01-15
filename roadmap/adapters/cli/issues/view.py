@@ -2,7 +2,10 @@
 
 import click
 
-from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
+from roadmap.adapters.cli.cli_command_helpers import (
+    ensure_entity_exists,
+    require_initialized,
+)
 from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
 

@@ -5,7 +5,7 @@ for running health checks across the system.
 """
 
 from roadmap.common.logging import get_logger
-from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validator_base import HealthStatus
 from roadmap.core.services.validators import (
     ArchivableIssuesValidator,
     ArchivableMilestonesValidator,

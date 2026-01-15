@@ -5,8 +5,11 @@ This command is syntactic sugar for: roadmap issue update <ID> --progress <PERCE
 
 import click
 
+from roadmap.adapters.cli.cli_command_helpers import (
+    ensure_entity_exists,
+    require_initialized,
+)
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
-from roadmap.adapters.cli.helpers import ensure_entity_exists, require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (

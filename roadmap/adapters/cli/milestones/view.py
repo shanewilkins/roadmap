@@ -2,7 +2,7 @@
 
 import click
 
-from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.mappers import MilestoneMapper
 from roadmap.adapters.cli.presentation.milestone_presenter import MilestonePresenter
 from roadmap.common.console import get_console

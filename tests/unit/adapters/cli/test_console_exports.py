@@ -1,6 +1,6 @@
 """Tests for CLI utils module."""
 
-from roadmap.adapters.cli.utils import get_console, is_testing_environment
+from roadmap.adapters.cli.console_exports import get_console, is_testing_environment
 
 
 class TestCliUtils:

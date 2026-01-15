@@ -3,7 +3,7 @@
 Common utilities for determining overall health status from individual checks.
 """
 
-from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validator_base import HealthStatus
 
 
 def get_overall_status(checks: dict) -> str:

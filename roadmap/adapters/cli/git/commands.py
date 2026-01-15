@@ -7,6 +7,7 @@ import click
 import structlog
 from rich.console import Console
 
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.git.handlers.git_authentication_handler import (
     GitAuthenticationHandler,
@@ -17,7 +18,6 @@ from roadmap.adapters.cli.git.handlers.git_connectivity_handler import (
 )
 from roadmap.adapters.cli.git.handlers.git_hooks_handler import GitHooksHandler
 from roadmap.adapters.cli.git.hooks_config import hooks_config
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.services.github.github_integration_service import (
     GitHubIntegrationService,

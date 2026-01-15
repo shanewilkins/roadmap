@@ -2,9 +2,9 @@
 
 import click
 
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.services.milestone_list_service import MilestoneListService
 from roadmap.common.console import get_console
 from roadmap.common.models import ColumnType

@@ -5,10 +5,10 @@ import json
 import click
 from structlog import get_logger
 
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.health.fixer import HealthFixOrchestrator
 from roadmap.adapters.cli.health.formatter import HealthCheckFormatter
 from roadmap.adapters.cli.health.scan import scan as health_scan
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
 )

@@ -8,7 +8,7 @@ import requests
 
 from roadmap.adapters.github.handlers.comments import CommentsHandler
 from roadmap.core.domain import Comment
-from tests.unit.shared.test_helpers import create_mock_comment
+from tests.unit.shared.test_assertion_helpers import create_mock_comment
 
 
 # Local fixture for real CommentsHandler with mocked session

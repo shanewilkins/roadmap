@@ -7,7 +7,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from roadmap.adapters.cli.helpers import ensure_entity_exists
+from roadmap.adapters.cli.cli_command_helpers import ensure_entity_exists
 from roadmap.common.console import get_console
 from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService

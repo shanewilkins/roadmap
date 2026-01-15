@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validator_base import HealthStatus
 from roadmap.core.services.validators.folder_structure_validator import (
     FolderStructureValidator,
 )

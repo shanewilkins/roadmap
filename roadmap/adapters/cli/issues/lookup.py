@@ -4,7 +4,7 @@ import sys
 
 import click
 
-from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.infrastructure.logging import (
     log_command,

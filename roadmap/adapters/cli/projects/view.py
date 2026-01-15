@@ -2,7 +2,7 @@
 
 import click
 
-from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.mappers import ProjectMapper
 from roadmap.adapters.cli.presentation.project_presenter import ProjectPresenter
 from roadmap.common.console import get_console

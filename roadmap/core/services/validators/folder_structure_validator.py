@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from roadmap.common.logging import get_logger
-from roadmap.core.services.base_validator import BaseValidator, HealthStatus
+from roadmap.core.services.validator_base import BaseValidator, HealthStatus
 
 from . import extract_issue_id
 

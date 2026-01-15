@@ -4,10 +4,10 @@ from dataclasses import asdict
 
 import click
 
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.dtos import IssueDTO
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.adapters.cli.services.export_manager import ExportManager
 from roadmap.common.console import get_console

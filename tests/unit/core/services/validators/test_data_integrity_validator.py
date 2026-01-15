@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validator_base import HealthStatus
 from roadmap.core.services.validators.data_integrity_validator import (
     DataIntegrityValidator,
 )

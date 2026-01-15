@@ -7,8 +7,8 @@ from datetime import UTC, datetime
 
 import click
 
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
@@ -97,7 +97,7 @@ def close_issue(
             update_kwargs["actual_end_date"] = end_date
 
         # Use wrapper for status change display
-        from roadmap.adapters.cli.helpers import ensure_entity_exists
+        from roadmap.adapters.cli.cli_command_helpers import ensure_entity_exists
 
         # Verify issue exists before updating
         ensure_entity_exists(core, "issue", issue_id)

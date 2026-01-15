@@ -2,9 +2,9 @@
 
 import click
 
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.crud import BaseUpdate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import MilestoneBuilder
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.infrastructure.logging import log_command
 
 

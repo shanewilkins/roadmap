@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validator_base import HealthStatus
 from roadmap.core.services.validators import OrphanedMilestonesValidator
 from tests.factories.domain import MilestoneBuilder, ProjectBuilder
 

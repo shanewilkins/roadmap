@@ -69,7 +69,7 @@ def apply_status_change(
     Raises:
         click.Abort: If issue doesn't exist or update fails
     """
-    from roadmap.adapters.cli.helpers import ensure_entity_exists
+    from roadmap.adapters.cli.cli_command_helpers import ensure_entity_exists
 
     # Ensure issue exists
     issue = ensure_entity_exists(core, "issue", issue_id)

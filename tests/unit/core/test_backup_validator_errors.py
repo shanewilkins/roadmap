@@ -223,7 +223,7 @@ class TestBackupValidatorHealthCheck:
             ):
                 status, message = BackupValidator.check_old_backups()
 
-                from roadmap.core.services.base_validator import HealthStatus
+                from roadmap.core.services.validator_base import HealthStatus
 
                 assert status == HealthStatus.HEALTHY
                 assert "No old backups" in message
@@ -240,7 +240,7 @@ class TestBackupValidatorHealthCheck:
         ):
             status, message = BackupValidator.check_old_backups()
 
-            from roadmap.core.services.base_validator import HealthStatus
+            from roadmap.core.services.validator_base import HealthStatus
 
             assert status == HealthStatus.HEALTHY
             assert "5 old backup file(s)" in message
@@ -255,7 +255,7 @@ class TestBackupValidatorHealthCheck:
         ):
             status, message = BackupValidator.check_old_backups()
 
-            from roadmap.core.services.base_validator import HealthStatus
+            from roadmap.core.services.validator_base import HealthStatus
 
             assert status == HealthStatus.HEALTHY
             assert "Could not check" in message
@@ -269,7 +269,7 @@ class TestBackupValidatorHealthCheck:
 
             status, message = BackupValidator.check_old_backups()
 
-            from roadmap.core.services.base_validator import HealthStatus
+            from roadmap.core.services.validator_base import HealthStatus
 
             assert status == HealthStatus.HEALTHY
 
@@ -287,7 +287,7 @@ class TestBackupValidatorHealthCheck:
         ):
             status, message = BackupValidator.check_old_backups()
 
-            from roadmap.core.services.base_validator import HealthStatus
+            from roadmap.core.services.validator_base import HealthStatus
 
             assert status == HealthStatus.HEALTHY
             # Check that large size is formatted with decimal

@@ -66,7 +66,7 @@ class BackupValidator:
             Tuple of (status, message) describing the health check result
         """
         try:
-            from roadmap.core.services.base_validator import HealthStatus
+            from roadmap.core.services.validator_base import HealthStatus
 
             backups_dir = Path(".roadmap/backups")
             old_backups = BackupValidator.scan_for_old_backups(backups_dir)

@@ -5,7 +5,7 @@ This command is syntactic sugar for: roadmap issue update <ID> --status in-progr
 
 import click
 
-from roadmap.adapters.cli.helpers import require_initialized
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.common.cli_errors import handle_cli_errors
 from roadmap.core.domain import Status
 

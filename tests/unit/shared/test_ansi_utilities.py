@@ -3,6 +3,7 @@ Test utilities for handling CLI output formatting.
 """
 
 import re
+from typing import cast
 
 
 def strip_ansi(text: str | bytes) -> str:
@@ -26,6 +27,9 @@ def strip_ansi(text: str | bytes) -> str:
     """
     if isinstance(text, bytes):
         text = text.decode("utf-8", errors="replace")
+
+    # Ensure type is str for Pyright
+    text = cast(str, text)
 
     # Comprehensive ANSI escape sequence patterns
     ansi_patterns = [

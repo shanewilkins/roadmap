@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validator_base import HealthStatus
 from roadmap.core.services.validators.archivable_milestones_validator import (
     ArchivableMilestonesValidator,
 )

@@ -13,8 +13,8 @@ import sys
 import click
 from structlog import get_logger
 
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.health.formatters import get_formatter
-from roadmap.adapters.cli.helpers import require_initialized
 from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthScanner,
 )

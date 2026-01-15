@@ -2,7 +2,7 @@
 
 from roadmap.common.logging import get_logger
 from roadmap.common.utils.timezone_utils import now_utc
-from roadmap.core.services.base_validator import HealthStatus
+from roadmap.core.services.validator_base import HealthStatus
 
 logger = get_logger(__name__)
 
