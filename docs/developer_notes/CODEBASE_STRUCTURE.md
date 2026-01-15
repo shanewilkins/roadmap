@@ -505,24 +505,114 @@ Each service handles one concern:
 
 ## Testing Organization
 
-Tests mirror the source code structure:
+Tests mirror the source code structure in a layered approach:
 
 ```
 tests/
-├── unit/
-│   ├── domain/           # Domain layer tests
-│   ├── application/      # Core service tests
-│   ├── infrastructure/   # Shared/persistence tests
-│   ├── presentation/     # CLI adapter tests
-│   └── shared/          # Common utility tests
+├── unit/                           # Isolated component tests
+│   ├── domain/                     # Domain layer tests (3 files)
+│   │   ├── test_parser.py
+│   │   ├── test_assignee_validation.py
+│   │   └── test_estimated_time.py
+│   │
+│   ├── application/                # Application/Core service tests (9 files)
+│   │   ├── test_core.py
+│   │   ├── test_core_advanced.py
+│   │   ├── test_core_comprehensive.py
+│   │   ├── test_core_edge_cases.py
+│   │   ├── test_core_final.py
+│   │   ├── test_data_utils.py
+│   │   ├── test_data_factory.py
+│   │   ├── test_bulk_operations.py
+│   │   └── test_visualization.py
+│   │
+│   ├── infrastructure/             # Infrastructure/Shared layer tests (6 files)
+│   │   ├── test_file_locking.py
+│   │   ├── test_github_client.py
+│   │   ├── test_git_hooks.py
+│   │   ├── test_git_hooks_coverage.py
+│   │   ├── test_enhanced_persistence.py
+│   │   └── test_gitignore_management.py
+│   │
+│   ├── presentation/               # CLI adapter tests (10+ files)
+│   │   ├── test_cli_smoke.py
+│   │   ├── test_issue.py
+│   │   ├── test_project.py
+│   │   ├── test_deps_add_validation_handling.py
+│   │   └── [other CLI command tests]
+│   │
+│   └── shared/                     # Shared utility tests (4 files)
+│       ├── test_utils.py
+│       ├── test_progress_calculation.py
+│       ├── test_security.py
+│       └── test_credentials.py
 │
-└── integration/         # End-to-end tests
-    ├── test_cli_*.py    # CLI workflows
-    ├── test_sync_*.py   # Sync workflows
-    └── test_*_lifecycle.py  # Full lifecycle tests
+├── integration/                    # Integration tests (50+ files)
+│   ├── test_integration.py
+│   ├── test_git_integration.py
+│   ├── test_cli_issue_commands.py
+│   ├── test_cli_milestone_commands.py
+│   ├── test_sync_backend_selection.py
+│   ├── test_issue_lifecycle.py
+│   ├── test_milestone_lifecycle.py
+│   └── [other workflow tests]
+│
+├── security/                       # Security-specific tests
+│   └── test_input_validation.py
+│
+├── fixtures/                       # Shared test fixtures
+│   ├── conftest.py                # Pytest configuration & fixtures
+│   └── [additional fixtures]
+│
+└── conftest.py                    # Root pytest configuration
 ```
 
-**Total Tests**: 6,558 (all passing with xdist parallelization)
+### Test Layer Guidelines
+
+**Domain Tests** (`tests/unit/domain/`)
+- Pure business logic in isolation
+- No external dependencies
+- Focus on models, enums, calculations
+- Mock external services
+
+**Application Tests** (`tests/unit/application/`)
+- Service and orchestration logic
+- Use fixtures for domain objects
+- Mock infrastructure layer
+- Test use cases end-to-end
+
+**Infrastructure Tests** (`tests/unit/infrastructure/`)
+- Integration with external systems
+- Storage and persistence operations
+- File and git operations
+- Mock actual API calls when appropriate
+
+**Presentation Tests** (`tests/unit/presentation/`)
+- CLI command tests
+- Input validation
+- Output formatting
+- Click command runner tests
+
+**Shared Tests** (`tests/unit/shared/`)
+- Utility function tests
+- Validators and formatters
+- Logging and progress helpers
+- No domain-specific logic
+
+**Integration Tests** (`tests/integration/`)
+- Workflows across layers
+- CLI end-to-end scenarios
+- Complete user workflows
+- May hit actual external systems or mocks
+
+### Test Statistics
+
+- **Total Tests**: 6,558 (all passing with xdist parallelization)
+- **Unit Tests**: 80+ test files
+- **Integration Tests**: 50+ test files
+- **Coverage**: 80%+ of codebase
+- **Parallel Execution**: 8 workers with xdist
+- **Recent Fix**: Fixed 3 flaky tests in test_deps_add_validation_handling.py for xdist compatibility
 
 ---
 
@@ -550,9 +640,167 @@ tests/
 
 ---
 
+## Sync Architecture
+
+### Overview
+
+The Roadmap sync system uses a **file-as-source-of-truth** approach leveraging git history and frontmatter metadata. This enables backend-agnostic sync while maintaining atomic, versioned state and three-way merge conflict detection.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   User Workflow (CLI)                       │
+│  roadmap sync → Fetch remote → Three-way merge → Commit     │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│            Generic Sync Orchestrator                        │
+│  • Detects changes (git diff + git history)                │
+│  • Performs three-way merge                                │
+│  • Handles conflict resolution                             │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│         Backend-Agnostic Sync Interface                     │
+│  • GitHub API Backend                                       │
+│  • Vanilla Git Backend                                      │
+│  • Future: Jira, Linear, GitLab adapters                   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│          Local File-Based Storage                           │
+│  • Issues: .roadmap/projects/{project}/issues/             │
+│  • YAML Frontmatter: sync_metadata embedded                │
+│  • Git History: Baseline reconstruction via git log        │
+│  • Database: Cache layer only (rebuilt on startup)         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Core Principle
+
+**Files are the source of truth.** Everything else (database, git history, sync metadata) is derived from or supporting.
+
+### Sync Metadata Structure
+
+Sync metadata is embedded in issue YAML frontmatter for:
+- **Atomic storage** with issue data
+- **Git history integration** (part of committed file)
+- **Backend agnostic** (applies to any syncing system)
+- **User transparency** (they see all state in git)
+
+```yaml
+---
+id: "gh-123"
+title: "Implement feature X"
+status: "in-progress"
+assignee: "jane"
+priority: "high"
+labels:
+  - "feature"
+  - "backend"
+
+# Sync metadata - stored in YAML header for git tracking
+sync_metadata:
+  last_synced: "2026-01-03T10:30:45Z"
+  last_updated: "2026-01-03T10:25:00Z"
+  remote_state:
+    status: "open"
+    assignee: "bob"
+    priority: "medium"
+    labels: ["feature"]
+---
+
+Full markdown content here...
+```
+
+### Sync Data Flow
+
+#### Normal Operation
+
+```
+User: roadmap list
+    ↓
+IssueService.list_issues()
+    ↓
+Check if DB is in sync with git
+    ├─ git diff --name-only (cheap, milliseconds)
+    ├─ If no changes: return cached from DB (fast)
+    └─ If changes detected:
+        ├─ For each changed file: load from disk
+        ├─ Update database
+        └─ Return from database
+```
+
+#### On Sync Operation
+
+```
+User: roadmap sync
+    ↓
+SyncOrchestrator starts
+    ├─ Get baseline: from database sync_base_state (fast)
+    ├─ Get local issues: from database (cached, fast)
+    ├─ Get remote issues: from API (expected cost)
+    ├─ Three-way merge
+    └─ Apply changes:
+        ├─ Write to files: .roadmap/issues/{id}.md
+        └─ Update database (in transaction)
+```
+
+### Git Sync Monitor
+
+The Git Sync Monitor (`roadmap/core/services/sync/`) detects changes between git and database:
+
+```python
+class GitSyncMonitor:
+    """Detects changes between git and database."""
+
+    def detect_changes(self) -> dict[str, str]:
+        """Detect which .roadmap/issues files changed since last sync.
+
+        Returns:
+            {
+                'modified': ['issue1.md', 'issue2.md'],
+                'added': ['issue3.md'],
+                'deleted': ['issue4.md']
+            }
+        """
+        # Fast: just get list of changed files via git diff
+        # Don't scan filesystem
+```
+
+### Baseline State Management
+
+Baseline state is reconstructed from git history via:
+
+1. **Git log queries** to find relevant commit history
+2. **Frontmatter parsing** from historical versions
+3. **Reconstruction** of state at specific points in time
+4. **Three-way merge** using: local version, remote version, baseline
+
+This approach enables:
+- ✅ Complete reproducibility (anyone can clone and reconstruct)
+- ✅ No external database dependencies for baseline
+- ✅ Atomic sync operations (git commits as transactions)
+- ✅ Backend agnostic (works with any issue tracking system)
+
+### Sync Services
+
+| Service | Location | Purpose |
+|---------|----------|---------|
+| `SyncOrchestrator` | `core/services/sync/` | Coordinates sync workflow |
+| `SyncStatePlan` | `core/services/sync/` | Plans sync operations |
+| `SyncStateManager` | `core/services/sync/` | Manages local sync state |
+| `SyncChangeComputer` | `core/services/sync/` | Computes changes needed |
+| `SyncConflictDetector` | `core/services/sync/` | Detects merge conflicts |
+| `SyncConflictResolver` | `core/services/sync/` | Resolves conflicts |
+| `GitSyncMonitor` | `core/services/sync/` | Monitors git changes |
+| `GitKeyNormalizer` | `core/services/sync/` | Normalizes git keys |
+
+---
+
 ## Related Documents
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Data models & file formats
-- [TEST_ORGANIZATION.md](./TEST_ORGANIZATION.md) - Test structure
-- [SYNC_ARCHITECTURE.md](./SYNC_ARCHITECTURE.md) - Sync system design
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Data models & file formats (Roadmap data structure)
+- [SYNC_ARCHITECTURE.md](./SYNC_ARCHITECTURE.md) - Detailed sync implementation guide (reference)
+- [GIT_SYNC_ARCHITECTURE.md](./GIT_SYNC_ARCHITECTURE.md) - Git diff-based optimization details (reference)
 - [NAMING_CONVENTIONS.md](../NAMING_CONVENTIONS.md) - Code style guide
+- [SECURITY.md](./SECURITY.md) - Security architecture and best practices
