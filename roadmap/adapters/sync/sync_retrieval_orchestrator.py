@@ -35,10 +35,33 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
     3. Intelligent baseline-less diff when no previous sync exists
     """
 
-    def __init__(self, *args, **kwargs):
-        """Initialize with baseline retriever."""
+    def __init__(self, *args, persistence=None, parser=None, **kwargs):
+        """Initialize with baseline retriever.
+
+        Args:
+            persistence: PersistenceInterface for git operations (optional)
+            parser: IssueParserInterface for file parsing (optional)
+        """
         super().__init__(*args, **kwargs)
-        self.baseline_retriever = BaselineStateRetriever(self.core.issues_dir)
+
+        # Use provided interfaces or create defaults
+        if persistence is None:
+            from roadmap.infrastructure.adapters.persistence_adapter import (
+                GitPersistenceAdapter,
+            )
+
+            persistence = GitPersistenceAdapter(self.core.root_path)
+
+        if parser is None:
+            from roadmap.infrastructure.adapters.persistence_adapter import (
+                IssueParserAdapter,
+            )
+
+            parser = IssueParserAdapter()
+
+        self.baseline_retriever = BaselineStateRetriever(
+            self.core.issues_dir, persistence, parser
+        )
         self.sync_metadata_cache: dict[str, Any] = {}
         self.baseline_selector = InteractiveBaselineSelector()
 

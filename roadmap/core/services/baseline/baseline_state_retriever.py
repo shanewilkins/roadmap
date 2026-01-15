@@ -13,12 +13,12 @@ from typing import Any
 
 from structlog import get_logger
 
-from roadmap.adapters.persistence.git_history import (
+from roadmap.core.interfaces.persistence import (
     FileNotFound,
     GitHistoryError,
-    get_file_at_timestamp,
+    IssueParserInterface,
+    PersistenceInterface,
 )
-from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.core.models.sync_state import IssueBaseState
 
 logger = get_logger(__name__)
@@ -33,13 +33,22 @@ class BaselineRetrievalError(Exception):
 class BaselineStateRetriever:
     """Retrieves baseline state from git history and YAML metadata."""
 
-    def __init__(self, issues_dir: Path):
-        """Initialize with issues directory.
+    def __init__(
+        self,
+        issues_dir: Path,
+        persistence: PersistenceInterface,
+        parser: IssueParserInterface,
+    ):
+        """Initialize with issues directory and persistence interface.
 
         Args:
             issues_dir: Path to issues directory
+            persistence: Interface for git history access
+            parser: Interface for issue file parsing
         """
         self.issues_dir = issues_dir
+        self.persistence = persistence
+        self.parser = parser
 
     def get_baseline_from_file(self, issue_file: Path) -> IssueBaseState | None:
         """Get baseline state directly from current issue file.
@@ -88,7 +97,9 @@ class BaselineStateRetriever:
         """
         try:
             # Get file content as it existed at last_synced time
-            file_content = get_file_at_timestamp(str(issue_file), last_synced)
+            file_content = self.persistence.get_file_at_timestamp(
+                str(issue_file), last_synced
+            )
 
             if not file_content:
                 logger.debug(

@@ -3,6 +3,12 @@
 from typing import Protocol
 
 from .assignee_validator import AssigneeValidator  # type: ignore[assignment]
+from .persistence import (
+    FileNotFound,
+    GitHistoryError,
+    IssueParserInterface,
+    PersistenceInterface,
+)
 from .state_managers import (
     IssueStateManager,
     MilestoneStateManager,
@@ -27,6 +33,10 @@ __all__ = [
     "SyncBackendInterface",
     "SyncConflict",
     "SyncReport",
+    "PersistenceInterface",
+    "IssueParserInterface",
+    "FileNotFound",
+    "GitHistoryError",
 ]
 
 
