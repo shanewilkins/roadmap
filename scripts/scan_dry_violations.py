@@ -27,7 +27,7 @@ PATTERNS = {
 # Track similar code blocks
 similar_blocks: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
 fixture_names: Set[str] = set()
-duplicate_patterns: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
+duplicate_patterns: Dict[str, List[Tuple[str, int, str]]] = defaultdict(list)
 
 
 def scan_file(filepath: Path) -> None:
@@ -38,19 +38,19 @@ def scan_file(filepath: Path) -> None:
     except Exception:
         return
 
-    rel_path = str(filepath.relative_to("./"))
+    rel_path = str(filepath.relative_to(Path.cwd()))
 
     # Check for repeated patterns
     for pattern_name, pattern in PATTERNS.items():
         matches = []
         for i, line in enumerate(lines, 1):
             if re.search(pattern, line):
-                matches.append((line.strip(), i))
+                matches.append((rel_path, i, line.strip()[:60]))
 
         if len(matches) > 2:  # Only report if appears 3+ times
-            for line, lineno in matches:
+            for file_path, lineno, code in matches:
                 duplicate_patterns[f"{pattern_name}"].append(
-                    (rel_path, lineno, line[:60])
+                    (file_path, lineno, code)
                 )
 
     # Look for fixture definitions
