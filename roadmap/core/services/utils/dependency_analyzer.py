@@ -12,11 +12,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from roadmap.common.logging import get_logger
+from roadmap.common.observability.instrumentation import traced
 from roadmap.core.domain.issue import Issue
 from roadmap.infrastructure.logging.error_logging import (
     log_error_with_context,
 )
-from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 

@@ -1,12 +1,12 @@
 """Unit tests for output formatting utilities."""
 
-from roadmap.common.models import ColumnDef, ColumnType, TableData
-from roadmap.shared.formatters.output import (
+from roadmap.common.formatters.output import (
     CSVOutputFormatter,
     JSONOutputFormatter,
     OutputFormatter,
     PlainTextOutputFormatter,
 )
+from roadmap.common.models import ColumnDef, ColumnType, TableData
 
 
 class TestOutputFormatter:
@@ -14,7 +14,7 @@ class TestOutputFormatter:
 
     def create_table_data(self, rows=None):
         """Create sample TableData for testing."""
-        from tests.unit.shared.test_data_factory import TestDataFactory
+        from tests.unit.common.formatters.test_data_factory import TestDataFactory
 
         if rows is None:
             rows = [

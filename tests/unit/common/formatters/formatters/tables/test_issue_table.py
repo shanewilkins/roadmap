@@ -4,9 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from roadmap.common.formatters.tables.issue_table import IssueTableFormatter
 from roadmap.common.models import TableData
 from roadmap.core.domain import Priority, Status
-from roadmap.shared.formatters.tables.issue_table import IssueTableFormatter
 
 
 class MockIssue:
@@ -164,7 +164,7 @@ class TestIssueTableFormatter:
     def test_display_items_empty_list(self, formatter):
         """Test displaying empty items list."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -176,7 +176,7 @@ class TestIssueTableFormatter:
     def test_display_items_with_issues(self, formatter, multiple_issues):
         """Test displaying issues."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -188,7 +188,7 @@ class TestIssueTableFormatter:
     def test_display_items_with_filter_description(self, formatter, sample_issue):
         """Test displaying items with custom filter description."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -249,7 +249,7 @@ class TestIssueTableFormatter:
     def test_display_issues_class_method(self, multiple_issues):
         """Test backward compatible display_issues method."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -277,7 +277,7 @@ class TestIssueTableFormatter:
     def test_display_workload_summary_zero_hours(self, formatter):
         """Test workload summary with zero hours."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -290,7 +290,7 @@ class TestIssueTableFormatter:
     def test_display_workload_summary_with_hours(self, formatter):
         """Test workload summary with hours."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -309,7 +309,7 @@ class TestIssueTableFormatter:
     def test_display_workload_summary_less_than_1_hour(self):
         """Test workload summary with less than 1 hour."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -321,7 +321,7 @@ class TestIssueTableFormatter:
     def test_display_workload_summary_more_than_24_hours(self):
         """Test workload summary with more than 24 hours."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -333,7 +333,7 @@ class TestIssueTableFormatter:
     def test_display_workload_summary_status_breakdown(self):
         """Test workload summary with status breakdown."""
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -412,7 +412,7 @@ class TestIssueTableFormatter:
         issues = [MockIssue(f"ISSUE-{i}") for i in range(3)]
 
         with patch(
-            "roadmap.shared.formatters.tables.issue_table._get_console"
+            "roadmap.common.formatters.tables.issue_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console

@@ -1,6 +1,6 @@
 """Tests for display formatting utilities."""
 
-from roadmap.shared.formatters.text.display import (
+from roadmap.common.formatters.text.display import (
     format_display_list,
     format_display_pairs,
 )

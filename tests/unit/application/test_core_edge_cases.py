@@ -8,7 +8,7 @@ import pytest
 
 from roadmap.core.domain import Priority, Status
 from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.shared.test_data_factory import TestDataFactory
+from tests.unit.common.formatters.test_data_factory import TestDataFactory
 
 
 @pytest.fixture

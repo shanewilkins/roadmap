@@ -13,7 +13,7 @@ from roadmap.core.services.github.github_conflict_detector import GitHubConflict
 from roadmap.core.services.github.github_integration_service import (
     GitHubIntegrationService,
 )
-from tests.unit.shared.test_assertion_helpers import create_mock_issue
+from tests.unit.common.formatters.test_assertion_helpers import create_mock_issue
 
 # ============================================================================
 # Unlink Command Tests

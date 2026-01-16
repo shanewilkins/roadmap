@@ -6,8 +6,8 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.issues.link import link_github_issue
+from tests.unit.common.formatters.test_assertion_helpers import create_mock_issue
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
-from tests.unit.shared.test_assertion_helpers import create_mock_issue
 
 
 class TestLinkCommandBasic:

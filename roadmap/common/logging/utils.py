@@ -17,7 +17,7 @@ from roadmap.common.logging.formatters import (
     include_structured_fields_in_message,
     scrub_sensitive_data,
 )
-from roadmap.shared.instrumentation import span_context_processor
+from roadmap.common.observability.instrumentation import span_context_processor
 
 
 def setup_logging(

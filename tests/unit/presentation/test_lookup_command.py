@@ -6,7 +6,7 @@ Phase 1C refactoring: Using mock factories and CLI runner fixtures to reduce DRY
 from unittest.mock import Mock
 
 from roadmap.adapters.cli.issues import issue
-from tests.unit.shared.test_assertion_helpers import create_mock_issue
+from tests.unit.common.formatters.test_assertion_helpers import create_mock_issue
 
 # mock_core fixture provided by tests.fixtures.mocks module
 # Uses centralized mock_core_simple

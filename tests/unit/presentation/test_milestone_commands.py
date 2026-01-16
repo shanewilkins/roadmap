@@ -4,8 +4,8 @@ import pytest
 
 from roadmap.adapters.cli import main
 from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.shared.test_ansi_utilities import strip_ansi
-from tests.unit.shared.test_assertion_helpers import (
+from tests.unit.common.formatters.test_ansi_utilities import strip_ansi
+from tests.unit.common.formatters.test_assertion_helpers import (
     assert_command_success,
     assert_issue_assigned_to_milestone,
     assert_issue_created,

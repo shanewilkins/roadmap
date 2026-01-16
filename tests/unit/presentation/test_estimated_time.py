@@ -2,7 +2,7 @@
 
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Issue, Milestone, Status
-from tests.unit.shared.test_assertion_helpers import (
+from tests.unit.common.formatters.test_assertion_helpers import (
     assert_command_success,
 )
 

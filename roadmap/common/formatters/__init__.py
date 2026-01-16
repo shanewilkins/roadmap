@@ -9,11 +9,11 @@ Organized into focused modules:
 - kanban: Kanban board organization and layout
 
 Use submodule imports for clarity:
-  from roadmap.shared.formatters.text import format_table, format_header
-  from roadmap.shared.formatters.output import OutputFormatter
-  from roadmap.shared.formatters.tables import IssueTableFormatter
-  from roadmap.shared.formatters.export import IssueExporter
-  from roadmap.shared.formatters.kanban import KanbanOrganizer, KanbanLayout
+  from roadmap.common.formatters.text import format_table, format_header
+  from roadmap.common.formatters.output import OutputFormatter
+  from roadmap.common.formatters.tables import IssueTableFormatter
+  from roadmap.common.formatters.export import IssueExporter
+  from roadmap.common.formatters.kanban import KanbanOrganizer, KanbanLayout
 """
 
 from .export import IssueExporter

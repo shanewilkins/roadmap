@@ -2,8 +2,8 @@
 
 import pytest
 
-from roadmap.shared.instrumentation import traced
-from roadmap.shared.observability import (
+from roadmap.common.observability.instrumentation import traced
+from roadmap.common.observability.observability import (
     create_span,
     get_current_span,
     set_current_span,

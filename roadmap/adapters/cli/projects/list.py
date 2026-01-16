@@ -8,9 +8,9 @@ from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.common.console import get_console
 from roadmap.common.datetime_parser import UnifiedDateTimeParser
+from roadmap.common.formatters import ProjectTableFormatter
 from roadmap.common.models import ColumnType
 from roadmap.infrastructure.logging import verbose_output
-from roadmap.shared import ProjectTableFormatter
 
 console = get_console()
 

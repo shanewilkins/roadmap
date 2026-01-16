@@ -5,9 +5,9 @@ import json
 from collections.abc import Sequence
 from io import StringIO
 
+from roadmap.common.formatters.output import OutputFormatter
+from roadmap.common.formatters.tables import IssueTableFormatter
 from roadmap.core.domain import Issue
-from roadmap.shared.formatters.output import OutputFormatter
-from roadmap.shared.formatters.tables import IssueTableFormatter
 
 
 class IssueExporter:

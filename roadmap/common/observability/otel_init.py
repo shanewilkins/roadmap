@@ -23,7 +23,7 @@ def initialize_tracing(service_name: str = "roadmap-cli") -> None:
         service_name: Name of the service for Jaeger (default: "roadmap-cli")
 
     Example:
-        from roadmap.shared.otel_init import initialize_tracing
+        from roadmap.common.observability.otel_init import initialize_tracing
         initialize_tracing()
     """
     global _tracer

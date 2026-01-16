@@ -2,11 +2,11 @@
 
 from typing import Any, Protocol
 
+from roadmap.common.observability.instrumentation import traced
 from roadmap.infrastructure.logging.error_logging import (
     log_error_with_context,
     log_validation_error,
 )
-from roadmap.shared.instrumentation import traced
 
 
 class AssigneeValidationResult:

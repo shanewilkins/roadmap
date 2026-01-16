@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.shared.formatters.text.basic import (
+from roadmap.common.formatters.text.basic import (
     format_error,
     format_header,
     format_info,
@@ -14,11 +14,11 @@ from roadmap.shared.formatters.text.basic import (
     format_table,
     format_warning,
 )
-from roadmap.shared.formatters.text.duration import (
+from roadmap.common.formatters.text.duration import (
     format_count,
     format_duration,
 )
-from roadmap.shared.formatters.text.status_badges import (
+from roadmap.common.formatters.text.status_badges import (
     format_percentage,
     format_status_badge,
 )

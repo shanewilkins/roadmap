@@ -11,14 +11,14 @@ from roadmap.adapters.cli.cli_command_helpers import (
 )
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.common.console import get_console
+from roadmap.common.formatters.text.operations import (
+    format_operation_failure,
+    format_operation_success,
+)
 from roadmap.core.domain import Status
 from roadmap.infrastructure.logging import (
     log_command,
     track_database_operation,
-)
-from roadmap.shared.formatters.text.operations import (
-    format_operation_failure,
-    format_operation_success,
 )
 
 console = get_console()

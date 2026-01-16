@@ -4,7 +4,7 @@ import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.common.console import get_console
-from roadmap.shared import KanbanLayout, KanbanOrganizer
+from roadmap.common.formatters import KanbanLayout, KanbanOrganizer
 
 console = get_console()
 

@@ -4,11 +4,11 @@ import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.common.console import get_console
+from roadmap.common.formatters.text.operations import (
+    format_operation_failure,
+)
 from roadmap.infrastructure.logging import (
     log_command,
-)
-from roadmap.shared.formatters.text.operations import (
-    format_operation_failure,
 )
 
 console = get_console()

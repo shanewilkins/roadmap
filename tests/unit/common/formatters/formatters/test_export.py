@@ -6,8 +6,8 @@ from io import StringIO
 from typing import cast
 from unittest.mock import Mock
 
+from roadmap.common.formatters.export import IssueExporter
 from roadmap.core.domain import Issue, IssueType, Priority, Status
-from roadmap.shared.formatters.export import IssueExporter
 
 
 class TestIssueExporter:

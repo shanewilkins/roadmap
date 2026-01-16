@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from roadmap.shared.formatters.text.operations import (
+from roadmap.common.formatters.text.operations import (
     OperationFormatter,
     format_entity_details,
     format_list_items,

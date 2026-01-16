@@ -6,7 +6,7 @@ Tests the archive/restore command coverage gaps.
 
 import pytest
 
-from tests.unit.shared.test_data_factory import TestDataFactory
+from tests.unit.common.formatters.test_data_factory import TestDataFactory
 
 
 @pytest.fixture

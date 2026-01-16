@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.shared.formatters.text.basic import (
+from roadmap.common.formatters.text.basic import (
     _format_table_simple,
     format_header,
     format_panel,
@@ -145,31 +145,31 @@ class TestFormatterModuleExports:
 
     def test_formatters_module_import(self):
         """Test that formatters module can be imported."""
-        from roadmap import shared
+        from roadmap.common import formatters
 
-        assert hasattr(shared, "formatters")
+        assert hasattr(formatters, "IssueExporter")
 
     def test_issue_exporter_available(self):
         """Test that IssueExporter is available in formatters."""
-        from roadmap.shared.formatters.export.issue_exporter import IssueExporter
+        from roadmap.common.formatters.export.issue_exporter import IssueExporter
 
         assert IssueExporter is not None
 
     def test_kanban_organizer_available(self):
         """Test that KanbanOrganizer is available in formatters."""
-        from roadmap.shared.formatters.kanban import KanbanOrganizer
+        from roadmap.common.formatters.kanban import KanbanOrganizer
 
         assert KanbanOrganizer is not None
 
     def test_kanban_layout_available(self):
         """Test that KanbanLayout is available in formatters."""
-        from roadmap.shared.formatters.kanban import KanbanLayout
+        from roadmap.common.formatters.kanban import KanbanLayout
 
         assert KanbanLayout is not None
 
     def test_table_formatters_available(self):
         """Test that table formatters are available."""
-        from roadmap.shared.formatters.tables import (
+        from roadmap.common.formatters.tables import (
             IssueTableFormatter,
             MilestoneTableFormatter,
             ProjectTableFormatter,

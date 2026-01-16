@@ -2,7 +2,7 @@
 
 from unittest.mock import Mock
 
-from roadmap.shared.otel_init import (
+from roadmap.common.observability.otel_init import (
     get_tracer,
     initialize_tracing,
     is_tracing_enabled,
@@ -14,7 +14,7 @@ class TestInitializeTracing:
 
     def test_initialize_tracing_with_default_service_name(self):
         """Test initialize_tracing with default service name."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         # Reset before test
         otel_module._tracer = None
@@ -29,7 +29,7 @@ class TestInitializeTracing:
 
     def test_initialize_tracing_with_custom_service_name(self):
         """Test initialize_tracing with custom service name."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         # Reset before test
         otel_module._tracer = None
@@ -46,7 +46,7 @@ class TestInitializeTracing:
 
     def test_initialize_tracing_no_exception(self):
         """Test that initialize_tracing doesn't raise unexpected exceptions."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         # Reset before test
         otel_module._tracer = None
@@ -77,7 +77,7 @@ class TestIsTracingEnabled:
     def test_is_tracing_enabled_initially_disabled(self):
         """Test that tracing is disabled initially."""
         # Reset global state
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         otel_module._tracer = None
         result = is_tracing_enabled()
@@ -85,7 +85,7 @@ class TestIsTracingEnabled:
 
     def test_is_tracing_enabled_after_initialization(self):
         """Test tracing status changes after initialization."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         # Set up a mock tracer
         otel_module._tracer = Mock()
@@ -101,7 +101,7 @@ class TestGetTracer:
 
     def test_get_tracer_returns_none_initially(self):
         """Test that get_tracer returns None initially."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         otel_module._tracer = None
         result = get_tracer()
@@ -109,7 +109,7 @@ class TestGetTracer:
 
     def test_get_tracer_returns_tracer_instance(self):
         """Test that get_tracer returns tracer instance if set."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         mock_tracer = Mock()
         otel_module._tracer = mock_tracer
@@ -131,7 +131,7 @@ class TestTracingIntegration:
     def test_initialize_then_check_status(self):
         """Test initializing and checking tracing status."""
         # Reset
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         otel_module._tracer = None
 
@@ -140,7 +140,7 @@ class TestTracingIntegration:
 
     def test_tracing_global_state(self):
         """Test that tracing uses global state."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         # Create a mock tracer
         mock_tracer = Mock()
@@ -166,7 +166,7 @@ class TestTracingIntegration:
 
     def test_tracing_disabled_state(self):
         """Test that tracing disabled state works correctly."""
-        import roadmap.shared.otel_init as otel_module
+        import roadmap.common.observability.otel_init as otel_module
 
         # Set tracer to None to disable
         otel_module._tracer = None

@@ -3,9 +3,9 @@
 from typing import TYPE_CHECKING, Any, cast
 
 from roadmap.common.console import get_console
+from roadmap.common.formatters.base_table_formatter import BaseTableFormatter
+from roadmap.common.formatters.tables.column_factory import create_project_columns
 from roadmap.common.models import TableData
-from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
-from roadmap.shared.formatters.tables.column_factory import create_project_columns
 
 if TYPE_CHECKING:
     pass

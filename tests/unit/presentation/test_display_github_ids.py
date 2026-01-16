@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 from rich.table import Table
 
-from roadmap.shared.formatters.tables.issue_table import IssueTableFormatter
+from roadmap.common.formatters.tables.issue_table import IssueTableFormatter
 
 
 @pytest.fixture

@@ -10,14 +10,14 @@ from typing import TYPE_CHECKING, Any
 
 from roadmap.adapters.github.handlers.base import GitHubAPIError
 from roadmap.common.logging import get_logger
+from roadmap.common.observability.instrumentation import traced
 from roadmap.infrastructure.logging.error_logging import (
     log_external_service_error,
     log_validation_error,
 )
-from roadmap.shared.instrumentation import traced
 
 if TYPE_CHECKING:
-    from roadmap.core.interfaces import GitHubBackendInterface
+    from roadmap.core.interfaces import GitHubBackendInterface  # noqa: F401
 
 logger = get_logger(__name__)
 

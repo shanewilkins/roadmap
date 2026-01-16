@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from roadmap.common.formatters.export.issue_exporter import IssueExporter
 from roadmap.core.domain import Priority, Status
-from roadmap.shared.formatters.export.issue_exporter import IssueExporter
 
 
 class MockIssue:
@@ -46,10 +46,10 @@ class TestIssueExporter:
         issues = [MockIssue()]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ):
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ) as mock_formatter:
                 mock_formatter_instance = Mock()
                 mock_formatter_instance.to_json.return_value = '{"test": "data"}'
@@ -65,10 +65,10 @@ class TestIssueExporter:
         issues = [MockIssue()]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ):
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ) as mock_formatter:
                 mock_formatter_instance = Mock()
                 mock_formatter_instance.to_csv.return_value = "id,title\nISSUE-001,Test"
@@ -83,10 +83,10 @@ class TestIssueExporter:
         issues = [MockIssue()]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ):
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ) as mock_formatter:
                 mock_formatter_instance = Mock()
                 mock_formatter_instance.to_markdown.return_value = "| Test |"
@@ -101,10 +101,10 @@ class TestIssueExporter:
         issues = [MockIssue()]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ):
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ):
                 with pytest.raises(ValueError):
                     IssueExporter.export(issues, "invalid")  # type: ignore
@@ -114,10 +114,10 @@ class TestIssueExporter:
         issues = [MockIssue()]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ) as mock_table_data:
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ) as mock_formatter:
                 mock_formatter_instance = Mock()
                 mock_formatter_instance.to_json.return_value = "{}"
@@ -196,10 +196,10 @@ class TestIssueExporter:
     def test_export_empty_list(self):
         """Test export with empty list."""
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ):
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ) as mock_formatter:
                 mock_formatter_instance = Mock()
                 mock_formatter_instance.to_json.return_value = "[]"
@@ -239,10 +239,10 @@ class TestIssueExporter:
         issues = [MockIssue()]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ):
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ) as mock_formatter:
                 mock_formatter_instance = Mock()
                 mock_formatter_instance.to_json.return_value = "json"
@@ -263,10 +263,10 @@ class TestIssueExporter:
         ]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ):
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ) as mock_formatter:
                 mock_formatter_instance = Mock()
                 mock_formatter_instance.to_json.return_value = "{}"
@@ -312,10 +312,10 @@ class TestIssueExporter:
         issues = [MockIssue()]
 
         with patch(
-            "roadmap.shared.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
+            "roadmap.common.formatters.export.issue_exporter.IssueTableFormatter.issues_to_table_data"
         ) as mock_table_data:
             with patch(
-                "roadmap.shared.formatters.export.issue_exporter.OutputFormatter"
+                "roadmap.common.formatters.export.issue_exporter.OutputFormatter"
             ):
                 try:
                     IssueExporter.export(issues, "json")  # type: ignore

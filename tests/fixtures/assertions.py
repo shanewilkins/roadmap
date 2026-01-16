@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from tests.unit.shared.test_ansi_utilities import clean_cli_output
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class CLIAssertion:

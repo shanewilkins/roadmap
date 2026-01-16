@@ -14,7 +14,7 @@ from roadmap.adapters.cli import main
 from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
 from roadmap.core.domain import IssueType, Priority
 from roadmap.infrastructure.core import RoadmapCore
-from tests.unit.shared.test_assertion_helpers import assert_command_success
+from tests.unit.common.formatters.test_assertion_helpers import assert_command_success
 
 
 class TestGitCommit:

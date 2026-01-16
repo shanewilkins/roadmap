@@ -28,14 +28,14 @@ class ClickTestResult:
     @property
     def clean_output(self) -> str:
         """Get output with ANSI codes stripped and whitespace normalized."""
-        from tests.unit.shared.test_ansi_utilities import clean_cli_output
+        from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
         return clean_cli_output(self.output)
 
     @property
     def stripped_output(self) -> str:
         """Get output with ANSI codes stripped."""
-        from tests.unit.shared.test_ansi_utilities import strip_ansi
+        from tests.unit.common.formatters.test_ansi_utilities import strip_ansi
 
         return strip_ansi(self.output)
 
@@ -154,7 +154,7 @@ class ClickTestHelper:
             ValueError: If no valid JSON found and no legacy pattern matched
         """
         from tests.common.cli_test_helpers import CLIOutputParser
-        from tests.unit.shared.test_ansi_utilities import strip_ansi
+        from tests.unit.common.formatters.test_ansi_utilities import strip_ansi
 
         # Strategy 1: Try JSON format (modern approach)
         try:
@@ -286,7 +286,9 @@ class ClickTestHelper:
         """Create a function that extracts IDs from output using a regex pattern."""
 
         def extractor(output: str) -> str | None:
-            from tests.unit.shared.test_ansi_utilities import clean_cli_output
+            from tests.unit.common.formatters.test_ansi_utilities import (
+                clean_cli_output,
+            )
 
             clean_output = clean_cli_output(output)
             match = re.search(pattern, clean_output)
@@ -307,7 +309,7 @@ class ClickTestHelper:
         Returns:
             List of dictionaries with row data
         """
-        from tests.unit.shared.test_ansi_utilities import clean_cli_output
+        from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
         clean_output = clean_cli_output(output)
         lines = clean_output.split("\n")

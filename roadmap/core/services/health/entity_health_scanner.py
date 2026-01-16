@@ -8,6 +8,7 @@ from typing import Any
 
 from roadmap.common.constants import Status
 from roadmap.common.logging import get_logger
+from roadmap.common.observability.instrumentation import traced
 from roadmap.core.domain.comment import Comment
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
@@ -21,7 +22,6 @@ from roadmap.core.services.health.health_models import (
     HealthSeverity,
 )
 from roadmap.core.services.health.issue_health_scanner import IssueHealthScanner
-from roadmap.shared.instrumentation import traced
 
 logger = get_logger(__name__)
 

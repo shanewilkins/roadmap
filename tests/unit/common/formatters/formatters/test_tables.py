@@ -2,12 +2,12 @@
 
 from unittest.mock import Mock
 
-from roadmap.core.domain import Issue, Priority, Status
-from roadmap.shared.formatters.tables import (
+from roadmap.common.formatters.tables import (
     IssueTableFormatter,
     MilestoneTableFormatter,
     ProjectTableFormatter,
 )
+from roadmap.core.domain import Issue, Priority, Status
 
 
 class TestIssueTableFormatter:

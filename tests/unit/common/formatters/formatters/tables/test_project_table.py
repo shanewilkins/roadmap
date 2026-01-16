@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.common.models import TableData
-from roadmap.shared.formatters.tables.project_table import (
+from roadmap.common.formatters.tables.project_table import (
     ProjectTableFormatter,
 )
+from roadmap.common.models import TableData
 
 
 class StatusEnum(Enum):
@@ -158,7 +158,7 @@ class TestProjectTableFormatter:
     def test_display_items_empty_list(self, formatter):
         """Test displaying empty items list."""
         with patch(
-            "roadmap.shared.formatters.tables.project_table._get_console"
+            "roadmap.common.formatters.tables.project_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -171,7 +171,7 @@ class TestProjectTableFormatter:
     def test_display_items_with_dict_projects(self, formatter, sample_project_dict):
         """Test displaying dictionary projects."""
         with patch(
-            "roadmap.shared.formatters.tables.project_table._get_console"
+            "roadmap.common.formatters.tables.project_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -184,7 +184,7 @@ class TestProjectTableFormatter:
     def test_display_items_with_object_projects(self, formatter, sample_project_obj):
         """Test displaying object projects."""
         with patch(
-            "roadmap.shared.formatters.tables.project_table._get_console"
+            "roadmap.common.formatters.tables.project_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -198,7 +198,7 @@ class TestProjectTableFormatter:
     ):
         """Test displaying items with custom filter description."""
         with patch(
-            "roadmap.shared.formatters.tables.project_table._get_console"
+            "roadmap.common.formatters.tables.project_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console
@@ -349,7 +349,7 @@ class TestProjectTableFormatter:
         projects = [{"id": f"proj-{i}", "name": f"Project {i}"} for i in range(3)]
 
         with patch(
-            "roadmap.shared.formatters.tables.project_table._get_console"
+            "roadmap.common.formatters.tables.project_table._get_console"
         ) as mock_get_console:
             mock_console = Mock()
             mock_get_console.return_value = mock_console

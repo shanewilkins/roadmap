@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any
 from rich.text import Text
 
 from roadmap.common.console import get_console
+from roadmap.common.formatters.base_table_formatter import BaseTableFormatter
 from roadmap.common.models import ColumnDef, ColumnType, TableData
-from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 
 if TYPE_CHECKING:
     pass

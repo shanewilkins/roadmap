@@ -12,6 +12,7 @@ from roadmap.adapters.cli.mappers import IssueMapper
 from roadmap.adapters.cli.services.export_manager import ExportManager
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
+from roadmap.common.formatters import IssueTableFormatter
 from roadmap.common.models import ColumnType, IssueListParams
 from roadmap.core.services.issue_helpers import (
     IssueFilterValidator,
@@ -19,7 +20,6 @@ from roadmap.core.services.issue_helpers import (
     WorkloadCalculator,
 )
 from roadmap.infrastructure.logging import verbose_output
-from roadmap.shared import IssueTableFormatter
 
 
 def _get_console():

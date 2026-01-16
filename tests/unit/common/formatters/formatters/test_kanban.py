@@ -4,8 +4,8 @@ from datetime import UTC, datetime, timedelta
 from typing import cast
 from unittest.mock import Mock, patch
 
+from roadmap.common.formatters.kanban import KanbanLayout, KanbanOrganizer
 from roadmap.core.domain import Issue, Priority, Status
-from roadmap.shared.formatters.kanban import KanbanLayout, KanbanOrganizer
 from tests.factories import IssueBuilder
 
 

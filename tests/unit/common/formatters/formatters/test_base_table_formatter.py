@@ -4,8 +4,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from roadmap.common.formatters.base_table_formatter import BaseTableFormatter
 from roadmap.common.models import ColumnDef, ColumnType, TableData
-from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
 
 
 class ConcreteTableFormatter(BaseTableFormatter):
@@ -63,7 +63,7 @@ class TestBaseTableFormatter:
 
     def test_display_items_empty_list(self, formatter):
         """Test displaying empty items list."""
-        with patch("roadmap.shared.formatters.base_table_formatter.get_console"):
+        with patch("roadmap.common.formatters.base_table_formatter.get_console"):
             # Just ensure it doesn't crash with empty list
             formatter.display_items([])
             # No exception means success
@@ -72,7 +72,7 @@ class TestBaseTableFormatter:
     def test_display_items_with_items(self, formatter):
         """Test displaying items list."""
         items = [1, 2, 3]
-        with patch("roadmap.shared.formatters.base_table_formatter.get_console"):
+        with patch("roadmap.common.formatters.base_table_formatter.get_console"):
             formatter.display_items(items)
 
         # Check that add_row was called for each item
@@ -82,7 +82,7 @@ class TestBaseTableFormatter:
     def test_display_items_with_filter_description(self, formatter):
         """Test displaying items with custom filter description."""
         items = [1, 2]
-        with patch("roadmap.shared.formatters.base_table_formatter.get_console"):
+        with patch("roadmap.common.formatters.base_table_formatter.get_console"):
             formatter.display_items(items, "custom filter")
 
         assert len(formatter.items_created) == 2
@@ -90,7 +90,7 @@ class TestBaseTableFormatter:
     def test_display_items_adds_all_rows(self, formatter):
         """Test that all items are added as rows."""
         items = [1, 2, 3, 4, 5]
-        with patch("roadmap.shared.formatters.base_table_formatter.get_console"):
+        with patch("roadmap.common.formatters.base_table_formatter.get_console"):
             formatter.display_items(items)
 
         # Check that add_row was called for each item
@@ -100,7 +100,7 @@ class TestBaseTableFormatter:
     def test_get_filter_description_called_with_items(self, formatter):
         """Test get_filter_description is called."""
         items = [1, 2, 3]
-        with patch("roadmap.shared.formatters.base_table_formatter.get_console"):
+        with patch("roadmap.common.formatters.base_table_formatter.get_console"):
             formatter.display_items(items)
 
         # Should have added all items
@@ -200,7 +200,7 @@ class TestBaseTableFormatter:
     def test_display_items_parametrized_counts(self, formatter, item_count):
         """Test displaying various counts of items."""
         items = list(range(item_count))
-        with patch("roadmap.shared.formatters.base_table_formatter.get_console"):
+        with patch("roadmap.common.formatters.base_table_formatter.get_console"):
             formatter.display_items(items)
 
         assert len(formatter.items_created) == item_count

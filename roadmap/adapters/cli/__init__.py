@@ -16,11 +16,11 @@ from roadmap.adapters.cli.exception_handler import handle_cli_exception
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import RoadmapException
 
+# Initialize OpenTelemetry tracing
+from roadmap.common.observability.otel_init import initialize_tracing
+
 # Import core classes for backward compatibility with tests
 from roadmap.infrastructure.core import RoadmapCore
-
-# Initialize OpenTelemetry tracing
-from roadmap.shared.otel_init import initialize_tracing
 
 console = get_console()
 

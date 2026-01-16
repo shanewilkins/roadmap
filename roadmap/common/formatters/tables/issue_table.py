@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Any
 from rich.text import Text
 
 from roadmap.common.console import get_console
+from roadmap.common.formatters.base_table_formatter import BaseTableFormatter
+from roadmap.common.formatters.tables.column_factory import create_issue_columns
 from roadmap.common.models import TableData
 from roadmap.common.status_style_manager import StatusStyleManager
 from roadmap.core.domain import Issue, Priority
-from roadmap.shared.formatters.base_table_formatter import BaseTableFormatter
-from roadmap.shared.formatters.tables.column_factory import create_issue_columns
 
 if TYPE_CHECKING:
     pass
