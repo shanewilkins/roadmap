@@ -29,7 +29,7 @@ class TestTrackFileOperation:
             ("sync", "/path/to/sync.md"),
         ],
     )
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_file_operation(self, mock_logger, operation, file_path):
         """Test file operation tracking with different operations."""
         with track_file_operation(operation, file_path) as result:
@@ -42,7 +42,7 @@ class TestTrackFileOperation:
         assert call_args[1]["operation"] == operation
         assert call_args[1]["file_path"] == file_path
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_file_operation_slow_warning(self, mock_logger):
         """Test warning when file operation is slow."""
         with track_file_operation(
@@ -58,7 +58,7 @@ class TestTrackFileOperation:
         assert call_args[1]["operation"] == "read"
         assert call_args[1]["file_path"] == "/large/file.md"
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_file_operation_custom_threshold(self, mock_logger):
         """Test custom warning threshold for file operations."""
         with track_file_operation(
@@ -71,7 +71,7 @@ class TestTrackFileOperation:
         assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_file_operation_exception_handling(self, mock_logger):
         """Test that timing is recorded even with exceptions."""
         try:
@@ -87,7 +87,7 @@ class TestTrackFileOperation:
 class TestTrackSyncOperation:
     """Test track_sync_operation context manager."""
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_sync_operation_basic(self, mock_logger):
         """Test basic sync operation tracking."""
         with track_sync_operation("github_sync") as result:
@@ -99,7 +99,7 @@ class TestTrackSyncOperation:
         assert result["throughput_items_per_sec"] == 0  # No entity count
         mock_logger.info.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_sync_operation_with_entity_count(self, mock_logger):
         """Test sync operation tracking with entity count."""
         with track_sync_operation("github_sync", entity_count=10) as result:
@@ -109,7 +109,7 @@ class TestTrackSyncOperation:
         call_args = mock_logger.info.call_args
         assert call_args[1]["entity_count"] == 10
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_sync_operation_throughput_calculation(self, mock_logger):
         """Test that throughput is correctly calculated."""
         with track_sync_operation(
@@ -123,7 +123,7 @@ class TestTrackSyncOperation:
         expected_throughput = (100 * 1000) / (result["duration_ms"])
         assert abs(result["throughput_items_per_sec"] - expected_throughput) < 1
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_sync_operation_slow_warning(self, mock_logger):
         """Test warning when sync operation is slow."""
         with track_sync_operation(
@@ -139,7 +139,7 @@ class TestTrackSyncOperation:
         assert call_args[1]["entity_count"] == 50
         assert "throughput_items_per_sec" in call_args[1]
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_sync_operation_no_warning_when_fast(self, mock_logger):
         """Test no warning for fast sync operations."""
         with track_sync_operation(
@@ -153,7 +153,7 @@ class TestTrackSyncOperation:
         mock_logger.warning.assert_not_called()
         mock_logger.info.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_sync_operation_zero_entity_count(self, mock_logger):
         """Test sync operation with zero entity count."""
         with track_sync_operation("empty_sync", entity_count=0) as result:
@@ -162,7 +162,7 @@ class TestTrackSyncOperation:
         # 0 entities should give 0 throughput
         assert result["throughput_items_per_sec"] == 0
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_sync_operation_exception_handling(self, mock_logger):
         """Test that timing is recorded even with exceptions."""
         try:
@@ -178,7 +178,7 @@ class TestTrackSyncOperation:
 class TestOperationTimer:
     """Test OperationTimer class for multi-step operations."""
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_basic(self, mock_logger):
         """Test basic operation timer usage."""
         timer = OperationTimer("data_sync")
@@ -204,7 +204,7 @@ class TestOperationTimer:
             ),
         ],
     )
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_step_execution(
         self, mock_logger, operation_name, num_steps, step_configs
     ):
@@ -222,7 +222,7 @@ class TestOperationTimer:
 
         assert len(timer.steps) >= num_steps - 1
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_finish(self, mock_logger):
         """Test operation timer finish method."""
         timer = OperationTimer("finish_op")
@@ -238,7 +238,7 @@ class TestOperationTimer:
         assert result["total_duration_ms"] >= 10
         mock_logger.info.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_finish_with_active_step(self, mock_logger):
         """Test that finish() ends current step if active."""
         timer = OperationTimer("active_finish_op")
@@ -251,7 +251,7 @@ class TestOperationTimer:
         assert timer.current_step is None
         assert result["total_duration_ms"] >= 10
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_step_timing_accuracy(self, mock_logger):
         """Test that step timing is reasonably accurate."""
         timer = OperationTimer("timing_test_op")
@@ -262,7 +262,7 @@ class TestOperationTimer:
 
         assert timer.steps["slow_step"] >= 20
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_total_time_includes_all_steps(self, mock_logger):
         """Test that total time includes all step times."""
         timer = OperationTimer("total_time_op")
@@ -279,7 +279,7 @@ class TestOperationTimer:
         total_steps_time = sum(timer.steps.values())
         assert result["total_duration_ms"] >= total_steps_time - 5  # Allow 5ms variance
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_logs_step_completion(self, mock_logger):
         """Test that step completion is logged."""
         timer = OperationTimer("log_test_op")
@@ -294,7 +294,7 @@ class TestOperationTimer:
         ]
         assert len(step_log_calls) > 0
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_logs_finish(self, mock_logger):
         """Test that finish is logged."""
         timer = OperationTimer("finish_log_op")
@@ -304,7 +304,7 @@ class TestOperationTimer:
         call_args = mock_logger.info.call_args
         assert "finish_log_op_finished" in str(call_args)
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_edge_cases(self, mock_logger):
         """Test operation timer edge cases: no steps and repeated finish."""
         # Test with no steps
@@ -329,7 +329,7 @@ class TestOperationTimer:
 class TestPerformanceTrackingIntegration:
     """Integration tests for performance tracking."""
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_nested_operations(self, mock_logger):
         """Test nested operation tracking."""
         with track_operation_time("outer") as outer_result:
@@ -340,7 +340,7 @@ class TestPerformanceTrackingIntegration:
         assert outer_result["duration_ms"] >= inner_result["duration_ms"]
         assert outer_result["duration_ms"] >= 20
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_operation_timer_with_context_managers(self, mock_logger):
         """Test combining OperationTimer with context managers."""
         timer = OperationTimer("combined_tracking")
@@ -358,7 +358,7 @@ class TestPerformanceTrackingIntegration:
         result = timer.finish()
         assert len(result["steps"]) == 2
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_multiple_operation_types(self, mock_logger):
         """Test tracking different operation types together."""
         operations = [

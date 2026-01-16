@@ -22,7 +22,7 @@ from roadmap.common.logging.error_logging import (
 class TestLogErrorWithContext:
     """Test log_error_with_context function."""
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_error_basic(self, mock_logger):
         """Test basic error logging."""
         error = ValueError("Bad value")
@@ -34,7 +34,7 @@ class TestLogErrorWithContext:
         assert call_args[1]["operation"] == "parse_config"
         assert call_args[1]["error_type"] == "ValueError"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_error_with_entity_context(self, mock_logger):
         """Test error logging with entity context."""
         error = ConnectionError("API unavailable")
@@ -49,7 +49,7 @@ class TestLogErrorWithContext:
         assert call_args[1]["entity_type"] == "issue"
         assert call_args[1]["entity_id"] == "issue-123"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_error_with_additional_context(self, mock_logger):
         """Test error logging with additional context."""
         error = FileNotFoundError("Config not found")
@@ -65,7 +65,7 @@ class TestLogErrorWithContext:
         assert call_args[1]["config_path"] == "/etc/roadmap.yml"
         assert call_args[1]["retry_count"] == 2
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_error_with_traceback(self, mock_logger):
         """Test error logging with traceback."""
         error = ValueError("Bad value")
@@ -78,7 +78,7 @@ class TestLogErrorWithContext:
         call_args = mock_logger.error.call_args
         assert "traceback" in call_args[1]
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_error_classification(self, mock_logger):
         """Test that error classification is logged."""
         error = ConnectionError("Network failed")
@@ -89,7 +89,7 @@ class TestLogErrorWithContext:
         assert call_args[1]["error_classification"] == ErrorClassification.SYSTEM_ERROR
         assert call_args[1]["is_recoverable"]
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_error_recovery_suggestion(self, mock_logger):
         """Test that recovery suggestion is logged."""
         error = ValueError("Invalid")
@@ -98,7 +98,7 @@ class TestLogErrorWithContext:
         call_args = mock_logger.error.call_args
         assert call_args[1]["suggested_action"] == "validate_input"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_error_all_parameters(self, mock_logger):
         """Test error logging with all parameters."""
         error = OSError("Permission denied")
@@ -122,7 +122,7 @@ class TestLogErrorWithContext:
 class TestLogValidationError:
     """Test log_validation_error function."""
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_validation_error_basic(self, mock_logger):
         """Test basic validation error logging."""
         from roadmap.common.errors import ValidationError
@@ -136,7 +136,7 @@ class TestLogValidationError:
         assert call_args[1]["entity_type"] == "issue"
         assert call_args[1]["error_type"] == "ValidationError"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_validation_error_with_field(self, mock_logger):
         """Test validation error logging with field name."""
         error = ValueError("Invalid value")
@@ -145,7 +145,7 @@ class TestLogValidationError:
         call_args = mock_logger.warning.call_args
         assert call_args[1]["field_name"] == "priority"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_validation_error_with_value(self, mock_logger):
         """Test validation error logging with proposed value."""
         error = ValueError("Out of range")
@@ -159,7 +159,7 @@ class TestLogValidationError:
         call_args = mock_logger.warning.call_args
         assert call_args[1]["proposed_value"] == -5
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_validation_error_suggests_validation(self, mock_logger):
         """Test that validation error suggests validation action."""
         error = ValueError("Bad data")
@@ -168,7 +168,7 @@ class TestLogValidationError:
         call_args = mock_logger.warning.call_args
         assert call_args[1]["suggested_action"] == "validate_input"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_validation_error_with_none_values(self, mock_logger):
         """Test validation error with None field and value."""
         error = ValueError("Invalid")
@@ -182,7 +182,7 @@ class TestLogValidationError:
 class TestLogDatabaseError:
     """Test log_database_error function."""
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_database_error_basic(self, mock_logger):
         """Test basic database error logging."""
         error = OSError("Database locked")
@@ -194,7 +194,7 @@ class TestLogDatabaseError:
         assert call_args[1]["operation"] == "create"
         assert call_args[1]["entity_type"] == "issue"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_database_error_with_entity_id(self, mock_logger):
         """Test database error logging with entity ID."""
         error = ConnectionError("Connection lost")
@@ -208,7 +208,7 @@ class TestLogDatabaseError:
         call_args = mock_logger.error.call_args
         assert call_args[1]["entity_id"] == "issue-456"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_database_error_with_retry_count(self, mock_logger):
         """Test database error logging with retry count."""
         error = TimeoutError("Query timeout")
@@ -222,7 +222,7 @@ class TestLogDatabaseError:
         call_args = mock_logger.error.call_args
         assert call_args[1]["retry_count"] == 3
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_database_error_recoverable(self, mock_logger):
         """Test that recoverable database errors are marked."""
         error = TimeoutError("Timeout")
@@ -232,7 +232,7 @@ class TestLogDatabaseError:
         assert call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "retry"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_database_error_not_recoverable(self, mock_logger):
         """Test that non-recoverable database errors are marked."""
         error = OSError("Permission denied")
@@ -242,7 +242,7 @@ class TestLogDatabaseError:
         assert not call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "manual_intervention"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     @pytest.mark.parametrize(
         "operation,entity_type,expected_operation",
         [
@@ -266,7 +266,7 @@ class TestLogDatabaseError:
         assert call_args[1]["operation"] == expected_operation
         assert call_args[1]["entity_type"] == entity_type
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_database_error_various_operations(self, mock_logger):
         """Test database error logging for different operations."""
         operations = ["create", "read", "update", "delete"]
@@ -283,7 +283,7 @@ class TestLogDatabaseError:
 class TestLogExternalServiceError:
     """Test log_external_service_error function."""
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_external_service_error_basic(self, mock_logger):
         """Test basic external service error logging."""
         error = ConnectionError("API unreachable")
@@ -295,7 +295,7 @@ class TestLogExternalServiceError:
         assert call_args[1]["service_name"] == "github_api"
         assert call_args[1]["operation"] == "sync_issues"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_external_service_error_with_retry_count(self, mock_logger):
         """Test external service error logging with retry count."""
         error = TimeoutError("Request timeout")
@@ -316,7 +316,7 @@ class TestLogExternalServiceError:
             (RuntimeError("Invalid response"), False, "contact_support"),
         ],
     )
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_external_service_error_recoverability(
         self, mock_logger, error, is_recoverable, suggested_action
     ):
@@ -336,7 +336,7 @@ class TestLogExternalServiceError:
             "custom_service",
         ],
     )
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_external_service_error_services(self, mock_logger, service_name):
         """Test external service error logging for different services."""
         error = ConnectionError("Connection failed")
@@ -354,7 +354,7 @@ class TestLogExternalServiceError:
             (ValueError("Bad value"), "ValueError"),
         ],
     )
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_log_external_service_error_types(
         self, mock_logger, error, error_type_name
     ):
@@ -368,7 +368,7 @@ class TestLogExternalServiceError:
 class TestErrorLoggingIntegration:
     """Integration tests for error logging."""
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_error_workflow_recoverable_error(self, mock_logger):
         """Test complete workflow for recoverable error."""
         error = TimeoutError("Connection timeout")
@@ -398,7 +398,7 @@ class TestErrorLoggingIntegration:
         assert call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "retry"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_error_workflow_user_error(self, mock_logger):
         """Test complete workflow for user error."""
         error = ValueError("Invalid input format")
@@ -422,7 +422,7 @@ class TestErrorLoggingIntegration:
         assert call_args[1]["field_name"] == "priority"
         assert call_args[1]["suggested_action"] == "validate_input"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_error_workflow_system_error(self, mock_logger):
         """Test complete workflow for system error."""
         error = OSError("Disk full")
@@ -447,7 +447,7 @@ class TestErrorLoggingIntegration:
         assert not call_args[1]["is_recoverable"]
         assert call_args[1]["suggested_action"] == "manual_intervention"
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_multiple_error_types(self, mock_logger):
         """Test logging multiple different error types."""
         errors = [
@@ -463,7 +463,7 @@ class TestErrorLoggingIntegration:
         for error, expected_class in errors:
             assert classify_error(error) == expected_class
 
-    @patch("roadmap.infrastructure.logging.error_logging.logger")
+    @patch("roadmap.common.logging.error_logging.logger")
     def test_error_message_preservation(self, mock_logger):
         """Test that error messages are preserved in logs."""
         error_message = "Very specific error message"

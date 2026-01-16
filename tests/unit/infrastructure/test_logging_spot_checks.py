@@ -130,9 +130,7 @@ class TestErrorContextLogging:
         """Test logging error with operation context."""
         error = ValidationError("Invalid input")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="create_issue",
@@ -151,9 +149,7 @@ class TestErrorContextLogging:
         error = GitHubAPIError("API error")
         additional = {"retry_count": 3, "endpoint": "/issues"}
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="sync_issues",
@@ -169,9 +165,7 @@ class TestErrorContextLogging:
         """Test logging error with traceback included."""
         error = GitError("clone", "Repository corrupted")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="clone_repo",
@@ -186,9 +180,7 @@ class TestErrorContextLogging:
         """Test that error classification is included in logged context."""
         error = TimeoutError("Request timed out")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="fetch_data",
@@ -206,9 +198,7 @@ class TestErrorContextLogging:
         """Test that error includes recovery suggestion."""
         error = ConnectionError("Connection refused")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="connect_to_server",
@@ -254,9 +244,7 @@ class TestCriticalPathLogging:
         """Test that archive operations log errors properly."""
         error = OSError("Disk full")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="archive_issue",
@@ -275,9 +263,7 @@ class TestCriticalPathLogging:
         """Test that CLI commands log errors with context."""
         error = ValidationError("Missing required argument")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="list_issues",
@@ -293,9 +279,7 @@ class TestCriticalPathLogging:
         """Test that GitHub handlers log errors properly."""
         error = GitHubAPIError("Rate limit exceeded")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="get_issues",
@@ -313,9 +297,7 @@ class TestCriticalPathLogging:
         """Test that database errors are logged with context."""
         error = RuntimeError("Database connection lost")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="save_issue",
@@ -337,9 +319,7 @@ class TestErrorLoggingRecovery:
         """Test logging retry attempts."""
         error = TimeoutError("Request timed out")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="fetch_github_data",
@@ -355,9 +335,7 @@ class TestErrorLoggingRecovery:
         """Test logging fallback actions."""
         error = NetworkError("Network unreachable")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="sync_with_github",
@@ -372,9 +350,7 @@ class TestErrorLoggingRecovery:
         """Test logging partial success with errors."""
         error = ValidationError("Some items failed validation")
 
-        with patch(
-            "roadmap.infrastructure.logging.error_logging.logger"
-        ) as mock_logger:
+        with patch("roadmap.common.logging.error_logging.logger") as mock_logger:
             log_error_with_context(
                 error=error,
                 operation="bulk_update_issues",

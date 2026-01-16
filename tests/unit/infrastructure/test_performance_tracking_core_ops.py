@@ -18,7 +18,7 @@ from roadmap.common.logging.performance_tracking import (
 class TestTrackOperationTime:
     """Test track_operation_time context manager."""
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_basic(self, mock_logger):
         """Test basic operation timing."""
         with track_operation_time("test_operation") as result:
@@ -29,7 +29,7 @@ class TestTrackOperationTime:
         assert not result["exceeded_threshold"]
         assert mock_logger.debug.called
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_with_warning(self, mock_logger):
         """Test operation timing with threshold exceeded."""
         with track_operation_time(
@@ -44,7 +44,7 @@ class TestTrackOperationTime:
         call_args = mock_logger.warning.call_args
         assert "slow_operation_slow" in str(call_args)
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_no_warning_when_fast(self, mock_logger):
         """Test that no warning is logged for fast operations."""
         with track_operation_time(
@@ -57,7 +57,7 @@ class TestTrackOperationTime:
         mock_logger.warning.assert_not_called()
         mock_logger.debug.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_with_info_level(self, mock_logger):
         """Test operation timing with info log level."""
         with track_operation_time(
@@ -69,14 +69,14 @@ class TestTrackOperationTime:
         assert not result["exceeded_threshold"]
         mock_logger.info.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_result_dict(self, mock_logger):
         """Test that result dictionary is properly populated."""
         with track_operation_time("test_op") as result:
             assert result["duration_ms"] == 0  # Before operation
             assert "exceeded_threshold" in result
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_with_exception(self, mock_logger):
         """Test that timing is recorded even when exception occurs."""
         try:
@@ -89,7 +89,7 @@ class TestTrackOperationTime:
         assert result["duration_ms"] >= 10
         assert mock_logger.debug.called or mock_logger.warning.called
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_custom_threshold(self, mock_logger):
         """Test custom warning threshold."""
         with track_operation_time(
@@ -101,7 +101,7 @@ class TestTrackOperationTime:
         assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_logs_correct_name(self, mock_logger):
         """Test that operation name is logged correctly."""
         with track_operation_time("my_operation"):
@@ -123,7 +123,7 @@ class TestTrackDatabaseOperation:
             ("delete", "project"),
         ],
     )
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_database_operation_basic(self, mock_logger, operation, entity_type):
         """Test database operation tracking with various operations and entities."""
         with track_database_operation(operation, entity_type) as result:
@@ -136,7 +136,7 @@ class TestTrackDatabaseOperation:
         assert call_args[1]["operation"] == operation
         assert call_args[1]["entity_type"] == entity_type
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_database_operation_with_entity_id(self, mock_logger):
         """Test database operation tracking with entity ID."""
         with track_database_operation("read", "issue", entity_id="issue-123"):
@@ -145,7 +145,7 @@ class TestTrackDatabaseOperation:
         call_args = mock_logger.debug.call_args
         assert call_args[1]["entity_id"] == "issue-123"
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_database_operation_slow_warning(self, mock_logger):
         """Test warning when database operation is slow."""
         with track_database_operation(
@@ -161,7 +161,7 @@ class TestTrackDatabaseOperation:
         assert call_args[1]["operation"] == "update"
         assert call_args[1]["entity_type"] == "milestone"
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_database_operation_custom_threshold(self, mock_logger):
         """Test custom warning threshold for database operations."""
         with track_database_operation(
@@ -174,7 +174,7 @@ class TestTrackDatabaseOperation:
         assert result["exceeded_threshold"]
         mock_logger.warning.assert_called_once()
 
-    @patch("roadmap.infrastructure.logging.performance_tracking.logger")
+    @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_database_operation_exception_handling(self, mock_logger):
         """Test that timing is recorded even with exceptions."""
         try:
