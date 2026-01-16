@@ -11,10 +11,10 @@ from roadmap.common.formatters.text.operations import (
     format_operation_failure,
     format_operation_success,
 )
-from roadmap.core.services.github.github_issue_client import GitHubIssueClient
-from roadmap.infrastructure.logging import (
+from roadmap.common.logging import (
     log_command,
 )
+from roadmap.core.services.github.github_issue_client import GitHubIssueClient
 
 console = get_console()
 

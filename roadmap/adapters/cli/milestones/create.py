@@ -5,7 +5,7 @@ import click
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.crud import BaseCreate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import MilestoneBuilder
-from roadmap.infrastructure.logging import (
+from roadmap.common.logging import (
     log_command,
     verbose_output,
 )

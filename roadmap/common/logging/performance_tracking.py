@@ -8,7 +8,7 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from roadmap.common.logging import get_logger
+from roadmap.common.logging.loggers import get_logger
 
 logger = get_logger(__name__)
 

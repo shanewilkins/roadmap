@@ -13,7 +13,7 @@ from typing import Any
 
 import click  # type: ignore[import-not-found]
 
-from roadmap.common.logging import get_logger
+from roadmap.common.logging.loggers import get_logger
 
 logger = get_logger(__name__)
 

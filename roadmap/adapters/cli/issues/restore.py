@@ -5,7 +5,7 @@ import click
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.issues.restore_class import IssueRestore
 from roadmap.common.console import get_console
-from roadmap.infrastructure.logging import (
+from roadmap.common.logging import (
     log_command,
     verbose_output,
 )

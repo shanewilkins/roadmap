@@ -8,8 +8,8 @@ from roadmap.adapters.cli.decorators import with_output_support
 from roadmap.adapters.cli.services.milestone_list_service import MilestoneListService
 from roadmap.common.console import get_console
 from roadmap.common.formatters import MilestoneTableFormatter
+from roadmap.common.logging import verbose_output
 from roadmap.common.models import ColumnType
-from roadmap.infrastructure.logging import verbose_output
 
 
 def _get_console():

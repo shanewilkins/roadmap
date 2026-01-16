@@ -5,7 +5,7 @@ Tests cover error classification, recovery suggestion, and all error logging fun
 
 import pytest
 
-from roadmap.infrastructure.logging.error_logging import (
+from roadmap.common.logging.error_logging import (
     ErrorClassification,
     classify_error,
     is_error_recoverable,

@@ -7,7 +7,7 @@ recovery suggestions for better debugging and operational visibility.
 import traceback
 from typing import Any
 
-from roadmap.common.logging import get_logger
+from roadmap.common.logging.loggers import get_logger
 
 logger = get_logger(__name__)
 

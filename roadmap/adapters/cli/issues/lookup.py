@@ -7,7 +7,7 @@ from roadmap.common.console import get_console
 from roadmap.common.formatters.text.operations import (
     format_operation_failure,
 )
-from roadmap.infrastructure.logging import (
+from roadmap.common.logging import (
     log_command,
 )
 

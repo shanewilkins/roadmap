@@ -17,6 +17,9 @@ from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.constants import MilestoneStatus, ProjectStatus
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
+from roadmap.common.logging.error_logging import (
+    log_database_error,
+)
 from roadmap.common.observability.instrumentation import traced
 from roadmap.common.services import (
     log_collection_operation,
@@ -27,9 +30,6 @@ from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.project import Project
 from roadmap.core.repositories import ProjectRepository
 from roadmap.infrastructure.file_enumeration import FileEnumerationService
-from roadmap.infrastructure.logging.error_logging import (
-    log_database_error,
-)
 
 logger = get_logger(__name__)
 

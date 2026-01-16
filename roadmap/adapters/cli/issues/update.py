@@ -6,10 +6,10 @@ from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.crud import BaseUpdate, EntityType
 from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
 from roadmap.adapters.cli.presentation.crud_presenter import UpdatePresenter
-from roadmap.common.models import IssueUpdateParams
-from roadmap.infrastructure.logging import (
+from roadmap.common.logging import (
     log_command,
 )
+from roadmap.common.models import IssueUpdateParams
 
 
 class IssueUpdate(BaseUpdate):

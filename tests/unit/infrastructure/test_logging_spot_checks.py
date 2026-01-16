@@ -12,7 +12,7 @@ from roadmap.common.errors import (
     NetworkError,
     ValidationError,
 )
-from roadmap.infrastructure.logging.error_logging import (
+from roadmap.common.logging.error_logging import (
     ErrorClassification,
     classify_error,
     is_error_recoverable,

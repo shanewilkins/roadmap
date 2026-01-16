@@ -17,12 +17,12 @@ from roadmap.common.errors import (
 )
 from roadmap.common.errors.error_standards import OperationType, safe_operation
 from roadmap.common.logging import get_logger
-from roadmap.common.observability.instrumentation import traced
-from roadmap.infrastructure.logging.error_logging import (
+from roadmap.common.logging.error_logging import (
     log_error_with_context,
     log_external_service_error,
     log_validation_error,
 )
+from roadmap.common.observability.instrumentation import traced
 from roadmap.infrastructure.security.credentials import get_credential_manager
 
 if TYPE_CHECKING:

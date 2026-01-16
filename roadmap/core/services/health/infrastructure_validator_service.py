@@ -15,13 +15,13 @@ consistent error handling and logging across all validators.
 from pathlib import Path
 
 from roadmap.common.logging import get_logger
+from roadmap.common.logging.error_logging import (
+    log_error_with_context,
+)
 from roadmap.common.observability.instrumentation import traced
 from roadmap.core.services.validator_base import BaseValidator, HealthStatus
 from roadmap.core.services.validators.health_status_utils import (
     get_overall_status,
-)
-from roadmap.infrastructure.logging.error_logging import (
-    log_error_with_context,
 )
 
 logger = get_logger(__name__)

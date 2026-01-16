@@ -14,11 +14,11 @@ from roadmap.common.formatters.text.operations import (
     format_operation_failure,
     format_operation_success,
 )
-from roadmap.core.domain import Status
-from roadmap.infrastructure.logging import (
+from roadmap.common.logging import (
     log_command,
     track_database_operation,
 )
+from roadmap.core.domain import Status
 
 console = get_console()
 

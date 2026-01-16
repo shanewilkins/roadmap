@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.infrastructure.logging.performance_tracking import (
+from roadmap.common.logging.performance_tracking import (
     OperationTimer,
     track_database_operation,
     track_file_operation,

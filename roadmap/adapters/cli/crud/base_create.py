@@ -12,7 +12,7 @@ from roadmap.adapters.cli.crud.crud_utils import (
 from roadmap.adapters.cli.presentation.crud_presenter import CreatePresenter
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import ValidationError
-from roadmap.infrastructure.logging import log_audit_event
+from roadmap.common.logging import log_audit_event
 
 
 class BaseCreate(ABC):

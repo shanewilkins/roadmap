@@ -4,11 +4,11 @@ import uuid
 from datetime import UTC, datetime
 
 from roadmap.common.errors.exceptions import ValidationError
-from roadmap.common.observability.instrumentation import traced
-from roadmap.core.domain import Comment
-from roadmap.infrastructure.logging.error_logging import (
+from roadmap.common.logging.error_logging import (
     log_validation_error,
 )
+from roadmap.common.observability.instrumentation import traced
+from roadmap.core.domain import Comment
 
 
 class CommentService:

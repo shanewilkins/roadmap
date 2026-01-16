@@ -6,6 +6,7 @@ import click
 
 from roadmap.adapters.cli.presentation.cleanup_presenter import CleanupPresenter
 from roadmap.common.console import get_console
+from roadmap.common.logging import verbose_output
 from roadmap.common.models import CleanupParams
 from roadmap.core.services.health.backup_cleanup_service import BackupCleanupService
 from roadmap.core.services.health.file_repair_service import FileRepairService
@@ -14,7 +15,6 @@ from roadmap.core.services.validators import (
     DuplicateIssuesValidator,
     FolderStructureValidator,
 )
-from roadmap.infrastructure.logging import verbose_output
 
 console = get_console()
 

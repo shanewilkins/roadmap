@@ -7,8 +7,8 @@ from roadmap.adapters.cli.cli_command_helpers import (
     require_initialized,
 )
 from roadmap.common.console import get_console
+from roadmap.common.logging import log_command, verbose_output
 from roadmap.core.services.comment.comment_service import CommentService
-from roadmap.infrastructure.logging import log_command, verbose_output
 
 
 @click.group("comment")

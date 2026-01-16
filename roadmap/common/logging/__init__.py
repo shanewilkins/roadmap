@@ -9,6 +9,23 @@ from roadmap.common.logging.correlation import (
     get_correlation_id,
     set_correlation_id,
 )
+from roadmap.common.logging.decorators import (
+    get_current_user,
+    log_audit_event,
+    log_command,
+    log_operation_duration,
+    verbose_output,
+)
+from roadmap.common.logging.error_logging import (
+    ErrorClassification,
+    classify_error,
+    is_error_recoverable,
+    log_database_error,
+    log_error_with_context,
+    log_external_service_error,
+    log_validation_error,
+    suggest_recovery,
+)
 from roadmap.common.logging.formatters import (
     SENSITIVE_KEYS,
     StructuredFormatter,
@@ -22,6 +39,13 @@ from roadmap.common.logging.loggers import (
     get_logger,
     get_presentation_logger,
     get_security_logger,
+)
+from roadmap.common.logging.performance_tracking import (
+    OperationTimer,
+    track_database_operation,
+    track_file_operation,
+    track_operation_time,
+    track_sync_operation,
 )
 from roadmap.common.logging.utils import (
     configure_for_testing,
@@ -58,6 +82,27 @@ __all__ = [
     "log_operation",
     "should_sample",
     "configure_for_testing",
+    # Decorators
+    "log_command",
+    "verbose_output",
+    "get_current_user",
+    "log_audit_event",
+    "log_operation_duration",
+    # Error logging
+    "ErrorClassification",
+    "classify_error",
+    "is_error_recoverable",
+    "log_database_error",
+    "log_error_with_context",
+    "log_external_service_error",
+    "log_validation_error",
+    "suggest_recovery",
+    # Performance tracking
+    "OperationTimer",
+    "track_database_operation",
+    "track_file_operation",
+    "track_operation_time",
+    "track_sync_operation",
 ]
 
 # Initialize logging at module load time

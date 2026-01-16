@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from roadmap.infrastructure.logging.error_logging import (
+from roadmap.common.logging.error_logging import (
     ErrorClassification,
     classify_error,
     is_error_recoverable,

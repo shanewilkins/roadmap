@@ -4,7 +4,7 @@ from typing import Any
 
 import requests
 
-from roadmap.infrastructure.logging import log_external_service_error
+from roadmap.common.logging import log_external_service_error
 
 
 class GitHubAPIError(Exception):

@@ -28,7 +28,7 @@ from functools import wraps
 from typing import Any, ParamSpec, TypeVar
 
 from roadmap.common.logging import get_logger
-from roadmap.infrastructure.logging.error_logging import (
+from roadmap.common.logging.error_logging import (
     is_error_recoverable,
     log_error_with_context,
 )
@@ -224,7 +224,7 @@ def safe_operation(
 
                 except Exception as e:
                     # Lazy import to avoid infrastructure dependency in common layer
-                    from roadmap.infrastructure.logging.error_logging import (
+                    from roadmap.common.logging.error_logging import (
                         is_error_recoverable,
                         log_error_with_context,
                     )

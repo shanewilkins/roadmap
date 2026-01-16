@@ -3,8 +3,8 @@
 import click
 
 from roadmap.common.console import get_console
+from roadmap.common.logging import verbose_output
 from roadmap.core.domain import Issue
-from roadmap.infrastructure.logging import verbose_output
 
 console = get_console()
 

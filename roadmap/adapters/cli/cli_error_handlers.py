@@ -17,9 +17,9 @@ from typing import Any
 import click
 
 from roadmap.common.console import get_console
-from roadmap.common.logging import get_logger
-from roadmap.infrastructure.logging import (
+from roadmap.common.logging import (
     classify_error,
+    get_logger,
     is_error_recoverable,
     suggest_recovery,
 )

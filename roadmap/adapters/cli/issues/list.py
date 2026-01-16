@@ -13,13 +13,13 @@ from roadmap.adapters.cli.services.export_manager import ExportManager
 from roadmap.common.console import get_console
 from roadmap.common.errors import ErrorHandler, ValidationError
 from roadmap.common.formatters import IssueTableFormatter
+from roadmap.common.logging import verbose_output
 from roadmap.common.models import ColumnType, IssueListParams
 from roadmap.core.services.issue_helpers import (
     IssueFilterValidator,
     IssueQueryService,
     WorkloadCalculator,
 )
-from roadmap.infrastructure.logging import verbose_output
 
 
 def _get_console():
