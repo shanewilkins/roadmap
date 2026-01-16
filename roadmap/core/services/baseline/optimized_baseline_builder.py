@@ -9,10 +9,8 @@ from pathlib import Path
 
 from structlog import get_logger
 
-from roadmap.adapters.persistence.git_history import (
-    GitHistoryError,
-    get_changed_files_since_commit,
-)
+from roadmap.adapters.persistence.git_history import get_changed_files_since_commit
+from roadmap.core.interfaces.persistence import GitHistoryError
 from roadmap.core.models.sync_state import SyncState
 
 logger = get_logger(__name__)

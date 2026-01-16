@@ -3,23 +3,17 @@
 import click
 from structlog import get_logger
 
+from roadmap.adapters.github.github import GitHubClient
 from roadmap.common.configuration.github.config_manager import GitHubConfigManager
 from roadmap.common.configuration.github.token_resolver import GitHubTokenResolver
 from roadmap.common.console import get_console
 from roadmap.common.constants import SyncBackend
 from roadmap.common.initialization.github.setup_validator import GitHubSetupValidator
 from roadmap.infrastructure.coordination.core import RoadmapCore
+from roadmap.infrastructure.security.credentials import CredentialManager
 
 logger = get_logger()
 console = get_console()
-
-# Import GitHub modules for type hints (allow test patching)
-try:
-    from roadmap.adapters.github.github import GitHubClient
-    from roadmap.infrastructure.security.credentials import CredentialManager
-except ImportError:
-    GitHubClient = None  # type: ignore
-    CredentialManager = None  # type: ignore
 
 
 def show_github_setup_instructions(github_repo: str, yes: bool) -> bool:

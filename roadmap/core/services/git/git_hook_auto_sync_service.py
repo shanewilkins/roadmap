@@ -11,8 +11,6 @@ when Git events occur (commits, checkouts, merges). It provides:
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.sync.backend_factory import get_sync_backend
-from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
 from roadmap.common.console import get_console
 from roadmap.core.services.github.github_integration_service import (
     GitHubIntegrationService,
@@ -236,6 +234,8 @@ class GitHookAutoSyncService:
             self.console.print(f"[dim]🔄 Auto-syncing issues ({event})...[/dim]")
 
             # Get GitHub backend for sync
+            from roadmap.adapters.sync.backend_factory import get_sync_backend
+
             backend = get_sync_backend("github", self.core, config)
             if not backend:
                 self.console.print(
@@ -244,6 +244,9 @@ class GitHookAutoSyncService:
                 return False
 
             # Create cache orchestrator for actual sync (uses three-way merge)
+            from roadmap.adapters.sync.sync_cache_orchestrator import (
+                SyncCacheOrchestrator,
+            )
             from roadmap.core.services.sync.sync_conflict_resolver import (
                 SyncConflictResolver,
             )

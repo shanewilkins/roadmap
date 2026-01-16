@@ -1,0 +1,75 @@
+================================================================================
+LAYER VIOLATION ANALYSIS
+================================================================================
+
+❌ Found 105 layer violations
+
+
+Common (Shared Utilities) importing from forbidden layers (8 violations):
+--------------------------------------------------------------------------------
+  roadmap/common/formatters/export/issue_exporter.py:10
+    → from roadmap.core.domain
+  roadmap/common/formatters/kanban/layout.py:3
+    → from roadmap.core.domain
+  roadmap/common/formatters/kanban/organizer.py:5
+    → from roadmap.core.domain
+  roadmap/common/formatters/tables/column_factory.py:8
+    → from roadmap.core.domain
+  roadmap/common/formatters/tables/issue_table.py:13
+    → from roadmap.core.domain
+  roadmap/common/initialization/github/setup_service.py:18
+    → from roadmap.adapters.github.github
+  roadmap/common/progress.py:14
+    → from roadmap.core.domain
+  roadmap/common/utils/status_utils.py:95
+    → from roadmap.core.domain.health
+
+Core (Application) importing from forbidden layers (15 violations):
+--------------------------------------------------------------------------------
+  roadmap/core/services/baseline/baseline_state_retriever.py:16
+    → from roadmap.adapters.persistence.parser.issue
+  roadmap/core/services/baseline/baseline_state_retriever.py:213
+    → from roadmap.adapters.persistence.parser.frontmatter
+  roadmap/core/services/baseline/optimized_baseline_builder.py:12
+    → from roadmap.adapters.persistence.git_history
+  roadmap/core/services/git/git_hook_auto_sync_service.py:14
+    → from roadmap.adapters.sync.backend_factory
+  roadmap/core/services/git/git_hook_auto_sync_service.py:15
+    → from roadmap.adapters.sync.sync_cache_orchestrator
+  roadmap/core/services/github/github_integration_service.py:362
+    → from roadmap.adapters.github.github
+  roadmap/core/services/github/github_issue_client.py:11
+    → from roadmap.adapters.github.handlers.base
+  roadmap/core/services/github/github_issue_client.py:91
+    → from roadmap.adapters.github.github
+  roadmap/core/services/github/github_issue_client.py:131
+    → from roadmap.adapters.github.github
+  roadmap/core/services/health/infrastructure_validator_service.py:253
+    → from roadmap.adapters.persistence.storage
+  ... and 5 more
+
+Infrastructure importing from forbidden layers (82 violations):
+--------------------------------------------------------------------------------
+  roadmap/infrastructure/coordination/coordinator_params.py:11
+    → from roadmap.core.domain
+  roadmap/infrastructure/coordination/core.py:24
+    → from roadmap.adapters.git.git
+  roadmap/infrastructure/coordination/core.py:25
+    → from roadmap.adapters.persistence.storage
+  roadmap/infrastructure/coordination/core.py:26
+    → from roadmap.adapters.persistence.yaml_repositories
+  roadmap/infrastructure/coordination/core.py:27
+    → from roadmap.common.utils.path_utils
+  roadmap/infrastructure/coordination/core.py:28
+    → from roadmap.core.services
+  roadmap/infrastructure/coordination/core.py:100
+    → from roadmap.adapters.git.sync_monitor
+  roadmap/infrastructure/coordination/core.py:110
+    → from roadmap.common.logging
+  roadmap/infrastructure/coordination/core.py:127
+    → from roadmap.adapters.persistence.yaml_repositories
+  roadmap/infrastructure/coordination/core.py:195
+    → from roadmap.common.configuration
+  ... and 72 more
+
+================================================================================

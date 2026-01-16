@@ -13,7 +13,6 @@ from typing import Any
 
 from structlog import get_logger
 
-from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.core.interfaces.parsers import IssueParserInterface
 from roadmap.core.interfaces.persistence import (
     FileNotFound,
@@ -159,6 +158,8 @@ class BaselineStateRetriever:
             IssueBaseState extracted from remote_state, or None if not present
         """
         try:
+            from roadmap.adapters.persistence.parser.issue import IssueParser
+
             sync_metadata = IssueParser.load_sync_metadata(issue_file)
 
             if not sync_metadata:

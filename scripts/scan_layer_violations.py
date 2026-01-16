@@ -100,6 +100,15 @@ def check_violation(from_layer, to_module):
     if to_layer == from_layer:
         return False
 
+    # Allow common → core.domain (type imports are OK)
+    if (
+        from_layer == "common"
+        and to_layer == "core"
+        and len(parts) >= 3
+        and parts[2] == "domain"
+    ):
+        return False
+
     # Check if this import is allowed
     if to_layer not in ALLOWED.get(from_layer, set()):
         return True
