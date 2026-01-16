@@ -5,7 +5,7 @@ with GitHub repositories. It implements the SyncBackendInterface protocol.
 """
 
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime  # noqa: F401  # Used in type hints
 from typing import Any, TypeVar
 
 from structlog import get_logger
@@ -17,9 +17,6 @@ from roadmap.adapters.sync.backends.services.github_authentication_service impor
 )
 from roadmap.adapters.sync.backends.services.github_issue_fetch_service import (
     GitHubIssueFetchService,
-)
-from roadmap.adapters.sync.backends.services.github_issue_push_service import (
-    GitHubIssuePushService,
 )
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces import (
@@ -183,32 +180,6 @@ class GitHubSyncBackend:
 
         return self._fetch_service.get_issues()
 
-    def push_issue(self, local_issue: Issue) -> bool:
-        """Push a single local issue to GitHub.
-
-        Args:
-            local_issue: The Issue object to push
-
-        Returns:
-            True if push succeeds, False if error.
-
-        Notes:
-            - Creates new GitHub issue if not linked (no github_issue field)
-            - Updates existing GitHub issue if linked (has github_issue field)
-            - Stores the GitHub issue number for future syncs
-        """
-        # Lazily initialize push service after first auth
-        if self._push_service is None and self.github_client:
-            self._push_service = GitHubIssuePushService(
-                self.github_client, self.config, self._helpers
-            )
-
-        if self._push_service is None:
-            logger.warning("github_push_service_not_initialized")
-            return False
-
-        return self._push_service.push_issue(local_issue)
-
     def push_issues(self, local_issues: list[Issue]) -> SyncReport:
         """Push multiple local issues to GitHub.
 
@@ -223,6 +194,24 @@ class GitHubSyncBackend:
 
         ops = GitHubSyncOps(self)
         return ops.push_issues(local_issues)
+
+    def push_issue(self, local_issue: Issue) -> bool:
+        """Push a single local issue to GitHub.
+
+        Args:
+            local_issue: The Issue object to push
+
+        Returns:
+            True if push succeeds, False if error.
+
+        Notes:
+            - Delegates to push_issues for consistency
+            - Creates new GitHub issue if not linked (no github_issue field)
+            - Updates existing GitHub issue if linked (has github_issue field)
+            - Stores the GitHub issue number for future syncs
+        """
+        report = self.push_issues([local_issue])
+        return len(report.pushed) > 0 and len(report.errors) == 0
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
         """Pull specified remote GitHub issues to local.
@@ -253,74 +242,12 @@ class GitHubSyncBackend:
             True if pull succeeds, False if error.
 
         Notes:
+            - Delegates to pull_issues for consistency
             - Fetches the remote issue and updates local
             - Should not raise exceptions; return False on failure
         """
-        from structlog import get_logger
-
-        from roadmap.adapters.sync.services import (
-            IssueStateService,
-        )
-
-        logger = get_logger()
-
-        try:
-            # Fetch the remote issue by ID
-            remote_issues = self.get_issues()
-            remote_issue = remote_issues.get(issue_id)
-
-            if not remote_issue:
-                logger.warning("pull_issue_not_found_remote", issue_id=issue_id)
-                return False
-
-            title = remote_issue.title or ""
-
-            if not issue_id or not title:
-                logger.warning(
-                    "pull_issue_missing_id_or_title", remote_issue=remote_issue
-                )
-                return False
-            logger.debug("github_pull_issue_started", issue_id=issue_id)
-
-            # Convert remote SyncIssue to local Issue object
-            github_issue_number = remote_issue.backend_id
-
-            matching_local_issue = self._find_matching_local_issue(
-                title, github_issue_number
-            )
-
-            # Convert to local Issue and prepare updates
-            # Normalize status from GitHub format to local Status enum
-            normalized_status = IssueStateService.normalize_status(remote_issue.status)
-
-            updates = {
-                "title": remote_issue.title,
-                "status": normalized_status,
-                "assignee": remote_issue.assignee,
-                "milestone": remote_issue.milestone,
-                "content": remote_issue.headline or "",  # SyncIssue.headline → content
-            }
-
-            # Update/create locally and link
-            self._apply_or_create_local_issue(
-                issue_id,
-                matching_local_issue,
-                updates,
-                github_issue_number,
-                remote_issue,
-            )
-
-            logger.info("github_pull_issue_completed", issue_id=issue_id)
-            return True
-
-        except Exception as e:
-            logger.warning(
-                "github_pull_issue_failed",
-                issue_id=issue_id,
-                error=str(e),
-                exc_info=True,
-            )
-            return False
+        report = self.pull_issues([issue_id])
+        return len(report.pulled) > 0 and len(report.errors) == 0
 
     def _convert_sync_to_issue(self, issue_id: str, sync_issue: SyncIssue) -> "Issue":
         """Convert SyncIssue to local Issue object.

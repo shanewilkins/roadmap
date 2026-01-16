@@ -94,22 +94,6 @@ class SyncBackendInterface(Protocol):
         """
         ...
 
-    def push_issue(self, local_issue: Issue) -> bool:
-        """Push a single local issue to remote.
-
-        Args:
-            local_issue: The Issue object to push to remote
-
-        Returns:
-            True if push succeeds, False if conflict or error.
-
-        Notes:
-            - Should handle conflicts gracefully (return False, not raise)
-            - May update local_issue.github_issue or similar fields
-            - Idempotent: pushing same issue twice should be safe
-        """
-        ...
-
     def push_issues(self, local_issues: list[Issue]) -> SyncReport:
         """Push multiple local issues to remote.
 
@@ -124,8 +108,28 @@ class SyncBackendInterface(Protocol):
             - Populate report.pushed with successful issue IDs
             - Populate report.conflicts with conflicting issues
             - Populate report.errors with issue_id -> error_message
+            - Single issues should be handled via push_issue(issue)
         """
         ...
+
+    def push_issue(self, local_issue: Issue) -> bool:
+        """Push a single local issue to remote.
+
+        Args:
+            local_issue: The Issue object to push to remote
+
+        Returns:
+            True if push succeeds, False if conflict or error.
+
+        Notes:
+            - Default implementation: delegates to push_issues()
+            - Backends may override for optimization
+            - Should handle conflicts gracefully (return False, not raise)
+            - May update local_issue fields
+            - Idempotent: pushing same issue twice should be safe
+        """
+        report = self.push_issues([local_issue])
+        return len(report.pushed) > 0 and len(report.errors) == 0
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
         """Pull specified remote issues to local.
@@ -142,6 +146,7 @@ class SyncBackendInterface(Protocol):
             - Populate report.conflicts with conflicting issues
             - Populate report.errors with issue_id -> error_message
             - Backend can optimize this (batch API calls, parallel processing, etc.)
+            - Single issues should be handled via pull_issue(issue_id)
         """
         ...
 
@@ -155,10 +160,13 @@ class SyncBackendInterface(Protocol):
             True if pull succeeds, False if error.
 
         Notes:
+            - Default implementation: delegates to pull_issues()
+            - Backends may override for optimization
             - Fetches the remote issue and updates local
             - Should not raise exceptions; return False on failure
         """
-        ...
+        report = self.pull_issues([issue_id])
+        return len(report.pulled) > 0 and len(report.errors) == 0
 
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Get available resolution strategies for a conflict.

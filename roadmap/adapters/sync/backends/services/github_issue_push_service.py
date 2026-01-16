@@ -5,7 +5,7 @@ from structlog import get_logger
 from roadmap.adapters.sync.backends.github_backend_helpers import GitHubBackendHelpers
 from roadmap.adapters.sync.backends.github_client import GitHubClientWrapper
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.sync.sync_report import SyncReport
+from roadmap.core.interfaces import SyncReport
 
 logger = get_logger()
 
@@ -120,18 +120,22 @@ class GitHubIssuePushService:
         for issue in local_issues:
             try:
                 if self.push_issue(issue):
+                    report.pushed.append(issue.id)
                     pushed_count += 1
                 else:
-                    errors.append(f"Failed to push issue {issue.id}")
+                    error_msg = f"Failed to push issue {issue.id}"
+                    report.errors[issue.id] = error_msg
+                    errors.append(error_msg)
             except Exception as e:
                 logger.error(
                     "github_push_issue_exception",
                     issue_id=issue.id,
                     error=str(e),
                 )
-                errors.append(f"Error pushing issue {issue.id}: {str(e)}")
+                error_msg = f"Error pushing issue {issue.id}: {str(e)}"
+                report.errors[issue.id] = error_msg
+                errors.append(error_msg)
 
-        report.issues_pushed = pushed_count
         if errors:
             report.error = "; ".join(errors)
 

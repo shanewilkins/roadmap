@@ -81,19 +81,6 @@ class VanillaGitSyncBackend:
         """
         return {}
 
-    def push_issue(self, local_issue: Issue) -> bool:
-        """No-op: Push a single issue.
-
-        For self-hosting, the user is responsible for git operations.
-
-        Args:
-            local_issue: The Issue object (unused)
-
-        Returns:
-            True (no-op succeeds)
-        """
-        return True
-
     def push_issues(self, local_issues: list[Issue]) -> SyncReport:
         """No-op: Push multiple issues.
 
@@ -106,6 +93,21 @@ class VanillaGitSyncBackend:
             Empty SyncReport (no-op)
         """
         return SyncReport()
+
+    def push_issue(self, local_issue: Issue) -> bool:
+        """No-op: Push a single issue.
+
+        For self-hosting, the user is responsible for git operations.
+        Delegates to push_issues for consistency.
+
+        Args:
+            local_issue: The Issue object (unused)
+
+        Returns:
+            True (no-op succeeds)
+        """
+        report = self.push_issues([local_issue])
+        return len(report.pushed) > 0 and len(report.errors) == 0
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
         """No-op: Pull specified remote issues.
@@ -124,6 +126,7 @@ class VanillaGitSyncBackend:
         """No-op: Pull a single issue.
 
         For self-hosting, the user is responsible for git operations.
+        Delegates to pull_issues for consistency.
 
         Args:
             issue_id: The issue ID (unused)
@@ -131,7 +134,8 @@ class VanillaGitSyncBackend:
         Returns:
             True (no-op succeeds)
         """
-        return True
+        report = self.pull_issues([issue_id])
+        return len(report.pulled) > 0 and len(report.errors) == 0
 
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Get available resolution strategies.

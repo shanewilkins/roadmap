@@ -22,6 +22,7 @@ class TestSyncBackendInterface:
             "get_issues",
             "push_issue",
             "push_issues",
+            "pull_issue",
             "pull_issues",
             "get_conflict_resolution_options",
             "resolve_conflict",
@@ -111,8 +112,9 @@ class MockSyncBackend:
         return {}
 
     def push_issue(self, local_issue: Issue) -> bool:
-        """Mock push_issue."""
-        return True
+        """Mock push_issue - delegates to push_issues."""
+        report = self.push_issues([local_issue])
+        return len(report.pushed) > 0 and len(report.errors) == 0
 
     def push_issues(self, local_issues: list[Issue]) -> SyncReport:
         """Mock push_issues."""
@@ -120,9 +122,16 @@ class MockSyncBackend:
         report.pushed = [issue.id for issue in local_issues]
         return report
 
-    def pull_issues(self) -> SyncReport:
+    def pull_issues(self, issue_ids: list[str]) -> SyncReport:
         """Mock pull_issues."""
-        return SyncReport()
+        report = SyncReport()
+        report.pulled = issue_ids.copy()
+        return report
+
+    def pull_issue(self, issue_id: str) -> bool:
+        """Mock pull_issue - delegates to pull_issues."""
+        report = self.pull_issues([issue_id])
+        return len(report.pulled) > 0 and len(report.errors) == 0
 
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Mock get_conflict_resolution_options."""
@@ -145,6 +154,7 @@ class TestSyncBackendImplementation:
         assert hasattr(backend, "get_issues")
         assert hasattr(backend, "push_issue")
         assert hasattr(backend, "push_issues")
+        assert hasattr(backend, "pull_issue")
         assert hasattr(backend, "pull_issues")
         assert hasattr(backend, "get_conflict_resolution_options")
         assert hasattr(backend, "resolve_conflict")
@@ -157,6 +167,7 @@ class TestSyncBackendImplementation:
         assert callable(backend.get_issues)
         assert callable(backend.push_issue)
         assert callable(backend.push_issues)
+        assert callable(backend.pull_issue)
         assert callable(backend.pull_issues)
         assert callable(backend.get_conflict_resolution_options)
         assert callable(backend.resolve_conflict)
@@ -190,8 +201,15 @@ class TestSyncBackendImplementation:
     def test_mock_backend_pull_issues(self):
         """Test mock backend can pull issues."""
         backend = MockSyncBackend()
-        report = backend.pull_issues()
+        report = backend.pull_issues(["issue1", "issue2"])
         assert isinstance(report, SyncReport)
+        assert len(report.pulled) == 2
+
+    def test_mock_backend_pull_issue(self):
+        """Test mock backend can pull single issue."""
+        backend = MockSyncBackend()
+        result = backend.pull_issue("issue1")
+        assert result is True
 
     def test_mock_backend_conflict_resolution(self):
         """Test mock backend can resolve conflicts."""
