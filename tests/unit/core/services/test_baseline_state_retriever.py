@@ -10,10 +10,11 @@ Tests cover:
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
+from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.core.domain import Issue, IssueType, Priority, Status
 from roadmap.core.interfaces.parsers import IssueParserInterface
 from roadmap.core.interfaces.persistence import PersistenceInterface
@@ -21,14 +22,6 @@ from roadmap.core.services.baseline.baseline_state_retriever import (
     BaselineRetrievalError,
     BaselineStateRetriever,
 )
-
-
-# Provide IssueParser via module globals without top-level import
-# This avoids direct adapter imports at module level
-def setup_module():
-    """Set up module-level test utilities."""
-    from roadmap.adapters.persistence.parser.issue import IssueParser
-    globals()["IssueParser"] = IssueParser
 
 
 class TestGetLocalBaseline:

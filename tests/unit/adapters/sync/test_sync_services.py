@@ -9,8 +9,8 @@ from roadmap.adapters.sync.services import (
     SyncLinkingService,
 )
 from roadmap.common.constants import Priority, Status
-from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
+from tests.fixtures.issue_factory import IssueFactory
 
 
 class TestIssueStateService:
@@ -136,7 +136,7 @@ class TestIssueStateService:
 
     def test_issue_to_push_payload_basic(self):
         """Test converting Issue to push payload."""
-        issue = Issue(
+        issue = IssueFactory.create(
             id="local-123",
             title="Test Issue",
             content="Issue description",
@@ -151,7 +151,7 @@ class TestIssueStateService:
 
     def test_issue_to_push_payload_closed_state(self):
         """Test that CLOSED status converts to 'closed' state."""
-        issue = Issue(
+        issue = IssueFactory.create(
             id="local-123",
             title="Test",
             status=Status.CLOSED,
@@ -163,7 +163,7 @@ class TestIssueStateService:
 
     def test_issue_to_push_payload_with_labels(self):
         """Test payload generation with labels."""
-        issue = Issue(
+        issue = IssueFactory.create(
             id="local-123",
             title="Test",
             labels=["bug", "feature"],
@@ -176,7 +176,7 @@ class TestIssueStateService:
 
     def test_issue_to_push_payload_with_comma_separated_labels(self):
         """Test payload generation with comma-separated labels."""
-        issue = Issue(
+        issue = IssueFactory.create(
             id="local-123",
             title="Test",
             labels=["bug, feature, urgent"],
@@ -188,7 +188,7 @@ class TestIssueStateService:
 
     def test_issue_to_push_payload_empty_labels(self):
         """Test that empty labels are not included in payload."""
-        issue = Issue(
+        issue = IssueFactory.create(
             id="local-123",
             title="Test",
             labels=[],
@@ -229,7 +229,7 @@ class TestIssuePersistenceService:
 
     def test_update_issue_with_remote_id(self):
         """Test updating issue with remote ID."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         issue.remote_ids = {}
 
         IssuePersistenceService.update_issue_with_remote_id(issue, "github", 42)
@@ -238,7 +238,7 @@ class TestIssuePersistenceService:
 
     def test_update_issue_with_remote_id_preserves_existing(self):
         """Test that existing remote IDs are preserved."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         issue.remote_ids = {"gitlab": "100"}
 
         IssuePersistenceService.update_issue_with_remote_id(issue, "github", 42)
@@ -248,7 +248,7 @@ class TestIssuePersistenceService:
 
     def test_update_issue_with_remote_id_initializes_dict(self):
         """Test that remote_ids dict is initialized if empty."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         issue.remote_ids = {}
 
         IssuePersistenceService.update_issue_with_remote_id(issue, "github", 42)
@@ -258,7 +258,7 @@ class TestIssuePersistenceService:
 
     def test_update_github_issue_number(self):
         """Test updating github_issue field."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
 
         IssuePersistenceService.update_github_issue_number(issue, 42)
 
@@ -266,7 +266,7 @@ class TestIssuePersistenceService:
 
     def test_save_issue_success(self):
         """Test successful issue save."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         mock_repo = Mock()
         mock_repo.save = Mock(return_value=None)
 
@@ -280,7 +280,7 @@ class TestIssuePersistenceService:
 
     def test_save_issue_failure(self):
         """Test issue save failure handling."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         mock_repo = Mock()
         mock_repo.save = Mock(side_effect=Exception("Save failed"))
 
@@ -293,7 +293,7 @@ class TestIssuePersistenceService:
 
     def test_get_issue_from_repo_found(self):
         """Test retrieving an existing issue from repo."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         mock_repo = Mock()
         mock_repo.get = Mock(return_value=issue)
 
@@ -331,7 +331,7 @@ class TestIssuePersistenceService:
 
     def test_apply_sync_issue_to_local_updates_fields(self):
         """Test applying sync issue updates to local issue."""
-        local_issue = Issue(
+        local_issue = IssueFactory.create(
             id="local-123",
             title="Old Title",
             content="Old content",
@@ -357,7 +357,7 @@ class TestIssuePersistenceService:
 
     def test_apply_sync_issue_to_local_preserves_local_id(self):
         """Test that local ID is preserved during update."""
-        local_issue = Issue(id="local-123", title="Test")
+        local_issue = IssueFactory.create(id="local-123", title="Test")
         sync_issue = SyncIssue(
             id="remote-42",
             title="Updated",
@@ -372,7 +372,7 @@ class TestIssuePersistenceService:
 
     def test_is_github_linked_with_direct_field(self):
         """Test detecting GitHub link via direct field."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         issue.remote_ids = {"github": 42}
 
         result = IssuePersistenceService.is_github_linked(issue)
@@ -381,7 +381,7 @@ class TestIssuePersistenceService:
 
     def test_is_github_linked_not_linked(self):
         """Test detecting unlinked issue."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         issue.remote_ids = {"gitlab": 100}
 
         result = IssuePersistenceService.is_github_linked(issue)
@@ -390,7 +390,7 @@ class TestIssuePersistenceService:
 
     def test_get_github_issue_number_from_remote_ids(self):
         """Test extracting GitHub number from remote_ids."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         issue.remote_ids = {"github": "42"}
 
         result = IssuePersistenceService.get_github_issue_number(issue)
@@ -399,7 +399,7 @@ class TestIssuePersistenceService:
 
     def test_get_github_issue_number_not_found(self):
         """Test when GitHub issue is not linked."""
-        issue = Issue(id="local-123", title="Test")
+        issue = IssueFactory.create(id="local-123", title="Test")
         issue.remote_ids = {}
 
         result = IssuePersistenceService.get_github_issue_number(issue)
@@ -447,14 +447,14 @@ class TestSyncLinkingService:
 
     def test_find_duplicate_by_title_found(self):
         """Test finding a duplicate issue by title."""
-        found_issue = Issue(id="existing-123", title="Test Title")
+        found_issue = IssueFactory.create(id="existing-123", title="Test Title")
 
         mock_repo = Mock()
         mock_repo.list = Mock(
             return_value=[
-                Issue(id="other-1", title="Other"),
+                IssueFactory.create(id="other-1", title="Other"),
                 found_issue,
-                Issue(id="other-2", title="Another"),
+                IssueFactory.create(id="other-2", title="Another"),
             ]
         )
 
@@ -469,7 +469,7 @@ class TestSyncLinkingService:
 
     def test_find_duplicate_by_title_case_insensitive(self):
         """Test that duplicate search is case-insensitive."""
-        found_issue = Issue(id="existing-123", title="Test Title")
+        found_issue = IssueFactory.create(id="existing-123", title="Test Title")
 
         mock_repo = Mock()
         mock_repo.list = Mock(return_value=[found_issue])
@@ -488,8 +488,8 @@ class TestSyncLinkingService:
         mock_repo = Mock()
         mock_repo.list = Mock(
             return_value=[
-                Issue(id="other-1", title="Other"),
-                Issue(id="other-2", title="Another"),
+                IssueFactory.create(id="other-1", title="Other"),
+                IssueFactory.create(id="other-2", title="Another"),
             ]
         )
 

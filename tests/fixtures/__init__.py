@@ -56,6 +56,7 @@ from .io import (
     clean_output,
     strip_ansi_fixture,
 )
+from .issue_factory import IssueFactory
 from .mocks import (
     cli_test_data,
     fast_mock_core,
@@ -68,6 +69,15 @@ from .mocks import (
     mock_core_with_github,
     mock_issue,
     mock_milestone,
+)
+from .patch_helpers import (
+    with_file_and_git,
+    with_file_operations,
+    with_git_service,
+    with_github_client,
+    with_health_validator,
+    with_parser,
+    with_persistence,
 )
 from .performance import (
     mock_git_operations,
@@ -106,6 +116,15 @@ from .workspace import (
 )
 
 __all__ = [
+    # Phase 1 Fixtures & Utilities
+    "IssueFactory",
+    "with_file_operations",
+    "with_github_client",
+    "with_git_service",
+    "with_health_validator",
+    "with_parser",
+    "with_persistence",
+    "with_file_and_git",
     # IO fixtures
     "strip_ansi_fixture",
     "clean_output",

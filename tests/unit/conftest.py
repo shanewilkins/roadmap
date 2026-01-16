@@ -22,6 +22,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from roadmap.core.interfaces.parsers import IssueParserInterface
+from roadmap.core.interfaces.persistence import PersistenceInterface
+from tests.fixtures.issue_factory import IssueFactory
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 # ============================================================================
@@ -39,26 +42,39 @@ def factory():
     return TestDataFactory
 
 
+@pytest.fixture
+def issue_factory():
+    """Provide access to IssueFactory for creating test issues.
+
+    Returns:
+        IssueFactory class with static factory methods
+    """
+    return IssueFactory
+
+
 # ============================================================================
-# Unit Test Assertions and Helpers
+# Persistence and Parser Mocks
 # ============================================================================
 
 
 @pytest.fixture
-def assert_mock_called_with_args():
-    """Helper to assert mock was called with specific arguments.
+def mock_persistence():
+    """Shared mock for PersistenceInterface.
 
     Returns:
-        Function that validates mock call arguments
+        MagicMock with PersistenceInterface spec
     """
+    return MagicMock(spec=PersistenceInterface)
 
-    def _assert(mock_obj, expected_args=None, expected_kwargs=None):
-        expected_args = expected_args or ()
-        expected_kwargs = expected_kwargs or {}
-        mock_obj.assert_called_once_with(*expected_args, **expected_kwargs)
-        return True
 
-    return _assert
+@pytest.fixture
+def mock_parser():
+    """Shared mock for IssueParserInterface.
+
+    Returns:
+        MagicMock with IssueParserInterface spec
+    """
+    return MagicMock(spec=IssueParserInterface)
 
 
 @pytest.fixture

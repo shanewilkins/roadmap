@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 
 from roadmap.common.constants import Status
-from roadmap.core.domain.issue import Issue
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
+from tests.fixtures.issue_factory import IssueFactory
 
 
 @pytest.mark.skip(
@@ -30,7 +30,7 @@ class TestSyncStateUpdates:
     @pytest.fixture
     def sample_issue(self):
         """Create a sample issue for testing."""
-        return Issue(
+        return IssueFactory.create(
             id="test-1",
             title="Test Issue",
             content="Test content",
@@ -60,7 +60,7 @@ class TestSyncStateUpdates:
         state_manager.save_base_state(sample_issue)
 
         # Create a different issue
-        issue2 = Issue(
+        issue2 = IssueFactory.create(
             id="test-2",
             title="Test Issue 2",
             content="Test content 2",
@@ -94,7 +94,7 @@ class TestSyncStateUpdates:
         self, state_manager, temp_roadmap_dir
     ):
         """Test that save_base_state handles issues with minimal fields."""
-        issue = Issue(
+        issue = IssueFactory.create(
             id="test-minimal",
             title="Minimal Issue",
             status=Status.TODO,
@@ -129,9 +129,9 @@ class TestSyncStateAfterPush:
         self, state_manager, temp_roadmap_dir
     ):
         """Test that state persists and accumulates across saves."""
-        issue1 = Issue(id="1", title="Issue 1", status=Status.TODO)
-        issue2 = Issue(id="2", title="Issue 2", status=Status.CLOSED)
-        issue3 = Issue(id="3", title="Issue 3", status=Status.IN_PROGRESS)
+        issue1 = IssueFactory.create(id="1", title="Issue 1", status=Status.TODO)
+        issue2 = IssueFactory.create(id="2", title="Issue 2", status=Status.CLOSED)
+        issue3 = IssueFactory.create(id="3", title="Issue 3", status=Status.IN_PROGRESS)
 
         # Save issues sequentially (simulating multiple push operations)
         state_manager.save_base_state(issue1)
@@ -148,7 +148,7 @@ class TestSyncStateAfterPush:
         self, state_manager, temp_roadmap_dir
     ):
         """Test that saved state can be used to prevent re-syncing."""
-        issue = Issue(id="test-id", title="Test", status=Status.TODO)
+        issue = IssueFactory.create(id="test-id", title="Test", status=Status.TODO)
 
         # Save base state (simulating a successful push)
         state_manager.save_base_state(issue)

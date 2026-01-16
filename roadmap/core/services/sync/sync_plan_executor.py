@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from roadmap.adapters.sync.services.sync_linking_service import SyncLinkingService
 from roadmap.core.services.sync.sync_plan import SyncPlan
 from roadmap.core.services.sync.sync_report import SyncReport
 
@@ -223,6 +222,10 @@ class SyncPlanExecutor:
             and getattr(self.db_session, "remote_link_repo", None)
         ):
             repo = self.db_session.remote_link_repo
+
+        from roadmap.adapters.sync.services.sync_linking_service import (
+            SyncLinkingService,
+        )
 
         return SyncLinkingService.link_issue_in_database(
             repo, local_id, backend, remote_id

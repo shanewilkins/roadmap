@@ -83,10 +83,29 @@ from tests.fixtures import (
 )
 from tests.fixtures.conftest import pytest_collection_modifyitems, setup_test_logging
 
+# Import new Phase 1 fixtures
+from tests.fixtures.issue_factory import IssueFactory
+from tests.fixtures.patch_helpers import (
+    with_file_operations,
+    with_git_service,
+    with_github_client,
+    with_health_validator,
+    with_parser,
+    with_persistence,
+)
+
 __all__ = [
     # Setup
     "setup_test_logging",
     "pytest_collection_modifyitems",
+    # Phase 1 Fixtures & Utilities
+    "IssueFactory",
+    "with_file_operations",
+    "with_github_client",
+    "with_git_service",
+    "with_health_validator",
+    "with_parser",
+    "with_persistence",
     # IO fixtures
     "strip_ansi_fixture",
     "clean_output",
