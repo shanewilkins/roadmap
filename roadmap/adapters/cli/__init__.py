@@ -1,11 +1,22 @@
 """
 Modular CLI architecture for the Roadmap tool.
 
-This module provides the main CLI entry point and lazy-loads command groups
-to improve performance and maintainability.
+This module provides the main CLI entry point and implements plugin-style
+lazy-loading of command groups to improve performance and maintainability.
+
+## Architecture
+
+Commands are registered via a plugin registry that specifies:
+- Command name/group name
+- Module path where the command is defined
+- Variable name of the command in that module
+
+This allows commands to be imported only when actually invoked, reducing
+startup time and improving modularity.
 """
 
-import os
+import importlib
+from typing import Any, Callable, Dict
 
 import click
 
@@ -23,6 +34,59 @@ from roadmap.common.observability.otel_init import initialize_tracing
 from roadmap.infrastructure.coordination.core import RoadmapCore
 
 console = get_console()
+
+# Plugin registry: maps command names to their import locations
+# Format: "command_name": ("module_path", "variable_name")
+# This allows lazy loading of commands - they're only imported when invoked
+_COMMAND_REGISTRY: Dict[str, tuple[str, str]] = {
+    # Core v1.0 standalone commands
+    "init": ("roadmap.adapters.cli.core", "init"),
+    "status": ("roadmap.adapters.cli.core", "status"),
+    "health": ("roadmap.adapters.cli.core", "health"),
+    "today": ("roadmap.adapters.cli.today", "today"),
+    "cleanup": ("roadmap.infrastructure.maintenance", "cleanup"),
+    # Command groups
+    "analysis": ("roadmap.adapters.cli.analysis", "analysis"),
+    "comment": ("roadmap.adapters.cli.comment", "comment"),
+    "config": ("roadmap.adapters.cli.config", "config"),
+    "data": ("roadmap.adapters.cli.data", "data"),
+    "git": ("roadmap.adapters.cli.git", "git"),
+    "issue": ("roadmap.adapters.cli.issues", "issue"),
+    "milestone": ("roadmap.adapters.cli.milestones", "milestone"),
+    "project": ("roadmap.adapters.cli.projects", "project"),
+    "sync": ("roadmap.adapters.cli.sync", "sync"),
+    "validate-links": ("roadmap.adapters.cli.sync_validation", "validate_links"),
+}
+
+# Cache for loaded commands to avoid re-importing
+_command_cache: Dict[str, Any] = {}
+
+
+def _load_command(command_name: str) -> Any:
+    """Lazily load a command from the registry.
+    
+    Args:
+        command_name: Name of command to load
+        
+    Returns:
+        The Click command/group object
+        
+    Raises:
+        ValueError: If command not found in registry
+    """
+    if command_name in _command_cache:
+        return _command_cache[command_name]
+    
+    if command_name not in _COMMAND_REGISTRY:
+        raise ValueError(f"Unknown command: {command_name}")
+    
+    module_path, var_name = _COMMAND_REGISTRY[command_name]
+    module = importlib.import_module(module_path)
+    command = getattr(module, var_name)
+    
+    _command_cache[command_name] = command
+    return command
+
 
 # Flag to track if commands have been registered to avoid duplicate registration
 _commands_registered = False
@@ -67,6 +131,7 @@ except ImportError:
 def _get_current_user():
     """Get current user from git config."""
     if gitpython is None:
+        import os
         return os.environ.get("USER") or os.environ.get("USERNAME")
 
     try:
@@ -80,6 +145,7 @@ def _get_current_user():
         pass
 
     # Fallback to environment variables
+    import os
     return os.environ.get("USER") or os.environ.get("USERNAME")
 
 
@@ -130,78 +196,33 @@ def main(ctx: click.Context):
 
 def register_commands():
     """
-    Lazy load and register all command groups.
-    This improves startup performance by only importing modules when needed.
-
-    Note: Post-1.0 features have been archived to the 'future/' directory
-    and are no longer registered. See future/FUTURE_FEATURES.md for details.
+    Register all commands from the plugin registry.
+    
+    Commands are loaded lazily from the registry, which maps command names
+    to their module paths. This approach:
+    - Reduces startup time by deferring imports
+    - Makes it easy to add/remove commands
+    - Provides a single source of truth for command list
     """
-    # Register standalone commands
-    from .core import health, init, status
-
-    main.add_command(init)
-    main.add_command(status)
-    main.add_command(health)
-
-    # Register today command
-    from roadmap.adapters.cli.today import today
-
-    main.add_command(today)
-
-    # Register cleanup command
-    from roadmap.infrastructure.maintenance import cleanup
-
-    main.add_command(cleanup)
-
-    # Register command groups with lazy loading
-    # Core v1.0 commands only
-    from roadmap.adapters.cli.analysis import analysis
-    from roadmap.adapters.cli.comment import comment
-    from roadmap.adapters.cli.config import config
-    from roadmap.adapters.cli.data import data
-    from roadmap.adapters.cli.git import git as git_cmd
-    from roadmap.adapters.cli.issues import issue
-    from roadmap.adapters.cli.milestones import milestone
-
-    # progress commands moved to future/ (post-v1.0)
-    from roadmap.adapters.cli.projects import project
-    from roadmap.adapters.cli.sync import sync
-    from roadmap.adapters.cli.sync_validation import validate_links
-
-    main.add_command(analysis)
-    main.add_command(config)
-    main.add_command(data)
-    main.add_command(project)
-    main.add_command(issue)
-    main.add_command(milestone)
-    main.add_command(git_cmd)
-    main.add_command(comment)
-    main.add_command(sync)
-    main.add_command(validate_links)
-    # recalculate_progress and progress_reports moved to future/
-
-    # ARCHIVED TO future/ (post-1.0 features):
-    # - progress.py (progress_reports, recalculate_progress)
-    # - activity.py, broadcast, capacity_forecast, dashboard, export_data, handoff, etc.
-    # - analytics.py and cli/analytics.py
-    # - team.py (team commands) -> future/team_management.py
-    # - user.py (user commands) -> future/user_management.py
-    # - ci.py (CI commands) -> future/ci_commands.py
-    # - release.py -> future/release_management.py
-    # - timezone.py -> future/timezone_commands.py
-    # - deprecated.py -> future/deprecated_commands.py
-    #
-    # To restore a feature, move it back from future/ and add it here.
+    for command_name, _ in _COMMAND_REGISTRY.items():
+        try:
+            command = _load_command(command_name)
+            main.add_command(command, name=command_name)
+        except Exception as e:
+            console.print(
+                f"⚠️  Failed to register command '{command_name}': {e}",
+                style="yellow"
+            )
 
 
 # Register commands at module load time
 # This ensures CLI commands are available for tests and direct usage
 try:
     register_commands()
+    _commands_registered = True
 except ImportError as e:
     # If there's a circular import, commands will still be registered
     # when main() is invoked through Click's mechanism
-
     if "partially initialized" not in str(e):
         # Re-raise if it's not a circular import issue
         raise
