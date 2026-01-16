@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.adapters.github.handlers.base import GitHubAPIError
+from roadmap.common.errors.error_network import GitHubAPIError
 from roadmap.core.services.github.github_issue_client import GitHubIssueClient
 
 
