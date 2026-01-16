@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from roadmap.infrastructure.github.setup import (
+from roadmap.common.initialization.github.setup_service import (
     GitHubSetupValidator,
     GitHubTokenResolver,
 )

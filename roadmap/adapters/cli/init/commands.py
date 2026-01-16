@@ -14,6 +14,7 @@ from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectDetectionService,
 )
 from roadmap.common.constants import SyncBackend
+from roadmap.common.initialization.github import GitHubInitializationService
 from roadmap.core.services.initialization import (
     InitializationLock,
     InitializationManifest,
@@ -21,7 +22,6 @@ from roadmap.core.services.initialization import (
     InitializationWorkflow,
 )
 from roadmap.infrastructure.core import RoadmapCore
-from roadmap.infrastructure.github import GitHubInitializationService
 
 logger = get_logger()
 presenter = CoreInitializationPresenter()

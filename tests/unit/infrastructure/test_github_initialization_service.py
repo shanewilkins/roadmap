@@ -6,7 +6,7 @@ import pytest
 import yaml
 
 from roadmap.common.constants import SyncBackend
-from roadmap.infrastructure.github.setup import (
+from roadmap.common.initialization.github.setup_service import (
     GitHubConfigManager,
     GitHubInitializationService,
     show_github_setup_instructions,
@@ -87,24 +87,26 @@ class TestShowGitHubSetupInstructions:
 
     def test_show_instructions_yes_mode(self):
         """Test showing instructions in --yes mode."""
-        with patch("roadmap.infrastructure.github.setup.console"):
+        with patch("roadmap.common.initialization.github.setup_service.console"):
             result = show_github_setup_instructions("owner/repo", yes=True)
             assert result
 
     def test_show_instructions_with_confirm_yes(self):
         """Test showing instructions with user confirming."""
-        with patch("roadmap.infrastructure.github.setup.console"):
+        with patch("roadmap.common.initialization.github.setup_service.console"):
             with patch(
-                "roadmap.infrastructure.github.setup.click.confirm", return_value=True
+                "roadmap.common.initialization.github.setup_service.click.confirm",
+                return_value=True,
             ):
                 result = show_github_setup_instructions("owner/repo", yes=False)
                 assert result
 
     def test_show_instructions_with_confirm_no(self):
         """Test showing instructions with user declining."""
-        with patch("roadmap.infrastructure.github.setup.console"):
+        with patch("roadmap.common.initialization.github.setup_service.console"):
             with patch(
-                "roadmap.infrastructure.github.setup.click.confirm", return_value=False
+                "roadmap.common.initialization.github.setup_service.click.confirm",
+                return_value=False,
             ):
                 result = show_github_setup_instructions("owner/repo", yes=False)
                 assert not result
@@ -120,8 +122,13 @@ class TestGitHubInitializationServiceCoverage:
         """
         service = GitHubInitializationService(mock_core)
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient", None):
-            with patch("roadmap.infrastructure.github.setup.CredentialManager", None):
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient", None
+        ):
+            with patch(
+                "roadmap.common.initialization.github.setup_service.CredentialManager",
+                None,
+            ):
                 with pytest.raises(ImportError):
                     service._validate_setup_conditions(
                         "owner/repo", interactive=False, yes=True, token=None
@@ -135,9 +142,16 @@ class TestGitHubInitializationServiceCoverage:
         service = GitHubInitializationService(mock_core)
         service.presenter = None
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient", None):
-            with patch("roadmap.infrastructure.github.setup.CredentialManager", None):
-                with patch("roadmap.infrastructure.github.setup.console"):
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient", None
+        ):
+            with patch(
+                "roadmap.common.initialization.github.setup_service.CredentialManager",
+                None,
+            ):
+                with patch(
+                    "roadmap.common.initialization.github.setup_service.console"
+                ):
                     result = service._configure_integration(
                         "owner/repo", interactive=False, yes=True, token=None
                     )
@@ -155,7 +169,7 @@ class TestGitHubInitializationServiceCoverage:
         with patch.object(
             service, "_validate_setup_conditions", side_effect=Exception("Test error")
         ):
-            with patch("roadmap.infrastructure.github.setup.console"):
+            with patch("roadmap.common.initialization.github.setup_service.console"):
                 result = service._configure_integration(
                     "owner/repo", interactive=False, yes=True, token=None
                 )
@@ -170,14 +184,16 @@ class TestGitHubInitializationServiceCoverage:
         service = GitHubInitializationService(mock_core)
 
         with patch(
-            "roadmap.infrastructure.github.setup.GitHubTokenResolver"
+            "roadmap.common.initialization.github.setup_service.GitHubTokenResolver"
         ) as MockResolver:
             mock_resolver = MagicMock()
             MockResolver.return_value = mock_resolver
             mock_resolver.get_existing_token.return_value = None
             mock_resolver.resolve_token.return_value = (None, False)
 
-            with patch("roadmap.infrastructure.github.setup.CredentialManager"):
+            with patch(
+                "roadmap.common.initialization.github.setup_service.CredentialManager"
+            ):
                 result = service._resolve_and_test_token(None, False, True)
                 assert result is None
 
@@ -188,14 +204,16 @@ class TestGitHubInitializationServiceCoverage:
         service.presenter = presenter
 
         with patch(
-            "roadmap.infrastructure.github.setup.GitHubTokenResolver"
+            "roadmap.common.initialization.github.setup_service.GitHubTokenResolver"
         ) as MockResolver:
             mock_resolver = MagicMock()
             MockResolver.return_value = mock_resolver
             mock_resolver.get_existing_token.return_value = None
             mock_resolver.resolve_token.return_value = ("test_token", True)
 
-            with patch("roadmap.infrastructure.github.setup.CredentialManager"):
+            with patch(
+                "roadmap.common.initialization.github.setup_service.CredentialManager"
+            ):
                 result = service._resolve_and_test_token("test_token", False, True)
                 assert result == "test_token"
                 presenter.present_github_testing.assert_called_once()
@@ -207,19 +225,21 @@ class TestGitHubInitializationServiceCoverage:
         """
         service = GitHubInitializationService(mock_core)
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient") as MockClient:
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient"
+        ) as MockClient:
             mock_client = MagicMock()
             MockClient.return_value = mock_client
 
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubSetupValidator"
+                "roadmap.common.initialization.github.setup_service.GitHubSetupValidator"
             ) as MockValidator:
                 mock_validator = MagicMock()
                 MockValidator.return_value = mock_validator
                 mock_validator.validate_authentication.return_value = (False, {})
 
                 with patch(
-                    "roadmap.infrastructure.github.setup.click.confirm",
+                    "roadmap.common.initialization.github.setup_service.click.confirm",
                     return_value=True,
                 ):
                     result = service._validate_github_access(
@@ -234,19 +254,21 @@ class TestGitHubInitializationServiceCoverage:
         """
         service = GitHubInitializationService(mock_core)
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient") as MockClient:
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient"
+        ) as MockClient:
             mock_client = MagicMock()
             MockClient.return_value = mock_client
 
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubSetupValidator"
+                "roadmap.common.initialization.github.setup_service.GitHubSetupValidator"
             ) as MockValidator:
                 mock_validator = MagicMock()
                 MockValidator.return_value = mock_validator
                 mock_validator.validate_authentication.return_value = (False, {})
 
                 with patch(
-                    "roadmap.infrastructure.github.setup.click.confirm",
+                    "roadmap.common.initialization.github.setup_service.click.confirm",
                     return_value=False,
                 ):
                     result = service._validate_github_access(
@@ -261,12 +283,14 @@ class TestGitHubInitializationServiceCoverage:
         """
         service = GitHubInitializationService(mock_core)
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient") as MockClient:
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient"
+        ) as MockClient:
             mock_client = MagicMock()
             MockClient.return_value = mock_client
 
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubSetupValidator"
+                "roadmap.common.initialization.github.setup_service.GitHubSetupValidator"
             ) as MockValidator:
                 mock_validator = MagicMock()
                 MockValidator.return_value = mock_validator
@@ -274,7 +298,7 @@ class TestGitHubInitializationServiceCoverage:
                 mock_validator.validate_repository_access.return_value = (False, {})
 
                 with patch(
-                    "roadmap.infrastructure.github.setup.click.confirm",
+                    "roadmap.common.initialization.github.setup_service.click.confirm",
                     return_value=True,
                 ):
                     result = service._validate_github_access(
@@ -286,12 +310,14 @@ class TestGitHubInitializationServiceCoverage:
         """Test successful GitHub access validation."""
         service = GitHubInitializationService(mock_core)
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient") as MockClient:
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient"
+        ) as MockClient:
             mock_client = MagicMock()
             MockClient.return_value = mock_client
 
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubSetupValidator"
+                "roadmap.common.initialization.github.setup_service.GitHubSetupValidator"
             ) as MockValidator:
                 mock_validator = MagicMock()
                 MockValidator.return_value = mock_validator
@@ -311,18 +337,20 @@ class TestGitHubInitializationServiceCoverage:
         service = GitHubInitializationService(mock_core)
 
         with patch(
-            "roadmap.infrastructure.github.setup.CredentialManager"
+            "roadmap.common.initialization.github.setup_service.CredentialManager"
         ) as MockCredMgr:
             mock_cred_mgr = MagicMock()
             MockCredMgr.return_value = mock_cred_mgr
 
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubConfigManager"
+                "roadmap.common.initialization.github.setup_service.GitHubConfigManager"
             ) as MockConfigMgr:
                 mock_config_mgr = MagicMock()
                 MockConfigMgr.return_value = mock_config_mgr
 
-                with patch("roadmap.infrastructure.github.setup.console"):
+                with patch(
+                    "roadmap.common.initialization.github.setup_service.console"
+                ):
                     service._store_credentials_and_config(
                         "new_token", "old_token", "owner/repo"
                     )
@@ -339,18 +367,20 @@ class TestGitHubInitializationServiceCoverage:
         service = GitHubInitializationService(mock_core)
 
         with patch(
-            "roadmap.infrastructure.github.setup.CredentialManager"
+            "roadmap.common.initialization.github.setup_service.CredentialManager"
         ) as MockCredMgr:
             mock_cred_mgr = MagicMock()
             MockCredMgr.return_value = mock_cred_mgr
 
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubConfigManager"
+                "roadmap.common.initialization.github.setup_service.GitHubConfigManager"
             ) as MockConfigMgr:
                 mock_config_mgr = MagicMock()
                 MockConfigMgr.return_value = mock_config_mgr
 
-                with patch("roadmap.infrastructure.github.setup.console"):
+                with patch(
+                    "roadmap.common.initialization.github.setup_service.console"
+                ):
                     service._store_credentials_and_config(
                         "same_token", "same_token", "owner/repo"
                     )
@@ -369,13 +399,13 @@ class TestGitHubInitializationServiceCoverage:
         service.presenter = presenter
 
         with patch(
-            "roadmap.infrastructure.github.setup.CredentialManager"
+            "roadmap.common.initialization.github.setup_service.CredentialManager"
         ) as MockCredMgr:
             mock_cred_mgr = MagicMock()
             MockCredMgr.return_value = mock_cred_mgr
 
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubConfigManager"
+                "roadmap.common.initialization.github.setup_service.GitHubConfigManager"
             ) as MockConfigMgr:
                 mock_config_mgr = MagicMock()
                 MockConfigMgr.return_value = mock_config_mgr

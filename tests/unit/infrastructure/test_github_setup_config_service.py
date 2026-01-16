@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from roadmap.common.constants import SyncBackend
-from roadmap.infrastructure.github.setup import (
+from roadmap.common.initialization.github.setup_service import (
     GitHubConfigManager,
     GitHubInitializationService,
     GitHubTokenResolver,
@@ -162,8 +162,13 @@ class TestGitHubInitializationService:
         """Test validation fails when imports are missing."""
         service = GitHubInitializationService(mock_core)
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient", None):
-            with patch("roadmap.infrastructure.github.setup.CredentialManager", None):
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient", None
+        ):
+            with patch(
+                "roadmap.common.initialization.github.setup_service.CredentialManager",
+                None,
+            ):
                 with pytest.raises(ImportError):
                     service._validate_setup_conditions("owner/repo", False, True, None)
 
@@ -172,7 +177,7 @@ class TestGitHubInitializationService:
         service = GitHubInitializationService(mock_core)
 
         with patch(
-            "roadmap.infrastructure.github.setup.CredentialManager"
+            "roadmap.common.initialization.github.setup_service.CredentialManager"
         ) as mock_cred_class:
             mock_cred = MagicMock()
             mock_cred.get_token.return_value = None
@@ -186,10 +191,10 @@ class TestGitHubInitializationService:
         service = GitHubInitializationService(mock_core)
 
         with patch(
-            "roadmap.infrastructure.github.setup.CredentialManager"
+            "roadmap.common.initialization.github.setup_service.CredentialManager"
         ) as mock_cred_class:
             with patch(
-                "roadmap.infrastructure.github.setup.GitHubConfigManager"
+                "roadmap.common.initialization.github.setup_service.GitHubConfigManager"
             ) as mock_config_class:
                 mock_cred = MagicMock()
                 mock_cred_class.return_value = mock_cred
@@ -209,8 +214,13 @@ class TestGitHubInitializationService:
         """Test configuration handles import errors."""
         service = GitHubInitializationService(mock_core)
 
-        with patch("roadmap.infrastructure.github.setup.GitHubClient", None):
-            with patch("roadmap.infrastructure.github.setup.CredentialManager", None):
+        with patch(
+            "roadmap.common.initialization.github.setup_service.GitHubClient", None
+        ):
+            with patch(
+                "roadmap.common.initialization.github.setup_service.CredentialManager",
+                None,
+            ):
                 result = service._configure_integration("owner/repo", False, True, None)
                 assert not result
 
