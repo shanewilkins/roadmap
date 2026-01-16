@@ -14,6 +14,7 @@ from tests.fixtures.issue_factory import IssueFactory
 from tests.fixtures.mock_builders import (
     build_mock_core,
     build_mock_core_with_repo,
+    build_mock_repo,
 )
 
 
@@ -401,8 +402,7 @@ class TestSyncLinkingService:
 
     def test_link_issue_in_database_success(self):
         """Test successful database linking."""
-        mock_repo = Mock()
-        mock_repo.link_issue = Mock(return_value=None)
+        mock_repo = build_mock_repo(link_issue_return=None)
 
         result = SyncLinkingService.link_issue_in_database(
             mock_repo, "local-123", "github", 42
@@ -425,8 +425,7 @@ class TestSyncLinkingService:
 
     def test_link_issue_in_database_failure(self):
         """Test linking failure handling."""
-        mock_repo = Mock()
-        mock_repo.link_issue = Mock(side_effect=Exception("Link failed"))
+        mock_repo = build_mock_repo(link_issue_side_effect=Exception("Link failed"))
 
         result = SyncLinkingService.link_issue_in_database(
             mock_repo, "local-123", "github", 42
@@ -438,17 +437,11 @@ class TestSyncLinkingService:
         """Test finding a duplicate issue by title."""
         found_issue = IssueFactory.create(id="existing-123", title="Test Title")
 
-        mock_repo = Mock()
-        mock_repo.list = Mock(
-            return_value=[
-                IssueFactory.create(id="other-1", title="Other"),
-                found_issue,
-                IssueFactory.create(id="other-2", title="Another"),
-            ]
-        )
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core_with_repo(list_return=[
+            IssueFactory.create(id="other-1", title="Other"),
+            found_issue,
+            IssueFactory.create(id="other-2", title="Another"),
+        ])
 
         result = SyncLinkingService.find_duplicate_by_title(
             "Test Title", "github", mock_core
@@ -460,11 +453,7 @@ class TestSyncLinkingService:
         """Test that duplicate search is case-insensitive."""
         found_issue = IssueFactory.create(id="existing-123", title="Test Title")
 
-        mock_repo = Mock()
-        mock_repo.list = Mock(return_value=[found_issue])
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core_with_repo(list_return=[found_issue])
 
         result = SyncLinkingService.find_duplicate_by_title(
             "test title", "github", mock_core
@@ -474,16 +463,10 @@ class TestSyncLinkingService:
 
     def test_find_duplicate_by_title_not_found(self):
         """Test when no duplicate is found."""
-        mock_repo = Mock()
-        mock_repo.list = Mock(
-            return_value=[
-                IssueFactory.create(id="other-1", title="Other"),
-                IssueFactory.create(id="other-2", title="Another"),
-            ]
-        )
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core_with_repo(list_return=[
+            IssueFactory.create(id="other-1", title="Other"),
+            IssueFactory.create(id="other-2", title="Another"),
+        ])
 
         result = SyncLinkingService.find_duplicate_by_title(
             "Nonexistent", "github", mock_core
@@ -493,11 +476,8 @@ class TestSyncLinkingService:
 
     def test_find_duplicate_by_title_failure(self):
         """Test duplicate search failure handling."""
-        mock_repo = Mock()
-        mock_repo.list = Mock(side_effect=Exception("List failed"))
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core()
+        mock_core.issue_service.repository.list = Mock(side_effect=Exception("List failed"))
 
         result = SyncLinkingService.find_duplicate_by_title("Test", "github", mock_core)
 
@@ -505,8 +485,7 @@ class TestSyncLinkingService:
 
     def test_get_local_id_from_remote_found(self):
         """Test retrieving local ID from remote ID."""
-        mock_repo = Mock()
-        mock_repo.get_issue_uuid = Mock(return_value="local-123")
+        mock_repo = build_mock_repo(get_issue_uuid_return="local-123")
 
         result = SyncLinkingService.get_local_id_from_remote("github", 42, mock_repo)
 
@@ -517,8 +496,7 @@ class TestSyncLinkingService:
 
     def test_get_local_id_from_remote_not_found(self):
         """Test when local ID is not found."""
-        mock_repo = Mock()
-        mock_repo.get_issue_uuid = Mock(return_value=None)
+        mock_repo = build_mock_repo(get_issue_uuid_return=None)
 
         result = SyncLinkingService.get_local_id_from_remote("github", 42, mock_repo)
 
@@ -532,7 +510,7 @@ class TestSyncLinkingService:
 
     def test_get_local_id_from_remote_failure(self):
         """Test retrieval failure handling."""
-        mock_repo = Mock()
+        mock_repo = build_mock_repo()
         mock_repo.get_issue_uuid = Mock(side_effect=Exception("Lookup failed"))
 
         result = SyncLinkingService.get_local_id_from_remote("github", 42, mock_repo)
@@ -548,8 +526,7 @@ class TestSyncLinkingService:
             backend_name="github",
             backend_id=42,
         )
-        mock_repo = Mock()
-        mock_repo.link_issue = Mock(return_value=None)
+        mock_repo = build_mock_repo(link_issue_return=None)
 
         result = SyncLinkingService.link_sync_issue(sync_issue, "local-123", mock_repo)
 
@@ -574,8 +551,7 @@ class TestSyncLinkingService:
 
     def test_is_linked_true(self):
         """Test detecting a linked issue."""
-        mock_repo = Mock()
-        mock_repo.get_remote_id = Mock(return_value="42")
+        mock_repo = build_mock_repo(get_remote_id_return="42")
 
         result = SyncLinkingService.is_linked("local-123", "github", mock_repo)
 
@@ -583,8 +559,7 @@ class TestSyncLinkingService:
 
     def test_is_linked_false(self):
         """Test detecting an unlinked issue."""
-        mock_repo = Mock()
-        mock_repo.get_remote_id = Mock(return_value=None)
+        mock_repo = build_mock_repo(get_remote_id_return=None)
 
         result = SyncLinkingService.is_linked("local-123", "github", mock_repo)
 
@@ -598,7 +573,7 @@ class TestSyncLinkingService:
 
     def test_is_linked_failure(self):
         """Test is_linked failure handling."""
-        mock_repo = Mock()
+        mock_repo = build_mock_repo()
         mock_repo.get_remote_id = Mock(side_effect=Exception("Lookup failed"))
 
         result = SyncLinkingService.is_linked("local-123", "github", mock_repo)

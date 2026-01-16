@@ -26,7 +26,9 @@ def build_mock_repo(
     get_return: Any = None,
     save_side_effect: Any = None,
     link_issue_return: Any = None,
+    link_issue_side_effect: Any = None,
     get_remote_id_return: Any = None,
+    get_issue_uuid_return: Any = None,
 ) -> Mock:
     """Build a mock repository with common methods.
 
@@ -35,7 +37,9 @@ def build_mock_repo(
         get_return: Value to return from repo.get() call
         save_side_effect: Side effect for repo.save() call (exception or None)
         link_issue_return: Value to return from repo.link_issue() call
+        link_issue_side_effect: Side effect for repo.link_issue() (e.g., exception)
         get_remote_id_return: Value to return from repo.get_remote_id() call
+        get_issue_uuid_return: Value to return from repo.get_issue_uuid() call
 
     Returns:
         Configured Mock repository
@@ -57,7 +61,9 @@ def build_mock_repo(
     else:
         mock_repo.save = Mock(return_value=None)
 
-    if link_issue_return is not None:
+    if link_issue_side_effect is not None:
+        mock_repo.link_issue = Mock(side_effect=link_issue_side_effect)
+    elif link_issue_return is not None:
         mock_repo.link_issue = Mock(return_value=link_issue_return)
     else:
         mock_repo.link_issue = Mock(return_value=None)
@@ -66,6 +72,11 @@ def build_mock_repo(
         mock_repo.get_remote_id = Mock(return_value=get_remote_id_return)
     else:
         mock_repo.get_remote_id = Mock(return_value=None)
+    
+    if get_issue_uuid_return is not None:
+        mock_repo.get_issue_uuid = Mock(return_value=get_issue_uuid_return)
+    else:
+        mock_repo.get_issue_uuid = Mock(return_value=None)
 
     return mock_repo
 
@@ -107,17 +118,21 @@ def build_mock_core_with_repo(
     get_return: Any = None,
     save_side_effect: Any = None,
     link_issue_return: Any = None,
+    link_issue_side_effect: Any = None,
     get_remote_id_return: Any = None,
+    get_issue_uuid_return: Any = None,
 ) -> Mock:
     """Build a mock core with a pre-configured repository.
-
+    
     Args:
         list_return: Value for repo.list() to return
         get_return: Value for repo.get() to return
         save_side_effect: Side effect for repo.save()
         link_issue_return: Value for repo.link_issue() to return
+        link_issue_side_effect: Side effect for repo.link_issue()
         get_remote_id_return: Value for repo.get_remote_id() to return
-
+        get_issue_uuid_return: Value for repo.get_issue_uuid() to return
+        
     Returns:
         Mock core with configured repository
     """
@@ -128,13 +143,13 @@ def build_mock_core_with_repo(
         get_return=get_return,
         save_side_effect=save_side_effect,
         link_issue_return=link_issue_return,
+        link_issue_side_effect=link_issue_side_effect,
         get_remote_id_return=get_remote_id_return,
+        get_issue_uuid_return=get_issue_uuid_return,
     )
     return mock_core
 
 
-# ============================================================================
-# Service Mocks
 # ============================================================================
 
 
