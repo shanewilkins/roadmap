@@ -200,6 +200,13 @@ __all__ = [
     "project_with_all_components",
     # Validator fixtures
     "all_validators_mocked",
+    # Path and filesystem fixtures
+    "path_operations_mocked",
+    "backup_cleanup_mocked",
+    # Logging and command fixtures
+    "error_logging_logger_mocked",
+    "performance_tracking_logger_mocked",
+    "git_run_command_mocked",
 ]
 
 
@@ -253,3 +260,122 @@ def all_validators_mocked():
             git_validator=mock_git,
             db_validator=mock_db,
         )
+
+
+@pytest.fixture
+def path_operations_mocked():
+    """Fixture that mocks common pathlib.Path operations.
+
+    Returns a SimpleNamespace with mocked Path methods:
+    - exists
+    - stat
+    - unlink
+    - glob
+
+    Usage:
+        def test_something(path_operations_mocked):
+            path_operations_mocked.exists.return_value = True
+            ...
+    """
+    with (
+        patch("pathlib.Path.exists") as mock_exists,
+        patch("pathlib.Path.stat") as mock_stat,
+        patch("pathlib.Path.unlink") as mock_unlink,
+        patch("pathlib.Path.glob") as mock_glob,
+    ):
+        yield SimpleNamespace(
+            exists=mock_exists,
+            stat=mock_stat,
+            unlink=mock_unlink,
+            glob=mock_glob,
+        )
+
+
+@pytest.fixture
+def backup_cleanup_mocked(path_operations_mocked):
+    """Fixture for backup cleanup service tests.
+
+    Mocks: logger, Path operations, and backup selection method.
+
+    Returns a SimpleNamespace with:
+    - logger
+    - path_ops (pathlib.Path operations)
+    - select_backups (BackupCleanupService._select_backups_for_deletion)
+
+    Usage:
+        def test_cleanup(backup_cleanup_mocked):
+            backup_cleanup_mocked.logger.info.assert_called()
+            ...
+    """
+    from roadmap.core.services.health.backup_cleanup_service import BackupCleanupService
+
+    with (
+        patch(
+            "roadmap.core.services.health.backup_cleanup_service.logger"
+        ) as mock_logger,
+        patch.object(
+            BackupCleanupService, "_select_backups_for_deletion"
+        ) as mock_select,
+    ):
+        yield SimpleNamespace(
+            logger=mock_logger,
+            path_ops=path_operations_mocked,
+            select_backups=mock_select,
+        )
+
+
+@pytest.fixture
+def error_logging_logger_mocked():
+    """Fixture for error logging tests.
+
+    Mocks the logger in roadmap.common.logging.error_logging module.
+
+    Returns a mock logger object for assertions.
+
+    Usage:
+        def test_error_logging(error_logging_logger_mocked):
+            error_logging_logger_mocked.error.assert_called()
+            ...
+    """
+    from unittest.mock import MagicMock
+
+    mock_logger = MagicMock()
+    with patch("roadmap.common.logging.error_logging.logger", mock_logger):
+        yield mock_logger
+
+
+@pytest.fixture
+def performance_tracking_logger_mocked():
+    """Fixture for performance tracking tests.
+
+    Mocks the logger in roadmap.common.logging.performance_tracking module.
+
+    Returns a mock logger object for assertions.
+
+    Usage:
+        def test_performance(performance_tracking_logger_mocked):
+            performance_tracking_logger_mocked.debug.assert_called()
+            ...
+    """
+    from unittest.mock import MagicMock
+
+    mock_logger = MagicMock()
+    with patch("roadmap.common.logging.performance_tracking.logger", mock_logger):
+        yield mock_logger
+
+
+@pytest.fixture
+def git_run_command_mocked():
+    """Fixture for git history tests.
+
+    Mocks the _run_git_command function in roadmap.adapters.persistence.git_history module.
+
+    Returns a mock function for setting return values and making assertions.
+
+    Usage:
+        def test_git_history(git_run_command_mocked):
+            git_run_command_mocked.return_value = "abc123"
+            ...
+    """
+    with patch("roadmap.adapters.persistence.git_history._run_git_command") as mock_cmd:
+        yield mock_cmd
