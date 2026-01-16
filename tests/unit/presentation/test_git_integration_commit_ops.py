@@ -21,7 +21,7 @@ from roadmap.common.errors.exceptions import (
     GitError,
     UpdateError,
 )
-from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
+from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 

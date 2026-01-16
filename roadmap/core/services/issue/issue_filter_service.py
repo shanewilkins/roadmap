@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from roadmap.core.domain import Issue, Priority, Status
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.core import RoadmapCore  # noqa: F401
+    from roadmap.infrastructure.coordination.core import RoadmapCore  # noqa: F401
 
 
 class IssueFilterValidator:

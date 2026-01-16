@@ -18,7 +18,7 @@ from roadmap.core.domain import (
     Priority,
     Status,
 )
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.application.test_data_factory import TestDataFactory
 
 

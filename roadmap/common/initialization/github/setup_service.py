@@ -8,7 +8,7 @@ from roadmap.common.configuration.github.token_resolver import GitHubTokenResolv
 from roadmap.common.console import get_console
 from roadmap.common.constants import SyncBackend
 from roadmap.common.initialization.github.setup_validator import GitHubSetupValidator
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger()
 console = get_console()

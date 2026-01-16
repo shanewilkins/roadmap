@@ -120,11 +120,22 @@ In addition to fixing boundary violations, we identified structural redundancies
 
 - **Phase 6a**: Scan & identify (20-30 min) ✅ COMPLETE
 - **Phase 6b**: Report generation (10-15 min) ✅ COMPLETE
-- **Phase 6c**: Fix violations (1-2 hours) ✅ IN PROGRESS
-  - Layer boundary violations (1-2 hours) ✅ COMPLETE
-  - Consolidate common/shared (2-3 hours) ✅ COMPLETE
-  - **[NEW] Consolidate logging modules (2-3 hours)** - QUEUED
-  - **[NEW] Reorganize GitHub modules (4-5 hours)** - QUEUED
-  - Simplify interface methods (1-2 hours) - QUEUED
-  - Split infrastructure layer (3-4 hours) - QUEUED
+- **Phase 6b: Consolidation Tasks** ✅ ALL COMPLETE
+  - 6b.1: Consolidate common/shared layers ✅ COMPLETE
+  - 6b.2: Consolidate logging modules ✅ COMPLETE (verified consolidation, added enhanced logging)
+  - 6b.3: Reorganize GitHub modules ✅ COMPLETE (TokenResolver/ConfigManager moved to common/configuration)
+  - 6b.4: Simplify interface methods ✅ COMPLETE (consolidated push/pull methods)
+  - 6b.5: Split infrastructure layer ✅ COMPLETE
+    - Created: coordination/, git/, observability/, validation/ subdirectories
+    - Organized: 25+ files into proper concern areas
+    - Updated: 160+ imports across codebase
+- **Phase 6c**: Fix boundary violations (IN PROGRESS)
+  - Current status: **105 violations** (down from 685 baseline) - **85% reduction!** ✅
+  - Goal: <50 violations by end of phase 6c
+  - Progress: On track to exceed goal
+- **Phase 6d**: Test refactoring (PLANNED)
+  - Consolidate duplicate test directories (tests_core vs core, etc.)
+  - Restructure tests to mirror infrastructure/ subdirectories
+  - Scan test layer violations
+  - Fix critical test isolation issues
 - **Verification**: Full test suite validation (15-20 min)

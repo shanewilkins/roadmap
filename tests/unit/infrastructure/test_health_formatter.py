@@ -1,7 +1,7 @@
 """Tests for health status formatter."""
 
 from roadmap.core.domain.health import HealthStatus
-from roadmap.infrastructure.health_formatter import HealthStatusFormatter
+from roadmap.infrastructure.observability.health_formatter import HealthStatusFormatter
 
 
 class TestHealthStatusFormatter:

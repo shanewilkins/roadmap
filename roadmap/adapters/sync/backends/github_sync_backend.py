@@ -30,7 +30,7 @@ from roadmap.core.models.sync_models import (
 )
 from roadmap.core.services.github.github_conflict_detector import GitHubConflictDetector
 from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger()
 

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestGitignoreManagement:

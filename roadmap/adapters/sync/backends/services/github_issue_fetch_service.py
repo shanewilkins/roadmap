@@ -4,6 +4,7 @@ from structlog import get_logger
 
 from roadmap.adapters.sync.backends.github_backend_helpers import GitHubBackendHelpers
 from roadmap.adapters.sync.backends.github_client import GitHubClientWrapper
+from roadmap.common.logging import log_error_with_context
 from roadmap.core.models.sync_models import SyncIssue
 
 logger = get_logger()
@@ -54,25 +55,44 @@ class GitHubIssueFetchService:
 
             # Convert each GitHub issue to SyncIssue
             result = {}
+            failed_conversions = 0
             for issue_dict in issues_data:
                 try:
                     sync_issue = self._dict_to_sync_issue(issue_dict)
                     remote_id = str(issue_dict.get("number", ""))
                     result[remote_id] = sync_issue
                 except Exception as e:
-                    logger.warning(
-                        "github_issue_conversion_failed",
-                        issue_number=issue_dict.get("number"),
-                        error=str(e),
+                    failed_conversions += 1
+                    issue_number = issue_dict.get("number")
+                    log_error_with_context(
+                        e,
+                        operation="convert_github_issue_to_sync",
+                        entity_type="Issue",
+                        entity_id=str(issue_number),
+                        additional_context={
+                            "owner": owner,
+                            "repo": repo,
+                            "total_issues": len(issues_data),
+                        },
+                        include_traceback=False,
                     )
+            if failed_conversions > 0:
+                logger.warning(
+                    "github_issue_conversions_failed",
+                    total=len(issues_data),
+                    failed=failed_conversions,
+                    successful=len(result),
+                )
             return result
 
         except Exception as e:
-            logger.error(
-                "github_fetch_error",
-                error_type=type(e).__name__,
-                error=str(e),
-                suggested_action="check_connectivity",
+            log_error_with_context(
+                e,
+                operation="fetch_github_issues",
+                entity_type="Repository",
+                entity_id=f"{owner}/{repo}",
+                additional_context={"suggested_action": "check_connectivity"},
+                include_traceback=True,
             )
             return {}
 

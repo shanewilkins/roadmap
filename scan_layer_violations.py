@@ -41,6 +41,20 @@ def get_layer(path_str):
     return None
 
 
+def normalize_module_path(module_path):
+    """Normalize module paths for comparison.
+
+    Maps infrastructure subdirectory imports back to infrastructure layer.
+    E.g., roadmap.infrastructure.coordination.core -> roadmap.infrastructure
+    """
+    parts = module_path.split(".")
+    if len(parts) >= 2 and parts[0] == "roadmap" and parts[1] == "infrastructure":
+        # All infrastructure subdirectories (coordination, git, observability, validation, security, maintenance)
+        # are part of the infrastructure layer
+        return ".".join(parts[:2])
+    return module_path
+
+
 def extract_imports(file_path):
     """Extract all imports from a Python file."""
     imports = []
@@ -65,6 +79,9 @@ def extract_imports(file_path):
 
 def check_violation(from_layer, to_module):
     """Check if an import violates layer rules."""
+    # Normalize the module path
+    to_module = normalize_module_path(to_module)
+
     # Extract the top-level module from the import
     parts = to_module.split(".")
     if len(parts) < 2:

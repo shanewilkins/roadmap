@@ -9,11 +9,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from roadmap.core.domain import IssueType, Priority, Status
-from roadmap.infrastructure.issue_operations import IssueOperations
+from roadmap.infrastructure.coordination.issue_operations import IssueOperations
 
 if TYPE_CHECKING:
     from roadmap.core.domain import Issue
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class IssueCoordinator:

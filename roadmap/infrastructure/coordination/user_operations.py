@@ -37,7 +37,7 @@ class UserOperations:
 
         # Use injected validator, or fall back to vanilla validator
         if assignee_validator is None:
-            from roadmap.infrastructure.vanilla_assignee_validator import (
+            from roadmap.infrastructure.validation.vanilla_assignee_validator import (
                 VanillaAssigneeValidator,
             )
 

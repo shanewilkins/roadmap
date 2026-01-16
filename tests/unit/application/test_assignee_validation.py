@@ -10,7 +10,7 @@ from roadmap.core.services.issue.assignee_validation_service import (
     IdentitySystemValidator,
     LocalValidator,
 )
-from roadmap.infrastructure.github_validator import (
+from roadmap.infrastructure.validation.github_validator import (
     GitHubAssigneeValidator as GitHubValidator,
 )
 
@@ -97,7 +97,7 @@ class TestGitHubValidator:
         validator = GitHubValidator("token", "owner", "repo", None)
 
         with patch(
-            "roadmap.infrastructure.github_validator.GitHubClient"
+            "roadmap.infrastructure.validation.github_validator.GitHubClient"
         ) as mock_client_class:
             mock_client = Mock()
             mock_client.validate_assignee.return_value = (True, "")
@@ -112,7 +112,7 @@ class TestGitHubValidator:
         validator = GitHubValidator("token", "owner", "repo", None)
 
         with patch(
-            "roadmap.infrastructure.github_validator.GitHubClient"
+            "roadmap.infrastructure.validation.github_validator.GitHubClient"
         ) as mock_client_class:
             mock_client = Mock()
             mock_client.validate_assignee.return_value = (
@@ -130,7 +130,7 @@ class TestGitHubValidator:
         validator = GitHubValidator("token", "owner", "repo", None)
 
         with patch(
-            "roadmap.infrastructure.github_validator.GitHubClient"
+            "roadmap.infrastructure.validation.github_validator.GitHubClient"
         ) as mock_client_class:
             mock_client_class.side_effect = Exception("Network error")
 
@@ -242,7 +242,7 @@ class TestAssigneeValidationStrategy:
             )
 
             with patch(
-                "roadmap.infrastructure.github_validator.GitHubClient"
+                "roadmap.infrastructure.validation.github_validator.GitHubClient"
             ) as mock_client_class:
                 mock_client = Mock()
                 mock_client.validate_assignee.return_value = (True, "")
@@ -266,7 +266,7 @@ class TestAssigneeValidationStrategy:
             )
 
             with patch(
-                "roadmap.infrastructure.github_validator.GitHubClient"
+                "roadmap.infrastructure.validation.github_validator.GitHubClient"
             ) as mock_client_class:
                 mock_client = Mock()
                 mock_client.validate_assignee.return_value = (

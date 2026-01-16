@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from roadmap.core.services.initialization_service import ProjectInitializationService
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestProjectInitializationService:

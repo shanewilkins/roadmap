@@ -11,7 +11,7 @@ from roadmap.adapters.cli.health.fixers.duplicate_issues_fixer import (
 )
 from roadmap.adapters.cli.health.fixers.old_backups_fixer import OldBackupsFixer
 from roadmap.adapters.cli.health.fixers.orphaned_issues_fixer import OrphanedIssuesFixer
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestFixResult:

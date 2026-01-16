@@ -5,7 +5,7 @@ from rich.console import Console
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.core.domain import Issue, Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = structlog.get_logger()
 

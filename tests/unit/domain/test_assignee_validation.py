@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.common.formatters.test_assertion_helpers import assert_command_success
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 

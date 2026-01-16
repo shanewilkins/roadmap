@@ -12,7 +12,7 @@ class TestAssigneeValidation:
         """Test that validate_assignee method exists and returns expected tuple type."""
         from unittest.mock import Mock
 
-        from roadmap.infrastructure.team_coordinator import TeamCoordinator
+        from roadmap.infrastructure.coordination.team_coordinator import TeamCoordinator
 
         mock_ops = Mock()
         coordinator = TeamCoordinator(mock_ops)

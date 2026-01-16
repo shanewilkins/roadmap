@@ -13,7 +13,7 @@ import click
 
 from roadmap.adapters.cli.health.enhancer import HealthCheckDetail, HealthCheckEnhancer
 from roadmap.core.domain.health import HealthStatus
-from roadmap.infrastructure.health import HealthCheck
+from roadmap.infrastructure.observability.health import HealthCheck
 
 
 class HealthCheckFormatter:

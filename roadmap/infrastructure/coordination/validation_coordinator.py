@@ -13,7 +13,7 @@ from roadmap.common.logging import get_logger
 from roadmap.core.services import GitHubIntegrationService
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 

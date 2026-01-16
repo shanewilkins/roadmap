@@ -140,7 +140,7 @@ class CoreInitializationPresenter:
             status: HealthStatus enum value or string
             message: Optional details about the check
         """
-        from roadmap.infrastructure.health import HealthStatus
+        from roadmap.infrastructure.observability.health import HealthStatus
 
         # Convert status to string if it's an enum
         status_str = status.name if isinstance(status, HealthStatus) else str(status)
@@ -168,7 +168,7 @@ class CoreInitializationPresenter:
         Args:
             status: HealthStatus enum value or string
         """
-        from roadmap.infrastructure.health import HealthStatus
+        from roadmap.infrastructure.observability.health import HealthStatus
 
         # Convert status to string if it's an enum
         status_str = status.name if isinstance(status, HealthStatus) else str(status)

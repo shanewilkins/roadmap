@@ -17,7 +17,7 @@ This approach:
 from typing import Any
 
 from roadmap.core.domain import Issue, Milestone
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 def assert_command_success(result: Any, message: str = "") -> None:

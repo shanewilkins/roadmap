@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 from roadmap.adapters.sync.sync_retrieval_orchestrator import SyncRetrievalOrchestrator
 from roadmap.common.constants import Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestSyncDatabaseConsistency(unittest.TestCase):

@@ -29,7 +29,7 @@ from roadmap.common.services import (
 from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.project import Project
 from roadmap.core.repositories import ProjectRepository
-from roadmap.infrastructure.file_enumeration import FileEnumerationService
+from roadmap.infrastructure.validation.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
 

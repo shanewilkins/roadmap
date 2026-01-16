@@ -7,7 +7,7 @@ milestones, issues, and status summaries.
 from typing import Any
 
 from roadmap.common.logging import get_logger
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 

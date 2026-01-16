@@ -3,6 +3,7 @@
 from structlog import get_logger
 
 from roadmap.adapters.sync.backends.github_client import GitHubClientWrapper
+from roadmap.common.logging import log_error_with_context
 
 logger = get_logger()
 
@@ -38,19 +39,21 @@ class GitHubAuthenticationService:
                 try:
                     self.github_client = GitHubClientWrapper(token)
                 except (ImportError, TypeError) as e:
-                    logger.error(
-                        "github_client_init_failed",
-                        error_type=type(e).__name__,
-                        error=str(e),
-                        suggested_action="check_dependencies",
+                    log_error_with_context(
+                        e,
+                        operation="initialize_github_client",
+                        additional_context={"suggested_action": "check_dependencies"},
+                        include_traceback=True,
                     )
                     return False
                 except Exception as e:
-                    logger.error(
-                        "github_client_init_failed",
-                        error_type=type(e).__name__,
-                        error=str(e),
-                        error_classification="initialization_error",
+                    log_error_with_context(
+                        e,
+                        operation="initialize_github_client",
+                        additional_context={
+                            "error_classification": "initialization_error"
+                        },
+                        include_traceback=True,
                     )
                     return False
 
@@ -72,12 +75,15 @@ class GitHubAuthenticationService:
                 return True
             except Exception as auth_error:
                 if "401" in str(auth_error) or "403" in str(auth_error):
-                    logger.error(
-                        "github_auth_failed_credentials",
-                        error=str(auth_error),
-                        owner=owner,
-                        repo=repo,
-                        suggested_action="check_token_validity_and_permissions",
+                    log_error_with_context(
+                        auth_error,
+                        operation="github_authentication",
+                        entity_type="Repository",
+                        entity_id=f"{owner}/{repo}",
+                        additional_context={
+                            "suggested_action": "check_token_validity_and_permissions"
+                        },
+                        include_traceback=False,
                     )
                 else:
                     logger.info(
@@ -90,10 +96,10 @@ class GitHubAuthenticationService:
                 return False
 
         except Exception as e:
-            logger.error(
-                "github_auth_error",
-                error_type=type(e).__name__,
-                error=str(e),
-                suggested_action="check_backend_status",
+            log_error_with_context(
+                e,
+                operation="github_authentication",
+                additional_context={"suggested_action": "check_backend_status"},
+                include_traceback=True,
             )
             return False

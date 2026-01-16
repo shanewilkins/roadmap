@@ -9,7 +9,7 @@ import pytest
 
 from roadmap.adapters.git.git_hooks import GitHookManager
 from roadmap.core.domain import IssueType, Priority
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 @pytest.mark.integration

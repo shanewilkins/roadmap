@@ -19,7 +19,7 @@ from roadmap.common.formatters.text.operations import (
 from roadmap.core.domain import Status
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.core import RoadmapCore  # noqa: F401
+    from roadmap.infrastructure.coordination.core import RoadmapCore  # noqa: F401
 
 console = get_console()
 

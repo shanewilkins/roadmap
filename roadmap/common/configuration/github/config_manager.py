@@ -5,7 +5,7 @@ from structlog import get_logger
 
 from roadmap.common.console import get_console
 from roadmap.common.constants import SyncBackend
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger()
 console = get_console()

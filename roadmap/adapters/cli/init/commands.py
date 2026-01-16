@@ -21,7 +21,7 @@ from roadmap.core.services.initialization import (
     InitializationValidator,
     InitializationWorkflow,
 )
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger()
 presenter = CoreInitializationPresenter()

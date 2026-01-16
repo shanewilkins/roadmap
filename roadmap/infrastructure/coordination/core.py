@@ -32,18 +32,22 @@ from roadmap.core.services import (
     MilestoneService,
     ProjectService,
 )
-from roadmap.infrastructure.git_coordinator import GitCoordinator
-from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
-from roadmap.infrastructure.initialization import InitializationManager
-from roadmap.infrastructure.issue_coordinator import IssueCoordinator
-from roadmap.infrastructure.issue_operations import IssueOperations
-from roadmap.infrastructure.milestone_coordinator import MilestoneCoordinator
-from roadmap.infrastructure.milestone_operations import MilestoneOperations
-from roadmap.infrastructure.project_coordinator import ProjectCoordinator
-from roadmap.infrastructure.project_operations import ProjectOperations
-from roadmap.infrastructure.team_coordinator import TeamCoordinator
-from roadmap.infrastructure.user_operations import UserOperations
-from roadmap.infrastructure.validation_coordinator import ValidationCoordinator
+from roadmap.infrastructure.coordination.git_coordinator import GitCoordinator
+from roadmap.infrastructure.coordination.initialization import InitializationManager
+from roadmap.infrastructure.coordination.issue_coordinator import IssueCoordinator
+from roadmap.infrastructure.coordination.issue_operations import IssueOperations
+from roadmap.infrastructure.coordination.milestone_coordinator import (
+    MilestoneCoordinator,
+)
+from roadmap.infrastructure.coordination.milestone_operations import MilestoneOperations
+from roadmap.infrastructure.coordination.project_coordinator import ProjectCoordinator
+from roadmap.infrastructure.coordination.project_operations import ProjectOperations
+from roadmap.infrastructure.coordination.team_coordinator import TeamCoordinator
+from roadmap.infrastructure.coordination.user_operations import UserOperations
+from roadmap.infrastructure.coordination.validation_coordinator import (
+    ValidationCoordinator,
+)
+from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 
 
 class RoadmapCore:
@@ -189,10 +193,10 @@ class RoadmapCore:
             An assignee validator instance (implements AssigneeValidator protocol)
         """
         from roadmap.common.configuration import ConfigManager
-        from roadmap.infrastructure.github_assignee_validator import (
+        from roadmap.infrastructure.validation.github_assignee_validator import (
             GitHubAssigneeValidator,
         )
-        from roadmap.infrastructure.vanilla_assignee_validator import (
+        from roadmap.infrastructure.validation.vanilla_assignee_validator import (
             VanillaAssigneeValidator,
         )
 

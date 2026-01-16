@@ -4,7 +4,7 @@ from structlog import get_logger
 
 from roadmap.core.domain.issue import Issue, Status
 from roadmap.core.models.sync_models import SyncIssue
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger()
 

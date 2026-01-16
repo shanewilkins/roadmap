@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from roadmap.adapters.persistence.repositories.remote_link_repository import (  # noqa: F401
         RemoteLinkRepository,
     )
-    from roadmap.infrastructure.core import RoadmapCore  # noqa: F401
+    from roadmap.infrastructure.coordination.core import RoadmapCore  # noqa: F401
 
 logger = get_logger(__name__)
 

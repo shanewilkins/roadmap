@@ -7,7 +7,7 @@ import pytest
 
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
 from roadmap.adapters.git.hook_script_generator import HookContentGenerator
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestGitHooksManagerFix:
@@ -30,7 +30,10 @@ class TestGitHooksManagerFix:
                 "from roadmap.adapters.git.git_hooks_manager import GitHookManager"
                 in content
             )
-            assert "from roadmap.infrastructure.core import RoadmapCore" in content
+            assert (
+                "from roadmap.infrastructure.coordination.core import RoadmapCore"
+                in content
+            )
 
             # Verify it has proper method name (underscores instead of hyphens)
             handler_name = hook_name.replace("-", "_")

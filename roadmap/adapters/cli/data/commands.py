@@ -73,7 +73,7 @@ def _get_core(ctx: click.Context):
 
     if core is None:
         try:
-            from roadmap.infrastructure.core import RoadmapCore
+            from roadmap.infrastructure.coordination.core import RoadmapCore
 
             core = RoadmapCore.find_existing_roadmap()
         except Exception:

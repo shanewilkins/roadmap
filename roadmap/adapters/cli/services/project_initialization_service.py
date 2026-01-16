@@ -17,7 +17,7 @@ from roadmap.core.services.project_init import (
     ProjectDetectionService,
     ProjectTemplateService,
 )
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 __all__ = [
     "ProjectDetectionService",

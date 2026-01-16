@@ -7,7 +7,7 @@ from typing import Any
 
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.core.domain import Issue, Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 from .git import GitCommit, GitIntegration
 from .git_hooks_manager import GitHookManager

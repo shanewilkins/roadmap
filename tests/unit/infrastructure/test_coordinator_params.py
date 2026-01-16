@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from roadmap.core.domain import IssueType, Priority
-from roadmap.infrastructure.coordinator_params import (
+from roadmap.infrastructure.coordination.coordinator_params import (
     IssueCreateParams,
     IssueListParams,
     IssueUpdateParams,

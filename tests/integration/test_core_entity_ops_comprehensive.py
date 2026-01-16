@@ -18,7 +18,7 @@ from roadmap.core.domain import (
     Priority,
     Status,
 )
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
 
@@ -266,7 +266,9 @@ class TestRoadmapCoreTeamManagement:
             for issue in assigned_issues:
                 assert issue.assignee == assignee
 
-    @patch("roadmap.infrastructure.user_operations.UserOperations.get_current_user")
+    @patch(
+        "roadmap.infrastructure.coordination.user_operations.UserOperations.get_current_user"
+    )
     def test_get_my_issues(self, mock_current_user, core):
         """Test getting issues assigned to current user."""
         mock_current_user.return_value = "alice@example.com"
@@ -290,7 +292,9 @@ class TestRoadmapCoreTeamManagement:
         assert "My Issue 1" in my_titles
         assert "My Issue 2" in my_titles
 
-    @patch("roadmap.infrastructure.team_coordinator.TeamCoordinator.get_current_user")
+    @patch(
+        "roadmap.infrastructure.coordination.team_coordinator.TeamCoordinator.get_current_user"
+    )
     def test_get_my_issues_no_current_user(self, mock_current_user, core):
         """Test getting my issues when current user is unknown."""
         mock_current_user.return_value = None

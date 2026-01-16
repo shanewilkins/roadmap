@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from roadmap.core.domain import MilestoneStatus, Priority, Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestRoadmapCore:

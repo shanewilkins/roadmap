@@ -25,7 +25,7 @@ from roadmap.core.repositories import (
     MilestoneRepository,
     ProjectRepository,
 )
-from roadmap.infrastructure.file_enumeration import FileEnumerationService
+from roadmap.infrastructure.validation.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
 

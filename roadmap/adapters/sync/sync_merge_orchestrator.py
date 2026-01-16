@@ -32,7 +32,7 @@ from roadmap.core.services.sync.sync_plan import (
 from roadmap.core.services.sync.sync_report import SyncReport
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 

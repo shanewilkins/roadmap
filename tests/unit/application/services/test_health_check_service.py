@@ -6,7 +6,7 @@ import pytest
 
 from roadmap.core.domain.health import HealthStatus
 from roadmap.core.services.health.health_check_service import HealthCheckService
-from roadmap.infrastructure.health import HealthCheck
+from roadmap.infrastructure.observability.health import HealthCheck
 
 
 class TestHealthCheckService:

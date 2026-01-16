@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from roadmap.adapters.git.git import GitBranch, GitIntegration
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 pytestmark = pytest.mark.unit
 

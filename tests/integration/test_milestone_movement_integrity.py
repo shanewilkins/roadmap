@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.core.domain import Priority, Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestIssueMilestoneMovement:

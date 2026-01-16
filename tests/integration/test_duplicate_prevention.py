@@ -11,7 +11,7 @@ import pytest
 
 from roadmap.common.constants import MilestoneStatus, ProjectStatus, Status
 from roadmap.core.domain import Priority
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestIssueDuplicatePrevention:

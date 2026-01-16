@@ -4,7 +4,7 @@ import uuid
 
 from roadmap.common.logging import get_logger
 from roadmap.core.services.project_init.template import ProjectTemplateService
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 

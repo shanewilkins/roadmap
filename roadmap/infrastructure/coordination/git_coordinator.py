@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, Any
 
 from roadmap.adapters.git.git import GitIntegration
 from roadmap.core.domain import Issue
-from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
+from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class GitCoordinator:

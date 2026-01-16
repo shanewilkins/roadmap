@@ -14,7 +14,7 @@ from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.common.formatters.test_assertion_helpers import (
     assert_command_success,
     assert_issue_created,

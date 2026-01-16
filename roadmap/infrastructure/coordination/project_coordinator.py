@@ -9,10 +9,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from roadmap.core.domain import Project
-from roadmap.infrastructure.project_operations import ProjectOperations
+from roadmap.infrastructure.coordination.project_operations import ProjectOperations
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class ProjectCoordinator:

@@ -5,7 +5,7 @@ Issue filtering logic extracted from complex CLI command.
 from datetime import UTC
 
 from roadmap.core.domain import Issue, Priority, Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class IssueFilterValidator:

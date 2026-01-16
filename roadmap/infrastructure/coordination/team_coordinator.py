@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING
 from roadmap.common.errors.error_standards import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 from roadmap.core.domain import Issue
-from roadmap.infrastructure.user_operations import UserOperations
+from roadmap.infrastructure.coordination.user_operations import UserOperations
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 

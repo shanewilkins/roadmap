@@ -301,7 +301,9 @@ class AssigneeValidationStrategy:
 
         token, owner, repo = self.github_config
         # Import here to avoid hard dependency on infrastructure
-        from roadmap.infrastructure.github_validator import GitHubAssigneeValidator
+        from roadmap.infrastructure.validation.github_validator import (
+            GitHubAssigneeValidator,
+        )
 
         github_validator = GitHubAssigneeValidator(
             token, owner, repo, self.cached_members

@@ -9,7 +9,7 @@ from pathlib import Path
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import OperationError
 from roadmap.common.security import create_secure_directory
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 from .utils import InitializationManifest
 

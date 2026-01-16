@@ -20,7 +20,7 @@ from roadmap.common.errors.exceptions import RoadmapException
 from roadmap.common.observability.otel_init import initialize_tracing
 
 # Import core classes for backward compatibility with tests
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 console = get_console()
 

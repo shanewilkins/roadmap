@@ -2,7 +2,7 @@
 
 from roadmap.common.logging import get_logger
 from roadmap.core.services.validator_base import BaseValidator, HealthStatus
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 

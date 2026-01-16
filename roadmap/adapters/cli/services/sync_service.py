@@ -10,7 +10,7 @@ import structlog
 
 from roadmap.adapters.sync.backend_factory import get_sync_backend as _get_backend
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 log = structlog.get_logger()
 

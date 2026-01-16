@@ -9,7 +9,7 @@ from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
 from roadmap.common.constants import Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.factories import IssueBuilder, MilestoneBuilder
 from tests.unit.common.formatters.test_ansi_utilities import strip_ansi
 from tests.unit.common.formatters.test_data_factory import TestDataFactory

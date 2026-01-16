@@ -146,7 +146,7 @@ def cli_runner_with_init(cli_runner):
             ],
         )
         assert result.exit_code == 0, f"Failed to initialize roadmap: {result.output}"
-        from roadmap.infrastructure.core import RoadmapCore
+        from roadmap.infrastructure.coordination.core import RoadmapCore
 
         core = RoadmapCore()
         yield cli_runner, core

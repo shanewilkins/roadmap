@@ -10,7 +10,7 @@ import pytest
 
 from roadmap.common.constants import Status
 from roadmap.core.domain import Priority
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestArchiveDuplicatePrevention:

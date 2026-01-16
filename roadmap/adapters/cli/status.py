@@ -22,7 +22,7 @@ from roadmap.adapters.cli.services.project_status_service import (
     MilestoneProgressService,
     StatusDataService,
 )
-from roadmap.infrastructure.health import HealthCheck
+from roadmap.infrastructure.observability.health import HealthCheck
 
 logger = get_logger()
 presenter = CoreInitializationPresenter()

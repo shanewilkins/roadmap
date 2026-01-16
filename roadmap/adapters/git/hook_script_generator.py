@@ -23,7 +23,7 @@ import sys
 sys.path.insert(0, '.')
 try:
     from roadmap.adapters.git.git_hooks_manager import GitHookManager
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
     core = RoadmapCore()
     hook_manager = GitHookManager(core)
     getattr(hook_manager, "{handler_name}")()

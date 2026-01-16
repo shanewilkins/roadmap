@@ -15,7 +15,7 @@ import pytest
 
 from roadmap.common.utils.timezone_utils import TimezoneManager
 from roadmap.core.domain import Issue, Priority, Status
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class TestTimezoneManager:

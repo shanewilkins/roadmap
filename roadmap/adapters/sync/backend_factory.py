@@ -9,7 +9,7 @@ from roadmap.adapters.sync.backends.vanilla_git_sync_backend import (
     VanillaGitSyncBackend,
 )
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 log = structlog.get_logger()
 

@@ -17,7 +17,7 @@ from roadmap.core.services.initialization import (
     InitializationWorkflow,
 )
 from roadmap.core.services.project_init.detection import ProjectDetectionService
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 

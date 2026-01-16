@@ -10,7 +10,7 @@ These replace the original monolithic HealthCheck class to improve separation of
 
 from roadmap.common.logging import get_logger
 from roadmap.core.domain.health import HealthStatus
-from roadmap.infrastructure.specialized_health_checkers import (
+from roadmap.infrastructure.observability.specialized_health_checkers import (
     DataHealthChecker,
     DirectoryHealthChecker,
     EntityHealthChecker,

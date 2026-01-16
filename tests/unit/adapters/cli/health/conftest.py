@@ -2,7 +2,7 @@
 
 import pytest
 
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 @pytest.fixture

@@ -10,13 +10,13 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from roadmap.core.domain import Milestone
-from roadmap.infrastructure.milestone_consistency_validator import (
+from roadmap.infrastructure.coordination.milestone_operations import MilestoneOperations
+from roadmap.infrastructure.validation.milestone_consistency_validator import (
     MilestoneConsistencyValidator,
 )
-from roadmap.infrastructure.milestone_operations import MilestoneOperations
 
 if TYPE_CHECKING:
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class MilestoneCoordinator:

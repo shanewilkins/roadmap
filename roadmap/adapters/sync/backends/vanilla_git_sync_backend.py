@@ -22,7 +22,7 @@ from roadmap.core.models.sync_models import (
     SyncMilestone,
     SyncProject,
 )
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 
 class VanillaGitSyncBackend:

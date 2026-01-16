@@ -13,7 +13,7 @@ from click.testing import CliRunner
 from roadmap.adapters.cli import main
 from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
 from roadmap.core.domain import IssueType, Priority
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.common.formatters.test_assertion_helpers import assert_command_success
 
 
@@ -347,8 +347,8 @@ def roadmap_with_git_core():
 
         # Refresh git integration after git repo is created
         from roadmap.adapters.git.git import GitIntegration
-        from roadmap.infrastructure.git_coordinator import GitCoordinator
-        from roadmap.infrastructure.git_integration_ops import GitIntegrationOps
+        from roadmap.infrastructure.coordination.git_coordinator import GitCoordinator
+        from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 
         git_integration = GitIntegration(core.root_path)
         git_ops = GitIntegrationOps(git_integration, core)

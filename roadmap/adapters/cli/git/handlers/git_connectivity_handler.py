@@ -3,7 +3,7 @@
 import structlog
 from rich.console import Console
 
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = structlog.get_logger()
 

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.common.console import get_console
-from roadmap.infrastructure.core import RoadmapCore
+from roadmap.infrastructure.coordination.core import RoadmapCore
 
 console = get_console()
 

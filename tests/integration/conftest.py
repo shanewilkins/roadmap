@@ -64,7 +64,7 @@ def initialized_roadmap_repo(real_git_repo):
     Returns:
         Path to initialized roadmap repository
     """
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
     original_cwd = os.getcwd()
     os.chdir(real_git_repo)
@@ -185,7 +185,7 @@ def integration_environment(tmp_path):
         )
 
         # Initialize roadmap
-        from roadmap.infrastructure.core import RoadmapCore
+        from roadmap.infrastructure.coordination.core import RoadmapCore
 
         core = RoadmapCore()
         core.initialize()
@@ -207,7 +207,7 @@ def cli_with_initialized_roadmap(temp_workspace):
     Returns:
         Tuple of (runner, workspace_path)
     """
-    from roadmap.infrastructure.core import RoadmapCore
+    from roadmap.infrastructure.coordination.core import RoadmapCore
 
     original_cwd = os.getcwd()
     os.chdir(temp_workspace)

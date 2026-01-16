@@ -4,6 +4,7 @@ from structlog import get_logger
 
 from roadmap.adapters.sync.backends.github_backend_helpers import GitHubBackendHelpers
 from roadmap.adapters.sync.backends.github_client import GitHubClientWrapper
+from roadmap.common.logging import log_error_with_context
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces import SyncReport
 
@@ -96,11 +97,17 @@ class GitHubIssuePushService:
             return result is not None
 
         except Exception as e:
-            logger.error(
-                "github_push_error",
-                issue_id=local_issue.id,
-                error_type=type(e).__name__,
-                error=str(e),
+            log_error_with_context(
+                e,
+                operation="push_github_issue",
+                entity_type="Issue",
+                entity_id=local_issue.id,
+                additional_context={
+                    "owner": owner,
+                    "repo": repo,
+                    "title": local_issue.title,
+                },
+                include_traceback=True,
             )
             return False
 
@@ -114,29 +121,37 @@ class GitHubIssuePushService:
             SyncReport with push results
         """
         report = SyncReport()
-        pushed_count = 0
+        logger.info("push_issues_starting", issue_count=len(local_issues))
         errors = []
 
         for issue in local_issues:
             try:
                 if self.push_issue(issue):
                     report.pushed.append(issue.id)
-                    pushed_count += 1
                 else:
                     error_msg = f"Failed to push issue {issue.id}"
                     report.errors[issue.id] = error_msg
                     errors.append(error_msg)
             except Exception as e:
-                logger.error(
-                    "github_push_issue_exception",
-                    issue_id=issue.id,
-                    error=str(e),
-                )
                 error_msg = f"Error pushing issue {issue.id}: {str(e)}"
                 report.errors[issue.id] = error_msg
                 errors.append(error_msg)
+                log_error_with_context(
+                    e,
+                    operation="push_issues",
+                    entity_type="Issue",
+                    entity_id=issue.id,
+                    additional_context={"issue_count": len(local_issues)},
+                    include_traceback=True,
+                )
 
         if errors:
             report.error = "; ".join(errors)
 
+        logger.info(
+            "push_issues_completed",
+            total=len(local_issues),
+            pushed=len(report.pushed),
+            failed=len(report.errors),
+        )
         return report

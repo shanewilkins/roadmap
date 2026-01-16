@@ -4,6 +4,7 @@ from typing import Any
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
+from roadmap.common.logging import log_error_with_context
 from roadmap.core.interfaces import SyncReport
 
 logger = get_logger()
@@ -17,7 +18,10 @@ class GitHubSyncOps:
         report = SyncReport()
 
         if not local_issues:
+            logger.info("push_issues_empty")
             return report
+
+        logger.info("push_issues_starting", issue_count=len(local_issues))
 
         with Progress(
             SpinnerColumn(),
@@ -41,12 +45,23 @@ class GitHubSyncOps:
                         if future.result():
                             report.pushed.append(issue.id)
                             status = "✓"
+                            logger.debug("push_issue_succeeded", issue_id=issue.id)
                         else:
-                            report.errors[issue.id] = "Failed to push issue"
+                            error_msg = "Failed to push issue"
+                            report.errors[issue.id] = error_msg
                             status = "✗"
+                            logger.warning("push_issue_failed", issue_id=issue.id)
                     except Exception as e:
-                        report.errors[issue.id] = str(e)
+                        error_msg = str(e)
+                        report.errors[issue.id] = error_msg
                         status = "✗"
+                        log_error_with_context(
+                            e,
+                            operation="push_issue_concurrent",
+                            entity_type="Issue",
+                            entity_id=issue.id,
+                            include_traceback=False,
+                        )
                     finally:
                         progress.update(
                             task,
@@ -54,6 +69,12 @@ class GitHubSyncOps:
                         )
                         progress.advance(task)
 
+        logger.info(
+            "push_issues_completed",
+            total=len(local_issues),
+            pushed=len(report.pushed),
+            failed=len(report.errors),
+        )
         return report
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
@@ -91,15 +112,23 @@ class GitHubSyncOps:
                             if success:
                                 successful_pulls.append(issue_id)
                                 status = "✓"
+                                logger.debug("pull_issue_succeeded", issue_id=issue_id)
                             else:
-                                failed_pulls[issue_id] = "Pull failed"
+                                error_msg = "Pull failed"
+                                failed_pulls[issue_id] = error_msg
                                 status = "✗"
+                                logger.warning("pull_issue_failed", issue_id=issue_id)
                         except Exception as e:
-                            logger.warning(
-                                "pull_issue_exception", issue_id=issue_id, error=str(e)
-                            )
-                            failed_pulls[issue_id] = str(e)
+                            error_msg = str(e)
+                            failed_pulls[issue_id] = error_msg
                             status = "✗"
+                            log_error_with_context(
+                                e,
+                                operation="pull_issue_concurrent",
+                                entity_type="Issue",
+                                entity_id=issue_id,
+                                include_traceback=False,
+                            )
                         finally:
                             progress.update(
                                 task,
