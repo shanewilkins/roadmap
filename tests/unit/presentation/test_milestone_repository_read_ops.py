@@ -21,6 +21,7 @@ from roadmap.adapters.persistence.repositories.milestone_repository import (
     MilestoneRepository,
 )
 from roadmap.common.errors.exceptions import UpdateError
+from tests.fixtures.mock_builders import build_mock_database_connection
 
 
 class TestMilestoneRepositoryGet:
@@ -28,13 +29,10 @@ class TestMilestoneRepositoryGet:
 
     def test_get_existing_milestone(self):
         """Test successful retrieval of existing milestone."""
-        mock_get_connection = Mock()
         mock_row = {"id": "m1", "title": "v1.0", "status": "open"}
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = mock_row
-        mock_conn.execute.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            fetch_result=mock_row
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
@@ -45,12 +43,9 @@ class TestMilestoneRepositoryGet:
 
     def test_get_nonexistent_milestone(self):
         """Test retrieval of non-existent milestone returns None."""
-        mock_get_connection = Mock()
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = None
-        mock_conn.execute.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            fetch_result=None
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
@@ -60,12 +55,9 @@ class TestMilestoneRepositoryGet:
 
     def test_get_with_none_id(self):
         """Test get with None as milestone_id."""
-        mock_get_connection = Mock()
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = None
-        mock_conn.execute.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            fetch_result=None
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
@@ -85,10 +77,9 @@ class TestMilestoneRepositoryGet:
 
     def test_get_sql_execution_error(self):
         """Test get when SQL execution fails."""
-        mock_get_connection = Mock()
-        mock_conn = Mock()
-        mock_conn.execute.side_effect = sqlite3.OperationalError("no such table")
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            execute_side_effect=sqlite3.OperationalError("no such table")
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
@@ -97,12 +88,9 @@ class TestMilestoneRepositoryGet:
 
     def test_get_with_empty_string_id(self):
         """Test get with empty string as milestone_id."""
-        mock_get_connection = Mock()
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = None
-        mock_conn.execute.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            fetch_result=None
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
@@ -112,12 +100,9 @@ class TestMilestoneRepositoryGet:
 
     def test_get_with_very_long_id(self):
         """Test get with extremely long milestone_id."""
-        mock_get_connection = Mock()
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = None
-        mock_conn.execute.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            fetch_result=None
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
@@ -128,14 +113,11 @@ class TestMilestoneRepositoryGet:
 
     def test_get_row_conversion_error(self):
         """Test get when row dict conversion fails."""
-        mock_get_connection = Mock()
-        mock_conn = Mock()
         # Create a mock row that cannot be converted to dict
         mock_row = Mock(spec=[])  # Empty spec prevents attribute access
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = mock_row
-        mock_conn.execute.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            fetch_result=mock_row
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 
@@ -167,12 +149,9 @@ class TestMilestoneRepositoryEdgeCases:
 
     def test_get_with_integer_id(self):
         """Test get with integer ID (type mismatch)."""
-        mock_get_connection = Mock()
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = None
-        mock_conn.execute.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection, mock_conn = build_mock_database_connection(
+            fetch_result=None
+        )
 
         repo = MilestoneRepository(mock_get_connection, Mock())
 

@@ -72,7 +72,7 @@ def build_mock_repo(
         mock_repo.get_remote_id = Mock(return_value=get_remote_id_return)
     else:
         mock_repo.get_remote_id = Mock(return_value=None)
-    
+
     if get_issue_uuid_return is not None:
         mock_repo.get_issue_uuid = Mock(return_value=get_issue_uuid_return)
     else:
@@ -123,7 +123,7 @@ def build_mock_core_with_repo(
     get_issue_uuid_return: Any = None,
 ) -> Mock:
     """Build a mock core with a pre-configured repository.
-    
+
     Args:
         list_return: Value for repo.list() to return
         get_return: Value for repo.get() to return
@@ -132,7 +132,7 @@ def build_mock_core_with_repo(
         link_issue_side_effect: Side effect for repo.link_issue()
         get_remote_id_return: Value for repo.get_remote_id() to return
         get_issue_uuid_return: Value for repo.get_issue_uuid() to return
-        
+
     Returns:
         Mock core with configured repository
     """
@@ -231,6 +231,48 @@ def build_mock_directory(files: list[str] | None = None) -> Mock:
     mock_dir.glob = Mock(return_value=files)
 
     return mock_dir
+
+
+# ============================================================================
+# Database Mocks
+# ============================================================================
+
+
+def build_mock_database_connection(
+    fetch_result: Any = None,
+    execute_side_effect: Any = None,
+) -> tuple[Mock, Mock]:
+    """Build a mock database connection with cursor.
+
+    Args:
+        fetch_result: Value for cursor.fetchone() to return
+        execute_side_effect: Side effect for connection.execute()
+
+    Returns:
+        Tuple of (mock_get_connection function, mock_connection)
+    """
+    mock_cursor = Mock()
+    if fetch_result is not None:
+        mock_cursor.fetchone.return_value = fetch_result
+        mock_cursor.fetchall.return_value = (
+            [fetch_result] if not isinstance(fetch_result, list) else fetch_result
+        )
+    else:
+        mock_cursor.fetchone.return_value = None
+        mock_cursor.fetchall.return_value = []
+
+    mock_cursor.execute = Mock(return_value=mock_cursor)
+
+    mock_conn = Mock()
+    if execute_side_effect is not None:
+        mock_conn.execute = Mock(side_effect=execute_side_effect)
+    else:
+        mock_conn.execute = Mock(return_value=mock_cursor)
+    mock_conn.cursor.return_value = mock_cursor
+
+    mock_get_connection = Mock(return_value=mock_conn)
+
+    return mock_get_connection, mock_conn
 
 
 # ============================================================================
