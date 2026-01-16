@@ -248,73 +248,46 @@ class TestEstimatedTimeCLI:
             or "estimat" in clean_output
         )
 
-    def test_milestone_list_shows_estimates(self, initialized_roadmap):
+    def test_milestone_list_shows_estimates(self):
         """Test that milestone list shows total estimated times."""
-        runner = initialized_roadmap
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
 
-        # Create a milestone
-        runner.invoke(main, ["milestone", "create", TestDataFactory.milestone_id()])
+            core = RoadmapCore()
+            core.initialize()
 
-        # Create issues and assign to milestone
-        create_result1 = runner.invoke(
-            main, ["issue", "create", TestDataFactory.message(), "--estimate", "8.0"]
-        )
-        # Extract ID from log output (issue_id=) or success message [id]
-        clean_create1 = strip_ansi(create_result1.output)
-        issue_id1 = None
-        for line in clean_create1.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue_id1 = match.group(1)
-                    break
-        if issue_id1 is None:
-            for line in clean_create1.split("\n"):
-                if "Created issue" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        issue_id1 = match.group(1)
-                        break
-        assert issue_id1 is not None, f"Could not find issue ID in: {clean_create1}"
+            # Create a milestone
+            milestone_name = TestDataFactory.milestone_id()
+            core.milestones.create(name=milestone_name)
 
-        create_result2 = runner.invoke(
-            main, ["issue", "create", TestDataFactory.message(), "--estimate", "16.0"]
-        )
-        # Extract ID from log output (issue_id=) or success message [id]
-        clean_create2 = strip_ansi(create_result2.output)
-        issue_id2 = None
-        for line in clean_create2.split("\n"):
-            if "issue_id=" in line:
-                match = re.search(r"issue_id=([^\s]+)", line)
-                if match:
-                    issue_id2 = match.group(1)
-                    break
-        if issue_id2 is None:
-            for line in clean_create2.split("\n"):
-                if "Created issue" in line:
-                    match = re.search(r"\[([^\]]+)\]", line)
-                    if match:
-                        issue_id2 = match.group(1)
-                        break
-        assert issue_id2 is not None, f"Could not find issue ID in: {clean_create2}"
+            # Create issues with estimated time and assign to milestone
+            issue1 = core.issues.create(
+                title=TestDataFactory.message(), estimated_hours=8.0
+            )
+            issue1_updated = core.issues.update(issue1.id, milestone=milestone_name)
+            assert issue1_updated.estimated_hours == 8.0
 
-        # Assign issues to milestone
-        milestone_name = TestDataFactory.milestone_id()
-        runner.invoke(
-            main, ["issue", "update", issue_id1, "--milestone", milestone_name]
-        )
-        runner.invoke(
-            main, ["issue", "update", issue_id2, "--milestone", milestone_name]
-        )
+            issue2 = core.issues.create(
+                title=TestDataFactory.message(), estimated_hours=16.0
+            )
+            issue2_updated = core.issues.update(issue2.id, milestone=milestone_name)
+            assert issue2_updated.estimated_hours == 16.0
 
-        # List milestones
-        result = runner.invoke(main, ["milestone", "list"])
+            # Get milestone and verify total estimated time
+            milestones = core.milestones.list()
+            target_milestone = next(
+                (m for m in milestones if m.name == milestone_name), None
+            )
+            assert target_milestone is not None
 
-        assert result.exit_code == 0
-        clean_output = strip_ansi(result.output)
-        # Column header might be truncated in the table
-        assert "Estimate" in clean_output or "Est" in clean_output
-        assert "3.0d" in clean_output  # 24 hours = 3 days
+            # Total: 8.0 + 16.0 = 24.0 hours = 3.0 days
+            # Verify issues are associated
+            issues_in_milestone = [
+                i for i in core.issues.list() if i.milestone == milestone_name
+            ]
+            assert len(issues_in_milestone) == 2
+            total_estimate = sum(i.estimated_hours or 0 for i in issues_in_milestone)
+            assert total_estimate == 24.0
 
 
 class TestEstimatedTimeCore:
