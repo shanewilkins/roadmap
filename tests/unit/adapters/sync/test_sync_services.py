@@ -11,6 +11,10 @@ from roadmap.adapters.sync.services import (
 from roadmap.common.constants import Priority, Status
 from roadmap.core.models.sync_models import SyncIssue
 from tests.fixtures.issue_factory import IssueFactory
+from tests.fixtures.mock_builders import (
+    build_mock_core,
+    build_mock_core_with_repo,
+)
 
 
 class TestIssueStateService:
@@ -267,11 +271,8 @@ class TestIssuePersistenceService:
     def test_save_issue_success(self):
         """Test successful issue save."""
         issue = IssueFactory.create(id="local-123", title="Test")
-        mock_repo = Mock()
-        mock_repo.save = Mock(return_value=None)
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core(has_repository=True)
+        mock_repo = mock_core.issue_service.repository
 
         result = IssuePersistenceService.save_issue(issue, mock_core)
 
@@ -281,11 +282,7 @@ class TestIssuePersistenceService:
     def test_save_issue_failure(self):
         """Test issue save failure handling."""
         issue = IssueFactory.create(id="local-123", title="Test")
-        mock_repo = Mock()
-        mock_repo.save = Mock(side_effect=Exception("Save failed"))
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core_with_repo(save_side_effect=Exception("Save failed"))
 
         result = IssuePersistenceService.save_issue(issue, mock_core)
 
@@ -294,11 +291,8 @@ class TestIssuePersistenceService:
     def test_get_issue_from_repo_found(self):
         """Test retrieving an existing issue from repo."""
         issue = IssueFactory.create(id="local-123", title="Test")
-        mock_repo = Mock()
-        mock_repo.get = Mock(return_value=issue)
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core_with_repo(get_return=issue)
+        mock_repo = mock_core.issue_service.repository
 
         result = IssuePersistenceService.get_issue_from_repo("local-123", mock_core)
 
@@ -307,11 +301,7 @@ class TestIssuePersistenceService:
 
     def test_get_issue_from_repo_not_found(self):
         """Test retrieving a non-existent issue from repo."""
-        mock_repo = Mock()
-        mock_repo.get = Mock(return_value=None)
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core_with_repo(get_return=None)
 
         result = IssuePersistenceService.get_issue_from_repo("nonexistent", mock_core)
 
@@ -319,11 +309,10 @@ class TestIssuePersistenceService:
 
     def test_get_issue_from_repo_failure(self):
         """Test issue retrieval failure handling."""
-        mock_repo = Mock()
-        mock_repo.get = Mock(side_effect=Exception("Repo error"))
-
-        mock_core = Mock()
-        mock_core.issue_service.repository = mock_repo
+        mock_core = build_mock_core_with_repo(get_return=None)
+        mock_core.issue_service.repository.get = Mock(
+            side_effect=Exception("Repo error")
+        )
 
         result = IssuePersistenceService.get_issue_from_repo("local-123", mock_core)
 

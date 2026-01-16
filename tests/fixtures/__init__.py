@@ -57,6 +57,17 @@ from .io import (
     strip_ansi_fixture,
 )
 from .issue_factory import IssueFactory
+from .mock_builders import (
+    CoreMockBuilder,
+    build_mock_core,
+    build_mock_core_with_repo,
+    build_mock_directory,
+    build_mock_file_handle,
+    build_mock_git_service,
+    build_mock_github_service,
+    build_mock_repo,
+    build_mock_sync_service,
+)
 from .mocks import (
     cli_test_data,
     fast_mock_core,
@@ -125,6 +136,16 @@ __all__ = [
     "with_parser",
     "with_persistence",
     "with_file_and_git",
+    # Phase 2 Mock Builders
+    "build_mock_repo",
+    "build_mock_core",
+    "build_mock_core_with_repo",
+    "build_mock_git_service",
+    "build_mock_github_service",
+    "build_mock_sync_service",
+    "build_mock_file_handle",
+    "build_mock_directory",
+    "CoreMockBuilder",
     # IO fixtures
     "strip_ansi_fixture",
     "clean_output",

@@ -85,6 +85,17 @@ from tests.fixtures.conftest import pytest_collection_modifyitems, setup_test_lo
 
 # Import new Phase 1 fixtures
 from tests.fixtures.issue_factory import IssueFactory
+from tests.fixtures.mock_builders import (
+    CoreMockBuilder,
+    build_mock_core,
+    build_mock_core_with_repo,
+    build_mock_directory,
+    build_mock_file_handle,
+    build_mock_git_service,
+    build_mock_github_service,
+    build_mock_repo,
+    build_mock_sync_service,
+)
 from tests.fixtures.patch_helpers import (
     with_file_operations,
     with_git_service,
@@ -106,6 +117,16 @@ __all__ = [
     "with_health_validator",
     "with_parser",
     "with_persistence",
+    # Phase 2 Mock Builders
+    "build_mock_repo",
+    "build_mock_core",
+    "build_mock_core_with_repo",
+    "build_mock_git_service",
+    "build_mock_github_service",
+    "build_mock_sync_service",
+    "build_mock_file_handle",
+    "build_mock_directory",
+    "CoreMockBuilder",
     # IO fixtures
     "strip_ansi_fixture",
     "clean_output",

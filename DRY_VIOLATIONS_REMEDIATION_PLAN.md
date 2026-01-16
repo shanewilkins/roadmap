@@ -291,6 +291,93 @@ def test_something(tmp_path):
 
 ---
 
+### 2.4 Reorganize `tests/unit/core/services/` Directory Structure
+
+**Goal**: Reduce root-level test files from 30+ to ~6-8 for better navigation
+
+**Strategy**: Create subdirectories by service domain
+
+**Subdirectories to create**:
+- `baseline/` - Baseline state management (4 files)
+- `github/` - GitHub integration (4 files)
+- `comment/` - Comment service (3 files)
+- `health/` - Entity health/validation/repair (5 files)
+- `git/` - Git-related services (2 files)
+- `issue/` - Issue services (2 files)
+- `milestone/` - Milestone services (1 file)
+- `analysis/` - Analysis/analysis services (4 files)
+- `backup/` - Backup/cleanup services (2 files)
+
+**Result**: ~27 files organized into 9 logical subdirectories, leaving 6-8 general service tests at root
+
+**Estimated Effort**: 30 minutes - 1 hour (mostly moving files, no code changes)
+**Impact**: Improved test discoverability and maintainability
+
+---
+
+### 2.4.5 Reorganize `tests/integration/` Directory Structure
+
+**Goal**: Reduce root-level test files from 59 to ~4 for significantly better navigation
+
+**Current State**: 59 test files at root level, very difficult to navigate
+
+**Strategy**: Create 12 logical subdirectories by feature/domain
+
+**Subdirectories to create**:
+- `cli/` - CLI command tests (6 files)
+- `core/` - Core RoadmapCore operations (10 files)
+- `git/` - Git integration (7 files)
+- `github/` - GitHub sync backend (5 files)
+- `git_hooks/` - Git hooks workflow (7 files)
+- `archive/` - Archive/restore operations (3 files)
+- `lifecycle/` - Issue/Milestone lifecycle (4 files)
+- `workflows/` - Cross-domain workflows (4 files)
+- `data/` - Data/filtering/constraints (4 files)
+- `init/` - Initialization/onboarding (2 files)
+- `view/` - View/presentation tests (3 files)
+- `performance/` - Performance/stress tests (1 file)
+
+**Files Remaining at Root**: ~4 general integration tests
+
+**Estimated Effort**: 1-2 hours (file moves + import path updates)
+**Impact**: Improved test navigation and discoverability
+**Note**: No DRY violations to eliminate (organizational improvement)
+
+---
+
+### 2.4.9 Investigate Top-Level Test Directory Consolidation
+
+**Goal**: Determine optimal organization for top-level test directories and resolve potential redundancy
+
+**Investigation Points**:
+
+1. **`tests/common/` vs `tests/test_common/`**
+   - Do both directories exist?
+   - What's the purpose/content of each?
+   - Should one absorb the other?
+   - Recommendation: Consolidate or eliminate duplicate
+
+2. **`tests/core/` vs `tests/test_core/`**
+   - Do both directories exist?
+   - Is one nested integration tests and one unit tests?
+   - Should one absorb the other?
+   - Could content move into `tests/unit/core/`?
+   - Recommendation: Consolidate or clarify purpose
+
+3. **`tests/test_cli/` naming inconsistency**
+   - Why prefix with `test_` when it's already in tests/ directory?
+   - Option A: Rename to `tests/cli/` for consistency
+   - Option B: Is this already covered by `tests/integration/cli/`?
+   - Option C: Move content into `tests/integration/cli/` and remove redundancy
+   - Recommendation: Align with overall structure
+
+**Estimated Effort**: 30-45 minutes (investigation + decisions)
+**Outcome**: Clear consolidation plan to eliminate directory redundancy
+
+**Follow-up**: Phase 2.4.10 (TBD based on findings)
+
+---
+
 ## Phase 3: Integration & Cleanup (Session 3)
 
 ### 3.1 Consolidate RoadmapCore Initialization (26 occurrences)
