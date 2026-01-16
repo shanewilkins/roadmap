@@ -1,21 +1,25 @@
-# Codebase Structure (Phase 5 - Post-Refactoring)
+# Codebase Structure (Phase 5+ - Post-Refactoring)
 
-This document describes the Python codebase organization following Phase 5 refactoring (Code Readability & Organization).
+This document describes the Python codebase organization and file structure following Phase 5 refactoring (Code Readability & Organization).
+
+**For architecture principles, dependency rules, and layer design rationale, see [ARCHITECTURE_LAYERS.md](./ARCHITECTURE_LAYERS.md).**
 
 ## Overview
 
-The Roadmap CLI tool follows a **layered architecture** with clear separation of concerns:
+The Roadmap CLI tool follows a **6-layer architecture** with clear separation of concerns:
 
 ```
-Adapters Layer (CLI)
+Presentation Layer (Adapters/CLI)
         ↓
-Application Layer (Core)
+Adapters Layer (External integrations)
         ↓
-Domain Layer (Models, Interfaces)
+Infrastructure Layer (Coordination, cross-cutting)
         ↓
-Infrastructure Layer (Persistence, GitHub)
+Core Layer (Business logic)
         ↓
-Shared Layer (Common utilities, formatting)
+Common Layer (Shared utilities)
+        ↓
+Domain Layer (Pure business entities)
 ```
 
 ## Directory Structure
@@ -25,17 +29,24 @@ Shared Layer (Common utilities, formatting)
 ```
 roadmap/
 ├── __init__.py                    # Package initialization, exports
-├── adapters/                      # ⭐ Presentation Layer - CLI interface
-├── core/                          # ⭐ Application/Business Logic Layer
-├── common/                        # ⭐ Cross-cutting utilities
-└── shared/                        # ⭐ Shared infrastructure & formatting
+├── adapters/                      # ⭐ Adapters Layer - CLI, GitHub client, Persistence
+├── core/                          # ⭐ Core Layer - Business logic & services
+├── common/                        # ⭐ Common Layer - Shared utilities & errors
+├── infrastructure/                # ⭐ Infrastructure Layer - Coordination & cross-cutting
+└── settings.py                    # Global settings
 ```
 
 ---
 
 ## Layer 1: Adapters (`/roadmap/adapters/`)
 
-**Purpose**: Translates CLI user input to domain operations.
+**Purpose**: Bridges between external systems (CLI, GitHub, persistence) and core business logic.
+
+**Subdirectories**:
+- `cli/` - Click command-line interface structure
+- `sync/` - GitHub synchronization adapters  
+- `persistence/` - File storage and serialization adapters
+- `github/` - GitHub API client adapters
 
 ```
 adapters/
@@ -324,59 +335,56 @@ common/
 
 ---
 
-## Layer 4: Shared (`/roadmap/shared/`)
+## Layer 4: Infrastructure (`/roadmap/infrastructure/`)
 
-**Purpose**: Infrastructure layer for persistence, formatting, and external integrations.
+**Purpose**: Cross-cutting coordination layer, orchestration, and system integration.
+
+**Subdirectories** (organized by concern):
+- `coordination/` - RoadmapCore, domain coordinators, operations orchestration
+- `git/` - Git operations and integration
+- `observability/` - Health checks, metrics, monitoring
+- `validation/` - Data validation, consistency checks
+- `security/` - Credential management, secrets handling
+- `maintenance/` - Cleanup, repairs, backups
 
 ```
-shared/
-├── __init__.py
+infrastructure/
+├── __init__.py                 # Re-exports primary coordinators
 │
-├── persistence.py            # File persistence implementation
-├── file_locking.py          # File locking mechanism
-├── github_client.py         # GitHub API client
-├── credentials.py           # Credential management
-│
-├── formatters/              # Output formatting layer (~30 formatters)
+├── coordination/               # Orchestration layer
 │   ├── __init__.py
-│   │
-│   ├── export/             # Export formatters
-│   │   ├── __init__.py
-│   │   ├── json_formatter.py
-│   │   ├── csv_formatter.py
-│   │   └── yaml_formatter.py
-│   │
-│   ├── kanban/             # Kanban board formatters
-│   │   ├── __init__.py
-│   │   └── kanban_formatter.py
-│   │
-│   ├── output/             # Output formatters
-│   │   ├── __init__.py
-│   │   ├── ansi_formatter.py
-│   │   ├── markdown_formatter.py
-│   │   └── text_formatter.py
-│   │
-│   ├── tables/             # Table formatters
-│   │   ├── __init__.py
-│   │   ├── table_formatter_base.py (was base_table_formatter.py)
-│   │   ├── issue_table_formatter.py
-│   │   ├── milestone_table_formatter.py
-│   │   └── kanban_table_formatter.py
-│   │
-│   └── text/               # Text processing
-│       ├── __init__.py
-│       ├── text_wrapper.py
-│       └── syntax_highlighter.py
+│   ├── core.py                # RoadmapCore - main coordinator
+│   ├── git_coordinator.py     # Git coordination
+│   ├── issue_coordinator.py   # Issue operations
+│   ├── issue_operations.py    # Issue operation execution
+│   ├── initialization.py      # Initialization management
+│   └── [other coordinators]
 │
-├── git_hooks/              # Git hooks integration
+├── git/                       # Git integration operations
 │   ├── __init__.py
-│   └── hook_manager.py
+│   ├── git_integration_ops.py
+│   └── [git operations]
 │
-├── otel_init.py           # OpenTelemetry initialization
-└── observability/         # Observability utilities
+├── observability/             # Health & monitoring
+│   ├── __init__.py
+│   ├── health.py             # Health checks
+│   ├── specialized_health_checkers.py
+│   ├── formatters.py         # Health report formatters
+│   └── instrumentation.py    # Metrics & tracing
+│
+├── validation/                # Data validation
+│   ├── __init__.py
+│   ├── data_validator.py
+│   └── [validators]
+│
+├── security/                  # Credential & secrets management
+│   ├── __init__.py
+│   ├── credentials.py
+│   └── [security utilities]
+│
+└── maintenance/              # Cleanup & repairs
     ├── __init__.py
-    ├── metrics.py
-    └── tracing.py
+    └── cleanup.py
 ```
 
 ---
@@ -417,7 +425,7 @@ Within layers, use relative imports:
 # roadmap/core/services/issue/issue_service.py
 from ..validators import validator_base
 from ...common.models import IssueModel
-from ...shared.persistence import save_to_disk
+from ...common.errors import ValidationError
 ```
 
 ---
@@ -461,16 +469,15 @@ from ...shared.persistence import save_to_disk
 ### 1. Layering
 
 ```
-Adapters (CLI)
-    ↓
-Core (Business Logic)
-    ↓
-Common (Shared Utilities)
-    ↓
-Shared (Infrastructure)
+Adapters → Core → Common ↔ Infrastructure
+Domain (no dependencies)
 ```
 
-No layer should depend on layers above it.
+- Adapters import from Core
+- Core imports from Common and Infrastructure
+- Infrastructure coordinates between Core and Adapters
+- Common has no upward dependencies
+- Domain is isolated (no imports from application)
 
 ### 2. Dependency Injection
 
@@ -493,6 +500,21 @@ class PersistenceInterface(ABC):
     def save(self, data: Dict) -> None:
         pass
 ```
+
+### 4. Single Responsibility
+
+Each service handles one concern:
+- `IssueService` → Issue CRUD operations
+- `SyncPlanExecutor` → Executing sync plans
+- `HealthCheckService` → System health checks
+
+---
+
+## Documentation Reference
+
+For layer design principles, dependency rules, and testing strategy, see:
+- **[ARCHITECTURE_LAYERS.md](./ARCHITECTURE_LAYERS.md)** - Layer design, dependencies, testing
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Data model and file format
 
 ### 4. Single Responsibility
 
