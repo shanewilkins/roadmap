@@ -10,7 +10,13 @@ Fixture organization:
   tests/fixtures/performance.py - Performance-optimized fixtures
   tests/fixtures/github.py      - GitHub integration fixtures
   tests/fixtures/assertions.py  - Assertion helpers
+  tests/fixtures/validators.py  - Infrastructure validator fixtures
 """
+
+from types import SimpleNamespace
+from unittest.mock import patch
+
+import pytest
 
 # Import setup function from fixtures
 # Import all fixtures from fixtures module - they're automatically available to tests
@@ -192,4 +198,58 @@ __all__ = [
     "project_description_content",
     "milestone_with_all_components",
     "project_with_all_components",
+    # Validator fixtures
+    "all_validators_mocked",
 ]
+
+
+# ============================================================================
+# Infrastructure Validator Fixtures (Phase 2.2)
+# ============================================================================
+# These fixtures consolidate multi-decorator patterns used for mocking
+# validators across test files (40+ @patch.object decorators reduced)
+
+
+@pytest.fixture
+def all_validators_mocked():
+    """Fixture that mocks all 6 infrastructure validators.
+
+    Returns a SimpleNamespace with attributes for each mocked validator:
+    - roadmap_validator
+    - state_validator
+    - issues_validator
+    - milestones_validator
+    - git_validator
+    - db_validator
+
+    Usage:
+        def test_something(all_validators_mocked):
+            all_validators_mocked.roadmap_validator.return_value = (HealthStatus.HEALTHY, "OK")
+            ...
+    """
+    from roadmap.core.services.health.infrastructure_validator_service import (
+        DatabaseIntegrityValidator,
+        GitRepositoryValidator,
+        IssuesDirectoryValidator,
+        MilestonesDirectoryValidator,
+        RoadmapDirectoryValidator,
+        StateFileValidator,
+    )
+
+    with (
+        patch.object(RoadmapDirectoryValidator, "check") as mock_roadmap,
+        patch.object(StateFileValidator, "check") as mock_state,
+        patch.object(IssuesDirectoryValidator, "check") as mock_issues,
+        patch.object(MilestonesDirectoryValidator, "check") as mock_milestones,
+        patch.object(GitRepositoryValidator, "check") as mock_git,
+        patch.object(DatabaseIntegrityValidator, "check") as mock_db,
+    ):
+        # Return as SimpleNamespace for clean attribute access
+        yield SimpleNamespace(
+            roadmap_validator=mock_roadmap,
+            state_validator=mock_state,
+            issues_validator=mock_issues,
+            milestones_validator=mock_milestones,
+            git_validator=mock_git,
+            db_validator=mock_db,
+        )

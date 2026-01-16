@@ -22,8 +22,6 @@ from roadmap.core.services.health.infrastructure_validator_service import (
     InfrastructureValidator,
     IssuesDirectoryValidator,
     MilestonesDirectoryValidator,
-    RoadmapDirectoryValidator,
-    StateFileValidator,
 )
 
 
@@ -214,28 +212,32 @@ class TestDatabaseIntegrityValidator:
 class TestInfrastructureValidator:
     """Tests for InfrastructureValidator orchestrator."""
 
-    @patch.object(RoadmapDirectoryValidator, "check")
-    @patch.object(StateFileValidator, "check")
-    @patch.object(IssuesDirectoryValidator, "check")
-    @patch.object(MilestonesDirectoryValidator, "check")
-    @patch.object(GitRepositoryValidator, "check")
-    @patch.object(DatabaseIntegrityValidator, "check")
-    def test_run_all_infrastructure_checks_all_healthy(
-        self,
-        mock_db_check,
-        mock_git_check,
-        mock_milestones_check,
-        mock_issues_check,
-        mock_state_check,
-        mock_roadmap_check,
-    ):
+    def test_run_all_infrastructure_checks_all_healthy(self, all_validators_mocked):
         """Test all checks passing."""
-        mock_roadmap_check.return_value = (HealthStatus.HEALTHY, "Roadmap OK")
-        mock_state_check.return_value = (HealthStatus.HEALTHY, "State OK")
-        mock_issues_check.return_value = (HealthStatus.HEALTHY, "Issues OK")
-        mock_milestones_check.return_value = (HealthStatus.HEALTHY, "Milestones OK")
-        mock_git_check.return_value = (HealthStatus.HEALTHY, "Git OK")
-        mock_db_check.return_value = (HealthStatus.HEALTHY, "DB OK")
+        all_validators_mocked.roadmap_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Roadmap OK",
+        )
+        all_validators_mocked.state_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "State OK",
+        )
+        all_validators_mocked.issues_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Issues OK",
+        )
+        all_validators_mocked.milestones_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Milestones OK",
+        )
+        all_validators_mocked.git_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Git OK",
+        )
+        all_validators_mocked.db_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "DB OK",
+        )
 
         validator = InfrastructureValidator()
         checks = validator.run_all_infrastructure_checks()
@@ -247,28 +249,32 @@ class TestInfrastructureValidator:
         assert checks["git_repository"] == (HealthStatus.HEALTHY, "Git OK")
         assert checks["database_integrity"] == (HealthStatus.HEALTHY, "DB OK")
 
-    @patch.object(RoadmapDirectoryValidator, "check")
-    @patch.object(StateFileValidator, "check")
-    @patch.object(IssuesDirectoryValidator, "check")
-    @patch.object(MilestonesDirectoryValidator, "check")
-    @patch.object(GitRepositoryValidator, "check")
-    @patch.object(DatabaseIntegrityValidator, "check")
-    def test_run_all_infrastructure_checks_mixed_status(
-        self,
-        mock_db_check,
-        mock_git_check,
-        mock_milestones_check,
-        mock_issues_check,
-        mock_state_check,
-        mock_roadmap_check,
-    ):
+    def test_run_all_infrastructure_checks_mixed_status(self, all_validators_mocked):
         """Test checks with mixed status."""
-        mock_roadmap_check.return_value = (HealthStatus.HEALTHY, "Roadmap OK")
-        mock_state_check.return_value = (HealthStatus.DEGRADED, "State degraded")
-        mock_issues_check.return_value = (HealthStatus.HEALTHY, "Issues OK")
-        mock_milestones_check.return_value = (HealthStatus.UNHEALTHY, "Milestones FAIL")
-        mock_git_check.return_value = (HealthStatus.HEALTHY, "Git OK")
-        mock_db_check.return_value = (HealthStatus.HEALTHY, "DB OK")
+        all_validators_mocked.roadmap_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Roadmap OK",
+        )
+        all_validators_mocked.state_validator.return_value = (
+            HealthStatus.DEGRADED,
+            "State degraded",
+        )
+        all_validators_mocked.issues_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Issues OK",
+        )
+        all_validators_mocked.milestones_validator.return_value = (
+            HealthStatus.UNHEALTHY,
+            "Milestones FAIL",
+        )
+        all_validators_mocked.git_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Git OK",
+        )
+        all_validators_mocked.db_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "DB OK",
+        )
 
         validator = InfrastructureValidator()
         checks = validator.run_all_infrastructure_checks()
@@ -280,28 +286,31 @@ class TestInfrastructureValidator:
         assert checks["git_repository"][0] == HealthStatus.HEALTHY
         assert checks["database_integrity"][0] == HealthStatus.HEALTHY
 
-    @patch.object(RoadmapDirectoryValidator, "check")
-    @patch.object(StateFileValidator, "check")
-    @patch.object(IssuesDirectoryValidator, "check")
-    @patch.object(MilestonesDirectoryValidator, "check")
-    @patch.object(GitRepositoryValidator, "check")
-    @patch.object(DatabaseIntegrityValidator, "check")
-    def test_run_all_infrastructure_checks_exception(
-        self,
-        mock_db_check,
-        mock_git_check,
-        mock_milestones_check,
-        mock_issues_check,
-        mock_state_check,
-        mock_roadmap_check,
-    ):
+    def test_run_all_infrastructure_checks_exception(self, all_validators_mocked):
         """Test exception during checks."""
-        mock_roadmap_check.side_effect = Exception("Unexpected error")
-        mock_state_check.return_value = (HealthStatus.HEALTHY, "State OK")
-        mock_issues_check.return_value = (HealthStatus.HEALTHY, "Issues OK")
-        mock_milestones_check.return_value = (HealthStatus.HEALTHY, "Milestones OK")
-        mock_git_check.return_value = (HealthStatus.HEALTHY, "Git OK")
-        mock_db_check.return_value = (HealthStatus.HEALTHY, "DB OK")
+        all_validators_mocked.roadmap_validator.side_effect = Exception(
+            "Unexpected error"
+        )
+        all_validators_mocked.state_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "State OK",
+        )
+        all_validators_mocked.issues_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Issues OK",
+        )
+        all_validators_mocked.milestones_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Milestones OK",
+        )
+        all_validators_mocked.git_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "Git OK",
+        )
+        all_validators_mocked.db_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "DB OK",
+        )
 
         validator = InfrastructureValidator()
         checks = validator.run_all_infrastructure_checks()
@@ -309,28 +318,26 @@ class TestInfrastructureValidator:
         assert "error" in checks
         assert checks["error"][0] == HealthStatus.UNHEALTHY
 
-    @patch.object(RoadmapDirectoryValidator, "check")
-    @patch.object(StateFileValidator, "check")
-    @patch.object(IssuesDirectoryValidator, "check")
-    @patch.object(MilestonesDirectoryValidator, "check")
-    @patch.object(GitRepositoryValidator, "check")
-    @patch.object(DatabaseIntegrityValidator, "check")
-    def test_get_overall_status_all_healthy(
-        self,
-        mock_db_check,
-        mock_git_check,
-        mock_milestones_check,
-        mock_issues_check,
-        mock_state_check,
-        mock_roadmap_check,
-    ):
+    def test_get_overall_status_all_healthy(self, all_validators_mocked):
         """Test overall status with all healthy."""
-        mock_roadmap_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_state_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_issues_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_milestones_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_git_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_db_check.return_value = (HealthStatus.HEALTHY, "OK")
+        all_validators_mocked.roadmap_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.state_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.issues_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.milestones_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.git_validator.return_value = (HealthStatus.HEALTHY, "OK")
+        all_validators_mocked.db_validator.return_value = (HealthStatus.HEALTHY, "OK")
 
         validator = InfrastructureValidator()
         checks = validator.run_all_infrastructure_checks()
@@ -338,28 +345,26 @@ class TestInfrastructureValidator:
 
         assert overall_status == HealthStatus.HEALTHY
 
-    @patch.object(RoadmapDirectoryValidator, "check")
-    @patch.object(StateFileValidator, "check")
-    @patch.object(IssuesDirectoryValidator, "check")
-    @patch.object(MilestonesDirectoryValidator, "check")
-    @patch.object(GitRepositoryValidator, "check")
-    @patch.object(DatabaseIntegrityValidator, "check")
-    def test_get_overall_status_degraded(
-        self,
-        mock_db_check,
-        mock_git_check,
-        mock_milestones_check,
-        mock_issues_check,
-        mock_state_check,
-        mock_roadmap_check,
-    ):
+    def test_get_overall_status_degraded(self, all_validators_mocked):
         """Test overall status with degraded."""
-        mock_roadmap_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_state_check.return_value = (HealthStatus.DEGRADED, "Degraded")
-        mock_issues_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_milestones_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_git_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_db_check.return_value = (HealthStatus.HEALTHY, "OK")
+        all_validators_mocked.roadmap_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.state_validator.return_value = (
+            HealthStatus.DEGRADED,
+            "Degraded",
+        )
+        all_validators_mocked.issues_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.milestones_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.git_validator.return_value = (HealthStatus.HEALTHY, "OK")
+        all_validators_mocked.db_validator.return_value = (HealthStatus.HEALTHY, "OK")
 
         validator = InfrastructureValidator()
         checks = validator.run_all_infrastructure_checks()
@@ -367,28 +372,26 @@ class TestInfrastructureValidator:
 
         assert overall_status == HealthStatus.DEGRADED
 
-    @patch.object(RoadmapDirectoryValidator, "check")
-    @patch.object(StateFileValidator, "check")
-    @patch.object(IssuesDirectoryValidator, "check")
-    @patch.object(MilestonesDirectoryValidator, "check")
-    @patch.object(GitRepositoryValidator, "check")
-    @patch.object(DatabaseIntegrityValidator, "check")
-    def test_get_overall_status_unhealthy(
-        self,
-        mock_db_check,
-        mock_git_check,
-        mock_milestones_check,
-        mock_issues_check,
-        mock_state_check,
-        mock_roadmap_check,
-    ):
+    def test_get_overall_status_unhealthy(self, all_validators_mocked):
         """Test overall status with unhealthy."""
-        mock_roadmap_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_state_check.return_value = (HealthStatus.UNHEALTHY, "Failed")
-        mock_issues_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_milestones_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_git_check.return_value = (HealthStatus.HEALTHY, "OK")
-        mock_db_check.return_value = (HealthStatus.HEALTHY, "OK")
+        all_validators_mocked.roadmap_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.state_validator.return_value = (
+            HealthStatus.UNHEALTHY,
+            "Failed",
+        )
+        all_validators_mocked.issues_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.milestones_validator.return_value = (
+            HealthStatus.HEALTHY,
+            "OK",
+        )
+        all_validators_mocked.git_validator.return_value = (HealthStatus.HEALTHY, "OK")
+        all_validators_mocked.db_validator.return_value = (HealthStatus.HEALTHY, "OK")
 
         validator = InfrastructureValidator()
         checks = validator.run_all_infrastructure_checks()
