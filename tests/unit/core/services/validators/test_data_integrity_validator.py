@@ -1,7 +1,6 @@
 """Tests for data integrity validator."""
 
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import pytest
@@ -21,27 +20,27 @@ class TestDataIntegrityValidator:
         assert hasattr(DataIntegrityValidator, "scan_for_data_integrity_issues")
         assert hasattr(DataIntegrityValidator, "check_data_integrity")
 
-    def test_scan_nonexistent_directory(self):
+    def test_scan_nonexistent_directory(self, temp_dir_context):
         """Test scanning when issues directory doesn't exist."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir) / "nonexistent"
 
             result = DataIntegrityValidator.scan_for_data_integrity_issues(issues_dir)
 
             assert result == {"malformed_files": []}
 
-    def test_scan_empty_directory(self):
+    def test_scan_empty_directory(self, temp_dir_context):
         """Test scanning empty directory."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
 
             result = DataIntegrityValidator.scan_for_data_integrity_issues(issues_dir)
 
             assert result == {"malformed_files": []}
 
-    def test_scan_skips_backup_files(self):
+    def test_scan_skips_backup_files(self, temp_dir_context):
         """Test that backup files are skipped."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
             backup_file = issues_dir / "issue.md.backup"
             backup_file.write_text("backup content")
@@ -50,9 +49,9 @@ class TestDataIntegrityValidator:
 
             assert result == {"malformed_files": []}
 
-    def test_scan_detects_malformed_files(self):
+    def test_scan_detects_malformed_files(self, temp_dir_context):
         """Test detection of malformed files."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create a file that will fail parsing
@@ -70,9 +69,9 @@ class TestDataIntegrityValidator:
             assert len(result["malformed_files"]) == 1
             assert "a1b2c3d4-Bad.md" in result["malformed_files"][0]
 
-    def test_scan_handles_parsing_errors_gracefully(self):
+    def test_scan_handles_parsing_errors_gracefully(self, temp_dir_context):
         """Test that parsing errors don't stop scanning."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create multiple files
@@ -96,9 +95,9 @@ class TestDataIntegrityValidator:
             # Only one file should be malformed
             assert len(result["malformed_files"]) == 1
 
-    def test_scan_nested_directories(self):
+    def test_scan_nested_directories(self, temp_dir_context):
         """Test scanning nested directory structure."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create nested structure
@@ -120,9 +119,9 @@ class TestDataIntegrityValidator:
             # Should find files in nested directories
             assert result == {"malformed_files": []}
 
-    def test_scan_returns_relative_paths(self):
+    def test_scan_returns_relative_paths(self, temp_dir_context):
         """Test that malformed file paths are relative."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
             subdir = issues_dir / "v1.0"
             subdir.mkdir()
@@ -142,9 +141,9 @@ class TestDataIntegrityValidator:
             assert "v1.0" in result["malformed_files"][0]
             assert str(issues_dir) not in result["malformed_files"][0]
 
-    def test_scan_multiple_malformed_files(self):
+    def test_scan_multiple_malformed_files(self, temp_dir_context):
         """Test detection of multiple malformed files."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create multiple malformed files
@@ -170,9 +169,9 @@ class TestDataIntegrityValidator:
             assert status == HealthStatus.HEALTHY
             assert "not initialized" in message.lower()
 
-    def test_check_data_integrity_no_issues(self):
+    def test_check_data_integrity_no_issues(self, temp_dir_context):
         """Test health check when no issues found."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             with (
                 patch("pathlib.Path.exists", return_value=True),
                 patch(
@@ -216,9 +215,9 @@ class TestDataIntegrityValidator:
             assert status == HealthStatus.UNHEALTHY
             assert "error" in message.lower()
 
-    def test_scan_result_structure(self):
+    def test_scan_result_structure(self, temp_dir_context):
         """Test that scan result has expected structure."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
 
             result = DataIntegrityValidator.scan_for_data_integrity_issues(issues_dir)
@@ -235,9 +234,9 @@ class TestDataIntegrityValidator:
             "issue-with-dashes.md",
         ],
     )
-    def test_scan_various_filenames(self, filename):
+    def test_scan_various_filenames(self, filename, temp_dir_context):
         """Test scanning files with various names."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
             issue_file = issues_dir / filename
             issue_file.write_text("content")
@@ -251,9 +250,9 @@ class TestDataIntegrityValidator:
 
             assert result == {"malformed_files": []}
 
-    def test_scan_empty_files(self):
+    def test_scan_empty_files(self, temp_dir_context):
         """Test scanning empty files."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
             empty_file = issues_dir / "a1b2c3d4-Empty.md"
             empty_file.write_text("")

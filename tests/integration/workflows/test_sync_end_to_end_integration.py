@@ -8,7 +8,6 @@ Tests comprehensive sync scenarios using:
 """
 
 import json
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -70,9 +69,9 @@ MULTI_ISSUE_SCENARIOS = [
 
 
 @pytest.fixture
-def temp_roadmap_dir():
+def temp_roadmap_dir(temp_dir_context):
     """Temporary roadmap directory for state persistence tests."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with temp_dir_context() as tmpdir:
         roadmap_dir = Path(tmpdir) / ".roadmap"
         roadmap_dir.mkdir()
         yield roadmap_dir

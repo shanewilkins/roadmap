@@ -45,9 +45,9 @@ class TestFileSynchronizer:
         return FileSynchronizer(db_manager._get_connection, db_manager.transaction)
 
     @pytest.fixture
-    def temp_data_dir(self):
+    def temp_data_dir(self, temp_dir_context):
         """Create a temporary data directory."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             yield Path(tmpdir)
 
     def test_initialization(self, file_synchronizer):

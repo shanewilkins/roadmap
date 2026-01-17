@@ -9,7 +9,6 @@ Tests cover:
 
 from datetime import UTC, datetime
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any
 
 from roadmap.adapters.persistence.parser.frontmatter import FrontmatterParser
@@ -119,9 +118,9 @@ class TestFrontmatterSyncMetadata:
 class TestIssueSyncMetadata:
     """Test sync_metadata handling in IssueParser."""
 
-    def test_load_sync_metadata_from_file(self):
+    def test_load_sync_metadata_from_file(self, temp_dir_context):
         """Test loading sync_metadata from an issue file."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             # Create a file with sync_metadata
@@ -148,9 +147,9 @@ class TestIssueSyncMetadata:
             assert isinstance(remote_state, dict)
             assert remote_state.get("status") == "open"
 
-    def test_load_sync_metadata_not_present(self):
+    def test_load_sync_metadata_not_present(self, temp_dir_context):
         """Test loading sync_metadata when not present."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             # Create a file without sync_metadata
@@ -165,9 +164,9 @@ class TestIssueSyncMetadata:
 
             assert result is None
 
-    def test_save_issue_with_sync_metadata(self):
+    def test_save_issue_with_sync_metadata(self, temp_dir_context):
         """Test saving an issue with sync_metadata."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             issue = Issue(
@@ -190,9 +189,9 @@ class TestIssueSyncMetadata:
             assert loaded_metadata is not None
             assert loaded_metadata["last_synced"] == "2026-01-03T10:00:00+00:00"
 
-    def test_update_issue_sync_metadata_only(self):
+    def test_update_issue_sync_metadata_only(self, temp_dir_context):
         """Test updating only sync_metadata without modifying the issue."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             # Create initial issue with content
@@ -226,9 +225,9 @@ class TestIssueSyncMetadata:
             assert loaded_issue.priority == Priority.HIGH
             assert loaded_issue.content == "Original content"
 
-    def test_roundtrip_sync_metadata(self):
+    def test_roundtrip_sync_metadata(self, temp_dir_context):
         """Test round-trip serialization and deserialization of sync_metadata."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             original_metadata = {
@@ -259,9 +258,9 @@ class TestIssueSyncMetadata:
 
             assert loaded_metadata == original_metadata
 
-    def test_sync_metadata_with_complex_remote_state(self):
+    def test_sync_metadata_with_complex_remote_state(self, temp_dir_context):
         """Test sync_metadata with nested remote_state structure."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             metadata = {

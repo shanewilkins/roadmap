@@ -1,6 +1,5 @@
 """Tests for sync state updates after push operations."""
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -19,7 +18,7 @@ class TestSyncStateUpdates:
     @pytest.fixture
     def temp_roadmap_dir(self):
         """Create a temporary roadmap directory."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             yield Path(tmpdir)
 
     @pytest.fixture
@@ -117,7 +116,7 @@ class TestSyncStateAfterPush:
     @pytest.fixture
     def temp_roadmap_dir(self):
         """Create a temporary roadmap directory."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             yield Path(tmpdir)
 
     @pytest.fixture

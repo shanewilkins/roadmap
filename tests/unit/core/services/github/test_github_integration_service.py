@@ -2,7 +2,6 @@
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import pytest
@@ -16,9 +15,9 @@ class TestGitHubIntegrationService:
     """Tests for GitHubIntegrationService."""
 
     @pytest.fixture
-    def temp_dir(self):
+    def temp_dir(self, temp_dir_context):
         """Create temporary directory for config files."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             yield Path(tmpdir)
 
     @pytest.fixture

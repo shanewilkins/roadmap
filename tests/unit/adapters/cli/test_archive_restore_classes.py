@@ -1,6 +1,5 @@
 """Tests for archive and restore base and concrete classes."""
 
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
@@ -118,9 +117,11 @@ class TestIssueRestore:
         assert result == []
 
     @patch("roadmap.adapters.cli.crud.crud_helpers.get_archive_dir")
-    def test_get_archived_files_to_restore_all(self, mock_get_archive_dir):
+    def test_get_archived_files_to_restore_all(
+        self, mock_get_archive_dir, temp_dir_context
+    ):
         """Test getting all archived files."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             archive_dir = Path(tmpdir)
             archive_dir.mkdir(exist_ok=True)
             (archive_dir / "issue1.md").write_text("test")

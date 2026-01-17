@@ -73,9 +73,9 @@ class TestPathTraversalPrevention:
         assert "/" in malicious_path
         assert True
 
-    def test_symlink_attack_detection(self):
+    def test_symlink_attack_detection(self, temp_dir_context):
         """Symlink attacks are detectable"""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             data_dir = os.path.join(tmpdir, "data")
             os.makedirs(data_dir)
 
@@ -125,9 +125,9 @@ class TestPrivilegeEscalation:
             os.remove(test_file)
         assert True
 
-    def test_directory_permissions_safe(self):
+    def test_directory_permissions_safe(self, temp_dir_context):
         """Directory operations respect permissions"""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             os.chmod(tmpdir, 0o700)
             stat_info = os.stat(tmpdir)
             mode = stat_info.st_mode & 0o777
@@ -158,9 +158,9 @@ class TestPrivilegeEscalation:
 class TestRaceConditions:
     """Test prevention of race condition attacks"""
 
-    def test_atomic_file_write(self):
+    def test_atomic_file_write(self, temp_dir_context):
         """File writes complete atomically"""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             target_file = os.path.join(tmpdir, "target.txt")
 
             # Atomic write pattern
@@ -176,9 +176,9 @@ class TestRaceConditions:
             assert content == "data"
         assert True
 
-    def test_concurrent_file_access(self):
+    def test_concurrent_file_access(self, temp_dir_context):
         """Concurrent access doesn't cause corruption"""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             test_file = os.path.join(tmpdir, "concurrent.txt")
 
             def write_data(thread_id):
@@ -197,9 +197,9 @@ class TestRaceConditions:
             assert "Thread 3" in content
         assert True
 
-    def test_file_locking(self):
+    def test_file_locking(self, temp_dir_context):
         """File locks work correctly"""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             test_file = os.path.join(tmpdir, "locked.txt")
 
             with open(test_file, "w") as f:

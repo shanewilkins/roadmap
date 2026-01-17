@@ -52,9 +52,9 @@ class TestStateManagerInitialization:
         StateManager(db_path=temp_db)
         assert temp_db.exists()
 
-    def test_init_creates_parent_directories(self):
+    def test_init_creates_parent_directories(self, temp_dir_context):
         """__init__ should create parent directories if they don't exist."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             db_path = Path(tmpdir) / "subdir" / "test.db"
             StateManager(db_path=db_path)
             assert db_path.exists()
@@ -132,9 +132,9 @@ class TestStateManagerConnections:
         """Test database_exists returns True for existing database."""
         assert state_manager.database_exists()
 
-    def test_database_exists_returns_false_for_missing_file(self):
+    def test_database_exists_returns_false_for_missing_file(self, temp_dir_context):
         """Test database_exists returns False when file doesn't exist."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             # Create path but don't create the database file
             db_path = Path(tmpdir) / "missing.db"
             manager = StateManager(db_path=db_path)

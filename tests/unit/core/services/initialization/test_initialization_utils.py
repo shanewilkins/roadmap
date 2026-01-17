@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import pytest
@@ -16,9 +15,9 @@ from roadmap.core.services.initialization.utils import (
 class TestInitializationLock:
     """Tests for InitializationLock class."""
 
-    def test_lock_acquire_when_not_locked(self):
+    def test_lock_acquire_when_not_locked(self, temp_dir_context):
         """Test acquiring lock when no lock exists."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -27,18 +26,18 @@ class TestInitializationLock:
             assert "pid:" in lock_path.read_text()
             assert "started:" in lock_path.read_text()
 
-    def test_lock_acquire_when_already_locked(self):
+    def test_lock_acquire_when_already_locked(self, temp_dir_context):
         """Test acquiring lock when lock already exists."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock_path.write_text("pid:1234\nstarted:2024-01-01T00:00:00\n")
 
             lock = InitializationLock(lock_path)
             assert lock.acquire() is False
 
-    def test_lock_acquire_writes_pid(self):
+    def test_lock_acquire_writes_pid(self, temp_dir_context):
         """Test that lock contains process ID."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -49,14 +48,14 @@ class TestInitializationLock:
             # Should contain our PID
             assert str(TestInitializationLock.__module__) or "pid:" in content
 
-    def test_lock_acquire_writes_timestamp(self):
+    def test_lock_acquire_writes_timestamp(self, temp_dir_context):
         """Test that lock contains timestamp."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
             lock.acquire()
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "nonexistent" / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -64,9 +63,9 @@ class TestInitializationLock:
             result = lock.acquire()
             assert result is True
 
-    def test_lock_release_removes_file(self):
+    def test_lock_release_removes_file(self, temp_dir_context):
         """Test that release removes the lock file."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -76,9 +75,9 @@ class TestInitializationLock:
             lock.release()
             assert not lock_path.exists()
 
-    def test_lock_release_when_already_released(self):
+    def test_lock_release_when_already_released(self, temp_dir_context):
         """Test that release doesn't fail if lock is already gone."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -86,9 +85,9 @@ class TestInitializationLock:
             lock.release()
             assert not lock_path.exists()
 
-    def test_lock_release_handles_permission_error(self):
+    def test_lock_release_handles_permission_error(self, temp_dir_context):
         """Test that release handles deletion errors gracefully."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
             lock.acquire()
@@ -99,9 +98,9 @@ class TestInitializationLock:
             # If we reach here, error was handled gracefully
             assert True
 
-    def test_lock_context_usage(self):
+    def test_lock_context_usage(self, temp_dir_context):
         """Test typical acquire/release pattern."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -114,17 +113,17 @@ class TestInitializationLock:
 class TestInitializationManifest:
     """Tests for InitializationManifest class."""
 
-    def test_manifest_initialization(self):
+    def test_manifest_initialization(self, temp_dir_context):
         """Test manifest initializes with empty created list."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
             assert manifest.data == {"created": []}
 
-    def test_manifest_add_path_existing_file(self):
+    def test_manifest_add_path_existing_file(self, temp_dir_context):
         """Test adding an existing file to manifest."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("test content")
@@ -135,9 +134,9 @@ class TestInitializationManifest:
             assert str(file_path) in manifest.data["created"]
             assert manifest_path.exists()
 
-    def test_manifest_add_path_existing_directory(self):
+    def test_manifest_add_path_existing_directory(self, temp_dir_context):
         """Test adding an existing directory to manifest."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             dir_path = Path(tmpdir) / "test_dir"
             dir_path.mkdir()
@@ -147,9 +146,9 @@ class TestInitializationManifest:
 
             assert str(dir_path) in manifest.data["created"]
 
-    def test_manifest_add_path_nonexistent(self):
+    def test_manifest_add_path_nonexistent(self, temp_dir_context):
         """Test adding a non-existent path does nothing."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             nonexistent_path = Path(tmpdir) / "nonexistent"
 
@@ -158,9 +157,9 @@ class TestInitializationManifest:
 
             assert manifest.data["created"] == []
 
-    def test_manifest_save(self):
+    def test_manifest_save(self, temp_dir_context):
         """Test that manifest saves to JSON file."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("content")
@@ -173,9 +172,9 @@ class TestInitializationManifest:
             saved_data = json.loads(manifest_path.read_text())
             assert str(file_path) in saved_data["created"]
 
-    def test_manifest_save_handles_error(self):
+    def test_manifest_save_handles_error(self, temp_dir_context):
         """Test that save errors are silently ignored."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             # Use a path in non-existent directory
             manifest_path = Path(tmpdir) / "nonexistent" / "manifest.json"
             manifest = InitializationManifest(manifest_path)
@@ -188,9 +187,9 @@ class TestInitializationManifest:
             # Manifest data should still be updated
             assert str(file_path) in manifest.data["created"]
 
-    def test_manifest_add_multiple_paths(self):
+    def test_manifest_add_multiple_paths(self, temp_dir_context):
         """Test adding multiple paths to manifest."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -205,9 +204,9 @@ class TestInitializationManifest:
             for path in paths:
                 assert str(path) in manifest.data["created"]
 
-    def test_manifest_rollback_removes_files(self):
+    def test_manifest_rollback_removes_files(self, temp_dir_context):
         """Test that rollback removes tracked files."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("content")
@@ -219,9 +218,9 @@ class TestInitializationManifest:
             manifest.rollback()
             assert not file_path.exists()
 
-    def test_manifest_rollback_removes_directories(self):
+    def test_manifest_rollback_removes_directories(self, temp_dir_context):
         """Test that rollback removes tracked directories."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             dir_path = Path(tmpdir) / "test_dir"
             dir_path.mkdir()
@@ -234,9 +233,9 @@ class TestInitializationManifest:
             manifest.rollback()
             assert not dir_path.exists()
 
-    def test_manifest_rollback_removes_multiple_paths(self):
+    def test_manifest_rollback_removes_multiple_paths(self, temp_dir_context):
         """Test that rollback removes multiple tracked paths."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -255,9 +254,9 @@ class TestInitializationManifest:
             # All should be deleted
             assert not any(p.exists() for p in created_paths)
 
-    def test_manifest_rollback_mixed_files_and_directories(self):
+    def test_manifest_rollback_mixed_files_and_directories(self, temp_dir_context):
         """Test rollback with both files and directories."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -278,9 +277,9 @@ class TestInitializationManifest:
             assert not file_path.exists()
             assert not dir_path.exists()
 
-    def test_manifest_rollback_handles_missing_manifest_file(self):
+    def test_manifest_rollback_handles_missing_manifest_file(self, temp_dir_context):
         """Test that rollback handles missing manifest file gracefully."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -288,9 +287,9 @@ class TestInitializationManifest:
             manifest.rollback()  # Should not raise
             assert True
 
-    def test_manifest_rollback_handles_invalid_json(self):
+    def test_manifest_rollback_handles_invalid_json(self, temp_dir_context):
         """Test that rollback handles invalid JSON in manifest."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest_path.write_text("invalid json {")
 
@@ -298,9 +297,9 @@ class TestInitializationManifest:
             manifest.rollback()  # Should not raise
             assert True
 
-    def test_manifest_rollback_handles_missing_paths(self):
+    def test_manifest_rollback_handles_missing_paths(self, temp_dir_context):
         """Test that rollback handles missing files gracefully."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest_path.write_text(
                 json.dumps({"created": [str(Path(tmpdir) / "nonexistent")]})
@@ -310,9 +309,9 @@ class TestInitializationManifest:
             manifest.rollback()  # Should not raise
             assert True
 
-    def test_manifest_rollback_handles_deletion_errors(self):
+    def test_manifest_rollback_handles_deletion_errors(self, temp_dir_context):
         """Test that rollback continues despite individual deletion errors."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "file.txt"
             file_path.write_text("content")
@@ -329,9 +328,9 @@ class TestInitializationManifest:
             # If we reach here, rollback handled errors gracefully
             assert True
 
-    def test_manifest_stores_correct_json_format(self):
+    def test_manifest_stores_correct_json_format(self, temp_dir_context):
         """Test that manifest stores data in correct JSON format."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("content")
@@ -354,9 +353,9 @@ class TestInitializationManifest:
             ".hidden_file.txt",
         ],
     )
-    def test_manifest_add_paths_various_filenames(self, filename):
+    def test_manifest_add_paths_various_filenames(self, filename, temp_dir_context):
         """Test adding files with various filename patterns."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / filename
             file_path.write_text("content")

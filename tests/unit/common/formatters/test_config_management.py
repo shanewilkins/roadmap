@@ -3,7 +3,6 @@
 Tests the team config (committed) vs user-local overrides (gitignored) pattern.
 """
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -19,9 +18,9 @@ from roadmap.common.configuration import (
 
 
 @pytest.fixture
-def temp_config_dir():
+def temp_config_dir(temp_dir_context):
     """Create a temporary directory for config files."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with temp_dir_context() as tmpdir:
         yield Path(tmpdir)
 
 

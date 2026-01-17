@@ -556,3 +556,30 @@ def with_git_integration(test_func: Callable) -> Callable:
         return test_func(*args, **kwargs)
 
     return wrapper
+
+
+# ============================================================================
+# Service-Specific Patches
+# ============================================================================
+
+
+def patch_backup_cleanup_service_select() -> Callable:
+    """Decorator that patches BackupCleanupService._select_backups_for_deletion.
+
+    Returns:
+        Decorator function
+    """
+
+    def decorator(test_func: Callable) -> Callable:
+        from roadmap.core.services.health.backup_cleanup_service import (
+            BackupCleanupService,
+        )
+
+        @patch.object(BackupCleanupService, "_select_backups_for_deletion")
+        @wraps(test_func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return test_func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

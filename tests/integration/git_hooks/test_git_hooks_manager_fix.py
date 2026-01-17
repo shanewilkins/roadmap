@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -14,9 +13,9 @@ from roadmap.adapters.git.hook_installer import HookInstaller
 class TestGitHooksIntegration:
     """Integration tests for git hooks."""
 
-    def test_hook_script_executes_without_error(self):
+    def test_hook_script_executes_without_error(self, temp_dir_context):
         """Test that generated hook script can be executed without errors."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             repo_path = Path(temp_dir)
             hooks_dir = repo_path / ".git" / "hooks"
             hooks_dir.mkdir(parents=True, exist_ok=True)
@@ -54,9 +53,9 @@ class TestGitHooksIntegration:
             finally:
                 os.chdir(original_cwd)
 
-    def test_all_hooks_install_without_errors(self):
+    def test_all_hooks_install_without_errors(self, temp_dir_context):
         """Test that all hook types can be installed without errors."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             repo_path = Path(temp_dir)
             hooks_dir = repo_path / ".git" / "hooks"
             hooks_dir.mkdir(parents=True, exist_ok=True)

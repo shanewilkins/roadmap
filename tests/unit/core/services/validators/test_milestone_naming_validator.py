@@ -1,7 +1,6 @@
 """Tests for MilestoneNamingValidator."""
 
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -182,9 +181,9 @@ class TestValidateWithFeedback:
 class TestFindNamingConflicts:
     """Test find_naming_conflicts for directory scanning."""
 
-    def test_no_conflicts_with_valid_names(self):
+    def test_no_conflicts_with_valid_names(self, temp_dir_context):
         """Test directory with compliant names."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             milestones_dir = Path(tmpdir)
 
             # Create valid milestone files
@@ -195,9 +194,9 @@ class TestFindNamingConflicts:
             conflicts = MilestoneNamingValidator.find_naming_conflicts(milestones_dir)
             assert conflicts == []
 
-    def test_detects_unsafe_names(self):
+    def test_detects_unsafe_names(self, temp_dir_context):
         """Test detection of names that need conversion."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             milestones_dir = Path(tmpdir)
 
             # Create file with unsafe name (spaces, uppercase)
@@ -207,9 +206,9 @@ class TestFindNamingConflicts:
             assert len(conflicts) > 0
             assert any("Sprint 1" in str(c) for c in conflicts)
 
-    def test_detects_collisions(self):
+    def test_detects_collisions(self, temp_dir_context):
         """Test detection of naming collisions."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             milestones_dir = Path(tmpdir)
 
             # Create files that would collide when converted to safe names
@@ -227,9 +226,9 @@ class TestFindNamingConflicts:
         )
         assert conflicts == []
 
-    def test_empty_directory(self):
+    def test_empty_directory(self, temp_dir_context):
         """Test with empty directory."""
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             milestones_dir = Path(tmpdir)
             conflicts = MilestoneNamingValidator.find_naming_conflicts(milestones_dir)
             assert conflicts == []

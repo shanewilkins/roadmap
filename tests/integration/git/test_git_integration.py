@@ -429,9 +429,9 @@ class TestGitIntegrationCore:
 class TestGitIntegrationErrorHandling:
     """Test error handling in Git integration."""
 
-    def test_non_git_repository(self):
+    def test_non_git_repository(self, temp_dir_context):
         """Test behavior in non-Git repositories."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             git = GitIntegration(Path(temp_dir))
 
             assert not git.is_git_repository()

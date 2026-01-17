@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -19,9 +18,9 @@ class TestGitHookManager:
     """Test Git hook manager functionality."""
 
     @pytest.fixture
-    def temp_git_repo(self):
+    def temp_git_repo(self, temp_dir_context):
         """Create a temporary Git repository for testing."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             os.chdir(temp_dir)
 
             # Initialize Git repo
@@ -188,9 +187,9 @@ class TestGitHookManager:
         assert updated_issue.status == Status.TODO  # Should remain unchanged
         assert updated_issue.progress_percentage is None  # Should remain unchanged
 
-    def test_non_git_repo_handling(self):
+    def test_non_git_repo_handling(self, temp_dir_context):
         """Test graceful handling when not in a Git repository."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             os.chdir(temp_dir)
 
             # Initialize roadmap without Git

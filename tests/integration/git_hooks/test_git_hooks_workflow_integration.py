@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -20,9 +19,9 @@ class TestWorkflowAutomation:
     """Test workflow automation orchestrator."""
 
     @pytest.fixture
-    def temp_git_repo(self):
+    def temp_git_repo(self, temp_dir_context):
         """Create a temporary Git repository for testing."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             os.chdir(temp_dir)
 
             # Initialize Git repo
@@ -320,9 +319,9 @@ class TestGitHooksIntegration:
     """Integration tests for Git hooks with real Git operations."""
 
     @pytest.fixture
-    def git_repo_with_roadmap(self):
+    def git_repo_with_roadmap(self, temp_dir_context):
         """Create Git repo with roadmap initialized."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             os.chdir(temp_dir)
 
             # Initialize Git repo

@@ -2,7 +2,6 @@
 
 import os
 import re
-import tempfile
 
 import pytest
 from click.testing import CliRunner
@@ -248,9 +247,9 @@ class TestEstimatedTimeCLI:
             or "estimat" in clean_output
         )
 
-    def test_milestone_list_shows_estimates(self):
+    def test_milestone_list_shows_estimates(self, temp_dir_context):
         """Test that milestone list shows total estimated times."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             os.chdir(tmpdir)
 
             core = RoadmapCore()
@@ -303,10 +302,10 @@ class TestEstimatedTimeCore:
         ],
     )
     def test_create_issue_estimated_hours(
-        self, estimated_hours, should_have_hours, expected_display
+        self, estimated_hours, should_have_hours, expected_display, temp_dir_context
     ):
         """Test creating an issue with and without estimated hours through core."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             os.chdir(tmpdir)
 
             core = RoadmapCore()
@@ -326,9 +325,9 @@ class TestEstimatedTimeCore:
 class TestEstimatedTimePersistence:
     """Test that estimated time persists correctly."""
 
-    def test_estimated_time_saves_and_loads(self):
+    def test_estimated_time_saves_and_loads(self, temp_dir_context):
         """Test that estimated time is saved to and loaded from files."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             os.chdir(tmpdir)
 
             # Create and save an issue with estimated time

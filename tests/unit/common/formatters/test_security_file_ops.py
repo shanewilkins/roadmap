@@ -4,7 +4,6 @@ Tests secure file and directory creation, permission management,
 and backup cleanup operations.
 """
 
-import tempfile
 import time
 from pathlib import Path
 from unittest.mock import patch
@@ -23,9 +22,9 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir(temp_dir_context):
     """Provide a temporary directory for test operations."""
-    with tempfile.TemporaryDirectory() as td:
+    with temp_dir_context() as td:
         yield Path(td)
 
 
@@ -220,9 +219,9 @@ class TestSecureFilePermissions:
             secure_file_permissions(nonexistent)
 
     @patch("pathlib.Path.chmod", side_effect=PermissionError("Access denied"))
-    def test_secure_file_permissions_failure(self, mock_chmod):
+    def test_secure_file_permissions_failure(self, mock_chmod, temp_dir_context):
         """Test permission setting failure."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             test_file = Path(temp_dir) / "test.txt"
             test_file.write_text("content")
 
@@ -230,9 +229,9 @@ class TestSecureFilePermissions:
                 secure_file_permissions(test_file)
 
     @patch("roadmap.common.security.file_operations.log_security_event")
-    def test_secure_file_permissions_logging(self, mock_log):
+    def test_secure_file_permissions_logging(self, mock_log, temp_dir_context):
         """Test permission setting logging."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             test_file = Path(temp_dir) / "test.txt"
             test_file.write_text("content")
 

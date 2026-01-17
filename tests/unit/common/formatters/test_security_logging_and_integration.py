@@ -32,9 +32,9 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir(temp_dir_context):
     """Provide a temporary directory for test operations."""
-    with tempfile.TemporaryDirectory() as td:
+    with temp_dir_context() as td:
         yield Path(td)
 
 
@@ -247,9 +247,9 @@ class TestValidateExportSize:
 class TestSecurityIntegration:
     """Test integration scenarios combining multiple security functions."""
 
-    def test_secure_file_creation_workflow(self):
+    def test_secure_file_creation_workflow(self, temp_dir_context):
         """Test complete secure file creation and validation workflow."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Sanitize filename first
@@ -285,7 +285,7 @@ class TestSecurityIntegration:
             assert file_perms == 0o600
             assert dir_perms == 0o700
 
-    def test_security_logging_integration(self):
+    def test_security_logging_integration(self, temp_dir_context):
         """Test that all security operations properly log events."""
         from roadmap.common.security import security_logger
 
@@ -293,7 +293,7 @@ class TestSecurityIntegration:
         for handler in security_logger.handlers[:]:
             security_logger.removeHandler(handler)
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             log_file = Path(temp_dir) / "security.log"
 
             # Configure logging
@@ -335,9 +335,9 @@ class TestSecurityIntegration:
             for handler in security_logger.handlers[:]:
                 security_logger.removeHandler(handler)
 
-    def test_error_handling_integration(self):
+    def test_error_handling_integration(self, temp_dir_context):
         """Test error handling across multiple security functions."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Test various error conditions
@@ -359,9 +359,9 @@ class TestSecurityIntegration:
 
             assert safe_file.exists()
 
-    def test_comprehensive_logging_coverage(self):
+    def test_comprehensive_logging_coverage(self, temp_dir_context):
         """Test that all major security operations execute without error."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Perform all major security operations
@@ -418,9 +418,9 @@ class TestSecurityPerformance:
         assert len(result) <= 255
         assert end_time - start_time < 1.0  # Should complete within 1 second
 
-    def test_many_path_validations(self):
+    def test_many_path_validations(self, temp_dir_context):
         """Test performance with many path validations."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Create some sample files for validation

@@ -9,7 +9,6 @@ Tests cover:
 
 from datetime import UTC, datetime
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock
 
 import pytest
@@ -27,14 +26,16 @@ from roadmap.core.services.baseline.baseline_state_retriever import (
 class TestGetLocalBaseline:
     """Test local baseline retrieval from git history."""
 
-    def _make_retriever(self, mock_persistence=None, mock_parser=None):
+    def _make_retriever(
+        self, mock_persistence=None, mock_parser=None, temp_dir_context=None
+    ):
         """Create a BaselineStateRetriever with mock dependencies."""
         if mock_persistence is None:
             mock_persistence = MagicMock(spec=PersistenceInterface)
         if mock_parser is None:
             mock_parser = MagicMock(spec=IssueParserInterface)
 
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
                 BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
@@ -43,9 +44,11 @@ class TestGetLocalBaseline:
                 issues_dir,
             )
 
-    def test_get_local_baseline_success(self):
+    def test_get_local_baseline_success(self, temp_dir_context):
         """Test successfully retrieving local baseline."""
-        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever(
+            temp_dir_context=temp_dir_context
+        )
 
         # Create file content with metadata
         issue_content = """---
@@ -93,11 +96,13 @@ Issue content here"""
         assert baseline.milestone == "v1.0"
         assert "bug" in baseline.labels
 
-    def test_get_local_baseline_file_not_found(self):
+    def test_get_local_baseline_file_not_found(self, temp_dir_context):
         """Test when file didn't exist at baseline time."""
         from roadmap.core.interfaces.persistence import FileNotFound
 
-        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever(
+            temp_dir_context=temp_dir_context
+        )
 
         mock_persistence.get_file_at_timestamp.side_effect = FileNotFound(
             "File not found"
@@ -108,11 +113,13 @@ Issue content here"""
 
         assert result is None
 
-    def test_get_local_baseline_git_error(self):
+    def test_get_local_baseline_git_error(self, temp_dir_context):
         """Test handling of git errors."""
         from roadmap.core.interfaces.persistence import GitHistoryError
 
-        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever(
+            temp_dir_context=temp_dir_context
+        )
 
         mock_persistence.get_file_at_timestamp.side_effect = GitHistoryError(
             "Git command failed"
@@ -127,14 +134,16 @@ Issue content here"""
 class TestGetRemoteBaseline:
     """Test remote baseline retrieval from sync_metadata."""
 
-    def _make_retriever(self, mock_persistence=None, mock_parser=None):
+    def _make_retriever(
+        self, mock_persistence=None, mock_parser=None, temp_dir_context=None
+    ):
         """Create a BaselineStateRetriever with mock dependencies."""
         if mock_persistence is None:
             mock_persistence = MagicMock(spec=PersistenceInterface)
         if mock_parser is None:
             mock_parser = MagicMock(spec=IssueParserInterface)
 
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
                 BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
@@ -143,9 +152,11 @@ class TestGetRemoteBaseline:
                 issues_dir,
             )
 
-    def test_get_remote_baseline_success(self):
+    def test_get_remote_baseline_success(self, temp_dir_context):
         """Test successfully retrieving remote baseline from sync_metadata."""
-        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever(
+            temp_dir_context=temp_dir_context
+        )
 
         # Create issue with sync_metadata
         issue = Issue(
@@ -186,9 +197,11 @@ class TestGetRemoteBaseline:
         assert baseline.assignee == "jane@example.com"  # From remote
         assert baseline.headline == "Remote description"
 
-    def test_get_remote_baseline_no_remote_state(self):
+    def test_get_remote_baseline_no_remote_state(self, temp_dir_context):
         """Test when sync_metadata exists but no remote_state."""
-        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever(
+            temp_dir_context=temp_dir_context
+        )
 
         issue = Issue(
             id="issue1",
@@ -211,9 +224,11 @@ class TestGetRemoteBaseline:
 
         assert baseline is None
 
-    def test_get_remote_baseline_with_datetime_parsing(self):
+    def test_get_remote_baseline_with_datetime_parsing(self, temp_dir_context):
         """Test remote baseline with datetime field parsing."""
-        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever(
+            temp_dir_context=temp_dir_context
+        )
 
         issue = Issue(
             id="issue1",
@@ -247,14 +262,16 @@ class TestGetRemoteBaseline:
 class TestBaselineComparison:
     """Test comparing local and remote baselines."""
 
-    def _make_retriever(self, mock_persistence=None, mock_parser=None):
+    def _make_retriever(
+        self, mock_persistence=None, mock_parser=None, temp_dir_context=None
+    ):
         """Create a BaselineStateRetriever with mock dependencies."""
         if mock_persistence is None:
             mock_persistence = MagicMock(spec=PersistenceInterface)
         if mock_parser is None:
             mock_parser = MagicMock(spec=IssueParserInterface)
 
-        with TemporaryDirectory() as tmpdir:
+        with temp_dir_context() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
                 BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
@@ -263,9 +280,11 @@ class TestBaselineComparison:
                 issues_dir,
             )
 
-    def test_local_and_remote_baselines_differ(self):
+    def test_local_and_remote_baselines_differ(self, temp_dir_context):
         """Test detecting differences between local and remote baselines."""
-        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever()
+        retriever, mock_persistence, mock_parser, issues_dir = self._make_retriever(
+            temp_dir_context=temp_dir_context
+        )
 
         issue = Issue(
             id="issue1",

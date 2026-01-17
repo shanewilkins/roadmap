@@ -1,3 +1,5 @@
+import pytest
+
 """Integration tests for sync database consistency.
 
 Verifies that after a successful sync, local issues, remote/GitHub issues,
@@ -12,6 +14,17 @@ from unittest.mock import MagicMock
 from roadmap.adapters.sync.sync_retrieval_orchestrator import SyncRetrievalOrchestrator
 from roadmap.common.constants import Status
 from roadmap.infrastructure.coordination.core import RoadmapCore
+
+
+@pytest.fixture
+def temp_dir_context():
+    """Fixture for TemporaryDirectory context manager pattern."""
+    from tempfile import TemporaryDirectory
+
+    def _context_manager():
+        return TemporaryDirectory()
+
+    return _context_manager
 
 
 class TestSyncDatabaseConsistency(unittest.TestCase):

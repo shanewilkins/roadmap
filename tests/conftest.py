@@ -207,6 +207,8 @@ __all__ = [
     "error_logging_logger_mocked",
     "performance_tracking_logger_mocked",
     "git_run_command_mocked",
+    # Temporary directory fixtures
+    "temp_dir_context",
 ]
 
 
@@ -379,3 +381,24 @@ def git_run_command_mocked():
     """
     with patch("roadmap.adapters.persistence.git_history._run_git_command") as mock_cmd:
         yield mock_cmd
+
+
+@pytest.fixture
+def temp_dir_context():
+    """Fixture for tests using TemporaryDirectory context manager pattern.
+
+    Provides a context manager-based temporary directory that's auto-cleaned.
+    Replaces: with tempfile.TemporaryDirectory() as tmpdir:
+
+    Usage:
+        def test_something(temp_dir_context):
+            with temp_dir_context() as tmpdir:
+                path = Path(tmpdir)
+                # test code
+    """
+    from tempfile import TemporaryDirectory
+
+    def _context_manager():
+        return TemporaryDirectory()
+
+    return _context_manager

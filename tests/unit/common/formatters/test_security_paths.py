@@ -5,7 +5,6 @@ and secure temporary file creation.
 """
 
 import os
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -23,16 +22,16 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir(temp_dir_context):
     """Provide a temporary directory for test operations."""
-    with tempfile.TemporaryDirectory() as td:
+    with temp_dir_context() as td:
         yield Path(td)
 
 
 @pytest.fixture
-def temp_base_dir():
+def temp_base_dir(temp_dir_context):
     """Provide a temporary base directory with safe working context."""
-    with tempfile.TemporaryDirectory() as td:
+    with temp_dir_context() as td:
         original_dir = os.getcwd()
         try:
             os.chdir(td)
@@ -104,18 +103,18 @@ class TestValidatePath:
         ):
             validate_path(bad_path, base_dir)
 
-    def test_validate_path_absolute_not_allowed(self):
+    def test_validate_path_absolute_not_allowed(self, temp_dir_context):
         """Test that absolute paths are rejected when not allowed."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             base_dir = Path(temp_dir)
             abs_path = Path("/etc/passwd")
 
             with pytest.raises(PathValidationError, match="Absolute paths not allowed"):
                 validate_path(abs_path, base_dir, allow_absolute=False)
 
-    def test_validate_path_absolute_allowed(self):
+    def test_validate_path_absolute_allowed(self, temp_dir_context):
         """Test that absolute paths are accepted when allowed."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             test_file = Path(temp_dir) / "test.txt"
             test_file.write_text("content")
 
@@ -152,9 +151,9 @@ class TestValidatePath:
         ):
             validate_path(dangerous_path, base_dir)
 
-    def test_validate_path_string_input(self):
+    def test_validate_path_string_input(self, temp_dir_context):
         """Test path validation with string input."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Create the actual file for testing
@@ -171,7 +170,7 @@ class TestValidatePath:
                 os.chdir(original_dir)
 
     @patch("roadmap.common.security.path_validation.log_security_event")
-    def test_validate_path_logging_scenarios(self, mock_log):
+    def test_validate_path_logging_scenarios(self, mock_log, temp_dir_context):
         """Test path validation logging for success and failure scenarios."""
         # Test failure logging
         with pytest.raises(PathValidationError):
@@ -184,7 +183,7 @@ class TestValidatePath:
         assert failure_logged
 
         # Test success logging
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             base_dir = Path(temp_dir)
             test_path = "safe_path.txt"
 

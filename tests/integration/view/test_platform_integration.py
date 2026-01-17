@@ -1,7 +1,6 @@
 """Integration tests for cross-platform CLI credential workflows."""
 
 import os
-import tempfile
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -16,7 +15,7 @@ class TestCrossPlatformCLIWorkflows:
     @pytest.fixture
     def temp_roadmap(self):
         """Create a temporary roadmap for testing."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_context() as temp_dir:
             os.chdir(temp_dir)
             runner = CliRunner()
             result = runner.invoke(
