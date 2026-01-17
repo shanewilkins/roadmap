@@ -3,7 +3,6 @@
 Tests cover error classification, recovery suggestion, and all error logging functions.
 """
 
-
 import pytest
 
 from roadmap.common.logging.error_logging import (

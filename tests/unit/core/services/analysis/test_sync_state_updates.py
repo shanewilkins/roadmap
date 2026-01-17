@@ -16,7 +16,7 @@ class TestSyncStateUpdates:
     """Test that sync state is properly updated after push operations."""
 
     @pytest.fixture
-    def temp_roadmap_dir(self):
+    def temp_roadmap_dir(self, temp_dir_context):
         """Create a temporary roadmap directory."""
         with temp_dir_context() as tmpdir:
             yield Path(tmpdir)
@@ -114,7 +114,7 @@ class TestSyncStateAfterPush:
     """Test sync state management after push operations."""
 
     @pytest.fixture
-    def temp_roadmap_dir(self):
+    def temp_roadmap_dir(self, temp_dir_context):
         """Create a temporary roadmap directory."""
         with temp_dir_context() as tmpdir:
             yield Path(tmpdir)
