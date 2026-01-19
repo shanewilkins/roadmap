@@ -7,13 +7,16 @@ import pytest
 
 from roadmap.common.constants import Status
 from roadmap.core.domain.comment import Comment
-from roadmap.core.domain.issue import Issue
-from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
 from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthScanner,
     EntityType,
     HealthSeverity,
+)
+from tests.fixtures import (
+    build_mock_comment,
+    build_mock_issue,
+    build_mock_milestone,
 )
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
@@ -29,10 +32,11 @@ class TestEntityHealthScanner:
     @pytest.fixture
     def mock_issue(self):
         """Create a mock issue for testing."""
-        issue = MagicMock(spec=Issue)
-        issue.id = "issue-1"
-        issue.title = "Test Issue"
-        issue.status = Status.TODO
+        issue = build_mock_issue(
+            id="issue-1",
+            title="Test Issue",
+            status=Status.TODO,
+        )
         issue.content = "Test content"
         issue.comments = []
         issue.estimated_hours = None
@@ -47,10 +51,11 @@ class TestEntityHealthScanner:
     @pytest.fixture
     def mock_milestone(self):
         """Create a mock milestone for testing."""
-        milestone = MagicMock(spec=Milestone)
-        milestone.name = "v1.0.0"
+        milestone = build_mock_milestone(
+            name="v1.0.0",
+            status=Status.TODO,
+        )
         milestone.content = "Test milestone"
-        milestone.status = Status.TODO
         milestone.created = datetime.now(UTC)
         milestone.due_date = datetime.now(UTC) + timedelta(days=30)
         milestone.calculated_progress = 0
@@ -406,15 +411,13 @@ class TestEntityHealthScanner:
 
     def test_validate_comment_thread_duplicate_ids(self, scanner):
         """Test comment thread validation with duplicate IDs."""
-        comment1 = MagicMock(spec=Comment)
-        comment1.id = "comment-1"
+        comment1 = build_mock_comment(id="comment-1")
         comment1.body = "Test"
         comment1.author = "user"
         comment1.created_at = datetime.now(UTC)
         comment1.in_reply_to = None
 
-        comment2 = MagicMock(spec=Comment)
-        comment2.id = "comment-1"  # Duplicate ID
+        comment2 = build_mock_comment(id="comment-1")  # Duplicate ID
         comment2.body = "Test"
         comment2.author = "user"
         comment2.created_at = datetime.now(UTC)
@@ -425,15 +428,13 @@ class TestEntityHealthScanner:
 
     def test_validate_comment_thread_circular_reference(self, scanner):
         """Test comment thread validation with circular reference."""
-        comment1 = MagicMock(spec=Comment)
-        comment1.id = "comment-1"
+        comment1 = build_mock_comment(id="comment-1")
         comment1.body = "Test 1"
         comment1.author = "user"
         comment1.created_at = datetime.now(UTC)
         comment1.in_reply_to = "comment-2"
 
-        comment2 = MagicMock(spec=Comment)
-        comment2.id = "comment-2"
+        comment2 = build_mock_comment(id="comment-2")
         comment2.body = "Test 2"
         comment2.author = "user"
         comment2.created_at = datetime.now(UTC)
@@ -444,8 +445,7 @@ class TestEntityHealthScanner:
 
     def test_scan_issue_with_invalid_comments(self, scanner, mock_issue):
         """Test scanning issue with invalid comment thread."""
-        comment = MagicMock(spec=Comment)
-        comment.id = "comment-1"
+        comment = build_mock_comment(id="comment-1")
         comment.body = ""
         comment.author = "user"
         comment.created_at = datetime.now(UTC)

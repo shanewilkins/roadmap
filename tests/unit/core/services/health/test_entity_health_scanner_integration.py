@@ -4,11 +4,13 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 from roadmap.common.constants import Status
-from roadmap.core.domain.issue import Issue
-from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
 from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthScanner,
+)
+from tests.fixtures import (
+    build_mock_issue,
+    build_mock_milestone,
 )
 
 
@@ -21,10 +23,11 @@ class TestEntityHealthScannerIntegration:
 
         issues = []
         for i in range(3):
-            issue = MagicMock(spec=Issue)
-            issue.id = f"issue-{i}"
-            issue.title = f"Test Issue {i}"
-            issue.status = Status.TODO if i == 0 else Status.IN_PROGRESS
+            issue = build_mock_issue(
+                id=f"issue-{i}",
+                title=f"Test Issue {i}",
+                status=Status.TODO if i == 0 else Status.IN_PROGRESS,
+            )
             issue.content = "" if i == 1 else "Content"
             issue.comments = []
             issue.estimated_hours = None
@@ -51,10 +54,11 @@ class TestEntityHealthScannerIntegration:
         scanner = EntityHealthScanner()
 
         # Create diverse entities
-        issue = MagicMock(spec=Issue)
-        issue.id = "issue-1"
-        issue.title = "Issue"
-        issue.status = Status.CLOSED
+        issue = build_mock_issue(
+            id="issue-1",
+            title="Issue",
+            status=Status.CLOSED,
+        )
         issue.content = "Content"
         issue.comments = []
         issue.estimated_hours = 5
@@ -65,10 +69,11 @@ class TestEntityHealthScannerIntegration:
         issue.handoff_date = None
         issue.progress_percentage = 100
 
-        milestone = MagicMock(spec=Milestone)
-        milestone.name = "v1.0"
+        milestone = build_mock_milestone(
+            name="v1.0",
+            status=Status.CLOSED,
+        )
         milestone.content = "Release 1.0"
-        milestone.status = Status.CLOSED
         milestone.created = datetime.now(UTC) - timedelta(days=30)
         milestone.due_date = datetime.now(UTC)
         milestone.calculated_progress = 100
