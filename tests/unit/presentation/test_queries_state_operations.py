@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from roadmap.adapters.persistence.storage.queries import QueryService
+from tests.fixtures import build_mock_path
 
 
 class TestQueryServiceInitialization:
@@ -56,10 +57,8 @@ class TestHasFileChanges:
         mock_roadmap_dir = Path("/test/.roadmap")
         mock_state_manager.db_path = mock_roadmap_dir / "db.sqlite"
 
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-        mock_file.read_bytes.return_value = b"file content"
-        mock_file.relative_to.return_value = Path("issues/test.md")
+        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file.read_bytes = mock.Mock(return_value=b"file content")
 
         mock_conn = mock.MagicMock()
         mock_conn.execute.return_value.fetchone.return_value = None  # No stored hash
@@ -88,10 +87,8 @@ class TestHasFileChanges:
         mock_roadmap_dir = Path("/test/.roadmap")
         mock_state_manager.db_path = mock_roadmap_dir / "db.sqlite"
 
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-        mock_file.read_bytes.return_value = b"new content"
-        mock_file.relative_to.return_value = Path("issues/test.md")
+        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file.read_bytes = mock.Mock(return_value=b"new content")
 
         mock_conn = mock.MagicMock()
         # Stored hash is different from current hash
@@ -121,10 +118,8 @@ class TestHasFileChanges:
         mock_roadmap_dir = Path("/test/.roadmap")
         mock_state_manager.db_path = mock_roadmap_dir / "db.sqlite"
 
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-        mock_file.read_bytes.return_value = b"file content"
-        mock_file.relative_to.return_value = Path("issues/test.md")
+        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file.read_bytes = mock.Mock(return_value=b"file content")
 
         test_hash = "abc123def456"
         mock_conn = mock.MagicMock()
@@ -156,9 +151,8 @@ class TestHasFileChanges:
         mock_state_manager = mock.MagicMock()
         mock_state_manager.db_path = Path("/test/.roadmap/db.sqlite")
 
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = True
-        mock_file.read_bytes.return_value = b"content"
+        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file.read_bytes = mock.Mock(return_value=b"content")
 
         with mock.patch.object(Path, "exists", return_value=True):
             with mock.patch("pathlib.Path.rglob") as mock_rglob:
@@ -178,9 +172,10 @@ class TestHasFileChanges:
         mock_state_manager = mock.MagicMock()
         mock_state_manager.db_path = Path("/test/.roadmap/db.sqlite")
 
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.exists.return_value = False  # File disappeared
-        mock_file.relative_to.return_value = Path("issues/test.md")
+        mock_file = build_mock_path(
+            name="issues/test.md",
+            exists=False,  # File disappeared
+        )
 
         mock_conn = mock.MagicMock()
 

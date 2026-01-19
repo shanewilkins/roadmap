@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from roadmap.adapters.persistence.sync_orchestrator import SyncOrchestrator
+from tests.fixtures import build_mock_path
 
 
 class TestSyncOrchestratorInitialization:
@@ -65,7 +66,7 @@ class TestHasFileChanged:
                 mock_conn.execute.return_value.fetchone.return_value = None
             mock_get_conn.return_value = mock_conn
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-        mock_file = mock.MagicMock(spec=Path)
+        mock_file = build_mock_path()
         mock_file.exists.return_value = file_exists
         if calc_hash is not None or stored_hash is not None:
             with mock.patch.object(
@@ -88,7 +89,7 @@ class TestSyncFileByType:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = mock.MagicMock(spec=Path)
+        mock_file = build_mock_path()
         mock_file.__str__ = mock.MagicMock(return_value="issues/test.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -109,7 +110,7 @@ class TestSyncFileByType:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = mock.MagicMock(spec=Path)
+        mock_file = build_mock_path()
         mock_file.__str__ = mock.MagicMock(return_value="milestones/v1.0.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -130,7 +131,7 @@ class TestSyncFileByType:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = mock.MagicMock(spec=Path)
+        mock_file = build_mock_path()
         mock_file.__str__ = mock.MagicMock(return_value="projects/backend.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -151,7 +152,7 @@ class TestSyncFileByType:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = mock.MagicMock(spec=Path)
+        mock_file = build_mock_path()
         mock_file.__str__ = mock.MagicMock(return_value="other/file.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -167,7 +168,7 @@ class TestSyncFileByType:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = mock.MagicMock(spec=Path)
+        mock_file = build_mock_path()
         mock_file.__str__ = mock.MagicMock(return_value="issues/test.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -192,7 +193,7 @@ class TestSyncDirectoryIncremental:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = False
 
         result = orchestrator.sync_directory_incremental(mock_dir)
@@ -207,7 +208,7 @@ class TestSyncDirectoryIncremental:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = True
         mock_dir.glob.return_value = []
 
@@ -224,10 +225,10 @@ class TestSyncDirectoryIncremental:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = mock.MagicMock(spec=Path)
+        mock_file = build_mock_path()
         mock_file.__str__ = mock.MagicMock(return_value="issues/test.md")
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = True
         mock_dir.glob.side_effect = [[mock_file], [], []]
 
@@ -245,7 +246,7 @@ class TestSyncDirectoryIncremental:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.side_effect = Exception("IO error")
 
         result = orchestrator.sync_directory_incremental(mock_dir)
@@ -263,7 +264,7 @@ class TestFullRebuildFromGit:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = False
 
         result = orchestrator.full_rebuild_from_git(mock_dir)
@@ -283,7 +284,7 @@ class TestFullRebuildFromGit:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = True
         mock_dir.glob.return_value = []
 
@@ -302,7 +303,7 @@ class TestShouldDoFullRebuild:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = True
         mock_dir.glob.side_effect = [[], [], []]  # No files
 
@@ -325,7 +326,7 @@ class TestShouldDoFullRebuild:
         # Create 10 mock files for testing
         mock_files = [mock.MagicMock(spec=Path) for _ in range(10)]
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = True
 
         # Mock glob to return files matching patterns
@@ -359,7 +360,7 @@ class TestShouldDoFullRebuild:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = mock.MagicMock(spec=Path)
+        mock_dir = build_mock_path(is_dir=True)
         mock_dir.exists.return_value = True
         mock_dir.glob.side_effect = Exception("IO error")
 
