@@ -65,6 +65,7 @@ from .mock_builders import (
     build_mock_file_handle,
     build_mock_git_service,
     build_mock_github_service,
+    build_mock_path,
     build_mock_repo,
     build_mock_sync_service,
 )
@@ -148,6 +149,7 @@ __all__ = [
     "build_mock_sync_service",
     "build_mock_file_handle",
     "build_mock_directory",
+    "build_mock_path",
     "CoreMockBuilder",
     # IO fixtures
     "strip_ansi_fixture",

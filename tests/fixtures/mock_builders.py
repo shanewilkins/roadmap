@@ -194,6 +194,46 @@ def build_mock_sync_service() -> Mock:
 # ============================================================================
 
 
+def build_mock_path(
+    name: str = "test.txt",
+    exists: bool = True,
+    is_dir: bool = False,
+    is_file: bool = True,
+    content: str = "",
+    glob_results: list[Any] | None = None,
+) -> Mock:
+    """Build a mock Path object with common filesystem operations.
+
+    Args:
+        name: Name/path of the file
+        exists: Whether the path exists
+        is_dir: Whether this is a directory
+        is_file: Whether this is a file
+        content: Content to return from read_text()
+        glob_results: Results to return from glob() calls
+
+    Returns:
+        Configured Mock Path object
+    """
+    from pathlib import Path
+
+    mock_path = Mock(spec=Path)
+    mock_path.exists = Mock(return_value=exists)
+    mock_path.is_dir = Mock(return_value=is_dir)
+    mock_path.is_file = Mock(return_value=is_file)
+    mock_path.name = name
+    mock_path.read_text = Mock(return_value=content)
+    mock_path.write_text = Mock(return_value=None)
+    mock_path.relative_to = Mock(return_value=Path(name))
+
+    if glob_results is None:
+        glob_results = []
+    mock_path.glob = Mock(return_value=glob_results)
+    mock_path.iterdir = Mock(return_value=glob_results)
+
+    return mock_path
+
+
 def build_mock_file_handle(content: str = "") -> Mock:
     """Build a mock file handle for file operations.
 
