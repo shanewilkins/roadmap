@@ -151,3 +151,70 @@ def mock_console():
         Mock console instance
     """
     return MagicMock()
+
+
+@pytest.fixture
+def mock_persistence():
+    """Create mock PersistenceInterface for testing.
+
+    Use this when testing services that depend on persistence without
+    touching actual filesystem or database.
+
+    Returns:
+        MagicMock with PersistenceInterface spec
+    """
+    from roadmap.core.interfaces.persistence import PersistenceInterface
+
+    return MagicMock(spec=PersistenceInterface)
+
+
+@pytest.fixture
+def roadmap_core():
+    """Create actual RoadmapCore instance for integration-style tests.
+
+    Use this when you need a real RoadmapCore instance initialized with
+    actual services but in an isolated workspace.
+
+    Returns:
+        RoadmapCore instance in a temporary workspace
+    """
+    import tempfile
+    from pathlib import Path
+
+    from roadmap.infrastructure.coordination.core import RoadmapCore
+
+    # Create temporary workspace for this test
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Set up minimal roadmap structure
+        roadmap_dir = Path(tmpdir) / ".roadmap"
+        roadmap_dir.mkdir()
+        (roadmap_dir / "issues").mkdir()
+        (roadmap_dir / "milestones").mkdir()
+
+        # Create core instance
+        core = RoadmapCore()
+        yield core
+
+
+@pytest.fixture
+def mock_git_service():
+    """Create mock GitService for testing.
+
+    Returns:
+        MagicMock with GitService spec
+    """
+    from roadmap.core.services.git.git_service import GitService
+
+    return MagicMock(spec=GitService)
+
+
+@pytest.fixture
+def mock_github_client():
+    """Create mock GitHub client for testing.
+
+    Returns:
+        MagicMock with GitHubBackendInterface spec
+    """
+    from roadmap.core.interfaces.sync import GitHubBackendInterface
+
+    return MagicMock(spec=GitHubBackendInterface)

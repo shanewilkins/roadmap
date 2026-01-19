@@ -78,8 +78,11 @@ from .mocks import (
     mock_core_initialized,
     mock_core_simple,
     mock_core_with_github,
+    mock_git_service,
     mock_issue,
     mock_milestone,
+    mock_persistence,
+    roadmap_core,
 )
 from .patch_helpers import (
     with_file_and_git,
@@ -175,6 +178,10 @@ __all__ = [
     "mock_console",
     "mock_issue",
     "mock_milestone",
+    "mock_persistence",
+    "mock_git_service",
+    "mock_github_client",
+    "roadmap_core",
     "lightweight_mock_core",
     "fast_mock_core",
     "cli_test_data",

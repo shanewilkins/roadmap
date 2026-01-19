@@ -1,0 +1,22 @@
+{
+  "threshold": 5,
+  "minLines": 5,
+  "minTokens": 50,
+  "reporters": ["json", "html"],
+  "exclude": [
+    "node_modules",
+    ".venv",
+    ".git",
+    "htmlcov",
+    "dist",
+    "build",
+    ".pytest_cache",
+    ".eggs",
+    "*.egg-info",
+    "docs",
+    "scripts"
+  ],
+  "languages": ["python"],
+  "absolute": true,
+  "paths": ["roadmap", "tests"]
+}
