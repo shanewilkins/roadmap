@@ -367,3 +367,126 @@ class CoreMockBuilder:
             mock_core.github_service = Mock()
 
         return mock_core
+
+
+# ============================================================================
+# Domain Entity Mocks
+# ============================================================================
+
+
+def build_mock_issue(
+    id: str = "issue-1",
+    title: str = "Test Issue",
+    status: str = "TODO",
+    priority: str = "MEDIUM",
+    **kwargs: Any,
+) -> Mock:
+    """Build a mock Issue entity.
+
+    Args:
+        id: Issue ID
+        title: Issue title
+        status: Issue status (TODO, IN_PROGRESS, DONE, BLOCKED)
+        priority: Issue priority (LOW, MEDIUM, HIGH)
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock Issue
+    """
+    from roadmap.core.domain.issue import Issue
+
+    mock_issue = Mock(spec=Issue)
+    mock_issue.id = id
+    mock_issue.title = title
+    mock_issue.status = status
+    mock_issue.priority = priority
+    for key, value in kwargs.items():
+        setattr(mock_issue, key, value)
+    return mock_issue
+
+
+def build_mock_milestone(
+    id: str = "milestone-1",
+    name: str = "v1.0",
+    status: str = "IN_PROGRESS",
+    **kwargs: Any,
+) -> Mock:
+    """Build a mock Milestone entity.
+
+    Args:
+        id: Milestone ID
+        name: Milestone name
+        status: Milestone status
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock Milestone
+    """
+    from roadmap.core.domain.milestone import Milestone
+
+    mock_milestone = Mock(spec=Milestone)
+    mock_milestone.id = id
+    mock_milestone.name = name
+    mock_milestone.status = status
+    for key, value in kwargs.items():
+        setattr(mock_milestone, key, value)
+    return mock_milestone
+
+
+def build_mock_comment(
+    id: str = "comment-1",
+    author: str = "test_user",
+    content: str = "Test comment",
+    **kwargs: Any,
+) -> Mock:
+    """Build a mock Comment entity.
+
+    Args:
+        id: Comment ID
+        author: Comment author
+        content: Comment content
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock Comment
+    """
+    from roadmap.core.domain.comment import Comment
+
+    mock_comment = Mock(spec=Comment)
+    mock_comment.id = id
+    mock_comment.author = author
+    mock_comment.content = content
+    for key, value in kwargs.items():
+        setattr(mock_comment, key, value)
+    return mock_comment
+
+
+def build_mock_roadmap_core(
+    has_github: bool = False,
+    has_repository: bool = True,
+    **kwargs: Any,
+) -> Mock:
+    """Build a mock RoadmapCore instance with domain entities.
+
+    Args:
+        has_github: If True, add github_service
+        has_repository: If True, add issue_service with repository
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock RoadmapCore
+    """
+    from roadmap.infrastructure.coordination.core import RoadmapCore
+
+    mock_core = Mock(spec=RoadmapCore)
+    for key, value in kwargs.items():
+        setattr(mock_core, key, value)
+
+    if has_repository:
+        mock_core.issue_service = Mock()
+        mock_core.issue_service.repository = build_mock_repo()
+
+    if has_github:
+        mock_core.github_service = Mock()
+
+    return mock_core

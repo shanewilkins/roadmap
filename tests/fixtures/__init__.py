@@ -59,14 +59,18 @@ from .io import (
 from .issue_factory import IssueFactory
 from .mock_builders import (
     CoreMockBuilder,
+    build_mock_comment,
     build_mock_core,
     build_mock_core_with_repo,
     build_mock_directory,
     build_mock_file_handle,
     build_mock_git_service,
     build_mock_github_service,
+    build_mock_issue,
+    build_mock_milestone,
     build_mock_path,
     build_mock_repo,
+    build_mock_roadmap_core,
     build_mock_sync_service,
 )
 from .mocks import (
@@ -149,6 +153,11 @@ __all__ = [
     "build_mock_sync_service",
     "build_mock_file_handle",
     "build_mock_directory",
+    "build_mock_path",
+    "build_mock_issue",
+    "build_mock_milestone",
+    "build_mock_comment",
+    "build_mock_roadmap_core",
     "build_mock_path",
     "CoreMockBuilder",
     # IO fixtures
