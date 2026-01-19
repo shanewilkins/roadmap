@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from roadmap.adapters.persistence.storage.conflicts import ConflictService
+from tests.fixtures import build_mock_path
 
 
 class TestConflictServiceInitialization:
@@ -46,9 +47,7 @@ class TestCheckGitConflicts:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = mock.MagicMock(spec=Path)
-        mock_roadmap_dir.exists.return_value = True
-        mock_roadmap_dir.glob.return_value = []
+        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True, glob_results=[])
 
         result = service.check_git_conflicts(mock_roadmap_dir)
 
@@ -63,15 +62,14 @@ class TestCheckGitConflicts:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.read_text.return_value = (
-            "content\n<<<<<<< HEAD\nconflict\n=======\nother\n>>>>>>> branch"
+        mock_file = build_mock_path(
+            name="issues/test.md",
+            content="content\n<<<<<<< HEAD\nconflict\n=======\nother\n>>>>>>> branch",
         )
-        mock_file.relative_to.return_value = Path("issues/test.md")
 
-        mock_roadmap_dir = mock.MagicMock(spec=Path)
-        mock_roadmap_dir.exists.return_value = True
-        mock_roadmap_dir.glob.return_value = [mock_file]
+        mock_roadmap_dir = build_mock_path(
+            exists=True, is_dir=True, glob_results=[mock_file]
+        )
 
         with mock.patch(
             "builtins.open", mock.mock_open(read_data="<<<<<<< HEAD\ncontent")
@@ -84,12 +82,11 @@ class TestCheckGitConflicts:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_file = mock.MagicMock(spec=Path)
-        mock_file.relative_to.return_value = Path("issues/test.md")
+        mock_file = build_mock_path(name="issues/test.md")
 
-        mock_roadmap_dir = mock.MagicMock(spec=Path)
-        mock_roadmap_dir.exists.return_value = True
-        mock_roadmap_dir.glob.return_value = [mock_file]
+        mock_roadmap_dir = build_mock_path(
+            exists=True, is_dir=True, glob_results=[mock_file]
+        )
 
         with mock.patch("builtins.open", side_effect=OSError("Cannot read file")):
             result = service.check_git_conflicts(mock_roadmap_dir)
@@ -101,7 +98,7 @@ class TestCheckGitConflicts:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = mock.MagicMock(spec=Path)
+        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True)
         mock_roadmap_dir.exists.side_effect = Exception("Unexpected error")
 
         result = service.check_git_conflicts(mock_roadmap_dir)
@@ -112,14 +109,13 @@ class TestCheckGitConflicts:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_file1 = mock.MagicMock(spec=Path)
-        mock_file1.relative_to.return_value = Path("issues/a.md")
+        mock_file1 = build_mock_path(name="issues/a.md")
 
-        mock_file2 = mock.MagicMock(spec=Path)
-        mock_file2.relative_to.return_value = Path("issues/b.md")
+        mock_file2 = build_mock_path(name="issues/b.md")
 
-        mock_roadmap_dir = mock.MagicMock(spec=Path)
-        mock_roadmap_dir.exists.return_value = True
+        mock_roadmap_dir = build_mock_path(
+            exists=True, is_dir=True, glob_results=[mock_file1, mock_file2]
+        )
         mock_roadmap_dir.glob.side_effect = [[mock_file1, mock_file2], [], []]
 
         with mock.patch("builtins.open", mock.mock_open(read_data="normal content")):
@@ -131,9 +127,7 @@ class TestCheckGitConflicts:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = mock.MagicMock(spec=Path)
-        mock_roadmap_dir.exists.return_value = True
-        mock_roadmap_dir.glob.return_value = []
+        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True, glob_results=[])
 
         service.check_git_conflicts(mock_roadmap_dir)
 
@@ -273,9 +267,7 @@ class TestConflictServiceIntegration:
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = mock.MagicMock(spec=Path)
-        mock_roadmap_dir.exists.return_value = True
-        mock_roadmap_dir.glob.return_value = []
+        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True, glob_results=[])
 
         # Check for conflicts
         result = service.check_git_conflicts(mock_roadmap_dir)
