@@ -1,11 +1,10 @@
 """OpenTelemetry initialization for local tracing.
 
-Sets up trace exporter and jaeger integration for local development.
-Exports traces to local Jaeger agent on UDP port 6831.
+Sets up trace exporter and OTLP integration for local development.
+Exports traces to local OTLP receiver on port 4317.
 """
 
 import logging
-import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +13,14 @@ _tracer: object | None = None
 
 
 def initialize_tracing(service_name: str = "roadmap-cli") -> None:
-    """Initialize OpenTelemetry tracing with Jaeger exporter.
+    """Initialize OpenTelemetry tracing with OTLP exporter.
 
     This must be called once at application startup before any tracing
-    operations. It configures trace export to a local Jaeger agent.
+    operations. It configures trace export to a local OTLP receiver
+    (typically a collector or Jaeger with OTLP native support).
 
     Args:
-        service_name: Name of the service for Jaeger (default: "roadmap-cli")
+        service_name: Name of the service for tracing (default: "roadmap-cli")
 
     Example:
         from roadmap.common.observability.otel_init import initialize_tracing
@@ -29,24 +29,20 @@ def initialize_tracing(service_name: str = "roadmap-cli") -> None:
     global _tracer
 
     try:
-        # Suppress deprecation warning for JaegerExporter
-        # This is development/tracing code and the deprecated exporter is stable
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
-            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-        # Create Jaeger exporter
-        jaeger_exporter = JaegerExporter(
-            agent_host_name="localhost",
-            agent_port=6831,
+        # Create OTLP exporter (connects to localhost:4317 by default)
+        otlp_exporter = OTLPSpanExporter(
+            endpoint="http://localhost:4317",
         )
 
         # Create tracer provider
         tracer_provider = TracerProvider()
-        tracer_provider.add_span_processor(BatchSpanProcessor(jaeger_exporter))
+        tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
 
         # Set global tracer provider
         from opentelemetry import trace
@@ -57,7 +53,7 @@ def initialize_tracing(service_name: str = "roadmap-cli") -> None:
 
         logger.debug(
             "OpenTelemetry tracing initialized",
-            extra={"service": service_name, "exporter": "jaeger"},
+            extra={"service": service_name, "exporter": "otlp"},
         )
 
     except ImportError as e:
@@ -101,7 +97,7 @@ def get_tracer():
         def __init__(self, tracer):
             self._tracer = tracer
 
-        def __call__(self, *args, **kwargs):
+        def __call__(self, *_args, **_kwargs):
             return self._tracer
 
         def __getattr__(self, name):
