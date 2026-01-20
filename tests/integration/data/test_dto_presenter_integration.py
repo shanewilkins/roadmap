@@ -9,16 +9,15 @@ from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
 from roadmap.adapters.cli.presentation.milestone_presenter import MilestonePresenter
 from roadmap.adapters.cli.presentation.project_presenter import ProjectPresenter
 from roadmap.common.constants import IssueType, Priority, Status
-from tests.fixtures import build_mock_issue
 
 
 class TestIssueDTOPresenterIntegration:
     """Integration tests for Issue domain → DTO → Presenter flow."""
 
-    def test_issue_domain_to_dto_to_presenter(self):
+    def test_issue_domain_to_dto_to_presenter(self, mock_issue_factory):
         """Test full flow: Issue domain model → DTO → Presenter."""
         # Create a mock domain Issue
-        domain_issue = build_mock_issue(
+        domain_issue = mock_issue_factory(
             id="issue001",
             title="Integration Test Issue",
             headline="Test issue headline",
@@ -57,10 +56,10 @@ class TestIssueDTOPresenterIntegration:
             # Verify console methods were called (rendering happened)
             assert mock_console.return_value.print.called
 
-    def test_issue_roundtrip_conversion(self):
+    def test_issue_roundtrip_conversion(self, mock_issue_factory):
         """Test domain → DTO → domain roundtrip conversion."""
         # Create domain issue
-        domain_issue = build_mock_issue(
+        domain_issue = mock_issue_factory(
             id="issue002",
             title="Roundtrip Test",
             headline="Roundtrip test headline",
@@ -120,12 +119,12 @@ class TestProjectDTOPresenterIntegration:
 class TestListCommandDTOFlow:
     """Integration tests for list command using DTOs."""
 
-    def test_list_command_issue_dto_conversion(self):
+    def test_list_command_issue_dto_conversion(self, mock_issue_factory):
         """Test that list command properly converts domain issues to DTOs."""
         # Create mock domain issues
         domain_issues = []
         for i in range(3):
-            issue = build_mock_issue(
+            issue = mock_issue_factory(
                 id=f"issue{i:03d}",
                 title=f"Test Issue {i}",
                 headline=f"Headline for issue {i}",
