@@ -67,11 +67,15 @@ from .mock_builders import (
     build_mock_git_service,
     build_mock_github_service,
     build_mock_issue,
+    build_mock_issue_parser_interface,
     build_mock_milestone,
     build_mock_path,
+    build_mock_persistence_interface,
+    build_mock_project,
     build_mock_repo,
     build_mock_roadmap_core,
     build_mock_sync_service,
+    build_mock_table_data,
 )
 from .mocks import (
     cli_test_data,
@@ -158,7 +162,10 @@ __all__ = [
     "build_mock_milestone",
     "build_mock_comment",
     "build_mock_roadmap_core",
-    "build_mock_path",
+    "build_mock_persistence_interface",
+    "build_mock_issue_parser_interface",
+    "build_mock_table_data",
+    "build_mock_project",
     "CoreMockBuilder",
     # IO fixtures
     "strip_ansi_fixture",

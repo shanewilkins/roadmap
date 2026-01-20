@@ -1,7 +1,7 @@
 """Integration tests for CLI DTO and Presenter flow."""
 
 import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from roadmap.adapters.cli.dtos import IssueDTO
 from roadmap.adapters.cli.mappers import IssueMapper
@@ -9,7 +9,7 @@ from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
 from roadmap.adapters.cli.presentation.milestone_presenter import MilestonePresenter
 from roadmap.adapters.cli.presentation.project_presenter import ProjectPresenter
 from roadmap.common.constants import IssueType, Priority, Status
-from roadmap.core.domain.issue import Issue
+from tests.fixtures import build_mock_issue
 
 
 class TestIssueDTOPresenterIntegration:
@@ -18,26 +18,25 @@ class TestIssueDTOPresenterIntegration:
     def test_issue_domain_to_dto_to_presenter(self):
         """Test full flow: Issue domain model → DTO → Presenter."""
         # Create a mock domain Issue
-        domain_issue = MagicMock(spec=Issue)
-        domain_issue.id = "issue001"
-        domain_issue.title = "Integration Test Issue"
-        domain_issue.headline = "Test issue headline"
-        domain_issue.priority = Priority.HIGH
-        domain_issue.status = Status.IN_PROGRESS
-        domain_issue.issue_type = IssueType.FEATURE
-        domain_issue.assignee = "Alice"
-        domain_issue.milestone = "v1.0"
-        domain_issue.due_date = datetime.datetime(2024, 3, 1)
-        domain_issue.estimated_hours = 5.0
-        domain_issue.actual_end_date = None
-        domain_issue.progress_percentage = 50
-        domain_issue.created = datetime.datetime(2024, 1, 1)
-        domain_issue.updated = datetime.datetime(2024, 1, 15)
-        domain_issue.content = (
-            "## Description\nTest feature\n\n## Acceptance Criteria\n- Works"
+        domain_issue = build_mock_issue(
+            id="issue001",
+            title="Integration Test Issue",
+            headline="Test issue headline",
+            priority=Priority.HIGH,
+            status=Status.IN_PROGRESS,
+            issue_type=IssueType.FEATURE,
+            assignee="Alice",
+            milestone="v1.0",
+            due_date=datetime.datetime(2024, 3, 1),
+            estimated_hours=5.0,
+            actual_end_date=None,
+            progress_percentage=50,
+            created=datetime.datetime(2024, 1, 1),
+            updated=datetime.datetime(2024, 1, 15),
+            content="## Description\nTest feature\n\n## Acceptance Criteria\n- Works",
+            labels=["feature", "backend"],
+            github_issue=123,
         )
-        domain_issue.labels = ["feature", "backend"]
-        domain_issue.github_issue = 123
 
         # Step 1: Convert domain to DTO
         issue_dto = IssueMapper.domain_to_dto(domain_issue)
@@ -61,24 +60,25 @@ class TestIssueDTOPresenterIntegration:
     def test_issue_roundtrip_conversion(self):
         """Test domain → DTO → domain roundtrip conversion."""
         # Create domain issue
-        domain_issue = MagicMock(spec=Issue)
-        domain_issue.id = "issue002"
-        domain_issue.title = "Roundtrip Test"
-        domain_issue.headline = "Roundtrip test headline"
-        domain_issue.priority = Priority.MEDIUM
-        domain_issue.status = Status.TODO
-        domain_issue.issue_type = IssueType.BUG
-        domain_issue.assignee = None
-        domain_issue.milestone = None
-        domain_issue.due_date = None
-        domain_issue.estimated_hours = None
-        domain_issue.actual_end_date = None
-        domain_issue.progress_percentage = 0
-        domain_issue.created = datetime.datetime(2024, 1, 1)
-        domain_issue.updated = datetime.datetime(2024, 1, 1)
-        domain_issue.content = None
-        domain_issue.labels = []
-        domain_issue.github_issue = None
+        domain_issue = build_mock_issue(
+            id="issue002",
+            title="Roundtrip Test",
+            headline="Roundtrip test headline",
+            priority=Priority.MEDIUM,
+            status=Status.TODO,
+            issue_type=IssueType.BUG,
+            assignee=None,
+            milestone=None,
+            due_date=None,
+            estimated_hours=None,
+            actual_end_date=None,
+            progress_percentage=0,
+            created=datetime.datetime(2024, 1, 1),
+            updated=datetime.datetime(2024, 1, 1),
+            content=None,
+            labels=[],
+            github_issue=None,
+        )
 
         # Convert to DTO
         issue_dto = IssueMapper.domain_to_dto(domain_issue)
@@ -125,24 +125,25 @@ class TestListCommandDTOFlow:
         # Create mock domain issues
         domain_issues = []
         for i in range(3):
-            issue = MagicMock(spec=Issue)
-            issue.id = f"issue{i:03d}"
-            issue.title = f"Test Issue {i}"
-            issue.headline = f"Headline for issue {i}"
-            issue.priority = Priority.HIGH if i % 2 == 0 else Priority.LOW
-            issue.status = Status.TODO
-            issue.issue_type = IssueType.FEATURE
-            issue.assignee = "Alice" if i % 2 == 0 else None
-            issue.milestone = "v1.0" if i % 2 == 0 else None
-            issue.due_date = None
-            issue.estimated_hours = 5.0
-            issue.actual_end_date = None
-            issue.progress_percentage = 0
-            issue.created = datetime.datetime(2024, 1, 1)
-            issue.updated = datetime.datetime(2024, 1, 1)
-            issue.content = None
-            issue.labels = []
-            issue.github_issue = None
+            issue = build_mock_issue(
+                id=f"issue{i:03d}",
+                title=f"Test Issue {i}",
+                headline=f"Headline for issue {i}",
+                priority=Priority.HIGH if i % 2 == 0 else Priority.LOW,
+                status=Status.TODO,
+                issue_type=IssueType.FEATURE,
+                assignee="Alice" if i % 2 == 0 else None,
+                milestone="v1.0" if i % 2 == 0 else None,
+                due_date=None,
+                estimated_hours=5.0,
+                actual_end_date=None,
+                progress_percentage=0,
+                created=datetime.datetime(2024, 1, 1),
+                updated=datetime.datetime(2024, 1, 1),
+                content=None,
+                labels=[],
+                github_issue=None,
+            )
             domain_issues.append(issue)
 
         # Convert to DTOs (as list command does)

@@ -490,3 +490,99 @@ def build_mock_roadmap_core(
         mock_core.github_service = Mock()
 
     return mock_core
+
+
+# ============================================================================
+# Interface Mocks
+# ============================================================================
+
+
+def build_mock_persistence_interface(**kwargs: Any) -> Mock:
+    """Build a mock PersistenceInterface.
+
+    Args:
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock PersistenceInterface
+    """
+    from roadmap.core.interfaces.persistence import PersistenceInterface
+
+    mock_persistence = Mock(spec=PersistenceInterface)
+    for key, value in kwargs.items():
+        setattr(mock_persistence, key, value)
+    return mock_persistence
+
+
+def build_mock_issue_parser_interface(**kwargs: Any) -> Mock:
+    """Build a mock IssueParserInterface.
+
+    Args:
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock IssueParserInterface
+    """
+    from roadmap.core.interfaces.parsers import IssueParserInterface
+
+    mock_parser = Mock(spec=IssueParserInterface)
+    for key, value in kwargs.items():
+        setattr(mock_parser, key, value)
+    return mock_parser
+
+
+# ============================================================================
+# UI/Presentation Mocks
+# ============================================================================
+
+
+def build_mock_table_data(
+    data: list | None = None,
+    columns: list | None = None,
+    **kwargs: Any,
+) -> Mock:
+    """Build a mock TableData object.
+
+    Args:
+        data: Table rows
+        columns: Column names
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock TableData
+    """
+    from rich.table import Table
+
+    mock_table = Mock(spec=Table)
+    if data is not None:
+        mock_table.rows = data
+    if columns is not None:
+        mock_table.columns = columns
+    for key, value in kwargs.items():
+        setattr(mock_table, key, value)
+    return mock_table
+
+
+def build_mock_project(
+    id: str = "project-1",
+    name: str = "Test Project",
+    **kwargs: Any,
+) -> Mock:
+    """Build a mock Project entity.
+
+    Args:
+        id: Project ID
+        name: Project name
+        **kwargs: Additional attributes
+
+    Returns:
+        Configured Mock Project
+    """
+    from roadmap.core.domain.project import Project
+
+    mock_project = Mock(spec=Project)
+    mock_project.id = id
+    mock_project.name = name
+    for key, value in kwargs.items():
+        setattr(mock_project, key, value)
+    return mock_project
