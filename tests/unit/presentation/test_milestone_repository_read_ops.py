@@ -21,16 +21,15 @@ from roadmap.adapters.persistence.repositories.milestone_repository import (
     MilestoneRepository,
 )
 from roadmap.common.errors.exceptions import UpdateError
-from tests.fixtures.mock_builders import build_mock_database_connection
 
 
 class TestMilestoneRepositoryGet:
     """Test milestone retrieval with various error scenarios."""
 
-    def test_get_existing_milestone(self):
+    def test_get_existing_milestone(self, mock_database_connection_factory):
         """Test successful retrieval of existing milestone."""
         mock_row = {"id": "m1", "title": "v1.0", "status": "open"}
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=mock_row
         )
 
@@ -41,9 +40,9 @@ class TestMilestoneRepositoryGet:
         assert result == mock_row
         mock_conn.execute.assert_called_once()
 
-    def test_get_nonexistent_milestone(self):
+    def test_get_nonexistent_milestone(self, mock_database_connection_factory):
         """Test retrieval of non-existent milestone returns None."""
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=None
         )
 
@@ -53,9 +52,9 @@ class TestMilestoneRepositoryGet:
 
         assert result is None
 
-    def test_get_with_none_id(self):
+    def test_get_with_none_id(self, mock_database_connection_factory):
         """Test get with None as milestone_id."""
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=None
         )
 
@@ -75,9 +74,9 @@ class TestMilestoneRepositoryGet:
         with pytest.raises(sqlite3.Error):
             repo.get("m1")
 
-    def test_get_sql_execution_error(self):
+    def test_get_sql_execution_error(self, mock_database_connection_factory):
         """Test get when SQL execution fails."""
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             execute_side_effect=sqlite3.OperationalError("no such table")
         )
 
@@ -86,9 +85,9 @@ class TestMilestoneRepositoryGet:
         with pytest.raises(sqlite3.OperationalError):
             repo.get("m1")
 
-    def test_get_with_empty_string_id(self):
+    def test_get_with_empty_string_id(self, mock_database_connection_factory):
         """Test get with empty string as milestone_id."""
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=None
         )
 
@@ -98,9 +97,9 @@ class TestMilestoneRepositoryGet:
 
         assert result is None
 
-    def test_get_with_very_long_id(self):
+    def test_get_with_very_long_id(self, mock_database_connection_factory):
         """Test get with extremely long milestone_id."""
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=None
         )
 
@@ -111,11 +110,11 @@ class TestMilestoneRepositoryGet:
 
         assert result is None
 
-    def test_get_row_conversion_error(self):
+    def test_get_row_conversion_error(self, mock_database_connection_factory):
         """Test get when row dict conversion fails."""
         # Create a mock row that cannot be converted to dict
         mock_row = Mock(spec=[])  # Empty spec prevents attribute access
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=mock_row
         )
 
@@ -147,9 +146,9 @@ class TestMilestoneRepositoryEdgeCases:
 
         assert result == "m1"
 
-    def test_get_with_integer_id(self):
+    def test_get_with_integer_id(self, mock_database_connection_factory):
         """Test get with integer ID (type mismatch)."""
-        mock_get_connection, mock_conn = build_mock_database_connection(
+        mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=None
         )
 
