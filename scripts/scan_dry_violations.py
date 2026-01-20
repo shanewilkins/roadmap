@@ -7,11 +7,9 @@ Identifies:
 - Similar code blocks that could be extracted
 """
 
-import os
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 # Common DRY violation patterns
 PATTERNS = {
@@ -25,9 +23,9 @@ PATTERNS = {
 }
 
 # Track similar code blocks
-similar_blocks: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
-fixture_names: Set[str] = set()
-duplicate_patterns: Dict[str, List[Tuple[str, int, str]]] = defaultdict(list)
+similar_blocks: dict[str, list[tuple[str, int]]] = defaultdict(list)
+fixture_names: set[str] = set()
+duplicate_patterns: dict[str, list[tuple[str, int, str]]] = defaultdict(list)
 
 
 def scan_file(filepath: Path) -> None:
@@ -49,12 +47,10 @@ def scan_file(filepath: Path) -> None:
 
         if len(matches) > 2:  # Only report if appears 3+ times
             for file_path, lineno, code in matches:
-                duplicate_patterns[f"{pattern_name}"].append(
-                    (file_path, lineno, code)
-                )
+                duplicate_patterns[f"{pattern_name}"].append((file_path, lineno, code))
 
     # Look for fixture definitions
-    for i, line in enumerate(lines, 1):
+    for _i, line in enumerate(lines, 1):
         fixture_match = re.search(r"@pytest\.fixture.*def\s+(\w+)", line)
         if fixture_match:
             fixture_names.add(fixture_match.group(1))
@@ -80,7 +76,9 @@ else:
     for pattern_name in sorted(duplicate_patterns.keys()):
         occurrences = duplicate_patterns[pattern_name]
         if len(occurrences) >= 3:
-            print(f"\n{pattern_name.replace('_', ' ').title()}: {len(occurrences)} occurrences")
+            print(
+                f"\n{pattern_name.replace('_', ' ').title()}: {len(occurrences)} occurrences"
+            )
             print("-" * 90)
             for filepath, lineno, code in occurrences[:8]:
                 print(f"  {filepath}:{lineno}")
@@ -90,7 +88,9 @@ else:
 
 print()
 print("=" * 90)
-print(f"\nTotal DRY Pattern Occurrences: {sum(len(v) for v in duplicate_patterns.values())}")
+print(
+    f"\nTotal DRY Pattern Occurrences: {sum(len(v) for v in duplicate_patterns.values())}"
+)
 print(f"Pattern Types Found: {len(duplicate_patterns)}")
 print()
 
@@ -105,7 +105,9 @@ if duplicate_patterns.get("mock_persistence", []):
         + str(len(duplicate_patterns.get("mock_persistence", [])))
         + " times"
     )
-    print("   💡 SUGGESTION: Create a @pytest.fixture for common mock_persistence setup")
+    print(
+        "   💡 SUGGESTION: Create a @pytest.fixture for common mock_persistence setup"
+    )
     print("      Example: Create tests/conftest.py with:")
     print(
         """
@@ -145,7 +147,9 @@ if duplicate_patterns.get("patch_pattern", []):
         + str(len(duplicate_patterns.get("patch_pattern", [])))
         + " times"
     )
-    print("   💡 SUGGESTION: Consolidate patches into conftest.py or use pytest-mock plugin")
+    print(
+        "   💡 SUGGESTION: Consolidate patches into conftest.py or use pytest-mock plugin"
+    )
 
 print()
 print("=" * 90)

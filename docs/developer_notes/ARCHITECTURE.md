@@ -725,7 +725,7 @@ class PersistenceInterface(ABC):
     @abstractmethod
     def load(self, path: str) -> dict:
         pass
-    
+
     @abstractmethod
     def save(self, path: str, data: dict) -> None:
         pass
@@ -746,9 +746,9 @@ from roadmap.core.services.issue import IssueService
 def test_issue_creation():
     mock_persistence = MagicMock(spec=PersistenceInterface)
     service = IssueService(mock_persistence)
-    
+
     result = service.create_issue(title="Test")
-    
+
     mock_persistence.save.assert_called_once()
 ```
 
@@ -848,6 +848,6 @@ from ...shared.persistence import save   # Non-existent "shared" layer
 
 ---
 
-**Last Updated**: January 15, 2026  
-**Phase**: 6 - Architecture & Code Quality  
+**Last Updated**: January 15, 2026
+**Phase**: 6 - Architecture & Code Quality
 **Version**: 1.0 (Consolidated)

@@ -16,7 +16,7 @@ startup time and improving modularity.
 """
 
 import importlib
-from typing import Any, Callable, Dict
+from typing import Any
 
 import click
 
@@ -38,7 +38,7 @@ console = get_console()
 # Plugin registry: maps command names to their import locations
 # Format: "command_name": ("module_path", "variable_name")
 # This allows lazy loading of commands - they're only imported when invoked
-_COMMAND_REGISTRY: Dict[str, tuple[str, str]] = {
+_COMMAND_REGISTRY: dict[str, tuple[str, str]] = {
     # Core v1.0 standalone commands
     "init": ("roadmap.adapters.cli.core", "init"),
     "status": ("roadmap.adapters.cli.core", "status"),
@@ -59,31 +59,31 @@ _COMMAND_REGISTRY: Dict[str, tuple[str, str]] = {
 }
 
 # Cache for loaded commands to avoid re-importing
-_command_cache: Dict[str, Any] = {}
+_command_cache: dict[str, Any] = {}
 
 
 def _load_command(command_name: str) -> Any:
     """Lazily load a command from the registry.
-    
+
     Args:
         command_name: Name of command to load
-        
+
     Returns:
         The Click command/group object
-        
+
     Raises:
         ValueError: If command not found in registry
     """
     if command_name in _command_cache:
         return _command_cache[command_name]
-    
+
     if command_name not in _COMMAND_REGISTRY:
         raise ValueError(f"Unknown command: {command_name}")
-    
+
     module_path, var_name = _COMMAND_REGISTRY[command_name]
     module = importlib.import_module(module_path)
     command = getattr(module, var_name)
-    
+
     _command_cache[command_name] = command
     return command
 
@@ -132,6 +132,7 @@ def _get_current_user():
     """Get current user from git config."""
     if gitpython is None:
         import os
+
         return os.environ.get("USER") or os.environ.get("USERNAME")
 
     try:
@@ -146,6 +147,7 @@ def _get_current_user():
 
     # Fallback to environment variables
     import os
+
     return os.environ.get("USER") or os.environ.get("USERNAME")
 
 
@@ -197,7 +199,7 @@ def main(ctx: click.Context):
 def register_commands():
     """
     Register all commands from the plugin registry.
-    
+
     Commands are loaded lazily from the registry, which maps command names
     to their module paths. This approach:
     - Reduces startup time by deferring imports
@@ -210,8 +212,7 @@ def register_commands():
             main.add_command(command, name=command_name)
         except Exception as e:
             console.print(
-                f"⚠️  Failed to register command '{command_name}': {e}",
-                style="yellow"
+                f"⚠️  Failed to register command '{command_name}': {e}", style="yellow"
             )
 
 

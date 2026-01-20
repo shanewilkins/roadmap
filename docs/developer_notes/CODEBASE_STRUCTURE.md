@@ -44,7 +44,7 @@ roadmap/
 
 **Subdirectories**:
 - `cli/` - Click command-line interface structure
-- `sync/` - GitHub synchronization adapters  
+- `sync/` - GitHub synchronization adapters
 - `persistence/` - File storage and serialization adapters
 - `github/` - GitHub API client adapters
 
