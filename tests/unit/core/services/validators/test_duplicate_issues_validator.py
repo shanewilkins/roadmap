@@ -1,6 +1,6 @@
 """Tests for duplicate issues validator."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from roadmap.core.services.validator_base import HealthStatus
 from roadmap.core.services.validators.duplicate_issues_validator import (
@@ -86,60 +86,56 @@ class TestDuplicateIssuesValidator:
         assert "87654321" in duplicates
         assert "abcdef00" not in duplicates
 
-    def test_perform_check_directory_not_exists(self):
+    def test_perform_check_directory_not_exists(self, mocker):
         """Test perform_check when issues directory doesn't exist."""
-        with patch(
+        mock_path = mocker.patch(
             "roadmap.core.services.validators.duplicate_issues_validator.Path"
-        ) as mock_path:
-            mock_dir = MagicMock()
-            mock_dir.exists.return_value = False
-            mock_path.return_value = mock_dir
+        )
+        mock_dir = MagicMock()
+        mock_dir.exists.return_value = False
+        mock_path.return_value = mock_dir
 
-            status, message = DuplicateIssuesValidator.perform_check()
-            assert status == HealthStatus.HEALTHY
-            assert "not initialized" in message
+        status, message = DuplicateIssuesValidator.perform_check()
+        assert status == HealthStatus.HEALTHY
+        assert "not initialized" in message
 
-    def test_perform_check_no_duplicates(self):
+    def test_perform_check_no_duplicates(self, mocker):
         """Test perform_check with no duplicates found."""
-        with (
-            patch(
-                "roadmap.core.services.validators.duplicate_issues_validator.Path"
-            ) as mock_path,
-            patch(
-                "roadmap.core.services.validators.duplicate_issues_validator.DuplicateIssuesValidator.scan_for_duplicate_issues"
-            ) as mock_scan,
-        ):
-            mock_dir = MagicMock()
-            mock_dir.exists.return_value = True
-            mock_path.return_value = mock_dir
-            mock_scan.return_value = {}
+        mock_path = mocker.patch(
+            "roadmap.core.services.validators.duplicate_issues_validator.Path"
+        )
+        mock_scan = mocker.patch(
+            "roadmap.core.services.validators.duplicate_issues_validator.DuplicateIssuesValidator.scan_for_duplicate_issues"
+        )
+        mock_dir = MagicMock()
+        mock_dir.exists.return_value = True
+        mock_path.return_value = mock_dir
+        mock_scan.return_value = {}
 
-            status, message = DuplicateIssuesValidator.perform_check()
-            assert status == HealthStatus.HEALTHY
-            assert "No duplicate issues found" in message
+        status, message = DuplicateIssuesValidator.perform_check()
+        assert status == HealthStatus.HEALTHY
+        assert "No duplicate issues found" in message
 
-    def test_perform_check_finds_duplicates(self):
+    def test_perform_check_finds_duplicates(self, mocker):
         """Test perform_check when duplicates are found."""
-        with (
-            patch(
-                "roadmap.core.services.validators.duplicate_issues_validator.Path"
-            ) as mock_path,
-            patch(
-                "roadmap.core.services.validators.duplicate_issues_validator.DuplicateIssuesValidator.scan_for_duplicate_issues"
-            ) as mock_scan,
-        ):
-            mock_dir = MagicMock()
-            mock_dir.exists.return_value = True
-            mock_path.return_value = mock_dir
+        mock_path = mocker.patch(
+            "roadmap.core.services.validators.duplicate_issues_validator.Path"
+        )
+        mock_scan = mocker.patch(
+            "roadmap.core.services.validators.duplicate_issues_validator.DuplicateIssuesValidator.scan_for_duplicate_issues"
+        )
+        mock_dir = MagicMock()
+        mock_dir.exists.return_value = True
+        mock_path.return_value = mock_dir
 
-            # Simulate 3 issue IDs with duplicates
-            # ISSUE-1 has 2 copies (1 duplicate), ISSUE-2 has 3 copies (2 duplicates)
-            mock_scan.return_value = {
-                "ISSUE-1": ["file1", "file2"],  # 1 duplicate
-                "ISSUE-2": ["file1", "file2", "file3"],  # 2 duplicates
-            }
+        # Simulate 3 issue IDs with duplicates
+        # ISSUE-1 has 2 copies (1 duplicate), ISSUE-2 has 3 copies (2 duplicates)
+        mock_scan.return_value = {
+            "ISSUE-1": ["file1", "file2"],  # 1 duplicate
+            "ISSUE-2": ["file1", "file2", "file3"],  # 2 duplicates
+        }
 
-            status, message = DuplicateIssuesValidator.perform_check()
-            assert status == HealthStatus.DEGRADED
-            assert "2 issue ID(s) have duplicates" in message
-            assert "3 duplicate files total" in message
+        status, message = DuplicateIssuesValidator.perform_check()
+        assert status == HealthStatus.DEGRADED
+        assert "2 issue ID(s) have duplicates" in message
+        assert "3 duplicate files total" in message
