@@ -1,7 +1,7 @@
 """Unit tests for ConfigurationService."""
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -130,16 +130,16 @@ class TestConfigurationServiceCredentials:
 class TestConfigurationServicePaths:
     """Test configuration path methods."""
 
-    def test_get_config_paths(self, config_service):
+    def test_get_config_paths(self, config_service, mocker):
         """Test getting configuration paths."""
-        with patch("roadmap.settings.get_config_paths") as mock_get_paths:
-            mock_get_paths.return_value = {
-                "user": Path("/home/user/.roadmap"),
-                "local": Path("/project/.roadmap"),
-            }
+        mock_get_paths = mocker.patch("roadmap.settings.get_config_paths")
+        mock_get_paths.return_value = {
+            "user": Path("/home/user/.roadmap"),
+            "local": Path("/project/.roadmap"),
+        }
 
-            result = config_service.get_config_paths()
+        result = config_service.get_config_paths()
 
-            assert "user" in result
-            assert "local" in result
-            mock_get_paths.assert_called_once()
+        assert "user" in result
+        assert "local" in result
+        mock_get_paths.assert_called_once()

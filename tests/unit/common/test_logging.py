@@ -1,7 +1,5 @@
 """Tests for logging configuration."""
 
-from unittest.mock import patch
-
 import pytest
 
 from roadmap.common.logging import (
@@ -102,10 +100,12 @@ class TestSetupLogging:
             (True, False, "WARNING"),
         ],
     )
-    def test_setup_logging_configurations(self, debug_mode, log_to_file, log_level):
+    def test_setup_logging_configurations(
+        self, mocker, debug_mode, log_to_file, log_level
+    ):
         """Test logging setup with various configurations."""
-        with patch("roadmap.common.logging.structlog"):
-            logger = setup_logging(
-                debug_mode=debug_mode, log_to_file=log_to_file, log_level=log_level
-            )
-            assert logger is not None
+        mocker.patch("roadmap.common.logging.structlog")
+        logger = setup_logging(
+            debug_mode=debug_mode, log_to_file=log_to_file, log_level=log_level
+        )
+        assert logger is not None

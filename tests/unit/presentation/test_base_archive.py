@@ -5,7 +5,7 @@ for archiving entities across all entity types.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -46,18 +46,18 @@ class TestBaseArchiveInitialization:
         assert archive.core is mock_core_simple
         assert archive.console is mock_console
 
-    def test_initialization_without_console(self, mock_core_simple):
+    def test_initialization_without_console(self, mock_core_simple, mocker):
         """Test archive instance initialization without console uses default."""
-        with patch(
+        mock_get_console = mocker.patch(
             "roadmap.adapters.cli.crud.base_archive.get_console"
-        ) as mock_get_console:
-            mock_default_console = MagicMock()
-            mock_get_console.return_value = mock_default_console
+        )
+        mock_default_console = MagicMock()
+        mock_get_console.return_value = mock_default_console
 
-            archive = ConcreteArchive(core=mock_core_simple)
+        archive = ConcreteArchive(core=mock_core_simple)
 
-            assert archive.core is mock_core_simple
-            assert archive.console is mock_default_console
+        assert archive.core is mock_core_simple
+        assert archive.console is mock_default_console
 
     def test_entity_type_accessible(self, archive_instance):
         """Test that entity_type is accessible."""
