@@ -123,3 +123,31 @@ def mock_any():
         MagicMock configured to match any value
     """
     return MagicMock()
+
+
+@pytest.fixture
+def unit_roadmap_core(tmp_path):
+    """Create a RoadmapCore instance for unit testing in isolation.
+
+    Creates RoadmapCore in a temporary directory without full initialization
+    for unit test scenarios that need a core instance but not full setup.
+
+    Args:
+        tmp_path: pytest temporary directory
+
+    Returns:
+        RoadmapCore instance with basic setup
+    """
+    import os
+
+    from roadmap.infrastructure.coordination.core import RoadmapCore
+
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
+
+    try:
+        core = RoadmapCore()
+        # Note: Not calling initialize() - for unit tests that need bare instance
+        yield core
+    finally:
+        os.chdir(original_cwd)

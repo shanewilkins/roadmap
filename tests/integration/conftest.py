@@ -219,3 +219,26 @@ def cli_with_initialized_roadmap(temp_workspace):
         yield runner, temp_workspace
     finally:
         os.chdir(original_cwd)
+
+
+@pytest.fixture
+def integration_roadmap_core(temp_workspace):
+    """Create an initialized RoadmapCore instance for integration testing.
+
+    Sets up a complete initialized RoadmapCore in a temporary workspace,
+    ready for integration tests.
+
+    Returns:
+        Initialized RoadmapCore instance
+    """
+    from roadmap.infrastructure.coordination.core import RoadmapCore
+
+    original_cwd = os.getcwd()
+    os.chdir(temp_workspace)
+
+    try:
+        core = RoadmapCore()
+        core.initialize()
+        yield core
+    finally:
+        os.chdir(original_cwd)
