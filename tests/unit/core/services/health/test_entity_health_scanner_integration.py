@@ -8,22 +8,18 @@ from roadmap.core.domain.project import Project
 from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthScanner,
 )
-from tests.fixtures import (
-    build_mock_issue,
-    build_mock_milestone,
-)
 
 
 class TestEntityHealthScannerIntegration:
     """Integration tests for entity health scanner."""
 
-    def test_scan_multiple_issues_with_various_problems(self):
+    def test_scan_multiple_issues_with_various_problems(self, mock_issue_factory):
         """Test scanning multiple issues with different problems."""
         scanner = EntityHealthScanner()
 
         issues = []
         for i in range(3):
-            issue = build_mock_issue(
+            issue = mock_issue_factory(
                 id=f"issue-{i}",
                 title=f"Test Issue {i}",
                 status=Status.TODO if i == 0 else Status.IN_PROGRESS,
@@ -49,12 +45,14 @@ class TestEntityHealthScannerIntegration:
         # Third issue should have missing estimate warning
         assert any(i.code == "missing_estimate" for i in reports[2].issues)
 
-    def test_scan_diverse_entity_types(self):
+    def test_scan_diverse_entity_types(
+        self, mock_issue_factory, mock_milestone_factory
+    ):
         """Test scanning different entity types in sequence."""
         scanner = EntityHealthScanner()
 
         # Create diverse entities
-        issue = build_mock_issue(
+        issue = mock_issue_factory(
             id="issue-1",
             title="Issue",
             status=Status.CLOSED,
@@ -69,7 +67,7 @@ class TestEntityHealthScannerIntegration:
         issue.handoff_date = None
         issue.progress_percentage = 100
 
-        milestone = build_mock_milestone(
+        milestone = mock_milestone_factory(
             name="v1.0",
             status=Status.CLOSED,
         )
