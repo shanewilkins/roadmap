@@ -81,11 +81,11 @@ class GitHubChangeDetector:
 
         return change
 
-    def detect_milestone_changes(self, local_milestone: Any) -> IssueChange | None:
+    def detect_milestone_changes(self, _local_milestone: Any) -> IssueChange | None:
         """Detect changes for a milestone.
 
         Args:
-            local_milestone: Local milestone to check
+            _local_milestone: Local milestone to check
 
         Returns:
             IssueChange with detected changes, or None if no changes
@@ -112,11 +112,11 @@ class GitHubChangeDetector:
         return github_issue
 
     @staticmethod
-    def _detect_local_changes(issue: Issue) -> dict[str, Any]:
+    def _detect_local_changes(_issue: Issue) -> dict[str, Any]:
         """Detect changes made locally to the issue.
 
         Args:
-            issue: Issue to check
+            _issue: Issue to check
 
         Returns:
             Dict of detected local changes
