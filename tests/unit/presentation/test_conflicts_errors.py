@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest import mock
 
 from roadmap.adapters.persistence.storage.conflicts import ConflictService
-from tests.fixtures import build_mock_path
 
 
 class TestConflictServiceInitialization:
@@ -42,12 +41,12 @@ class TestCheckGitConflicts:
         # Should return empty list when directory doesn't exist
         assert result == []
 
-    def test_check_git_conflicts_no_files(self):
+    def test_check_git_conflicts_no_files(self, mock_path_factory):
         """Test when directory exists but has no files."""
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True, glob_results=[])
+        mock_roadmap_dir = mock_path_factory(exists=True, is_dir=True, glob_results=[])
 
         result = service.check_git_conflicts(mock_roadmap_dir)
 
@@ -57,17 +56,17 @@ class TestCheckGitConflicts:
             "git_conflicts_detected", "false"
         )
 
-    def test_check_git_conflicts_detects_conflict_markers(self):
+    def test_check_git_conflicts_detects_conflict_markers(self, mock_path_factory):
         """Test detection of git conflict markers."""
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_file = build_mock_path(
+        mock_file = mock_path_factory(
             name="issues/test.md",
             content="content\n<<<<<<< HEAD\nconflict\n=======\nother\n>>>>>>> branch",
         )
 
-        mock_roadmap_dir = build_mock_path(
+        mock_roadmap_dir = mock_path_factory(
             exists=True, is_dir=True, glob_results=[mock_file]
         )
 
@@ -77,14 +76,14 @@ class TestCheckGitConflicts:
             result = service.check_git_conflicts(mock_roadmap_dir)
             assert len(result) > 0 or result == []
 
-    def test_check_git_conflicts_file_read_error(self):
+    def test_check_git_conflicts_file_read_error(self, mock_path_factory):
         """Test handling of file read errors."""
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_file = build_mock_path(name="issues/test.md")
+        mock_file = mock_path_factory(name="issues/test.md")
 
-        mock_roadmap_dir = build_mock_path(
+        mock_roadmap_dir = mock_path_factory(
             exists=True, is_dir=True, glob_results=[mock_file]
         )
 
@@ -93,41 +92,45 @@ class TestCheckGitConflicts:
             # Should continue despite error
             assert isinstance(result, list)
 
-    def test_check_git_conflicts_general_error(self):
+    def test_check_git_conflicts_general_error(self, mock_path_factory):
         """Test handling of general errors."""
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True)
-        mock_roadmap_dir.exists.side_effect = Exception("Unexpected error")
+        mock_roadmap_dir = mock_path_factory(exists=True, is_dir=True)
+        mock_roadmap_dir.exists = mock.MagicMock(
+            side_effect=Exception("Unexpected error")
+        )
 
         result = service.check_git_conflicts(mock_roadmap_dir)
         assert result == []
 
-    def test_check_git_conflicts_multiple_files(self):
+    def test_check_git_conflicts_multiple_files(self, mock_path_factory):
         """Test checking multiple files."""
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_file1 = build_mock_path(name="issues/a.md")
+        mock_file1 = mock_path_factory(name="issues/a.md")
 
-        mock_file2 = build_mock_path(name="issues/b.md")
+        mock_file2 = mock_path_factory(name="issues/b.md")
 
-        mock_roadmap_dir = build_mock_path(
+        mock_roadmap_dir = mock_path_factory(
             exists=True, is_dir=True, glob_results=[mock_file1, mock_file2]
         )
-        mock_roadmap_dir.glob.side_effect = [[mock_file1, mock_file2], [], []]
+        mock_roadmap_dir.glob = mock.MagicMock(
+            side_effect=[[mock_file1, mock_file2], [], []]
+        )
 
         with mock.patch("builtins.open", mock.mock_open(read_data="normal content")):
             result = service.check_git_conflicts(mock_roadmap_dir)
             assert isinstance(result, list)
 
-    def test_check_git_conflicts_sets_state(self):
+    def test_check_git_conflicts_sets_state(self, mock_path_factory):
         """Test that conflict state is properly set."""
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True, glob_results=[])
+        mock_roadmap_dir = mock_path_factory(exists=True, is_dir=True, glob_results=[])
 
         service.check_git_conflicts(mock_roadmap_dir)
 
@@ -262,12 +265,12 @@ class TestGetConflictFiles:
 class TestConflictServiceIntegration:
     """Integration tests for ConflictService."""
 
-    def test_conflict_workflow(self):
+    def test_conflict_workflow(self, mock_path_factory):
         """Test complete conflict detection workflow."""
         mock_state_manager = mock.MagicMock()
         service = ConflictService(mock_state_manager)
 
-        mock_roadmap_dir = build_mock_path(exists=True, is_dir=True, glob_results=[])
+        mock_roadmap_dir = mock_path_factory(exists=True, is_dir=True, glob_results=[])
 
         # Check for conflicts
         result = service.check_git_conflicts(mock_roadmap_dir)

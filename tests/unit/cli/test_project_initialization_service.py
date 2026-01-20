@@ -18,7 +18,6 @@ from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectDetectionService,
     ProjectTemplateService,
 )
-from tests.fixtures import build_mock_roadmap_core
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
@@ -299,10 +298,10 @@ class TestProjectCreationService:
     """Tests for project creation."""
 
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
-    def test_create_project_success(self, mock_core_class, tmp_path):
+    def test_create_project_success(self, mock_core_class, mock_roadmap_core_factory):
         """Test successful project creation."""
-        # Setup mock
-        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
+        # Setup mock - use fixture factory for customized mock_core
+        mock_core = mock_roadmap_core_factory()
 
         # Create projects directory
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
@@ -322,10 +321,12 @@ class TestProjectCreationService:
         assert result["name"] == "Test Project"
 
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
-    def test_create_project_creates_file(self, mock_core_class, tmp_path):
+    def test_create_project_creates_file(
+        self, mock_core_class, mock_roadmap_core_factory
+    ):
         """Test that project creation creates the project file."""
-        # Setup mock
-        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
+        # Setup mock - use fixture factory for customized mock_core
+        mock_core = mock_roadmap_core_factory()
 
         # Create projects directory
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
@@ -348,10 +349,12 @@ class TestProjectCreationService:
         assert project_file.exists()
 
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
-    def test_create_project_file_content(self, mock_core_class, tmp_path):
+    def test_create_project_file_content(
+        self, mock_core_class, mock_roadmap_core_factory
+    ):
         """Test that project file contains correct content."""
-        # Setup mock
-        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
+        # Setup mock - use fixture factory for customized mock_core
+        mock_core = mock_roadmap_core_factory()
 
         # Create projects directory
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
@@ -374,14 +377,16 @@ class TestProjectCreationService:
         assert "A test project" in content
 
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
-    def test_create_project_with_custom_template(self, mock_core_class, tmp_path):
+    def test_create_project_with_custom_template(
+        self, mock_core_class, mock_roadmap_core_factory
+    ):
         """Test project creation with custom template."""
-        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
+        mock_core = mock_roadmap_core_factory()
 
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
 
         # Create custom template
-        template_file = tmp_path / "template.md"
+        template_file = mock_core.roadmap_dir / "template.md"
         template_file.write_text("# Custom\nCustom content here")
 
         detected_info = {"git_repo": None, "git_user": "user"}
@@ -403,10 +408,10 @@ class TestProjectCreationService:
 
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_with_invalid_template_fallback(
-        self, mock_core_class, tmp_path
+        self, mock_core_class, mock_roadmap_core_factory
     ):
         """Test that invalid custom template falls back to standard template."""
-        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
+        mock_core = mock_roadmap_core_factory()
 
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
 

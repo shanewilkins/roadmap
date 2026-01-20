@@ -13,11 +13,6 @@ from roadmap.core.services.health.entity_health_scanner import (
     EntityType,
     HealthSeverity,
 )
-from tests.fixtures import (
-    build_mock_comment,
-    build_mock_issue,
-    build_mock_milestone,
-)
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
@@ -30,9 +25,9 @@ class TestEntityHealthScanner:
         return EntityHealthScanner()
 
     @pytest.fixture
-    def mock_issue(self):
+    def mock_issue(self, mock_issue_factory):
         """Create a mock issue for testing."""
-        issue = build_mock_issue(
+        issue = mock_issue_factory(
             id="issue-1",
             title="Test Issue",
             status=Status.TODO,
@@ -49,9 +44,9 @@ class TestEntityHealthScanner:
         return issue
 
     @pytest.fixture
-    def mock_milestone(self):
+    def mock_milestone(self, mock_milestone_factory):
         """Create a mock milestone for testing."""
-        milestone = build_mock_milestone(
+        milestone = mock_milestone_factory(
             name="v1.0.0",
             status=Status.TODO,
         )
@@ -409,15 +404,15 @@ class TestEntityHealthScanner:
         else:
             assert errors == []
 
-    def test_validate_comment_thread_duplicate_ids(self, scanner):
+    def test_validate_comment_thread_duplicate_ids(self, scanner, mock_comment_factory):
         """Test comment thread validation with duplicate IDs."""
-        comment1 = build_mock_comment(id="comment-1")
+        comment1 = mock_comment_factory(id="comment-1")
         comment1.body = "Test"
         comment1.author = "user"
         comment1.created_at = datetime.now(UTC)
         comment1.in_reply_to = None
 
-        comment2 = build_mock_comment(id="comment-1")  # Duplicate ID
+        comment2 = mock_comment_factory(id="comment-1")  # Duplicate ID
         comment2.body = "Test"
         comment2.author = "user"
         comment2.created_at = datetime.now(UTC)
@@ -426,15 +421,17 @@ class TestEntityHealthScanner:
         errors = EntityHealthScanner._validate_comment_thread([comment1, comment2])
         assert any("Duplicate" in error for error in errors)
 
-    def test_validate_comment_thread_circular_reference(self, scanner):
+    def test_validate_comment_thread_circular_reference(
+        self, scanner, mock_comment_factory
+    ):
         """Test comment thread validation with circular reference."""
-        comment1 = build_mock_comment(id="comment-1")
+        comment1 = mock_comment_factory(id="comment-1")
         comment1.body = "Test 1"
         comment1.author = "user"
         comment1.created_at = datetime.now(UTC)
         comment1.in_reply_to = "comment-2"
 
-        comment2 = build_mock_comment(id="comment-2")
+        comment2 = mock_comment_factory(id="comment-2")
         comment2.body = "Test 2"
         comment2.author = "user"
         comment2.created_at = datetime.now(UTC)
@@ -443,9 +440,11 @@ class TestEntityHealthScanner:
         errors = EntityHealthScanner._validate_comment_thread([comment1, comment2])
         assert any("Circular" in error for error in errors)
 
-    def test_scan_issue_with_invalid_comments(self, scanner, mock_issue):
+    def test_scan_issue_with_invalid_comments(
+        self, scanner, mock_issue, mock_comment_factory
+    ):
         """Test scanning issue with invalid comment thread."""
-        comment = build_mock_comment(id="comment-1")
+        comment = mock_comment_factory(id="comment-1")
         comment.body = ""
         comment.author = "user"
         comment.created_at = datetime.now(UTC)

@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest import mock
 
 from roadmap.adapters.persistence.sync_orchestrator import SyncOrchestrator
-from tests.fixtures import build_mock_path
 
 
 class TestSyncOrchestratorInitialization:
@@ -52,7 +51,7 @@ class TestHasFileChanged:
             ),
         ],
     )
-    def test_has_file_changed_param(self, desc, setup_fn, expected):
+    def test_has_file_changed_param(self, desc, setup_fn, expected, mock_path_factory):
         file_exists, stored_hash, calc_hash, error = setup_fn()
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
@@ -66,8 +65,7 @@ class TestHasFileChanged:
                 mock_conn.execute.return_value.fetchone.return_value = None
             mock_get_conn.return_value = mock_conn
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
-        mock_file = build_mock_path()
-        mock_file.exists.return_value = file_exists
+        mock_file = mock_path_factory(exists=file_exists)
         if calc_hash is not None or stored_hash is not None:
             with mock.patch.object(
                 orchestrator._parser, "calculate_file_hash"
@@ -82,14 +80,14 @@ class TestHasFileChanged:
 class TestSyncFileByType:
     """Test _sync_file_by_type method."""
 
-    def test_sync_issue_file(self):
+    def test_sync_issue_file(self, mock_path_factory):
         """Test syncing issue file."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = build_mock_path()
+        mock_file = mock_path_factory(name="test.md")
         mock_file.__str__ = mock.MagicMock(return_value="issues/test.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -103,14 +101,14 @@ class TestSyncFileByType:
             assert result is True
             assert stats["files_synced"] == 1
 
-    def test_sync_milestone_file(self):
+    def test_sync_milestone_file(self, mock_path_factory):
         """Test syncing milestone file."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = build_mock_path()
+        mock_file = mock_path_factory(name="v1.0.md")
         mock_file.__str__ = mock.MagicMock(return_value="milestones/v1.0.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -124,14 +122,14 @@ class TestSyncFileByType:
             assert result is True
             assert stats["files_synced"] == 1
 
-    def test_sync_project_file(self):
+    def test_sync_project_file(self, mock_path_factory):
         """Test syncing project file."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = build_mock_path()
+        mock_file = mock_path_factory(name="backend.md")
         mock_file.__str__ = mock.MagicMock(return_value="projects/backend.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -145,14 +143,14 @@ class TestSyncFileByType:
             assert result is True
             assert stats["files_synced"] == 1
 
-    def test_sync_file_type_unknown(self):
+    def test_sync_file_type_unknown(self, mock_path_factory):
         """Test with unknown file type."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = build_mock_path()
+        mock_file = mock_path_factory(name="file.md")
         mock_file.__str__ = mock.MagicMock(return_value="other/file.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -161,14 +159,14 @@ class TestSyncFileByType:
 
         assert result is False
 
-    def test_sync_file_failure(self):
+    def test_sync_file_failure(self, mock_path_factory):
         """Test handling of sync failure."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = build_mock_path()
+        mock_file = mock_path_factory(name="test.md")
         mock_file.__str__ = mock.MagicMock(return_value="issues/test.md")
 
         stats = {"files_synced": 0, "files_failed": 0}
@@ -186,31 +184,28 @@ class TestSyncFileByType:
 class TestSyncDirectoryIncremental:
     """Test sync_directory_incremental method."""
 
-    def test_sync_directory_not_exists(self):
+    def test_sync_directory_not_exists(self, mock_path_factory):
         """Test when directory doesn't exist."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.return_value = False
+        mock_dir = mock_path_factory(is_dir=True, exists=False)
 
         result = orchestrator.sync_directory_incremental(mock_dir)
 
         assert result["files_checked"] == 0
         assert result["files_synced"] == 0
 
-    def test_sync_directory_empty(self):
+    def test_sync_directory_empty(self, mock_path_factory):
         """Test syncing empty directory."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.return_value = True
-        mock_dir.glob.return_value = []
+        mock_dir = mock_path_factory(is_dir=True, exists=True, glob_results=[])
 
         result = orchestrator.sync_directory_incremental(mock_dir)
 
@@ -218,19 +213,20 @@ class TestSyncDirectoryIncremental:
         assert result["files_synced"] == 0
         assert "sync_time" in result
 
-    def test_sync_directory_with_files(self):
+    def test_sync_directory_with_files(self, mock_path_factory):
         """Test syncing directory with files."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_file = build_mock_path()
+        mock_file = mock_path_factory(name="test.md")
         mock_file.__str__ = mock.MagicMock(return_value="issues/test.md")
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.return_value = True
-        mock_dir.glob.side_effect = [[mock_file], [], []]
+        mock_dir = mock_path_factory(
+            is_dir=True, exists=True, glob_results=[[mock_file], [], []]
+        )
+        mock_dir.glob = mock.MagicMock(side_effect=[[mock_file], [], []])
 
         with mock.patch.object(orchestrator, "_has_file_changed") as mock_check:
             mock_check.return_value = False
@@ -239,15 +235,15 @@ class TestSyncDirectoryIncremental:
 
             assert result["files_checked"] == 1
 
-    def test_sync_directory_error(self):
+    def test_sync_directory_error(self, mock_path_factory):
         """Test error handling in directory sync."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.side_effect = Exception("IO error")
+        mock_dir = mock_path_factory(is_dir=True, exists=False)
+        mock_dir.exists = mock.MagicMock(side_effect=Exception("IO error"))
 
         result = orchestrator.sync_directory_incremental(mock_dir)
 
@@ -257,22 +253,21 @@ class TestSyncDirectoryIncremental:
 class TestFullRebuildFromGit:
     """Test full_rebuild_from_git method."""
 
-    def test_rebuild_directory_not_exists(self):
+    def test_rebuild_directory_not_exists(self, mock_path_factory):
         """Test rebuild when directory doesn't exist."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.return_value = False
+        mock_dir = mock_path_factory(is_dir=True, exists=False)
 
         result = orchestrator.full_rebuild_from_git(mock_dir)
 
         assert result["files_processed"] == 0
         assert "rebuild_time" in result
 
-    def test_rebuild_empty_directory(self):
+    def test_rebuild_empty_directory(self, mock_path_factory):
         """Test rebuild with empty directory."""
         mock_get_conn = mock.MagicMock()
         mock_conn = mock.MagicMock()
@@ -284,9 +279,7 @@ class TestFullRebuildFromGit:
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.return_value = True
-        mock_dir.glob.return_value = []
+        mock_dir = mock_path_factory(is_dir=True, exists=True, glob_results=[])
 
         result = orchestrator.full_rebuild_from_git(mock_dir)
 
@@ -296,16 +289,15 @@ class TestFullRebuildFromGit:
 class TestShouldDoFullRebuild:
     """Test should_do_full_rebuild method."""
 
-    def test_no_previous_sync(self):
+    def test_no_previous_sync(self, mock_path_factory):
         """Test when there's no previous sync checkpoint."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.return_value = True
-        mock_dir.glob.side_effect = [[], [], []]  # No files
+        mock_dir = mock_path_factory(is_dir=True, exists=True)
+        mock_dir.glob = mock.MagicMock(side_effect=[[], [], []])  # No files
 
         with mock.patch.object(
             orchestrator._state_tracker, "get_last_incremental_sync"
@@ -316,7 +308,7 @@ class TestShouldDoFullRebuild:
 
             assert result is True
 
-    def test_threshold_not_exceeded(self):
+    def test_threshold_not_exceeded(self, mock_path_factory):
         """Test when file change threshold is not exceeded."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
@@ -326,7 +318,7 @@ class TestShouldDoFullRebuild:
         # Create 10 mock files for testing
         mock_files = [mock.MagicMock(spec=Path) for _ in range(10)]
 
-        mock_dir = build_mock_path(is_dir=True)
+        mock_dir = mock_path_factory(is_dir=True, exists=True)
         mock_dir.exists.return_value = True
 
         # Mock glob to return files matching patterns
@@ -353,16 +345,15 @@ class TestShouldDoFullRebuild:
                 # 1 changed out of 10 = 10% < 50%, so should return False
                 assert result is False
 
-    def test_rebuild_decision_error(self):
+    def test_rebuild_decision_error(self, mock_path_factory):
         """Test error handling in rebuild decision."""
         mock_get_conn = mock.MagicMock()
         mock_transaction = mock.MagicMock()
 
         orchestrator = SyncOrchestrator(mock_get_conn, mock_transaction)
 
-        mock_dir = build_mock_path(is_dir=True)
-        mock_dir.exists.return_value = True
-        mock_dir.glob.side_effect = Exception("IO error")
+        mock_dir = mock_path_factory(is_dir=True, exists=True)
+        mock_dir.glob = mock.MagicMock(side_effect=Exception("IO error"))
 
         result = orchestrator.should_do_full_rebuild(mock_dir)
 

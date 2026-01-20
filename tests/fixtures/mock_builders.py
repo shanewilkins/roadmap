@@ -1,23 +1,24 @@
 """Mock builders and factories for common test objects.
 
 This module provides factory functions for creating commonly-used mock objects
-in tests, reducing duplication of mock setup code across the test suite.
+in tests with customizable behavior. For basic mocks without customization, use
+the fixtures from tests/fixtures/mocks.py instead.
 
 Usage:
-    from tests.fixtures.mock_builders import build_mock_repo, build_mock_core
+    from tests.fixtures.mock_builders import build_mock_repo, build_mock_core_with_repo
 
-    # Create a mock repository
-    mock_repo = build_mock_repo()
+    # Create a mock repository with specific behavior
+    mock_repo = build_mock_repo(list_return=[issue1, issue2])
 
-    # Create a mock core with custom attributes
-    mock_core = build_mock_core(has_github=True)
+    # Create a mock core with custom repo behavior
+    mock_core = build_mock_core_with_repo(save_side_effect=Exception("Save failed"))
 """
 
 from typing import Any
 from unittest.mock import Mock
 
 # ============================================================================
-# Repository Mocks
+# Repository Builders - Keep these as they accept customization parameters
 # ============================================================================
 
 
@@ -30,7 +31,7 @@ def build_mock_repo(
     get_remote_id_return: Any = None,
     get_issue_uuid_return: Any = None,
 ) -> Mock:
-    """Build a mock repository with common methods.
+    """Build a mock repository with custom return values and side effects.
 
     Args:
         list_return: Value to return from repo.list() call
@@ -82,7 +83,7 @@ def build_mock_repo(
 
 
 # ============================================================================
-# Core Mocks
+# Core Builders - Keep these as they have optional customization
 # ============================================================================
 
 
@@ -91,7 +92,7 @@ def build_mock_core(
     has_repository: bool = True,
     **kwargs: Any,
 ) -> Mock:
-    """Build a mock RoadmapCore instance.
+    """Build a mock RoadmapCore instance with optional customization.
 
     Args:
         has_github: If True, add github_service to mock
@@ -122,7 +123,7 @@ def build_mock_core_with_repo(
     get_remote_id_return: Any = None,
     get_issue_uuid_return: Any = None,
 ) -> Mock:
-    """Build a mock core with a pre-configured repository.
+    """Build a mock core with a pre-configured repository with custom behavior.
 
     Args:
         list_return: Value for repo.list() to return
@@ -151,130 +152,7 @@ def build_mock_core_with_repo(
 
 
 # ============================================================================
-
-
-def build_mock_git_service() -> Mock:
-    """Build a mock Git service.
-
-    Returns:
-        Configured Mock Git service
-    """
-    mock_git = Mock()
-    mock_git.get_current_branch = Mock(return_value="main")
-    mock_git.get_status = Mock(return_value={"clean": True})
-    return mock_git
-
-
-def build_mock_github_service() -> Mock:
-    """Build a mock GitHub service.
-
-    Returns:
-        Configured Mock GitHub service
-    """
-    mock_github = Mock()
-    mock_github.get_issues = Mock(return_value=[])
-    mock_github.create_issue = Mock(return_value={"id": "123"})
-    return mock_github
-
-
-def build_mock_sync_service() -> Mock:
-    """Build a mock Sync service.
-
-    Returns:
-        Configured Mock Sync service
-    """
-    mock_sync = Mock()
-    mock_sync.pull = Mock(return_value={"issues": [], "conflicts": []})
-    mock_sync.push = Mock(return_value={"success": True})
-    return mock_sync
-
-
-# ============================================================================
-# File/Filesystem Mocks
-# ============================================================================
-
-
-def build_mock_path(
-    name: str = "test.txt",
-    exists: bool = True,
-    is_dir: bool = False,
-    is_file: bool = True,
-    content: str = "",
-    glob_results: list[Any] | None = None,
-) -> Mock:
-    """Build a mock Path object with common filesystem operations.
-
-    Args:
-        name: Name/path of the file
-        exists: Whether the path exists
-        is_dir: Whether this is a directory
-        is_file: Whether this is a file
-        content: Content to return from read_text()
-        glob_results: Results to return from glob() calls
-
-    Returns:
-        Configured Mock Path object
-    """
-    from pathlib import Path
-
-    mock_path = Mock(spec=Path)
-    mock_path.exists = Mock(return_value=exists)
-    mock_path.is_dir = Mock(return_value=is_dir)
-    mock_path.is_file = Mock(return_value=is_file)
-    mock_path.name = name
-    mock_path.read_text = Mock(return_value=content)
-    mock_path.write_text = Mock(return_value=None)
-    mock_path.relative_to = Mock(return_value=Path(name))
-
-    if glob_results is None:
-        glob_results = []
-    mock_path.glob = Mock(return_value=glob_results)
-    mock_path.iterdir = Mock(return_value=glob_results)
-
-    return mock_path
-
-
-def build_mock_file_handle(content: str = "") -> Mock:
-    """Build a mock file handle for file operations.
-
-    Args:
-        content: Content to return when file is read
-
-    Returns:
-        Configured Mock file handle
-    """
-    mock_file = Mock()
-    mock_file.read = Mock(return_value=content)
-    mock_file.write = Mock(return_value=len(content))
-    mock_file.__enter__ = Mock(return_value=mock_file)
-    mock_file.__exit__ = Mock(return_value=None)
-    return mock_file
-
-
-def build_mock_directory(files: list[str] | None = None) -> Mock:
-    """Build a mock directory/path object.
-
-    Args:
-        files: List of filenames that should appear in directory
-
-    Returns:
-        Configured Mock directory
-    """
-    mock_dir = Mock()
-    mock_dir.exists = Mock(return_value=True)
-    mock_dir.is_dir = Mock(return_value=True)
-
-    if files is None:
-        files = []
-
-    mock_dir.iterdir = Mock(return_value=files)
-    mock_dir.glob = Mock(return_value=files)
-
-    return mock_dir
-
-
-# ============================================================================
-# Database Mocks
+# Database Builders - Keep these as they return tuples and have customization
 # ============================================================================
 
 
@@ -370,7 +248,43 @@ class CoreMockBuilder:
 
 
 # ============================================================================
-# Domain Entity Mocks
+# Parametrizable Entity Builders
+# ============================================================================
+
+
+def build_mock_roadmap_core(
+    has_github: bool = False,
+    has_repository: bool = True,
+    **kwargs: Any,
+) -> Mock:
+    """Build a mock RoadmapCore instance with custom attributes.
+
+    Args:
+        has_github: If True, add github_service
+        has_repository: If True, add issue_service with repository
+        **kwargs: Additional attributes (e.g., roadmap_dir)
+
+    Returns:
+        Configured Mock RoadmapCore
+    """
+    from roadmap.infrastructure.coordination.core import RoadmapCore
+
+    mock_core = Mock(spec=RoadmapCore)
+    for key, value in kwargs.items():
+        setattr(mock_core, key, value)
+
+    if has_repository:
+        mock_core.issue_service = Mock()
+        mock_core.issue_service.repository = build_mock_repo()
+
+    if has_github:
+        mock_core.github_service = Mock()
+
+    return mock_core
+
+
+# ============================================================================
+# Entity Builder Functions (helper functions, not fixtures)
 # ============================================================================
 
 
@@ -381,7 +295,7 @@ def build_mock_issue(
     priority: str = "MEDIUM",
     **kwargs: Any,
 ) -> Mock:
-    """Build a mock Issue entity.
+    """Build a mock Issue entity with customizable attributes.
 
     Args:
         id: Issue ID
@@ -411,7 +325,7 @@ def build_mock_milestone(
     status: str = "IN_PROGRESS",
     **kwargs: Any,
 ) -> Mock:
-    """Build a mock Milestone entity.
+    """Build a mock Milestone entity with customizable attributes.
 
     Args:
         id: Milestone ID
@@ -439,7 +353,7 @@ def build_mock_comment(
     content: str = "Test comment",
     **kwargs: Any,
 ) -> Mock:
-    """Build a mock Comment entity.
+    """Build a mock Comment entity with customizable attributes.
 
     Args:
         id: Comment ID
@@ -461,150 +375,12 @@ def build_mock_comment(
     return mock_comment
 
 
-def build_mock_roadmap_core(
-    has_github: bool = False,
-    has_repository: bool = True,
-    **kwargs: Any,
-) -> Mock:
-    """Build a mock RoadmapCore instance with domain entities.
-
-    Args:
-        has_github: If True, add github_service
-        has_repository: If True, add issue_service with repository
-        **kwargs: Additional attributes
-
-    Returns:
-        Configured Mock RoadmapCore
-    """
-    from roadmap.infrastructure.coordination.core import RoadmapCore
-
-    mock_core = Mock(spec=RoadmapCore)
-    for key, value in kwargs.items():
-        setattr(mock_core, key, value)
-
-    if has_repository:
-        mock_core.issue_service = Mock()
-        mock_core.issue_service.repository = build_mock_repo()
-
-    if has_github:
-        mock_core.github_service = Mock()
-
-    return mock_core
-
-
-# ============================================================================
-# Filesystem Helpers
-# ============================================================================
-
-
-def temp_dir_helper(cleanup: bool = True):
-    """Context manager for temporary directories with automatic cleanup.
-
-    This is a light wrapper around tempfile.TemporaryDirectory that
-    simplifies common test patterns.
-
-    Args:
-        cleanup: If True, automatically clean up on exit. Always True
-                 since TemporaryDirectory handles cleanup.
-
-    Returns:
-        Context manager that yields temporary directory path
-
-    Usage:
-        from tests.fixtures import temp_dir_helper
-
-        with temp_dir_helper() as tmpdir:
-            test_file = Path(tmpdir) / "test.txt"
-            test_file.write_text("content")
-    """
-    import tempfile
-    from contextlib import contextmanager
-
-    @contextmanager
-    def _temp_dir():
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield tmpdir
-
-    return _temp_dir()
-
-
-# ============================================================================
-# Interface Mocks
-# ============================================================================
-
-
-def build_mock_persistence_interface(**kwargs: Any) -> Mock:
-    """Build a mock PersistenceInterface.
-
-    Args:
-        **kwargs: Additional attributes
-
-    Returns:
-        Configured Mock PersistenceInterface
-    """
-    from roadmap.core.interfaces.persistence import PersistenceInterface
-
-    mock_persistence = Mock(spec=PersistenceInterface)
-    for key, value in kwargs.items():
-        setattr(mock_persistence, key, value)
-    return mock_persistence
-
-
-def build_mock_issue_parser_interface(**kwargs: Any) -> Mock:
-    """Build a mock IssueParserInterface.
-
-    Args:
-        **kwargs: Additional attributes
-
-    Returns:
-        Configured Mock IssueParserInterface
-    """
-    from roadmap.core.interfaces.parsers import IssueParserInterface
-
-    mock_parser = Mock(spec=IssueParserInterface)
-    for key, value in kwargs.items():
-        setattr(mock_parser, key, value)
-    return mock_parser
-
-
-# ============================================================================
-# UI/Presentation Mocks
-# ============================================================================
-
-
-def build_mock_table_data(
-    data: list | None = None,
-    columns: list | None = None,
-    **kwargs: Any,
-) -> Mock:
-    """Build a mock TableData object.
-
-    Args:
-        data: Table rows
-        columns: Column names
-        **kwargs: Additional attributes
-
-    Returns:
-        Configured Mock TableData
-    """
-    from rich.table import Table
-
-    mock_table = Mock(spec=Table)
-    if data is not None:
-        mock_table.rows = data
-    if columns is not None:
-        mock_table.columns = columns
-    for key, value in kwargs.items():
-        setattr(mock_table, key, value)
-    return mock_table
-
-
 def build_mock_project(
     id: str = "project-1",
     name: str = "Test Project",
     **kwargs: Any,
 ) -> Mock:
-    """Build a mock Project entity.
+    """Build a mock Project entity with customizable attributes.
 
     Args:
         id: Project ID
@@ -622,3 +398,87 @@ def build_mock_project(
     for key, value in kwargs.items():
         setattr(mock_project, key, value)
     return mock_project
+
+
+# ============================================================================
+# Customizable Path and Filesystem Builders
+# ============================================================================
+
+
+def build_mock_path(
+    name: str = "test.txt",
+    exists: bool = True,
+    is_dir: bool = False,
+    is_file: bool = True,
+    content: str = "",
+    glob_results: list[Any] | None = None,
+) -> Mock:
+    """Build a mock Path object with customizable filesystem operations.
+
+    Args:
+        name: Name/path of the file
+        exists: Whether the path exists
+        is_dir: Whether this is a directory
+        is_file: Whether this is a file
+        content: Content to return from read_text()
+        glob_results: Results to return from glob() calls
+
+    Returns:
+        Configured Mock Path object
+    """
+    from pathlib import Path
+
+    mock_path = Mock(spec=Path)
+    mock_path.exists = Mock(return_value=exists)
+    mock_path.is_dir = Mock(return_value=is_dir)
+    mock_path.is_file = Mock(return_value=is_file)
+    mock_path.name = name
+    mock_path.read_text = Mock(return_value=content)
+    mock_path.write_text = Mock(return_value=None)
+    mock_path.relative_to = Mock(return_value=Path(name))
+
+    if glob_results is None:
+        glob_results = []
+    mock_path.glob = Mock(return_value=glob_results)
+    mock_path.iterdir = Mock(return_value=glob_results)
+
+    return mock_path
+
+
+def build_mock_file_handle(content: str = "") -> Mock:
+    """Build a mock file handle for file operations.
+
+    Args:
+        content: Content to return when file is read
+
+    Returns:
+        Configured Mock file handle
+    """
+    mock_file = Mock()
+    mock_file.read = Mock(return_value=content)
+    mock_file.write = Mock(return_value=len(content))
+    mock_file.__enter__ = Mock(return_value=mock_file)
+    mock_file.__exit__ = Mock(return_value=None)
+    return mock_file
+
+
+def build_mock_directory(files: list[str] | None = None) -> Mock:
+    """Build a mock directory/path object with customizable contents.
+
+    Args:
+        files: List of filenames that should appear in directory
+
+    Returns:
+        Configured Mock directory
+    """
+    mock_dir = Mock()
+    mock_dir.exists = Mock(return_value=True)
+    mock_dir.is_dir = Mock(return_value=True)
+
+    if files is None:
+        files = []
+
+    mock_dir.iterdir = Mock(return_value=files)
+    mock_dir.glob = Mock(return_value=files)
+
+    return mock_dir
