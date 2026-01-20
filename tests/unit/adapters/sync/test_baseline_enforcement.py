@@ -6,7 +6,7 @@ creation during first sync.
 
 from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -43,18 +43,18 @@ class TestBaselineEnforcement:
         return mock
 
     @pytest.fixture
-    def orchestrator(self, mock_core, mock_backend):
+    def orchestrator(self, mock_core, mock_backend, mocker):
         """Create orchestrator with mocks."""
-        with patch(
+        mocker.patch(
             "roadmap.adapters.sync.sync_retrieval_orchestrator.BaselineStateRetriever"
-        ):
-            orchestrator = SyncRetrievalOrchestrator(
-                core=mock_core,
-                backend=mock_backend,
-            )
-            # Mock state_manager
-            orchestrator.state_manager = MagicMock()
-            return orchestrator
+        )
+        orchestrator = SyncRetrievalOrchestrator(
+            core=mock_core,
+            backend=mock_backend,
+        )
+        # Mock state_manager
+        orchestrator.state_manager = MagicMock()
+        return orchestrator
 
     def test_has_baseline_returns_false_when_no_state(self, orchestrator):
         """Test has_baseline returns False when no sync state exists."""
@@ -111,31 +111,31 @@ class TestBaselineEnforcement:
         with pytest.raises(RuntimeError, match="Baseline required"):
             orchestrator.ensure_baseline(interactive=False)
 
-    def test_ensure_baseline_creates_from_local(self, orchestrator):
+    def test_ensure_baseline_creates_from_local(self, orchestrator, mocker):
         """Test ensure_baseline creates baseline from local when strategy=LOCAL."""
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=None)
 
-        with patch.object(
+        mocker.patch.object(
             orchestrator, "_create_baseline_from_local", return_value=True
-        ):
-            result = orchestrator.ensure_baseline(
-                strategy=BaselineStrategy.LOCAL, interactive=False
-            )
+        )
+        result = orchestrator.ensure_baseline(
+            strategy=BaselineStrategy.LOCAL, interactive=False
+        )
         assert result is True
 
-    def test_ensure_baseline_creates_from_remote(self, orchestrator):
+    def test_ensure_baseline_creates_from_remote(self, orchestrator, mocker):
         """Test ensure_baseline creates baseline from remote when strategy=REMOTE."""
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=None)
 
-        with patch.object(
+        mocker.patch.object(
             orchestrator, "_create_baseline_from_remote", return_value=True
-        ):
-            result = orchestrator.ensure_baseline(
-                strategy=BaselineStrategy.REMOTE, interactive=False
-            )
+        )
+        result = orchestrator.ensure_baseline(
+            strategy=BaselineStrategy.REMOTE, interactive=False
+        )
         assert result is True
 
-    def test_create_baseline_from_local_succeeds(self, orchestrator):
+    def test_create_baseline_from_local_succeeds(self, orchestrator, mocker):
         """Test creating baseline from local issues."""
         baseline_state = IssueBaseState(
             id="issue-1",
@@ -148,26 +148,26 @@ class TestBaselineEnforcement:
         )
         mock_sync_state.issues["issue-1"] = baseline_state
 
-        with patch.object(
+        mocker.patch.object(
             orchestrator, "_create_initial_baseline", return_value=mock_sync_state
-        ):
-            result = orchestrator._create_baseline_from_local()
+        )
+        result = orchestrator._create_baseline_from_local()
 
         assert result is True
         # Mock the database save method instead of state_manager
         orchestrator.core.db.save_sync_baseline.assert_called_once()
 
-    def test_create_baseline_from_local_fails_when_empty(self, orchestrator):
+    def test_create_baseline_from_local_fails_when_empty(self, orchestrator, mocker):
         """Test creating baseline from local fails with empty state."""
         empty_state = SyncState(
             last_sync=datetime.now(UTC),
             backend="test",
         )
 
-        with patch.object(
+        mocker.patch.object(
             orchestrator, "_create_initial_baseline", return_value=empty_state
-        ):
-            result = orchestrator._create_baseline_from_local()
+        )
+        result = orchestrator._create_baseline_from_local()
 
         assert result is False
 
@@ -220,7 +220,7 @@ class TestBaselineEnforcement:
 
         assert result is False
 
-    def test_ensure_baseline_with_interactive_prompt(self, orchestrator):
+    def test_ensure_baseline_with_interactive_prompt(self, orchestrator, mocker):
         """Test ensure_baseline with interactive prompt."""
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=None)
 
@@ -231,26 +231,26 @@ class TestBaselineEnforcement:
             return_value=mock_result
         )
 
-        with patch.object(
+        mocker.patch.object(
             orchestrator, "_create_baseline_from_local", return_value=True
-        ):
-            result = orchestrator.ensure_baseline(interactive=True)
+        )
+        result = orchestrator.ensure_baseline(interactive=True)
 
         assert result is True
         orchestrator.baseline_selector.select_baseline.assert_called_once()
 
-    def test_baseline_enforcement_workflow(self, orchestrator):
+    def test_baseline_enforcement_workflow(self, orchestrator, mocker):
         """Test complete workflow of enforcing baseline."""
         # Start with no baseline
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=None)
 
         # Ensure baseline with LOCAL strategy
-        with patch.object(
+        mocker.patch.object(
             orchestrator, "_create_baseline_from_local", return_value=True
-        ):
-            assert orchestrator.ensure_baseline(
-                strategy=BaselineStrategy.LOCAL, interactive=False
-            )
+        )
+        assert orchestrator.ensure_baseline(
+            strategy=BaselineStrategy.LOCAL, interactive=False
+        )
 
         # Now baseline should exist (via saved state)
         baseline_state = IssueBaseState(

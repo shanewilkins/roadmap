@@ -5,7 +5,7 @@ for restoring entities across all entity types.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -46,18 +46,18 @@ class TestBaseRestoreInitialization:
         assert restore.core is mock_core_simple
         assert restore.console is mock_console
 
-    def test_initialization_without_console(self, mock_core_simple):
+    def test_initialization_without_console(self, mock_core_simple, mocker):
         """Test restore instance initialization without console uses default."""
-        with patch(
+        mock_get_console = mocker.patch(
             "roadmap.adapters.cli.crud.base_restore.get_console"
-        ) as mock_get_console:
-            mock_default_console = MagicMock()
-            mock_get_console.return_value = mock_default_console
+        )
+        mock_default_console = MagicMock()
+        mock_get_console.return_value = mock_default_console
 
-            restore = ConcreteRestore(core=mock_core_simple)
+        restore = ConcreteRestore(core=mock_core_simple)
 
-            assert restore.core is mock_core_simple
-            assert restore.console is mock_default_console
+        assert restore.core is mock_core_simple
+        assert restore.console is mock_default_console
 
     def test_entity_type_accessible(self, restore_instance):
         """Test that entity_type is accessible."""

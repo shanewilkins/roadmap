@@ -1,7 +1,5 @@
 """Tests for error handling standards and decorators."""
 
-from unittest.mock import patch
-
 import pytest
 
 from roadmap.common.errors import (
@@ -232,7 +230,7 @@ class TestSafeOperationDecorator:
             else:
                 update_issue(id=entity_id)
 
-    def test_safe_operation_exponential_backoff(self):
+    def test_safe_operation_exponential_backoff(self, mocker):
         """Test that retry delay increases exponentially."""
         delays = []
 
@@ -258,8 +256,8 @@ class TestSafeOperationDecorator:
                 raise ConnectionError("Network timeout")
             return {"data": "success"}
 
-        with patch("time.sleep", mock_sleep):
-            result = fetch_data()
+        mocker.patch("time.sleep", mock_sleep)
+        result = fetch_data()
 
         assert result["data"] == "success"
         # Should have slept 3 times with exponential backoff
