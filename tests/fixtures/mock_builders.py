@@ -493,6 +493,42 @@ def build_mock_roadmap_core(
 
 
 # ============================================================================
+# Filesystem Helpers
+# ============================================================================
+
+
+def temp_dir_helper(cleanup: bool = True):
+    """Context manager for temporary directories with automatic cleanup.
+
+    This is a light wrapper around tempfile.TemporaryDirectory that
+    simplifies common test patterns.
+
+    Args:
+        cleanup: If True, automatically clean up on exit. Always True
+                 since TemporaryDirectory handles cleanup.
+
+    Returns:
+        Context manager that yields temporary directory path
+
+    Usage:
+        from tests.fixtures import temp_dir_helper
+
+        with temp_dir_helper() as tmpdir:
+            test_file = Path(tmpdir) / "test.txt"
+            test_file.write_text("content")
+    """
+    import tempfile
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _temp_dir():
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield tmpdir
+
+    return _temp_dir()
+
+
+# ============================================================================
 # Interface Mocks
 # ============================================================================
 

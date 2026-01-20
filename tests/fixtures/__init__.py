@@ -76,6 +76,7 @@ from .mock_builders import (
     build_mock_roadmap_core,
     build_mock_sync_service,
     build_mock_table_data,
+    temp_dir_helper,
 )
 from .mocks import (
     cli_test_data,
@@ -166,6 +167,7 @@ __all__ = [
     "build_mock_issue_parser_interface",
     "build_mock_table_data",
     "build_mock_project",
+    "temp_dir_helper",
     "CoreMockBuilder",
     # IO fixtures
     "strip_ansi_fixture",
