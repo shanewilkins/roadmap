@@ -1,7 +1,7 @@
 """Tests for git branch manager."""
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -25,10 +25,10 @@ class TestGitBranchManagerInit:
             manager = GitBranchManager(custom_path)
             assert manager.repo_path == custom_path
 
-    def test_init_with_config(self):
+    def test_init_with_config(self, mock_config_factory):
         """Test initialization with config."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
-            config = Mock()
+            config = mock_config_factory()
             manager = GitBranchManager(config=config)
             assert manager.config is config
 
@@ -95,36 +95,36 @@ class TestGenerateTitleSlug:
 class TestDeterminePrefix:
     """Test branch prefix determination."""
 
-    def test_prefix_default_feature(self):
+    def test_prefix_default_feature(self, mock_issue_factory):
         """Test default prefix is feature."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(priority=Mock(value="low"))
+            issue = mock_issue_factory()
             delattr(issue, "issue_type") if hasattr(issue, "issue_type") else None
             prefix = manager._determine_prefix(issue)
             assert prefix == "feature"
 
-    def test_prefix_bugfix_for_bug_type(self):
+    def test_prefix_bugfix_for_bug_type(self, mock_issue_factory):
         """Test bugfix prefix for bug type issues."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(issue_type="bug", priority=Mock(value="low"))
+            issue = mock_issue_factory(issue_type="bug")
             prefix = manager._determine_prefix(issue)
             assert prefix == "bugfix"
 
-    def test_prefix_docs_for_documentation_type(self):
+    def test_prefix_docs_for_documentation_type(self, mock_issue_factory):
         """Test docs prefix for documentation type."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(issue_type="documentation", priority=Mock(value="low"))
+            issue = mock_issue_factory(issue_type="documentation")
             prefix = manager._determine_prefix(issue)
             assert prefix == "docs"
 
-    def test_prefix_hotfix_for_critical_priority(self):
+    def test_prefix_hotfix_for_critical_priority(self, mock_issue_factory):
         """Test hotfix prefix for critical priority."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(priority=Mock(value="critical"))
+            issue = mock_issue_factory(priority_value="critical")
             delattr(issue, "issue_type") if hasattr(issue, "issue_type") else None
             prefix = manager._determine_prefix(issue)
             assert prefix == "hotfix"
@@ -137,11 +137,11 @@ class TestDeterminePrefix:
             ("documentation", "docs"),
         ],
     )
-    def test_prefix_various_types(self, issue_type, expected):
+    def test_prefix_various_types(self, issue_type, expected, mock_issue_factory):
         """Test prefix for various issue types."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(issue_type=issue_type, priority=Mock(value="low"))
+            issue = mock_issue_factory(issue_type=issue_type)
             prefix = manager._determine_prefix(issue)
             assert prefix == expected
 
@@ -179,33 +179,31 @@ class TestFormatBranchName:
 class TestSuggestBranchName:
     """Test branch name suggestion."""
 
-    def test_suggest_includes_issue_id(self):
+    def test_suggest_includes_issue_id(self, mock_issue_factory):
         """Test that suggestion includes issue ID."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(id="issue123", title="Add feature", priority=Mock(value="low"))
+            issue = mock_issue_factory(id="issue123", title="Add feature")
             delattr(issue, "issue_type") if hasattr(issue, "issue_type") else None
 
             suggestion = manager.suggest_branch_name(issue)
             assert "issue123" in suggestion
 
-    def test_suggest_includes_slug(self):
+    def test_suggest_includes_slug(self, mock_issue_factory):
         """Test that suggestion includes title slug."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(id="123", title="Fix bug", priority=Mock(value="low"))
+            issue = mock_issue_factory(id="123", title="Fix bug")
             delattr(issue, "issue_type") if hasattr(issue, "issue_type") else None
 
             suggestion = manager.suggest_branch_name(issue)
             assert "fix" in suggestion.lower()
 
-    def test_suggest_includes_prefix(self):
+    def test_suggest_includes_prefix(self, mock_issue_factory):
         """Test that suggestion includes appropriate prefix."""
         with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor"):
             manager = GitBranchManager()
-            issue = Mock(
-                id="123", title="Fix bug", issue_type="bug", priority=Mock(value="low")
-            )
+            issue = mock_issue_factory(id="123", title="Fix bug", issue_type="bug")
 
             suggestion = manager.suggest_branch_name(issue)
             assert "bugfix" in suggestion
@@ -214,53 +212,49 @@ class TestSuggestBranchName:
 class TestCheckWorkingTreeClean:
     """Test working tree cleanliness check."""
 
-    def test_clean_tree_returns_true(self):
+    def test_clean_tree_returns_true(self, mock_git_executor_factory):
         """Test that clean working tree returns True."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="")  # No changes
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = ""  # No changes
 
             manager = GitBranchManager()
             is_clean = manager._check_working_tree_clean(force=False)
             assert is_clean is True
 
-    def test_dirty_tree_returns_false(self):
+    def test_dirty_tree_returns_false(self, mock_git_executor_factory):
         """Test that dirty working tree returns False."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="M file.py\n")
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = "M file.py\n"  # Modified file
 
             manager = GitBranchManager()
             is_clean = manager._check_working_tree_clean(force=False)
             assert is_clean is False
 
-    def test_force_returns_true_regardless(self):
+    def test_force_returns_true_regardless(self, mock_git_executor_factory):
         """Test that force flag returns True regardless."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="M file.py\n")
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = "M file.py\n"  # Dirty
 
             manager = GitBranchManager()
             is_clean = manager._check_working_tree_clean(force=True)
             assert is_clean is True
 
-    def test_untracked_files_ignored(self):
+    def test_untracked_files_ignored(self, mock_git_executor_factory):
         """Test that untracked files (?) don't count as changes."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="?? new_file.py\n")
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = "?? new_file.py\n"  # Untracked
 
             manager = GitBranchManager()
             is_clean = manager._check_working_tree_clean(force=False)
@@ -270,27 +264,25 @@ class TestCheckWorkingTreeClean:
 class TestBranchAlreadyExists:
     """Test branch existence checking."""
 
-    def test_branch_exists_returns_true(self):
+    def test_branch_exists_returns_true(self, mock_git_executor_factory):
         """Test that existing branch returns True."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="abc123")
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = "abc123"  # Branch exists
 
             manager = GitBranchManager()
             exists = manager._branch_already_exists("existing-branch")
             assert exists is True
 
-    def test_branch_not_exists_returns_false(self):
+    def test_branch_not_exists_returns_false(self, mock_git_executor_factory):
         """Test that non-existent branch returns False."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output=None)
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = None
 
             manager = GitBranchManager()
             exists = manager._branch_already_exists("nonexistent-branch")
@@ -300,25 +292,24 @@ class TestBranchAlreadyExists:
 class TestHandleExistingBranch:
     """Test handling of existing branches."""
 
-    def test_checkout_existing_branch(self):
+    def test_checkout_existing_branch(self, mock_git_executor_factory):
         """Test checking out existing branch."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="Switched to branch")
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = "Switched to branch"
 
             manager = GitBranchManager()
             success = manager._handle_existing_branch("existing-branch", checkout=True)
             assert success is True
 
-    def test_skip_checkout_existing_branch(self):
+    def test_skip_checkout_existing_branch(self, mock_git_executor_factory):
         """Test skipping checkout of existing branch."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory()
             mock_executor_class.return_value = mock_executor
 
             manager = GitBranchManager()
@@ -329,52 +320,54 @@ class TestHandleExistingBranch:
 class TestCreateBranchForIssue:
     """Test creating branches for issues."""
 
-    def test_create_branch_not_git_repo(self):
+    def test_create_branch_not_git_repo(
+        self, mock_git_executor_factory, mock_issue_factory
+    ):
         """Test that creation fails if not in git repo."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(is_repo=False)
             mock_executor_class.return_value = mock_executor
-            mock_executor.is_git_repository.return_value = False
 
             manager = GitBranchManager()
-            issue = Mock(id="123", title="Test", priority=Mock(value="low"))
+            issue = mock_issue_factory()
             delattr(issue, "issue_type") if hasattr(issue, "issue_type") else None
 
             success = manager.create_branch_for_issue(issue)
             assert success is False
 
-    def test_create_branch_dirty_working_tree(self):
+    def test_create_branch_dirty_working_tree(
+        self, mock_git_executor_factory, mock_issue_factory
+    ):
         """Test that creation fails if working tree is dirty."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(
+                is_repo=True, run_output="M file.py\n"
+            )
             mock_executor_class.return_value = mock_executor
-            mock_executor.is_git_repository.return_value = True
-            mock_executor.run.side_effect = [
-                "M file.py\n",  # Dirty status
-            ]
 
             manager = GitBranchManager()
-            issue = Mock(id="123", title="Test", priority=Mock(value="low"))
+            issue = mock_issue_factory()
             delattr(issue, "issue_type") if hasattr(issue, "issue_type") else None
 
             success = manager.create_branch_for_issue(issue, force=False)
             assert success is False
 
-    def test_create_branch_force_skips_dirty_check(self):
+    def test_create_branch_force_skips_dirty_check(
+        self, mock_git_executor_factory, mock_issue_factory
+    ):
         """Test that force flag skips dirty check."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(is_repo=True)
             mock_executor_class.return_value = mock_executor
-            mock_executor.is_git_repository.return_value = True
 
             manager = GitBranchManager()
-            issue = Mock(id="123", title="Test", priority=Mock(value="low"))
+            issue = mock_issue_factory()
             delattr(issue, "issue_type") if hasattr(issue, "issue_type") else None
 
             # With force=True, it should continue past dirty check
@@ -386,14 +379,14 @@ class TestCreateBranchForIssue:
 class TestGetCurrentBranch:
     """Test getting current branch information."""
 
-    def test_get_current_branch_success(self):
+    def test_get_current_branch_success(self, mock_git_executor_factory):
         """Test successfully getting current branch."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
-            mock_executor_class.return_value = mock_executor
+            mock_executor = mock_git_executor_factory()
             mock_executor.run.side_effect = ["main", "origin/main", "abc123"]
+            mock_executor_class.return_value = mock_executor
 
             manager = GitBranchManager()
             branch = manager.get_current_branch()
@@ -402,14 +395,13 @@ class TestGetCurrentBranch:
             assert branch.name == "main"
             assert branch.current is True
 
-    def test_get_current_branch_detached_head(self):
+    def test_get_current_branch_detached_head(self, mock_git_executor_factory):
         """Test getting current branch in detached HEAD state."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="HEAD")
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = "HEAD"
 
             manager = GitBranchManager()
             branch = manager.get_current_branch()
@@ -420,29 +412,28 @@ class TestGetCurrentBranch:
 class TestGetAllBranches:
     """Test getting all branches."""
 
-    def test_get_all_branches_none(self):
+    def test_get_all_branches_none(self, mock_git_executor_factory):
         """Test getting all branches when none exist."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
+            mock_executor = mock_git_executor_factory(run_output="")
             mock_executor_class.return_value = mock_executor
-            mock_executor.run.return_value = ""
 
             manager = GitBranchManager()
             branches = manager.get_all_branches()
 
             assert branches == []
 
-    def test_get_all_branches_multiple(self):
+    def test_get_all_branches_multiple(self, mock_git_executor_factory):
         """Test getting multiple branches."""
         with patch(
             "roadmap.adapters.git.git_branch_manager.GitCommandExecutor"
         ) as mock_executor_class:
-            mock_executor = Mock()
-            mock_executor_class.return_value = mock_executor
+            mock_executor = mock_git_executor_factory()
             output = "main|*\nfeature/test|  \ndevelop|  "
             mock_executor.run.return_value = output
+            mock_executor_class.return_value = mock_executor
 
             manager = GitBranchManager()
             branches = manager.get_all_branches()
@@ -451,8 +442,4 @@ class TestGetAllBranches:
             assert any(b.current for b in branches)  # One should be current
 
 
-@pytest.fixture
-def mock_git_executor():
-    """Provide a mock GitCommandExecutor."""
-    with patch("roadmap.adapters.git.git_branch_manager.GitCommandExecutor") as mock:
-        yield mock.return_value
+# Fixtures removed - using factories from conftest instead

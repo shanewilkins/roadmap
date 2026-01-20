@@ -586,13 +586,27 @@ def mock_issue_factory():
     from roadmap.core.domain.issue import Issue
 
     def _factory(
-        id="issue-1", title="Test Issue", status="TODO", priority="MEDIUM", **kwargs
+        id="issue-1",
+        title="Test Issue",
+        status="TODO",
+        priority_value="medium",
+        issue_type=None,
+        **kwargs,
     ):
         mock_issue = Mock(spec=Issue)
         mock_issue.id = id
         mock_issue.title = title
         mock_issue.status = status
-        mock_issue.priority = priority
+
+        # Create priority mock with .value attribute for compatibility
+        mock_priority = Mock()
+        mock_priority.value = priority_value
+        mock_issue.priority = mock_priority
+
+        # Set issue_type if provided
+        if issue_type is not None:
+            mock_issue.issue_type = issue_type
+
         for key, value in kwargs.items():
             setattr(mock_issue, key, value)
         return mock_issue
@@ -823,5 +837,298 @@ def mock_database_connection_factory():
 
         mock_get_connection = Mock(return_value=mock_conn)
         return mock_get_connection, mock_conn
+
+    return _factory
+
+
+# ============================================================================
+# Phase 4: Mock Pattern Consolidation Factories
+# ============================================================================
+
+
+@pytest.fixture
+def mock_response_factory():
+    """Factory fixture for HTTP/API response mocks (Tier 1: 52 occurrences).
+
+    Returns:
+        Function that creates customized mock response objects
+
+    Usage:
+        def test_github_api(mock_response_factory):
+            response = mock_response_factory(status_code=200, json_data={"id": 1})
+            # OR
+            response = mock_response_factory(status_code=404, text="Not found")
+    """
+
+    def _factory(status_code=200, json_data=None, text="", headers=None):
+        """Create mock HTTP response.
+
+        Args:
+            status_code: HTTP status code (default: 200)
+            json_data: Data to return from json() method (default: {})
+            text: Response text (default: "")
+            headers: Response headers dict (default: {})
+
+        Returns:
+            Mock response object
+        """
+        response = Mock()
+        response.status_code = status_code
+        response.json = Mock(return_value=json_data or {})
+        response.text = text
+        response.headers = headers or {}
+        response.ok = status_code < 400
+        response.raise_for_status = Mock()
+        return response
+
+    return _factory
+
+
+@pytest.fixture
+def mock_console_factory():
+    """Factory fixture for Rich console mocks (Tier 1: 50 occurrences).
+
+    Returns:
+        Function that creates customized mock console objects
+
+    Usage:
+        def test_presenter(mock_console_factory):
+            console = mock_console_factory()
+            # OR with specific methods
+            console = mock_console_factory(
+                with_print=True,
+                with_rule=True,
+                with_panel=True
+            )
+    """
+
+    def _factory(with_print=True, with_rule=True, with_panel=True, with_table=False):
+        """Create mock Rich console.
+
+        Args:
+            with_print: Enable print method (default: True)
+            with_rule: Enable rule method (default: True)
+            with_panel: Enable panel method (default: True)
+            with_table: Enable table method (default: False)
+
+        Returns:
+            Mock console object with Rich-like interface
+        """
+        console = Mock()
+        if with_print:
+            console.print = Mock()
+        if with_rule:
+            console.rule = Mock()
+        if with_panel:
+            console.panel = Mock()
+        if with_table:
+            console.table = Mock()
+        return console
+
+    return _factory
+
+
+@pytest.fixture
+def mock_git_factory():
+    """Factory fixture for Git operation mocks (Tier 2: 46 occurrences).
+
+    Returns:
+        Function that creates customized mock Git objects
+
+    Usage:
+        def test_git_ops(mock_git_factory):
+            git = mock_git_factory(current_branch="main")
+            # OR with commits
+            git = mock_git_factory(
+                current_branch="develop",
+                commits=["abc123", "def456"]
+            )
+    """
+
+    def _factory(current_branch="main", run_output="", commits=None, is_dirty=False):
+        """Create mock Git service.
+
+        Args:
+            current_branch: Current git branch (default: "main")
+            run_output: Output for git run command (default: "")
+            commits: List of commits (default: [])
+            is_dirty: Whether working directory is dirty (default: False)
+
+        Returns:
+            Mock git service with common methods
+        """
+        git = Mock()
+        git.get_current_branch.return_value = current_branch
+        git.run.return_value = run_output
+        git.get_commits.return_value = commits or []
+        git.is_dirty.return_value = is_dirty
+        git.commit.return_value = None
+        git.push.return_value = None
+        git.pull.return_value = None
+        return git
+
+    return _factory
+
+
+@pytest.fixture
+def mock_github_integration_factory():
+    """Factory fixture for GitHub integration mocks (Tier 2: 24 occurrences).
+
+    Returns:
+        Function that creates customized mock GitHub integration objects
+
+    Usage:
+        def test_github_sync(mock_github_integration_factory):
+            integration = mock_github_integration_factory(authenticated=True)
+            # OR with issues
+            integration = mock_github_integration_factory(
+                authenticated=True,
+                issues=[{"id": 1, "title": "Test"}]
+            )
+    """
+
+    def _factory(authenticated=True, sync_result=None, issues=None):
+        """Create mock GitHub integration.
+
+        Args:
+            authenticated: Whether authenticated (default: True)
+            sync_result: Result from sync operation (default: None)
+            issues: List of issues to return (default: [])
+
+        Returns:
+            Mock GitHub integration object
+        """
+        integration = Mock()
+        integration.authenticate.return_value = authenticated
+        integration.sync.return_value = sync_result
+        integration.get_issues.return_value = issues or []
+        integration.is_authenticated.return_value = authenticated
+        integration.close.return_value = None
+        return integration
+
+    return _factory
+
+
+@pytest.fixture
+def mock_git_executor_factory():
+    """Factory fixture for Git executor mocks (Tier 3: 17 + 14 = 31 occurrences).
+
+    SYNC PRIORITY: This pattern appears frequently in sync test files.
+
+    Returns:
+        Function that creates customized mock Git executor objects
+
+    Usage:
+        def test_sync_monitor(mock_git_executor_factory):
+            executor = mock_git_executor_factory(run_output="commit_hash")
+            # OR
+            executor = mock_git_executor_factory(
+                is_repo=True,
+                current_branch="develop",
+                run_output="merged"
+            )
+    """
+
+    def _factory(run_output="", is_repo=True, current_branch="main"):
+        """Create mock Git executor.
+
+        Args:
+            run_output: Output from run command (default: "")
+            is_repo: Is this a git repository (default: True)
+            current_branch: Current branch (default: "main")
+
+        Returns:
+            Mock git executor with common methods
+        """
+        executor = Mock()
+        executor.run.return_value = run_output
+        executor.is_git_repository.return_value = is_repo
+        executor.get_current_branch.return_value = current_branch
+        executor.commit.return_value = None
+        executor.push.return_value = None
+        executor.pull.return_value = None
+        executor.add.return_value = None
+        return executor
+
+    return _factory
+
+
+@pytest.fixture
+def mock_config_factory():
+    """Factory fixture for configuration mocks (Tier 3: 15 occurrences).
+
+    Returns:
+        Function that creates customized mock config objects
+
+    Usage:
+        def test_github_config(mock_config_factory):
+            config = mock_config_factory()
+            # OR with specific values
+            config = mock_config_factory(
+                github_token="token_123",
+                repo_owner="user",
+                repo_name="repo"
+            )
+    """
+
+    def _factory(github_token="token", repo_owner="owner", repo_name="repo"):
+        """Create mock configuration.
+
+        Args:
+            github_token: GitHub token (default: "token")
+            repo_owner: Repository owner (default: "owner")
+            repo_name: Repository name (default: "repo")
+
+        Returns:
+            Mock config object
+        """
+        config = Mock()
+        config.github_token = github_token
+        config.repo_owner = repo_owner
+        config.repo_name = repo_name
+        config.get = Mock(
+            side_effect=lambda key, default=None: {
+                "github_token": github_token,
+                "repo_owner": repo_owner,
+                "repo_name": repo_name,
+            }.get(key, default)
+        )
+        return config
+
+    return _factory
+
+
+@pytest.fixture
+def mock_github_manager_factory():
+    """Factory fixture for GitHub manager mocks (Tier 4: 10 occurrences).
+
+    Returns:
+        Function that creates customized mock GitHub manager objects
+
+    Usage:
+        def test_github_ops(mock_github_manager_factory):
+            manager = mock_github_manager_factory()
+            # OR with custom behavior
+            manager = mock_github_manager_factory(
+                list_issues_result=[{"id": 1}]
+            )
+    """
+
+    def _factory(list_issues_result=None, create_issue_result=None):
+        """Create mock GitHub manager.
+
+        Args:
+            list_issues_result: Result from list_issues (default: [])
+            create_issue_result: Result from create_issue (default: {})
+
+        Returns:
+            Mock GitHub manager object
+        """
+        manager = Mock()
+        manager.list_issues.return_value = list_issues_result or []
+        manager.create_issue.return_value = create_issue_result or {}
+        manager.update_issue.return_value = None
+        manager.delete_issue.return_value = None
+        return manager
 
     return _factory

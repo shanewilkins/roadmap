@@ -6,6 +6,28 @@ import pytest
 
 from roadmap.adapters.git.sync_monitor import GitSyncMonitor
 
+# ============================================================================
+# Fixtures
+# ============================================================================
+
+
+def _setup_monitor_git_executor(
+    monitor, is_repo=True, run_output=None, side_effect=None
+):
+    """Helper to configure monitor's git_executor mocks.
+
+    Args:
+        monitor: GitSyncMonitor instance
+        is_repo: Whether is_git_repository should return True
+        run_output: Default return value for run() (default None)
+        side_effect: Optional side effect function for run()
+    """
+    monitor.git_executor.is_git_repository = Mock(return_value=is_repo)
+    if side_effect:
+        monitor.git_executor.run = Mock(side_effect=side_effect)
+    else:
+        monitor.git_executor.run = Mock(return_value=run_output)
+
 
 class TestGitSyncMonitorChangeDetection:
     """Test change detection via git diff."""
@@ -23,8 +45,7 @@ class TestGitSyncMonitorChangeDetection:
 
     def test_detect_changes_no_commits(self, monitor):
         """Should return empty dict if unable to get current commit."""
-        monitor.git_executor.is_git_repository = Mock(return_value=True)
-        monitor.git_executor.run = Mock(return_value=None)
+        _setup_monitor_git_executor(monitor, is_repo=True, run_output=None)
 
         changes = monitor.detect_changes()
         assert changes == {}
@@ -32,9 +53,7 @@ class TestGitSyncMonitorChangeDetection:
     def test_detect_changes_already_synced(self, monitor):
         """Should return empty dict if already synced to current commit."""
         current_commit = "abc123def456"
-
-        monitor.git_executor.is_git_repository = Mock(return_value=True)
-        monitor.git_executor.run = Mock(return_value=current_commit)
+        _setup_monitor_git_executor(monitor, is_repo=True, run_output=current_commit)
 
         # Save the sync state
         monitor._cached_last_synced_commit = current_commit
@@ -48,8 +67,6 @@ class TestGitSyncMonitorChangeDetection:
         current_commit = "abc123def456"
         all_files_output = ".roadmap/issues/issue-1.yaml\n.roadmap/issues/issue-2.yaml"
 
-        monitor.git_executor.is_git_repository = Mock(return_value=True)
-
         def git_run_side_effect(args):
             if "rev-parse" in args:
                 return current_commit
@@ -57,7 +74,9 @@ class TestGitSyncMonitorChangeDetection:
                 return all_files_output
             return ""
 
-        monitor.git_executor.run = Mock(side_effect=git_run_side_effect)
+        _setup_monitor_git_executor(
+            monitor, is_repo=True, side_effect=git_run_side_effect
+        )
 
         changes = monitor.detect_changes()
 
@@ -70,8 +89,7 @@ class TestGitSyncMonitorChangeDetection:
         current_commit = "abc123def456"
         last_synced = "xyz789uvw012"
 
-        monitor.git_executor.is_git_repository = Mock(return_value=True)
-        monitor.git_executor.run = Mock(return_value=current_commit)
+        _setup_monitor_git_executor(monitor, is_repo=True, run_output=current_commit)
         monitor._cached_last_synced_commit = last_synced
         monitor._cached_current_commit = current_commit
 
@@ -96,8 +114,7 @@ class TestGitSyncMonitorChangeDetection:
         current_commit = "abc123def456"
         last_synced = "xyz789uvw012"
 
-        monitor.git_executor.is_git_repository = Mock(return_value=True)
-        monitor.git_executor.run = Mock(return_value=current_commit)
+        _setup_monitor_git_executor(monitor, is_repo=True, run_output=current_commit)
         monitor._cached_last_synced_commit = last_synced
         monitor._cached_current_commit = current_commit
 
@@ -127,7 +144,9 @@ class TestGitSyncMonitorFileChangeParsing:
 
     def test_parse_git_diff_modified(self, monitor):
         """Should parse modified status correctly."""
-        monitor.git_executor.run = Mock(return_value="M\t.roadmap/issues/issue-1.yaml")
+        _setup_monitor_git_executor(
+            monitor, run_output="M\t.roadmap/issues/issue-1.yaml"
+        )
 
         changes = monitor._get_changed_files("abc123")
 
@@ -136,7 +155,9 @@ class TestGitSyncMonitorFileChangeParsing:
 
     def test_parse_git_diff_added(self, monitor):
         """Should parse added status correctly."""
-        monitor.git_executor.run = Mock(return_value="A\t.roadmap/issues/issue-2.yaml")
+        _setup_monitor_git_executor(
+            monitor, run_output="A\t.roadmap/issues/issue-2.yaml"
+        )
 
         changes = monitor._get_changed_files("abc123")
 
@@ -145,7 +166,9 @@ class TestGitSyncMonitorFileChangeParsing:
 
     def test_parse_git_diff_deleted(self, monitor):
         """Should parse deleted status correctly."""
-        monitor.git_executor.run = Mock(return_value="D\t.roadmap/issues/issue-3.yaml")
+        _setup_monitor_git_executor(
+            monitor, run_output="D\t.roadmap/issues/issue-3.yaml"
+        )
 
         changes = monitor._get_changed_files("abc123")
 
@@ -159,7 +182,7 @@ class TestGitSyncMonitorFileChangeParsing:
             "A\t.roadmap/issues/issue-2.yaml\n"
             "D\t.roadmap/issues/issue-3.yaml"
         )
-        monitor.git_executor.run = Mock(return_value=diff_output)
+        _setup_monitor_git_executor(monitor, run_output=diff_output)
 
         changes = monitor._get_changed_files("abc123")
 
@@ -171,7 +194,7 @@ class TestGitSyncMonitorFileChangeParsing:
     def test_parse_git_diff_with_spaces_in_filenames(self, monitor):
         """Should handle filenames with spaces."""
         diff_output = "M\t.roadmap/issues/issue with spaces.yaml"
-        monitor.git_executor.run = Mock(return_value=diff_output)
+        _setup_monitor_git_executor(monitor, run_output=diff_output)
 
         changes = monitor._get_changed_files("abc123")
 
@@ -186,7 +209,7 @@ class TestGitSyncMonitorFileChangeParsing:
             "A\t.roadmap/projects/project-1.yaml\n"
             "D\tpyproject.toml"
         )
-        monitor.git_executor.run = Mock(return_value=diff_output)
+        _setup_monitor_git_executor(monitor, run_output=diff_output)
 
         changes = monitor._get_changed_files("abc123")
 
@@ -200,7 +223,7 @@ class TestGitSyncMonitorFileChangeParsing:
             "M\t.roadmap/issues/issue-1.yaml\n"
             "D\t.roadmap/archive/issues/archived-1.yaml"
         )
-        monitor.git_executor.run = Mock(return_value=diff_output)
+        _setup_monitor_git_executor(monitor, run_output=diff_output)
 
         changes = monitor._get_changed_files("abc123")
 
@@ -252,13 +275,13 @@ class TestGitSyncMonitorSyncState:
         mock_cursor.execute = mock_execute
 
         monitor = GitSyncMonitor(repo_path=tmp_path, state_manager=mock_state_manager)
-        monitor.git_executor.is_git_repository = Mock(return_value=True)
+        _setup_monitor_git_executor(monitor, is_repo=True)
         return monitor
 
     def test_save_and_retrieve_last_synced_commit(self, monitor):
         """Should save and retrieve last synced commit from file."""
         current_commit = "abc123def456"
-        monitor.git_executor.run = Mock(return_value=current_commit)
+        _setup_monitor_git_executor(monitor, is_repo=True, run_output=current_commit)
 
         # Save
         assert monitor._save_last_synced_commit() is True
@@ -318,8 +341,7 @@ class TestGitSyncMonitorDatabaseSync:
         mock_state_manager._get_connection.return_value = mock_connection
 
         monitor = GitSyncMonitor(repo_path=tmp_path, state_manager=mock_state_manager)
-        monitor.git_executor.is_git_repository = Mock(return_value=True)
-        monitor.git_executor.run = Mock(return_value="abc123def456")
+        _setup_monitor_git_executor(monitor, is_repo=True, run_output="abc123def456")
         return monitor
 
     def test_sync_to_database_without_state_manager(self, tmp_path):

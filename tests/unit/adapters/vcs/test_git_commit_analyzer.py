@@ -233,6 +233,7 @@ class TestParseCommitMessageForUpdates:
 
     def test_parse_empty_message(self):
         """Test parsing empty commit message."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             commit = Mock(message="", extract_progress_info=Mock(return_value=None))
@@ -242,6 +243,7 @@ class TestParseCommitMessageForUpdates:
 
     def test_parse_progress_info(self):
         """Test parsing commit with progress information."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             commit = Mock(
@@ -256,6 +258,7 @@ class TestParseCommitMessageForUpdates:
 
     def test_parse_completion_pattern_closes(self):
         """Test parsing completion pattern with 'closes'."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             commit = Mock(
@@ -269,6 +272,7 @@ class TestParseCommitMessageForUpdates:
 
     def test_parse_wip_indicator(self):
         """Test parsing work-in-progress indicator."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             commit = Mock(
@@ -290,6 +294,7 @@ class TestParseCommitMessageForUpdates:
     )
     def test_parse_various_completion_patterns(self, message, expected_status):
         """Test parsing various completion patterns."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             commit = Mock(
@@ -304,6 +309,7 @@ class TestParseCommitMessageForUpdates:
 
     def test_parse_message_case_insensitive(self):
         """Test that message parsing is case-insensitive."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             commit = Mock(
@@ -316,6 +322,7 @@ class TestParseCommitMessageForUpdates:
 
     def test_parse_progress_boundary_values(self):
         """Test progress parsing with boundary values."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
 
@@ -333,6 +340,7 @@ class TestParseCommitMessageForUpdates:
 
     def test_parse_progress_over_100_clamped(self):
         """Test that progress over 100% is clamped."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             commit = Mock(message="", extract_progress_info=Mock(return_value=150.0))
@@ -346,6 +354,7 @@ class TestGetRecentCommits:
 
     def test_get_recent_commits_empty(self):
         """Test getting recent commits when none exist."""
+
         with patch(
             "roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"
         ) as mock_executor_class:
@@ -360,6 +369,7 @@ class TestGetRecentCommits:
 
     def test_get_recent_commits_count(self):
         """Test get_recent_commits calls with correct count."""
+
         with patch(
             "roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"
         ) as mock_executor_class:
@@ -376,6 +386,7 @@ class TestGetRecentCommits:
 
     def test_get_commits_for_issue(self):
         """Test getting commits for specific issue."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             analyzer.get_recent_commits = Mock(return_value=[])
@@ -391,6 +402,7 @@ class TestAutoUpdateIssuesFromCommits:
 
     def test_auto_update_with_no_commits(self):
         """Test auto update with no commits provided."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             analyzer.get_recent_commits = Mock(return_value=[])
@@ -404,6 +416,7 @@ class TestAutoUpdateIssuesFromCommits:
 
     def test_auto_update_initializes_result_lists(self):
         """Test that auto_update initializes all result lists."""
+
         with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor"):
             analyzer = GitCommitAnalyzer()
             analyzer.get_recent_commits = Mock(return_value=[])
@@ -414,10 +427,3 @@ class TestAutoUpdateIssuesFromCommits:
             assert "updated" in results
             assert "closed" in results
             assert "errors" in results
-
-
-@pytest.fixture
-def mock_git_executor():
-    """Provide a mock GitCommandExecutor."""
-    with patch("roadmap.adapters.git.git_commit_analyzer.GitCommandExecutor") as mock:
-        yield mock.return_value
