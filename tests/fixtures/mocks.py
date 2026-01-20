@@ -768,3 +768,60 @@ def mock_path_factory():
         return mock_path
 
     return _factory
+
+
+@pytest.fixture
+def mock_database_connection_factory():
+    """Factory fixture that creates mock database connections with customizable behavior.
+
+    Replaces build_mock_database_connection() calls in test methods.
+
+    Returns:
+        Function that creates (mock_get_connection, mock_connection) tuple
+
+    Usage:
+        def test_something(mock_database_connection_factory):
+            mock_get_connection, mock_conn = mock_database_connection_factory()
+            # OR
+            mock_get_connection, mock_conn = mock_database_connection_factory(
+                fetch_result={"id": "m1"}
+            )
+            # OR with side effect
+            mock_get_connection, mock_conn = mock_database_connection_factory(
+                execute_side_effect=sqlite3.Error("Connection failed")
+            )
+    """
+
+    def _factory(fetch_result=None, execute_side_effect=None):
+        """Create mock database connection tuple.
+
+        Args:
+            fetch_result: Value for cursor.fetchone() to return
+            execute_side_effect: Side effect for connection.execute()
+
+        Returns:
+            Tuple of (mock_get_connection function, mock_connection)
+        """
+        mock_cursor = Mock()
+        if fetch_result is not None:
+            mock_cursor.fetchone.return_value = fetch_result
+            mock_cursor.fetchall.return_value = (
+                [fetch_result] if not isinstance(fetch_result, list) else fetch_result
+            )
+        else:
+            mock_cursor.fetchone.return_value = None
+            mock_cursor.fetchall.return_value = []
+
+        mock_cursor.execute = Mock(return_value=mock_cursor)
+
+        mock_conn = Mock()
+        if execute_side_effect is not None:
+            mock_conn.execute = Mock(side_effect=execute_side_effect)
+        else:
+            mock_conn.execute = Mock(return_value=mock_cursor)
+        mock_conn.cursor.return_value = mock_cursor
+
+        mock_get_connection = Mock(return_value=mock_conn)
+        return mock_get_connection, mock_conn
+
+    return _factory
