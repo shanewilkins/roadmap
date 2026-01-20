@@ -7,6 +7,7 @@ Tests cover:
 - Field extraction from both sources
 """
 
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -35,7 +36,7 @@ class TestGetLocalBaseline:
         if mock_parser is None:
             mock_parser = MagicMock(spec=IssueParserInterface)
 
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
                 BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
@@ -143,7 +144,7 @@ class TestGetRemoteBaseline:
         if mock_parser is None:
             mock_parser = MagicMock(spec=IssueParserInterface)
 
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
                 BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
@@ -271,7 +272,7 @@ class TestBaselineComparison:
         if mock_parser is None:
             mock_parser = MagicMock(spec=IssueParserInterface)
 
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
                 BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),

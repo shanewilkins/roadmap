@@ -75,7 +75,7 @@ class TestPathTraversalPrevention:
 
     def test_symlink_attack_detection(self, temp_dir_context):
         """Symlink attacks are detectable"""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             data_dir = os.path.join(tmpdir, "data")
             os.makedirs(data_dir)
 
@@ -127,7 +127,7 @@ class TestPrivilegeEscalation:
 
     def test_directory_permissions_safe(self, temp_dir_context):
         """Directory operations respect permissions"""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             os.chmod(tmpdir, 0o700)
             stat_info = os.stat(tmpdir)
             mode = stat_info.st_mode & 0o777
@@ -160,7 +160,7 @@ class TestRaceConditions:
 
     def test_atomic_file_write(self, temp_dir_context):
         """File writes complete atomically"""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             target_file = os.path.join(tmpdir, "target.txt")
 
             # Atomic write pattern
@@ -178,7 +178,7 @@ class TestRaceConditions:
 
     def test_concurrent_file_access(self, temp_dir_context):
         """Concurrent access doesn't cause corruption"""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             test_file = os.path.join(tmpdir, "concurrent.txt")
 
             def write_data(thread_id):
@@ -199,7 +199,7 @@ class TestRaceConditions:
 
     def test_file_locking(self, temp_dir_context):
         """File locks work correctly"""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             test_file = os.path.join(tmpdir, "locked.txt")
 
             with open(test_file, "w") as f:

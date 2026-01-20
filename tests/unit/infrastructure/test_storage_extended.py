@@ -64,7 +64,7 @@ class TestStateManagerUtilities:
 
     def test_database_exists_returns_false_for_missing_file(self, temp_dir_context):
         """Test database_exists returns False when file doesn't exist."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             # Create path but don't create the database file
             db_path = Path(tmpdir) / "missing.db"
             manager = StateManager(db_path=db_path)

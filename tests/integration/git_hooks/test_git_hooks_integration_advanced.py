@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -19,7 +20,7 @@ class TestGitHooksAdvancedIntegration:
     @pytest.fixture
     def advanced_repo(self, temp_dir_context):
         """Create a complex git repository for advanced testing."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
             original_cwd = os.getcwd()
 

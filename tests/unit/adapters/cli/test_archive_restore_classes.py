@@ -1,5 +1,6 @@
 """Tests for archive and restore base and concrete classes."""
 
+import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
@@ -121,7 +122,7 @@ class TestIssueRestore:
         self, mock_get_archive_dir, temp_dir_context
     ):
         """Test getting all archived files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             archive_dir = Path(tmpdir)
             archive_dir.mkdir(exist_ok=True)
             (archive_dir / "issue1.md").write_text("test")

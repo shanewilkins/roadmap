@@ -1,5 +1,6 @@
 """Tests for folder structure validator."""
 
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -40,7 +41,7 @@ class TestCheckRootIssues:
 
     def test_check_root_issues_no_issues(self, temp_dir_context):
         """Test checking root issues when none exist."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             core = Mock()
             misplaced = []
@@ -51,7 +52,7 @@ class TestCheckRootIssues:
 
     def test_check_root_issues_misplaced_issue(self, temp_dir_context):
         """Test detecting misplaced issue in root with milestone assigned."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create issue file in root (8 hex char issue ID format)
@@ -81,7 +82,7 @@ class TestCheckRootIssues:
 
     def test_check_root_issues_with_backup_file(self, temp_dir_context):
         """Test that backup files are skipped."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create backup file
@@ -98,7 +99,7 @@ class TestCheckRootIssues:
 
     def test_check_root_issues_no_milestone_assigned(self, temp_dir_context):
         """Test that issues without milestone are not flagged."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create issue file
@@ -120,7 +121,7 @@ class TestCheckRootIssues:
 
     def test_check_root_issues_milestone_folder_nonexistent(self, temp_dir_context):
         """Test that missing milestone folder doesn't cause issue reporting."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create issue file
@@ -143,7 +144,7 @@ class TestCheckRootIssues:
 
     def test_check_root_issues_exception_handling(self, temp_dir_context):
         """Test that exceptions during processing are handled gracefully."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create issue file
@@ -173,7 +174,7 @@ class TestCheckRootIssues:
         self, filename, should_extract, temp_dir_context
     ):
         """Test various filename formats."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             issue_file = issues_dir / filename

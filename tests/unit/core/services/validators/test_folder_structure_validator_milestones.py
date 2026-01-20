@@ -1,5 +1,6 @@
 """Tests for folder structure validator."""
 
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -13,7 +14,7 @@ class TestProcessMilestoneFile:
 
     def test_process_milestone_file_orphaned_issue(self, temp_dir_context):
         """Test detecting orphaned issue in milestone folder."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestone_dir = Path(tmpdir) / "v1.0"
             milestone_dir.mkdir()
 
@@ -40,7 +41,7 @@ class TestProcessMilestoneFile:
 
     def test_process_milestone_file_backup_skipped(self, temp_dir_context):
         """Test that backup files in milestone folders are skipped."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestone_dir = Path(tmpdir) / "v1.0"
             milestone_dir.mkdir()
             issue_file = milestone_dir / "a1b2c3d4-Issue.md.backup"
@@ -58,7 +59,7 @@ class TestProcessMilestoneFile:
 
     def test_process_milestone_file_with_milestone_assignment(self, temp_dir_context):
         """Test that correctly placed issues are not flagged."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestone_dir = Path(tmpdir) / "v1.0"
             milestone_dir.mkdir()
 
@@ -82,7 +83,7 @@ class TestProcessMilestoneFile:
 
     def test_process_milestone_file_exception_handling(self, temp_dir_context):
         """Test exception handling during file processing."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestone_dir = Path(tmpdir) / "v1.0"
             milestone_dir.mkdir()
             issue_file = milestone_dir / "a1b2c3d4-Issue.md"
@@ -105,7 +106,7 @@ class TestCheckMilestoneFolders:
 
     def test_check_milestone_folders_no_folders(self, temp_dir_context):
         """Test when no milestone folders exist."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             core = Mock()
             orphaned = []
@@ -118,7 +119,7 @@ class TestCheckMilestoneFolders:
 
     def test_check_milestone_folders_skips_hidden(self, temp_dir_context):
         """Test that hidden folders are skipped."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create hidden folder
@@ -138,7 +139,7 @@ class TestCheckMilestoneFolders:
 
     def test_check_milestone_folders_skips_backlog(self, temp_dir_context):
         """Test that backlog folder is skipped."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create backlog folder
@@ -158,7 +159,7 @@ class TestCheckMilestoneFolders:
 
     def test_check_milestone_folders_processes_milestone_files(self, temp_dir_context):
         """Test that milestone folders are processed."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create milestone folder with orphaned issue
@@ -184,7 +185,7 @@ class TestCheckMilestoneFolders:
 
     def test_check_milestone_folders_multiple_milestones(self, temp_dir_context):
         """Test processing multiple milestone folders."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create multiple milestone folders
@@ -214,7 +215,7 @@ class TestScanForFolderStructureIssues:
 
     def test_scan_no_issues(self, temp_dir_context):
         """Test scan when no issues are found."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             core = Mock()
 
@@ -226,7 +227,7 @@ class TestScanForFolderStructureIssues:
 
     def test_scan_finds_misplaced_issues(self, temp_dir_context):
         """Test scan detecting misplaced issues."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create issue in root with milestone
@@ -250,7 +251,7 @@ class TestScanForFolderStructureIssues:
 
     def test_scan_finds_orphaned_issues(self, temp_dir_context):
         """Test scan detecting orphaned issues."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create orphaned issue in milestone folder
@@ -275,7 +276,7 @@ class TestScanForFolderStructureIssues:
 
     def test_scan_finds_both_types(self, temp_dir_context):
         """Test scan finding both misplaced and orphaned issues."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
 
             # Create misplaced issue in root
@@ -313,7 +314,7 @@ class TestScanForFolderStructureIssues:
 
     def test_scan_exception_handling(self, temp_dir_context):
         """Test that exceptions during scan are handled gracefully."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             (issues_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
 
@@ -329,7 +330,7 @@ class TestScanForFolderStructureIssues:
 
     def test_scan_result_structure_misplaced(self, temp_dir_context):
         """Test structure of misplaced issue result."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             (issues_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
             (issues_dir / "v1.0").mkdir()
@@ -355,7 +356,7 @@ class TestScanForFolderStructureIssues:
 
     def test_scan_result_structure_orphaned(self, temp_dir_context):
         """Test structure of orphaned issue result."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             v1_dir = issues_dir / "v1.0"
             v1_dir.mkdir()

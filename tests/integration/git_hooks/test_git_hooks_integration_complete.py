@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 
@@ -19,7 +20,7 @@ class TestGitHooksIntegration:
     @pytest.fixture
     def git_hooks_repo(self, temp_dir_context):
         """Create a git repository with roadmap initialized for hooks testing."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
             original_cwd = os.getcwd()
 

@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,7 @@ class TestGitHooksIntegration:
 
     def test_hook_script_executes_without_error(self, temp_dir_context):
         """Test that generated hook script can be executed without errors."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
             hooks_dir = repo_path / ".git" / "hooks"
             hooks_dir.mkdir(parents=True, exist_ok=True)
@@ -55,7 +56,7 @@ class TestGitHooksIntegration:
 
     def test_all_hooks_install_without_errors(self, temp_dir_context):
         """Test that all hook types can be installed without errors."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
             hooks_dir = repo_path / ".git" / "hooks"
             hooks_dir.mkdir(parents=True, exist_ok=True)

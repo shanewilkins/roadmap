@@ -1,6 +1,7 @@
 """Tests for enhanced list command functionality."""
 
 import os
+import tempfile
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -15,7 +16,7 @@ from roadmap.infrastructure.coordination.core import RoadmapCore
 @pytest.fixture
 def temp_roadmap(temp_dir_context):
     """Create a temporary roadmap for testing."""
-    with temp_dir_context() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         old_cwd = os.getcwd()
         os.chdir(temp_dir)
         try:

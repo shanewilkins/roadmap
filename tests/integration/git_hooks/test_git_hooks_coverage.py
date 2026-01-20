@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -17,7 +18,7 @@ class TestGitHooksSpecificCoverage:
     @pytest.fixture
     def minimal_git_repo(self, temp_dir_context):
         """Create minimal git repository for focused testing."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
             original_cwd = os.getcwd()
 
@@ -54,7 +55,7 @@ class TestGitHooksSpecificCoverage:
 
     def test_hook_manager_without_git_repo(self, temp_dir_context):
         """Test GitHookManager behavior outside git repository."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = os.getcwd()
             try:
                 os.chdir(temp_dir)  # Non-git directory

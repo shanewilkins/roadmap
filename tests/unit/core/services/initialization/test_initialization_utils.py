@@ -1,6 +1,7 @@
 """Tests for initialization utilities."""
 
 import json
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -17,7 +18,7 @@ class TestInitializationLock:
 
     def test_lock_acquire_when_not_locked(self, temp_dir_context):
         """Test acquiring lock when no lock exists."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -28,7 +29,7 @@ class TestInitializationLock:
 
     def test_lock_acquire_when_already_locked(self, temp_dir_context):
         """Test acquiring lock when lock already exists."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock_path.write_text("pid:1234\nstarted:2024-01-01T00:00:00\n")
 
@@ -37,7 +38,7 @@ class TestInitializationLock:
 
     def test_lock_acquire_writes_pid(self, temp_dir_context):
         """Test that lock contains process ID."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -50,12 +51,12 @@ class TestInitializationLock:
 
     def test_lock_acquire_writes_timestamp(self, temp_dir_context):
         """Test that lock contains timestamp."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
             lock.acquire()
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "nonexistent" / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -65,7 +66,7 @@ class TestInitializationLock:
 
     def test_lock_release_removes_file(self, temp_dir_context):
         """Test that release removes the lock file."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -77,7 +78,7 @@ class TestInitializationLock:
 
     def test_lock_release_when_already_released(self, temp_dir_context):
         """Test that release doesn't fail if lock is already gone."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -87,7 +88,7 @@ class TestInitializationLock:
 
     def test_lock_release_handles_permission_error(self, temp_dir_context):
         """Test that release handles deletion errors gracefully."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
             lock.acquire()
@@ -100,7 +101,7 @@ class TestInitializationLock:
 
     def test_lock_context_usage(self, temp_dir_context):
         """Test typical acquire/release pattern."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             lock_path = Path(tmpdir) / "init.lock"
             lock = InitializationLock(lock_path)
 
@@ -115,7 +116,7 @@ class TestInitializationManifest:
 
     def test_manifest_initialization(self, temp_dir_context):
         """Test manifest initializes with empty created list."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -123,7 +124,7 @@ class TestInitializationManifest:
 
     def test_manifest_add_path_existing_file(self, temp_dir_context):
         """Test adding an existing file to manifest."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("test content")
@@ -136,7 +137,7 @@ class TestInitializationManifest:
 
     def test_manifest_add_path_existing_directory(self, temp_dir_context):
         """Test adding an existing directory to manifest."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             dir_path = Path(tmpdir) / "test_dir"
             dir_path.mkdir()
@@ -148,7 +149,7 @@ class TestInitializationManifest:
 
     def test_manifest_add_path_nonexistent(self, temp_dir_context):
         """Test adding a non-existent path does nothing."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             nonexistent_path = Path(tmpdir) / "nonexistent"
 
@@ -159,7 +160,7 @@ class TestInitializationManifest:
 
     def test_manifest_save(self, temp_dir_context):
         """Test that manifest saves to JSON file."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("content")
@@ -174,7 +175,7 @@ class TestInitializationManifest:
 
     def test_manifest_save_handles_error(self, temp_dir_context):
         """Test that save errors are silently ignored."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             # Use a path in non-existent directory
             manifest_path = Path(tmpdir) / "nonexistent" / "manifest.json"
             manifest = InitializationManifest(manifest_path)
@@ -189,7 +190,7 @@ class TestInitializationManifest:
 
     def test_manifest_add_multiple_paths(self, temp_dir_context):
         """Test adding multiple paths to manifest."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -206,7 +207,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_removes_files(self, temp_dir_context):
         """Test that rollback removes tracked files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("content")
@@ -220,7 +221,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_removes_directories(self, temp_dir_context):
         """Test that rollback removes tracked directories."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             dir_path = Path(tmpdir) / "test_dir"
             dir_path.mkdir()
@@ -235,7 +236,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_removes_multiple_paths(self, temp_dir_context):
         """Test that rollback removes multiple tracked paths."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -256,7 +257,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_mixed_files_and_directories(self, temp_dir_context):
         """Test rollback with both files and directories."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -279,7 +280,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_handles_missing_manifest_file(self, temp_dir_context):
         """Test that rollback handles missing manifest file gracefully."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest = InitializationManifest(manifest_path)
 
@@ -289,7 +290,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_handles_invalid_json(self, temp_dir_context):
         """Test that rollback handles invalid JSON in manifest."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest_path.write_text("invalid json {")
 
@@ -299,7 +300,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_handles_missing_paths(self, temp_dir_context):
         """Test that rollback handles missing files gracefully."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             manifest_path.write_text(
                 json.dumps({"created": [str(Path(tmpdir) / "nonexistent")]})
@@ -311,7 +312,7 @@ class TestInitializationManifest:
 
     def test_manifest_rollback_handles_deletion_errors(self, temp_dir_context):
         """Test that rollback continues despite individual deletion errors."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "file.txt"
             file_path.write_text("content")
@@ -330,7 +331,7 @@ class TestInitializationManifest:
 
     def test_manifest_stores_correct_json_format(self, temp_dir_context):
         """Test that manifest stores data in correct JSON format."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / "test.txt"
             file_path.write_text("content")
@@ -355,7 +356,7 @@ class TestInitializationManifest:
     )
     def test_manifest_add_paths_various_filenames(self, filename, temp_dir_context):
         """Test adding files with various filename patterns."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "manifest.json"
             file_path = Path(tmpdir) / filename
             file_path.write_text("content")

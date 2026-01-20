@@ -1,5 +1,6 @@
 """Tests for MilestoneNamingValidator."""
 
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -183,7 +184,7 @@ class TestFindNamingConflicts:
 
     def test_no_conflicts_with_valid_names(self, temp_dir_context):
         """Test directory with compliant names."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestones_dir = Path(tmpdir)
 
             # Create valid milestone files
@@ -196,7 +197,7 @@ class TestFindNamingConflicts:
 
     def test_detects_unsafe_names(self, temp_dir_context):
         """Test detection of names that need conversion."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestones_dir = Path(tmpdir)
 
             # Create file with unsafe name (spaces, uppercase)
@@ -208,7 +209,7 @@ class TestFindNamingConflicts:
 
     def test_detects_collisions(self, temp_dir_context):
         """Test detection of naming collisions."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestones_dir = Path(tmpdir)
 
             # Create files that would collide when converted to safe names
@@ -228,7 +229,7 @@ class TestFindNamingConflicts:
 
     def test_empty_directory(self, temp_dir_context):
         """Test with empty directory."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             milestones_dir = Path(tmpdir)
             conflicts = MilestoneNamingValidator.find_naming_conflicts(milestones_dir)
             assert conflicts == []

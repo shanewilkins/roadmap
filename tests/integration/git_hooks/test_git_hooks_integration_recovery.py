@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,7 @@ class TestGitHooksErrorRecovery:
     @pytest.fixture
     def corrupted_repo(self, temp_dir_context):
         """Create a git repository with potential corruption scenarios."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
             original_cwd = os.getcwd()
 

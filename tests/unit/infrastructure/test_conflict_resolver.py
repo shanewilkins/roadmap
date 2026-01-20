@@ -18,7 +18,7 @@ class TestConflictResolver:
     @pytest.fixture
     def temp_dir(self, temp_dir_context):
         """Create a temporary directory for test files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
     @pytest.fixture

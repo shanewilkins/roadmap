@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -20,7 +21,7 @@ class TestGitHookManager:
     @pytest.fixture
     def temp_git_repo(self, temp_dir_context):
         """Create a temporary Git repository for testing."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             os.chdir(temp_dir)
 
             # Initialize Git repo
@@ -189,7 +190,7 @@ class TestGitHookManager:
 
     def test_non_git_repo_handling(self, temp_dir_context):
         """Test graceful handling when not in a Git repository."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             os.chdir(temp_dir)
 
             # Initialize roadmap without Git

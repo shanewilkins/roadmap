@@ -47,7 +47,7 @@ class TestFileSynchronizer:
     @pytest.fixture
     def temp_data_dir(self, temp_dir_context):
         """Create a temporary data directory."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
     def test_initialization(self, file_synchronizer):

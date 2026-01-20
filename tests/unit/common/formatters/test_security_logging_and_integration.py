@@ -34,7 +34,7 @@ pytestmark = pytest.mark.unit
 @pytest.fixture
 def temp_dir(temp_dir_context):
     """Provide a temporary directory for test operations."""
-    with temp_dir_context() as td:
+    with tempfile.TemporaryDirectory() as td:
         yield Path(td)
 
 
@@ -249,7 +249,7 @@ class TestSecurityIntegration:
 
     def test_secure_file_creation_workflow(self, temp_dir_context):
         """Test complete secure file creation and validation workflow."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Sanitize filename first
@@ -293,7 +293,7 @@ class TestSecurityIntegration:
         for handler in security_logger.handlers[:]:
             security_logger.removeHandler(handler)
 
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             log_file = Path(temp_dir) / "security.log"
 
             # Configure logging
@@ -337,7 +337,7 @@ class TestSecurityIntegration:
 
     def test_error_handling_integration(self, temp_dir_context):
         """Test error handling across multiple security functions."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Test various error conditions
@@ -361,7 +361,7 @@ class TestSecurityIntegration:
 
     def test_comprehensive_logging_coverage(self, temp_dir_context):
         """Test that all major security operations execute without error."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Perform all major security operations
@@ -420,7 +420,7 @@ class TestSecurityPerformance:
 
     def test_many_path_validations(self, temp_dir_context):
         """Test performance with many path validations."""
-        with temp_dir_context() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             base_dir = Path(temp_dir)
 
             # Create some sample files for validation

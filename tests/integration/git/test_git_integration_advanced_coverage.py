@@ -3,6 +3,7 @@ Comprehensive test coverage for git_integration module.
 Targets uncovered areas to achieve 85%+ coverage.
 """
 
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -18,7 +19,7 @@ pytestmark = pytest.mark.unit
 @pytest.fixture
 def temp_dir(temp_dir_context):
     """Create a temporary directory for testing."""
-    with temp_dir_context() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
 
 

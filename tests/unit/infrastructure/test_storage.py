@@ -46,7 +46,7 @@ class TestStateManager:
 
     def test_init_creates_parent_directories(self, temp_dir_context):
         """__init__ should create parent directories if they don't exist."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "subdir" / "test.db"
             StateManager(db_path=db_path)
             assert db_path.exists()

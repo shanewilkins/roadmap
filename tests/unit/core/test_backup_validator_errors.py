@@ -4,6 +4,7 @@ Tests cover error handling, boundary conditions, and edge cases.
 """
 
 import os
+import tempfile
 import time
 from pathlib import Path
 from unittest.mock import patch
@@ -38,7 +39,7 @@ class TestBackupValidatorDirectoryHandling:
 
     def test_scan_empty_backups_dir(self, temp_dir_context):
         """Empty backups dir should return empty result."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             result = BackupValidator.scan_for_old_backups(backups_dir)
 
@@ -47,7 +48,7 @@ class TestBackupValidatorDirectoryHandling:
 
     def test_scan_dir_with_no_backup_files(self, temp_dir_context):
         """Dir with non-backup files should return empty result."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             (backups_dir / "readme.txt").touch()
             (backups_dir / "config.json").touch()
@@ -59,7 +60,7 @@ class TestBackupValidatorDirectoryHandling:
 
     def test_scan_permission_denied_on_directory(self, temp_dir_context):
         """Permission denied accessing directory should raise exception."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             backup_file = backups_dir / "issue_1.backup.md"
             backup_file.touch()
@@ -76,7 +77,7 @@ class TestBackupValidatorFileScanning:
 
     def test_scan_single_backup_file(self, temp_dir_context):
         """Single backup file below keep threshold should not be deleted."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             backup_file = backups_dir / "issue_123_v1.backup.md"
             backup_file.write_text("backup content")
@@ -88,7 +89,7 @@ class TestBackupValidatorFileScanning:
 
     def test_scan_multiple_backup_files_same_issue(self, temp_dir_context):
         """Multiple backups of same issue, some beyond keep threshold."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Create 5 backup files for same issue
@@ -104,7 +105,7 @@ class TestBackupValidatorFileScanning:
 
     def test_scan_multiple_issues_separate_keep_threshold(self, temp_dir_context):
         """Each issue has its own keep threshold."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Create 3 backups for issue 1
@@ -124,7 +125,7 @@ class TestBackupValidatorFileScanning:
 
     def test_scan_keep_value_zero(self, temp_dir_context):
         """Keep value of 0 should delete all files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             for i in range(3):
@@ -137,7 +138,7 @@ class TestBackupValidatorFileScanning:
 
     def test_scan_keep_value_negative(self, temp_dir_context):
         """Negative keep value should delete all files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             for i in range(3):
@@ -151,7 +152,7 @@ class TestBackupValidatorFileScanning:
 
     def test_scan_files_with_underscores_in_names(self, temp_dir_context):
         """Files with multiple underscores should be grouped correctly."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Issue key is everything before last underscore
@@ -171,7 +172,7 @@ class TestBackupValidatorSizeCalculation:
 
     def test_size_calculation_single_file(self, temp_dir_context):
         """Size should match file size."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Create 3 files, delete oldest
@@ -188,7 +189,7 @@ class TestBackupValidatorSizeCalculation:
     @pytest.mark.skipif(False, reason="")
     def test_size_calculation_multiple_files(self, temp_dir_context):
         """Total size should sum all deleted files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             base_time = time.time()
 
@@ -207,7 +208,7 @@ class TestBackupValidatorSizeCalculation:
 
     def test_size_zero_for_empty_result(self, temp_dir_context):
         """No files to delete should result in zero size."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             backup_file = backups_dir / "issue_123_v1.backup.md"
             backup_file.write_text("content")
@@ -223,7 +224,7 @@ class TestBackupValidatorHealthCheck:
 
     def test_health_check_no_old_backups(self, temp_dir_context):
         """No old backups should return HEALTHY status."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             (backups_dir / "issue_123_v1.backup.md").write_text("content")
 
@@ -310,7 +311,7 @@ class TestBackupValidatorEdgeCases:
 
     def test_backup_files_with_special_characters(self, temp_dir_context):
         """Backup files with special characters should be handled."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Files with special chars in issue key (if allowed by filesystem)
@@ -324,7 +325,7 @@ class TestBackupValidatorEdgeCases:
 
     def test_backup_files_same_mtime(self, temp_dir_context):
         """Files with same mtime should still be ordered correctly."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Create files with explicit same mtime
@@ -340,7 +341,7 @@ class TestBackupValidatorEdgeCases:
 
     def test_scan_with_very_large_keep_value(self, temp_dir_context):
         """Very large keep value should keep all files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             for i in range(5):
@@ -354,7 +355,7 @@ class TestBackupValidatorEdgeCases:
 
     def test_mixed_backup_and_non_backup_files(self, temp_dir_context):
         """Directory with mixed file types should only process backup files."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Create backup files
@@ -374,7 +375,7 @@ class TestBackupValidatorEdgeCases:
 
     def test_backup_file_with_missing_version(self, temp_dir_context):
         """Backup file with missing version number (edge case in naming)."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # File without version number
@@ -391,7 +392,7 @@ class TestBackupValidatorEdgeCases:
 
     def test_deeply_nested_issue_keys(self, temp_dir_context):
         """Issue keys with many underscores should be parsed correctly."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             # Very nested issue key
@@ -412,7 +413,7 @@ class TestBackupValidatorDataIntegrity:
 
     def test_result_structure_always_has_required_keys(self, temp_dir_context):
         """Result should always have required keys."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             result = BackupValidator.scan_for_old_backups(backups_dir)
@@ -424,7 +425,7 @@ class TestBackupValidatorDataIntegrity:
 
     def test_deleted_files_have_correct_path(self, temp_dir_context):
         """Deleted file entries should have Path objects."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
 
             for i in range(3):
@@ -441,7 +442,7 @@ class TestBackupValidatorDataIntegrity:
     @pytest.mark.skipif(False, reason="")
     def test_newest_files_kept_not_deleted(self, temp_dir_context):
         """Newest files (by mtime) should be kept, oldest deleted."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             backups_dir = Path(tmpdir)
             base_time = time.time()
 

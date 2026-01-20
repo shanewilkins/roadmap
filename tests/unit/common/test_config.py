@@ -1,5 +1,6 @@
 """Tests for configuration system."""
 
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -99,14 +100,14 @@ class TestConfigLoader:
             path = ConfigLoader.get_user_config_path()
             assert path == Path.home() / ".roadmap" / "config.yaml"
         else:
-            with temp_dir_context() as tmpdir:
+            with tempfile.TemporaryDirectory() as tmpdir:
                 project_root = Path(tmpdir)
                 path = ConfigLoader.get_project_config_path(project_root)
                 assert path == project_root / ".roadmap" / "config.yaml"
 
     def test_load_config_file_scenarios(self, temp_dir_context):
         """Test loading config files in various scenarios."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "config.yaml"
 
             # Test 1: Non-existent file returns None
@@ -128,7 +129,7 @@ class TestConfigLoader:
 
     def test_load_config_merging(self, temp_dir_context):
         """Test config merging with precedence."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             project_root = Path(tmpdir)
             roadmap_dir = project_root / ".roadmap"
             roadmap_dir.mkdir()
@@ -150,7 +151,7 @@ class TestConfigLoader:
 
     def test_save_and_load_config(self, temp_dir_context):
         """Test saving and loading config."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "config.yaml"
 
             # Create and save config
@@ -171,7 +172,7 @@ class TestConfigLoader:
 
     def test_get_config_value(self, temp_dir_context):
         """Test getting configuration value by path."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "config.yaml"
 
             # Create config
@@ -185,7 +186,7 @@ class TestConfigLoader:
 
     def test_set_config_value(self, temp_dir_context):
         """Test setting configuration value."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / ".roadmap"
             config_path.mkdir()
             config_file = config_path / "config.yaml"
@@ -207,7 +208,7 @@ class TestConfigLoader:
 
     def test_invalid_config_file(self, temp_dir_context):
         """Test loading invalid config file."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "bad_config.yaml"
 
             # Create invalid YAML
@@ -232,7 +233,7 @@ class TestConfigPrecedence:
 
     def test_project_overrides_defaults(self, temp_dir_context):
         """Test project config overrides defaults."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             project_root = Path(tmpdir)
             roadmap_dir = project_root / ".roadmap"
             roadmap_dir.mkdir()

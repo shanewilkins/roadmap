@@ -7,6 +7,7 @@ Tests cover:
 - Round-trip serialization/deserialization
 """
 
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -120,7 +121,7 @@ class TestIssueSyncMetadata:
 
     def test_load_sync_metadata_from_file(self, temp_dir_context):
         """Test loading sync_metadata from an issue file."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             # Create a file with sync_metadata
@@ -149,7 +150,7 @@ class TestIssueSyncMetadata:
 
     def test_load_sync_metadata_not_present(self, temp_dir_context):
         """Test loading sync_metadata when not present."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             # Create a file without sync_metadata
@@ -166,7 +167,7 @@ class TestIssueSyncMetadata:
 
     def test_save_issue_with_sync_metadata(self, temp_dir_context):
         """Test saving an issue with sync_metadata."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             issue = Issue(
@@ -191,7 +192,7 @@ class TestIssueSyncMetadata:
 
     def test_update_issue_sync_metadata_only(self, temp_dir_context):
         """Test updating only sync_metadata without modifying the issue."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             # Create initial issue with content
@@ -227,7 +228,7 @@ class TestIssueSyncMetadata:
 
     def test_roundtrip_sync_metadata(self, temp_dir_context):
         """Test round-trip serialization and deserialization of sync_metadata."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             original_metadata = {
@@ -260,7 +261,7 @@ class TestIssueSyncMetadata:
 
     def test_sync_metadata_with_complex_remote_state(self, temp_dir_context):
         """Test sync_metadata with nested remote_state structure."""
-        with temp_dir_context() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "issue.md"
 
             metadata = {
