@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest import mock
 
 from roadmap.adapters.persistence.storage.queries import QueryService
-from tests.fixtures import build_mock_path
 
 
 class TestQueryServiceInitialization:
@@ -51,13 +50,13 @@ class TestHasFileChanges:
                 result = service.has_file_changes()
                 assert result is expected
 
-    def test_has_file_changes_with_new_file(self):
+    def test_has_file_changes_with_new_file(self, mock_path_factory):
         """Test has_file_changes detects new markdown files."""
         mock_state_manager = mock.MagicMock()
         mock_roadmap_dir = Path("/test/.roadmap")
         mock_state_manager.db_path = mock_roadmap_dir / "db.sqlite"
 
-        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file = mock_path_factory(name="issues/test.md", exists=True)
         mock_file.read_bytes = mock.Mock(return_value=b"file content")
 
         mock_conn = mock.MagicMock()
@@ -81,13 +80,13 @@ class TestHasFileChanges:
                         # New file (no stored hash) means changes detected
                         assert result is True
 
-    def test_has_file_changes_with_modified_file(self):
+    def test_has_file_changes_with_modified_file(self, mock_path_factory):
         """Test has_file_changes detects modified markdown files."""
         mock_state_manager = mock.MagicMock()
         mock_roadmap_dir = Path("/test/.roadmap")
         mock_state_manager.db_path = mock_roadmap_dir / "db.sqlite"
 
-        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file = mock_path_factory(name="issues/test.md", exists=True)
         mock_file.read_bytes = mock.Mock(return_value=b"new content")
 
         mock_conn = mock.MagicMock()
@@ -112,13 +111,13 @@ class TestHasFileChanges:
                         # Modified file (different hash) means changes detected
                         assert result is True
 
-    def test_has_file_changes_no_changes(self):
+    def test_has_file_changes_no_changes(self, mock_path_factory):
         """Test has_file_changes when files haven't changed."""
         mock_state_manager = mock.MagicMock()
         mock_roadmap_dir = Path("/test/.roadmap")
         mock_state_manager.db_path = mock_roadmap_dir / "db.sqlite"
 
-        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file = mock_path_factory(name="issues/test.md", exists=True)
         mock_file.read_bytes = mock.Mock(return_value=b"file content")
 
         test_hash = "abc123def456"
@@ -146,12 +145,12 @@ class TestHasFileChanges:
                             # Same hash means no changes
                             assert result is False
 
-    def test_has_file_changes_transaction_error(self):
+    def test_has_file_changes_transaction_error(self, mock_path_factory):
         """Test has_file_changes handles transaction errors."""
         mock_state_manager = mock.MagicMock()
         mock_state_manager.db_path = Path("/test/.roadmap/db.sqlite")
 
-        mock_file = build_mock_path(name="issues/test.md", exists=True)
+        mock_file = mock_path_factory(name="issues/test.md", exists=True)
         mock_file.read_bytes = mock.Mock(return_value=b"content")
 
         with mock.patch.object(Path, "exists", return_value=True):
@@ -167,12 +166,12 @@ class TestHasFileChanges:
                     # On error, assume changes exist to be safe
                     assert result is True
 
-    def test_has_file_changes_file_disappeared(self):
+    def test_has_file_changes_file_disappeared(self, mock_path_factory):
         """Test has_file_changes when file disappears during check."""
         mock_state_manager = mock.MagicMock()
         mock_state_manager.db_path = Path("/test/.roadmap/db.sqlite")
 
-        mock_file = build_mock_path(
+        mock_file = mock_path_factory(
             name="issues/test.md",
             exists=False,  # File disappeared
         )
