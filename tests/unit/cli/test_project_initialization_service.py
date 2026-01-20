@@ -18,7 +18,7 @@ from roadmap.adapters.cli.services.project_initialization_service import (
     ProjectDetectionService,
     ProjectTemplateService,
 )
-from roadmap.infrastructure.coordination.core import RoadmapCore
+from tests.fixtures import build_mock_roadmap_core
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
@@ -302,8 +302,7 @@ class TestProjectCreationService:
     def test_create_project_success(self, mock_core_class, tmp_path):
         """Test successful project creation."""
         # Setup mock
-        mock_core = MagicMock(spec=RoadmapCore)
-        mock_core.roadmap_dir = tmp_path / ".roadmap"
+        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
 
         # Create projects directory
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
@@ -326,8 +325,7 @@ class TestProjectCreationService:
     def test_create_project_creates_file(self, mock_core_class, tmp_path):
         """Test that project creation creates the project file."""
         # Setup mock
-        mock_core = MagicMock(spec=RoadmapCore)
-        mock_core.roadmap_dir = tmp_path / ".roadmap"
+        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
 
         # Create projects directory
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
@@ -353,8 +351,7 @@ class TestProjectCreationService:
     def test_create_project_file_content(self, mock_core_class, tmp_path):
         """Test that project file contains correct content."""
         # Setup mock
-        mock_core = MagicMock(spec=RoadmapCore)
-        mock_core.roadmap_dir = tmp_path / ".roadmap"
+        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
 
         # Create projects directory
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
@@ -379,8 +376,7 @@ class TestProjectCreationService:
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
     def test_create_project_with_custom_template(self, mock_core_class, tmp_path):
         """Test project creation with custom template."""
-        mock_core = MagicMock(spec=RoadmapCore)
-        mock_core.roadmap_dir = tmp_path / ".roadmap"
+        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
 
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
 
@@ -410,8 +406,7 @@ class TestProjectCreationService:
         self, mock_core_class, tmp_path
     ):
         """Test that invalid custom template falls back to standard template."""
-        mock_core = MagicMock(spec=RoadmapCore)
-        mock_core.roadmap_dir = tmp_path / ".roadmap"
+        mock_core = build_mock_roadmap_core(roadmap_dir=tmp_path / ".roadmap")
 
         (mock_core.roadmap_dir / "projects").mkdir(parents=True, exist_ok=True)
 
