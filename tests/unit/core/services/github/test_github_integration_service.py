@@ -12,6 +12,22 @@ from roadmap.core.services.github.github_integration_service import (
 )
 
 
+def _create_mock_config(github_config=None):
+    """Helper to create a mock ConfigManager config object."""
+    mock_config = Mock()
+    mock_config.github = github_config
+    mock_config.user = None  # Default to None unless explicitly set
+    return mock_config
+
+
+def _create_mock_config_manager(config_github=None):
+    """Helper to create a mock ConfigManager instance."""
+    mock_manager = Mock()
+    mock_config = _create_mock_config(config_github)
+    mock_manager.load.return_value = mock_config
+    return mock_manager
+
+
 class TestGitHubIntegrationService:
     """Tests for GitHubIntegrationService."""
 
@@ -55,66 +71,49 @@ class TestGitHubIntegrationService:
 
     def test_get_github_config_no_github_section(self, service):
         """Test getting GitHub config when no GitHub section exists."""
-        mock_config = Mock()
-        mock_config.github = None
-
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
-            mock_manager = Mock()
-            mock_manager.load.return_value = mock_config
-            mock_manager_class.return_value = mock_manager
-
+            mock_manager_class.return_value = _create_mock_config_manager(None)
             result = service.get_github_config()
 
         assert result == (None, None, None)
 
     def test_get_github_config_missing_owner(self, service):
         """Test getting GitHub config when owner is missing."""
-        mock_config = Mock()
-        mock_config.github = {"repo": "my-repo"}
-
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
-            mock_manager = Mock()
-            mock_manager.load.return_value = mock_config
-            mock_manager_class.return_value = mock_manager
-
+            mock_manager_class.return_value = _create_mock_config_manager(
+                {"repo": "my-repo"}
+            )
             result = service.get_github_config()
 
         assert result == (None, None, None)
 
     def test_get_github_config_missing_repo(self, service):
         """Test getting GitHub config when repo is missing."""
-        mock_config = Mock()
-        mock_config.github = {"owner": "my-owner"}
-
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
-            mock_manager = Mock()
-            mock_manager.load.return_value = mock_config
-            mock_manager_class.return_value = mock_manager
-
+            mock_manager_class.return_value = _create_mock_config_manager(
+                {"owner": "my-owner"}
+            )
             result = service.get_github_config()
 
         assert result == (None, None, None)
 
     def test_get_github_config_with_token_from_credentials(self, service):
         """Test getting GitHub config with token from credentials manager."""
-        mock_config = Mock()
-        mock_config.github = {"owner": "my-owner", "repo": "my-repo"}
-
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             with patch(
                 "roadmap.core.services.github.github_integration_service.get_credential_manager"
             ) as mock_cred_manager_func:
-                mock_manager = Mock()
-                mock_manager.load.return_value = mock_config
-                mock_manager_class.return_value = mock_manager
+                mock_manager_class.return_value = _create_mock_config_manager(
+                    {"owner": "my-owner", "repo": "my-repo"}
+                )
 
                 mock_cred_manager = Mock()
                 mock_cred_manager.get_token.return_value = "test_token"
@@ -127,18 +126,15 @@ class TestGitHubIntegrationService:
 
     def test_get_github_config_with_token_from_env(self, service):
         """Test getting GitHub config with token from environment."""
-        mock_config = Mock()
-        mock_config.github = {"owner": "my-owner", "repo": "my-repo"}
-
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
             with patch(
                 "roadmap.core.services.github.github_integration_service.get_credential_manager"
             ) as mock_cred_manager_func:
-                mock_manager = Mock()
-                mock_manager.load.return_value = mock_config
-                mock_manager_class.return_value = mock_manager
+                mock_manager_class.return_value = _create_mock_config_manager(
+                    {"owner": "my-owner", "repo": "my-repo"}
+                )
 
                 mock_cred_manager = Mock()
                 mock_cred_manager.get_token.return_value = None
@@ -201,14 +197,10 @@ class TestGitHubIntegrationService:
 
     def test_get_current_user_no_user_config(self, service):
         """Test getting current user when no user config exists."""
-        mock_config = Mock(spec=[])
-
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
-            mock_manager = Mock()
-            mock_manager.load.return_value = mock_config
-            mock_manager_class.return_value = mock_manager
+            mock_manager_class.return_value = _create_mock_config_manager()
 
             user = service.get_current_user()
 
@@ -218,12 +210,12 @@ class TestGitHubIntegrationService:
         """Test successfully getting current user."""
         mock_user = Mock()
         mock_user.name = "john_doe"
-        mock_config = Mock()
-        mock_config.user = mock_user
 
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
+            mock_config = _create_mock_config()
+            mock_config.user = mock_user
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
             mock_manager_class.return_value = mock_manager
@@ -239,12 +231,12 @@ class TestGitHubIntegrationService:
 
         mock_user = Mock()
         mock_user.name = "jane_doe"
-        mock_config = Mock()
-        mock_config.user = mock_user
 
         with patch(
             "roadmap.core.services.github.github_integration_service.ConfigManager"
         ) as mock_manager_class:
+            mock_config = _create_mock_config()
+            mock_config.user = mock_user
             mock_manager = Mock()
             mock_manager.load.return_value = mock_config
             mock_manager_class.return_value = mock_manager

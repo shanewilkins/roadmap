@@ -8,7 +8,7 @@ Strategic approach to addressing 784 code duplication patterns identified across
 
 **Current State**: 784 total pattern occurrences across 6 duplication types
 - Mock Setup: 316 occurrences
-- Patch Pattern: 284 occurrences  
+- Patch Pattern: 284 occurrences
 - Temp Directory: 133 occurrences
 - RoadmapCore Init: 26 occurrences
 - Issue Creation: 22 occurrences
@@ -91,7 +91,7 @@ def mock_git_service():
     return MagicMock(spec=GitService)
 ```
 
-**Files to Update**: 
+**Files to Update**:
 - `tests/conftest.py` - Add fixtures
 - `tests/unit/conftest.py` - Layer-specific fixtures
 - `tests/unit/core/conftest.py` - Core service fixtures
@@ -116,7 +116,7 @@ from roadmap.core.domain.entities import Issue, Status, Priority
 
 class IssueFactory:
     """Factory for creating test Issue instances."""
-    
+
     @staticmethod
     def create(
         id="issue-1",
@@ -137,22 +137,22 @@ class IssueFactory:
             progress=progress,
             **kwargs
         )
-    
+
     @staticmethod
     def create_in_progress(id="issue-1", **kwargs) -> Issue:
         """Create an in-progress issue."""
         return IssueFactory.create(id=id, status=Status.IN_PROGRESS, **kwargs)
-    
+
     @staticmethod
     def create_done(id="issue-1", **kwargs) -> Issue:
         """Create a completed issue."""
         return IssueFactory.create(id=id, status=Status.DONE, progress=100, **kwargs)
-    
+
     @staticmethod
     def create_blocked(id="issue-1", **kwargs) -> Issue:
         """Create a blocked issue."""
         return IssueFactory.create(id=id, status=Status.BLOCKED, **kwargs)
-    
+
     @staticmethod
     def create_batch(count=5, **kwargs) -> list[Issue]:
         """Create multiple issues for batch testing."""
@@ -164,7 +164,7 @@ class IssueFactory:
 
 **Usage**: Replace all `Issue(id="...", title="...", ...)` with `IssueFactory.create(...)`
 
-**Files to Update**: 
+**Files to Update**:
 - `tests/unit/core/services/test_sync_state_updates.py` (6 occurrences)
 - `tests/unit/adapters/sync/test_sync_services.py` (8 occurrences)
 - `tests/integration/test_duplicate_prevention.py` (2 occurrences)
@@ -506,6 +506,6 @@ python3 scripts/scan_dry_violations.py
 
 ---
 
-**Created**: January 15, 2026  
-**Status**: Ready for implementation  
+**Created**: January 15, 2026
+**Status**: Ready for implementation
 **Estimated Total Effort**: 11-15 hours over 3 sessions

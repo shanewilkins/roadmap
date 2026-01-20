@@ -20,6 +20,7 @@ def mock_core():
     core.issues_dir = Path("/mock/roadmap/issues")
     core.issues = Mock()
     core.issues.list = Mock(return_value=[])
+    core.db = Mock()
     return core
 
 
@@ -29,6 +30,14 @@ def mock_backend():
     backend = Mock()
     backend.__class__.__name__ = "MockBackend"
     return backend
+
+
+def _setup_orchestrator_state_manager(orchestrator):
+    """Helper to configure orchestrator's state_manager mocks."""
+    orchestrator.state_manager = Mock()
+    orchestrator.state_manager.load_sync_state = Mock(return_value=None)
+    orchestrator.state_manager.get_sync_baseline = Mock(return_value=None)
+    return orchestrator.state_manager
 
 
 @pytest.fixture
@@ -42,8 +51,7 @@ def enhanced_orchestrator(mock_core, mock_backend):
             backend=mock_backend,
         )
         # Inject mock state_manager after creation
-        orchestrator.state_manager = Mock()
-        orchestrator.state_manager.load_sync_state = Mock(return_value=None)
+        _setup_orchestrator_state_manager(orchestrator)
         return orchestrator
 
 
@@ -82,14 +90,14 @@ class TestFindIssueFile:
         ):
             orchestrator = SyncRetrievalOrchestrator(
                 core=mock_core,
-                backend=Mock(),
+                backend=mock_backend,
             )
-            orchestrator.state_manager = Mock()
+            _setup_orchestrator_state_manager(orchestrator)
 
         result = orchestrator._find_issue_file("TASK-123")
         assert result == issue_file
 
-    def test_returns_none_when_not_found(self, mock_core, tmp_path):
+    def test_returns_none_when_not_found(self, mock_core, mock_backend, tmp_path):
         """Should return None when issue file not found."""
         issues_dir = tmp_path / "issues"
         issues_dir.mkdir(parents=True)
@@ -100,9 +108,9 @@ class TestFindIssueFile:
         ):
             orchestrator = SyncRetrievalOrchestrator(
                 core=mock_core,
-                backend=Mock(),
+                backend=mock_backend,
             )
-            orchestrator.state_manager = Mock()
+            _setup_orchestrator_state_manager(orchestrator)
 
         result = orchestrator._find_issue_file("NOTFOUND-999")
         assert result is None
@@ -266,10 +274,13 @@ class TestCreateInitialBaseline:
             labels=[],
         )
 
+        def get_baseline_from_file_side_effect(issue_file):
+            """Return baseline based on filename."""
+            filename = str(issue_file)
+            return base_state1 if "issue-1" in filename else base_state2
+
         enhanced_orchestrator.baseline_retriever.get_baseline_from_file = Mock(
-            side_effect=lambda issue_file: (
-                base_state1 if "issue-1" in str(issue_file) else base_state2
-            )
+            side_effect=get_baseline_from_file_side_effect
         )
 
         # Mock issues_dir.exists() and issue file checks
