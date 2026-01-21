@@ -16,8 +16,7 @@ class InitializationValidator:
     def check_existing_roadmap(
         core: RoadmapCore, force: bool
     ) -> tuple[bool, str | None]:
-        """
-        Check if roadmap already exists.
+        """Check if roadmap already exists.
 
         Returns:
             Tuple of (should_continue, error_message)
@@ -47,8 +46,7 @@ class InitializationValidator:
     def post_init_validate(
         core: RoadmapCore, name: str, project_info: dict[str, Any] | None
     ) -> bool:
-        """
-        Validate initialization results.
+        """Validate initialization results.
 
         Returns:
             True if validation passed, False if warnings were found

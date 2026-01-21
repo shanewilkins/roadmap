@@ -1,5 +1,4 @@
-"""
-Progress calculation engine for automatic milestone and project updates.
+"""Progress calculation engine for automatic milestone and project updates.
 
 This module provides the core functionality to automatically calculate and update
 progress for milestones and projects based on issue completion, implementing

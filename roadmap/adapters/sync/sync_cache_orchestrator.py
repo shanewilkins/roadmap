@@ -37,8 +37,9 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
         """Initialize with optimized baseline builder.
 
         Args:
+            *args: Positional arguments passed to EnhancedSyncOrchestrator
             show_progress: Whether to show progress bars
-            *args, **kwargs: Passed to EnhancedSyncOrchestrator
+            **kwargs: Keyword arguments passed to EnhancedSyncOrchestrator
         """
         super().__init__(*args, **kwargs)
         self.optimized_builder = OptimizedBaselineBuilder(self.issues_dir)

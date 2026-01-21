@@ -10,8 +10,7 @@ class KanbanOrganizer:
 
     @staticmethod
     def categorize_issues(milestone_issues: list[Issue]) -> dict:
-        """
-        Categorize issues into kanban columns.
+        """Categorize issues into kanban columns.
 
         Returns:
             Dictionary with keys: overdue, blocked, in_progress, not_started, done
@@ -48,8 +47,7 @@ class KanbanOrganizer:
     def create_column_definitions(
         categories: dict, no_color: bool
     ) -> list[tuple[str, list[Issue], str]]:
-        """
-        Create column definitions for display.
+        """Create column definitions for display.
 
         Returns:
             List of tuples: (column_title, issues, style)

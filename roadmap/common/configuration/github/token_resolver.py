@@ -36,8 +36,7 @@ class GitHubTokenResolver:
         yes: bool,
         existing_token: str | None,
     ) -> tuple[str | None, bool]:
-        """
-        Resolve which token to use.
+        """Resolve which token to use.
 
         Returns:
             Tuple of (token, should_continue)

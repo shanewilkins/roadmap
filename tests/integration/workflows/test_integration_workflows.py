@@ -1,5 +1,4 @@
-"""
-Integration tests for the roadmap CLI tool.
+"""Integration tests for the roadmap CLI tool.
 
 These tests verify end-to-end workflows and cross-module integration.
 """

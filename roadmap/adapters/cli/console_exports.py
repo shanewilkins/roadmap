@@ -1,5 +1,4 @@
-"""
-Utility functions for CLI operations.
+"""Utility functions for CLI operations.
 
 This module re-exports core utilities from roadmap.common to maintain
 backward compatibility with existing CLI code.

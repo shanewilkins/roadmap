@@ -72,6 +72,7 @@ class IssueOperations:
             depends_on: List of issue IDs this depends on (optional)
             blocks: List of issue IDs this blocks (optional)
             status: Issue status (optional, defaults to TODO)
+            content: Issue content/description (optional)
 
         Returns:
             Created Issue object

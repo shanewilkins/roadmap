@@ -17,8 +17,7 @@ class GitHubSetupValidator:
         self.client = github_client
 
     def validate_authentication(self) -> tuple[bool, str | None]:
-        """
-        Validate user authentication.
+        """Validate user authentication.
 
         Returns:
             Tuple of (success, username or error)
@@ -34,8 +33,7 @@ class GitHubSetupValidator:
             return False, str(e)
 
     def validate_repository_access(self, github_repo: str) -> tuple[bool, dict | None]:
-        """
-        Validate repository access and permissions.
+        """Validate repository access and permissions.
 
         Returns:
             Tuple of (success, repo_info or error_message)

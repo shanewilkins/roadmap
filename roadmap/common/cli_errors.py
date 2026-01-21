@@ -1,5 +1,4 @@
-"""
-Unified error handling for CLI commands.
+"""Unified error handling for CLI commands.
 
 Provides consistent error handling, logging, and user feedback across all CLI commands.
 """
@@ -29,8 +28,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 def handle_cli_errors(
     command_name: str | None = None, show_traceback: bool = False, log_args: bool = True
 ) -> Callable[[F], F]:
-    """
-    Add unified error handling to CLI commands with timing and correlation tracking.
+    """Add unified error handling to CLI commands with timing and correlation tracking.
 
     Args:
         command_name: Name of the command (for logging)
@@ -132,8 +130,7 @@ def handle_cli_errors(
 
 
 def validate_required_args(**kwargs: Any) -> None:
-    """
-    Validate that required arguments are provided.
+    """Validate that required arguments are provided.
 
     Args:
         **kwargs: Dictionary of argument names and values to validate

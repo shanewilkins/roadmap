@@ -1,5 +1,4 @@
-"""
-Service for issue creation operations.
+"""Service for issue creation operations.
 
 Consolidates business logic for creating issues, including assignee resolution,
 Git branch creation, and formatted display of created issues.
@@ -32,8 +31,7 @@ class IssueCreationService:
     def resolve_and_validate_assignee(
         self, assignee: str | None = None, auto_detect: bool = True
     ) -> str | None:
-        """
-        Resolve and validate an assignee.
+        """Resolve and validate an assignee.
 
         Auto-detects from Git if not provided. Validates against team members
         and returns canonical name.
@@ -97,8 +95,7 @@ class IssueCreationService:
         checkout: bool = True,
         force: bool = False,
     ) -> tuple[bool, str | None]:
-        """
-        Create a Git branch for an issue.
+        """Create a Git branch for an issue.
 
         Attempts multiple strategies to create and checkout the branch, with
         fallbacks for various failure scenarios.
@@ -221,8 +218,7 @@ class IssueCreationService:
     # ─────────────────────────────────────────────────────────────────────────
 
     def format_created_issue_display(self, issue, milestone: str | None = None) -> None:
-        """
-        Display formatted information about a newly created issue.
+        """Display formatted information about a newly created issue.
 
         Args:
             issue: Created issue object

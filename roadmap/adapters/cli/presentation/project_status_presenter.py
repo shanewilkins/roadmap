@@ -1,5 +1,4 @@
-"""
-Presentation layer for project status display logic.
+"""Presentation layer for project status display logic.
 
 Handles all user-facing output:
 - Displaying milestone progress

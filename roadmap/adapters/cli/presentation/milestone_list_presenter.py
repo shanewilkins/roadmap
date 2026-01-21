@@ -1,5 +1,4 @@
-"""
-Presentation layer for milestone list command.
+"""Presentation layer for milestone list command.
 
 Handles all display logic related to:
 - Rendering milestone tables

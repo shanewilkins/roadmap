@@ -4,8 +4,7 @@ from typing import Any
 
 
 def format_display_list(items: list[str], title: str | None = None) -> str:
-    """
-    Format items as a bulleted list.
+    """Format items as a bulleted list.
 
     Args:
         items: List of items to format
@@ -23,8 +22,7 @@ def format_display_list(items: list[str], title: str | None = None) -> str:
 
 
 def format_display_pairs(pairs: dict[str, Any], title: str | None = None) -> str:
-    """
-    Format key-value pairs for display.
+    """Format key-value pairs for display.
 
     Args:
         pairs: Dictionary of key-value pairs

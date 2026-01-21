@@ -1,5 +1,4 @@
-"""
-Unit tests for MilestoneListPresenter.
+"""Unit tests for MilestoneListPresenter.
 
 Tests cover:
 - Rendering milestone tables

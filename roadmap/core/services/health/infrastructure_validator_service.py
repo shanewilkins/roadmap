@@ -1,5 +1,4 @@
-"""
-Infrastructure validators for health checks.
+"""Infrastructure validators for health checks.
 
 Handles validation of:
 - Roadmap directory structure

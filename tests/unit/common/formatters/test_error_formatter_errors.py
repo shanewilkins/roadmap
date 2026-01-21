@@ -1,5 +1,4 @@
-"""
-Comprehensive error path tests for error_formatter module.
+"""Comprehensive error path tests for error_formatter module.
 
 Tests cover:
 - format_error_message with various exception types

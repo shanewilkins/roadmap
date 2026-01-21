@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Phase 2.1 Mock Builders Rollout Script
+"""Phase 2.1 Mock Builders Rollout Script
 
 This script systematically replaces Mock() setup patterns with mock_builders
 factory functions across the test suite.

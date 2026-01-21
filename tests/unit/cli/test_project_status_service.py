@@ -1,5 +1,4 @@
-"""
-Unit tests for ProjectStatusService.
+"""Unit tests for ProjectStatusService.
 
 Tests cover:
 - Status data gathering

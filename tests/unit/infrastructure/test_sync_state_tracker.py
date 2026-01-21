@@ -1,6 +1,4 @@
-"""
-Tests for sync state tracking.
-"""
+"""Tests for sync state tracking."""
 
 import tempfile
 from pathlib import Path

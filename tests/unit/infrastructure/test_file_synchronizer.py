@@ -1,6 +1,4 @@
-"""
-Tests for file synchronization operations.
-"""
+"""Tests for file synchronization operations."""
 
 import hashlib
 import tempfile

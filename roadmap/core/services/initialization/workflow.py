@@ -1,5 +1,4 @@
-"""
-Initialization workflow service for roadmap CLI.
+"""Initialization workflow service for roadmap CLI.
 
 Orchestrates the core initialization workflow steps.
 """
@@ -29,8 +28,7 @@ class InitializationWorkflow:
         self.core = core
 
     def cleanup_existing(self) -> bool:
-        """
-        Remove existing roadmap directory.
+        """Remove existing roadmap directory.
 
         Returns:
             True if successful, False otherwise

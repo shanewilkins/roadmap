@@ -1,5 +1,4 @@
-"""
-Comprehensive test coverage for git_integration module.
+"""Comprehensive test coverage for git_integration module.
 Targets uncovered areas to achieve 85%+ coverage.
 """
 

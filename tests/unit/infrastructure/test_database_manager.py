@@ -1,6 +1,4 @@
-"""
-Tests for database infrastructure management.
-"""
+"""Tests for database infrastructure management."""
 
 import sqlite3
 import tempfile

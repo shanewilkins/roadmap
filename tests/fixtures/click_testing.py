@@ -1,5 +1,4 @@
-"""
-Comprehensive Click CLI testing infrastructure.
+"""Comprehensive Click CLI testing infrastructure.
 
 Provides reusable fixtures, helpers, and assertions for testing Click-based CLI applications.
 This module encapsulates best practices for Click testing with proper output capture,

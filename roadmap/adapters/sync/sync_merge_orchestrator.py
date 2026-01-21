@@ -592,6 +592,7 @@ class SyncMergeOrchestrator:
             updates: Issues to push (local updates)
             resolved_issues: Issues resolved from conflicts
             pulls: Issues to pull (remote updates)
+            dry_run: If True, perform dry run without making changes
             push_only: If True, only push changes (skip pulls)
             pull_only: If True, only pull changes (skip pushes)
 

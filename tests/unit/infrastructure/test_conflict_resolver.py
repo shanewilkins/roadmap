@@ -1,6 +1,4 @@
-"""
-Tests for conflict detection and resolution.
-"""
+"""Tests for conflict detection and resolution."""
 
 import tempfile
 from pathlib import Path

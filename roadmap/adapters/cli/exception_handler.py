@@ -1,5 +1,4 @@
-"""
-Centralized exception handling for CLI commands.
+"""Centralized exception handling for CLI commands.
 
 This module provides error handling and formatting for all exceptions
 raised by CLI commands, ensuring consistent user-facing error messages
@@ -21,8 +20,7 @@ from roadmap.common.errors.exceptions import RoadmapException
 def handle_cli_exception(
     ctx: click.Context, error: Exception, show_traceback: bool = False
 ) -> None:
-    """
-    Centralized exception handler for CLI commands.
+    """Centralized exception handler for CLI commands.
 
     Catches RoadmapException instances and formats them for user output,
     directing errors to stderr with proper exit codes. Other exceptions
@@ -52,8 +50,7 @@ def handle_cli_exception(
 def with_exception_handler(
     show_traceback: bool = False,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    """
-    Wrap CLI commands with centralized exception handling.
+    """Wrap CLI commands with centralized exception handling.
 
     Args:
         show_traceback: Whether to show full traceback on error
@@ -90,8 +87,7 @@ def with_exception_handler(
 
 
 def setup_cli_exception_handling() -> None:
-    """
-    Set up global exception handling for the CLI group.
+    """Set up global exception handling for the CLI group.
 
     This configures Click to use our custom exception handler for all
     subcommands in the CLI group.

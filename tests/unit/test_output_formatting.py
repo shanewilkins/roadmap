@@ -1,5 +1,4 @@
-"""
-Tests for output models and formatting.
+"""Tests for output models and formatting.
 
 Unit tests for ColumnDef, TableData, OutputFormatter, and specialized formatters.
 """

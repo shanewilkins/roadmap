@@ -1,5 +1,4 @@
-"""
-Integration tests for Phase 3: Init Messaging & UX enhancements.
+"""Integration tests for Phase 3: Init Messaging & UX enhancements.
 
 Tests enhanced init messaging:
 - Show which projects are being joined

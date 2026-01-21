@@ -1,6 +1,4 @@
-"""
-Tests for Click command decorators - output support and formatting.
-"""
+"""Tests for Click command decorators - output support and formatting."""
 
 import click
 import pytest

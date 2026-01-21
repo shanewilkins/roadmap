@@ -1,5 +1,4 @@
-"""
-CLI Coverage Tests - Simplified approach for CLI module testing.
+"""CLI Coverage Tests - Simplified approach for CLI module testing.
 
 This module focuses on testing CLI commands that aren't covered by existing tests,
 using a simpler approach that works with the existing codebase.

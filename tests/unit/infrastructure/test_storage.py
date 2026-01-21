@@ -1,6 +1,4 @@
-"""
-Tests for storage infrastructure.
-"""
+"""Tests for storage infrastructure."""
 
 import sqlite3
 import tempfile

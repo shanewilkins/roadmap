@@ -26,6 +26,7 @@ def unlink_github_issue(ctx: click.Context, issue_id: str) -> None:
     """Remove GitHub link from a local issue.
 
     Args:
+        ctx: Click context with core object
         issue_id: ID of the local issue to unlink
     """
     core = ctx.obj["core"]

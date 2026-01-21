@@ -1,5 +1,4 @@
-"""
-Persistence Layer - Data Serialization and Storage.
+"""Persistence Layer - Data Serialization and Storage.
 
 This layer handles reading and writing data to files, including:
 - YAML frontmatter parsing

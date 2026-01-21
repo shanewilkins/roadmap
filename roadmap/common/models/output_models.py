@@ -1,5 +1,4 @@
-"""
-Output abstraction layer - Core data structures for structured output.
+"""Output abstraction layer - Core data structures for structured output.
 
 This module provides the foundation for multi-format output (Rich, plain-text, JSON, CSV).
 Commands return structured TableData objects instead of formatted strings, allowing
@@ -25,8 +24,7 @@ class ColumnType(str, Enum):
 
 @dataclass
 class ColumnDef:
-    """
-    Metadata for a single table column.
+    """Metadata for a single table column.
 
     This separates column structure from presentation, enabling the same
     column to be rendered in multiple output formats.
@@ -98,8 +96,7 @@ class ColumnDef:
 
 @dataclass
 class TableData:
-    """
-    Structured table data with metadata.
+    """Structured table data with metadata.
 
     Contains the data and metadata needed to render a table in any format
     (Rich, plain-text, JSON, CSV). This decouples data from presentation.
@@ -183,8 +180,7 @@ class TableData:
         return [[row[i] for i in selected_indices] for row in self.rows]
 
     def filter(self, column: str, value: Any) -> "TableData":
-        """
-        Apply filter and return new TableData.
+        """Apply filter and return new TableData.
 
         Args:
             column: Column name to filter by.
@@ -236,8 +232,7 @@ class TableData:
         return new_table
 
     def sort(self, sort_spec: str | list[tuple[str, str]]) -> "TableData":
-        """
-        Apply sorting and return new TableData.
+        """Apply sorting and return new TableData.
 
         Args:
             sort_spec: Either a string (column name, ascending) or
@@ -308,8 +303,7 @@ class TableData:
         return new_table
 
     def select_columns(self, columns: list[str]) -> "TableData":
-        """
-        Select specific columns to display.
+        """Select specific columns to display.
 
         Args:
             columns: List of column names to display.

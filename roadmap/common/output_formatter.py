@@ -1,5 +1,4 @@
-"""
-Output formatter - Renders TableData in multiple formats.
+"""Output formatter - Renders TableData in multiple formats.
 
 Supports Rich (interactive), plain-text (POSIX), JSON (machine-readable), and CSV (data analysis).
 """
@@ -16,8 +15,7 @@ from roadmap.common.models import TableData
 
 
 class OutputFormatter:
-    """
-    Format TableData for different output modes.
+    """Format TableData for different output modes.
 
     Renders the same TableData in multiple formats:
     - Rich: Interactive terminal with colors and styling
@@ -58,8 +56,7 @@ class OutputFormatter:
     }
 
     def __init__(self, table_data: TableData):
-        """
-        Initialize formatter with table data.
+        """Initialize formatter with table data.
 
         Args:
             table_data: TableData object to format.
@@ -67,8 +64,7 @@ class OutputFormatter:
         self.table = table_data
 
     def to_rich(self) -> Table:
-        """
-        Format as Rich table with colors and styling.
+        """Format as Rich table with colors and styling.
 
         Returns:
             Rich Table object suitable for console.print().
@@ -97,8 +93,7 @@ class OutputFormatter:
         return table
 
     def to_plain_text(self) -> str:
-        """
-        Format as plain ASCII text (POSIX-compliant).
+        """Format as plain ASCII text (POSIX-compliant).
 
         Returns:
             String containing POSIX-safe table output.
@@ -163,8 +158,7 @@ class OutputFormatter:
         return "\n".join(lines)
 
     def to_json(self) -> str:
-        """
-        Format as JSON (machine-readable).
+        """Format as JSON (machine-readable).
 
         Returns:
             JSON string containing table data and metadata.
@@ -181,8 +175,7 @@ class OutputFormatter:
         return json.dumps(data, indent=2, default=str)
 
     def to_csv(self) -> str:
-        """
-        Format as CSV (RFC 4180 compliant).
+        """Format as CSV (RFC 4180 compliant).
 
         Returns:
             CSV string suitable for import to Excel/Sheets.
@@ -210,8 +203,7 @@ class OutputFormatter:
         return output.getvalue()
 
     def to_markdown(self) -> str:
-        """
-        Format as Markdown table.
+        """Format as Markdown table.
 
         Returns:
             Markdown table syntax suitable for README/docs.
@@ -245,8 +237,7 @@ class OutputFormatter:
         return "\n".join(lines)
 
     def to_html(self) -> str:
-        """
-        Format as HTML table with styling.
+        """Format as HTML table with styling.
 
         Returns:
             HTML table suitable for email, web, or documentation.
@@ -339,8 +330,7 @@ class OutputFormatter:
 
 
 class PlainTextOutputFormatter:
-    """
-    Specialized formatter for plain-text output with emoji replacement.
+    """Specialized formatter for plain-text output with emoji replacement.
 
     Used by CLI when ROADMAP_OUTPUT_FORMAT=plain or --plain-text flag is set.
     Ensures all output is POSIX-compliant (no ANSI codes, ASCII emoji).
@@ -356,8 +346,7 @@ class PlainTextOutputFormatter:
 
 
 class JSONOutputFormatter:
-    """
-    Specialized formatter for JSON output (machine-readable).
+    """Specialized formatter for JSON output (machine-readable).
 
     Used by CLI when --json flag is set or ROADMAP_OUTPUT_FORMAT=json.
     Ensures valid JSON output for tool integration.
@@ -373,8 +362,7 @@ class JSONOutputFormatter:
 
 
 class CSVOutputFormatter:
-    """
-    Specialized formatter for CSV output (data analysis).
+    """Specialized formatter for CSV output (data analysis).
 
     Used by CLI when --csv flag is set or ROADMAP_OUTPUT_FORMAT=csv.
     Ensures RFC 4180 compliant CSV output.
@@ -390,8 +378,7 @@ class CSVOutputFormatter:
 
 
 class HTMLOutputFormatter:
-    """
-    Specialized formatter for HTML output (web/email).
+    """Specialized formatter for HTML output (web/email).
 
     Used by CLI when --html flag is set or ROADMAP_OUTPUT_FORMAT=html.
     Generates self-contained HTML with embedded CSS for email clients and browsers.

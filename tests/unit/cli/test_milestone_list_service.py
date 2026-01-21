@@ -1,5 +1,4 @@
-"""
-Unit tests for MilestoneListService.
+"""Unit tests for MilestoneListService.
 
 Tests cover:
 - Filtering milestones (overdue, all)

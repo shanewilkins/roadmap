@@ -1,5 +1,4 @@
-"""
-Formatters package - unified formatting utilities.
+"""Formatters package - unified formatting utilities.
 
 Organized into focused modules:
 - text: Basic text, duration, status, operation formatting

@@ -11,8 +11,7 @@ from roadmap.core.domain import Issue
 
 
 class IssueExporter:
-    """
-    Export issues to various formats.
+    """Export issues to various formats.
 
     Supports two export styles:
     1. Unified export() - recommended for production use
@@ -34,8 +33,7 @@ class IssueExporter:
 
     @staticmethod
     def export(issues: Sequence[Issue], format_type: str, title: str = "Issues") -> str:
-        """
-        Export issues using the unified OutputFormatter.
+        """Export issues using the unified OutputFormatter.
 
         Converts issues to TableData and uses OutputFormatter for consistent
         rendering across all formats.

@@ -1,5 +1,4 @@
-"""
-Domain Layer - Pure Business Logic & Models.
+"""Domain Layer - Pure Business Logic & Models.
 
 This layer contains the core business models and domain logic that are
 independent of any framework or external system. Models here should:

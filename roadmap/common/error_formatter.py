@@ -1,5 +1,4 @@
-"""
-Error formatting utilities for CLI output.
+"""Error formatting utilities for CLI output.
 
 Provides consistent error message formatting for both plain and rich output modes.
 """
@@ -9,8 +8,7 @@ from roadmap.common.errors.exceptions import RoadmapException
 
 
 def format_error_message(exc: RoadmapException | Exception) -> str:
-    """
-    Format an exception for user-friendly CLI output.
+    """Format an exception for user-friendly CLI output.
 
     For RoadmapException: Uses user_message with appropriate styling
     For other exceptions: Uses generic fallback message
@@ -36,8 +34,7 @@ def format_error_message(exc: RoadmapException | Exception) -> str:
 
 
 def format_warning_message(message: str) -> str:
-    """
-    Format a warning message for CLI output.
+    """Format a warning message for CLI output.
 
     Args:
         message: Warning message text
@@ -54,8 +51,7 @@ def format_warning_message(message: str) -> str:
 
 
 def format_info_message(message: str) -> str:
-    """
-    Format an info message for CLI output.
+    """Format an info message for CLI output.
 
     Args:
         message: Info message text
@@ -72,8 +68,7 @@ def format_info_message(message: str) -> str:
 
 
 def format_success_message(message: str) -> str:
-    """
-    Format a success message for CLI output.
+    """Format a success message for CLI output.
 
     Args:
         message: Success message text

@@ -1,5 +1,4 @@
-"""
-Service layer for project status computation and aggregation.
+"""Service layer for project status computation and aggregation.
 
 Handles all business logic related to:
 - Computing milestone progress

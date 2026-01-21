@@ -1,5 +1,4 @@
-"""
-Shared Layer - Common Utilities & Patterns.
+"""Shared Layer - Common Utilities & Patterns.
 
 This layer contains utilities and patterns used across all layers.
 Common code that would otherwise be duplicated.

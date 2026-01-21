@@ -1,5 +1,4 @@
-"""
-Service layer for milestone list command.
+"""Service layer for milestone list command.
 
 Handles all business logic related to:
 - Filtering milestones (overdue, open/closed, etc.)

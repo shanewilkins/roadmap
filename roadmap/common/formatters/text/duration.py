@@ -2,8 +2,7 @@
 
 
 def format_duration(seconds: float) -> str:
-    """
-    Format duration in seconds to human-readable format.
+    """Format duration in seconds to human-readable format.
 
     Args:
         seconds: Duration in seconds
@@ -22,8 +21,7 @@ def format_duration(seconds: float) -> str:
 
 
 def format_count(count: int, singular: str, plural: str | None = None) -> str:
-    """
-    Format a count with proper singular/plural form.
+    """Format a count with proper singular/plural form.
 
     Args:
         count: The count

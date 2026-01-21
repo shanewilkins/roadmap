@@ -1,5 +1,4 @@
-"""
-Unified DateTime Parser for Roadmap CLI.
+"""Unified DateTime Parser for Roadmap CLI.
 
 This module provides a single source of truth for all datetime parsing operations
 across the roadmap CLI, eliminating duplication and ensuring consistent behavior.

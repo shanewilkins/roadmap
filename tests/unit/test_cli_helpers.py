@@ -1,6 +1,4 @@
-"""
-Tests for CLI helpers - format handling, column selection, sorting, filtering.
-"""
+"""Tests for CLI helpers - format handling, column selection, sorting, filtering."""
 
 import click
 import pytest

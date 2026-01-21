@@ -39,8 +39,10 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         """Initialize with baseline retriever.
 
         Args:
+            *args: Positional arguments passed to parent class
             persistence: PersistenceInterface for git operations (optional)
             parser: IssueParserInterface for file parsing (optional)
+            **kwargs: Keyword arguments passed to parent class
         """
         super().__init__(*args, **kwargs)
 

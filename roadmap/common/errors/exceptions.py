@@ -1,5 +1,4 @@
-"""
-Roadmap exception hierarchy.
+"""Roadmap exception hierarchy.
 
 All exceptions include:
 - domain_message: Technical message for logging

@@ -1,5 +1,4 @@
-"""
-Unit tests for ProjectStatusPresenter.
+"""Unit tests for ProjectStatusPresenter.
 
 Tests cover:
 - Milestone progress display

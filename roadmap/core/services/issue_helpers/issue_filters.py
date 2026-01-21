@@ -18,8 +18,7 @@ class IssueFilterValidator:
         next_milestone: bool,
         milestone: str | None,
     ) -> tuple[bool, str | None]:
-        """
-        Validate that filter combinations are valid.
+        """Validate that filter combinations are valid.
 
         Returns:
             Tuple of (is_valid, error_message)
@@ -125,8 +124,7 @@ class IssueQueryService:
         my_issues: bool = False,
         overdue: bool = False,
     ) -> tuple[list[Issue], str]:
-        """
-        Get issues based on primary filter criteria.
+        """Get issues based on primary filter criteria.
 
         Returns:
             Tuple of (issues, filter_description)
@@ -161,8 +159,7 @@ class IssueQueryService:
         issue_type: str | None = None,
         overdue: bool = False,
     ) -> tuple[list[Issue], str]:
-        """
-        Apply additional filters to issue list.
+        """Apply additional filters to issue list.
 
         Returns:
             Tuple of (filtered_issues, updated_description)
@@ -268,8 +265,7 @@ class WorkloadCalculator:
 
     @staticmethod
     def calculate_workload(issues: list[Issue]) -> dict:
-        """
-        Calculate workload statistics for a list of issues.
+        """Calculate workload statistics for a list of issues.
 
         Returns:
             Dictionary with total_hours, status_breakdown

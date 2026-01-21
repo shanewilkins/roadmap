@@ -1,6 +1,4 @@
-"""
-Tests for kanban board helpers.
-"""
+"""Tests for kanban board helpers."""
 
 from datetime import UTC, datetime, timedelta
 from typing import cast

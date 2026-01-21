@@ -1,5 +1,4 @@
-"""
-Service for starting work on issues.
+"""Service for starting work on issues.
 
 Consolidates business logic for updating issue status, setting start dates,
 and optionally creating Git branches.
@@ -29,8 +28,7 @@ class StartIssueService:
 
     @staticmethod
     def parse_start_date(date_str: str | None) -> datetime:
-        """
-        Parse start date from string input.
+        """Parse start date from string input.
 
         Args:
             date_str: Date string in format YYYY-MM-DD or YYYY-MM-DD HH:MM
@@ -63,8 +61,7 @@ class StartIssueService:
     # ─────────────────────────────────────────────────────────────────────────
 
     def start_work(self, issue_id: str, start_date: datetime) -> object | None:
-        """
-        Update issue to start work.
+        """Update issue to start work.
 
         Sets status to IN_PROGRESS, sets actual start date, and initializes
         progress tracking.
@@ -88,8 +85,7 @@ class StartIssueService:
     # ─────────────────────────────────────────────────────────────────────────
 
     def should_create_branch(self, git_branch_flag: bool) -> bool:
-        """
-        Determine if git branch should be created based on flag and config.
+        """Determine if git branch should be created based on flag and config.
 
         Currently only respects explicit --create-branch flag.
         Auto-creation can be re-enabled via config in the future.
@@ -111,8 +107,7 @@ class StartIssueService:
     # ─────────────────────────────────────────────────────────────────────────
 
     def display_started(self, issue, start_date: datetime) -> None:
-        """
-        Display success message for started issue.
+        """Display success message for started issue.
 
         Args:
             issue: Issue that was started
@@ -125,8 +120,7 @@ class StartIssueService:
         self._console.print("   Status: In Progress", style="yellow")
 
     def display_branch_created(self, branch_name: str, checkout: bool) -> None:
-        """
-        Display git branch creation success.
+        """Display git branch creation success.
 
         Args:
             branch_name: Name of created branch

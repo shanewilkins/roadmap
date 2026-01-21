@@ -1,6 +1,4 @@
-"""
-Tests for git status display helper.
-"""
+"""Tests for git status display helper."""
 
 from unittest.mock import Mock
 

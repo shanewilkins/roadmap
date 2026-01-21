@@ -1,5 +1,4 @@
-"""
-Security audit for Git integration and data privacy in Roadmap CLI.
+"""Security audit for Git integration and data privacy in Roadmap CLI.
 
 Day 3 of comprehensive security audit framework.
 Tests git hook safety, git command construction, branch/commit validation,

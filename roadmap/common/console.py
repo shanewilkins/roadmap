@@ -1,5 +1,4 @@
-"""
-Console utilities for CLI operations.
+"""Console utilities for CLI operations.
 
 Provides centralized console instances configured for the current environment:
 - get_console() → Rich console for successful output (stdout)
@@ -26,8 +25,7 @@ from rich.console import Console
 
 
 def is_plain_mode() -> bool:
-    """
-    Detect if we should use plain text output (no ANSI codes).
+    """Detect if we should use plain text output (no ANSI codes).
 
     Returns True if any of:
     - Output is redirected/piped (not a terminal)
@@ -77,8 +75,7 @@ def is_plain_mode() -> bool:
 
 
 def is_testing_environment() -> bool:
-    """
-    Detect if we're running in a testing environment.
+    """Detect if we're running in a testing environment.
 
     Returns True if any of the following conditions are met:
     - pytest is running
@@ -127,8 +124,7 @@ def is_testing_environment() -> bool:
 
 
 def get_console() -> Console:
-    """
-    Get a console instance configured for successful output (stdout).
+    """Get a console instance configured for successful output (stdout).
 
     Returns a console configured for:
     - Rich output when in interactive terminal (colors, tables, styles)
@@ -160,8 +156,7 @@ def get_console() -> Console:
 
 
 def get_console_stderr() -> Console:
-    """
-    Get a console instance configured for error output (stderr).
+    """Get a console instance configured for error output (stderr).
 
     Returns a console that outputs to stderr for:
     - Error messages

@@ -142,8 +142,7 @@ def format_operation_success(
     reason: str | None = None,
     extra_details: dict[str, str] | None = None,
 ) -> list[str]:
-    """
-    Format a successful operation message with consistent styling.
+    """Format a successful operation message with consistent styling.
 
     Returns a list of formatted lines for console output.
 
@@ -188,8 +187,7 @@ def format_operation_failure(
     error: str | None = None,
     suggestion: str | None = None,
 ) -> list[str]:
-    """
-    Format a failed operation message with consistent styling.
+    """Format a failed operation message with consistent styling.
 
     Returns a list of formatted lines for console output.
 
@@ -228,8 +226,7 @@ def format_entity_details(
     status: str | None = None,
     details: dict[str, str] | None = None,
 ) -> list[str]:
-    """
-    Format entity details for consistent display across commands.
+    """Format entity details for consistent display across commands.
 
     Args:
         entity_id: ID of the entity
@@ -265,8 +262,7 @@ def format_list_items(
     show_count: int | None = None,
     more_suffix: str = "... and {count} more",
 ) -> list[str]:
-    """
-    Format a list of items consistently.
+    """Format a list of items consistently.
 
     Args:
         items: List of dicts with 'id' and 'title' keys minimum

@@ -1,5 +1,4 @@
-"""
-Unified output management for CLI commands.
+"""Unified output management for CLI commands.
 
 Centralizes all CLI output handling across:
 - Multiple formats (table/json/csv/markdown)
@@ -24,8 +23,7 @@ from roadmap.common.output_formatter import OutputFormatter
 
 
 class OutputManager:
-    """
-    Unified output management for CLI commands.
+    """Unified output management for CLI commands.
 
     Handles rendering of TableData in multiple formats:
     - table: Pretty Rich table (default, terminal-friendly)
@@ -69,8 +67,7 @@ class OutputManager:
         output_file: Path | None = None,
         force_plain: bool = False,
     ):
-        """
-        Initialize OutputManager.
+        """Initialize OutputManager.
 
         Args:
             format: Output format (table/plain/json/csv/markdown/html)
@@ -119,8 +116,7 @@ class OutputManager:
 
     @staticmethod
     def _should_use_colors() -> bool:
-        """
-        Detect if terminal supports colors.
+        """Detect if terminal supports colors.
 
         Checks:
         1. NO_COLOR env var (standard no-color support)
@@ -179,8 +175,7 @@ class OutputManager:
         return True
 
     def render_table(self, table_data: TableData) -> None:
-        """
-        Render a table in the configured format.
+        """Render a table in the configured format.
 
         Handles both terminal output and file saves.
         Automatically detects test environment and strips ANSI codes.
@@ -222,8 +217,7 @@ class OutputManager:
             self._output_content(content)
 
     def render_rich(self, renderable) -> None:
-        """
-        Render a Rich-compatible object.
+        """Render a Rich-compatible object.
 
         Useful for rendering non-table objects like Panels, etc.
 
@@ -233,8 +227,7 @@ class OutputManager:
         self.console.print(renderable)
 
     def _output_content(self, content: str) -> None:
-        """
-        Output content to file or stdout.
+        """Output content to file or stdout.
 
         Args:
             content: String content to output
@@ -249,8 +242,7 @@ class OutputManager:
     def print_message(
         self, message: str, style: str | None = None, fg: str | None = None
     ) -> None:
-        """
-        Print a simple message (not a table).
+        """Print a simple message (not a table).
 
         Useful for status messages, warnings, etc.
 
@@ -278,8 +270,7 @@ class OutputManager:
         bold: bool = False,
         italic: bool = False,
     ) -> None:
-        """
-        Print styled text (terminal output only).
+        """Print styled text (terminal output only).
 
         Args:
             text: Text to print
@@ -296,8 +287,7 @@ class OutputManager:
             click.echo(text)
 
     def print_section_header(self, title: str) -> None:
-        """
-        Print a section header.
+        """Print a section header.
 
         Args:
             title: Section title
@@ -312,8 +302,7 @@ class OutputManager:
 def create_output_manager(
     format: str | None = None, output_file: str | None = None
 ) -> OutputManager:
-    """
-    Create an OutputManager with optional CLI arguments.
+    """Create an OutputManager with optional CLI arguments.
 
     Useful for Click commands with --format and --output options.
 

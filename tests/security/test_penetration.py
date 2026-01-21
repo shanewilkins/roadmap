@@ -1,7 +1,6 @@
 # tests/security/test_penetration.py
 
-"""
-Day 4 Security Audit: Penetration Testing Framework
+"""Day 4 Security Audit: Penetration Testing Framework
 
 This module contains penetration testing scenarios and attack vector simulations
 to verify that Roadmap CLI is resistant to common attack patterns.

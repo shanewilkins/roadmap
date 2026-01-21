@@ -1,5 +1,4 @@
-"""
-Unit tests for ProjectInitializationService.
+"""Unit tests for ProjectInitializationService.
 
 Tests cover:
 - Project context detection (git, package files, directory)

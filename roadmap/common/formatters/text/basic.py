@@ -18,8 +18,7 @@ def format_table(
     rows: list[tuple],
     console_obj: Optional["Console"] = None,
 ) -> str:
-    """
-    Format data as a rich table for display.
+    """Format data as a rich table for display.
 
     Args:
         title: Table title
@@ -77,8 +76,7 @@ def format_panel(
     title: str | None = None,
     expand: bool = False,
 ) -> "Panel":
-    """
-    Format content in a rich panel.
+    """Format content in a rich panel.
 
     Args:
         content: Panel content
@@ -97,8 +95,7 @@ def format_panel(
 
 
 def format_header(text: str, level: int = 1) -> Text:
-    """
-    Format text as a header with styling.
+    """Format text as a header with styling.
 
     Args:
         text: Header text
@@ -141,8 +138,7 @@ def format_info(text: str) -> Text:
 
 
 def format_list(items: list[str], title: str | None = None) -> str:
-    """
-    Format items as a bulleted list.
+    """Format items as a bulleted list.
 
     Args:
         items: List of items to format
@@ -161,8 +157,7 @@ def format_list(items: list[str], title: str | None = None) -> str:
 
 
 def format_key_value_pairs(pairs: dict[str, Any], title: str | None = None) -> str:
-    """
-    Format key-value pairs for display.
+    """Format key-value pairs for display.
 
     Args:
         pairs: Dictionary of key-value pairs
@@ -184,8 +179,7 @@ def format_key_value_pairs(pairs: dict[str, Any], title: str | None = None) -> s
 
 
 def truncate_text(text: str, max_length: int = 50, suffix: str = "...") -> str:
-    """
-    Truncate text to maximum length with optional suffix.
+    """Truncate text to maximum length with optional suffix.
 
     Args:
         text: Text to truncate
@@ -207,8 +201,7 @@ def truncate_text(text: str, max_length: int = 50, suffix: str = "...") -> str:
 
 
 def format_json(data: Any, indent: int = 2) -> str:
-    """
-    Format data as JSON.
+    """Format data as JSON.
 
     Args:
         data: Data to format

@@ -1,14 +1,11 @@
-"""
-Test utilities for handling CLI output formatting.
-"""
+"""Test utilities for handling CLI output formatting."""
 
 import re
 from typing import cast
 
 
 def strip_ansi(text: str | bytes) -> str:
-    """
-    Remove ANSI escape sequences from text.
+    """Remove ANSI escape sequences from text.
 
     This function removes all ANSI color codes, formatting codes, and cursor
     control sequences to get clean text for test assertions.
@@ -57,8 +54,7 @@ def strip_ansi(text: str | bytes) -> str:
 
 
 def normalize_whitespace(text: str) -> str:
-    """
-    Normalize whitespace in text for consistent test comparisons.
+    """Normalize whitespace in text for consistent test comparisons.
 
     Args:
         text: Text to normalize
@@ -76,8 +72,7 @@ def normalize_whitespace(text: str) -> str:
 
 
 def clean_cli_output(text: str) -> str:
-    """
-    Clean CLI output for test assertions by removing ANSI codes and normalizing whitespace.
+    """Clean CLI output for test assertions by removing ANSI codes and normalizing whitespace.
 
     This is a convenience function that combines ANSI stripping with whitespace
     normalization for consistent test assertions.
@@ -93,8 +88,7 @@ def clean_cli_output(text: str) -> str:
 
 
 def assert_in_output(expected: str, actual_output: str, clean: bool = True) -> bool:
-    """
-    Check if expected text is in CLI output, with optional cleaning.
+    """Check if expected text is in CLI output, with optional cleaning.
 
     Args:
         expected: Text to look for
@@ -113,8 +107,7 @@ def assert_in_output(expected: str, actual_output: str, clean: bool = True) -> b
 def assert_output_contains(
     expected_lines: list[str], actual_output: str, clean: bool = True
 ) -> bool:
-    """
-    Check if all expected lines are present in CLI output.
+    """Check if all expected lines are present in CLI output.
 
     Args:
         expected_lines: List of text lines to look for

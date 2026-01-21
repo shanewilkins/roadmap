@@ -1,5 +1,4 @@
-"""
-Tests for infrastructure validators.
+"""Tests for infrastructure validators.
 
 Covers:
 - RoadmapDirectoryValidator

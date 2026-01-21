@@ -1,5 +1,4 @@
-"""
-Integration tests for Phase 4: End-to-End Team Onboarding
+"""Integration tests for Phase 4: End-to-End Team Onboarding
 
 Tests complete team onboarding workflow patterns using the infrastructure
 that's been validated in earlier phases (config management, project detection).

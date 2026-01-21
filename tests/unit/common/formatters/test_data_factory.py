@@ -1,6 +1,4 @@
-"""
-Test data factory for CLI command tests and general test helpers.
-"""
+"""Test data factory for CLI command tests and general test helpers."""
 
 import itertools
 import random

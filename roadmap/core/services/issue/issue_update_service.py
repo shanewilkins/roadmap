@@ -1,5 +1,4 @@
-"""
-Service for issue update operations.
+"""Service for issue update operations.
 
 Consolidates business logic for updating issues, including building update
 dictionaries from CLI parameters, resolving assignees, and displaying results.
@@ -37,8 +36,7 @@ class IssueUpdateService:
         description: str | None = None,
         estimate: float | None = None,
     ) -> dict:
-        """
-        Build update dictionary from provided parameters.
+        """Build update dictionary from provided parameters.
 
         Validates and normalizes all update fields, resolving assignees and
         converting enum strings to proper types.
@@ -80,8 +78,7 @@ class IssueUpdateService:
     # ─────────────────────────────────────────────────────────────────────────
 
     def resolve_assignee_for_update(self, assignee: str):
-        """
-        Resolve and validate assignee for update operation.
+        """Resolve and validate assignee for update operation.
 
         Args:
             assignee: Assignee to resolve
@@ -121,8 +118,7 @@ class IssueUpdateService:
     def display_update_result(
         self, updated_issue, updates: dict, reason: str | None = None
     ) -> None:
-        """
-        Display the results of an issue update.
+        """Display the results of an issue update.
 
         Args:
             updated_issue: The updated issue object

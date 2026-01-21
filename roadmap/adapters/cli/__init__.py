@@ -1,5 +1,4 @@
-"""
-Modular CLI architecture for the Roadmap tool.
+"""Modular CLI architecture for the Roadmap tool.
 
 This module provides the main CLI entry point and implements plugin-style
 lazy-loading of command groups to improve performance and maintainability.
@@ -197,8 +196,7 @@ def main(ctx: click.Context):
 
 
 def register_commands():
-    """
-    Register all commands from the plugin registry.
+    """Register all commands from the plugin registry.
 
     Commands are loaded lazily from the registry, which maps command names
     to their module paths. This approach:

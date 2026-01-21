@@ -1,5 +1,4 @@
-"""
-Click command decorators for structured output with filtering/sorting.
+"""Click command decorators for structured output with filtering/sorting.
 
 Provides @with_output_support decorator that adds:
 - --format flag (rich, plain, json, csv, markdown)
@@ -38,8 +37,7 @@ def with_output_support(
     available_columns: list[str] | None = None,
     column_types: dict[str, ColumnType] | None = None,
 ):
-    """
-    Add output formatting support to Click commands.
+    """Add output formatting support to Click commands.
 
     Adds three flags to command:
     - --format: Output format (rich, plain, json, csv, markdown)
@@ -159,8 +157,7 @@ def add_output_flags(
     available_columns: list[str] | None = None,
     column_types: dict[str, ColumnType] | None = None,
 ) -> Callable:
-    """
-    Simpler decorator that just adds flags without automatic processing.
+    """Simpler decorator that just adds flags without automatic processing.
 
     Use this if you want manual control over how formatting is applied.
     The flags are added to the command, and you handle them manually.

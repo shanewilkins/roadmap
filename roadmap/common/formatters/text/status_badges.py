@@ -4,8 +4,7 @@ from rich.text import Text
 
 
 def format_status_badge(status: str) -> Text:
-    """
-    Format a status as a colored badge.
+    """Format a status as a colored badge.
 
     Args:
         status: Status value
@@ -41,8 +40,7 @@ def format_status_badge(status: str) -> Text:
 
 
 def format_percentage(value: float, decimals: int = 1) -> str:
-    """
-    Format a numeric value as a percentage.
+    """Format a numeric value as a percentage.
 
     Args:
         value: Decimal value (0.0-1.0 or 0-100)

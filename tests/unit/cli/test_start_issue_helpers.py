@@ -1,6 +1,4 @@
-"""
-Tests for start issue helpers.
-"""
+"""Tests for start issue helpers."""
 
 from datetime import UTC, datetime
 from unittest.mock import Mock

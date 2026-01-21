@@ -1,5 +1,4 @@
-"""
-CLI helpers for structured output formatting and filtering.
+"""CLI helpers for structured output formatting and filtering.
 
 Provides decorators, utilities, and helpers for commands to support
 --format, --columns, and --sort-by flags for consistent user experience.
@@ -17,8 +16,7 @@ from roadmap.common.output_formatter import OutputFormatter
 
 
 class OutputFormatHandler:
-    """
-    Handles output format selection and rendering.
+    """Handles output format selection and rendering.
 
     Supports: rich (default), plain-text, json, csv, markdown
     """
@@ -33,8 +31,7 @@ class OutputFormatHandler:
 
     @staticmethod
     def render(table_data: TableData, format_name: str = "rich") -> str | Table:
-        """
-        Render table data in specified format.
+        """Render table data in specified format.
 
         Args:
             table_data: TableData object to render.
@@ -65,8 +62,7 @@ class OutputFormatHandler:
 
 
 class ColumnSelector:
-    """
-    Smart column selection utility.
+    """Smart column selection utility.
 
     Handles --columns flag parsing and validation:
     - Comma-separated column names
@@ -79,8 +75,7 @@ class ColumnSelector:
     def parse(
         columns_str: str | None, available_columns: list[str]
     ) -> list[str] | None:
-        """
-        Parse --columns flag value.
+        """Parse --columns flag value.
 
         Args:
             columns_str: Raw --columns value (comma-separated).
@@ -121,8 +116,7 @@ class ColumnSelector:
 
 
 class SortSpecParser:
-    """
-    Parse and validate --sort-by flag.
+    """Parse and validate --sort-by flag.
 
     Handles:
     - Single column: --sort-by name
@@ -134,8 +128,7 @@ class SortSpecParser:
 
     @staticmethod
     def parse(sort_str: str | None, available_columns: list[str]) -> list[tuple] | None:
-        """
-        Parse --sort-by flag value.
+        """Parse --sort-by flag value.
 
         Args:
             sort_str: Raw --sort-by value (format: col1:asc,col2:desc).
@@ -195,15 +188,13 @@ class SortSpecParser:
 
 
 class FilterSpec:
-    """
-    Represents a single filter specification.
+    """Represents a single filter specification.
 
     Used internally for parsed --filter arguments.
     """
 
     def __init__(self, column: str, operator: str, value: Any):
-        """
-        Initialize filter spec.
+        """Initialize filter spec.
 
         Args:
             column: Column name to filter.
@@ -220,8 +211,7 @@ class FilterSpec:
 
 
 class FilterSpecParser:
-    """
-    Parse and validate --filter flags.
+    """Parse and validate --filter flags.
 
     Handles:
     - Simple equality: --filter status=open
@@ -239,8 +229,7 @@ class FilterSpecParser:
     def parse(
         filter_str: str | None, column_types: dict[str, ColumnType]
     ) -> list[FilterSpec] | None:
-        """
-        Parse --filter flag value(s).
+        """Parse --filter flag value(s).
 
         Args:
             filter_str: Raw --filter value(s).
@@ -343,8 +332,7 @@ class FilterSpecParser:
 def format_output(
     format_choice: str = "rich", columns: list[str] | None = None
 ) -> Callable:
-    """
-    Handle output formatting for command results.
+    """Handle output formatting for command results.
 
     Wraps command functions to:
     1. Convert returned TableData to formatted output

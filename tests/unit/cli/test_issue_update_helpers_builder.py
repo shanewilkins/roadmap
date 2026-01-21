@@ -1,6 +1,4 @@
-"""
-Tests for issue update helpers.
-"""
+"""Tests for issue update helpers."""
 
 from unittest.mock import Mock
 

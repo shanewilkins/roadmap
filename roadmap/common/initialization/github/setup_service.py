@@ -17,8 +17,7 @@ console = get_console()
 
 
 def show_github_setup_instructions(github_repo: str, yes: bool) -> bool:
-    """
-    Show GitHub setup instructions and get user confirmation.
+    """Show GitHub setup instructions and get user confirmation.
 
     Returns:
         True if user wants to continue, False to skip
@@ -65,8 +64,7 @@ class GitHubInitializationService:
         presenter=None,
         sync_backend: SyncBackend = SyncBackend.GITHUB,
     ) -> bool:
-        """
-        Set up GitHub integration if requested.
+        """Set up GitHub integration if requested.
 
         Args:
             skip_github: If True, skip GitHub setup
