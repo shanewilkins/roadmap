@@ -50,4 +50,9 @@ class GitHubClientWrapper:
         return getattr(self._client, item)
 
     def is_initialized(self) -> bool:
+        """Check if the GitHub client is initialized.
+
+        Returns:
+            True if client is initialized, False otherwise.
+        """
         return self._client is not None

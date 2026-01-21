@@ -350,7 +350,6 @@ class SyncMergeOrchestrator:
             Dict with keys 'auto_linked', 'potential_duplicates', 'new_remote'
             containing lists of remote issue IDs
         """
-
         return self._engine._match_and_link_remote_issues(
             local_issues_dict, remote_issues_data, dry_run=dry_run
         )

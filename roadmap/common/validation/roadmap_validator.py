@@ -21,7 +21,6 @@ class RoadmapValidator:
 
     def _setup_predefined_validators(self):
         """Set up predefined validators for common roadmap entities."""
-
         # Issue validation schema
         self.issue_schema = SchemaValidator("issue")
         self.issue_schema.add_field(

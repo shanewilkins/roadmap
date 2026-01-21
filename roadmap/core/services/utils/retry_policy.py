@@ -38,6 +38,11 @@ class RetryPolicy:
         return self.base_delay * (self.factor ** (attempt - 1))
 
     def sleep_for_attempt(self, attempt: int) -> None:
+        """Sleep for the appropriate backoff delay based on attempt number.
+
+        Args:
+            attempt: The attempt number (1-based).
+        """
         delay = self.get_backoff_delay(attempt)
         if delay > 0:
             time.sleep(delay)

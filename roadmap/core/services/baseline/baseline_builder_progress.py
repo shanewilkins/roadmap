@@ -58,7 +58,6 @@ class ProgressTrackingBaselineBuilder:
             phase: Name of phase
             details: Optional details dict
         """
-
         logger.info(
             "baseline_rebuild_phase",
             phase=phase,

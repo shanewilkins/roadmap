@@ -142,12 +142,27 @@ class SyncPlan:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def add(self, action: Action) -> None:
+        """Add an action to the sync plan.
+
+        Args:
+            action: The action to add.
+        """
         self.actions.append(action)
 
     def describe(self) -> list[str]:
+        """Get textual descriptions of all actions in the plan.
+
+        Returns:
+            List of action descriptions.
+        """
         return [a.describe() for a in self.actions]
 
     def to_dict(self) -> dict[str, Any]:
+        """Convert the sync plan to a dictionary representation.
+
+        Returns:
+            Dictionary with actions and metadata.
+        """
         return {
             "actions": [
                 {"type": a.action_type, "payload": a.payload} for a in self.actions

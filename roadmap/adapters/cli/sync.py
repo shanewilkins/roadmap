@@ -25,7 +25,6 @@ def _show_baseline(core, backend, verbose, console_inst) -> bool:
 
 def _reset_baseline(core, backend, verbose, console_inst) -> bool:
     """Handle the `--reset-baseline` flag: force recalculation of baseline."""
-
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
     from roadmap.adapters.cli.sync_context import (
         _clear_baseline_db,

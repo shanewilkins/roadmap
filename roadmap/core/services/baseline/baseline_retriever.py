@@ -17,6 +17,17 @@ class BaselineRetriever:
     def get_current_baseline(
         core: Any = None, db_session: Any = None
     ) -> BaselineSnapshot:
+        """Get the current sync baseline from available stores.
+
+        Tries multiple sources in order: core.db, db_session, or empty dict.
+
+        Args:
+            core: Optional core instance with db attribute.
+            db_session: Optional database session.
+
+        Returns:
+            Baseline snapshot dictionary.
+        """
         if (
             core is not None
             and getattr(core, "db", None)

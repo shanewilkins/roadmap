@@ -34,6 +34,14 @@ class IssueHealthScanner:
 
     @traced("scan_issue")
     def scan_issue(self, issue: Issue) -> EntityHealthReport:
+        """Scan an issue and return its health report.
+
+        Args:
+            issue: Issue to scan for health problems.
+
+        Returns:
+            Health report for the scanned issue.
+        """
         report = EntityHealthReport(
             entity_id=issue.id,
             entity_type=EntityType.ISSUE,

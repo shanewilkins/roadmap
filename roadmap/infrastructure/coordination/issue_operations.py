@@ -161,7 +161,6 @@ class IssueOperations:
         Returns:
             Updated Issue object if found, None otherwise
         """
-
         # Build params, only including fields that were explicitly provided
         params_dict = {"issue_id": issue_id}
 

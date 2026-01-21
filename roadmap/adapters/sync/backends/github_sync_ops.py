@@ -24,6 +24,14 @@ class GitHubSyncOps:
         self.backend = backend
 
     def push_issues(self, local_issues: list) -> SyncReport:
+        """Push local issues to GitHub backend with progress tracking.
+
+        Args:
+            local_issues: List of local issues to push.
+
+        Returns:
+            Sync report with push results and errors.
+        """
         report = SyncReport()
 
         if not local_issues:
@@ -87,6 +95,14 @@ class GitHubSyncOps:
         return report
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
+        """Pull issues from GitHub backend by IDs.
+
+        Args:
+            issue_ids: List of issue IDs to pull.
+
+        Returns:
+            Sync report with pull results and errors.
+        """
         report = SyncReport()
 
         if not issue_ids:

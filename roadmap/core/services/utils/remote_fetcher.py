@@ -67,6 +67,16 @@ class RemoteFetcher:
     def fetch_issue(
         adapter: Any, issue_id: str, retry_policy: RetryPolicy | None = None
     ) -> Any:
+        """Fetch a single issue from remote adapter with retry logic.
+
+        Args:
+            adapter: Remote adapter instance with pull_issue method.
+            issue_id: The issue ID to fetch.
+            retry_policy: Optional custom retry policy.
+
+        Returns:
+            The fetched issue or None if fetch fails.
+        """
         if adapter is None:
             return None
 
@@ -115,6 +125,16 @@ class RemoteFetcher:
     def fetch_issues(
         adapter: Any, issue_ids: Iterable[str], retry_policy: RetryPolicy | None = None
     ) -> list[Any]:
+        """Fetch multiple issues from remote adapter with retry logic.
+
+        Args:
+            adapter: Remote adapter instance with pull_issue method.
+            issue_ids: Iterable of issue IDs to fetch.
+            retry_policy: Optional custom retry policy.
+
+        Returns:
+            List of fetched issues.
+        """
         if adapter is None:
             return []
 
