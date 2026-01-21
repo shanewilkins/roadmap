@@ -1,5 +1,6 @@
 """
 Core CLI commands: init and status.
+
 These are the fundamental commands needed to get started with Roadmap.
 """
 
