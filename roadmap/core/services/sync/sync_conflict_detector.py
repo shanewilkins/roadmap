@@ -13,6 +13,51 @@ from typing import Any
 from roadmap.core.services.sync.sync_conflict_resolver import ConflictField
 
 
+def _convert_enum_field(field_name: str, value: Any) -> Any:
+    """Convert string enum values to enum types for status/priority fields.
+
+    Args:
+        field_name: Name of field ("status", "priority", etc.)
+        value: Value to potentially convert
+
+    Returns:
+        Converted enum value, or original value if conversion fails/not applicable
+    """
+    if not isinstance(value, str) or value is None:
+        return value
+
+    if field_name == "status":
+        try:
+            from roadmap.common.constants import Status
+
+            try:
+                return Status(value)
+            except (ValueError, KeyError):
+                return Status(value.lower())
+        except Exception:
+            return value
+
+    if field_name == "priority":
+        try:
+            from roadmap.common.constants import Priority
+
+            try:
+                return Priority(value)
+            except (ValueError, KeyError):
+                return Priority(value.lower())
+        except Exception:
+            return value
+
+    return value
+
+
+def _get_field_value(obj: dict[str, Any] | object, field_name: str) -> Any:
+    """Safely extract field value from dict or object."""
+    if isinstance(obj, dict):
+        return obj.get(field_name)
+    return getattr(obj, field_name, None)
+
+
 def detect_field_conflicts(
     local: object,
     remote: dict[str, Any] | object,
@@ -37,34 +82,10 @@ def detect_field_conflicts(
     for field_name in fields_to_sync:
         try:
             local_val = getattr(local, field_name, None)
-            if isinstance(remote, dict):
-                remote_val = remote.get(field_name)
-            else:
-                remote_val = getattr(remote, field_name, None)
+            remote_val = _get_field_value(remote, field_name)
 
-            if field_name == "status" and remote_val is not None:
-                if isinstance(remote_val, str):
-                    try:
-                        from roadmap.common.constants import Status
-
-                        try:
-                            remote_val = Status(remote_val)
-                        except (ValueError, KeyError):
-                            remote_val = Status(remote_val.lower())
-                    except Exception:
-                        pass
-
-            if field_name == "priority" and remote_val is not None:
-                if isinstance(remote_val, str):
-                    try:
-                        from roadmap.common.constants import Priority
-
-                        try:
-                            remote_val = Priority(remote_val)
-                        except (ValueError, KeyError):
-                            remote_val = Priority(remote_val.lower())
-                    except Exception:
-                        pass
+            # Convert enum strings to types
+            remote_val = _convert_enum_field(field_name, remote_val)
 
             if not local_val and not remote_val:
                 continue

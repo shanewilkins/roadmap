@@ -93,7 +93,7 @@ jobs:
       run: poetry run bandit -r roadmap -c .bandit --severity-level=high
 
     - name: Run Radon Complexity Check
-      run: poetry run radon cc roadmap --exclude=tests -nb
+      run: bash -c 'poetry run radon cc roadmap --exclude=tests --min D 2>&1 | grep -q . && exit 1 || exit 0'
 
     - name: Run Vulture Dead Code Detection
       run: poetry run vulture roadmap --min-confidence=80 --exclude=tests

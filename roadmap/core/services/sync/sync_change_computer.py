@@ -9,6 +9,44 @@ from __future__ import annotations
 from typing import Any
 
 
+def _convert_enum_field(field_name: str, value: Any) -> Any:
+    """Convert string enum values to enum types for status/priority fields.
+
+    Args:
+        field_name: Name of field ("status", "priority", etc.)
+        value: Value to potentially convert
+
+    Returns:
+        Converted enum value, or original value if conversion fails/not applicable
+    """
+    if not isinstance(value, str) or value is None:
+        return value
+
+    if field_name == "status":
+        try:
+            from roadmap.common.constants import Status
+
+            try:
+                return Status(value)
+            except (ValueError, KeyError):
+                return Status(value.lower())
+        except Exception:
+            return value
+
+    if field_name == "priority":
+        try:
+            from roadmap.common.constants import Priority
+
+            try:
+                return Priority(value)
+            except (ValueError, KeyError):
+                return Priority(value.lower())
+        except Exception:
+            return value
+
+    return value
+
+
 def compute_changes(
     baseline: Any | None,
     local: Any,
@@ -75,12 +113,6 @@ def compute_changes_remote(
 
     Accepts either dict-like or object remote representations.
     """
-    try:
-        from roadmap.common.constants import Priority, Status
-    except Exception:  # pragma: no cover - defensive import
-        Priority = None  # type: ignore
-        Status = None  # type: ignore
-
     changes: dict[str, Any] = {}
 
     def get_remote_field(field_name: str, default: Any = None) -> Any:
@@ -110,33 +142,8 @@ def compute_changes_remote(
             baseline_value = getattr(baseline, baseline_attr, None)
             remote_value = remote_getter()
 
-            if (
-                field_name == "status"
-                and remote_value is not None
-                and Status is not None
-            ):
-                if isinstance(remote_value, str):
-                    try:
-                        remote_value = Status(remote_value)
-                    except (ValueError, KeyError):
-                        try:
-                            remote_value = Status(remote_value.lower())
-                        except (ValueError, KeyError):
-                            pass
-
-            if (
-                field_name == "priority"
-                and remote_value is not None
-                and Priority is not None
-            ):
-                if isinstance(remote_value, str):
-                    try:
-                        remote_value = Priority(remote_value)
-                    except (ValueError, KeyError):
-                        try:
-                            remote_value = Priority(remote_value.lower())
-                        except (ValueError, KeyError):
-                            pass
+            # Convert enum strings to types
+            remote_value = _convert_enum_field(field_name, remote_value)
 
             if baseline_value != remote_value:
                 changes[field_name] = {"from": baseline_value, "to": remote_value}
