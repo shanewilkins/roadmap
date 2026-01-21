@@ -61,7 +61,7 @@ class BaseUpdate(ABC):
     def post_update_hook(  # noqa: B027
         self, entity: Any, update_dict: dict[str, Any], **kwargs
     ) -> None:
-        """Optional hook after entity update.
+        """Handle entity update completion with optional custom logic.
 
         Override to handle:
         - Git branch updates

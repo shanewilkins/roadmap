@@ -54,7 +54,7 @@ class BaseCreate(ABC):
         ...
 
     def post_create_hook(self, entity: Any, **kwargs) -> None:  # noqa: B027
-        """Optional hook after entity creation.
+        """Handle entity creation completion with optional custom logic.
 
         Override to handle:
         - Git branch creation

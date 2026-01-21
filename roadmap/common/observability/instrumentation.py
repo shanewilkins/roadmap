@@ -17,7 +17,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def traced(operation_name: str) -> Callable[[F], F]:
-    """Decorator to automatically create spans for functions.
+    """Create spans for functions automatically.
 
     Wraps a function to create a trace span, track duration, and set
     span context in logs. Works with both sync and async functions.

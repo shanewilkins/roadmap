@@ -176,7 +176,7 @@ def clear_session_cache() -> None:
 
 
 def cache_result(key: str, ttl: float = float("inf")):
-    """Decorator to cache function results in session cache.
+    """Cache function results in session cache.
 
     Args:
         key: The cache key to use (can contain {arg_name} placeholders)

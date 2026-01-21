@@ -124,7 +124,7 @@ class LabelHandler(BaseGitHubHandler):
         return None
 
     def setup_default_labels(self) -> None:
-        """Setup default labels for priority and status."""
+        """Set up default labels for priority and status."""
         self._check_repository()
 
         # Priority labels

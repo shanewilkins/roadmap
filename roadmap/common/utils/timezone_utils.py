@@ -403,29 +403,29 @@ def get_timezone_manager(user_timezone: str | None = None) -> TimezoneManager:
 
 
 def now_utc() -> datetime:
-    """Convenience function to get current UTC datetime."""
+    """Get current UTC datetime."""
     return get_timezone_manager().now_utc()
 
 
 def now_local(user_timezone: str | None = None) -> datetime:
-    """Convenience function to get current datetime in user's timezone."""
+    """Get current datetime in user's timezone."""
     return get_timezone_manager(user_timezone).now_local()
 
 
 def parse_datetime(date_str: str, input_timezone: str | None = None) -> datetime:
-    """Convenience function to parse user datetime input."""
+    """Parse user-input datetime string."""
     return get_timezone_manager().parse_user_input(date_str, input_timezone)
 
 
 def format_datetime(
     dt: datetime, format_str: str | None = None, user_timezone: str | None = None
 ) -> str:
-    """Convenience function to format datetime for user display."""
+    """Format datetime for user display."""
     return get_timezone_manager(user_timezone).format_for_user(dt, format_str)
 
 
 def format_relative_time(dt: datetime, user_timezone: str | None = None) -> str:
-    """Convenience function to format relative time."""
+    """Format relative time representation."""
     return get_timezone_manager(user_timezone).format_relative(dt)
 
 

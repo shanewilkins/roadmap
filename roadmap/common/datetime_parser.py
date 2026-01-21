@@ -283,26 +283,26 @@ class UnifiedDateTimeParser:
 def parse_datetime(
     value: Any, source_type: str = "user", assumed_timezone: str | None = None
 ) -> datetime | None:
-    """Convenience function for universal datetime parsing."""
+    """Parse datetime from various input formats."""
     return UnifiedDateTimeParser.parse_any_datetime(
         value, source_type, assumed_timezone
     )
 
 
 def parse_github_datetime(github_timestamp: str) -> datetime:
-    """Convenience function for GitHub timestamp parsing."""
+    """Parse GitHub timestamp format."""
     return UnifiedDateTimeParser.parse_github_timestamp(github_timestamp)
 
 
 def parse_file_datetime(
     value: str, assumed_timezone: str | None = None
 ) -> datetime | None:
-    """Convenience function for file datetime parsing."""
+    """Parse datetime from file path format."""
     return UnifiedDateTimeParser.parse_file_datetime(value, assumed_timezone)
 
 
 def parse_user_datetime(
     value: str, assumed_timezone: str | None = None
 ) -> datetime | None:
-    """Convenience function for user input datetime parsing."""
+    """Parse user-input datetime string."""
     return UnifiedDateTimeParser.parse_user_datetime(value, assumed_timezone)

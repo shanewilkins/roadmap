@@ -194,7 +194,7 @@ class HealthCheckEnhancer:
         ]
 
     def _enhance_generic(self, detail: HealthCheckDetail) -> None:
-        """Generic enhancement for checks without specific handlers."""
+        """Enhance check with generic recommendations."""
         if detail.status == HealthStatus.HEALTHY:
             detail.recommendations = ["No action needed"]
         elif detail.status == HealthStatus.DEGRADED:

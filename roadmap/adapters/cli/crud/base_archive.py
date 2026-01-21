@@ -78,9 +78,9 @@ class BaseArchive(ABC):
     def validate_entity_before_archive(
         self, entity: Any, **kwargs
     ) -> tuple[bool, str | None]:
-        """Optional validation before archiving an entity.
+        """Validate entity before archiving.
 
-        Override to add entity-specific validation rules.
+        Allows subclasses to add entity-specific validation rules.
 
         Args:
             entity: The entity being considered for archive

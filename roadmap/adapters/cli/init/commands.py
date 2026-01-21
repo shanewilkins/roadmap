@@ -86,7 +86,7 @@ def _setup_project(
     template_path,
     interactive,
 ):
-    """Setup project if not skipped."""
+    """Set up project if not skipped."""
     if skip_project:
         return None
 
@@ -161,7 +161,7 @@ def _handle_init_dry_run(
 
 
 def _setup_init_environment(custom_core, name: str, force: bool, log):
-    """Setup lock and manifest for initialization.
+    """Set up lock and manifest for initialization.
 
     Args:
         custom_core: RoadmapCore instance
@@ -226,7 +226,7 @@ def _setup_project_and_context(
     template_path: str | None,
     interactive: bool,
 ) -> dict | None:
-    """Setup project and save configuration.
+    """Set up project and save configuration.
 
     Args:
         custom_core: The roadmap core instance

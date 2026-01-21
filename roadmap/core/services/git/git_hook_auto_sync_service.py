@@ -188,7 +188,7 @@ class GitHookAutoSyncService:
         branch: str | None = None,
         confirm: bool = True,
     ) -> bool:
-        """Internal method to perform auto-sync.
+        """Perform auto-sync on git event.
 
         Args:
             event: Event type ('commit', 'checkout', 'merge')

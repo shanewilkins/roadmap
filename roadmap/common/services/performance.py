@@ -15,7 +15,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def timed_operation(operation_name: str | None = None, record_metric: bool = True):
-    """Decorator to time operations and optionally record metrics.
+    """Time operations and optionally record metrics.
 
     This decorator measures the execution time of a function and logs it.
     It can also record the timing as a metric in the global MetricsCollector

@@ -160,7 +160,7 @@ class StateManager:
         self._initialize_remote_links_impl(roadmap_dir)
 
     def _initialize_remote_links_impl(self, roadmap_dir: Path | str) -> None:
-        """Implementation of remote links initialization.
+        """Initialize remote links from storage.
 
         Args:
             roadmap_dir: Path to the roadmap directory

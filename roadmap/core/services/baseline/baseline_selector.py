@@ -83,7 +83,7 @@ class InteractiveBaselineSelector:
         self.logger = get_logger()
 
     def _default_output(self, message: str):
-        """Default output to console."""
+        """Output message to console."""
         print(message)
 
     def prompt_baseline_strategy(self) -> BaselineStrategy:

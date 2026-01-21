@@ -246,7 +246,7 @@ def log_operation_timing(operation: str, logger=None, **context):
 
 
 def log_operation(operation: str, **context):
-    """Decorator for logging operation start/end with context and timing.
+    """Log operation start/end with context and timing.
 
     Args:
         operation: Operation name

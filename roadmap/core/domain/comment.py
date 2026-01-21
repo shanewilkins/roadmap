@@ -18,7 +18,7 @@ class Comment:
     in_reply_to: int | None = None  # Comment ID this is a reply to (for threading)
 
     def __str__(self) -> str:
-        """String representation."""
+        """Return string representation."""
         return (
             f"Comment by {self.author} on {self.created_at.strftime('%Y-%m-%d %H:%M')}"
         )

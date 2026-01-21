@@ -145,7 +145,7 @@ def safe_operation(
     retry_delay: float = 0.5,
     retry_backoff: float = 2.0,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """Decorator for safe operation execution with standard error handling.
+    """Execute operation safely with standard error handling.
 
     Wraps create, read, update, delete, sync operations with:
     - Automatic error classification and logging with rich context

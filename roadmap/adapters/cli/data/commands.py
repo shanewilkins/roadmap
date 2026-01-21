@@ -24,7 +24,7 @@ def _serialize_issue(issue: Issue) -> dict:
 
 @click.group()
 def data():
-    """Data export, import, and reporting."""
+    """Export, import, and analyze roadmap data."""
     pass
 
 

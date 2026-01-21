@@ -55,7 +55,7 @@ def git():
 @click.pass_context
 @require_initialized
 def setup_git(ctx: click.Context, auth: bool, update_token: bool, git_auth: bool):
-    """Setup Git integration and authentication.
+    """Set up Git integration and authentication.
 
     Configure GitHub authentication for sync operations or manage git workflow.
     Supports both GitHub PAT tokens and vanilla Git self-hosting.

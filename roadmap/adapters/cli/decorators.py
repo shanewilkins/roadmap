@@ -39,7 +39,7 @@ def with_output_support(
     column_types: dict[str, ColumnType] | None = None,
 ):
     """
-    Decorator to add output formatting support to Click commands.
+    Add output formatting support to Click commands.
 
     Adds three flags to command:
     - --format: Output format (rich, plain, json, csv, markdown)

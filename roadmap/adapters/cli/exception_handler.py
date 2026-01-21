@@ -53,7 +53,7 @@ def with_exception_handler(
     show_traceback: bool = False,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
-    Decorator to wrap CLI commands with centralized exception handling.
+    Wrap CLI commands with centralized exception handling.
 
     Args:
         show_traceback: Whether to show full traceback on error
@@ -63,10 +63,10 @@ def with_exception_handler(
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        """Decorator implementation."""
+        """Implement exception handling decorator."""
 
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            """Wrapper function."""
+            """Execute wrapped function with exception handling."""
             try:
                 return func(*args, **kwargs)
             except click.Abort:

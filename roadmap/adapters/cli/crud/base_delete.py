@@ -38,7 +38,7 @@ class BaseDelete(ABC):
         self.console = console or get_console()
 
     def post_delete_hook(self, entity_id: str, **kwargs) -> None:  # noqa: B027
-        """Optional hook after entity deletion.
+        """Handle entity deletion completion with optional custom logic.
 
         Override to handle cleanup, notifications, etc.
 

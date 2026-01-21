@@ -30,7 +30,7 @@ def handle_cli_errors(
     command_name: str | None = None, show_traceback: bool = False, log_args: bool = True
 ) -> Callable[[F], F]:
     """
-    Decorator to add unified error handling to CLI commands with timing and correlation tracking.
+    Add unified error handling to CLI commands with timing and correlation tracking.
 
     Args:
         command_name: Name of the command (for logging)

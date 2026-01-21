@@ -24,7 +24,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def require_initialized(func: Callable) -> Callable:
-    """Decorator: Ensure roadmap is initialized before command execution.
+    """Require roadmap to be initialized before command execution.
 
     Usage:
         @click.command()

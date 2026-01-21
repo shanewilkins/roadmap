@@ -48,7 +48,7 @@ def log_command(
     track_duration: bool = True,
     log_args: bool = False,
 ) -> Callable:
-    """Decorator to log CLI command execution with audit trail.
+    """Log CLI command execution with audit trail.
 
     Args:
         command_name: Name of the command (e.g., "issue_create")
@@ -126,7 +126,7 @@ def log_command(
 
 
 def verbose_output(func: Callable) -> Callable:
-    """Decorator to add --verbose flag for controlling debug output visibility.
+    """Add --verbose flag for controlling debug output visibility.
 
     Suppresses debug logs by default for clean output.
     When --verbose/-v is passed, all debug information is shown.
@@ -221,7 +221,7 @@ def log_operation_duration(
     operation_name: str,
     warn_threshold_ms: int = 5000,
 ) -> Callable:
-    """Decorator to log operation duration and identify slow operations.
+    """Log operation duration and identify slow operations.
 
     Args:
         operation_name: Name of the operation

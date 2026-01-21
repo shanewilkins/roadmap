@@ -27,7 +27,7 @@ def service_operation(
     include_traceback: bool = False,
     log_success: bool = False,
 ):
-    """Decorator for service methods with intelligent error handling.
+    """Provide intelligent error handling for service methods.
 
     **Key Features:**
     - Mandatory error logging (no silent failures)
@@ -152,7 +152,7 @@ def _log_operation_error(
     log_level: str,
     include_traceback: bool,
 ) -> None:
-    """Helper to log operation errors consistently with context.
+    """Log operation errors consistently with context.
 
     Captures error details and routes to appropriate logger method
     based on configured log level.

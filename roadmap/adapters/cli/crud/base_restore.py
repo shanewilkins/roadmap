@@ -76,9 +76,9 @@ class BaseRestore(ABC):
     def validate_entity_before_restore(
         self, file_path: Path
     ) -> tuple[bool, str | None]:
-        """Optional validation before restoring an entity.
+        """Validate entity before restoring.
 
-        Override to add entity-specific validation rules.
+        Allows subclasses to add entity-specific validation rules.
 
         Args:
             file_path: The file being considered for restore

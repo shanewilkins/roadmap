@@ -344,7 +344,7 @@ def format_output(
     format_choice: str = "rich", columns: list[str] | None = None
 ) -> Callable:
     """
-    Decorator to handle output formatting.
+    Handle output formatting for command results.
 
     Wraps command functions to:
     1. Convert returned TableData to formatted output

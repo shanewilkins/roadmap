@@ -173,7 +173,7 @@ class GitHubClient(BaseGitHubHandler):
         return self._label_handler.create_label(name, color, description)
 
     def setup_default_labels(self) -> None:
-        """Setup default labels for priority and status."""
+        """Set up default labels for priority and status."""
         self._label_handler.owner = self.owner
         self._label_handler.repo = self.repo
         self._label_handler.setup_default_labels()

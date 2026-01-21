@@ -251,7 +251,7 @@ def create_progress_builder(
     issues_dir: Path,
     show_progress: bool = True,
 ) -> ProgressTrackingBaselineBuilder | None:
-    """Factory function to create progress-enabled baseline builder.
+    """Create a progress-enabled baseline builder.
 
     Args:
         issues_dir: Path to issues directory

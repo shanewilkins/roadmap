@@ -27,7 +27,7 @@ class WorkflowAutomation:
         self.git_integration = GitIntegration()
 
     def setup_automation(self, features: list[str] | None = None) -> dict[str, bool]:
-        """Setup automated workflow features.
+        """Set up automated workflow features.
 
         Args:
             features: List of features to enable. Options:
@@ -75,7 +75,7 @@ class WorkflowAutomation:
             return False
 
     def _setup_status_automation(self) -> bool:
-        """Setup intelligent status automation rules."""
+        """Set up intelligent status automation rules."""
         try:
             # Create automation config
             config = {
@@ -99,7 +99,7 @@ class WorkflowAutomation:
             return False
 
     def _setup_progress_tracking(self) -> bool:
-        """Setup automated progress tracking."""
+        """Set up automated progress tracking."""
         try:
             # Initialize progress tracking state
             tracking_state = {
