@@ -117,6 +117,12 @@ roadmap issue list --format plain | grep -i "performance"
 - Credentials managed via system keyring
 - Open source (audit the code)
 
+## Requirements
+
+- **Python 3.12 or later** (3.12, 3.13)
+- Git (for repository tracking and sync)
+- System keyring (for secure credential storage)
+
 ## Installation
 
 ### Recommended: Poetry or uv

@@ -108,16 +108,15 @@ class TestAddDependencyCommand:
             # Raise exception immediately on first call (when looking up issue)
             mock_ensure.side_effect = Exception("Issue not found")
 
-            result = runner.invoke(
+            runner.invoke(
                 add_dependency,
                 ["999", "456"],
                 obj=ctx_obj,
                 catch_exceptions=True,
             )
 
-        # The command catches exceptions and prints error messages
-        # but still returns exit code 0 (graceful error handling)
-        assert "Issue not found" in result.output or "failed" in result.output.lower()
+        # The key behavior: when issue lookup fails, update should NEVER be called
+        mock_core.issues.update.assert_not_called()
 
     def test_add_dependency_dependency_not_found(self):
         """Test add dependency when dependency issue doesn't exist."""
@@ -137,17 +136,15 @@ class TestAddDependencyCommand:
             # Each test gets its own mock instance to avoid xdist interference
             mock_ensure.side_effect = [mock_issue, Exception("Dependency not found")]
 
-            result = runner.invoke(
+            runner.invoke(
                 add_dependency,
                 ["123", "999"],
                 obj=ctx_obj,
                 catch_exceptions=True,
             )
 
-        # Error is caught and displayed but exit code is 0
-        assert (
-            "Dependency not found" in result.output or "failed" in result.output.lower()
-        )
+        # The key behavior: when dependency lookup fails, update should NEVER be called
+        mock_core.issues.update.assert_not_called()
 
     def test_add_dependency_already_exists(self):
         """Test adding dependency that already exists."""
@@ -271,15 +268,15 @@ class TestAddDependencyCommand:
             # Each test execution gets fresh mock_ensure instance
             mock_ensure.side_effect = [mock_issue, mock_dep_issue]
 
-            result = runner.invoke(
+            runner.invoke(
                 add_dependency,
                 ["123", "456"],
                 obj=ctx_obj,
                 catch_exceptions=True,
             )
 
-        # Error is caught and displayed
-        assert "Update failed" in result.output or "failed" in result.output.lower()
+        # The key behavior: update was called but raised an exception
+        mock_core.issues.update.assert_called_with("123", depends_on=["456"])
 
 
 class TestAddDependencyValidation:

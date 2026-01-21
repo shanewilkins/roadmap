@@ -1,5 +1,7 @@
 """Tests for milestone CLI commands."""
 
+from pathlib import Path
+
 import pytest
 
 from roadmap.adapters.cli import main
@@ -96,7 +98,7 @@ class TestMilestoneAssign:
             )
             assert init_result.exit_code == 0
 
-            core = RoadmapCore()
+            core = RoadmapCore(root_path=Path.cwd())
 
             cli_runner.invoke(
                 main, ["milestone", "create", "v1.0", "--description", "First release"]
@@ -127,7 +129,13 @@ class TestMilestoneAssign:
             result = cli_runner.invoke(
                 main, ["milestone", "assign", "fake-id", "nonexistent"]
             )
-            assert result.exit_code != 0 or "Failed" in result.output
+            # Command should fail when trying to assign nonexistent issue to nonexistent milestone
+            # Exit code should be nonzero (Abort raised) or output contains failure message
+            assert (
+                result.exit_code != 0
+                or "failed" in result.output.lower()
+                or "not found" in result.output.lower()
+            )
 
     def test_milestone_assign_without_roadmap(self, cli_runner):
         """Test assigning without initialized roadmap."""

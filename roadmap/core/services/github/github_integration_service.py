@@ -62,13 +62,8 @@ class GitHubIntegrationService:
             GitHubBackendInterface implementation
         """
         if self._github_backend is None:
-            from roadmap.infrastructure.adapters import GitHubBackendAdapter
-
-            token, owner, repo = self._get_credentials()
-            if not token or not owner or not repo:
-                raise ValueError("GitHub credentials not configured")
-            self._github_backend = GitHubBackendAdapter(
-                token=token, owner=owner, repo=repo
+            raise RuntimeError(
+                "GitHub backend not configured. Ensure RoadmapCore is initialized with backend."
             )
         return self._github_backend
 

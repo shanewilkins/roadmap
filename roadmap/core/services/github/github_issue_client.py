@@ -134,17 +134,11 @@ class GitHubIssueClient:
             is_valid, message = client.validate_github_token()
 
             if is_valid:
-                logger.debug("github_token_validated", message="Token is valid")
+                logger.debug("github_token_validated", authenticated_user=message)
             else:
-                log_validation_error(
-                    ValueError("GitHub token validation failed"),
-                    entity_type="GitHubToken",
-                    field_name="token",
-                    proposed_value="***",
-                )
                 logger.warning(
                     "github_token_validation_failed",
-                    message="Token authentication failed",
+                    error_message=message,
                 )
             return is_valid, message
         except GitHubAPIError as e:
@@ -153,7 +147,6 @@ class GitHubIssueClient:
                 service_name="GitHub",
                 operation="validate_token",
             )
-            logger.warning("github_token_validation_error", error=str(e))
             return False, str(e)
 
     @traced("issue_exists")
