@@ -28,6 +28,12 @@ class Action:
 @dataclass
 class PushAction(Action):
     def __init__(self, issue_id: str, issue_payload: Any = None):
+        """Initialize PushAction.
+
+        Args:
+            issue_id: ID of the issue to push.
+            issue_payload: Payload data for the issue.
+        """
         super().__init__(
             action_type="push",
             payload={"issue_id": issue_id, "issue": issue_payload or {}},
@@ -37,6 +43,12 @@ class PushAction(Action):
 @dataclass
 class PullAction(Action):
     def __init__(self, issue_id: str, remote_payload: Any = None):
+        """Initialize PullAction.
+
+        Args:
+            issue_id: ID of the issue to pull.
+            remote_payload: Remote payload data.
+        """
         super().__init__(
             action_type="pull",
             payload={"issue_id": issue_id, "remote": remote_payload or {}},
@@ -46,6 +58,12 @@ class PullAction(Action):
 @dataclass
 class CreateLocalAction(Action):
     def __init__(self, remote_id: str, remote_payload: Any = None):
+        """Initialize CreateLocalAction.
+
+        Args:
+            remote_id: Remote ID of the issue.
+            remote_payload: Remote payload data.
+        """
         super().__init__(
             action_type="create_local",
             payload={"remote_id": remote_id, "remote": remote_payload or {}},
@@ -55,6 +73,13 @@ class CreateLocalAction(Action):
 @dataclass
 class LinkAction(Action):
     def __init__(self, issue_id: str, backend_name: str, remote_id: str):
+        """Initialize LinkAction.
+
+        Args:
+            issue_id: Local issue ID.
+            backend_name: Name of the backend.
+            remote_id: Remote ID to link to.
+        """
         super().__init__(
             action_type="link",
             payload={
@@ -68,6 +93,11 @@ class LinkAction(Action):
 @dataclass
 class UpdateBaselineAction(Action):
     def __init__(self, baseline_snapshot: dict[str, Any]):
+        """Initialize UpdateBaselineAction.
+
+        Args:
+            baseline_snapshot: Baseline snapshot to update.
+        """
         super().__init__(
             action_type="update_baseline", payload={"baseline": baseline_snapshot}
         )
@@ -76,6 +106,12 @@ class UpdateBaselineAction(Action):
 @dataclass
 class ResolveConflictAction(Action):
     def __init__(self, issue_id: str, resolution: dict[str, Any]):
+        """Initialize ResolveConflictAction.
+
+        Args:
+            issue_id: ID of the issue with conflict.
+            resolution: Resolution data for the conflict.
+        """
         super().__init__(
             action_type="resolve_conflict",
             payload={"issue_id": issue_id, "resolution": resolution},

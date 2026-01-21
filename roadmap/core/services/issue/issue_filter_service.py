@@ -51,6 +51,11 @@ class IssueQueryService:
     """Service for querying issues with different filter criteria."""
 
     def __init__(self, core: "RoadmapCore"):  # noqa: F821
+        """Initialize IssueQueryService.
+
+        Args:
+            core: Core roadmap instance.
+        """
         self.core = core
 
     def _get_issues_for_assignee_filters(

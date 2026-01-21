@@ -16,6 +16,7 @@ class RoadmapValidator:
     """Main validation class with predefined validators for roadmap entities."""
 
     def __init__(self):
+        """Initialize RoadmapValidator."""
         self._setup_predefined_validators()
 
     def _setup_predefined_validators(self):

@@ -17,6 +17,11 @@ class WorkflowAutomation:
     """High-level workflow automation orchestrator."""
 
     def __init__(self, roadmap_core: RoadmapCore):
+        """Initialize WorkflowAutomation.
+
+        Args:
+            roadmap_core: Core roadmap integration instance.
+        """
         self.core = roadmap_core
         self.hook_manager = GitHookManager(roadmap_core)
         self.git_integration = GitIntegration()

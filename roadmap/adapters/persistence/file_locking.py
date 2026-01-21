@@ -33,6 +33,13 @@ class FileLock:
     def __init__(
         self, file_path: Path, timeout: float = 30.0, check_interval: float = 0.1
     ):
+        """Initialize FileLock.
+
+        Args:
+            file_path: Path to file to lock.
+            timeout: Lock acquisition timeout in seconds.
+            check_interval: Interval in seconds between lock checks.
+        """
         self.file_path = file_path
         self.lock_path = file_path.with_suffix(file_path.suffix + ".lock")
         self.timeout = timeout
@@ -160,6 +167,11 @@ class LockManager:
     """Manager for handling multiple file locks and lock policies."""
 
     def __init__(self, default_timeout: float = 30.0):
+        """Initialize LockManager.
+
+        Args:
+            default_timeout: Default timeout for lock acquisition in seconds.
+        """
         self.default_timeout = default_timeout
         self.active_locks: dict[str, FileLock] = {}
         self._global_lock = Lock()  # Thread safety
@@ -242,6 +254,11 @@ class LockedFileOperations:
     """File operations with automatic locking."""
 
     def __init__(self, lock_manager: LockManager | None = None):
+        """Initialize LockedFileOperations.
+
+        Args:
+            lock_manager: LockManager instance. Defaults to new LockManager.
+        """
         self.lock_manager = lock_manager or LockManager()
 
     def read_file_locked(self, file_path: Path, timeout: float | None = None) -> str:

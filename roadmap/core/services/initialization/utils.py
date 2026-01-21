@@ -15,6 +15,11 @@ class InitializationLock:
     """Manages initialization lockfile to prevent concurrent inits."""
 
     def __init__(self, lock_path: Path):
+        """Initialize InitializationLock.
+
+        Args:
+            lock_path: Path to the lock file.
+        """
         self.lock_path = lock_path
 
     def acquire(self) -> bool:
@@ -46,6 +51,11 @@ class InitializationManifest:
     """Tracks created files/directories for potential rollback."""
 
     def __init__(self, manifest_file: Path):
+        """Initialize InitializationManifest.
+
+        Args:
+            manifest_file: Path to the manifest file.
+        """
         self.manifest_file = manifest_file
         self.data: dict[str, list] = {"created": []}
 

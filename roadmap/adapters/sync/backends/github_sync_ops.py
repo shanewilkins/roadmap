@@ -1,3 +1,5 @@
+"""GitHub synchronization operations with parallel execution."""
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
@@ -12,6 +14,11 @@ logger = get_logger()
 
 class GitHubSyncOps:
     def __init__(self, backend: Any):
+        """Initialize GitHubSyncOps.
+
+        Args:
+            backend: GitHub backend instance.
+        """
         self.backend = backend
 
     def push_issues(self, local_issues: list) -> SyncReport:

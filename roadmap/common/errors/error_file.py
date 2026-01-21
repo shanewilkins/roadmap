@@ -15,6 +15,14 @@ class FileOperationError(RoadmapError):
         operation: str | None = None,
         **kwargs,
     ):
+        """Initialize FileOperationError.
+
+        Args:
+            message: Error message.
+            file_path: Path to the file involved in the error.
+            operation: Name of the file operation that failed.
+            **kwargs: Additional arguments passed to parent class.
+        """
         context = kwargs.get("context", {})
         if file_path:
             context["file_path"] = str(file_path)

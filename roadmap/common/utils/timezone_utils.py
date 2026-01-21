@@ -36,6 +36,11 @@ except ImportError:
             """Minimal ZoneInfo fallback for older Python versions."""
 
             def __init__(self, name: str):
+                """Initialize ZoneInfo fallback.
+
+                Args:
+                    name: Timezone name.
+                """
                 self.name = name
                 if name == "UTC":
                     self._tz = UTC
@@ -78,6 +83,7 @@ except ImportError:
                 return self._tz.dst(dt)
 
             def __repr__(self):
+                """Return string representation of ZoneInfo."""
                 return f"ZoneInfo('{self.name}')"
 
 

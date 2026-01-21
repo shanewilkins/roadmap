@@ -18,6 +18,11 @@ class GitHookManager:
     """Manages Git hooks for automated roadmap integration."""
 
     def __init__(self, roadmap_core: RoadmapCore):
+        """Initialize GitHookManager.
+
+        Args:
+            roadmap_core: Core roadmap integration instance.
+        """
         self.core = roadmap_core
         self.git_integration = GitIntegration()
         self.hooks_dir = (

@@ -21,6 +21,7 @@ class BackupCleanupResult:
     """Result of backup cleanup operation."""
 
     def __init__(self):
+        """Initialize BackupCleanupResult."""
         self.deleted_count: int = 0
         self.failed_count: int = 0
         self.total_freed_bytes: int = 0

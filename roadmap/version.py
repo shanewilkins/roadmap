@@ -57,9 +57,11 @@ class SemanticVersion:
         return f"{self.major}.{self.minor}.{self.patch}"
 
     def __repr__(self) -> str:
+        """Return string representation of SemanticVersion."""
         return f"SemanticVersion('{self}')"
 
     def __eq__(self, other) -> bool:
+        """Check equality with another SemanticVersion."""
         if not isinstance(other, SemanticVersion):
             return False
         return (self.major, self.minor, self.patch) == (
@@ -69,6 +71,7 @@ class SemanticVersion:
         )
 
     def __lt__(self, other) -> bool:
+        """Check if this version is less than another."""
         if not isinstance(other, SemanticVersion):
             return NotImplemented
         return (self.major, self.minor, self.patch) < (
@@ -78,12 +81,15 @@ class SemanticVersion:
         )
 
     def __le__(self, other) -> bool:
+        """Check if this version is less than or equal to another."""
         return self < other or self == other
 
     def __gt__(self, other) -> bool:
+        """Check if this version is greater than another."""
         return not self <= other
 
     def __ge__(self, other) -> bool:
+        """Check if this version is greater than or equal to another."""
         return not self < other
 
 

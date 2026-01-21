@@ -1,3 +1,5 @@
+"""Remote data fetching with retry logic and request management."""
+
 import time
 from collections.abc import Iterable
 from typing import Any

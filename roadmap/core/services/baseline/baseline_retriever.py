@@ -1,3 +1,5 @@
+"""Baseline snapshot retrieval from remote sources."""
+
 from typing import Any
 
 BaselineSnapshot = dict[str, Any]

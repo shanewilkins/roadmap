@@ -17,6 +17,12 @@ class ErrorHandler:
     def __init__(
         self, logger: logging.Logger | None = None, console: Console | None = None
     ):
+        """Initialize ErrorHandler.
+
+        Args:
+            logger: Logger instance for error logging. Defaults to module logger.
+            console: Console instance for error display. Defaults to stderr console.
+        """
         self.logger = logger or logging.getLogger(__name__)
         self.console = console or Console(stderr=True)
         self.error_counts: dict[ErrorCategory, int] = {}

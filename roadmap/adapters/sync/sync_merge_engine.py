@@ -51,6 +51,15 @@ class SyncMergeEngine:
         conflict_resolver: SyncConflictResolver,
         state_manager: SyncStateManager,
     ):
+        """Initialize SyncMergeEngine.
+
+        Args:
+            core: Core roadmap instance.
+            backend: Sync backend.
+            state_comparator: State comparator service.
+            conflict_resolver: Conflict resolver service.
+            state_manager: State manager service.
+        """
         self.core = core
         self.backend = backend
         self.state_comparator = state_comparator

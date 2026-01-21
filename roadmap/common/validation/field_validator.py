@@ -21,6 +21,18 @@ class FieldValidator:
         custom_validator: Callable[[Any], tuple[bool, str]] | None = None,
         allow_none: bool | None = None,
     ):
+        """Initialize FieldValidator.
+
+        Args:
+            field_name: Name of the field to validate.
+            required: Whether the field is required.
+            min_length: Minimum length if applicable.
+            max_length: Maximum length if applicable.
+            pattern: Regex pattern to match against.
+            enum_values: List of allowed enum values.
+            custom_validator: Optional custom validation function.
+            allow_none: Whether None values are allowed.
+        """
         self.field_name = field_name
         self.required = required
         self.min_length = min_length

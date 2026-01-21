@@ -13,6 +13,11 @@ class GitHubTokenResolver:
     """Resolves GitHub tokens from multiple sources."""
 
     def __init__(self, cred_manager=None):  # type: ignore
+        """Initialize GitHubTokenResolver.
+
+        Args:
+            cred_manager: Optional credential manager instance.
+        """
         self.cred_manager = cred_manager
 
     def get_existing_token(self) -> str | None:

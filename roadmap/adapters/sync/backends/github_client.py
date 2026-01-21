@@ -22,6 +22,11 @@ class GitHubClientWrapper:
     """
 
     def __init__(self, token: str | None):
+        """Initialize GitHubClientWrapper.
+
+        Args:
+            token: GitHub API token.
+        """
         self._client = None
         if token:
             try:
@@ -39,6 +44,7 @@ class GitHubClientWrapper:
                 )
 
     def __getattr__(self, item: str) -> Any:
+        """Get attribute from wrapped GitHub client."""
         if self._client is None:
             raise AttributeError(f"GitHub client not initialized, no attribute {item}")
         return getattr(self._client, item)

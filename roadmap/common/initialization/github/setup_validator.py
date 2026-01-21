@@ -9,6 +9,11 @@ class GitHubSetupValidator:
     """Validates GitHub connectivity and permissions during setup."""
 
     def __init__(self, github_client):  # type: ignore
+        """Initialize GitHubSetupValidator.
+
+        Args:
+            github_client: GitHub client instance.
+        """
         self.client = github_client
 
     def validate_authentication(self) -> tuple[bool, str | None]:

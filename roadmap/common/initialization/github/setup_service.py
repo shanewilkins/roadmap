@@ -46,6 +46,11 @@ class GitHubInitializationService:
     """Orchestrates GitHub integration setup during initialization."""
 
     def __init__(self, core: RoadmapCore):
+        """Initialize GitHubInitializationService.
+
+        Args:
+            core: Core roadmap instance.
+        """
         self.core = core
         self.presenter = None  # Set by caller if needed
 

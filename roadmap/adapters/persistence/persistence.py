@@ -16,6 +16,11 @@ class YAMLRecoveryManager:
     """Manages YAML file recovery and validation."""
 
     def __init__(self, backup_dir: Path | None = None):
+        """Initialize YAMLRecoveryManager.
+
+        Args:
+            backup_dir: Directory for storing backups. Defaults to .roadmap/backups.
+        """
         self.backup_dir = backup_dir or Path(".roadmap/backups")
         ensure_directory_exists(self.backup_dir)
 
@@ -212,6 +217,11 @@ class EnhancedYAMLPersistence:
     """Enhanced YAML persistence with validation and recovery."""
 
     def __init__(self, recovery_manager: YAMLRecoveryManager | None = None):
+        """Initialize EnhancedYAMLPersistence.
+
+        Args:
+            recovery_manager: YAMLRecoveryManager instance. Defaults to new instance.
+        """
         self.recovery_manager = recovery_manager or YAMLRecoveryManager()
 
     def safe_load_with_validation(

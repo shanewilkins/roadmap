@@ -15,6 +15,11 @@ class GitHubConfigManager:
     """Manages GitHub configuration in roadmap config file."""
 
     def __init__(self, core: RoadmapCore):
+        """Initialize GitHubConfigManager.
+
+        Args:
+            core: Core roadmap instance.
+        """
         self.core = core
         self.config_file = core.roadmap_dir / "config.yaml"
 

@@ -20,6 +20,11 @@ class InitializationWorkflow:
     """Orchestrates the initialization workflow steps."""
 
     def __init__(self, core: RoadmapCore):
+        """Initialize InitializationWorkflow.
+
+        Args:
+            core: Core roadmap instance.
+        """
         self.core = core
 
     def cleanup_existing(self) -> bool:

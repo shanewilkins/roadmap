@@ -34,6 +34,13 @@ class FileOperationError(Exception):
     def __init__(
         self, message: str, path: Path | None = None, operation: str | None = None
     ):
+        """Initialize FileOperationError.
+
+        Args:
+            message: Error message.
+            path: Path involved in the operation.
+            operation: Name of the operation that failed.
+        """
         super().__init__(message)
         self.path = path
         self.operation = operation

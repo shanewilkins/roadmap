@@ -1,3 +1,5 @@
+"""Helper functions for GitHub backend synchronization operations."""
+
 from datetime import UTC, datetime
 from typing import Any
 
@@ -8,6 +10,12 @@ logger = get_logger()
 
 class GitHubBackendHelpers:
     def __init__(self, core, remote_link_repo=None):
+        """Initialize GitHubBackendHelpers.
+
+        Args:
+            core: Core roadmap instance.
+            remote_link_repo: Optional remote link repository.
+        """
         self.core = core
         self.remote_link_repo = remote_link_repo
 

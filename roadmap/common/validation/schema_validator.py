@@ -10,6 +10,11 @@ class SchemaValidator:
     """Schema-based validator for complex data structures."""
 
     def __init__(self, schema_name: str):
+        """Initialize SchemaValidator.
+
+        Args:
+            schema_name: Name of the schema being validated.
+        """
         self.schema_name = schema_name
         self.validators: dict[str, FieldValidator] = {}
 

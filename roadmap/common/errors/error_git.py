@@ -13,6 +13,14 @@ class GitOperationError(RoadmapError):
         exit_code: int | None = None,
         **kwargs,
     ):
+        """Initialize GitOperationError.
+
+        Args:
+            message: Error message.
+            command: Git command that failed.
+            exit_code: Exit code from the Git command.
+            **kwargs: Additional arguments passed to parent class.
+        """
         context = kwargs.get("context", {})
         if command:
             context["command"] = command
@@ -34,6 +42,13 @@ class ConfigurationError(RoadmapError):
     """Errors related to configuration."""
 
     def __init__(self, message: str, config_file=None, **kwargs):
+        """Initialize ConfigurationError.
+
+        Args:
+            message: Error message.
+            config_file: Path to the configuration file with the issue.
+            **kwargs: Additional arguments passed to parent class.
+        """
         from pathlib import Path
 
         context = kwargs.get("context", {})

@@ -18,6 +18,7 @@ class FileRepairResult:
     """Result of file repair operation."""
 
     def __init__(self):
+        """Initialize FileRepairResult."""
         self.fixed_files: list[str] = []
         self.errors: list[str] = []
 

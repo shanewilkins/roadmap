@@ -13,6 +13,14 @@ class NetworkError(RoadmapError):
         status_code: int | None = None,
         **kwargs,
     ):
+        """Initialize NetworkError.
+
+        Args:
+            message: Error message.
+            url: URL where the network error occurred.
+            status_code: HTTP status code from the response.
+            **kwargs: Additional arguments passed to parent class.
+        """
         context = kwargs.get("context", {})
         if url:
             context["url"] = url
@@ -40,6 +48,14 @@ class GitHubAPIError(NetworkError):
         rate_limit_remaining: int | None = None,
         **kwargs,
     ):
+        """Initialize GitHubAPIError.
+
+        Args:
+            message: Error message.
+            endpoint: GitHub API endpoint that was called.
+            rate_limit_remaining: Number of remaining GitHub API requests.
+            **kwargs: Additional arguments passed to parent class.
+        """
         context = kwargs.get("context", {})
         if endpoint:
             context["endpoint"] = endpoint
@@ -59,6 +75,12 @@ class AuthenticationError(RoadmapError):
     """Raised when authentication fails."""
 
     def __init__(self, message: str, **kwargs):
+        """Initialize AuthenticationError.
+
+        Args:
+            message: Error message.
+            **kwargs: Additional arguments passed to parent class.
+        """
         super().__init__(
             message,
             severity=kwargs.get("severity", ErrorSeverity.HIGH),

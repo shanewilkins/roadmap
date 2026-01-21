@@ -15,6 +15,14 @@ class ParseError(RoadmapError):
         line_number: int | None = None,
         **kwargs,
     ):
+        """Initialize ParseError.
+
+        Args:
+            message: Error message.
+            file_path: Path to the file that failed to parse.
+            line_number: Line number where the parse error occurred.
+            **kwargs: Additional arguments passed to parent class.
+        """
         context = kwargs.get("context", {})
         if file_path:
             context["file_path"] = str(file_path)
@@ -36,6 +44,12 @@ class SecurityError(RoadmapError):
     """Base class for security-related errors."""
 
     def __init__(self, message: str, **kwargs):
+        """Initialize SecurityError.
+
+        Args:
+            message: Error message.
+            **kwargs: Additional arguments passed to parent class.
+        """
         super().__init__(
             message,
             severity=kwargs.get("severity", ErrorSeverity.CRITICAL),
@@ -49,6 +63,13 @@ class PathValidationError(SecurityError):
     """Raised when path validation fails (path traversal, etc.)."""
 
     def __init__(self, message: str, path: Path | str | None = None, **kwargs):
+        """Initialize PathValidationError.
+
+        Args:
+            message: Error message.
+            path: Path that failed validation.
+            **kwargs: Additional arguments passed to parent class.
+        """
         context = kwargs.get("context", {})
         if path:
             context["path"] = str(path)

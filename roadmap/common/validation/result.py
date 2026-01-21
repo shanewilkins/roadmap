@@ -10,6 +10,13 @@ class ValidationResult:
         errors: list[str] | None = None,
         field: str | None = None,
     ):
+        """Initialize ValidationResult.
+
+        Args:
+            is_valid: Whether validation passed.
+            errors: List of validation error messages.
+            field: Name of the field being validated.
+        """
         self.is_valid = is_valid
         self.errors = errors or []
         self.field = field
@@ -26,4 +33,5 @@ class ValidationResult:
             self.errors.extend(other.errors)
 
     def __bool__(self) -> bool:
+        """Return whether validation passed."""
         return self.is_valid

@@ -215,6 +215,7 @@ class FilterSpec:
         self.value = value
 
     def __repr__(self):
+        """Return string representation of FilterSpec."""
         return f"FilterSpec({self.column}{self.operator}{self.value})"
 
 

@@ -18,6 +18,13 @@ class RetryPolicy:
     def __init__(
         self, max_retries: int = 3, base_delay: float = 0.5, factor: float = 2.0
     ):
+        """Initialize RetryPolicy.
+
+        Args:
+            max_retries: Maximum number of retry attempts.
+            base_delay: Initial delay in seconds.
+            factor: Exponential factor for delay increase.
+        """
         self.max_retries = max_retries
         self.base_delay = base_delay
         self.factor = factor

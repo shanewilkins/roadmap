@@ -25,6 +25,11 @@ class IssueHealthScanner:
     """Scan a single issue for health problems (extracted implementations)."""
 
     def __init__(self, core: Any = None):
+        """Initialize IssueHealthScanner.
+
+        Args:
+            core: Core roadmap instance.
+        """
         self.core = core
 
     @traced("scan_issue")

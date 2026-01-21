@@ -41,6 +41,15 @@ class RoadmapError(Exception):
         context: dict[str, Any] | None = None,
         cause: Exception | None = None,
     ):
+        """Initialize RoadmapError.
+
+        Args:
+            message: Error message.
+            severity: Error severity level.
+            category: Error category.
+            context: Additional context dictionary.
+            cause: Underlying exception that caused this error.
+        """
         super().__init__(message)
         self.message = message
         self.severity = severity
@@ -49,6 +58,7 @@ class RoadmapError(Exception):
         self.cause = cause
 
     def __str__(self) -> str:
+        """Return string representation of error."""
         return self.message
 
     def get_context_info(self) -> str:
