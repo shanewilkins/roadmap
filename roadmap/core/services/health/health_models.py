@@ -48,22 +48,27 @@ class EntityHealthReport:
 
     @property
     def issue_count(self) -> int:
+        """Return the total number of health issues."""
         return len(self.issues)
 
     @property
     def error_count(self) -> int:
+        """Return the count of error-severity health issues."""
         return sum(1 for i in self.issues if i.severity == HealthSeverity.ERROR)
 
     @property
     def warning_count(self) -> int:
+        """Return the count of warning-severity health issues."""
         return sum(1 for i in self.issues if i.severity == HealthSeverity.WARNING)
 
     @property
     def info_count(self) -> int:
+        """Return the count of info-severity health issues."""
         return sum(1 for i in self.issues if i.severity == HealthSeverity.INFO)
 
     @property
     def is_healthy(self) -> bool:
+        """Check if entity is healthy (no errors or critical issues)."""
         return not any(
             i.severity in (HealthSeverity.ERROR, HealthSeverity.CRITICAL)
             for i in self.issues
@@ -71,4 +76,5 @@ class EntityHealthReport:
 
     @property
     def is_degraded(self) -> bool:
+        """Check if entity has any warnings."""
         return any(i.severity == HealthSeverity.WARNING for i in self.issues)
