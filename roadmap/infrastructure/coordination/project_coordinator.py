@@ -1,4 +1,4 @@
-"""Project Coordinator - Coordinates project-related operations
+"""Project Coordinator - Coordinates project-related operations.
 
 Extracted from RoadmapCore to reduce god object complexity.
 Provides a focused API for all project-related concerns.

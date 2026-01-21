@@ -9,6 +9,8 @@ logger = get_logger()
 
 
 class GitHubBackendHelpers:
+    """Helper methods for GitHub backend synchronization."""
+
     def __init__(self, core, remote_link_repo=None):
         """Initialize GitHubBackendHelpers.
 

@@ -1,4 +1,4 @@
-"""Milestone Consistency Validation Module
+"""Milestone Consistency Validation Module.
 
 Handles validation and fixing of milestone filename and name field consistency.
 Extracted from RoadmapCore to reduce god object complexity.

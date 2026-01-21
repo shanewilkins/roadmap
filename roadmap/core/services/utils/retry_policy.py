@@ -1,3 +1,5 @@
+"""Retry policy with exponential backoff strategy."""
+
 import time
 
 

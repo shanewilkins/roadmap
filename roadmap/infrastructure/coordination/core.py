@@ -1,4 +1,4 @@
-"""RoadmapCore - Lightweight Service Container and Coordinator
+"""RoadmapCore - Lightweight Service Container and Coordinator.
 
 RoadmapCore is a lightweight facade that provides a clean, domain-organized
 API by coordinating across multiple specialized domain coordinators.

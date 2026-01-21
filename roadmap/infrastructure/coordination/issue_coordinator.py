@@ -1,4 +1,4 @@
-"""Issue Coordinator - Coordinates issue-related operations
+"""Issue Coordinator - Coordinates issue-related operations.
 
 Extracted from RoadmapCore to reduce god object complexity.
 Provides a focused API for all issue-related concerns.

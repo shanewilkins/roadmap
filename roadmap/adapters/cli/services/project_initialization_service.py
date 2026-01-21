@@ -1,4 +1,4 @@
-"""Project Initialization Service - Backward Compatibility Facade
+"""Project Initialization Service - Backward Compatibility Facade.
 
 DEPRECATED: This module is maintained for backward compatibility.
 Use roadmap.core.services.project_init package instead.

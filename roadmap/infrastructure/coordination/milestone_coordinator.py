@@ -1,4 +1,4 @@
-"""Milestone Coordinator - Coordinates milestone-related operations
+"""Milestone Coordinator - Coordinates milestone-related operations.
 
 Extracted from RoadmapCore to reduce god object complexity.
 Provides a focused API for all milestone-related concerns.

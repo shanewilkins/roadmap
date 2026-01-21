@@ -27,6 +27,8 @@ class Action:
 
 @dataclass
 class PushAction(Action):
+    """Action to push a local issue to a remote backend."""
+
     def __init__(self, issue_id: str, issue_payload: Any = None):
         """Initialize PushAction.
 
@@ -42,6 +44,8 @@ class PushAction(Action):
 
 @dataclass
 class PullAction(Action):
+    """Action to pull remote changes for a local issue."""
+
     def __init__(self, issue_id: str, remote_payload: Any = None):
         """Initialize PullAction.
 
@@ -57,6 +61,8 @@ class PullAction(Action):
 
 @dataclass
 class CreateLocalAction(Action):
+    """Action to create a local issue from a remote entity."""
+
     def __init__(self, remote_id: str, remote_payload: Any = None):
         """Initialize CreateLocalAction.
 
@@ -72,6 +78,8 @@ class CreateLocalAction(Action):
 
 @dataclass
 class LinkAction(Action):
+    """Action to link a local issue with a remote issue."""
+
     def __init__(self, issue_id: str, backend_name: str, remote_id: str):
         """Initialize LinkAction.
 
@@ -92,6 +100,8 @@ class LinkAction(Action):
 
 @dataclass
 class UpdateBaselineAction(Action):
+    """Action to update the baseline snapshot."""
+
     def __init__(self, baseline_snapshot: dict[str, Any]):
         """Initialize UpdateBaselineAction.
 
@@ -105,6 +115,8 @@ class UpdateBaselineAction(Action):
 
 @dataclass
 class ResolveConflictAction(Action):
+    """Action to resolve a sync conflict for an issue."""
+
     def __init__(self, issue_id: str, resolution: dict[str, Any]):
         """Initialize ResolveConflictAction.
 

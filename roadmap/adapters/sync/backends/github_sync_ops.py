@@ -13,6 +13,8 @@ logger = get_logger()
 
 
 class GitHubSyncOps:
+    """Perform synchronization operations with GitHub backend."""
+
     def __init__(self, backend: Any):
         """Initialize GitHubSyncOps.
 

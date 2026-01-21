@@ -1,4 +1,4 @@
-"""Git Coordinator - Coordinates git-related operations
+"""Git Coordinator - Coordinates git-related operations.
 
 Extracted from RoadmapCore to reduce god object complexity.
 Provides a focused API for all git integration concerns.

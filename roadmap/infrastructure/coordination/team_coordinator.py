@@ -1,4 +1,4 @@
-"""Team Coordinator - Coordinates team and user-related operations
+"""Team Coordinator - Coordinates team and user-related operations.
 
 Extracted from RoadmapCore to reduce god object complexity.
 Provides a focused API for all team and user management concerns.

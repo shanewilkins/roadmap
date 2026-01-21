@@ -1,4 +1,4 @@
-"""Validation Coordinator - Coordinates validation operations
+"""Validation Coordinator - Coordinates validation operations.
 
 Extracted from RoadmapCore to reduce god object complexity.
 Provides a focused API for validation concerns.
