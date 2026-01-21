@@ -80,7 +80,6 @@ repos:
     rev: v1.1.350
     hooks:
       - id: pyright
-        args: ['--outputjson']
 
   # Documentation validation (blocking - must pass)
   - repo: local

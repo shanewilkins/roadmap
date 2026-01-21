@@ -16,15 +16,15 @@
   "pythonPlatform": "All",
   "typeCheckingMode": "basic",
   "reportMissingModuleSource": false,
-  "reportMissingImports": "warning",
+  "reportMissingImports": "error",
   "reportUndefinedVariable": "error",
-  "reportAssertAlwaysTrue": "warning",
+  "reportAssertAlwaysTrue": "error",
   "reportUnusedImport": "information",
   "reportUnusedVariable": "information",
-  "reportDuplicateImport": "warning",
-  "reportGeneralTypeIssues": "warning",
-  "reportOptionalMemberAccess": "warning",
-  "reportOptionalSubscript": "warning",
+  "reportDuplicateImport": "error",
+  "reportGeneralTypeIssues": "error",
+  "reportOptionalMemberAccess": "error",
+  "reportOptionalSubscript": "error",
   "overrides": [
     {
       "include": [

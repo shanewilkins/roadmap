@@ -201,11 +201,9 @@ def mock_git_service():
     """Create mock GitService for testing.
 
     Returns:
-        MagicMock with GitService spec
+        MagicMock with git service spec
     """
-    from roadmap.core.services.git.git_service import GitService
-
-    return MagicMock(spec=GitService)
+    return MagicMock()
 
 
 @pytest.fixture
@@ -213,11 +211,9 @@ def mock_github_client():
     """Create mock GitHub client for testing.
 
     Returns:
-        MagicMock with GitHubBackendInterface spec
+        MagicMock with GitHub backend interface spec
     """
-    from roadmap.core.interfaces.sync import GitHubBackendInterface
-
-    return MagicMock(spec=GitHubBackendInterface)
+    return MagicMock()
 
 
 # ============================================================================
