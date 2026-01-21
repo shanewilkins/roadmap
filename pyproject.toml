@@ -124,6 +124,7 @@ mkdocs-material = "^9.5.0"
 mkdocs-click = "^0.8.0"
 myst-parser = "^4.0.0"
 pytest-mock = "^3.15.1"
+import-linter = "^2.9"
 
 [tool.poetry.scripts]
 roadmap = "roadmap.adapters.cli:main"
@@ -195,4 +196,51 @@ markers = [
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning"
+]
+
+# Import linter - enforce architectural layer boundaries
+[tool.import_linter]
+root_package = "roadmap"
+
+[[tool.import_linter.contracts]]
+# Core should not import adapters
+type = "forbidden"
+source_module = "roadmap.core"
+forbidden_modules = [
+    "roadmap.adapters"
+]
+
+[[tool.import_linter.contracts]]
+# Common should not import core or adapters
+type = "forbidden"
+source_module = "roadmap.common"
+forbidden_modules = [
+    "roadmap.core",
+    "roadmap.adapters"
+]
+
+[[tool.import_linter.contracts]]
+# Infrastructure should not import adapters (they coordinate, not integrate)
+type = "forbidden"
+source_module = "roadmap.infrastructure"
+forbidden_modules = [
+    "roadmap.adapters"
+]
+
+[[tool.import_linter.contracts]]
+# Adapters can import core, common, infrastructure but not other adapters from different domains
+# (GitHub adapter shouldn't import git adapter internals, etc.)
+type = "forbidden"
+source_module = "roadmap.adapters.sync"
+forbidden_modules = [
+    "roadmap.adapters.persistence",
+    "roadmap.adapters.github"
+]
+
+[[tool.import_linter.contracts]]
+type = "forbidden"
+source_module = "roadmap.adapters.persistence"
+forbidden_modules = [
+    "roadmap.adapters.sync",
+    "roadmap.adapters.github"
 ]

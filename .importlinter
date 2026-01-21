@@ -1,0 +1,8 @@
+[importlinter]
+root_package = roadmap
+
+[importlinter:contract:1]
+name = forbid_core_to_adapters_imports
+type = forbidden
+source_modules = roadmap.core
+forbidden_modules = roadmap.adapters
