@@ -98,5 +98,8 @@ jobs:
     - name: Run Vulture Dead Code Detection
       run: poetry run vulture roadmap --min-confidence=80 --exclude=tests
 
+    - name: Run import-linter Architecture Check
+      run: bash scripts/lint-imports-wrapper.sh
+
     - name: Run Pyright Type Checking
       run: poetry run pyright

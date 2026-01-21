@@ -94,6 +94,18 @@ repos:
         pass_filenames: false
         always_run: true
 
+  # Architecture layer enforcement (import-linter)
+  # Prevents regressions by ensuring new code doesn't violate layer boundaries
+  - repo: local
+    hooks:
+      - id: import-linter
+        name: import-linter - architecture layer enforcement
+        entry: bash scripts/lint-imports-wrapper.sh
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
   # Run cosmetic fixes last (don't block on whitespace)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0

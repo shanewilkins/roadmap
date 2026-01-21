@@ -1,8 +1,44 @@
 [importlinter]
 root_package = roadmap
 
+# Layer Architecture (5-layer):
+# 1. Common - shared utilities
+# 2. Infrastructure - coordination, persistence, external service integration
+# 3. Core - business logic orchestration, services
+# 4. Adapters - implementation details, external interfaces (persistence, sync, GitHub)
+# 5. Presentation - CLI (adapters/cli)
+
+# Layer 1: Common - shared utilities
+# Common can import from: itself only
 [importlinter:contract:1]
-name = forbid_core_to_adapters_imports
+name = common_isolation
+type = forbidden
+source_modules = roadmap.common
+forbidden_modules = roadmap.infrastructure, roadmap.core, roadmap.adapters
+
+# Layer 2: Infrastructure - coordination, persistence, external service integration
+# Infrastructure can import from: common, infrastructure
+# Infrastructure CANNOT import from: core, adapters (upstream restriction)
+[importlinter:contract:2]
+name = infrastructure_isolation
+type = forbidden
+source_modules = roadmap.infrastructure
+forbidden_modules = roadmap.core, roadmap.adapters
+
+# Layer 3: Core - business logic orchestration, services
+# Core can import from: common, infrastructure
+# Core CANNOT import from: adapters (violation currently grandfathered - 14 violations)
+[importlinter:contract:3]
+name = forbid_core_to_adapters
 type = forbidden
 source_modules = roadmap.core
 forbidden_modules = roadmap.adapters
+
+# Layer 4: Adapters - implementation details (persistence, sync, GitHub, etc.)
+# Adapters can import from: common, infrastructure, core
+# Adapters CANNOT import from: each other (e.g., sync cannot import persistence directly)
+# Note: This is a softer boundary - adapters can import each other through coordination layer
+
+# Layer 5: Presentation - CLI
+# Presentation can import from: everything (top layer, entry point)
+# Note: adapters.cli is the presentation layer
