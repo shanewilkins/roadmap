@@ -25,6 +25,8 @@ Module structure after Phase 5 Stage 2 refactoring:
 - helpers/: Helper functions
 """
 
+from typing import TYPE_CHECKING
+
 from .baseline.baseline_retriever import BaselineRetriever
 from .baseline.baseline_selector import BaselineStrategy
 from .baseline.baseline_state_retriever import BaselineStateRetriever
@@ -73,61 +75,184 @@ from .utils.remote_fetcher import RemoteFetcher  # noqa: F401
 from .utils.remote_state_normalizer import RemoteStateNormalizer  # noqa: F401
 from .utils.retry_policy import RetryPolicy  # noqa: F401
 
-# Lazy imports for all services that cause circular dependencies
-# These services import from adapters/infrastructure/validators that eventually import RoadmapCore
-_lazy_modules = {
-    "GitHookAutoSyncService": (
-        "git.git_hook_auto_sync_service",
-        "GitHookAutoSyncService",
-    ),
-    "GitHookAutoSyncConfig": (
-        "git.git_hook_auto_sync_service",
-        "GitHookAutoSyncConfig",
-    ),
-    "DataIntegrityValidatorService": (
-        "health.data_integrity_validator_service",
-        "DataIntegrityValidatorService",
-    ),
-    "HealthCheckService": ("health.health_check_service", "HealthCheckService"),
-    "InfrastructureValidator": (
-        "health.infrastructure_validator_service",
-        "InfrastructureValidator",
-    ),
-    "ProjectService": ("project.project_service", "ProjectService"),
-    "ProjectStatusService": ("project.project_status_service", "ProjectStatusService"),
-    # Sync services that depend on adapters
-    "compute_changes": ("sync.sync_change_computer", "compute_changes"),
-    "compute_changes_remote": ("sync.sync_change_computer", "compute_changes_remote"),
-    "detect_field_conflicts": ("sync.sync_conflict_detector", "detect_field_conflicts"),
-    "SyncConflictResolver": ("sync.sync_conflict_resolver", "SyncConflictResolver"),
-    "Conflict": ("sync.sync_conflict_resolver", "Conflict"),
-    "ConflictField": ("sync.sync_conflict_resolver", "ConflictField"),
-    "normalize_remote_keys": ("sync.sync_key_normalizer", "normalize_remote_keys"),
-    "SyncMetadataService": ("sync.sync_metadata_service", "SyncMetadataService"),
-    "SyncRecord": ("sync.sync_metadata_service", "SyncRecord"),
-    "SyncMetadata": ("sync.sync_metadata_service", "SyncMetadata"),
-    "SyncPlan": ("sync.sync_plan", "SyncPlan"),
-    "PushAction": ("sync.sync_plan", "PushAction"),
-    "PullAction": ("sync.sync_plan", "PullAction"),
-    "CreateLocalAction": ("sync.sync_plan", "CreateLocalAction"),
-    "LinkAction": ("sync.sync_plan", "LinkAction"),
-    "UpdateBaselineAction": ("sync.sync_plan", "UpdateBaselineAction"),
-    "ResolveConflictAction": ("sync.sync_plan", "ResolveConflictAction"),
-    "SyncPlanExecutor": ("sync.sync_plan_executor", "SyncPlanExecutor"),
-    "SyncReport": ("sync.sync_report", "SyncReport"),
-    "IssueChange": ("sync.sync_report", "IssueChange"),
-    "SyncStateComparator": ("sync.sync_state_comparator", "SyncStateComparator"),
-    "SyncStateManager": ("sync.sync_state_manager", "SyncStateManager"),
-}
+# Import circular-dependency services only for type checking
+# These are loaded normally at runtime but import RoadmapCore indirectly
+if TYPE_CHECKING:
+    from .git.git_hook_auto_sync_service import (  # noqa: F401
+        GitHookAutoSyncConfig,
+        GitHookAutoSyncService,
+    )
+    from .health.data_integrity_validator_service import (  # noqa: F401
+        DataIntegrityValidatorService,
+    )
+    from .health.health_check_service import HealthCheckService  # noqa: F401
+    from .health.infrastructure_validator_service import (
+        InfrastructureValidator,  # noqa: F401
+    )
+    from .project.project_service import ProjectService  # noqa: F401
+    from .project.project_status_service import ProjectStatusService  # noqa: F401
+    from .sync.sync_change_computer import (  # noqa: F401
+        compute_changes,
+        compute_changes_remote,
+    )
+    from .sync.sync_conflict_detector import detect_field_conflicts  # noqa: F401
+    from .sync.sync_conflict_resolver import (  # noqa: F401
+        Conflict,
+        ConflictField,
+        SyncConflictResolver,
+    )
+    from .sync.sync_key_normalizer import normalize_remote_keys  # noqa: F401
+    from .sync.sync_metadata_service import (  # noqa: F401
+        SyncMetadata,
+        SyncMetadataService,
+        SyncRecord,
+    )
+    from .sync.sync_plan import (  # noqa: F401
+        CreateLocalAction,
+        LinkAction,
+        PullAction,
+        PushAction,
+        ResolveConflictAction,
+        SyncPlan,
+        UpdateBaselineAction,
+    )
+    from .sync.sync_plan_executor import SyncPlanExecutor  # noqa: F401
+    from .sync.sync_report import IssueChange, SyncReport  # noqa: F401
+    from .sync.sync_state_comparator import SyncStateComparator  # noqa: F401
+    from .sync.sync_state_manager import SyncStateManager  # noqa: F401
 
 
 def __getattr__(name: str):  # noqa: ANN001, ANN201
-    """Lazy load services to avoid circular imports."""
+    """Lazy load services that have circular dependencies with infrastructure.
+
+    These services are imported only at runtime when accessed, not at module load time.
+    This breaks the circular dependency: infrastructure.core → core.services → services.xxx → infrastructure.core
+    """
+    # Lazy modules mapping for runtime loading
+    _lazy_modules = {
+        "GitHookAutoSyncService": (
+            "roadmap.core.services.git.git_hook_auto_sync_service",
+            "GitHookAutoSyncService",
+        ),
+        "GitHookAutoSyncConfig": (
+            "roadmap.core.services.git.git_hook_auto_sync_service",
+            "GitHookAutoSyncConfig",
+        ),
+        "DataIntegrityValidatorService": (
+            "roadmap.core.services.health.data_integrity_validator_service",
+            "DataIntegrityValidatorService",
+        ),
+        "HealthCheckService": (
+            "roadmap.core.services.health.health_check_service",
+            "HealthCheckService",
+        ),
+        "InfrastructureValidator": (
+            "roadmap.core.services.health.infrastructure_validator_service",
+            "InfrastructureValidator",
+        ),
+        "ProjectService": (
+            "roadmap.core.services.project.project_service",
+            "ProjectService",
+        ),
+        "ProjectStatusService": (
+            "roadmap.core.services.project.project_status_service",
+            "ProjectStatusService",
+        ),
+        "compute_changes": (
+            "roadmap.core.services.sync.sync_change_computer",
+            "compute_changes",
+        ),
+        "compute_changes_remote": (
+            "roadmap.core.services.sync.sync_change_computer",
+            "compute_changes_remote",
+        ),
+        "detect_field_conflicts": (
+            "roadmap.core.services.sync.sync_conflict_detector",
+            "detect_field_conflicts",
+        ),
+        "SyncConflictResolver": (
+            "roadmap.core.services.sync.sync_conflict_resolver",
+            "SyncConflictResolver",
+        ),
+        "Conflict": (
+            "roadmap.core.services.sync.sync_conflict_resolver",
+            "Conflict",
+        ),
+        "ConflictField": (
+            "roadmap.core.services.sync.sync_conflict_resolver",
+            "ConflictField",
+        ),
+        "normalize_remote_keys": (
+            "roadmap.core.services.sync.sync_key_normalizer",
+            "normalize_remote_keys",
+        ),
+        "SyncMetadataService": (
+            "roadmap.core.services.sync.sync_metadata_service",
+            "SyncMetadataService",
+        ),
+        "SyncRecord": (
+            "roadmap.core.services.sync.sync_metadata_service",
+            "SyncRecord",
+        ),
+        "SyncMetadata": (
+            "roadmap.core.services.sync.sync_metadata_service",
+            "SyncMetadata",
+        ),
+        "SyncPlan": (
+            "roadmap.core.services.sync.sync_plan",
+            "SyncPlan",
+        ),
+        "PushAction": (
+            "roadmap.core.services.sync.sync_plan",
+            "PushAction",
+        ),
+        "PullAction": (
+            "roadmap.core.services.sync.sync_plan",
+            "PullAction",
+        ),
+        "CreateLocalAction": (
+            "roadmap.core.services.sync.sync_plan",
+            "CreateLocalAction",
+        ),
+        "LinkAction": (
+            "roadmap.core.services.sync.sync_plan",
+            "LinkAction",
+        ),
+        "UpdateBaselineAction": (
+            "roadmap.core.services.sync.sync_plan",
+            "UpdateBaselineAction",
+        ),
+        "ResolveConflictAction": (
+            "roadmap.core.services.sync.sync_plan",
+            "ResolveConflictAction",
+        ),
+        "SyncPlanExecutor": (
+            "roadmap.core.services.sync.sync_plan_executor",
+            "SyncPlanExecutor",
+        ),
+        "SyncReport": (
+            "roadmap.core.services.sync.sync_report",
+            "SyncReport",
+        ),
+        "IssueChange": (
+            "roadmap.core.services.sync.sync_report",
+            "IssueChange",
+        ),
+        "SyncStateComparator": (
+            "roadmap.core.services.sync.sync_state_comparator",
+            "SyncStateComparator",
+        ),
+        "SyncStateManager": (
+            "roadmap.core.services.sync.sync_state_manager",
+            "SyncStateManager",
+        ),
+    }
+
     if name in _lazy_modules:
-        module_path, class_name = _lazy_modules[name]
-        module = __import__(
-            f"roadmap.core.services.{module_path}", fromlist=[class_name]
-        )
+        module_name, class_name = _lazy_modules[name]
+        import importlib
+
+        module = importlib.import_module(module_name)
         return getattr(module, class_name)
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

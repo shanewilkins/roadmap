@@ -18,9 +18,20 @@ This is a Python command line tool called 'roadmap' built with Poetry for packag
 - Include comprehensive tests
 - Update changelog for releases
 - Use type hints throughout the codebase
+- Maintain POSIX compatibility throughout the codebase
 
 ### CLI Tool Features
 - Command line interface using Click or argparse
 - Proper error handling and user feedback
 - Configuration file support
 - Extensible command structure
+
+### Policy Directives
+- You may not commit, reset, or force push to the main branch without approval.
+- You may not revert changes to the main branch without approval.
+- You may not create new branches without approval.
+- You may not run the full test suite without approval.
+- You may not deploy to production without approval.
+- You may not decide that a test failing is acceptable without approval.
+- You may not merge pull requests without approval.
+- Use the CLI git, not MCP

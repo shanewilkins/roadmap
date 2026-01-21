@@ -268,12 +268,14 @@ class TestEstimatedTimeCLI:
                 title=TestDataFactory.message(), estimated_hours=8.0
             )
             issue1_updated = core.issues.update(issue1.id, milestone=milestone_name)
+            assert issue1_updated is not None
             assert issue1_updated.estimated_hours == 8.0
 
             issue2 = core.issues.create(
                 title=TestDataFactory.message(), estimated_hours=16.0
             )
             issue2_updated = core.issues.update(issue2.id, milestone=milestone_name)
+            assert issue2_updated is not None
             assert issue2_updated.estimated_hours == 16.0
 
             # Get milestone and verify total estimated time

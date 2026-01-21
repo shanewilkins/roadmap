@@ -82,12 +82,12 @@ repos:
       - id: pyright
         args: ['--outputjson']
 
-  # Documentation validation (warnings only, non-blocking - D212 violations being fixed)
+  # Documentation validation (blocking - must pass)
   - repo: local
     hooks:
       - id: pydocstyle
-        name: pydocstyle - docstring validation (warnings)
-        entry: bash -c 'poetry run pydocstyle --convention=google roadmap || true'
+        name: pydocstyle - docstring validation
+        entry: poetry run pydocstyle --convention=google roadmap
         language: system
         types: [python]
         pass_filenames: false
