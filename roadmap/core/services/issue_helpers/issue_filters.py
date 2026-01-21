@@ -1,6 +1,4 @@
-"""
-Issue filtering logic extracted from complex CLI command.
-"""
+"""Issue filtering logic extracted from complex CLI command."""
 
 from datetime import UTC
 

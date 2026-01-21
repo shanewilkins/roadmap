@@ -397,7 +397,6 @@ def sync(
         # Override backend selection
         roadmap sync --backend=github
     """
-
     core = ctx.obj["core"]
     console_inst = get_console()
 
