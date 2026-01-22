@@ -162,6 +162,8 @@ class DatabaseManager:
         );
 
         -- Sync base state (three-way merge baseline from last successful sync)
+        -- Note: issue_id does NOT have a foreign key constraint because sync baseline
+        -- can be saved before issues are persisted to the database (during sync operations)
         CREATE TABLE IF NOT EXISTS sync_base_state (
             issue_id TEXT PRIMARY KEY,
             status TEXT NOT NULL,
@@ -266,6 +268,8 @@ class DatabaseManager:
             """)
 
         # Migration 2: Create sync_base_state table if it doesn't exist
+        # Note: issue_id does NOT have a foreign key constraint because sync baseline
+        # can be saved before issues are persisted to the database (during sync operations)
         cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_base_state'"
         )

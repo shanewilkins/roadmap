@@ -230,7 +230,8 @@ class TestRoadmapCoreAdvancedOperations:
         assert core.git is not None
         # Check if git integration has the repository path
         assert hasattr(core.git, "repo_path")
-        assert core.git.repo_path == core.root_path
+        # Resolve both paths to handle symlinks on macOS /var -> /private/var
+        assert core.git.repo_path.resolve() == core.root_path.resolve()
 
     @patch("roadmap.adapters.persistence.parser.IssueParser.save_issue_file")
     def test_security_integration(self, mock_save, core):

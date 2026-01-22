@@ -459,7 +459,12 @@ class StateManager:
                 issue_count=len(baseline),
             )
 
-            with self.transaction() as conn:
+            # Get connection and disable FK constraints for this operation
+            conn = self._connection_manager.get_connection()
+            conn.execute("PRAGMA foreign_keys = OFF")
+
+            try:
+                conn.execute("BEGIN IMMEDIATE")
                 # Clear old baseline
                 conn.execute("DELETE FROM sync_base_state")
                 logger.debug("cleared_old_sync_baseline_from_database")
@@ -484,6 +489,10 @@ class StateManager:
                             now,
                         ),
                     )
+                conn.execute("COMMIT")
+            finally:
+                # Re-enable foreign keys
+                conn.execute("PRAGMA foreign_keys = ON")
 
             logger.info(
                 "sync_baseline_saved_to_database",

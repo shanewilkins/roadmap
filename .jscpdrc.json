@@ -1,22 +1,25 @@
 {
-  "threshold": 5,
+  "threshold": 3,
   "minLines": 5,
   "minTokens": 50,
-  "reporters": ["json", "html"],
+  "reporters": ["json", "html", "console"],
   "exclude": [
+    "**/.venv/**",
     "node_modules",
-    ".venv",
     ".git",
     "htmlcov",
     "dist",
     "build",
     ".pytest_cache",
     ".eggs",
-    "*.egg-info",
+    "**/*.egg-info",
     "docs",
-    "scripts"
+    "scripts",
+    ".pyenv"
   ],
   "languages": ["python"],
   "absolute": true,
+  "format": ["python"],
+  "outputDir": "jscpd_report",
   "paths": ["roadmap", "tests"]
 }

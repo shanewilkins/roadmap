@@ -98,6 +98,9 @@ jobs:
     - name: Run Vulture Dead Code Detection
       run: poetry run vulture roadmap --min-confidence=80 --exclude=tests
 
+    - name: Run jscpd DRY Violation Detection
+      run: jscpd roadmap/ --format python --threshold 3 --min-lines 5 --min-tokens 50 -r console
+
     - name: Run import-linter Architecture Check
       run: bash scripts/lint-imports-wrapper.sh
 

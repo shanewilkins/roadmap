@@ -77,6 +77,18 @@ repos:
         pass_filenames: false
         always_run: true
 
+  # Run jscpd for DRY violations (duplicate code detection)
+  # Threshold set to 3% (well above baseline of 1.94%) to catch regressions
+  - repo: local
+    hooks:
+    - id: jscpd
+      name: jscpd - DRY violation detection
+      entry: bash -c 'jscpd roadmap/ --format python --threshold 3 --min-lines 5 --min-tokens 50 -r console 2>&1 | tail -20'
+      language: system
+      types: [python]
+      pass_filenames: false
+      always_run: true
+
   # Run type checking (before cosmetic fixes - warnings only, non-blocking)
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.350

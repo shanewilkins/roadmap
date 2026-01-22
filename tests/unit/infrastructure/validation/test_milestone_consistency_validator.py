@@ -42,7 +42,7 @@ class TestMilestoneConsistencyValidator:
     def test_validate_consistent_milestone(self, validator):
         """Test validation with consistent milestone."""
         with patch(
-            "roadmap.infrastructure.validation.milestone_consistency_validator.MilestoneParser.parse_milestone_file"
+            "roadmap.infrastructure.validation_gateway.ValidationGateway.parse_milestone_for_validation"
         ) as mock_parse:
             mock_milestone = MagicMock()
             mock_milestone.filename = "Q1-2024.md"
@@ -59,7 +59,7 @@ class TestMilestoneConsistencyValidator:
     def test_validate_inconsistent_filename(self, validator):
         """Test validation with mismatched filename."""
         with patch(
-            "roadmap.infrastructure.validation.milestone_consistency_validator.MilestoneParser.parse_milestone_file"
+            "roadmap.infrastructure.validation_gateway.ValidationGateway.parse_milestone_for_validation"
         ) as mock_parse:
             mock_milestone = MagicMock()
             mock_milestone.filename = "Q1-2024.md"  # Expected
@@ -80,7 +80,7 @@ class TestMilestoneConsistencyValidator:
     def test_validate_parse_error(self, validator):
         """Test validation when parsing fails."""
         with patch(
-            "roadmap.infrastructure.validation.milestone_consistency_validator.MilestoneParser.parse_milestone_file"
+            "roadmap.infrastructure.validation_gateway.ValidationGateway.parse_milestone_for_validation"
         ) as mock_parse:
             mock_parse.side_effect = ValueError("Invalid format")
 
@@ -98,7 +98,7 @@ class TestMilestoneConsistencyValidator:
     def test_validate_multiple_files_mixed(self, validator):
         """Test validation with multiple files, some consistent and some not."""
         with patch(
-            "roadmap.infrastructure.validation.milestone_consistency_validator.MilestoneParser.parse_milestone_file"
+            "roadmap.infrastructure.validation_gateway.ValidationGateway.parse_milestone_for_validation"
         ) as mock_parse:
 
             def parse_side_effect(file_path):
@@ -138,7 +138,7 @@ class TestMilestoneConsistencyValidator:
     def test_validate_nested_directories(self, validator):
         """Test validation with nested directory structure."""
         with patch(
-            "roadmap.infrastructure.validation.milestone_consistency_validator.MilestoneParser.parse_milestone_file"
+            "roadmap.infrastructure.validation_gateway.ValidationGateway.parse_milestone_for_validation"
         ) as mock_parse:
             mock_milestone = MagicMock()
             mock_milestone.filename = "2024.md"
@@ -157,7 +157,7 @@ class TestMilestoneConsistencyValidator:
     def test_validate_handles_exception_gracefully(self, validator):
         """Test that unexpected exceptions are handled."""
         with patch(
-            "roadmap.infrastructure.validation.milestone_consistency_validator.MilestoneParser.parse_milestone_file"
+            "roadmap.infrastructure.validation_gateway.ValidationGateway.parse_milestone_for_validation"
         ) as mock_parse:
             mock_parse.side_effect = Exception("Unexpected error")
 
