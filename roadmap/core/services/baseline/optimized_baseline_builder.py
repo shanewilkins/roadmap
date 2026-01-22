@@ -9,9 +9,9 @@ from pathlib import Path
 
 from structlog import get_logger
 
-from roadmap.adapters.persistence.git_history import get_changed_files_since_commit
 from roadmap.core.interfaces.persistence import GitHistoryError
 from roadmap.core.models.sync_state import SyncState
+from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 
 logger = get_logger(__name__)
 
@@ -100,7 +100,9 @@ class OptimizedBaselineBuilder:
             >>> print(changed)  # {'.../TASK-123-example.md', ...}
         """
         try:
-            changed = get_changed_files_since_commit(git_ref, str(self.issues_dir))
+            changed = PersistenceGateway.get_changed_files_since_commit(
+                git_ref, str(self.issues_dir)
+            )
 
             # Filter to only issue files (*.md)
             issue_files = {f for f in changed if f.endswith(".md")}

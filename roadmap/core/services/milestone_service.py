@@ -16,7 +16,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.persistence.parser import IssueParser, MilestoneParser
 from roadmap.common.constants import MilestoneStatus, Status
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
@@ -29,6 +28,7 @@ from roadmap.common.services import log_entry, log_event, log_exit, log_metric
 from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.repositories import IssueRepository, MilestoneRepository
+from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 from roadmap.infrastructure.validation.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
@@ -287,7 +287,7 @@ class MilestoneService:
         if self.issues_dir:
             issues = FileEnumerationService.enumerate_and_parse(
                 self.issues_dir,
-                IssueParser.parse_issue_file,
+                PersistenceGateway.parse_issue_file,
             )
             log_metric("issues_enumerated_for_unassignment", len(issues))
 
@@ -299,9 +299,9 @@ class MilestoneService:
                     # Find and save the issue file
                     for issue_file in self.issues_dir.rglob("*.md"):
                         try:
-                            test_issue = IssueParser.parse_issue_file(issue_file)
+                            test_issue = PersistenceGateway.parse_issue_file(issue_file)
                             if test_issue.id == issue.id:
-                                IssueParser.save_issue_file(issue, issue_file)
+                                PersistenceGateway.save_issue_file(issue, issue_file)
                                 unassigned_count += 1
                                 break
                         except Exception:
@@ -312,7 +312,7 @@ class MilestoneService:
         if self.milestones_dir:
             for milestone_file in self.milestones_dir.rglob("*.md"):
                 try:
-                    test_milestone = MilestoneParser.parse_milestone_file(
+                    test_milestone = PersistenceGateway.parse_milestone_file(
                         milestone_file
                     )
                     if test_milestone.name == name:

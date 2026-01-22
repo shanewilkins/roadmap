@@ -22,6 +22,7 @@ from roadmap.core.services.validator_base import BaseValidator, HealthStatus
 from roadmap.core.services.validators.health_status_utils import (
     get_overall_status,
 )
+from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 
 logger = get_logger(__name__)
 
@@ -249,10 +250,8 @@ class DatabaseIntegrityValidator(BaseValidator):
             Tuple of (status, message) describing the health check result
         """
         # Import here to avoid circular imports
-        from roadmap.adapters.persistence.storage import StateManager
-
         try:
-            state_mgr = StateManager()
+            state_mgr = PersistenceGateway.get_state_manager()
             # Try a simple query to verify DB is healthy
             conn = state_mgr._get_connection()
             conn.execute("SELECT 1")

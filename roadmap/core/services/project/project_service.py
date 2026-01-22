@@ -13,7 +13,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.common.constants import MilestoneStatus, ProjectStatus
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
@@ -29,6 +28,7 @@ from roadmap.common.services import (
 from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.project import Project
 from roadmap.core.repositories import ProjectRepository
+from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 from roadmap.infrastructure.validation.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
@@ -352,7 +352,7 @@ class ProjectService:
 
         milestones = FileEnumerationService.enumerate_and_parse(
             self.milestones_dir,
-            MilestoneParser.parse_milestone_file,
+            PersistenceGateway.parse_milestone_file,
         )
 
         # Build lookup for project's milestones

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from roadmap.common.logging import get_logger
 from roadmap.core.services.validator_base import HealthStatus
+from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 
 logger = get_logger(__name__)
 
@@ -31,9 +32,7 @@ class DataIntegrityValidator:
                 continue
 
             try:
-                from roadmap.adapters.persistence.parser import IssueParser
-
-                IssueParser.parse_issue_file(issue_file)
+                PersistenceGateway.parse_issue_file(issue_file)
             except Exception:
                 # File couldn't be parsed
                 result["malformed_files"].append(

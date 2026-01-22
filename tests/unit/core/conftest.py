@@ -74,7 +74,6 @@ def baseline_retriever(temp_issues_dir, mock_persistence, mock_parser):
     return BaselineStateRetriever(
         temp_issues_dir,
         mock_persistence,
-        mock_parser,
     )
 
 

@@ -13,13 +13,13 @@ from typing import Any
 
 from structlog import get_logger
 
-from roadmap.core.interfaces.parsers import IssueParserInterface
 from roadmap.core.interfaces.persistence import (
     FileNotFound,
     GitHistoryError,
     PersistenceInterface,
 )
 from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 
 logger = get_logger(__name__)
 
@@ -37,18 +37,15 @@ class BaselineStateRetriever:
         self,
         issues_dir: Path,
         persistence: PersistenceInterface,
-        parser: "IssueParserInterface | None" = None,
     ):
         """Initialize with issues directory and persistence interface.
 
         Args:
             issues_dir: Path to issues directory
             persistence: Interface for git history access
-            parser: Interface for issue file parsing (optional, not currently used)
         """
         self.issues_dir = issues_dir
         self.persistence = persistence
-        self.parser = parser
 
     def get_baseline_from_file(self, issue_file: Path) -> IssueBaseState | None:
         """Get baseline state directly from current issue file.
@@ -158,9 +155,7 @@ class BaselineStateRetriever:
             IssueBaseState extracted from remote_state, or None if not present
         """
         try:
-            from roadmap.adapters.persistence.parser.issue import IssueParser
-
-            sync_metadata = IssueParser.load_sync_metadata(issue_file)
+            sync_metadata = PersistenceGateway.load_sync_metadata(issue_file)
 
             if not sync_metadata:
                 logger.debug(
@@ -211,11 +206,10 @@ class BaselineStateRetriever:
         Returns:
             IssueBaseState or None if extraction fails
         """
-        from roadmap.adapters.persistence.parser.frontmatter import FrontmatterParser
         from roadmap.common.datetime_parser import parse_datetime
 
         try:
-            frontmatter, _ = FrontmatterParser.parse_content(content)
+            frontmatter, _ = PersistenceGateway.parse_frontmatter(content)
 
             # Parse updated datetime
             updated_at = datetime.now(UTC)

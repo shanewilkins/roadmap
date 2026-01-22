@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from roadmap.adapters.persistence.parser import ProjectParser
+from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 
 
 class ProjectDetectionService:
@@ -25,7 +25,7 @@ class ProjectDetectionService:
 
         for project_file in projects_dir.glob("*.md"):
             try:
-                project = ProjectParser.parse_project_file(project_file)
+                project = PersistenceGateway.parse_project_file(project_file)
                 existing_projects.append(
                     {
                         "name": project.name,

@@ -39,7 +39,7 @@ class TestGetLocalBaseline:
         with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
-                BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
+                BaselineStateRetriever(issues_dir, mock_persistence),
                 mock_persistence,
                 mock_parser,
                 issues_dir,
@@ -147,7 +147,7 @@ class TestGetRemoteBaseline:
         with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
-                BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
+                BaselineStateRetriever(issues_dir, mock_persistence),
                 mock_persistence,
                 mock_parser,
                 issues_dir,
@@ -275,7 +275,7 @@ class TestBaselineComparison:
         with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             return (
-                BaselineStateRetriever(issues_dir, mock_persistence, mock_parser),
+                BaselineStateRetriever(issues_dir, mock_persistence),
                 mock_persistence,
                 mock_parser,
                 issues_dir,

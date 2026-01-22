@@ -35,13 +35,12 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
     3. Intelligent baseline-less diff when no previous sync exists
     """
 
-    def __init__(self, *args, persistence=None, parser=None, **kwargs):
+    def __init__(self, *args, persistence=None, **kwargs):
         """Initialize with baseline retriever.
 
         Args:
             *args: Positional arguments passed to parent class
             persistence: PersistenceInterface for git operations (optional)
-            parser: IssueParserInterface for file parsing (optional)
             **kwargs: Keyword arguments passed to parent class
         """
         super().__init__(*args, **kwargs)
@@ -71,12 +70,8 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             persistence = SimplePersistence()
 
-        # Parser parameter is accepted but not used - stubbed out
-        if parser is None:
-            parser = None  # BaselineStateRetriever doesn't use it anyway
-
         self.baseline_retriever = BaselineStateRetriever(
-            self.core.issues_dir, persistence, parser
+            self.core.issues_dir, persistence
         )
         self.sync_metadata_cache: dict[str, Any] = {}
         self.baseline_selector = InteractiveBaselineSelector()
