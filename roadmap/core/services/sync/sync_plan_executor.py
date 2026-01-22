@@ -223,13 +223,9 @@ class SyncPlanExecutor:
         ):
             repo = self.db_session.remote_link_repo
 
-        from roadmap.adapters.sync.services.sync_linking_service import (
-            SyncLinkingService,
-        )
+        from roadmap.infrastructure.sync_gateway import SyncGateway
 
-        return SyncLinkingService.link_issue_in_database(
-            repo, local_id, backend, remote_id
-        )
+        return SyncGateway.link_issue_in_database(repo, local_id, backend, remote_id)
 
     def _handle_update_baseline(self, action: Any, dry_run: bool = True) -> bool:
         baseline = action.payload.get("baseline")

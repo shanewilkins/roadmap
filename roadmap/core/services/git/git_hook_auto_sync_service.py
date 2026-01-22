@@ -234,9 +234,9 @@ class GitHookAutoSyncService:
             self.console.print(f"[dim]🔄 Auto-syncing issues ({event})...[/dim]")
 
             # Get GitHub backend for sync
-            from roadmap.adapters.sync.backend_factory import get_sync_backend
+            from roadmap.infrastructure.sync_gateway import SyncGateway
 
-            backend = get_sync_backend("github", self.core, config)
+            backend = SyncGateway.get_sync_backend("github", self.core, config)
             if not backend:
                 self.console.print(
                     "[yellow]  ⚠️  GitHub backend not available - skipping sync[/yellow]"
@@ -244,9 +244,6 @@ class GitHookAutoSyncService:
                 return False
 
             # Create cache orchestrator for actual sync (uses three-way merge)
-            from roadmap.adapters.sync.sync_cache_orchestrator import (
-                SyncCacheOrchestrator,
-            )
             from roadmap.core.services.sync.sync_conflict_resolver import (
                 SyncConflictResolver,
             )
@@ -254,11 +251,11 @@ class GitHookAutoSyncService:
                 SyncStateComparator,
             )
 
-            orchestrator = SyncCacheOrchestrator(
+            orchestrator = SyncGateway.create_sync_cache_orchestrator(
                 self.core,
                 backend,
-                state_comparator=SyncStateComparator(),
                 conflict_resolver=SyncConflictResolver(),
+                state_comparator=SyncStateComparator(),
                 show_progress=False,  # Silent mode for hooks
             )
 

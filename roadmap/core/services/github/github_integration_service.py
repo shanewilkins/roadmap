@@ -354,9 +354,11 @@ class GitHubIntegrationService:
                 return True, ""
 
             # If not in cache or cache is empty, do full validation via API
-            from roadmap.adapters.github.github import GitHubClient
+            from roadmap.infrastructure.github_gateway import GitHubGateway
 
-            client = GitHubClient(token=token, owner=owner, repo=repo)
+            client = GitHubGateway.get_github_client(
+                {"token": token, "owner": owner, "repo": repo}
+            )
 
             # This will do the full GitHub API validation
             github_valid, github_error = client.validate_assignee(assignee)  # type: ignore[attr-defined]

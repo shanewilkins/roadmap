@@ -8,18 +8,19 @@ GitHub repository to be configured.
 import os
 from typing import TYPE_CHECKING, Any
 
-from roadmap.adapters.github.handlers.base import GitHubAPIError
 from roadmap.common.logging import get_logger
 from roadmap.common.logging.error_logging import (
     log_external_service_error,
     log_validation_error,
 )
 from roadmap.common.observability.instrumentation import traced
+from roadmap.infrastructure.github_gateway import GitHubGateway
 
 if TYPE_CHECKING:
     from roadmap.core.interfaces import GitHubBackendInterface  # noqa: F401
 
 logger = get_logger(__name__)
+GitHubAPIError = GitHubGateway.get_github_api_error()
 
 
 class GitHubIssueClient:
@@ -88,9 +89,9 @@ class GitHubIssueClient:
         try:
             # Use injected backend or create adapter on-demand
             if self._github_backend is None:
-                from roadmap.adapters.github.github import GitHubClient
-
-                client = GitHubClient(token=self.token, owner=owner, repo=repo)
+                client = GitHubGateway.get_github_client(
+                    {"token": self.token, "owner": owner, "repo": repo}
+                )
                 issue_data = client.fetch_issue(issue_number)
             else:
                 issue_data = self._github_backend.get_issue(str(issue_number))
@@ -128,9 +129,9 @@ class GitHubIssueClient:
         try:
             # Create a backend adapter with minimal configuration (needs owner/repo for initialization)
             # We'll use a dummy repo for validation since we only care about authentication
-            from roadmap.adapters.github.github import GitHubClient
-
-            client = GitHubClient(token=self.token, owner="dummy", repo="dummy")
+            client = GitHubGateway.get_github_client(
+                {"token": self.token, "owner": "dummy", "repo": "dummy"}
+            )
             is_valid, message = client.validate_github_token()
 
             if is_valid:
