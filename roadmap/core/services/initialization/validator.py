@@ -21,6 +21,12 @@ class InitializationValidator:
         Returns:
             Tuple of (should_continue, error_message)
         """
+        roadmap_path = core.roadmap_dir
+
+        # Check if roadmap path exists as a file (not a directory)
+        if roadmap_path.exists() and not roadmap_path.is_dir():
+            return False, f"Roadmap path exists but is not a directory: {roadmap_path}"
+
         if not core.is_initialized():
             return True, None
 

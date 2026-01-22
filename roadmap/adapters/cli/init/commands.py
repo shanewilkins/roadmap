@@ -1,5 +1,6 @@
 """Initialize a new roadmap directory structure."""
 
+import sys
 from pathlib import Path
 
 import click
@@ -512,7 +513,7 @@ def init(
         custom_core, params.name, params.force, log
     )
     if not lock:
-        return
+        sys.exit(1)
 
     presenter.present_initialization_header()
 

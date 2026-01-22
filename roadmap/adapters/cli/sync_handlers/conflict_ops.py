@@ -9,6 +9,7 @@ import yaml
 from structlog import get_logger
 
 from roadmap.adapters.cli.services.sync_service import get_sync_backend
+from roadmap.adapters.cli.sync_context import _resolve_backend_and_init
 from roadmap.adapters.sync.sync_retrieval_orchestrator import (
     SyncRetrievalOrchestrator,
 )
@@ -22,39 +23,9 @@ def show_conflicts(
     core: Any, backend: str | None, verbose: bool, console_inst: Any
 ) -> bool:
     """Handle the `--conflicts` flag to analyze and present conflicts."""
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_type = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_type = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_type = "git"
-
-    if backend_type == "github":
-        github_config = full_config.get("github", {})
-        from roadmap.infrastructure.security.credentials import CredentialManager
-
-        cred_manager = CredentialManager()  # type: ignore[call-arg]
-        token = cred_manager.get_token()
-
-        config_dict = {
-            "owner": github_config.get("owner"),
-            "repo": github_config.get("repo"),
-            "token": token,
-        }
-    else:
-        config_dict = {}
-
-    sync_backend = get_sync_backend(backend_type, core, config_dict)  # type: ignore
+    backend_type, sync_backend = _resolve_backend_and_init(
+        core, backend, get_sync_backend
+    )
     if not sync_backend:
         console_inst.print("❌ Failed to initialize backend", style="bold red")
         sys.exit(1)

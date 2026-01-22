@@ -8,6 +8,28 @@ from roadmap.core.domain import Comment
 class CommentsHandler(BaseGitHubHandler):
     """Handler for GitHub Comments API operations."""
 
+    def _create_comment_from_response(
+        self, comment_data: dict, issue_id: str = ""
+    ) -> Comment:
+        """Create a Comment object from GitHub API response data.
+
+        Args:
+            comment_data: GitHub API comment response
+            issue_id: Issue ID (may be empty for standalone comment endpoints)
+
+        Returns:
+            Comment object
+        """
+        return Comment(
+            id=comment_data["id"],
+            issue_id=issue_id,
+            author=comment_data["user"]["login"],
+            body=comment_data["body"],
+            created_at=parse_github_datetime(comment_data["created_at"]),
+            updated_at=parse_github_datetime(comment_data["updated_at"]),
+            github_url=comment_data["html_url"],
+        )
+
     def get_issue_comments(self, issue_number: int) -> list[Comment]:
         """Get all comments for a specific issue.
 
@@ -25,14 +47,8 @@ class CommentsHandler(BaseGitHubHandler):
 
         comments = []
         for comment_data in response.json():
-            comment = Comment(
-                id=comment_data["id"],
-                issue_id=str(issue_number),
-                author=comment_data["user"]["login"],
-                body=comment_data["body"],
-                created_at=parse_github_datetime(comment_data["created_at"]),
-                updated_at=parse_github_datetime(comment_data["updated_at"]),
-                github_url=comment_data["html_url"],
+            comment = self._create_comment_from_response(
+                comment_data, issue_id=str(issue_number)
             )
             comments.append(comment)
 
@@ -59,14 +75,8 @@ class CommentsHandler(BaseGitHubHandler):
         )
 
         comment_data = response.json()
-        return Comment(
-            id=comment_data["id"],
-            issue_id=str(issue_number),
-            author=comment_data["user"]["login"],
-            body=comment_data["body"],
-            created_at=parse_github_datetime(comment_data["created_at"]),
-            updated_at=parse_github_datetime(comment_data["updated_at"]),
-            github_url=comment_data["html_url"],
+        return self._create_comment_from_response(
+            comment_data, issue_id=str(issue_number)
         )
 
     def update_issue_comment(self, comment_id: int, body: str) -> Comment:
@@ -90,15 +100,8 @@ class CommentsHandler(BaseGitHubHandler):
         )
 
         comment_data = response.json()
-        return Comment(
-            id=comment_data["id"],
-            issue_id="",  # We don't get issue number from this endpoint
-            author=comment_data["user"]["login"],
-            body=comment_data["body"],
-            created_at=parse_github_datetime(comment_data["created_at"]),
-            updated_at=parse_github_datetime(comment_data["updated_at"]),
-            github_url=comment_data["html_url"],
-        )
+        # We don't get issue number from this endpoint
+        return self._create_comment_from_response(comment_data, issue_id="")
 
     def delete_issue_comment(self, comment_id: int) -> None:
         """Delete a comment.

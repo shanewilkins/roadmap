@@ -200,8 +200,6 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
 
     Returns tuple: (backend_type, sync_backend, orchestrator, pre_sync_baseline, pre_sync_issue_count, state_comparator, conflict_resolver)
     """
-    import yaml
-
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
     from roadmap.adapters.sync.sync_retrieval_orchestrator import (
         SyncRetrievalOrchestrator,
@@ -211,44 +209,14 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
     from roadmap.core.services.sync.sync_conflict_resolver import SyncConflictResolver
     from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
-    # Load config
-    config_file = core.roadmap_dir / "config.yaml"
-    full_config: dict = {}
-    if config_file.exists():
-        with open(config_file) as f:
-            loaded = yaml.safe_load(f)
-            if isinstance(loaded, dict):
-                full_config = loaded
-
-    if backend:
-        backend_type = backend.lower()
-    else:
-        if full_config.get("github", {}).get("sync_backend"):
-            backend_type = str(full_config["github"]["sync_backend"]).lower()
-        else:
-            backend_type = "git"
+    # Resolve backend and initialize
+    backend_type, sync_backend = _resolve_backend_and_init(
+        core, backend, get_sync_backend
+    )
 
     console_inst.print(
         f"🔄 Syncing with {backend_type.upper()} backend", style="bold cyan"
     )
-
-    # Prepare config for backend
-    if backend_type == "github":
-        github_config = full_config.get("github", {})
-        from roadmap.infrastructure.security.credentials import CredentialManager
-
-        cred_manager = CredentialManager()  # type: ignore[call-arg]
-        token = cred_manager.get_token()
-
-        config = {
-            "owner": github_config.get("owner"),
-            "repo": github_config.get("repo"),
-            "token": token,
-        }
-    else:
-        config = {}
-
-    sync_backend = get_sync_backend(backend_type, core, config)  # type: ignore[arg-type]
     orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
 
     # Pre-sync baseline for comparison

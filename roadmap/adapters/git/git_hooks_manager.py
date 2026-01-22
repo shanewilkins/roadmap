@@ -369,30 +369,11 @@ class GitHookManager:
         Args:
             commit_sha: Git commit SHA for logging
         """
-        try:
-            from roadmap.core.services.git.git_hook_auto_sync_service import (
-                GitHookAutoSyncService,
-            )
-
-            # Load config
-            config_path = Path(".roadmap") / "config.json"
-            if not config_path.exists():
-                return
-
-            # Initialize service and load config
-            service = GitHookAutoSyncService(self.core)
-            if not service.load_config_from_file(config_path):
-                return
-
-            # Trigger sync if enabled (no confirmation in hooks)
-            service.auto_sync_on_commit(
-                commit_sha=commit_sha,
-                confirm=False,  # Non-interactive in hooks
-            )
-
-        except Exception:
-            # Silent fail to avoid breaking Git operations
-            pass
+        self._trigger_auto_sync_operation(
+            "auto_sync_on_commit",
+            commit_sha=commit_sha,
+            confirm=False,  # Non-interactive in hooks
+        )
 
     def _trigger_auto_sync_on_checkout(self, branch: str | None = None):
         """Trigger auto-sync after checkout if enabled.
@@ -400,36 +381,30 @@ class GitHookManager:
         Args:
             branch: Branch name for logging
         """
-        try:
-            from roadmap.core.services.git.git_hook_auto_sync_service import (
-                GitHookAutoSyncService,
-            )
-
-            # Load config
-            config_path = Path(".roadmap") / "config.json"
-            if not config_path.exists():
-                return
-
-            # Initialize service and load config
-            service = GitHookAutoSyncService(self.core)
-            if not service.load_config_from_file(config_path):
-                return
-
-            # Trigger sync if enabled (no confirmation in hooks)
-            service.auto_sync_on_checkout(
-                branch=branch,
-                confirm=False,  # Non-interactive in hooks
-            )
-
-        except Exception:
-            # Silent fail to avoid breaking Git operations
-            pass
+        self._trigger_auto_sync_operation(
+            "auto_sync_on_checkout",
+            branch=branch,
+            confirm=False,  # Non-interactive in hooks
+        )
 
     def _trigger_auto_sync_on_merge(self, commit_sha: str | None = None):
         """Trigger auto-sync after merge if enabled.
 
         Args:
             commit_sha: Merge commit SHA for logging
+        """
+        self._trigger_auto_sync_operation(
+            "auto_sync_on_merge",
+            commit_sha=commit_sha,
+            confirm=False,  # Non-interactive in hooks
+        )
+
+    def _trigger_auto_sync_operation(self, operation: str, **kwargs) -> None:
+        """Execute an auto-sync operation with common error handling.
+
+        Args:
+            operation: The name of the auto-sync method to call
+            **kwargs: Arguments to pass to the sync method
         """
         try:
             from roadmap.core.services.git.git_hook_auto_sync_service import (
@@ -447,10 +422,9 @@ class GitHookManager:
                 return
 
             # Trigger sync if enabled (no confirmation in hooks)
-            service.auto_sync_on_merge(
-                commit_sha=commit_sha,
-                confirm=False,  # Non-interactive in hooks
-            )
+            method = getattr(service, operation, None)
+            if method:
+                method(**kwargs)
 
         except Exception:
             # Silent fail to avoid breaking Git operations

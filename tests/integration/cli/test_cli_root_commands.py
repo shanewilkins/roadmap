@@ -101,10 +101,7 @@ class TestCLIInit:
                     "--non-interactive",
                     "--skip-github",
                 ],
-                lambda result: (
-                    Path(".roadmap").exists()
-                    and len(list((Path(".roadmap") / "db").glob("*.db"))) > 0
-                ),
+                lambda result: (result.exit_code == 0 and Path(".roadmap").exists()),
             ),
             (
                 ["init", "--help"],

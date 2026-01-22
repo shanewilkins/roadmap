@@ -22,6 +22,11 @@ from roadmap.adapters.cli.services.project_status_service import (
     MilestoneProgressService,
     StatusDataService,
 )
+from roadmap.adapters.cli.utils.click_options import (
+    details_option,
+    format_option,
+    verbose_option,
+)
 from roadmap.infrastructure.observability.health import HealthCheck
 
 logger = get_logger()
@@ -82,24 +87,9 @@ def status(ctx: click.Context, verbose: bool) -> None:
 
 
 @click.command()
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Show detailed debug information and all health check logs",
-)
-@click.option(
-    "--details",
-    is_flag=True,
-    help="Show detailed recommendations and fix commands for each check",
-)
-@click.option(
-    "--format",
-    "-f",
-    type=click.Choice(["plain", "json"], case_sensitive=False),
-    default="plain",
-    help="Output format (default: plain text)",
-)
+@verbose_option
+@details_option
+@format_option
 @click.pass_context
 def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) -> None:
     """Check system health and component status.
@@ -325,24 +315,9 @@ def _display_fix_results_plain(results: list, dry_run: bool) -> None:
 
 
 @click.group(invoke_without_command=True)
-@click.option(
-    "--details",
-    is_flag=True,
-    help="Show detailed recommendations and fix commands for each check",
-)
-@click.option(
-    "--format",
-    "-f",
-    type=click.Choice(["plain", "json"], case_sensitive=False),
-    default="plain",
-    help="Output format (default: plain text)",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Show detailed debug information and all health check logs",
-)
+@details_option
+@format_option
+@verbose_option
 @click.pass_context
 @require_initialized
 def health(ctx: click.Context, details: bool, format: str, verbose: bool) -> None:
