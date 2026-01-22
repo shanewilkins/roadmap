@@ -97,11 +97,11 @@ class TestGitHubValidator:
         validator = GitHubValidator("token", "owner", "repo", None)
 
         with patch(
-            "roadmap.infrastructure.validation.github_validator.GitHubClient"
-        ) as mock_client_class:
+            "roadmap.infrastructure.validation.github_validator.ValidationGateway.get_github_client"
+        ) as mock_get_client:
             mock_client = Mock()
             mock_client.validate_assignee.return_value = (True, "")
-            mock_client_class.return_value = mock_client
+            mock_get_client.return_value = mock_client
 
             result = validator.validate("newuser")
             assert result.is_valid
@@ -112,14 +112,14 @@ class TestGitHubValidator:
         validator = GitHubValidator("token", "owner", "repo", None)
 
         with patch(
-            "roadmap.infrastructure.validation.github_validator.GitHubClient"
-        ) as mock_client_class:
+            "roadmap.infrastructure.validation.github_validator.ValidationGateway.get_github_client"
+        ) as mock_get_client:
             mock_client = Mock()
             mock_client.validate_assignee.return_value = (
                 False,
                 "User does not exist",
             )
-            mock_client_class.return_value = mock_client
+            mock_get_client.return_value = mock_client
 
             result = validator.validate("invaliduser")
             assert not result.is_valid
@@ -130,9 +130,9 @@ class TestGitHubValidator:
         validator = GitHubValidator("token", "owner", "repo", None)
 
         with patch(
-            "roadmap.infrastructure.validation.github_validator.GitHubClient"
-        ) as mock_client_class:
-            mock_client_class.side_effect = Exception("Network error")
+            "roadmap.infrastructure.validation.github_validator.ValidationGateway.get_github_client"
+        ) as mock_get_client:
+            mock_get_client.side_effect = Exception("Network error")
 
             result = validator.validate("testuser")
             assert not result.is_valid
@@ -242,12 +242,11 @@ class TestAssigneeValidationStrategy:
             )
 
             with patch(
-                "roadmap.infrastructure.validation.github_validator.GitHubClient"
-            ) as mock_client_class:
+                "roadmap.infrastructure.validation.github_validator.ValidationGateway.get_github_client"
+            ) as mock_get_client:
                 mock_client = Mock()
                 mock_client.validate_assignee.return_value = (True, "")
-                mock_client_class.return_value = mock_client
-
+                mock_get_client.return_value = mock_client
                 is_valid, error, canonical = strategy.validate("testuser")
                 assert is_valid
                 assert canonical == "testuser"
@@ -266,14 +265,14 @@ class TestAssigneeValidationStrategy:
             )
 
             with patch(
-                "roadmap.infrastructure.validation.github_validator.GitHubClient"
-            ) as mock_client_class:
+                "roadmap.infrastructure.validation.github_validator.ValidationGateway.get_github_client"
+            ) as mock_get_client:
                 mock_client = Mock()
                 mock_client.validate_assignee.return_value = (
                     False,
                     "User not in repo",
                 )
-                mock_client_class.return_value = mock_client
+                mock_get_client.return_value = mock_client
 
                 is_valid, error, canonical = strategy.validate("baduser")
                 assert not is_valid

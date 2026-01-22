@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from roadmap.adapters.persistence.parser import MilestoneParser
+from roadmap.infrastructure.validation_gateway import ValidationGateway
 
 
 class MilestoneConsistencyValidator:
@@ -32,7 +32,9 @@ class MilestoneConsistencyValidator:
 
         for milestone_file in self.milestones_dir.rglob("*.md"):
             try:
-                milestone = MilestoneParser.parse_milestone_file(milestone_file)
+                milestone = ValidationGateway.parse_milestone_for_validation(
+                    milestone_file
+                )
                 expected_filename = milestone.filename
                 actual_filename = milestone_file.name
 

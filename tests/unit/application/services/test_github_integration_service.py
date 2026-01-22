@@ -224,11 +224,11 @@ class TestGitHubIntegrationService:
         ):
             with patch.object(service, "get_cached_team_members", return_value=[]):
                 with patch(
-                    "roadmap.infrastructure.validation.github_validator.GitHubClient"
-                ) as mock_client:
-                    mock_client.return_value.validate_assignee.return_value = (
-                        validation_result
-                    )
+                    "roadmap.infrastructure.validation.github_validator.ValidationGateway.get_github_client"
+                ) as mock_get_client:
+                    mock_client = Mock()
+                    mock_client.validate_assignee.return_value = validation_result
+                    mock_get_client.return_value = mock_client
                     is_valid, error_msg = service.validate_assignee(error_message)
                     assert is_valid == expected_valid
                     if expected_in_error:

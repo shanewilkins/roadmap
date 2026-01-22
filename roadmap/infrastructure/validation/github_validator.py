@@ -4,11 +4,11 @@ Provides concrete GitHub-based validator implementation without coupling
 core services directly to GitHub adapter.
 """
 
-from roadmap.adapters.github.github import GitHubClient
 from roadmap.common.logging import get_logger
 from roadmap.core.services.issue.assignee_validation_service import (
     AssigneeValidationResult,
 )
+from roadmap.infrastructure.validation_gateway import ValidationGateway
 
 logger = get_logger(__name__)
 
@@ -59,7 +59,9 @@ class GitHubAssigneeValidator:
 
         # Do full validation via API
         try:
-            client = GitHubClient(token=self.token, owner=self.owner, repo=self.repo)
+            client = ValidationGateway.get_github_client(
+                token=self.token, org=self.owner
+            )
             github_valid, github_error = client.validate_assignee(assignee)  # type: ignore[attr-defined]
 
             if github_valid:
@@ -79,7 +81,9 @@ class GitHubAssigneeValidator:
             List of GitHub repository team members
         """
         try:
-            client = GitHubClient(token=self.token, owner=self.owner, repo=self.repo)
+            client = ValidationGateway.get_github_client(
+                token=self.token, org=self.owner
+            )
             members = client.get_team_members()  # type: ignore[attr-defined]
             logger.debug("github_team_members_retrieved", count=len(members))
             return members

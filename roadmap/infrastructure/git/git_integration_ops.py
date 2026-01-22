@@ -13,7 +13,6 @@ Responsibilities:
 
 from typing import TYPE_CHECKING, Any
 
-from roadmap.adapters.git.git import GitIntegration
 from roadmap.common.errors.error_standards import OperationType, safe_operation
 from roadmap.common.logging import get_logger
 
@@ -26,7 +25,7 @@ logger = get_logger(__name__)
 class GitIntegrationOps:
     """Manager for git integration operations."""
 
-    def __init__(self, git: GitIntegration, core: "RoadmapCore"):
+    def __init__(self, git: Any, core: "RoadmapCore"):
         """Initialize git integration operations manager.
 
         Args:

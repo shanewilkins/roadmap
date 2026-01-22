@@ -21,9 +21,6 @@ This design:
 
 from pathlib import Path
 
-from roadmap.adapters.git.git import GitIntegration
-from roadmap.adapters.persistence.storage import StateManager
-from roadmap.adapters.persistence.yaml_repositories import YAMLIssueRepository
 from roadmap.common.utils.path_utils import build_roadmap_paths
 from roadmap.core.services import (
     ConfigurationService,
@@ -47,6 +44,7 @@ from roadmap.infrastructure.coordination.user_operations import UserOperations
 from roadmap.infrastructure.coordination.validation_coordinator import (
     ValidationCoordinator,
 )
+from roadmap.infrastructure.coordination_gateway import CoordinationGateway
 from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 
 
@@ -91,17 +89,17 @@ class RoadmapCore:
         self.db_dir = paths["db_dir"]
 
         # Initialize core infrastructure
-        self._git = GitIntegration(self.root_path)
+        self._git = CoordinationGateway.get_git_integration()
+        self._git.root_path = self.root_path
 
         # Initialize StateManager first (without GitSyncMonitor)
-        self.db = StateManager(self.db_dir / "state.db")
+        self.db = CoordinationGateway.get_state_manager()
+        self.db.db_path = self.db_dir / "state.db"
 
         # Initialize GitSyncMonitor with StateManager for database sync
-        from roadmap.adapters.git.sync_monitor import GitSyncMonitor
-
-        self.git_sync_monitor = GitSyncMonitor(
-            repo_path=self.root_path, state_manager=self.db
-        )
+        self.git_sync_monitor = CoordinationGateway.get_git_sync_monitor()
+        self.git_sync_monitor.repo_path = self.root_path
+        self.git_sync_monitor.state_manager = self.db
 
         # Initialize remote links from YAML (Phase 3)
         try:
@@ -124,12 +122,15 @@ class RoadmapCore:
         self.config_service = ConfigurationService()
 
         # Initialize repositories (abstraction layer)
+        issue_repository = CoordinationGateway.get_yaml_issue_repository(
+            db=self.db, issues_dir=self.issues_dir
+        )
+
         from roadmap.adapters.persistence.yaml_repositories import (
             YAMLMilestoneRepository,
             YAMLProjectRepository,
         )
 
-        issue_repository = YAMLIssueRepository(self.db, self.issues_dir)
         milestone_repository = YAMLMilestoneRepository(self.db, self.milestones_dir)
         project_repository = YAMLProjectRepository(self.db, self.projects_dir)
 
@@ -352,9 +353,7 @@ class RoadmapCore:
     def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
         """Ensure git hooks are installed for automatic sync."""
         try:
-            from roadmap.adapters.git.git_hooks import GitHookManager
-
-            hook_manager = GitHookManager(self)
+            hook_manager = CoordinationGateway.get_git_hook_manager(self)
 
             if show_progress:
                 console.print("[dim]Installing git hooks for automatic sync...[/dim]")

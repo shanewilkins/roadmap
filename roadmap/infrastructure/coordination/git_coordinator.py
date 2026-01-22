@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from roadmap.adapters.git.git import GitIntegration
 from roadmap.core.domain import Issue
 from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 
@@ -27,7 +26,7 @@ class GitCoordinator:
             core: RoadmapCore instance for initialization checks
         """
         self._ops: GitIntegrationOps = git_ops
-        self._git: GitIntegration = git_ops.git
+        self._git: Any = git_ops.git
         self._core = core
 
     def get_context(self) -> dict[str, Any]:
