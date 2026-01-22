@@ -35,8 +35,10 @@ class TestProjectDetectionService:
         result = ProjectDetectionService.detect_existing_projects(projects_dir)
         assert result == []
 
-    @patch("roadmap.core.services.project_init.detection.ProjectParser")
-    def test_detect_existing_projects_with_projects(self, mock_parser, tmp_path):
+    @patch(
+        "roadmap.infrastructure.persistence_gateway.PersistenceGateway.parse_project_file"
+    )
+    def test_detect_existing_projects_with_projects(self, mock_parse_project, tmp_path):
         """Test detection of multiple existing projects."""
         projects_dir = tmp_path / "projects"
         projects_dir.mkdir()
@@ -54,7 +56,7 @@ class TestProjectDetectionService:
         mock_project2.name = "Project 2"
         mock_project2.id = "def456"
 
-        mock_parser.parse_project_file.side_effect = [mock_project1, mock_project2]
+        mock_parse_project.side_effect = [mock_project1, mock_project2]
 
         result = ProjectDetectionService.detect_existing_projects(projects_dir)
 
@@ -64,8 +66,10 @@ class TestProjectDetectionService:
         assert result[1]["name"] == "Project 2"
         assert result[1]["id"] == "def456"
 
-    @patch("roadmap.core.services.project_init.detection.ProjectParser")
-    def test_detect_existing_projects_parse_error(self, mock_parser, tmp_path):
+    @patch(
+        "roadmap.infrastructure.persistence_gateway.PersistenceGateway.parse_project_file"
+    )
+    def test_detect_existing_projects_parse_error(self, mock_parse_project, tmp_path):
         """Test that projects that fail to parse are skipped."""
         projects_dir = tmp_path / "projects"
         projects_dir.mkdir()
@@ -77,7 +81,7 @@ class TestProjectDetectionService:
         mock_good.name = "Good Project"
         mock_good.id = "goodid"
 
-        mock_parser.parse_project_file.side_effect = [
+        mock_parse_project.side_effect = [
             Exception("Parse error"),
             mock_good,
         ]

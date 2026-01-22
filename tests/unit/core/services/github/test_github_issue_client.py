@@ -59,16 +59,18 @@ class TestFetchIssue:
             "updated_at": "2025-01-15T12:00:00Z",
         }
 
-        with patch("roadmap.adapters.github.github.GitHubClient") as mock_client:
+        with patch(
+            "roadmap.infrastructure.github_gateway.GitHubGateway.get_github_client"
+        ) as mock_get_client:
             mock_instance = MagicMock()
             mock_instance.fetch_issue.return_value = expected_data
-            mock_client.return_value = mock_instance
+            mock_get_client.return_value = mock_instance
 
             result = client.fetch_issue("owner", "repo", 123)
 
             assert result == expected_data
-            mock_client.assert_called_once_with(
-                token="test_token", owner="owner", repo="repo"
+            mock_get_client.assert_called_once_with(
+                {"token": "test_token", "owner": "owner", "repo": "repo"}
             )
             mock_instance.fetch_issue.assert_called_once_with(123)
 
