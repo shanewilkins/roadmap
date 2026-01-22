@@ -1,0 +1,71 @@
+# .semgrep.yml - Semantic Error Pattern Detection Rules
+
+# Phase 7a: Error Handling & Logging Validation
+# These rules detect silent failures and error handling anti-patterns
+# that our structural linters (ruff, pylint) cannot catch
+
+rules:
+  # Rule 1: Exception handlers with pass statement (silent failure)
+  - id: except-silent-pass
+    patterns:
+      - pattern: |
+          try:
+              ...
+          except $EXCEPTION:
+              pass
+    message: |
+      Silent failure detected: Exception handler uses 'pass' without logging.
+      This swallows errors and prevents debugging. Add logging before pass:
+        except $EXCEPTION as e:
+            logger.warning("Operation failed", error=str(e))
+            pass
+    severity: ERROR
+    languages: [python]
+
+  # Rule 2: Exception handlers with continue in loop (silent skip)
+  - id: except-silent-continue
+    patterns:
+      - pattern: |
+          for ... in ...:
+              try:
+                  ...
+              except $EXCEPTION:
+                  continue
+    message: |
+      Silent failure detected: Exception handler uses 'continue' without logging.
+      This silently skips items in loops. Add logging before continue:
+        except $EXCEPTION as e:
+            logger.warning("Item skipped due to error", error=str(e))
+            continue
+    severity: ERROR
+    languages: [python]
+
+  # Rule 3: Exception handlers with return (silent exit without context)
+  - id: except-silent-return
+    patterns:
+      - pattern: |
+          try:
+              ...
+          except $EXCEPTION:
+              return
+      - pattern: |
+          try:
+              ...
+          except $EXCEPTION:
+              return $VALUE
+    message: |
+      Silent failure detected: Exception handler uses 'return' without logging.
+      This exits functions silently. Add logging before return:
+        except $EXCEPTION as e:
+            logger.error("Operation failed", error=str(e))
+            return False
+    severity: WARNING
+    languages: [python]
+
+
+# Phase 7b+ Placeholder rules (to be added)
+# - structlog consistency enforcement
+# - logging quality validation
+# - error context completeness
+# - CLI error routing (stdout vs stderr)
+# - Framework-specific anti-patterns

@@ -118,6 +118,21 @@ repos:
         pass_filenames: false
         always_run: true
 
+  # Semantic error handling validation (Phase 7a)
+  # Semgrep uses AST-based pattern matching for semantic analysis
+  # Detects: except+pass, except+continue, except+return without logging
+  # STATUS: Currently DISABLED (stages) - will enforce after baseline established in Phase 7b
+  # Note: Baseline feature not available in v1.45.0
+  # TODO: Enable in Phase 7b, upgrade to v1.50.0+ when baseline feature is available
+  - repo: https://github.com/returntocorp/semgrep
+    rev: v1.45.0
+    hooks:
+      - id: semgrep
+        name: semgrep - semantic error pattern detection
+        args: [--config=.semgrep.yml, --error]
+        stages: [manual]  # DISABLED - run manually via: pre-commit run semgrep --all-files
+        types: [python]
+
   # Run cosmetic fixes last (don't block on whitespace)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
