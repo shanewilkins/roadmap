@@ -8,6 +8,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import structlog
+
+logger = structlog.get_logger()
+
 
 def _convert_enum_field(field_name: str, value: Any) -> Any:
     """Convert string enum values to enum types for status/priority fields.
@@ -30,7 +34,15 @@ def _convert_enum_field(field_name: str, value: Any) -> Any:
                 return Status(value)
             except (ValueError, KeyError):
                 return Status(value.lower())
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "enum_conversion_failed",
+                operation="convert_enum_field",
+                field="status",
+                provided_value=value,
+                error=str(e),
+                action="Using fallback value",
+            )
             return value
 
     if field_name == "priority":
@@ -41,7 +53,15 @@ def _convert_enum_field(field_name: str, value: Any) -> Any:
                 return Priority(value)
             except (ValueError, KeyError):
                 return Priority(value.lower())
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "enum_conversion_failed",
+                operation="convert_enum_field",
+                field="priority",
+                provided_value=value,
+                error=str(e),
+                action="Using fallback value",
+            )
             return value
 
     return value
@@ -85,8 +105,12 @@ def compute_changes(
                             baseline=baseline_value,
                             current=local_value,
                         )
-                    except Exception:
-                        pass
+                    except Exception as logging_error:
+                        logger.error(
+                            "logger_failed",
+                            operation="compute_changes (debug logging)",
+                            error=str(logging_error),
+                        )
         except Exception as e:
             if logger is not None:
                 try:
@@ -96,8 +120,12 @@ def compute_changes(
                         field=field_name,
                         error=str(e),
                     )
-                except Exception:
-                    pass
+                except Exception as logging_error:
+                    logger.error(
+                        "logger_failed",
+                        operation="compute_changes (warning logging)",
+                        error=str(logging_error),
+                    )
             continue
 
     return changes
@@ -156,8 +184,12 @@ def compute_changes_remote(
                             baseline=baseline_value,
                             current=remote_value,
                         )
-                    except Exception:
-                        pass
+                    except Exception as logging_error:
+                        logger.error(
+                            "logger_failed",
+                            operation="compute_changes_remote (debug logging)",
+                            error=str(logging_error),
+                        )
         except Exception as e:
             if logger is not None:
                 try:
@@ -166,8 +198,12 @@ def compute_changes_remote(
                         field=field_name,
                         error=str(e),
                     )
-                except Exception:
-                    pass
+                except Exception as logging_error:
+                    logger.error(
+                        "logger_failed",
+                        operation="compute_changes_remote (warning logging)",
+                        error=str(logging_error),
+                    )
             continue
 
     return changes
