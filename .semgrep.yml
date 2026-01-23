@@ -42,17 +42,21 @@ rules:
 
   # Rule 3: Exception handlers with return (silent exit without context)
   - id: except-silent-return
-    patterns:
-      - pattern: |
-          try:
-              ...
-          except $EXCEPTION:
-              return
-      - pattern: |
-          try:
-              ...
-          except $EXCEPTION:
-              return $VALUE
+    pattern-either:
+      - patterns:
+          - pattern: |
+              try:
+                  ...
+              except $EXCEPTION:
+                  return
+          - pattern-not: logger.$METHOD(...)
+      - patterns:
+          - pattern: |
+              try:
+                  ...
+              except $EXCEPTION:
+                  return $VALUE
+          - pattern-not: logger.$METHOD(...)
     message: |
       Silent failure detected: Exception handler uses 'return' without logging.
       This exits functions silently. Add logging before return:
