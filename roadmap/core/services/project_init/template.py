@@ -4,6 +4,10 @@ import getpass
 from datetime import UTC, datetime
 from pathlib import Path
 
+import structlog
+
+logger = structlog.get_logger()
+
 
 class ProjectTemplateService:
     """Service for generating project templates."""
@@ -213,6 +217,12 @@ tags: []
             tpl_path = Path(template_path)
             if tpl_path.exists() and tpl_path.is_file():
                 return tpl_path.read_text()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "template_load_failed",
+                operation="load_template",
+                template_path=str(template_path),
+                error=str(e),
+                action="Returning None",
+            )
         return None

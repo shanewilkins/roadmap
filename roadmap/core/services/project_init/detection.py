@@ -2,7 +2,11 @@
 
 from pathlib import Path
 
+import structlog
+
 from roadmap.infrastructure.persistence_gateway import PersistenceGateway
+
+logger = structlog.get_logger()
 
 
 class ProjectDetectionService:
@@ -33,7 +37,14 @@ class ProjectDetectionService:
                         "file": project_file.name,
                     }
                 )
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "project_parse_failed",
+                    operation="parse_project",
+                    file=project_file.name,
+                    error=str(e),
+                    action="Skipping project",
+                )
                 # Skip projects that can't be parsed
                 continue
 

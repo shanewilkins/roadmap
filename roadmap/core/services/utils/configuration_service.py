@@ -7,8 +7,12 @@ providing unified access to application configuration and secrets.
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from roadmap.core.interfaces import CredentialProvider
 from roadmap.settings import settings
+
+logger = structlog.get_logger()
 
 
 class ConfigurationService:
@@ -43,7 +47,14 @@ class ConfigurationService:
         """
         try:
             return self._settings.get(key, default)
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "config_get_failed",
+                operation="get_config",
+                key=key,
+                error=str(e),
+                action="Returning default value",
+            )
             return default
 
     def get_github_config(self) -> dict[str, Any]:

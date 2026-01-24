@@ -57,9 +57,22 @@ class RemoteFetcher:
                     now_ts = int(time.time())
                     wait = max(0, reset_ts - now_ts)
                     return float(wait)
-                except Exception:
+                except Exception as e:
+                    logger.debug(
+                        "reset_time_parsing_failed",
+                        operation="parse_reset_time",
+                        reset_value=str(reset),
+                        error=str(e),
+                        action="Using default wait time 0",
+                    )
                     return 0.0
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "rate_limit_check_failed",
+                operation="check_rate_limit",
+                error=str(e),
+                action="Assuming no rate limit",
+            )
             return 0.0
         return 0.0
 

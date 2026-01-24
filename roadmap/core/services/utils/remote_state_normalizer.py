@@ -100,5 +100,11 @@ class RemoteStateNormalizer:
 
             return None
 
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "normalize_state_failed",
+                operation="normalize_state",
+                error=str(e),
+                action="Returning None",
+            )
             return None

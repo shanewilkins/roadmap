@@ -116,5 +116,11 @@ class FieldConflictDetector:
 
             return value
 
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "normalize_field_value_failed",
+                operation="normalize_field_value",
+                error=str(e),
+                action="Returning None",
+            )
             return None

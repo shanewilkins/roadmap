@@ -5,6 +5,10 @@ import re
 import subprocess
 from pathlib import Path
 
+import structlog
+
+logger = structlog.get_logger()
+
 
 class ProjectContextDetectionService:
     """Service for detecting project context from git and file system."""
@@ -87,8 +91,13 @@ class ProjectContextDetectionService:
                     if repo_part and "/" in repo_part:
                         context["git_repo"] = repo_part
                         context["project_name"] = repo_part.split("/")[1]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "git_context_detection_failed",
+                operation="detect_git_context",
+                error=str(e),
+                action="Continuing with partial context",
+            )
 
     @staticmethod
     def _detect_git_user(context: dict) -> None:
@@ -102,8 +111,13 @@ class ProjectContextDetectionService:
             )
             if user_result.returncode == 0:
                 context["git_user"] = user_result.stdout.strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "git_user_detection_failed",
+                operation="detect_git_user",
+                error=str(e),
+                action="Skipping git user detection",
+            )
 
     @staticmethod
     def _detect_from_package_files(context: dict) -> None:
@@ -122,5 +136,11 @@ class ProjectContextDetectionService:
                         if "name" in data:
                             context["project_name"] = data["name"]
                             break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(
+                        "package_file_parse_failed",
+                        operation="parse_package_file",
+                        file=config_file,
+                        error=str(e),
+                        action="Trying next config file",
+                    )
