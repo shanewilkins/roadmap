@@ -76,9 +76,14 @@ class OptimizedBaselineBuilder:
                 completed=completed,
                 total=total,
             )
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "progress_update_failed",
+                operation="report_progress",
+                error=str(e),
+                action="Continuing without progress update",
+            )
             # Silently ignore progress update errors
-            pass
 
     def get_changed_issue_files(
         self,
@@ -208,8 +213,13 @@ class OptimizedBaselineBuilder:
                     # Return TYPE-ID format (e.g., TASK-123)
                     issue_id = f"{parts[0]}-{parts[1]}"
                     return issue_id
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "issue_id_parsing_failed",
+                operation="parse_issue_id",
+                error=str(e),
+                action="Returning None",
+            )
         return None
 
     def get_issue_files_to_update(

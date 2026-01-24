@@ -2,7 +2,11 @@
 
 from typing import Any
 
+import structlog
+
 BaselineSnapshot = dict[str, Any]
+
+logger = structlog.get_logger()
 
 
 class BaselineRetriever:
@@ -35,13 +39,25 @@ class BaselineRetriever:
         ):
             try:
                 return core.db.get_sync_baseline() or {}
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "get_sync_baseline_failed",
+                    operation="get_sync_baseline",
+                    error=str(e),
+                    action="Using fallback empty dict",
+                )
                 return {}
 
         if db_session is not None and hasattr(db_session, "get_sync_baseline"):
             try:
                 return db_session.get_sync_baseline() or {}
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "get_sync_baseline_db_failed",
+                    operation="get_sync_baseline_db_session",
+                    error=str(e),
+                    action="Using empty baseline",
+                )
                 return {}
 
         return {}
