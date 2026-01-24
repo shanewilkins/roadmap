@@ -143,14 +143,28 @@ class SyncPlanExecutor:
             try:
                 r = adapter.push_issues(issues)
                 return bool(getattr(r, "pushed", None))
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "batch_push_failed",
+                    operation="push_issues_batch",
+                    issue_count=len(issues),
+                    error=str(e),
+                    action="Falling back to single-issue push",
+                )
                 return False
 
         # Fallback to single-issue push
         if issue and hasattr(adapter, "push_issue"):
             try:
                 return adapter.push_issue(issue)
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "single_push_failed",
+                    operation="push_issue",
+                    issue_id=getattr(issue, "id", None),
+                    error=str(e),
+                    action="Returning False",
+                )
                 return False
 
         return False
@@ -171,15 +185,28 @@ class SyncPlanExecutor:
             try:
                 r = adapter.pull_issues(issue_ids)
                 return bool(getattr(r, "pulled", None))
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "batch_pull_failed",
+                    operation="pull_issues_batch",
+                    issue_count=len(issue_ids),
+                    error=str(e),
+                    action="Falling back to single-issue pull",
+                )
                 return False
 
         # Fallback to single-issue pull if available
         if issue_id and hasattr(adapter, "pull_issue"):
             try:
                 return adapter.pull_issue(issue_id)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "single_pull_failed",
+                    operation="pull_issue",
+                    issue_id=issue_id,
+                    error=str(e),
+                    action="Continuing to return False",
+                )
 
         return False
 
@@ -202,7 +229,14 @@ class SyncPlanExecutor:
                 )
                 self._created_local_ids[str(remote_id)] = created_id
                 return created_id
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "create_local_issue_failed",
+                    operation="create_issue",
+                    remote_id=str(remote_id),
+                    error=str(e),
+                    action="Trying fallback database method",
+                )
                 return None
 
         if self.db_session and hasattr(self.db_session, "create_issue"):
@@ -210,7 +244,14 @@ class SyncPlanExecutor:
                 created_id = self.db_session.create_issue(remote_payload)
                 self._created_local_ids[str(remote_id)] = created_id
                 return created_id
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "create_issue_db_failed",
+                    operation="create_issue_db_session",
+                    remote_id=str(remote_id),
+                    error=str(e),
+                    action="Returning None",
+                )
                 return None
 
         return None
@@ -251,14 +292,26 @@ class SyncPlanExecutor:
             try:
                 self.core.db.set_sync_baseline(baseline)
                 return True
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "set_sync_baseline_failed",
+                    operation="set_sync_baseline_core",
+                    error=str(e),
+                    action="Trying fallback database method",
+                )
                 return False
 
         if self.db_session and hasattr(self.db_session, "set_sync_baseline"):
             try:
                 self.db_session.set_sync_baseline(baseline)
                 return True
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "set_sync_baseline_db_failed",
+                    operation="set_sync_baseline_db_session",
+                    error=str(e),
+                    action="Returning False",
+                )
                 return False
 
         return False
@@ -274,7 +327,14 @@ class SyncPlanExecutor:
         if adapter and hasattr(adapter, "resolve_conflict"):
             try:
                 return adapter.resolve_conflict(issue_id, resolution)
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "resolve_conflict_adapter_failed",
+                    operation="resolve_conflict",
+                    issue_id=issue_id,
+                    error=str(e),
+                    action="Trying fallback database method",
+                )
                 return False
 
         if (
@@ -284,7 +344,14 @@ class SyncPlanExecutor:
         ):
             try:
                 return self.core.db.apply_conflict_resolution(issue_id, resolution)
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "apply_conflict_resolution_failed",
+                    operation="apply_conflict_resolution",
+                    issue_id=issue_id,
+                    error=str(e),
+                    action="Returning False",
+                )
                 return False
 
         return False

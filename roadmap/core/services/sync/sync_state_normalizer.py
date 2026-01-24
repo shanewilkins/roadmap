@@ -88,6 +88,10 @@ def normalize_remote_state(
         if logger is not None:
             try:
                 logger.debug("normalize_remote_state_error", error=str(e))
-            except Exception:
-                pass
+            except Exception as logging_error:
+                logger.error(
+                    "logger_failed",
+                    operation="log_normalize_remote_state_error",
+                    error=str(logging_error),
+                )
         return None

@@ -57,7 +57,15 @@ def _convert_enum_field(field_name: str, value: Any) -> Any:
                 return Priority(value)
             except (ValueError, KeyError):
                 return Priority(value.lower())
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "enum_conversion_failed",
+                operation="convert_enum_field",
+                field="priority",
+                provided_value=value,
+                error=str(e),
+                action="Using fallback value",
+            )
             return value
 
     return value
@@ -128,8 +136,12 @@ def detect_field_conflicts(
                         field=field_name,
                         error=str(e),
                     )
-                except Exception:
-                    pass
+                except Exception as logging_error:
+                    logger.error(
+                        "logger_failed",
+                        operation="log_field_conflict_error",
+                        error=str(logging_error),
+                    )
             continue
 
     return conflicts

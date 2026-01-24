@@ -68,8 +68,12 @@ def _build_remote_id_mapping(
                                 local_uuid=local_uuid,
                                 backend=backend_name,
                             )
-                        except Exception:
-                            pass
+                        except Exception as logging_error:
+                            logger.error(
+                                "logger_failed",
+                                operation="log_loaded_remote_id_from_yaml",
+                                error=str(logging_error),
+                            )
 
     return remote_id_to_local_uuid, db_lookup_available
 
@@ -101,8 +105,12 @@ def _apply_remote_normalization(
                         original_key=remote_key_str,
                         normalized_to=local_uuid,
                     )
-                except Exception:
-                    pass
+                except Exception as logging_error:
+                    logger.error(
+                        "logger_failed",
+                        operation="log_normalized_remote_key",
+                        error=str(logging_error),
+                    )
         else:
             prefixed_key = f"_remote_{remote_key}"
             normalized_remote[prefixed_key] = remote_issue
@@ -114,8 +122,12 @@ def _apply_remote_normalization(
                         remote_key=str(remote_key),
                         prefixed_key=prefixed_key,
                     )
-                except Exception:
-                    pass
+                except Exception as logging_error:
+                    logger.error(
+                        "logger_failed",
+                        operation="log_new_remote_issue",
+                        error=str(logging_error),
+                    )
 
     return normalized_remote, unmatched_count
 
@@ -159,7 +171,11 @@ def normalize_remote_keys(
                 backend=backend_name,
                 db_lookup_used=db_lookup_available,
             )
-        except Exception:
-            pass
+        except Exception as logging_error:
+            logger.error(
+                "logger_failed",
+                operation="log_remote_keys_normalized",
+                error=str(logging_error),
+            )
 
     return local, normalized_remote
