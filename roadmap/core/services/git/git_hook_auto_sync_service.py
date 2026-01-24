@@ -11,11 +11,15 @@ when Git events occur (commits, checkouts, merges). It provides:
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from roadmap.common.console import get_console
 from roadmap.core.services.github.github_integration_service import (
     GitHubIntegrationService,
 )
 from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
+
+logger = structlog.get_logger()
 
 
 class GitHookAutoSyncConfig:
@@ -361,7 +365,8 @@ class GitHookAutoSyncService:
                 return True
 
             return False
-        except Exception:
+        except Exception as e:
+            logger.debug("config_load_failed", error=str(e), action="load_config")
             return False
 
     def save_config_to_file(self, config_path: Path) -> bool:
@@ -393,5 +398,6 @@ class GitHookAutoSyncService:
                 json.dump(config_dict, f, indent=2)
 
             return True
-        except Exception:
+        except Exception as e:
+            logger.debug("config_save_failed", error=str(e), action="save_config")
             return False

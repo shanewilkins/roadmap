@@ -6,7 +6,11 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
+import structlog
+
 from roadmap.common.console import get_console
+
+logger = structlog.get_logger()
 
 console = get_console()
 
@@ -31,7 +35,8 @@ class InitializationLock:
                 f"pid:{os.getpid()}\nstarted:{datetime.now(UTC).isoformat()}\n"
             )
             return True
-        except Exception:
+        except Exception as e:
+            logger.debug("lockfile_creation_failed", error=str(e), action="create_lock")
             console.print(
                 "⚠️  Could not create init lockfile; proceeding with care",
                 style="yellow",
@@ -43,8 +48,8 @@ class InitializationLock:
         try:
             if self.lock_path.exists():
                 self.lock_path.unlink()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("lockfile_release_failed", error=str(e), action="release_lock")
 
 
 class InitializationManifest:
@@ -69,8 +74,8 @@ class InitializationManifest:
         """Save manifest to disk (best effort)."""
         try:
             self.manifest_file.write_text(json.dumps(self.data))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("manifest_save_failed", error=str(e), action="save_manifest")
 
     def rollback(self) -> None:
         """Remove all paths tracked in the manifest."""
@@ -86,7 +91,14 @@ class InitializationManifest:
                         ppath.unlink()
                     elif ppath.is_dir():
                         shutil.rmtree(ppath)
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                except Exception as e:
+                    logger.debug(
+                        "manifest_item_removal_failed",
+                        path=p,
+                        error=str(e),
+                        action="remove_item",
+                    )
+        except Exception as e:
+            logger.debug(
+                "manifest_rollback_failed", error=str(e), action="rollback_manifest"
+            )

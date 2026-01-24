@@ -6,12 +6,16 @@ Orchestrates the core initialization workflow steps.
 import shutil
 from pathlib import Path
 
+import structlog
+
 from roadmap.common.console import get_console
 from roadmap.common.errors.exceptions import OperationError
 from roadmap.common.security import create_secure_directory
 from roadmap.infrastructure.coordination.core import RoadmapCore
 
 from .utils import InitializationManifest
+
+logger = structlog.get_logger()
 
 console = get_console()
 
@@ -170,5 +174,9 @@ class InitializationWorkflow:
         if self.core.roadmap_dir.exists():
             try:
                 shutil.rmtree(self.core.roadmap_dir)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "roadmap_dir_cleanup_failed",
+                    error=str(e),
+                    action="cleanup_roadmap_dir",
+                )

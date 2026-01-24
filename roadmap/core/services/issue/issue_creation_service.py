@@ -225,7 +225,13 @@ class IssueCreationService:
             )
             self._show_branch_success_message(branch_name, checkout)
             return True
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "branch_creation_failed",
+                branch_name=branch_name,
+                error=str(e),
+                action="create_branch",
+            )
             return False
 
     def _show_branch_success_message(self, branch_name: str, checkout: bool) -> None:

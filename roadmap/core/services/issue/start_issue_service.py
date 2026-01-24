@@ -49,8 +49,13 @@ class StartIssueService:
         # Try full datetime format first
         try:
             return datetime.strptime(date_str, "%Y-%m-%d %H:%M")
-        except ValueError:
-            pass
+        except ValueError as e:
+            logger.debug(
+                "date_parse_failed",
+                date_str=date_str,
+                error=str(e),
+                action="parse_datetime",
+            )
 
         # Try date-only format
         try:

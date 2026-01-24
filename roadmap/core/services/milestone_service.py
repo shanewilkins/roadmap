@@ -16,6 +16,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from roadmap.common.constants import MilestoneStatus, Status
 from roadmap.common.errors import OperationType, safe_operation
 from roadmap.common.logging import get_logger
@@ -30,6 +32,8 @@ from roadmap.core.domain.milestone import Milestone
 from roadmap.core.repositories import IssueRepository, MilestoneRepository
 from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 from roadmap.infrastructure.validation.file_enumeration import FileEnumerationService
+
+logger = structlog.get_logger()
 
 logger = get_logger(__name__)
 
@@ -304,7 +308,12 @@ class MilestoneService:
                                 PersistenceGateway.save_issue_file(issue, issue_file)
                                 unassigned_count += 1
                                 break
-                        except Exception:
+                        except Exception as e:
+                            logger.debug(
+                                "issue_unassign_failed",
+                                error=str(e),
+                                action="unassign_issue",
+                            )
                             continue
 
         log_metric("issues_unassigned", unassigned_count)
@@ -324,7 +333,12 @@ class MilestoneService:
                         )
                         log_exit("delete_milestone", success=True)
                         return True
-                except Exception:
+                except Exception as e:
+                    logger.debug(
+                        "milestone_delete_failed",
+                        error=str(e),
+                        action="delete_milestone",
+                    )
                     continue
         log_exit("delete_milestone", success=False)
         return False

@@ -13,6 +13,8 @@ consistent error handling and logging across all validators.
 
 from pathlib import Path
 
+import structlog
+
 from roadmap.common.logging import get_logger
 from roadmap.common.logging.error_logging import (
     log_error_with_context,
@@ -23,6 +25,8 @@ from roadmap.core.services.validators.health_status_utils import (
     get_overall_status,
 )
 from roadmap.infrastructure.persistence_gateway import PersistenceGateway
+
+logger = structlog.get_logger()
 
 logger = get_logger(__name__)
 
@@ -61,7 +65,10 @@ class RoadmapDirectoryValidator(BaseValidator):
         try:
             test_file.touch()
             test_file.unlink()
-        except OSError:
+        except OSError as e:
+            logger.error(
+                "roadmap_dir_not_writable", error=str(e), action="check_writable"
+            )
             return HealthStatus.DEGRADED, ".roadmap directory is not writable"
 
         return (
