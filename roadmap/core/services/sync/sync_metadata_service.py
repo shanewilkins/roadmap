@@ -4,7 +4,11 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+import structlog
+
 from roadmap.core.domain import Issue
+
+logger = structlog.get_logger()
 
 
 @dataclass
@@ -129,8 +133,14 @@ class SyncMetadataService:
                 metadata = SyncMetadata.from_dict(issue.github_sync_metadata)
                 self._cache[issue.id] = metadata
                 return metadata
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "sync_metadata_deserialization_failed",
+                    operation="load_from_cache",
+                    issue_id=issue.id,
+                    error=str(e),
+                    action="Creating new metadata",
+                )
 
         # Create new metadata
         github_id = getattr(issue, "github_issue", None)

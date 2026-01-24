@@ -513,8 +513,14 @@ class SyncStateComparator:
                         remote_status = Status(remote_status)
                     except Exception:
                         remote_status = Status(remote_status.lower())
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "status_normalization_failed",
+                    operation="normalize_status",
+                    field="remote_status",
+                    error=str(e),
+                    action="Skipping status normalization",
+                )
 
             local_status = getattr(local, "status", None)
 
@@ -656,14 +662,12 @@ class SyncStateComparator:
         self,
         baseline: IssueBaseState | None,
         local: Issue,
-        source: str = "local",
     ) -> dict[str, Any]:
         """Compute what changed between baseline and local issue.
 
         Args:
             baseline: The baseline state
             local: The current local issue
-            source: Description of source (for logging)
 
         Returns:
             Dict of field → value for changed fields

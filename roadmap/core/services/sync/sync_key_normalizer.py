@@ -10,6 +10,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+import structlog
+
+logger = structlog.get_logger()
+
 
 def _build_remote_id_mapping(
     local: dict[str, Any],
@@ -40,8 +44,12 @@ def _build_remote_id_mapping(
                     backend=backend_name,
                     link_count=len(remote_id_to_local_uuid),
                 )
-            except Exception:
-                pass
+            except Exception as logging_error:
+                logger.error(
+                    "logger_failed",
+                    operation="log_remote_links_loaded",
+                    error=str(logging_error),
+                )
 
     # Supplement from YAML if DB is missing entries
     if not db_lookup_available or len(remote_id_to_local_uuid) < len(local):

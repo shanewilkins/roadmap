@@ -13,8 +13,12 @@ from __future__ import annotations
 
 from typing import Any
 
+import structlog
+
 from roadmap.core.services.sync.sync_plan import SyncPlan
 from roadmap.core.services.sync.sync_report import SyncReport
+
+logger = structlog.get_logger()
 
 
 class SyncPlanExecutor:
@@ -83,6 +87,13 @@ class SyncPlanExecutor:
                     elif action.action_type == "pull":
                         report.issues_pulled += 1
             except Exception as e:
+                logger.error(
+                    "sync_action_execution_failed",
+                    operation="execute_action",
+                    action_type=getattr(action, "action_type", None),
+                    error=str(e),
+                    action="Recording error and checking stop_on_error",
+                )
                 # Record top-level error and optionally stop
                 report.error = str(e)
                 if self.stop_on_error:

@@ -10,6 +10,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+import structlog
+
+logger = structlog.get_logger()
+
 
 def extract_timestamp(
     data: dict[str, Any] | object,
@@ -48,8 +52,12 @@ def extract_timestamp(
                     field=timestamp_field,
                     error=str(e),
                 )
-            except Exception:
-                pass
+            except Exception as logging_error:
+                logger.error(
+                    "logger_failed",
+                    operation="log_timestamp_extraction_error",
+                    error=str(logging_error),
+                )
         return None
 
 

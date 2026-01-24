@@ -10,7 +10,11 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
+import structlog
+
 from roadmap.core.services.sync.sync_conflict_resolver import ConflictField
+
+logger = structlog.get_logger()
 
 
 def _convert_enum_field(field_name: str, value: Any) -> Any:
@@ -34,7 +38,15 @@ def _convert_enum_field(field_name: str, value: Any) -> Any:
                 return Status(value)
             except (ValueError, KeyError):
                 return Status(value.lower())
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "enum_conversion_failed",
+                operation="convert_enum_field",
+                field="status",
+                provided_value=value,
+                error=str(e),
+                action="Using fallback value",
+            )
             return value
 
     if field_name == "priority":
