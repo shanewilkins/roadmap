@@ -49,8 +49,14 @@ class FolderStructureValidator(BaseValidator):
                                 ),
                             }
                         )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "issue_parse_failed",
+                    operation="parse_issue",
+                    file=str(issue_file),
+                    error=str(e),
+                    action="Skipping issue",
+                )
 
     @staticmethod
     def _process_milestone_file(
@@ -82,8 +88,13 @@ class FolderStructureValidator(BaseValidator):
                         "folder": milestone_folder.name,
                     }
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "milestone_folder_check_failed",
+                operation="check_milestone_folders",
+                error=str(e),
+                action="Continuing to next folder",
+            )
 
     @staticmethod
     def _check_milestone_folders(issues_dir: Path, core, orphaned_list: list) -> None:

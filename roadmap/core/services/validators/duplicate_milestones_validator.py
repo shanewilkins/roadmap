@@ -3,8 +3,12 @@
 from collections import defaultdict
 from pathlib import Path
 
+import structlog
+
 from roadmap.core.services.validator_base import BaseValidator, HealthStatus
 from roadmap.infrastructure.coordination.core import RoadmapCore
+
+logger = structlog.get_logger()
 
 
 class DuplicateMilestonesValidator(BaseValidator):
@@ -70,8 +74,13 @@ class DuplicateMilestonesValidator(BaseValidator):
                         }
                     )
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "scan_duplicate_names_failed",
+                operation="scan_for_duplicate_names",
+                error=str(e),
+                action="Returning empty duplicates",
+            )
 
         return duplicates
 
@@ -122,5 +131,11 @@ class DuplicateMilestonesValidator(BaseValidator):
             message = f"⚠️ {'; '.join(issues)}: Manual cleanup required"
             return HealthStatus.DEGRADED, message
 
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "duplicate_milestones_check_failed",
+                operation="perform_check",
+                error=str(e),
+                action="Returning healthy status",
+            )
             return HealthStatus.HEALTHY, "Could not check for duplicate milestones"
