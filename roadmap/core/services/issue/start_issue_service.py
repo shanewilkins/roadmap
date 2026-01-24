@@ -6,8 +6,12 @@ and optionally creating Git branches.
 
 from datetime import UTC, datetime
 
+import structlog
+
 from roadmap.common.console import get_console
 from roadmap.core.domain import Status
+
+logger = structlog.get_logger()
 
 
 class StartIssueService:
@@ -152,7 +156,13 @@ class StartIssueService:
                     "⚠️  Failed to create or checkout branch. See git for details.",
                     style="yellow",
                 )
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "branch_creation_failed",
+                operation="create_branch",
+                error=str(e),
+                action="Showing user message",
+            )
             self._console.print(
                 "⚠️  Failed to create or checkout branch. See git for details.",
                 style="yellow",

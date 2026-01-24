@@ -8,8 +8,11 @@ import os
 import subprocess
 
 import click
+import structlog
 
 from roadmap.common.console import get_console
+
+logger = structlog.get_logger()
 
 
 class IssueCreationService:
@@ -159,7 +162,13 @@ class IssueCreationService:
                 # Try with just issue
                 try:
                     return self.core.git.create_branch_for_issue(issue)
-                except Exception:
+                except Exception as e:
+                    logger.debug(
+                        "create_branch_fallback_failed",
+                        operation="create_branch_for_issue",
+                        error=str(e),
+                        action="Returning False",
+                    )
                     return False
 
     def _has_uncommitted_changes(self) -> bool:
@@ -169,7 +178,13 @@ class IssueCreationService:
                 self.core.git._run_git_command(["status", "--porcelain"]) or ""
             )
             return bool(status_output.strip())
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "git_status_check_failed",
+                operation="check_git_status",
+                error=str(e),
+                action="Assuming no changes",
+            )
             return False
 
     def _try_direct_git_command(self, branch_name: str, checkout: bool) -> bool:
@@ -187,8 +202,14 @@ class IssueCreationService:
             if exists:
                 self._show_branch_success_message(branch_name, checkout)
                 return True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(
+                "direct_git_command_failed",
+                operation="try_direct_git_command",
+                branch=branch_name,
+                error=str(e),
+                action="Falling back to subprocess",
+            )
         return False
 
     def _try_subprocess_git(self, branch_name: str, checkout: bool) -> bool:
