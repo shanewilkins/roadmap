@@ -390,5 +390,6 @@ class GitBranchManager:
                 return [issue_id]
             else:
                 return []
-        except Exception:
+        except Exception as e:
+            logger.debug("branch_issue_extraction_failed", branch_name=branch_name, error=str(e))
             return []

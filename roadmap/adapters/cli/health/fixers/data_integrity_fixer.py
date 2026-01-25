@@ -123,7 +123,8 @@ class DataIntegrityFixer(HealthFixer):
                     logger.debug("issue_file_parse_failed", file=str(issue_file), error=str(e))
                     # File couldn't be parsed
                     malformed.append(str(issue_file.relative_to(issues_dir)))
-        except Exception:
+        except Exception as e:
+            logger.error("malformed_files_check_failed", error=str(e))
             return []
 
         return malformed
