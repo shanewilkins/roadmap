@@ -240,7 +240,8 @@ class VersionManager:
                 "uncommitted_files": uncommitted_files,
                 "is_clean": len(uncommitted_files) == 0,
             }
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            logger.debug("git_status_check_failed", error=str(e))
             return {
                 "is_git_repo": False,
                 "current_branch": None,
