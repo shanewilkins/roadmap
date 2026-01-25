@@ -5,6 +5,7 @@ from typing import Any, cast
 
 import requests
 from requests.adapters import HTTPAdapter
+from structlog import get_logger
 from urllib3.util.retry import Retry
 
 from roadmap.adapters.github.handlers.base import (
@@ -13,6 +14,8 @@ from roadmap.adapters.github.handlers.base import (
 )
 from roadmap.adapters.github.handlers.labels import LabelHandler
 from roadmap.infrastructure.security.credentials import get_credential_manager
+
+logger = get_logger()
 
 
 class GitHubClient(BaseGitHubHandler):
@@ -86,8 +89,8 @@ class GitHubClient(BaseGitHubHandler):
         try:
             credential_manager = get_credential_manager()
             return credential_manager.get_token()
-        except Exception:
-            # Silently fail - credential manager issues shouldn't block functionality
+        except Exception as e:
+            logger.debug("credential_manager_failed", error=str(e))
             return None
 
     def set_repository(self, owner: str, repo: str) -> None:

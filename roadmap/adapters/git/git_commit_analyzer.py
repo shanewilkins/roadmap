@@ -4,9 +4,13 @@ import re
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.adapters.git.git import GitCommit
 from roadmap.adapters.git.git_command_executor import GitCommandExecutor
 from roadmap.common.datetime_parser import parse_datetime
+
+logger = get_logger()
 
 
 class GitCommitAnalyzer:
@@ -33,7 +37,8 @@ class GitCommitAnalyzer:
             hash_val, author, date_str, message = line.split("|", 3)
             date = parse_datetime(date_str.replace(" ", "T"), "iso")
             return (hash_val, author, date, message)
-        except Exception:
+        except Exception as e:
+            logger.debug("parse_commit_line_failed", line=line, error=str(e))
             return None
 
     def _extract_file_stats(self, stat_output: str | None) -> tuple[list, int, int]:

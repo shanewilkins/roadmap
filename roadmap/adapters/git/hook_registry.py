@@ -3,6 +3,10 @@
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
+logger = get_logger()
+
 
 class HookRegistry:
     """Registry and metadata for available Git hooks."""
@@ -50,7 +54,8 @@ class HookStatus:
         try:
             hook_file.read_text()
             return True
-        except Exception:
+        except Exception as e:
+            logger.error("hook_install_check_failed", error=str(e))
             return False
 
     @staticmethod
@@ -61,7 +66,8 @@ class HookStatus:
         try:
             content = hook_file.read_text()
             return "roadmap-hook" in content
-        except Exception:
+        except Exception as e:
+            logger.error("hook_content_check_failed", error=str(e))
             return False
 
     @staticmethod
@@ -71,7 +77,8 @@ class HookStatus:
             return False
         try:
             return bool(hook_file.stat().st_mode & 0o111)
-        except Exception:
+        except Exception as e:
+            logger.debug("hook_executable_check_failed", error=str(e))
             return False
 
     @staticmethod

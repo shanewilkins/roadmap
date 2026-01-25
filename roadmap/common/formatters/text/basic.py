@@ -34,7 +34,8 @@ def format_table(
     )
     try:
         from rich.console import Console
-    except ImportError:
+    except ImportError as e:
+        logger.debug("rich_import_failed", error=str(e))
         # Fallback to simple formatting
         return _format_table_simple(title, columns, rows)
 

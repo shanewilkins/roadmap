@@ -43,7 +43,8 @@ class SyncStateTracker:
         try:
             conflicts_detected = self.get_sync_state("git_conflicts_detected")
             return conflicts_detected == "true"
-        except Exception:
+        except Exception as e:
+            logger.debug("git_conflict_check_failed", error=str(e))
             # If we can't check, assume no conflicts to avoid blocking operations
             return False
 
@@ -54,7 +55,8 @@ class SyncStateTracker:
             if conflict_files_json:
                 return json.loads(conflict_files_json)
             return []
-        except Exception:
+        except Exception as e:
+            logger.debug("conflict_files_retrieval_failed", error=str(e))
             return []
 
     def update_last_incremental_sync(self, sync_time: str):

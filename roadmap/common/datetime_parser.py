@@ -8,11 +8,15 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
+from structlog import get_logger
+
 # Import timezone utilities
 from .utils.timezone_utils import (
     ensure_timezone_aware,
     get_timezone_manager,
 )
+
+logger = get_logger()
 
 
 class UnifiedDateTimeParser:
@@ -208,7 +212,8 @@ class UnifiedDateTimeParser:
         try:
             timezone_manager = get_timezone_manager()
             return timezone_manager.parse_user_input(value, assumed_timezone)
-        except Exception:
+        except Exception as e:
+            logger.debug("timezone_manager_parsing_failed", value=value, error=str(e))
             # Fallback to manual parsing
             return cls._parse_with_formats(
                 value, cls.DATETIME_FORMATS, assumed_timezone
@@ -239,7 +244,8 @@ class UnifiedDateTimeParser:
             dt = datetime.fromisoformat(value)
             return ensure_timezone_aware(dt, assumed_timezone or "UTC")
 
-        except ValueError:
+        except ValueError as e:
+            logger.debug("iso_datetime_parse_failed", value=value, error=str(e))
             return None
 
     @classmethod
@@ -273,7 +279,13 @@ class UnifiedDateTimeParser:
             try:
                 dt = datetime.strptime(value, fmt)
                 return ensure_timezone_aware(dt, assumed_timezone or "UTC")
-            except ValueError:
+            except ValueError as e:
+                logger.debug(
+                    "format_datetime_parse_failed",
+                    value=value,
+                    format=fmt,
+                    error=str(e),
+                )
                 continue
         return None
 

@@ -1,6 +1,10 @@
 """Kanban board layout and rendering."""
 
+from structlog import get_logger
+
 from roadmap.core.domain import Issue
+
+logger = get_logger()
 
 
 class KanbanLayout:
@@ -14,7 +18,8 @@ class KanbanLayout:
 
             terminal_width = shutil.get_terminal_size().columns
             return max(30, (terminal_width - 5) // num_columns)
-        except Exception:
+        except Exception as e:
+            logger.debug("terminal_size_calculation_failed", error=str(e))
             return 35
 
     @staticmethod

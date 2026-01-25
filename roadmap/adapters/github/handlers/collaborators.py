@@ -1,6 +1,10 @@
 """GitHub Collaborators handler."""
 
+from structlog import get_logger
+
 from roadmap.adapters.github.handlers.base import BaseGitHubHandler
+
+logger = get_logger()
 
 
 class CollaboratorsHandler(BaseGitHubHandler):
@@ -101,7 +105,8 @@ class CollaboratorsHandler(BaseGitHubHandler):
         try:
             response = self._make_request("GET", f"/users/{username}")
             return response.status_code == 200
-        except Exception:
+        except Exception as e:
+            logger.error("user_validation_failed", username=username, error=str(e))
             return False
 
     def validate_user_has_repository_access(self, username: str) -> bool:
@@ -116,7 +121,8 @@ class CollaboratorsHandler(BaseGitHubHandler):
         try:
             team_members = self.get_team_members()
             return username in team_members
-        except Exception:
+        except Exception as e:
+            logger.error("access_validation_failed", username=username, error=str(e))
             return False
 
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:

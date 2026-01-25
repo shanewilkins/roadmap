@@ -2,8 +2,12 @@
 
 from pathlib import Path
 
+from structlog import get_logger
+
 from .hook_registry import HookRegistry
 from .hook_script_generator import HookContentGenerator
+
+logger = get_logger()
 
 
 class HookInstaller:
@@ -61,7 +65,8 @@ class HookInstaller:
             for hook_name in hooks_to_remove:
                 self._uninstall_single_hook(hook_name)
             return True
-        except Exception:
+        except Exception as e:
+            logger.error("hook_uninstall_failed", error=str(e))
             return False
 
     def _install_single_hook(self, hook_name: str) -> None:

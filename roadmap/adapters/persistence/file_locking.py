@@ -12,7 +12,11 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.common.utils.file_utils import ensure_directory_exists
+
+logger = get_logger()
 
 
 class FileLockError(Exception):
@@ -139,7 +143,8 @@ class FileLock:
                 fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
             return False  # No lock held
-        except OSError:
+        except OSError as e:
+            logger.debug("lock_check_failed", error=str(e))
             return True  # Lock is held
 
     def get_lock_info(self) -> dict[str, Any] | None:
@@ -159,7 +164,8 @@ class FileLock:
             if self.lock_path.exists():
                 self.lock_path.unlink()
             return True
-        except Exception:
+        except Exception as e:
+            logger.error("force_unlock_failed", error=str(e))
             return False
 
 
@@ -225,7 +231,10 @@ class LockManager:
                     if not lock.is_locked():
                         lock_file.unlink()
                         cleaned += 1
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "stale_lock_cleanup_failed", lock_file=str(lock_file), error=str(e)
+                )
                 continue
 
         return cleaned
@@ -244,7 +253,10 @@ class LockManager:
                 lock_info = lock.get_lock_info()
                 if lock_info:
                     locks[str(original_file)] = lock_info
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "lock_info_retrieval_failed", lock_file=str(lock_file), error=str(e)
+                )
                 continue
 
         return locks

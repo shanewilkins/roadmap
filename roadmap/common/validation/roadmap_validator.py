@@ -5,11 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.common.constants import IssueType, MilestoneStatus, Priority, Status
 
 from .field_validator import FieldValidator
 from .result import ValidationResult
 from .schema_validator import SchemaValidator
+
+logger = get_logger()
 
 
 class RoadmapValidator:
@@ -108,7 +112,8 @@ class RoadmapValidator:
             if num_value < 0:
                 return False, "must be a positive number"
             return True, ""
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            logger.debug("number_validation_failed", value=value, error=str(e))
             return False, "must be a valid number"
 
     def _validate_percentage(self, value: Any) -> tuple[bool, str]:
@@ -121,7 +126,8 @@ class RoadmapValidator:
             if not 0 <= num_value <= 100:
                 return False, "must be between 0 and 100"
             return True, ""
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            logger.debug("percentage_validation_failed", value=value, error=str(e))
             return False, "must be a valid number"
 
     def _validate_datetime(self, value: Any) -> tuple[bool, str]:
@@ -139,7 +145,8 @@ class RoadmapValidator:
 
                 parse_datetime(value, "flexible")
                 return True, ""
-            except Exception:
+            except Exception as e:
+                logger.debug("datetime_parsing_failed", value=value, error=str(e))
                 return False, "must be a valid datetime format"
 
         return False, "must be a datetime or valid datetime string"
@@ -256,6 +263,7 @@ class RoadmapValidator:
                 result.add_error(f"{field_name} should be a relative path")
 
         except Exception as e:
+            logger.error("path_validation_failed", path=str(path_value), error=str(e))
             result.add_error(f"Invalid {field_name}: {str(e)}")
 
         return result

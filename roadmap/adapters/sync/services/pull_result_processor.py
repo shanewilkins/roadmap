@@ -33,7 +33,8 @@ class PullResultProcessor:
                     rid = getattr(item, "backend_id", None) or getattr(item, "id", None)
                     if rid is not None:
                         pulled_remote_ids.append(str(rid))
-                except Exception:
+                except Exception as e:
+                    logger.debug("pulled_item_id_extraction_failed", error=str(e))
                     continue
         else:
             pull_report = fetched
@@ -44,7 +45,8 @@ class PullResultProcessor:
                         if isinstance(pull_report.errors, dict)
                         else []
                     )
-                except Exception:
+                except Exception as e:
+                    logger.debug("error_keys_extraction_failed", error=str(e))
                     err_keys = []
                 pull_errors = err_keys
                 logger.warning(
@@ -60,7 +62,8 @@ class PullResultProcessor:
             else:
                 try:
                     pulled_iter = list(pulled_raw)
-                except Exception:
+                except Exception as e:
+                    logger.debug("pulled_iter_conversion_failed", error=str(e))
                     pulled_iter = [pulled_raw]
                 pulled_remote_ids = [str(i) for i in pulled_iter]
                 pulled_count = len(pulled_remote_ids)

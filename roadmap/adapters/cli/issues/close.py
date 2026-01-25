@@ -6,6 +6,7 @@ This command is syntactic sugar for: roadmap issue update <ID> --status closed
 from datetime import UTC, datetime
 
 import click
+from structlog import get_logger
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
@@ -21,6 +22,7 @@ from roadmap.common.logging import (
 from roadmap.core.domain import Status
 
 console = get_console()
+logger = get_logger()
 
 
 def _parse_completion_date(date_str: str) -> datetime | None:
@@ -49,7 +51,10 @@ def _parse_completion_date(date_str: str) -> datetime | None:
         )
         try:
             return datetime.strptime(date_str, "%Y-%m-%d")
-        except ValueError:
+        except ValueError as e:
+            logger.debug(
+                "completion_date_parse_failed", date_str=date_str, error=str(e)
+            )
             return None
 
 

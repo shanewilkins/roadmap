@@ -17,13 +17,17 @@ from pathlib import Path
 from typing import Any
 
 import click
+from structlog import get_logger
+
+logger = get_logger()
 
 
 def parse_log_line(line: str) -> dict[str, Any] | None:
     """Parse a JSON log line."""
     try:
         return json.loads(line)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.debug("json_decode_failed", error=str(e))
         return None
 
 
@@ -32,7 +36,8 @@ def format_timestamp(ts: str) -> str:
     try:
         dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
         return dt.strftime("%Y-%m-%d %H:%M:%S")
-    except Exception:
+    except Exception as e:
+        logger.debug("timestamp_format_failed", timestamp=ts, error=str(e))
         return ts
 
 

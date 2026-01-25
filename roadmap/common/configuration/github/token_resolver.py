@@ -3,10 +3,12 @@
 import os
 
 import click
+from structlog import get_logger
 
 from roadmap.common.console import get_console
 
 console = get_console()
+logger = get_logger()
 
 
 class GitHubTokenResolver:
@@ -26,7 +28,8 @@ class GitHubTokenResolver:
             return None
         try:
             return self.cred_manager.get_token()
-        except Exception:
+        except Exception as e:
+            logger.debug("stored_token_retrieval_failed", error=str(e))
             return None
 
     def resolve_token(

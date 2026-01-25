@@ -140,7 +140,8 @@ class MilestoneOperations:
                 )
                 is not None
             )
-        except UpdateError:
+        except UpdateError as e:
+            logger.error("milestone_update_failed", name=name, error=str(e))
             return False
 
     @safe_operation(OperationType.READ, "Milestone")

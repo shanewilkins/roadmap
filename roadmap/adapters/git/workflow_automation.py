@@ -5,12 +5,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.core.domain import Issue, Status
 from roadmap.infrastructure.coordination.core import RoadmapCore
 
 from .git import GitCommit, GitIntegration
 from .git_hooks_manager import GitHookManager
+
+logger = get_logger()
 
 
 class WorkflowAutomation:
@@ -71,7 +75,8 @@ class WorkflowAutomation:
 
             return True
 
-        except Exception:
+        except Exception as e:
+            logger.error("context_cleanup_failed", error=str(e))
             return False
 
     def _setup_status_automation(self) -> bool:
@@ -95,7 +100,8 @@ class WorkflowAutomation:
             config_file.write_text(json.dumps(config, indent=2))
             return True
 
-        except Exception:
+        except Exception as e:
+            logger.error("status_automation_setup_failed", error=str(e))
             return False
 
     def _setup_progress_tracking(self) -> bool:
@@ -117,7 +123,8 @@ class WorkflowAutomation:
             tracking_file.write_text(json.dumps(tracking_state, indent=2))
             return True
 
-        except Exception:
+        except Exception as e:
+            logger.error("progress_tracking_setup_failed", error=str(e))
             return False
 
     def sync_all_issues_with_git(self) -> dict[str, Any]:

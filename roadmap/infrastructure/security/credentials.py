@@ -139,7 +139,8 @@ class CredentialManager:
                 return self._check_secretservice_available()
             else:
                 return False
-        except Exception:
+        except Exception as e:
+            logger.debug("secretservice_availability_check_failed", error=str(e))
             return False
 
     # macOS Keychain implementation
@@ -203,7 +204,8 @@ class CredentialManager:
         try:
             result = subprocess.run(["security", "-h"], capture_output=True, text=True)
             return result.returncode == 0
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            logger.debug("security_command_not_found", error=str(e))
             return False
 
     # Windows Credential Manager implementation
@@ -222,7 +224,8 @@ class CredentialManager:
 
             keyring.set_password(self.SERVICE_NAME, target_name, token)
             return True
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_keychain", error=str(e))
             # Fallback to cmdkey if keyring not available
             return self._store_token_cmdkey(token, repo_info)
 
@@ -233,7 +236,8 @@ class CredentialManager:
 
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
             return keyring.get_password(self.SERVICE_NAME, target_name)
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_get_wincred", error=str(e))
             # Fallback to cmdkey if keyring not available
             return self._get_token_cmdkey()
 
@@ -245,23 +249,27 @@ class CredentialManager:
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
             keyring.delete_password(self.SERVICE_NAME, target_name)
             return True
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_delete_wincred", error=str(e))
             # Fallback to cmdkey if keyring not available
             return self._delete_token_cmdkey()
-        except Exception:
+        except Exception as e:
+            logger.error("wincred_token_deletion_failed", error=str(e))
             return False
 
     def _check_wincred_available(self) -> bool:
         """Check if Windows Credential Manager is available."""
         try:
             return True
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_check_wincred", error=str(e))
             try:
                 result = subprocess.run(
                     ["cmdkey", "/?"], capture_output=True, text=True
                 )
                 return result.returncode == 0
-            except FileNotFoundError:
+            except FileNotFoundError as e:
+                logger.debug("cmdkey_not_found", error=str(e))
                 return False
 
     def _store_token_cmdkey(
@@ -309,7 +317,8 @@ class CredentialManager:
 
             keyring.set_password(self.SERVICE_NAME, target_name, token)
             return True
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_store_secretservice", error=str(e))
             # Fallback if keyring not available
             return self._store_token_fallback(token, repo_info)
 
@@ -320,7 +329,8 @@ class CredentialManager:
 
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
             return keyring.get_password(self.SERVICE_NAME, target_name)
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_get_secretservice", error=str(e))
             # Fallback if keyring not available
             return self._get_token_fallback()
 

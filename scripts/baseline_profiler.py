@@ -15,9 +15,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+from structlog import get_logger
 
 from roadmap.common.cache import clear_session_cache
 from roadmap.common.services import get_profiler
+
+logger = get_logger()
 
 
 def simulate_operations():
@@ -84,7 +87,8 @@ def simulate_operations():
     try:
         time.sleep(0.003)
         raise ValueError("Simulated network error")
-    except Exception:
+    except Exception as e:
+        logger.debug("simulated_error_caught", error=str(e))
         profiler.end_operation("fetch_with_retry", error=True)
 
 
@@ -185,7 +189,8 @@ def establish_baseline(profile_file: str | None, iterations: int):
                 timeout=5,
             )
             return result.stdout.strip() if result.returncode == 0 else "Unknown"
-        except Exception:
+        except Exception as e:
+            logger.debug("system_info_retrieval_failed", error=str(e))
             return "Unknown"
 
     def get_memory_gb() -> float:
@@ -207,7 +212,8 @@ def establish_baseline(profile_file: str | None, iterations: int):
                     kb = int(result.stdout.split()[1])
                     return kb / (1024**2)
             return 0.0
-        except Exception:
+        except Exception as e:
+            logger.debug("memory_info_retrieval_failed", error=str(e))
             return 0.0
 
     # Save detailed results
@@ -237,7 +243,8 @@ def establish_baseline(profile_file: str | None, iterations: int):
                         version = line.split('"')[1]
                         results_dict["roadmap_version"] = version
                         break
-    except Exception:
+    except Exception as e:
+        logger.debug("version_extraction_failed", error=str(e))
         results_dict["roadmap_version"] = "unknown"
 
     output_path.write_text(json.dumps(results_dict, indent=2))

@@ -11,6 +11,10 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+from structlog import get_logger
+
+logger = get_logger()
+
 # Common DRY violation patterns
 PATTERNS = {
     "mock_setup": r"mock_\w+\s*=\s*MagicMock\(",
@@ -33,7 +37,8 @@ def scan_file(filepath: Path) -> None:
     try:
         with open(filepath) as f:
             lines = f.readlines()
-    except Exception:
+    except Exception as e:
+        logger.debug("file_scan_failed", filepath=str(filepath), error=str(e))
         return
 
     rel_path = str(filepath.relative_to(Path.cwd()))
