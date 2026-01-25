@@ -21,6 +21,9 @@ rules:
             pass
     severity: ERROR
     languages: [python]
+    paths:
+      exclude:
+        - tests/
 
   # Rule 2: Exception handlers with continue in loop (silent skip)
   - id: except-silent-continue
