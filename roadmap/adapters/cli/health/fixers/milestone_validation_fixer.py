@@ -83,7 +83,7 @@ class MilestoneValidationFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, _force: bool = False) -> FixResult:  # noqa: ARG002
+    def apply(self, _force: bool = False) -> FixResult:
         """Fix issues with invalid milestone references.
 
         Args:
