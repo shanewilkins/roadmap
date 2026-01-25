@@ -42,6 +42,9 @@ rules:
             continue
     severity: ERROR
     languages: [python]
+    paths:
+      exclude:
+        - tests/
 
   # Rule 3: Exception handlers with return (silent exit without context)
   - id: except-silent-return
@@ -68,6 +71,9 @@ rules:
             return False
     severity: WARNING
     languages: [python]
+    paths:
+      exclude:
+        - tests/
 
 
 # Phase 7d: Logging Quality & Enforcement Rules

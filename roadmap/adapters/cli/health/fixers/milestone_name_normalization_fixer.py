@@ -2,7 +2,11 @@
 
 from pathlib import Path
 
+from structlog import get_logger
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
+
+logger = get_logger()
 
 
 class MilestoneNameNormalizationFixer(HealthFixer):
@@ -75,7 +79,7 @@ class MilestoneNameNormalizationFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:  # noqa: ARG002
         """Normalize milestone names in issue metadata.
 
         Args:
@@ -98,7 +102,12 @@ class MilestoneNameNormalizationFixer(HealthFixer):
                     fixed_count += 1
                 else:
                     failed_items.append(issue_id)
-            except Exception:
+            except Exception as e:
+                logger.error(
+                    "normalize_milestone_failed",
+                    issue_id=issue_data["id"],
+                    error=str(e),
+                )
                 failed_items.append(issue_data["id"])
 
         return FixResult(
@@ -161,7 +170,8 @@ class MilestoneNameNormalizationFixer(HealthFixer):
                         }
                     )
 
-        except Exception:
+        except Exception as e:
+            logger.error("find_mismatched_milestones_failed", error=str(e))
             return []
 
         return mismatched

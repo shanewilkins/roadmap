@@ -3,7 +3,11 @@
 from difflib import get_close_matches
 from pathlib import Path
 
+from structlog import get_logger
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
+
+logger = get_logger()
 
 
 class MilestoneValidationFixer(HealthFixer):
@@ -79,7 +83,7 @@ class MilestoneValidationFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:  # noqa: ARG002
         """Fix issues with invalid milestone references.
 
         Args:
@@ -108,7 +112,12 @@ class MilestoneValidationFixer(HealthFixer):
                     fixed_count += 1
                 else:
                     failed_items.append(issue_id)
-            except Exception:
+            except Exception as e:
+                logger.error(
+                    "fix_invalid_milestone_failed",
+                    issue_id=issue_data["id"],
+                    error=str(e),
+                )
                 failed_items.append(issue_data["id"])
 
         return FixResult(
@@ -160,7 +169,8 @@ class MilestoneValidationFixer(HealthFixer):
                         }
                     )
 
-        except Exception:
+        except Exception as e:
+            logger.error("find_invalid_milestones_failed", error=str(e))
             return []
 
         return invalid
@@ -184,5 +194,10 @@ class MilestoneValidationFixer(HealthFixer):
             # Find close matches
             matches = get_close_matches(invalid_milestone, available, n=1, cutoff=0.6)
             return matches[0] if matches else None
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "get_milestone_suggestion_failed",
+                milestone=invalid_milestone,
+                error=str(e),
+            )
             return None

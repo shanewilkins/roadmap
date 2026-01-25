@@ -1,6 +1,10 @@
 """Fixer for duplicate issues."""
 
+from structlog import get_logger
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
+
+logger = get_logger()
 
 
 class DuplicateIssuesFixer(HealthFixer):
@@ -69,7 +73,7 @@ class DuplicateIssuesFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:  # noqa: ARG002
         """Merge duplicate issues.
 
         Args:
@@ -122,8 +126,9 @@ class DuplicateIssuesFixer(HealthFixer):
                         "created": issue.created_date or "",
                     }
                 )
-        except Exception:
-            # If we can't read issues, return empty list
+        except Exception as e:
+            # If we can't read issues, log and return empty list
+            logger.error("read_duplicate_issues_failed", error=str(e))
             return []
 
         # Return only groups with duplicates

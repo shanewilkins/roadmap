@@ -3,8 +3,12 @@
 import shutil
 from pathlib import Path
 
+from structlog import get_logger
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
 from roadmap.core.domain.issue import Status
+
+logger = get_logger()
 
 
 class OrphanedIssuesFixer(HealthFixer):
@@ -68,7 +72,7 @@ class OrphanedIssuesFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:  # noqa: ARG002
         """Move orphaned issues to correct folders.
 
         Args:
@@ -122,7 +126,12 @@ class OrphanedIssuesFixer(HealthFixer):
                     moved_count += 1
                 else:
                     failed_items.append(issue_id)
-            except Exception:
+            except Exception as e:
+                logger.error(
+                    "move_orphaned_issue_failed",
+                    issue_id=issue_data["id"],
+                    error=str(e),
+                )
                 failed_items.append(issue_data["id"])
 
         return FixResult(
@@ -177,7 +186,8 @@ class OrphanedIssuesFixer(HealthFixer):
                             }
                         )
 
-        except Exception:
+        except Exception as e:
+            logger.error("find_orphaned_issues_failed", error=str(e))
             return []
 
         return misplaced

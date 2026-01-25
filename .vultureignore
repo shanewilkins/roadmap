@@ -11,8 +11,10 @@ cli
 
 # Common test patterns
 Test
+
 # Function parameters that are part of the public API but not always used internally
 include_traceback
 filters
 log_level
 log_file
+force
