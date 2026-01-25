@@ -49,7 +49,10 @@ def extract_user_context() -> dict[str, Any]:
             "command": ctx.invoked_subcommand,
             "params": dict(ctx.params),
         }
-    except RuntimeError:
+    except RuntimeError as e:
+        logger.debug(
+            "click_context_not_available", error=str(e), action="extract_user_context"
+        )
         return {"user": None, "command": None, "params": {}}
 
 
@@ -60,7 +63,7 @@ def handle_cli_error(
     entity_id: str | None = None,
     context: dict[str, Any] | None = None,
     fatal: bool = True,
-    include_traceback: bool = True,
+    include_traceback: bool = True,  # noqa: ARG001
 ) -> None:
     """Universal CLI error handler with classification, logging, and display.
 

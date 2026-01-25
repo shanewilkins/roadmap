@@ -120,7 +120,17 @@ class BaseDelete(ABC):
         try:
             delete_entity_by_type(self.core, self.entity_type, entity_id)
             return True
-        except Exception:
+        except Exception as e:
+            from roadmap.common.logging import get_logger
+
+            logger = get_logger(__name__)
+            logger.debug(
+                "entity_deletion_failed",
+                entity_id=entity_id,
+                entity_type=self.entity_type,
+                error=str(e),
+                action="delete_entity",
+            )
             return False
 
     def _display_success(self, entity_id: str, entity: Any) -> None:

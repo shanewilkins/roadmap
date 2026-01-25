@@ -34,10 +34,10 @@ def get_current_user() -> str:
             name = repo.config_reader().get_value("user", "name")
             if isinstance(name, str):
                 return name
-        except Exception:
-            pass
-    except Exception:
-        pass
+        except Exception as e:
+            logger.debug("user_name_lookup_failed_in_repo_config", error=str(e))
+    except Exception as e:
+        logger.debug("user_name_lookup_failed", error=str(e))
 
     return "unknown"
 

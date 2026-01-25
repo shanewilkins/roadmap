@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.core.domain import MilestoneStatus, Status
 from roadmap.infrastructure.coordination.core import RoadmapCore
@@ -12,6 +14,8 @@ from roadmap.infrastructure.coordination.core import RoadmapCore
 from .git import GitCommit, GitIntegration
 from .hook_installer import HookInstaller
 from .hook_registry import HookRegistry, HookStatus
+
+logger = get_logger()
 
 
 class GitHookManager:
@@ -105,9 +109,9 @@ class GitHookManager:
             # Trigger auto-sync if enabled
             self._trigger_auto_sync_on_commit(latest_commit_sha)
 
-        except Exception:
+        except Exception as e:
             # Silent fail to avoid breaking Git operations
-            pass
+            logger.error("handle_post_commit_failed", error=str(e))
 
     def handle_post_checkout(self):
         """Handle post-checkout hook - track branch changes and trigger auto-sync.
@@ -133,9 +137,9 @@ class GitHookManager:
             # Trigger auto-sync if enabled
             self._trigger_auto_sync_on_checkout(branch_name)
 
-        except Exception:
+        except Exception as e:
             # Silent fail to avoid breaking Git operations
-            pass
+            logger.error("handle_post_checkout_failed", error=str(e))
 
     def handle_pre_push(self):
         """Handle pre-push hook - basic push notification and trigger auto-sync.
@@ -161,9 +165,9 @@ class GitHookManager:
             # Note: We don't auto-sync on pre-push to avoid blocking the push
             # Users can manually sync before pushing if desired
 
-        except Exception:
+        except Exception as e:
             # Silent fail to avoid breaking Git operations
-            pass
+            logger.error("handle_pre_push_failed", error=str(e))
 
     def handle_post_merge(self):
         """Handle post-merge hook - update milestone progress and trigger auto-sync."""
@@ -181,11 +185,11 @@ class GitHookManager:
                 )
                 merge_commit_sha = result.stdout.strip()
                 self._trigger_auto_sync_on_merge(merge_commit_sha)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("trigger_auto_sync_on_merge_failed", error=str(e))
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("handle_post_merge_failed", error=str(e))
 
     def _log_hook_activity(self, activity_type: str, activity_detail: str) -> None:
         """Log hook activity to .git/roadmap-hooks.log.
@@ -201,8 +205,10 @@ class GitHookManager:
 
             with open(log_file, "a") as f:
                 f.write(log_entry)
-        except Exception:
-            pass  # Silent fail for logging
+        except Exception as e:
+            logger.debug(
+                "log_hook_activity_failed", error=str(e)
+            )  # Silent fail for logging
 
     def _update_issue_from_commit(
         self, issue_id: str, commit: GitCommit, progress: float | None = None
@@ -240,8 +246,8 @@ class GitHookManager:
             issue_path = self.core.issues_dir / issue.filename
             IssueParser.save_issue_file(issue, issue_path)
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("update_issue_from_commit_failed", error=str(e))
 
     def _complete_issue_from_commit(self, issue_id: str, commit: GitCommit):
         """Mark an issue as completed based on commit message."""
@@ -271,8 +277,8 @@ class GitHookManager:
                 issue_path = self.core.issues_dir / issue.filename
                 IssueParser.save_issue_file(issue, issue_path)
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("complete_issue_from_commit_failed", error=str(e))
 
     def _is_milestone_active(self, milestone) -> bool:
         """Check if milestone is active.
@@ -360,8 +366,8 @@ class GitHookManager:
                         self._update_milestone_attributes(milestone, progress)
                         self._save_milestone(milestone)
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("update_milestone_progress_failed", error=str(e))
 
     def _trigger_auto_sync_on_commit(self, commit_sha: str | None = None):
         """Trigger auto-sync after commit if enabled.
@@ -426,6 +432,6 @@ class GitHookManager:
             if method:
                 method(**kwargs)
 
-        except Exception:
+        except Exception as e:
             # Silent fail to avoid breaking Git operations
-            pass
+            logger.error("trigger_auto_sync_operation_failed", error=str(e))

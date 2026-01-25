@@ -2,8 +2,12 @@
 
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.adapters.github.handlers.base import BaseGitHubHandler
 from roadmap.core.domain import Priority, Status
+
+logger = get_logger()
 
 
 class LabelHandler(BaseGitHubHandler):
@@ -150,6 +154,6 @@ class LabelHandler(BaseGitHubHandler):
             if name not in existing_labels:
                 try:
                     self.create_label(name, color, description)
-                except Exception:
+                except Exception as e:
                     # Label might have been created by another process
-                    pass
+                    logger.debug("create_label_failed", label_name=name, error=str(e))

@@ -4,9 +4,9 @@ Sets up trace exporter and OTLP integration for local development.
 Exports traces to local OTLP receiver on port 4317.
 """
 
-import logging
+from structlog import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 # Global tracer instance
 _tracer: object | None = None

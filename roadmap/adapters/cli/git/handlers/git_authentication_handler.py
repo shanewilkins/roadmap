@@ -45,8 +45,12 @@ class GitAuthenticationHandler:
                     elif not click.confirm("Update GitHub token?"):
                         self.console.print("Skipped GitHub authentication setup")
                         return
-            except Exception:
-                pass  # No existing token
+            except Exception as e:
+                logger.debug(
+                    "existing_token_check_failed",
+                    error=str(e),
+                    action="check_existing_token",
+                )
 
         # Get new token from user
         self.console.print("🔑 GitHub Authentication Setup", style="bold cyan")

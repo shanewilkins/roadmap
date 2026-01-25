@@ -1,12 +1,13 @@
 """Security event logging utilities."""
 
-import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
 # Security logger
-security_logger = logging.getLogger("roadmap.security")
+security_logger = get_logger()
 
 
 def log_security_event(event_type: str, details: dict[str, Any] | None = None) -> None:
@@ -19,33 +20,17 @@ def log_security_event(event_type: str, details: dict[str, Any] | None = None) -
     if details is None:
         details = {}
 
-    try:
-        # Add timestamp and event type to details
-        log_data = {
-            "event_type": event_type,
-            "timestamp": datetime.now(UTC).isoformat(),
-            **details,
-        }
-
-        # Only log if the logger has handlers and they're not closed
-        if security_logger.handlers:
-            # Check if handlers are still valid
-            for handler in security_logger.handlers:
-                if hasattr(handler, "stream") and hasattr(handler, "stream"):
-                    stream = getattr(handler, "stream", None)
-                    if stream and hasattr(stream, "closed") and stream.closed:
-                        return  # Skip logging if stream is closed
-
-        # Log as structured data
-        security_logger.info(f"Security event: {event_type}", extra=log_data)
-
-    except Exception:
-        # Don't let logging failures break functionality
-        pass
+    # Log as structured data
+    security_logger.info(
+        event_type,
+        timestamp=datetime.now(UTC).isoformat(),
+        **details,
+    )
 
 
 def configure_security_logging(
-    log_level: str = "INFO", log_file: Path | None = None
+    log_level: str = "INFO",
+    log_file: Path | None = None,  # noqa: ARG001
 ) -> None:
     """Configure security event logging.
 
@@ -53,26 +38,6 @@ def configure_security_logging(
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
         log_file: Optional file to log to (in addition to console)
     """
-    # Set up security logger
-    security_logger.setLevel(getattr(logging, log_level.upper()))
-
-    # Create formatter
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    security_logger.addHandler(console_handler)
-
-    # File handler if specified
-    if log_file:
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(formatter)
-        security_logger.addHandler(file_handler)
-
-        # Secure the log file - import here to avoid circular dependency
-        from .file_operations import secure_file_permissions
-
-        secure_file_permissions(log_file, 0o600)
+    # Structlog configuration is centralized in roadmap/common/logging/__init__.py
+    # This function is kept for backward compatibility
+    pass

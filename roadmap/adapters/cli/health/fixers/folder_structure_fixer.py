@@ -1,6 +1,10 @@
 """Fixer for folder structure issues (issues not in correct milestone folders)."""
 
+from structlog import get_logger
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
+
+logger = get_logger()
 
 
 class FolderStructureFixer(HealthFixer):
@@ -83,8 +87,8 @@ class FolderStructureFixer(HealthFixer):
                 # In actual implementation would move files
                 # For now, just count successful operations
                 moved_count += 1
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error("move_issue_failed", error=str(e))
 
         return FixResult(
             fix_type=self.fix_type,

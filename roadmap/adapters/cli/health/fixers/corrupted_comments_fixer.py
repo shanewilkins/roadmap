@@ -2,7 +2,11 @@
 
 import json
 
+import structlog
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
+
+logger = structlog.get_logger()
 
 
 class CorruptedCommentsFixer(HealthFixer):
@@ -106,8 +110,14 @@ class CorruptedCommentsFixer(HealthFixer):
                             entity
                         ) if entity_type == "issue" else None
                         fixed_count += 1
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "comment_sanitization_failed",
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    error=str(e),
+                    action="sanitize_comment",
+                )
 
         return FixResult(
             fix_type=self.fix_type,
@@ -168,8 +178,8 @@ class CorruptedCommentsFixer(HealthFixer):
                                     "index": i,
                                 }
                             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("comments_load_failed", error=str(e), action="load_comments")
 
         return corrupted
 

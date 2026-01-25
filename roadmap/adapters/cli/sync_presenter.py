@@ -48,8 +48,15 @@ def present_analysis(analysis_report: Any, verbose: bool = False) -> None:
                     if title:
                         line += f"{title}"
                     console.print(line)
-                except Exception:
-                    # Avoid failing presentation on malformed change objects
+                except Exception as e:
+                    from roadmap.common.logging import get_logger
+
+                    logger = get_logger(__name__)
+                    logger.debug(
+                        "sync_change_presentation_failed",
+                        error=str(e),
+                        action="present_change",
+                    )
                     continue
 
 

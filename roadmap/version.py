@@ -11,8 +11,11 @@ from pathlib import Path
 from typing import Any
 
 import toml
+from structlog import get_logger
 
 from .core.domain import Issue, Milestone
+
+logger = get_logger()
 
 
 class SemanticVersion:
@@ -111,8 +114,8 @@ class VersionManager:
             version_str = data.get("tool", {}).get("poetry", {}).get("version")
             if version_str:
                 return SemanticVersion(version_str)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("get_current_version_failed", error=str(e))
         return None
 
     def get_init_version(self) -> SemanticVersion | None:
@@ -123,8 +126,8 @@ class VersionManager:
             match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
             if match:
                 return SemanticVersion(match.group(1))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("get_init_version_failed", error=str(e))
         return None
 
     def check_version_consistency(self) -> dict[str, Any]:

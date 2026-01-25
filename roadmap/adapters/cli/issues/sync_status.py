@@ -28,7 +28,16 @@ def _format_timestamp(iso_str: str) -> str:
         if dt:
             return dt.strftime("%Y-%m-%d %H:%M:%S")
         return iso_str
-    except Exception:
+    except Exception as e:
+        from roadmap.common.logging import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug(
+            "iso_datetime_format_failed",
+            iso_str=iso_str,
+            error=str(e),
+            action="format_iso_timestamp",
+        )
         return iso_str
 
 

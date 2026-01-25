@@ -13,7 +13,9 @@ class MilestoneRestore(BaseRestore):
     entity_type = EntityType.MILESTONE
 
     def get_archived_files_to_restore(
-        self, entity_id: str | None = None, **filters
+        self,
+        entity_id: str | None = None,
+        **filters,  # noqa: ARG001
     ) -> list[Path]:
         """Get archived milestone files to restore.
 
@@ -38,7 +40,16 @@ class MilestoneRestore(BaseRestore):
                     milestone = MilestoneParser.parse_milestone_file(md_file)
                     if milestone.name == entity_id:
                         return [md_file]
-                except Exception:
+                except Exception as e:
+                    from roadmap.common.logging import get_logger
+
+                    logger = get_logger(__name__)
+                    logger.debug(
+                        "milestone_parse_failed",
+                        file=str(md_file),
+                        error=str(e),
+                        action="find_restore_files",
+                    )
                     continue
             return []
         else:

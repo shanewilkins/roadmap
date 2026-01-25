@@ -3,8 +3,12 @@
 import re
 from pathlib import Path
 
+from structlog import get_logger
+
 from roadmap.adapters.git.git import GitBranch
 from roadmap.adapters.git.git_command_executor import GitCommandExecutor
+
+logger = get_logger()
 
 
 class GitBranchManager:
@@ -95,8 +99,8 @@ class GitBranchManager:
                 defaults = getattr(self.config, "defaults", None)
                 if defaults and hasattr(defaults, "get"):
                     return defaults.get("branch_name_template")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("get_branch_name_template_failed", error=str(e))
         return None
 
     def _format_branch_name(
@@ -116,8 +120,12 @@ class GitBranchManager:
         if template:
             try:
                 return template.format(id=issue_id, slug=slug, prefix=prefix)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(
+                    "format_branch_name_template_failed",
+                    template=template,
+                    error=str(e),
+                )
 
         return f"{prefix}/{issue_id}-{slug}"
 

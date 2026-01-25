@@ -17,15 +17,16 @@ Functions:
     backup_file: Create backup of existing file before modification
 """
 
-import logging
 import os
 import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
+from structlog import get_logger
+
 # File operations logger
-file_logger = logging.getLogger("roadmap.file_utils")
+file_logger = get_logger()
 
 
 class FileOperationError(Exception):

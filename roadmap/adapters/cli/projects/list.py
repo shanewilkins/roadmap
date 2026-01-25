@@ -39,7 +39,15 @@ def _parse_project_metadata(file_path) -> dict | None:
                 metadata["id"] = filename_stem.split("-", 1)[0]
 
         return metadata if isinstance(metadata, dict) else None
-    except Exception:
+    except Exception as e:
+        from roadmap.common.logging import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug(
+            "project_metadata_parse_failed",
+            error=str(e),
+            action="parse_project_metadata",
+        )
         return None
 
 

@@ -2,8 +2,12 @@
 
 from pathlib import Path
 
+from structlog import get_logger
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
 from roadmap.adapters.persistence.parser import IssueParser
+
+logger = get_logger()
 
 
 class DataIntegrityFixer(HealthFixer):
@@ -80,8 +84,10 @@ class DataIntegrityFixer(HealthFixer):
                 if full_path.exists():
                     full_path.unlink()
                     removed_count += 1
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(
+                    "remove_malformed_file_failed", file_path=file_path, error=str(e)
+                )
 
         return FixResult(
             fix_type=self.fix_type,

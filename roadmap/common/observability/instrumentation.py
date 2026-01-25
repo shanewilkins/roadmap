@@ -5,13 +5,14 @@ trace span creation and duration tracking.
 """
 
 import functools
-import logging
 from collections.abc import Callable
 from typing import Any, TypeVar
 
+from structlog import get_logger
+
 from .observability import create_span, get_current_span, set_current_span
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 F = TypeVar("F", bound=Callable[..., Any])
 

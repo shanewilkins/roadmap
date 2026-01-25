@@ -13,8 +13,6 @@ For backward compatibility, all public classes and functions are re-exported
 from the root module.
 """
 
-import logging as std_logging
-
 from .exceptions import PathValidationError, SecurityError
 from .export_cleanup import cleanup_old_backups, validate_export_size
 from .file_operations import (
@@ -23,11 +21,9 @@ from .file_operations import (
     secure_file_permissions,
 )
 from .filename_sanitization import sanitize_filename
-from .logging import configure_security_logging, log_security_event
+from .logging import configure_security_logging, log_security_event, security_logger
 from .path_validation import validate_path
 from .temp_files import create_secure_temp_file
-
-security_logger = std_logging.getLogger("roadmap.security")
 
 __all__ = [
     # Exceptions

@@ -98,8 +98,16 @@ class IssueArchive(BaseArchive):
 
         try:
             rel_path = issue_file.relative_to(issues_dir)
-        except ValueError:
-            # File is not under issues_dir, put in root
+        except ValueError as e:
+            from roadmap.common.logging import get_logger
+
+            logger = get_logger(__name__)
+            logger.debug(
+                "issue_relative_path_failed",
+                file=str(issue_file),
+                error=str(e),
+                action="calculate_archive_path",
+            )
             return archive_dir / issue_file.name
 
         # If file is directly in issues_dir (no parent folder), put in archive root

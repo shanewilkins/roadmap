@@ -77,7 +77,16 @@ class MilestoneArchive(BaseArchive):
                     if milestone.name == entity.name:
                         files.append(md_file)
                         break
-                except Exception:
+                except Exception as e:
+                    from roadmap.common.logging import get_logger
+
+                    logger = get_logger(__name__)
+                    logger.debug(
+                        "milestone_parse_failed",
+                        file=str(md_file),
+                        error=str(e),
+                        action="find_milestone_files",
+                    )
                     continue
         return files
 

@@ -1,10 +1,10 @@
 """Analysis commands for roadmap insights and reporting."""
 
 import json
-import logging
 from pathlib import Path
 
 import click
+from structlog import get_logger
 
 from roadmap.common.console import get_console
 from roadmap.common.logging import verbose_output
@@ -12,7 +12,7 @@ from roadmap.core.services.issue_helpers.issue_filters import IssueQueryService
 from roadmap.core.services.utils.critical_path_calculator import CriticalPathCalculator
 
 console = get_console()
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 @click.group()

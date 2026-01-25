@@ -37,7 +37,16 @@ def _parse_completion_date(date_str: str) -> datetime | None:
 
     try:
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M")
-    except ValueError:
+    except ValueError as e:
+        from roadmap.common.logging import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug(
+            "datetime_parse_failed",
+            date_str=date_str,
+            error=str(e),
+            action="parse_close_date",
+        )
         try:
             return datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:

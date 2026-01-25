@@ -175,14 +175,24 @@ def _parse_config_value(value: str):
     # Try integer
     try:
         return int(value)
-    except ValueError:
-        pass
+    except ValueError as e:
+        logger.debug(
+            "int_conversion_failed",
+            value=value,
+            error=str(e),
+            action="parse_config_value",
+        )
 
     # Try float
     try:
         return float(value)
-    except ValueError:
-        pass
+    except ValueError as e:
+        logger.debug(
+            "float_conversion_failed",
+            value=value,
+            error=str(e),
+            action="parse_config_value",
+        )
 
     # Return as string
     return value

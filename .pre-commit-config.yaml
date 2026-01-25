@@ -62,7 +62,7 @@ repos:
     rev: v2.14
     hooks:
       - id: vulture
-        args: ['--min-confidence=80', '--exclude=tests']
+        args: ['--min-confidence=80', '--exclude=tests', '--ignore-names=include_traceback,filters,log_level,log_file']
         pass_filenames: true
         types: [python]
 

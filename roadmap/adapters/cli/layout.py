@@ -46,7 +46,15 @@ class SmartTableLayout:
         try:
             width = shutil.get_terminal_size().columns
             return max(width, 40)  # Minimum 40 columns
-        except Exception:
+        except Exception as e:
+            from roadmap.common.logging import get_logger
+
+            logger = get_logger(__name__)
+            logger.debug(
+                "terminal_width_detection_failed",
+                error=str(e),
+                action="get_terminal_width",
+            )
             return 80  # Default fallback
 
     def calculate_table_width(self, table_data: TableData) -> int:

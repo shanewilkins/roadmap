@@ -1,21 +1,24 @@
 """Error handling utilities and context managers."""
 
-import logging
 import sys
 from contextlib import contextmanager
 from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
+from structlog import get_logger
+from structlog.typing import FilteringBoundLogger
 
 from roadmap.common.errors.error_base import ErrorCategory, ErrorSeverity, RoadmapError
+
+logger = get_logger()
 
 
 class ErrorHandler:
     """Centralized error handling utilities."""
 
     def __init__(
-        self, logger: logging.Logger | None = None, console: Console | None = None
+        self, logger: FilteringBoundLogger | None = None, console: Console | None = None
     ):
         """Initialize ErrorHandler.
 
@@ -23,7 +26,7 @@ class ErrorHandler:
             logger: Logger instance for error logging. Defaults to module logger.
             console: Console instance for error display. Defaults to stderr console.
         """
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = logger or get_logger()
         self.console = console or Console(stderr=True)
         self.error_counts: dict[ErrorCategory, int] = {}
 

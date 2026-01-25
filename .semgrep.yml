@@ -67,7 +67,143 @@ rules:
     languages: [python]
 
 
-# Phase 7b+ Placeholder rules (to be added)
+# Phase 7d: Logging Quality & Enforcement Rules
+# These rules ensure that when logging IS present, it follows standards
+# from Phase 7b (error categories, log levels, required context fields)
+
+  # Rule 4: Ensure error/warning logger calls include severity field
+  # Only flags error() and warning() calls - info/debug don't need severity
+  - id: missing-severity-field
+    patterns:
+      - pattern-either:
+          # Match logger.error or logger.warning calls without severity
+          - patterns:
+              - pattern: logger.error($EVENT, ...)
+              - pattern-not: logger.error(..., severity=$SEVERITY)
+          - patterns:
+              - pattern: logger.warning($EVENT, ...)
+              - pattern-not: logger.warning(..., severity=$SEVERITY)
+    message: |
+      Error/warning log calls require 'severity' field for log aggregation and filtering.
+      Add severity field matching error category:
+        logger.error("event_name", ..., severity="config_error")  # for config errors
+        logger.error("event_name", ..., severity="data_error")    # for data errors
+        logger.warning("event_name", ..., severity="operational")  # for operational errors
+
+      See Phase 7b remediation checklist for severity field mapping.
+    severity: WARNING
+    languages: [python]
+
+  # Rule 5: Bare except without logging (bare except is a serious code smell)
+  # NOTE: except Exception is allowed if logged; we handle that separately
+  - id: except-too-broad
+    pattern: |
+      try:
+          ...
+      except:
+          ...
+    message: |
+      Bare except catches everything including system errors and is dangerous.
+      Catch specific exception types instead and always log:
+        try:
+            operation()
+        except (FileNotFoundError, PermissionError) as e:
+            logger.error("operation_failed", error=str(e), ...)
+
+      If you need to catch all exceptions (rare), at least name them and log:
+        except Exception as e:
+            logger.error("unexpected_error", error=str(e), ...)
+    severity: ERROR
+    languages: [python]
+
+  # Rule 6: Exception caught but not included in log context
+  # REFINED: Only flag when exception is caught and DIRECTLY logged in same block
+  # This avoids false positives from extraction/transformation functions
+  - id: caught-exception-not-logged
+    patterns:
+      - pattern: |
+          try:
+              ...
+          except $EXCEPTION as $VAR:
+              logger.$METHOD(...)
+      - pattern-not: logger.$METHOD(..., $VAR)
+      - pattern-not: logger.$METHOD(..., str($VAR))
+      - pattern-not: logger.$METHOD(..., error=$VAR)
+      - pattern-not: logger.$METHOD(..., error=str($VAR))
+      - pattern-not: logger.$METHOD(..., exception=$VAR)
+      - pattern-not: logger.$METHOD(..., exc_info=...)
+    message: |
+      Exception variable is caught and logged in same block, but exception details are not included.
+      Include exception details in the log context:
+        except ValueError as e:
+            logger.error("operation_failed", error=str(e), ...)
+
+      This preserves error information for debugging and log aggregation.
+    severity: WARNING
+    languages: [python]
+
+  # Rule 7: Logger call without event name (first positional arg)
+  # DISABLED: Too many false positives with different logging styles
+  # - id: generic-log-event-name
+  #   patterns:
+  #     - pattern: logger.$METHOD($EVENT, ...)
+  #     - metavariable-comparison:
+  #         metavariable: $EVENT
+  #         comparison: |
+  #           re.fullmatch(r'".*(error|failed|fail|err|problem|exception|catch|handled).*"', str($EVENT))
+  #   message: |
+  #     Event name is too generic and not searchable. Use specific event names:
+  #       ❌ logger.error("error")
+  #       ❌ logger.error("failed")
+  #       ✅ logger.error("file_not_found")
+  #       ✅ logger.error("validation_failed")
+  #       ✅ logger.error("api_timeout")
+
+  # Rule 8: Logger call without event name (first positional arg)
+  - id: mixed-logging-frameworks
+    patterns:
+      - pattern-either:
+          # Using standard logging.getLogger() when structlog available
+          - pattern: logging.getLogger(...)
+          # Using standard logging.error/warning when structlog available
+          - pattern: logging.$METHOD(...)
+    message: |
+      Mixing standard logging with structlog is not allowed.
+      Use structlog exclusively for consistent structured logging:
+        ✅ from structlog import get_logger
+        ✅ logger = get_logger()
+        ✅ logger.error("event", key=value, ...)
+
+        ❌ import logging
+        ❌ logger = logging.getLogger()
+
+      Structlog provides better structured output for log aggregation.
+    severity: ERROR
+    languages: [python]
+
+  # Rule 9: Logger call without event name (first positional arg)
+  - id: logger-missing-event-name
+    patterns:
+      - pattern-either:
+          - pattern: logger.error()
+          - pattern: logger.warning()
+          - pattern: logger.info()
+          - pattern: logger.debug()
+    message: |
+      Logger call missing event name (first positional argument).
+      Event names are required for structured logging and log aggregation:
+        ✅ logger.error("operation_failed", operation="...", error="...")
+        ❌ logger.error()
+
+      The event name is the first positional argument and must be a string constant.
+    severity: ERROR
+    languages: [python]
+
+
+# Phase 7e+ Placeholder rules (to be added)
+# - logging context completeness by error category
+# - CLI error routing (stdout vs stderr)
+# - Framework-specific patterns
 # - structlog consistency enforcement
 # - logging quality validation
 # - error context completeness

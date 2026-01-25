@@ -17,6 +17,10 @@ from datetime import UTC, datetime, tzinfo
 from pathlib import Path
 from typing import Any
 
+from structlog import get_logger
+
+logger = get_logger()
+
 # Import zoneinfo with fallback for older Python versions
 try:
     from zoneinfo import ZoneInfo  # type: ignore[attr-defined]
@@ -238,7 +242,13 @@ class TimezoneManager:
                         return naive_dt.replace(tzinfo=ZoneInfo(input_tz)).astimezone(
                             UTC
                         )
-                    except ValueError:
+                    except ValueError as e:
+                        logger.debug(
+                            "date_format_failed",
+                            format_pattern=fmt,
+                            input=date_str,
+                            error=str(e),
+                        )
                         continue
 
                 raise ValueError(f"Unable to parse date string: {date_str}")

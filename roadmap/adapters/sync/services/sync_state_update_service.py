@@ -2,7 +2,11 @@
 
 from datetime import UTC
 
+from structlog import get_logger
+
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
+
+logger = get_logger()
 
 
 class SyncStateUpdateService:
@@ -40,6 +44,6 @@ class SyncStateUpdateService:
             # Save updated state
             self.state_manager.save_sync_state_to_db(base_state)
 
-        except Exception:
+        except Exception as e:
             # Log but don't raise - state update failures shouldn't break sync
-            pass
+            logger.error("update_sync_state_failed", error=str(e))

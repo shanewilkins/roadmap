@@ -5,14 +5,15 @@ progress for milestones and projects based on issue completion, implementing
 the requirements from issue 515a927c.
 """
 
-import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
+
+from structlog import get_logger
 
 from roadmap.common.constants import MilestoneStatus, RiskLevel
 from roadmap.core.domain import Issue, Milestone, Project
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class ProgressCalculationEngine:

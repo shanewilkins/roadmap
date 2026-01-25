@@ -6,10 +6,13 @@ This fixer ensures that:
 3. All naming is consistent across the system
 """
 
-import logging
 from pathlib import Path
 
+from structlog import get_logger
+
 from roadmap.adapters.cli.health.fixer import FixResult, FixSafety, HealthFixer
+
+logger = get_logger()
 
 
 class MilestoneNamingComplianceFixer(HealthFixer):
@@ -22,7 +25,7 @@ class MilestoneNamingComplianceFixer(HealthFixer):
     def __init__(self, core):
         """Initialize fixer with core instance."""
         super().__init__(core)
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
 
     @property
     def fix_type(self) -> str:

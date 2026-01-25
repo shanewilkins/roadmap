@@ -139,10 +139,18 @@ def _get_current_user():
         try:
             name = repo.config_reader().get_value("user", "name")
             return name
-        except Exception:
-            pass
-    except Exception:
-        pass
+        except Exception as e:
+            from roadmap.common.logging import get_logger
+
+            logger = get_logger(__name__)
+            logger.debug(
+                "git_user_name_read_failed", error=str(e), action="get_git_user_name"
+            )
+    except Exception as e:
+        from roadmap.common.logging import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug("git_repo_open_failed", error=str(e), action="detect_git_repo")
 
     # Fallback to environment variables
     import os
@@ -164,8 +172,15 @@ def _detect_project_context():
         try:
             gitpython.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
             context["has_git"] = True
-        except Exception:
-            pass
+        except Exception as e:
+            from roadmap.common.logging import get_logger
+
+            logger = get_logger(__name__)
+            logger.debug(
+                "git_repo_detection_failed",
+                error=str(e),
+                action="detect_project_context",
+            )
 
     return context
 

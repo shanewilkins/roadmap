@@ -257,9 +257,13 @@ def _display_config(
         console.print(f"  Never Synced:       {stats['never_synced']}")
         if stats["total_sync_attempts"] > 0:
             console.print(f"  Success Rate:       {stats['success_rate']:.1f}%")
-    except Exception:
-        # Stats might fail if no issues exist
-        pass
+    except Exception as e:
+        from roadmap.common.logging import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug(
+            "sync_stats_display_failed", error=str(e), action="display_sync_stats"
+        )
 
     console.print()
 
