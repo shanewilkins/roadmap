@@ -65,7 +65,6 @@ repos:
         args: ['--min-confidence=80', '--exclude=tests']
         pass_filenames: true
         types: [python]
-        stages: [manual]
 
   # Run DRY violation detection (duplicate code - warnings only, non-blocking)
   - repo: local

@@ -83,11 +83,11 @@ class MilestoneValidationFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:  # noqa: ARG002
+    def apply(self, _force: bool = False) -> FixResult:  # noqa: ARG002
         """Fix issues with invalid milestone references.
 
         Args:
-            force: Ignored (MODERATE fixers apply automatically)
+            _force: Ignored (SAFE fixers apply automatically)
 
         Returns:
             FixResult with fix results

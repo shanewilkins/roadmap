@@ -73,11 +73,11 @@ class DuplicateIssuesFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:  # noqa: ARG002
+    def apply(self, _force: bool = False) -> FixResult:
         """Merge duplicate issues.
 
         Args:
-            force: If True, apply without confirmation
+            _force: If True, apply without confirmation
 
         Returns:
             FixResult with merge results

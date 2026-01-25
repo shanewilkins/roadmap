@@ -72,11 +72,11 @@ class OrphanedIssuesFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, force: bool = False) -> FixResult:  # noqa: ARG002
+    def apply(self, _force: bool = False) -> FixResult:  # noqa: ARG002
         """Move orphaned issues to correct folders.
 
         Args:
-            force: Ignored (SAFE fixers apply automatically)
+            _force: Ignored (SAFE fixers apply automatically)
 
         Returns:
             FixResult with move results
