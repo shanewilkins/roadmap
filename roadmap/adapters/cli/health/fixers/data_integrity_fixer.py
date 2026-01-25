@@ -119,7 +119,8 @@ class DataIntegrityFixer(HealthFixer):
 
                 try:
                     IssueParser.parse_issue_file(issue_file)
-                except Exception:
+                except Exception as e:
+                    logger.debug("issue_file_parse_failed", file=str(issue_file), error=str(e))
                     # File couldn't be parsed
                     malformed.append(str(issue_file.relative_to(issues_dir)))
         except Exception:

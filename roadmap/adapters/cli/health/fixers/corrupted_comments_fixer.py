@@ -230,5 +230,6 @@ class CorruptedCommentsFixer(HealthFixer):
                 else:
                     sanitized.append(comment)
             return sanitized
-        except Exception:
+        except Exception as e:
+            logger.error("comment_sanitization_failed", error=str(e))
             return None

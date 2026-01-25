@@ -324,5 +324,6 @@ class SyncLinkingService:
             )
             return bool(remote_id)
 
-        except Exception:
+        except Exception as e:
+            logger.debug("remote_id_lookup_failed", error=str(e))
             return False

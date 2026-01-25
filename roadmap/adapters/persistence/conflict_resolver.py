@@ -59,7 +59,8 @@ class ConflictResolver:
                     or "=======" in content
                     or ">>>>>>>" in content
                 )
-        except Exception:
+        except Exception as e:
+            logger.debug("conflict_marker_check_failed", error=str(e))
             return False
 
     def resolve_conflict(self, file_path: Path, resolution: str) -> bool:

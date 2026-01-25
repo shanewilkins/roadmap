@@ -79,7 +79,8 @@ class ConflictService:
                 "git_conflicts_detected"
             )
             return conflicts_detected == "true"
-        except Exception:
+        except Exception as e:
+            logger.debug("git_conflict_check_failed", error=str(e))
             # If we can't check, assume no conflicts to avoid blocking operations
             return False
 
@@ -90,5 +91,6 @@ class ConflictService:
             if conflict_files_json:
                 return json.loads(conflict_files_json)
             return []
-        except Exception:
+        except Exception as e:
+            logger.debug("conflict_files_retrieval_failed", error=str(e))
             return []
