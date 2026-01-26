@@ -20,7 +20,7 @@ class IssueStorage:
             issue_repo: IssueRepository instance for data access
         """
         self._issue_repo = issue_repo
-        logger.debug("IssueStorage initialized")
+        logger.debug("issue_storage_initialized")
 
     @safe_operation(OperationType.CREATE, "Issue", include_traceback=True)
     def create(self, issue_data: dict[str, Any]) -> str:

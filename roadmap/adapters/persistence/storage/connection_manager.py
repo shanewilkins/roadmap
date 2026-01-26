@@ -20,7 +20,7 @@ class ConnectionManager:
             db_manager: DatabaseManager instance handling connection pooling
         """
         self._db_manager = db_manager
-        logger.debug("ConnectionManager initialized")
+        logger.debug("connection_manager_initialized")
 
     def get_connection(self) -> sqlite3.Connection:
         """Get thread-local database connection.

@@ -342,7 +342,8 @@ class CredentialManager:
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
             keyring.delete_password(self.SERVICE_NAME, target_name)
             return True
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_delete_token", error=str(e))
             # Fallback if keyring not available
             return self._delete_token_fallback()
         except Exception as e:
@@ -357,7 +358,8 @@ class CredentialManager:
             # Try to access the keyring to see if it's functional
             keyring.get_keyring()
             return True
-        except ImportError:
+        except ImportError as e:
+            logger.debug("keyring_import_failed_check_available", error=str(e))
             return False
         except Exception as e:
             logger.debug("check_secretservice_available_failed", error=str(e))

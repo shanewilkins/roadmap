@@ -161,7 +161,6 @@ class SyncMergeEngine:
                 "conflicts_resolution_failed",
                 error=str(e),
                 strategy=getattr(strategy, "value", None),
-                exc_info=True,
                 severity="operational",
             )
             return []

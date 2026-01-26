@@ -185,7 +185,9 @@ class ProgressCalculationEngine:
                 updated_projects += 1
 
         logger.info(
-            f"Recalculated progress: {updated_milestones} milestones, {updated_projects} projects updated"
+            "progress_recalculated",
+            updated_milestones=updated_milestones,
+            updated_projects=updated_projects,
         )
 
         return {"milestones": updated_milestones, "projects": updated_projects}
@@ -365,7 +367,7 @@ class ProgressEventSystem:
                     }
                 )
             except Exception as e:
-                logger.error("progress_event_listener_error", error=str(e))
+                logger.error("progress_event_listener_error", error=str(e), severity="system_error")
 
         return {
             "milestones_updated": updated_milestones,

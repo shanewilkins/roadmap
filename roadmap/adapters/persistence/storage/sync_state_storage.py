@@ -28,7 +28,7 @@ class SyncStateStorage:
         """
         self._sync_state_repo = sync_state_repo
         self._file_synchronizer = file_synchronizer
-        logger.debug("SyncStateStorage initialized")
+        logger.debug("sync_state_storage_initialized")
 
     # Sync state operations
     def get_sync_state(self, key: str) -> str | None:

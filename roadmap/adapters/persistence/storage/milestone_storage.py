@@ -20,7 +20,7 @@ class MilestoneStorage:
             milestone_repo: MilestoneRepository instance for data access
         """
         self._milestone_repo = milestone_repo
-        logger.debug("MilestoneStorage initialized")
+        logger.debug("milestone_storage_initialized")
 
     @safe_operation(OperationType.CREATE, "Milestone", include_traceback=True)
     def create(self, milestone_data: dict[str, Any]) -> str:

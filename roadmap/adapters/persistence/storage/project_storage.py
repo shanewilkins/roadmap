@@ -20,7 +20,7 @@ class ProjectStorage:
             project_repo: ProjectRepository instance for data access
         """
         self._project_repo = project_repo
-        logger.debug("ProjectStorage initialized")
+        logger.debug("project_storage_initialized")
 
     @safe_operation(OperationType.CREATE, "Project", include_traceback=True)
     def create(self, project_data: dict[str, Any]) -> str:
