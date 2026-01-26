@@ -135,14 +135,8 @@ rules:
               ...
           except $EXCEPTION as $VAR:
               ...
-      # Find logger.error/critical calls in that context (not debug/info/warning)
+      # Find logger calls in that context
       - pattern: logger.$METHOD(...)
-      - metavariable-pattern:
-          metavariable: $METHOD
-          patterns:
-            - pattern-either:
-                - pattern: error
-                - pattern: critical
       # But exclude if error/exception/exc_info/error_message/error_type are already present
       - pattern-not-inside: logger.$METHOD(..., error=..., ...)
       - pattern-not-inside: logger.$METHOD(..., exception=..., ...)
