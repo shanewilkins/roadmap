@@ -21,7 +21,7 @@ from .file_operations import (
     secure_file_permissions,
 )
 from .filename_sanitization import sanitize_filename
-from .logging import configure_security_logging, log_security_event, security_logger
+from .logging import log_security_event, security_logger
 from .path_validation import validate_path
 from .temp_files import create_secure_temp_file
 
@@ -31,7 +31,6 @@ __all__ = [
     "PathValidationError",
     # Logging
     "log_security_event",
-    "configure_security_logging",
     "security_logger",
     # Path validation
     "validate_path",

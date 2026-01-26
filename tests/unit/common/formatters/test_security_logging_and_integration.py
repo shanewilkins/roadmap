@@ -16,7 +16,6 @@ import pytest
 
 from roadmap.common.security import (
     SecurityError,
-    configure_security_logging,
     create_secure_directory,
     create_secure_file,
     create_secure_temp_file,
@@ -115,67 +114,6 @@ class TestLogSecurityEvent:
             log_security_event("closed_handler_event")
             # The implementation doesn't check handler status, so it will still be called
             mock_info.assert_called_once()
-
-
-class TestConfigureSecurityLogging:
-    """Test configure_security_logging function."""
-
-    @pytest.fixture(autouse=True)
-    def setup_and_teardown(self):
-        """Clear existing handlers before and after each test."""
-        original_handlers = security_logger.handlers.copy()
-        original_level = security_logger.level
-
-        security_logger.handlers.clear()
-        yield
-
-        for handler in security_logger.handlers.copy():
-            handler.close()
-            security_logger.removeHandler(handler)
-
-        security_logger.handlers.clear()
-        for handler in original_handlers:
-            security_logger.addHandler(handler)
-        security_logger.setLevel(original_level)
-    @pytest.mark.parametrize(
-        "level_str,expected_level",
-        [
-            ("DEBUG", logging.DEBUG),
-            ("INFO", logging.INFO),
-            ("WARNING", logging.WARNING),
-            ("ERROR", logging.ERROR),
-        ],
-    )
-    def test_configure_security_logging_levels(self, level_str, expected_level):
-        """Test different logging levels."""
-        # configure_security_logging is a no-op for backward compatibility
-        configure_security_logging(level_str)
-        # Just verify it doesn't crash
-        assert True
-
-    def test_configure_security_logging_basic(self):
-        """Test basic logging configuration."""
-        # configure_security_logging is a no-op for backward compatibility
-        configure_security_logging("INFO")
-        # Just verify it doesn't crash
-        assert True
-
-    def test_configure_security_logging_with_file(self, temp_dir):
-        """Test logging configuration with file output."""
-        log_file = temp_dir / "security.log"
-        # configure_security_logging is a no-op for backward compatibility
-        configure_security_logging("DEBUG", log_file)
-        # Just verify it doesn't crash
-        assert True
-
-    def test_configure_security_logging_formatter(self):
-        """Test that formatter configuration is a no-op for backward compatibility."""
-        # configure_security_logging is intentionally a no-op for backward compatibility
-        # Structlog configuration is centralized in roadmap/common/logging/__init__.py
-        configure_security_logging()
-        # Function should complete without error
-        assert True
-
 
 class TestValidateExportSize:
     """Test validate_export_size function."""
@@ -279,16 +217,9 @@ class TestSecurityIntegration:
             assert dir_perms == 0o700
 
     def test_security_logging_integration(self, temp_dir_context):
-        """Test that security operations work (configure_security_logging is a no-op)."""
-        from roadmap.common.security import security_logger
+        """Test that security operations work correctly."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            log_file = Path(temp_dir) / "security.log"
-
-            # configure_security_logging is intentionally a no-op for backward compatibility
-            # Structlog configuration is centralized in roadmap/common/logging/__init__.py
-            configure_security_logging("INFO", log_file)
-
             # Perform various security operations
             test_dir = Path(temp_dir) / "test_operations"
             create_secure_directory(test_dir)
@@ -314,7 +245,6 @@ class TestSecurityIntegration:
                 os.chdir(original_dir)
 
             # Security operations should complete without error
-            # (logging configuration is centralized, not handled by configure_security_logging)
             assert True
 
     def test_error_handling_integration(self, temp_dir_context):

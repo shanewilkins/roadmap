@@ -112,7 +112,6 @@ from .logging import (
 from .progress import ProgressCalculationEngine, ProgressEventSystem
 from .security import (
     cleanup_old_backups,
-    configure_security_logging,
     create_secure_directory,
     create_secure_file,
     create_secure_temp_file,
@@ -201,7 +200,6 @@ __all__ = [
     "safe_write_file",
     # Security utilities
     "cleanup_old_backups",
-    "configure_security_logging",
     "create_secure_directory",
     "create_secure_file",
     "create_secure_temp_file",
