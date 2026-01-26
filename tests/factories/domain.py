@@ -38,6 +38,21 @@ class IssueBuilder:
             issue_type=IssueType.FEATURE,
         )
 
+    @classmethod
+    def todo_bug(cls, title: str) -> "IssueBuilder":
+        """Create a TODO bug issue (common pattern)."""
+        return cls().with_title(title).with_type(IssueType.BUG).with_status(Status.TODO)
+
+    @classmethod
+    def in_progress_feature(cls, title: str) -> "IssueBuilder":
+        """Create an IN_PROGRESS feature issue (common pattern)."""
+        return cls().with_title(title).with_type(IssueType.FEATURE).with_status(Status.IN_PROGRESS)
+
+    @classmethod
+    def high_priority(cls, title: str) -> "IssueBuilder":
+        """Create a high-priority issue (common pattern)."""
+        return cls().with_title(title).with_priority(Priority.HIGH)
+
     def with_id(self, issue_id: str) -> "IssueBuilder":
         """Set the issue ID."""
         self._issue.id = issue_id
@@ -172,6 +187,16 @@ class MilestoneBuilder:
             status=MilestoneStatus.OPEN,
         )
 
+    @classmethod
+    def in_progress(cls, name: str) -> "MilestoneBuilder":
+        """Create an IN_PROGRESS milestone (common pattern)."""
+        return cls().with_name(name).with_status(MilestoneStatus.IN_PROGRESS)
+
+    @classmethod
+    def at_risk(cls, name: str) -> "MilestoneBuilder":
+        """Create an AT_RISK milestone (common pattern)."""
+        return cls().with_name(name).with_status(MilestoneStatus.AT_RISK).with_risk_level(RiskLevel.HIGH)
+
     def with_name(self, name: str) -> "MilestoneBuilder":
         """Set the milestone name."""
         self._milestone.name = name
@@ -266,6 +291,16 @@ class ProjectBuilder:
             content="",
             status=ProjectStatus.PLANNING,
         )
+
+    @classmethod
+    def in_progress(cls, name: str) -> "ProjectBuilder":
+        """Create an IN_PROGRESS project (common pattern)."""
+        return cls().with_name(name).with_status(ProjectStatus.IN_PROGRESS)
+
+    @classmethod
+    def active_high_priority(cls, name: str) -> "ProjectBuilder":
+        """Create an active high-priority project (common pattern)."""
+        return cls().with_name(name).with_status(ProjectStatus.IN_PROGRESS).with_priority(Priority.HIGH)
 
     def with_id(self, project_id: str) -> "ProjectBuilder":
         """Set the project ID."""

@@ -2,6 +2,7 @@
 
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Issue, Milestone, Status
+from tests.factories import IssueBuilder, MilestoneBuilder
 from tests.unit.common.formatters.test_assertion_helpers import (
     assert_command_success,
 )
@@ -12,14 +13,14 @@ class TestEstimatedTimeModel:
 
     def test_issue_with_estimated_hours(self):
         """Test creating an issue with estimated hours."""
-        issue = Issue(title="Test Issue", estimated_hours=8.5)
+        issue = IssueBuilder().with_estimated_hours(8.5).build()
 
         assert issue.estimated_hours == 8.5
         assert issue.estimated_time_display == "1.1d"
 
     def test_issue_without_estimated_hours(self):
         """Test creating an issue without estimated hours."""
-        issue = Issue(title="Test Issue")
+        issue = IssueBuilder().build()
 
         assert issue.estimated_hours is None
         assert issue.estimated_time_display == "Not estimated"
@@ -27,15 +28,15 @@ class TestEstimatedTimeModel:
     def test_estimated_time_display_formats(self):
         """Test different formats for estimated time display."""
         # Test minutes (< 1 hour)
-        issue_minutes = Issue(title="Test", estimated_hours=0.5)
+        issue_minutes = IssueBuilder().with_estimated_hours(0.5).build()
         assert issue_minutes.estimated_time_display == "30m"
 
         # Test hours (< 8 hours)
-        issue_hours = Issue(title="Test", estimated_hours=4.25)
+        issue_hours = IssueBuilder().with_estimated_hours(4.25).build()
         assert issue_hours.estimated_time_display == "4.2h"
 
         # Test days (>= 8 hours)
-        issue_days = Issue(title="Test", estimated_hours=16.0)
+        issue_days = IssueBuilder().with_estimated_hours(16.0).build()
         assert issue_days.estimated_time_display == "2.0d"
 
 
@@ -44,16 +45,12 @@ class TestMilestoneEstimatedTime:
 
     def test_milestone_total_estimated_hours(self):
         """Test milestone total estimated hours calculation."""
-        milestone = Milestone(name="v1.0")
+        milestone = MilestoneBuilder().with_name("v1.0").build()
         issues = [
-            Issue(title="Issue 1", estimated_hours=4.0, milestone="v1.0"),
-            Issue(title="Issue 2", estimated_hours=8.0, milestone="v1.0"),
-            Issue(
-                title="Issue 3", estimated_hours=None, milestone="v1.0"
-            ),  # No estimate
-            Issue(
-                title="Issue 4", estimated_hours=2.0, milestone="v2.0"
-            ),  # Different milestone
+            IssueBuilder().with_milestone("v1.0").with_estimated_hours(4.0).build(),
+            IssueBuilder().with_milestone("v1.0").with_estimated_hours(8.0).build(),
+            IssueBuilder().with_milestone("v1.0").build(),  # No estimate
+            IssueBuilder().with_milestone("v2.0").with_estimated_hours(2.0).build(),  # Different milestone
         ]
 
         total_hours = milestone.get_total_estimated_hours(issues)
@@ -61,26 +58,11 @@ class TestMilestoneEstimatedTime:
 
     def test_milestone_remaining_estimated_hours(self):
         """Test milestone remaining estimated hours calculation."""
-        milestone = Milestone(name="v1.0")
+        milestone = MilestoneBuilder().with_name("v1.0").build()
         issues = [
-            Issue(
-                title="Done Issue",
-                estimated_hours=4.0,
-                milestone="v1.0",
-                status=Status.CLOSED,
-            ),
-            Issue(
-                title="Todo Issue",
-                estimated_hours=8.0,
-                milestone="v1.0",
-                status=Status.TODO,
-            ),
-            Issue(
-                title="In Progress",
-                estimated_hours=6.0,
-                milestone="v1.0",
-                status=Status.IN_PROGRESS,
-            ),
+            IssueBuilder().with_milestone("v1.0").with_status(Status.CLOSED).with_estimated_hours(4.0).build(),
+            IssueBuilder().with_milestone("v1.0").with_status(Status.TODO).with_estimated_hours(8.0).build(),
+            IssueBuilder().with_milestone("v1.0").with_status(Status.IN_PROGRESS).with_estimated_hours(6.0).build(),
         ]
 
         remaining_hours = milestone.get_remaining_estimated_hours(issues)
@@ -88,12 +70,12 @@ class TestMilestoneEstimatedTime:
 
     def test_milestone_estimated_time_display(self):
         """Test milestone estimated time display formatting."""
-        milestone = Milestone(name="v1.0")
+        milestone = MilestoneBuilder().with_name("v1.0").build()
 
         # Test with no estimates
         issues_no_estimate = [
-            Issue(title="Issue 1", milestone="v1.0"),
-            Issue(title="Issue 2", milestone="v1.0"),
+            IssueBuilder().with_milestone("v1.0").build(),
+            IssueBuilder().with_milestone("v1.0").build(),
         ]
         assert (
             milestone.get_estimated_time_display(issues_no_estimate) == "Not estimated"
@@ -101,15 +83,15 @@ class TestMilestoneEstimatedTime:
 
         # Test with small estimate (hours)
         issues_hours = [
-            Issue(title="Issue 1", estimated_hours=2.0, milestone="v1.0"),
-            Issue(title="Issue 2", estimated_hours=3.0, milestone="v1.0"),
+            IssueBuilder().with_milestone("v1.0").with_estimated_hours(2.0).build(),
+            IssueBuilder().with_milestone("v1.0").with_estimated_hours(3.0).build(),
         ]
         assert milestone.get_estimated_time_display(issues_hours) == "5.0h"
 
         # Test with large estimate (days)
         issues_days = [
-            Issue(title="Issue 1", estimated_hours=8.0, milestone="v1.0"),
-            Issue(title="Issue 2", estimated_hours=16.0, milestone="v1.0"),
+            IssueBuilder().with_milestone("v1.0").with_estimated_hours(8.0).build(),
+            IssueBuilder().with_milestone("v1.0").with_estimated_hours(16.0).build(),
         ]
         assert milestone.get_estimated_time_display(issues_days) == "3.0d"
 
@@ -330,23 +312,23 @@ class TestEstimatedTimeEdgeCases:
 
     def test_zero_estimated_hours(self):
         """Test handling of zero estimated hours."""
-        issue = Issue(title="Test", estimated_hours=0.0)
+        issue = IssueBuilder().with_estimated_hours(0.0).build()
         assert issue.estimated_time_display == "0m"
 
     def test_very_small_estimated_hours(self):
         """Test handling of very small estimated hours."""
-        issue = Issue(title="Test", estimated_hours=0.1)  # 6 minutes
+        issue = IssueBuilder().with_estimated_hours(0.1).build()  # 6 minutes
         assert issue.estimated_time_display == "6m"
 
     def test_large_estimated_hours(self):
         """Test handling of large estimated hours."""
-        issue = Issue(title="Test", estimated_hours=160.0)  # 20 days
+        issue = IssueBuilder().with_estimated_hours(160.0).build()  # 20 days
         assert issue.estimated_time_display == "20.0d"
 
     def test_negative_estimated_hours_not_allowed(self):
         """Test that negative estimated hours are handled gracefully."""
         # Pydantic should handle validation, but let's test our display logic
-        issue = Issue(title="Test", estimated_hours=-5.0)
+        issue = IssueBuilder().with_estimated_hours(-5.0).build()
         # This might raise an error or handle it gracefully depending on validation
         # The important thing is our system doesn't crash
         display = issue.estimated_time_display
