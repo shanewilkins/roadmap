@@ -90,7 +90,12 @@ def critical_path(
                 logger.debug("Loading all issues")
                 issues_domain, filter_desc = query_service.get_filtered_issues()
         except Exception as e:
-            logger.error(f"Failed to load issues: {str(e)}", exc_info=True)
+            logger.error(
+                f"Failed to load issues: {str(e)}",
+                error=str(e),
+                severity="operational",
+                exc_info=True,
+            )
             console.print(f"❌ Failed to load issues: {str(e)}", style="bold red")
             return
 
@@ -130,7 +135,12 @@ def critical_path(
                 },
             )
         except Exception as e:
-            logger.error(f"Critical path calculation failed: {str(e)}", exc_info=True)
+            logger.error(
+                f"Critical path calculation failed: {str(e)}",
+                error=str(e),
+                severity="operational",
+                exc_info=True,
+            )
             console.print(
                 f"❌ Critical path calculation failed: {str(e)}", style="bold red"
             )
@@ -147,7 +157,10 @@ def critical_path(
 
     except Exception as e:
         logger.error(
-            f"Unexpected error in critical path command: {str(e)}", exc_info=True
+            f"Unexpected error in critical path command: {str(e)}",
+            error=str(e),
+            severity="operational",
+            exc_info=True,
         )
         console.print(f"❌ Unexpected error: {str(e)}", style="bold red")
 
@@ -164,7 +177,11 @@ def _get_core(ctx: click.Context):
     try:
         return ctx.obj.get("core") if ctx.obj else None
     except (AttributeError, TypeError) as e:
-        logger.warning(f"Failed to get core from context: {str(e)}")
+        logger.warning(
+            f"Failed to get core from context: {str(e)}",
+            error=str(e),
+            severity="operational",
+        )
         return None
 
 
@@ -184,7 +201,12 @@ def _display_critical_path(result, milestone: str | None = None):
         console.print(output)
         logger.debug("Critical path displayed successfully")
     except Exception as e:
-        logger.error(f"Failed to format critical path display: {str(e)}", exc_info=True)
+        logger.error(
+            f"Failed to format critical path display: {str(e)}",
+            error=str(e),
+            severity="operational",
+            exc_info=True,
+        )
         console.print(f"❌ Failed to format output: {str(e)}", style="bold red")
 
 
@@ -206,7 +228,9 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
         elif format == "csv":
             output_str = _format_csv_export(result, issues)
         else:
-            logger.error(f"Unsupported export format: {format}")
+            logger.error(
+                f"Unsupported export format: {format}", severity="config_error"
+            )
             console.print("❌ Unsupported export format", style="bold red")
             return
 
@@ -218,7 +242,12 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
                 logger.info(f"Exported critical path to {path}")
                 console.print(f"✅ Exported to {path}", style="bold green")
             except OSError as e:
-                logger.error(f"Failed to write export file: {str(e)}", exc_info=True)
+                logger.error(
+                    f"Failed to write export file: {str(e)}",
+                    error=str(e),
+                    severity="operational",
+                    exc_info=True,
+                )
                 console.print(
                     f"❌ Failed to write export file: {str(e)}", style="bold red"
                 )
@@ -227,7 +256,12 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
             console.print(output_str)
 
     except Exception as e:
-        logger.error(f"Export failed: {str(e)}", exc_info=True)
+        logger.error(
+            f"Export failed: {str(e)}",
+            error=str(e),
+            severity="operational",
+            exc_info=True,
+        )
         console.print(f"❌ Export failed: {str(e)}", style="bold red")
 
 
@@ -264,7 +298,12 @@ def _format_json_export(result, issues: list) -> dict:
             },
         }
     except Exception as e:
-        logger.error(f"JSON formatting failed: {str(e)}", exc_info=True)
+        logger.error(
+            f"JSON formatting failed: {str(e)}",
+            error=str(e),
+            severity="operational",
+            exc_info=True,
+        )
         raise
 
 
@@ -299,5 +338,10 @@ def _format_csv_export(result, issues: list) -> str:
 
         return "\n".join(lines)
     except Exception as e:
-        logger.error(f"CSV formatting failed: {str(e)}", exc_info=True)
+        logger.error(
+            f"CSV formatting failed: {str(e)}",
+            error=str(e),
+            severity="operational",
+            exc_info=True,
+        )
         raise
