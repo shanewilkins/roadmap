@@ -70,7 +70,7 @@ def critical_path(
 
         core = _get_core(ctx)
         if not core or not core.is_initialized():
-            logger.warning("Roadmap not initialized")
+            logger.warning("Roadmap not initialized", severity="operational")
             console.print(
                 "❌ Roadmap not initialized. Run 'roadmap init' first.",
                 style="bold red",

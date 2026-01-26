@@ -55,7 +55,9 @@ class HookStatus:
             hook_file.read_text()
             return True
         except Exception as e:
-            logger.error("hook_install_check_failed", error=str(e))
+            logger.error(
+                "hook_install_check_failed", error=str(e), severity="operational"
+            )
             return False
 
     @staticmethod

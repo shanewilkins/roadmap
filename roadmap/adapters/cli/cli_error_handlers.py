@@ -119,6 +119,7 @@ def handle_cli_error(
     logger.error(
         f"{operation}_failed",
         exc_info=error,
+        severity="operational",
         **error_context,
     )
 

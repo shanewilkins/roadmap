@@ -494,6 +494,7 @@ def sync(
             operation="sync",
             error_type=type(exc).__name__,
             error=str(exc),
+            severity="operational",
             error_classification="cli_error",
             suggested_action="check_logs_for_details",
         )
