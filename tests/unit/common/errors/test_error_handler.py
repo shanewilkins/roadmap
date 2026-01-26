@@ -1,8 +1,7 @@
 """Tests for error handling utilities."""
 
-import logging
-
 import pytest
+from structlog import get_logger
 
 from roadmap.common.errors.error_base import (
     ErrorCategory,
@@ -18,7 +17,7 @@ class TestErrorHandler:
     @pytest.fixture
     def handler(self):
         """Create error handler with mock logger and console."""
-        logger = logging.getLogger("test")
+        logger = get_logger()
         return ErrorHandler(logger=logger)
 
     @pytest.fixture

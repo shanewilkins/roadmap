@@ -171,15 +171,11 @@ class TestConfigureSecurityLogging:
         formatter = handler.formatter
         assert formatter is not None
 
-        log_record = logging.LogRecord(
-            name="test",
-            level=logging.INFO,
-            pathname="",
-            lineno=0,
-            msg="test message",
-            args=(),
-            exc_info=None,
-        )
+        log_record = {
+            "event": "test message",
+            "log_level": "info",
+            "timestamp": "2024-01-01T00:00:00Z",
+        }
         formatted = formatter.format(log_record)
         assert "test message" in formatted
 

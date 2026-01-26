@@ -156,6 +156,8 @@ def verbose_output(func: Callable) -> Callable:
         verbose = kwargs.get("verbose", False)
 
         # Adjust console logging based on verbose flag
+        # Handler management requires standard logging API
+        # nosemgrep
         roadmap_logger = logging.getLogger("roadmap")
         original_levels = {}
 

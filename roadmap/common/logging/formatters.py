@@ -1,6 +1,6 @@
 """Log formatters and data scrubbing for structured logging."""
 
-import logging
+from typing import Any
 
 # Sensitive keys that should be redacted from logs
 SENSITIVE_KEYS = {
@@ -14,54 +14,45 @@ SENSITIVE_KEYS = {
 }
 
 
-class StructuredFormatter(logging.Formatter):
-    """Custom formatter that includes structured fields from LogRecord extras.
+class StructuredFormatter:
+    """Custom formatter that includes structured fields from event data.
 
-    This formatter enhances the standard logging format to include any extra
-    fields that were passed as structured data via structlog. This makes
-    error context (error_type, error_message, etc.) visible in the console.
+    This formatter enhances logging to include any extra fields that were
+    passed as structured data via structlog. This makes error context
+    (error_type, error_message, etc.) visible in console/file output.
     """
 
-    def format(self, record: logging.LogRecord) -> str:
-        """Format log record with structured fields.
+    def format(self, record: dict[str, Any]) -> str:
+        """Format event dict with structured fields.
 
         Args:
-            record: LogRecord to format
+            record: Event dictionary from structlog
 
         Returns:
             Formatted log message with structured fields
         """
-        # Get the base formatted message
-        base_msg = super().format(record)
+        # Get the base message
+        base_msg = record.get("event", "")
 
-        # Collect extra fields that aren't standard LogRecord attributes
+        # Collect extra fields that aren't standard structlog attributes
         standard_attrs = {
-            "name",
-            "msg",
-            "args",
-            "created",
-            "filename",
-            "funcName",
-            "levelname",
-            "levelno",
-            "lineno",
-            "module",
-            "msecs",
-            "message",
-            "pathname",
-            "process",
-            "processName",
-            "relativeCreated",
-            "thread",
-            "threadName",
+            "event",
+            "log_level",
+            "timestamp",
+            "_from_structlog",
+            "_record",
+            "_logger",
+            "_method_name",
+            "_fn_module",
+            "_fn_name",
+            "_fn_lineno",
+            "exception",
             "exc_info",
-            "exc_text",
             "stack_info",
-            "asctime",
         }
 
         extra_fields = {}
-        for key, value in record.__dict__.items():
+        for key, value in record.items():
             if key not in standard_attrs and not key.startswith("_"):
                 extra_fields[key] = value
 
@@ -81,7 +72,7 @@ class StructuredFormatter(logging.Formatter):
         return base_msg
 
 
-def scrub_sensitive_data(logger, _method_name, event_dict):
+def scrub_sensitive_data(_logger, _method_name, event_dict):
     """Structlog processor to remove sensitive data from logs."""
 
     def scrub_value(key, value):
@@ -97,7 +88,7 @@ def scrub_sensitive_data(logger, _method_name, event_dict):
     return {k: scrub_value(k, v) for k, v in event_dict.items()}
 
 
-def include_structured_fields_in_message(logger, _method_name, event_dict):
+def include_structured_fields_in_message(_logger, _method_name, event_dict):
     """Include structured fields (error_type, error_message, etc.) in the log message.
 
     This processor appends structured fields to the message so they're visible

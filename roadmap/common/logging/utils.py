@@ -313,7 +313,6 @@ def should_sample(sample_rate: float = 0.1) -> bool:
 
 def configure_for_testing():
     """Configure minimal logging for tests."""
-    logging.basicConfig(level=logging.CRITICAL)
     structlog.configure(
         processors=[
             # Minimal processors for testing
