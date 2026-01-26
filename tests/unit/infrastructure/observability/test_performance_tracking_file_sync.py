@@ -314,7 +314,8 @@ class TestOperationTimer:
 
         performance_tracking_logger_mocked.info.assert_called_once()
         call_args = performance_tracking_logger_mocked.info.call_args
-        assert "finish_log_op_finished" in str(call_args)
+        assert call_args[0][0] == "operation_finished"
+        assert "finish_log_op" in call_args[1]["operation_name"]
 
     def test_operation_timer_edge_cases(self, performance_tracking_logger_mocked):
         """Test operation timer edge cases: no steps and repeated finish."""

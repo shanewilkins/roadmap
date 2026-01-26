@@ -140,7 +140,7 @@ class TestErrorContextLogging:
 
             mock_logger.error.assert_called_once()
             call_args = mock_logger.error.call_args
-            assert call_args[0][0] == "create_issue_failed"
+            assert call_args[0][0] == "operation_failed"
             assert "operation" in call_args[1]
             assert call_args[1]["operation"] == "create_issue"
 
@@ -255,7 +255,7 @@ class TestCriticalPathLogging:
 
             mock_logger.error.assert_called_once()
             call_args = mock_logger.error.call_args
-            assert call_args[0][0] == "archive_issue_failed"
+            assert call_args[0][0] == "operation_failed"
             assert call_args[1]["operation"] == "archive_issue"
             assert call_args[1]["archive_path"] == "/tmp/archive"
 

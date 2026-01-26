@@ -50,7 +50,8 @@ def track_operation_time(
         else:
             log_func = getattr(logger, log_level, logger.debug)
             log_func(
-                f"{operation_name}_completed",
+                "operation_completed",
+                operation_name=operation_name,
                 duration_ms=duration_ms,
             )
 

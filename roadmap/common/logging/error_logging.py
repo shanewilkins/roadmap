@@ -129,7 +129,7 @@ def log_error_with_context(
     if include_traceback:
         context["traceback"] = traceback.format_exc()
 
-    logger.error("operation_failed", operation=operation, **context)
+    logger.error("operation_failed", **context)
 
 
 def log_validation_error(

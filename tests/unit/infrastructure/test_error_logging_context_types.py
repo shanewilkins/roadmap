@@ -27,7 +27,7 @@ class TestLogErrorWithContext:
 
         error_logging_logger_mocked.error.assert_called_once()
         call_args = error_logging_logger_mocked.error.call_args
-        assert call_args[0][0] == "parse_config_failed"
+        assert call_args[0][0] == "operation_failed"
         assert call_args[1]["operation"] == "parse_config"
         assert call_args[1]["error_type"] == "ValueError"
 

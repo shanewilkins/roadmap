@@ -42,7 +42,8 @@ class TestTrackOperationTime:
         assert result["duration_ms"] >= 20
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
-        assert "slow_operation_slow" in str(call_args)
+        assert call_args[0][0] == "operation_slow"
+        assert "slow_operation" in call_args[1]["operation_name"]
 
     @patch("roadmap.common.logging.performance_tracking.logger")
     def test_track_operation_time_no_warning_when_fast(self, mock_logger):
@@ -108,7 +109,8 @@ class TestTrackOperationTime:
             pass
 
         call_args = mock_logger.debug.call_args
-        assert "my_operation_completed" in str(call_args)
+        assert call_args[0][0] == "operation_completed"
+        assert call_args[1]["operation_name"] == "my_operation"
 
 
 class TestTrackDatabaseOperation:
