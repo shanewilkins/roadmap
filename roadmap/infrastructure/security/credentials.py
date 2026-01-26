@@ -55,7 +55,7 @@ class CredentialManager:
             logger.info("github_token_stored", system=self.system)
             return result
         except Exception as e:
-            logger.error("github_token_store_failed", error=str(e), system=self.system)
+            logger.error("github_token_store_failed", error=str(e), system=self.system, severity="config_error")
             raise CredentialManagerError(f"Failed to store token: {e}") from e
 
     def get_token(self) -> str | None:
@@ -90,7 +90,7 @@ class CredentialManager:
         except Exception as e:
             # Silently fail and return None - credential retrieval should be non-blocking
             logger.warning(
-                "github_token_retrieval_failed", error=str(e), system=self.system
+                "github_token_retrieval_failed", error=str(e), system=self.system, severity="operational"
             )
             return None
 
@@ -120,7 +120,7 @@ class CredentialManager:
             return result
         except Exception as e:
             logger.error(
-                "github_token_deletion_failed", error=str(e), system=self.system
+                "github_token_deletion_failed", error=str(e), system=self.system, severity="config_error"
             )
             raise CredentialManagerError(f"Failed to delete token: {e}") from e
 
@@ -254,7 +254,7 @@ class CredentialManager:
             # Fallback to cmdkey if keyring not available
             return self._delete_token_cmdkey()
         except Exception as e:
-            logger.error("wincred_token_deletion_failed", error=str(e))
+            logger.error("wincred_token_deletion_failed", error=str(e), severity="config_error")
             return False
 
     def _check_wincred_available(self) -> bool:

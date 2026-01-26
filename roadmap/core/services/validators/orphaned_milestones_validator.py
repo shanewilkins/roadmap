@@ -75,7 +75,7 @@ class OrphanedMilestonesValidator(BaseValidator):
                 f"⚠️ {count} orphaned milestone(s) found (not assigned to any project): "
                 "These milestones should be assigned to a project or deleted"
             )
-            logger.warning("health_check_orphaned_milestones", count=count)
+            logger.warning("health_check_orphaned_milestones", count=count, severity="operational")
             return HealthStatus.DEGRADED, message
 
         except Exception as e:

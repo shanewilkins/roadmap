@@ -111,6 +111,7 @@ class RoadmapCore:
             logger.warning(
                 "failed_to_initialize_remote_links_in_core",
                 error=str(e),
+                severity="operational",
             )
 
         # Wire GitSyncMonitor into StateManager for transparent cache sync
