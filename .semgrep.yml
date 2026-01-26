@@ -137,6 +137,11 @@ rules:
               ...
       # Find logger calls in that context
       - pattern: logger.$METHOD(...)
+      # Must reference the exception variable or have structural error context
+      - pattern-either:
+          - pattern: logger.$METHOD(..., $KEY=$VAR, ...)
+          - pattern: logger.$METHOD(..., $KEY=str($VAR), ...)
+          - pattern: logger.$METHOD(..., $KEY=f"...$VAR...", ...)
       # But exclude if error/exception/exc_info/error_message/error_type are already present
       - pattern-not-inside: logger.$METHOD(..., error=..., ...)
       - pattern-not-inside: logger.$METHOD(..., exception=..., ...)
