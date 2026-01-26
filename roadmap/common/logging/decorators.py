@@ -78,7 +78,11 @@ def log_command(
             )
 
             if log_args:
-                logger.debug(f"{command_name}_arguments", kwargs=kwargs)
+                logger.debug(
+                    "command_received_with_arguments",
+                    command=command_name,
+                    kwargs=kwargs,
+                )
 
             try:
                 result = func(*args, **kwargs)

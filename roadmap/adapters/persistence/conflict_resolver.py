@@ -87,10 +87,19 @@ class ConflictResolver:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(resolved)
 
-            logger.info(f"Resolved conflict in {file_path.name} (kept {resolution})")
+            logger.info(
+                "conflict_resolved",
+                filepath=file_path.name,
+                resolution=resolution,
+            )
             return True
         except Exception as e:
-            logger.error(f"Error resolving conflict in {file_path}: {e}")
+            logger.error(
+                "error_resolving_conflict",
+                file_path=str(file_path),
+                error=str(e),
+                severity="operational",
+            )
             return False
 
     def _remove_conflict_markers(self, content: str, resolution: str) -> str:

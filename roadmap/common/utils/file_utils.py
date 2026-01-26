@@ -145,7 +145,10 @@ def ensure_directory_exists(
         directory_path = Path(directory_path)
         directory_path.mkdir(mode=permissions, parents=parents, exist_ok=exist_ok)
 
-        file_logger.debug(f"Directory ensured: {directory_path}")
+        file_logger.debug(
+            "directory_ensured",
+            directory_path=str(directory_path),
+        )
         return directory_path
 
     except OSError as e:
@@ -195,7 +198,11 @@ def safe_write_file(
             with open(file_path, "w", encoding=encoding) as f:
                 f.write(content)
 
-        file_logger.debug(f"File written safely: {file_path} ({len(content)} chars)")
+        file_logger.debug(
+            "file_written_safely",
+            file_path=str(file_path),
+            char_count=len(content),
+        )
         return file_path
 
     except Exception as e:
@@ -226,13 +233,20 @@ def safe_read_file(
 
         if not file_path.exists():
             if default is not None:
-                file_logger.debug(f"File not found, returning default: {file_path}")
+                file_logger.debug(
+                    "file_not_found_returning_default",
+                    file_path=str(file_path),
+                )
                 return default
             else:
                 raise FileNotFoundError(f"File not found: {file_path}")
 
         content = file_path.read_text(encoding=encoding)
-        file_logger.debug(f"File read safely: {file_path} ({len(content)} chars)")
+        file_logger.debug(
+            "file_read_safely",
+            file_path=str(file_path),
+            char_count=len(content),
+        )
         return content
 
     except FileNotFoundError:
@@ -284,7 +298,12 @@ def file_exists_check(
         return True
 
     except Exception as e:
-        file_logger.warning(f"File existence check failed: {e} (path: {file_path})")
+        file_logger.warning(
+            "file_existence_check_failed",
+            file_path=str(file_path),
+            error=str(e),
+            severity="operational",
+        )
         return False
 
 
@@ -306,7 +325,11 @@ def get_file_size(file_path: str | Path) -> int:
             raise FileNotFoundError(f"File not found: {file_path}")
 
         size = file_path.stat().st_size
-        file_logger.debug(f"File size: {file_path} ({size} bytes)")
+        file_logger.debug(
+            "file_size_retrieved",
+            file_path=str(file_path),
+            size_bytes=size,
+        )
         return size
 
     except Exception as e:
@@ -347,7 +370,11 @@ def backup_file(
             backup_path = file_path.with_suffix(f"{file_path.suffix}{backup_suffix}")
 
         shutil.copy2(file_path, backup_path)
-        file_logger.info(f"File backed up: {file_path} → {backup_path}")
+        file_logger.info(
+            "file_backed_up",
+            file_path=str(file_path),
+            backup_path=str(backup_path),
+        )
         return backup_path
 
     except Exception as e:
@@ -380,12 +407,24 @@ def cleanup_temp_files(directory: str | Path, pattern: str = "*.tmp") -> int:
             try:
                 temp_file.unlink()
                 count += 1
-                file_logger.debug(f"Cleaned up temp file: {temp_file}")
+                file_logger.debug(
+                    "temp_file_cleaned_up",
+                    temp_file=str(temp_file),
+                )
             except OSError as e:
-                file_logger.warning(f"Failed to remove temp file {temp_file}: {e}")
+                file_logger.warning(
+                    "failed_to_remove_temp_file",
+                    temp_file=str(temp_file),
+                    error=str(e),
+                    severity="operational",
+                )
 
         if count > 0:
-            file_logger.info(f"Cleaned up {count} temporary files in {directory}")
+            file_logger.info(
+                "temporary_files_cleaned_up",
+                count=count,
+                directory=str(directory),
+            )
 
         return count
 

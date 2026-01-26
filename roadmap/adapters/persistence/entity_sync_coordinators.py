@@ -261,12 +261,20 @@ class MilestoneSyncCoordinator(EntitySyncCoordinator):
         """Sync a single milestone file to database."""
         try:
             if not file_path.exists():
-                logger.warning(f"Milestone file not found: {file_path}")
+                logger.warning(
+                    "milestone_file_not_found",
+                    file_path=str(file_path),
+                    severity="operational",
+                )
                 return False
 
             milestone_data = self._parser.parse_yaml_frontmatter(file_path)
             if not milestone_data:
-                logger.warning(f"No YAML data found in {file_path}")
+                logger.warning(
+                    "milestone_no_yaml_data_found",
+                    file_path=str(file_path),
+                    severity="operational",
+                )
                 return False
 
             # Extract milestone ID
@@ -348,12 +356,20 @@ class ProjectSyncCoordinator(EntitySyncCoordinator):
         """Sync a single project file to database."""
         try:
             if not file_path.exists():
-                logger.warning(f"Project file not found: {file_path}")
+                logger.warning(
+                    "project_file_not_found",
+                    file_path=str(file_path),
+                    severity="operational",
+                )
                 return False
 
             project_data = self._parser.parse_yaml_frontmatter(file_path)
             if not project_data:
-                logger.warning(f"No YAML data found in {file_path}")
+                logger.warning(
+                    "project_no_yaml_data_found",
+                    file_path=str(file_path),
+                    severity="operational",
+                )
                 return False
 
             # Extract project ID
@@ -390,7 +406,11 @@ class ProjectSyncCoordinator(EntitySyncCoordinator):
 
             # Update sync status
             self._update_sync_status(file_path)
-            logger.info(f"Synced project file: {project_id}", file_path=str(file_path))
+            logger.info(
+                "synced_project_file",
+                project_id=project_id,
+                file_path=str(file_path),
+            )
             return True
 
         except Exception as e:

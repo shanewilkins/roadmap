@@ -219,13 +219,17 @@ def log_operation_timing(operation: str, logger=None, **context):
     logger = logger or get_logger()
     start_time = time.perf_counter()
 
-    logger.info(f"Starting {operation}", operation=operation, **context)
+    logger.info(
+        "operation_started",
+        operation=operation,
+        **context,
+    )
 
     try:
         yield
         duration = time.perf_counter() - start_time
         logger.info(
-            f"Completed {operation}",
+            "operation_completed",
             operation=operation,
             duration_ms=round(duration * 1000, 2),
             success=True,
@@ -264,7 +268,11 @@ def log_operation(operation: str, **context):
             logger = get_logger()
             start_time = time.perf_counter()
 
-            logger.info(f"Starting {operation}", operation=operation, **context)
+            logger.info(
+                "operation_started",
+                operation=operation,
+                **context,
+            )
             try:
                 result = func(*args, **kwargs)
                 duration = time.perf_counter() - start_time

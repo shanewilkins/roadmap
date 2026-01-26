@@ -82,7 +82,10 @@ def critical_path(
         try:
             query_service = IssueQueryService(core)
             if milestone:
-                logger.debug(f"Filtering issues for milestone: {milestone}")
+                logger.debug(
+                    "filtering_issues_for_milestone",
+                    milestone=milestone,
+                )
                 issues_domain, filter_desc = query_service.get_filtered_issues(
                     milestone=milestone
                 )
@@ -99,7 +102,10 @@ def critical_path(
             console.print(f"❌ Failed to load issues: {str(e)}", style="bold red")
             return
 
-        logger.debug(f"Loaded {len(issues_domain)} issues")
+        logger.debug(
+            "issues_loaded",
+            count=len(issues_domain),
+        )
 
         # Filter closed issues unless explicitly included
         if not include_closed:
@@ -108,7 +114,9 @@ def critical_path(
             filtered_count = original_count - len(issues_domain)
             if filtered_count > 0:
                 logger.debug(
-                    f"Filtered out {filtered_count} closed issues, {len(issues_domain)} remaining"
+                    "issues_filtered_for_status",
+                    filtered_count=filtered_count,
+                    remaining_count=len(issues_domain),
                 )
 
         if not issues_domain:
@@ -123,7 +131,10 @@ def critical_path(
             return
 
         # Calculate critical path
-        logger.debug(f"Calculating critical path for {len(issues_domain)} issues")
+        logger.debug(
+            "calculating_critical_path",
+            issue_count=len(issues_domain),
+        )
         try:
             calculator = CriticalPathCalculator()
             result = calculator.calculate_critical_path(issues_domain)
@@ -136,7 +147,7 @@ def critical_path(
             )
         except Exception as e:
             logger.error(
-                f"Critical path calculation failed: {str(e)}",
+                "critical_path_calculation_failed",
                 error=str(e),
                 severity="operational",
                 exc_info=True,
@@ -147,7 +158,10 @@ def critical_path(
             return
 
         # Output results
-        logger.debug(f"Outputting results - export format: {export or 'display'}")
+        logger.debug(
+            "outputting_critical_path_results",
+            export_format=export or "display",
+        )
         if export:
             _export_critical_path(result, issues_domain, export, output)
         else:
@@ -178,7 +192,7 @@ def _get_core(ctx: click.Context):
         return ctx.obj.get("core") if ctx.obj else None
     except (AttributeError, TypeError) as e:
         logger.warning(
-            f"Failed to get core from context: {str(e)}",
+            "failed_to_get_core_from_context",
             error=str(e),
             severity="operational",
         )
@@ -202,7 +216,7 @@ def _display_critical_path(result, milestone: str | None = None):
         logger.debug("Critical path displayed successfully")
     except Exception as e:
         logger.error(
-            f"Failed to format critical path display: {str(e)}",
+            "failed_to_format_critical_path_display",
             error=str(e),
             severity="operational",
             exc_info=True,
@@ -220,7 +234,10 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
         output_path: Optional file path for export
     """
     try:
-        logger.debug(f"Exporting critical path to {format}")
+        logger.debug(
+            "exporting_critical_path",
+            export_format=format,
+        )
 
         if format == "json":
             data = _format_json_export(result, issues)
@@ -229,7 +246,9 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
             output_str = _format_csv_export(result, issues)
         else:
             logger.error(
-                f"Unsupported export format: {format}", severity="config_error"
+                "unsupported_export_format",
+                format=format,
+                severity="config_error",
             )
             console.print("❌ Unsupported export format", style="bold red")
             return
@@ -239,11 +258,14 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
                 path = Path(output_path)
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(output_str)
-                logger.info(f"Exported critical path to {path}")
+                logger.info(
+                    "critical_path_exported",
+                    output_path=str(path),
+                )
                 console.print(f"✅ Exported to {path}", style="bold green")
             except OSError as e:
                 logger.error(
-                    f"Failed to write export file: {str(e)}",
+                    "failed_to_write_export_file",
                     error=str(e),
                     severity="operational",
                     exc_info=True,
@@ -257,7 +279,7 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
 
     except Exception as e:
         logger.error(
-            f"Export failed: {str(e)}",
+            "critical_path_export_failed",
             error=str(e),
             severity="operational",
             exc_info=True,
