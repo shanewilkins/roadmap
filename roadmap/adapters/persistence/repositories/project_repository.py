@@ -159,6 +159,10 @@ class ProjectRepository:
         updated = cursor.rowcount > 0
         if updated:
             action = "archived" if archived else "unarchived"
-            logger.info(f"Project {action}", project_id=project_id)
+            logger.info(
+                "project_status_changed",
+                project_id=project_id,
+                action=action,
+            )
 
         return updated

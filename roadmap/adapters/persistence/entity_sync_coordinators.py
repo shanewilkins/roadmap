@@ -44,7 +44,12 @@ class EntitySyncCoordinator:
                 ).fetchone()
                 return result[0] if result else None
         except Exception as e:
-            logger.warning(f"Failed to find milestone '{milestone_name}'", error=str(e))
+            logger.warning(
+                "failed_to_find_milestone",
+                milestone_name=milestone_name,
+                error=str(e),
+                severity="operational",
+            )
             return None
 
     def _normalize_date(self, date_value: Any) -> Any:
@@ -121,7 +126,11 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
         if not project_id:
             project_id = self._get_default_project_id()
             if not project_id:
-                logger.warning(f"No projects found for issue {issue_id}, skipping")
+                logger.warning(
+                    "no_projects_found_for_issue",
+                    issue_id=issue_id,
+                    severity="operational",
+                )
                 return None
         issue_data["project_id"] = project_id
         return project_id
@@ -154,13 +163,21 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
         """Sync a single issue file to database."""
         try:
             if not file_path.exists():
-                logger.warning(f"Issue file not found: {file_path}")
+                logger.warning(
+                    "issue_file_not_found",
+                    file_path=str(file_path),
+                    severity="operational",
+                )
                 return False
 
             # Parse YAML frontmatter
             issue_data = self._parser.parse_yaml_frontmatter(file_path)
             if not issue_data:
-                logger.warning(f"No YAML data found in {file_path}")
+                logger.warning(
+                    "no_yaml_data_found",
+                    file_path=str(file_path),
+                    severity="operational",
+                )
                 return False
 
             # Extract issue ID
@@ -220,11 +237,20 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
 
             # Update sync status
             self._update_sync_status(file_path)
-            logger.info(f"Synced issue file: {issue_id}", file_path=str(file_path))
+            logger.info(
+                "synced_issue_file",
+                issue_id=issue_id,
+                file_path=str(file_path),
+            )
             return True
 
         except Exception as e:
-            logger.error(f"Failed to sync issue file {file_path}", error=str(e))
+            logger.error(
+                "failed_to_sync_issue_file",
+                file_path=str(file_path),
+                error=str(e),
+                severity="operational",
+            )
             return False
 
 

@@ -91,7 +91,7 @@ def critical_path(
                 issues_domain, filter_desc = query_service.get_filtered_issues()
         except Exception as e:
             logger.error(
-                f"Failed to load issues: {str(e)}",
+                "failed_to_load_issues",
                 error=str(e),
                 severity="operational",
                 exc_info=True,

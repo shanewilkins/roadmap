@@ -54,7 +54,12 @@ class SyncOrchestrator:
             return current_hash != row[0]
 
         except Exception as e:
-            logger.error(f"Failed to check file changes for {file_path}", error=str(e))
+            logger.error(
+                "failed_to_check_file_changes",
+                file_path=str(file_path),
+                error=str(e),
+                severity="operational",
+            )
             return True
 
     def _sync_file_by_type(self, file_path: Path, stats: dict) -> bool:
@@ -94,7 +99,11 @@ class SyncOrchestrator:
 
         try:
             if not roadmap_dir.exists():
-                logger.warning(f"Roadmap directory not found: {roadmap_dir}")
+                logger.warning(
+                    "roadmap_directory_not_found",
+                    roadmap_dir=str(roadmap_dir),
+                    severity="operational",
+                )
                 return stats
 
             # Process in dependency order: projects first, then milestones, then issues
@@ -172,7 +181,11 @@ class SyncOrchestrator:
 
         try:
             if not roadmap_dir.exists():
-                logger.warning(f"Roadmap directory not found: {roadmap_dir}")
+                logger.warning(
+                    "roadmap_directory_not_found",
+                    roadmap_dir=str(roadmap_dir),
+                    severity="operational",
+                )
                 return stats
 
             # Clear existing data

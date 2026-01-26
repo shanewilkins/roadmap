@@ -128,7 +128,10 @@ def service_operation(
             try:
                 result = func(self, *args, **kwargs)
                 if log_success:
-                    logger.debug(f"{func.__name__}_completed")
+                    logger.debug(
+                        "operation_completed",
+                        operation=func.__name__,
+                    )
                 return result
             except Exception as e:
                 _log_operation_error(

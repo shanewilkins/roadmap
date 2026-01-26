@@ -75,7 +75,12 @@ class FileSynchronizer:
             return current_hash != sync_status["content_hash"]
 
         except Exception as e:
-            logger.error(f"Failed to check file changes for {file_path}", error=str(e))
+            logger.error(
+                "failed_to_check_file_changes",
+                file_path=str(file_path),
+                error=str(e),
+                severity="operational",
+            )
             return True
 
     def sync_directory_incremental(self, roadmap_dir: Path) -> dict[str, Any]:

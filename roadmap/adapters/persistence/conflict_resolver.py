@@ -36,7 +36,11 @@ class ConflictResolver:
                 if self._has_conflict_markers(file_path):
                     conflict_files.append(str(file_path))
         except Exception as e:
-            logger.warning(f"Error detecting conflicts: {e}")
+            logger.warning(
+                "error_detecting_conflicts",
+                error=str(e),
+                severity="operational",
+            )
 
         return conflict_files
 

@@ -131,6 +131,10 @@ class MilestoneRepository:
         updated = cursor.rowcount > 0
         if updated:
             action = "archived" if archived else "unarchived"
-            logger.info(f"Milestone {action}", milestone_id=milestone_id)
+            logger.info(
+                "milestone_status_changed",
+                milestone_id=milestone_id,
+                action=action,
+            )
 
         return updated

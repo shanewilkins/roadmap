@@ -152,6 +152,10 @@ class IssueRepository:
         updated = cursor.rowcount > 0
         if updated:
             action = "archived" if archived else "unarchived"
-            logger.info(f"Issue {action}", issue_id=issue_id)
+            logger.info(
+                "issue_status_changed",
+                issue_id=issue_id,
+                action=action,
+            )
 
         return updated

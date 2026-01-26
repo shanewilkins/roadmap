@@ -22,7 +22,12 @@ class FileParser:
             with open(file_path, "rb") as f:
                 return hashlib.sha256(f.read()).hexdigest()
         except Exception as e:
-            logger.warning(f"Failed to calculate hash for {file_path}", error=str(e))
+            logger.warning(
+                "failed_to_calculate_hash",
+                file_path=str(file_path),
+                error=str(e),
+                severity="operational",
+            )
             return ""
 
     @staticmethod
@@ -55,7 +60,12 @@ class FileParser:
                 return loaded if isinstance(loaded, dict) else {}
 
         except Exception as e:
-            logger.error(f"Failed to parse YAML from {file_path}", error=str(e))
+            logger.error(
+                "failed_to_parse_yaml",
+                file_path=str(file_path),
+                error=str(e),
+                severity="data_error",
+            )
             return {}
 
     @staticmethod
@@ -73,5 +83,10 @@ class FileParser:
                 "modified_time": datetime.fromtimestamp(file_stat.st_mtime),
             }
         except Exception as e:
-            logger.error(f"Failed to extract metadata for {file_path}", error=str(e))
+            logger.error(
+                "failed_to_extract_metadata",
+                file_path=str(file_path),
+                error=str(e),
+                severity="data_error",
+            )
             return {}

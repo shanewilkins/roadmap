@@ -320,9 +320,13 @@ class DatabaseManager:
         for migration_sql in migrations:
             try:
                 conn.executescript(migration_sql)
-                logger.info("Applied database migration")
+                logger.info("applied_database_migration")
             except Exception as e:
-                logger.warning(f"Migration may have already been applied: {e}")
+                logger.warning(
+                    "migration_may_have_been_applied",
+                    error=str(e),
+                    severity="operational",
+                )
 
         conn.commit()
 
