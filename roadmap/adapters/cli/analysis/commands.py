@@ -171,7 +171,7 @@ def critical_path(
 
     except Exception as e:
         logger.error(
-            f"Unexpected error in critical path command: {str(e)}",
+            "critical_path_command_failed",
             error=str(e),
             severity="operational",
             exc_info=True,
@@ -322,7 +322,7 @@ def _format_json_export(result, issues: list) -> dict:
         }
     except Exception as e:
         logger.error(
-            f"JSON formatting failed: {str(e)}",
+            "json_formatting_failed",
             error=str(e),
             severity="operational",
             exc_info=True,
@@ -362,7 +362,7 @@ def _format_csv_export(result, issues: list) -> str:
         return "\n".join(lines)
     except Exception as e:
         logger.error(
-            f"CSV formatting failed: {str(e)}",
+            "csv_formatting_failed",
             error=str(e),
             severity="operational",
             exc_info=True,

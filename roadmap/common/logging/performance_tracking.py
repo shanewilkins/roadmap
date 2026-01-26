@@ -42,7 +42,8 @@ def track_operation_time(
         if duration_ms > warn_threshold_ms:
             result["exceeded_threshold"] = True
             logger.warning(
-                f"{operation_name}_slow",
+                "operation_slow",
+                operation_name=operation_name,
                 duration_ms=duration_ms,
                 threshold_ms=warn_threshold_ms,
             )
@@ -182,7 +183,8 @@ def track_sync_operation(
         if duration_ms > warn_threshold_ms:
             result["exceeded_threshold"] = True
             logger.warning(
-                f"{operation_name}_slow",
+                "operation_slow",
+                operation_name=operation_name,
                 duration_ms=duration_ms,
                 entity_count=entity_count,
                 threshold_ms=warn_threshold_ms,
@@ -190,7 +192,8 @@ def track_sync_operation(
             )
         else:
             logger.info(
-                f"{operation_name}_completed",
+                "operation_completed",
+                operation_name=operation_name,
                 duration_ms=duration_ms,
                 entity_count=entity_count,
                 throughput_items_per_sec=result.get("throughput_items_per_sec"),
@@ -230,7 +233,8 @@ class OperationTimer:
             duration_ms = (time.time() - self.current_step_start) * 1000
             self.steps[self.current_step] = duration_ms
             logger.debug(
-                f"{self.operation_name}_step_completed",
+                "step_completed",
+                operation_name=self.operation_name,
                 step=self.current_step,
                 duration_ms=duration_ms,
             )
@@ -254,7 +258,8 @@ class OperationTimer:
         }
 
         logger.info(
-            f"{self.operation_name}_finished",
+            "operation_finished",
+            operation_name=self.operation_name,
             **result,
         )
 

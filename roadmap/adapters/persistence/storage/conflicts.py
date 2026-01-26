@@ -50,12 +50,15 @@ class ConflictService:
 
                     except Exception as e:
                         logger.warning(
-                            f"Failed to check conflicts in {file_path}", error=str(e)
+                            "failed_to_check_conflicts",
+                            error=str(e),
+                            file_path=str(file_path),
                         )
 
             if conflict_files:
                 logger.warning(
-                    f"Git conflicts detected in {len(conflict_files)} files",
+                    "git_conflicts_detected",
+                    conflict_count=len(conflict_files),
                     conflicts=conflict_files,
                 )
                 self.state_manager.set_sync_state("git_conflicts_detected", "true")

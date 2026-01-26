@@ -211,10 +211,11 @@ def safe_operation(
                 try:
                     if attempt > 0:
                         logger.debug(
-                            f"retry_{operation_type}",
+                            "retry_attempt",
                             attempt=attempt,
                             max_retries=max_retries,
                             entity_type=entity_type,
+                            operation_type=operation_type,
                         )
                     return func(*args, **kwargs)
 
@@ -251,11 +252,12 @@ def safe_operation(
                     if retryable and is_recoverable and attempt < max_retries - 1:
                         attempt += 1
                         logger.info(
-                            f"retrying_{operation_type}",
+                            "retry_in_progress",
                             attempt=attempt,
                             max_retries=max_retries,
                             error_type=type(e).__name__,
                             delay_seconds=delay,
+                            operation_type=operation_type,
                         )
                         time.sleep(delay)
                         delay *= retry_backoff
@@ -336,7 +338,8 @@ def log_operation(
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             if log_inputs:
                 logger.info(
-                    f"{operation_type}_started",
+                    "operation_started",
+                    operation_type=operation_type,
                     entity_type=entity_type,
                     **kwargs,
                 )
@@ -345,7 +348,8 @@ def log_operation(
 
             if log_output and result:
                 logger.info(
-                    f"{operation_type}_completed",
+                    "operation_completed",
+                    operation_type=operation_type,
                     entity_type=entity_type,
                 )
 

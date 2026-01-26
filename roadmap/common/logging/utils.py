@@ -238,7 +238,7 @@ def log_operation_timing(operation: str, logger=None, **context):
     except Exception as e:
         duration = time.perf_counter() - start_time
         logger.error(
-            f"Failed {operation}",
+            "operation_failed",
             operation=operation,
             duration_ms=round(duration * 1000, 2),
             success=False,
@@ -277,7 +277,7 @@ def log_operation(operation: str, **context):
                 result = func(*args, **kwargs)
                 duration = time.perf_counter() - start_time
                 logger.info(
-                    f"Completed {operation}",
+                    "operation_completed",
                     operation=operation,
                     duration_ms=round(duration * 1000, 2),
                     success=True,
@@ -287,7 +287,7 @@ def log_operation(operation: str, **context):
             except Exception as e:
                 duration = time.perf_counter() - start_time
                 logger.error(
-                    f"Failed {operation}",
+                    "operation_failed",
                     operation=operation,
                     duration_ms=round(duration * 1000, 2),
                     success=False,

@@ -71,7 +71,8 @@ def log_command(
 
             # Log command initiation
             logger.info(
-                f"{command_name}_initiated",
+                "command_initiated",
+                command_name=command_name,
                 user=user,
                 entity_type=entity_type,
                 args_logged=log_args,
@@ -90,7 +91,8 @@ def log_command(
                 # Log successful completion
                 duration_ms = (time.time() - start_time) * 1000
                 logger.info(
-                    f"{command_name}_completed",
+                    "command_completed",
+                    command_name=command_name,
                     user=user,
                     entity_type=entity_type,
                     duration_ms=duration_ms if track_duration else None,
@@ -103,7 +105,8 @@ def log_command(
                 # User cancelled (Ctrl+C or declined prompt)
                 duration_ms = (time.time() - start_time) * 1000
                 logger.info(
-                    f"{command_name}_cancelled",
+                    "command_cancelled",
+                    command_name=command_name,
                     user=user,
                     entity_type=entity_type,
                     duration_ms=duration_ms if track_duration else None,
@@ -114,7 +117,8 @@ def log_command(
                 # Log error with context
                 duration_ms = (time.time() - start_time) * 1000
                 logger.error(
-                    f"{command_name}_failed",
+                    "command_failed",
+                    command_name=command_name,
                     user=user,
                     entity_type=entity_type,
                     error_type=type(e).__name__,
@@ -251,13 +255,15 @@ def log_operation_duration(
                 # Log at appropriate level based on duration
                 if duration_ms > warn_threshold_ms:
                     logger.warning(
-                        f"{operation_name}_slow",
+                        "operation_slow",
+                        operation_name=operation_name,
                         duration_ms=duration_ms,
                         threshold_ms=warn_threshold_ms,
                     )
                 else:
                     logger.debug(
-                        f"{operation_name}_completed",
+                        "operation_completed",
+                        operation_name=operation_name,
                         duration_ms=duration_ms,
                     )
 
@@ -266,7 +272,8 @@ def log_operation_duration(
             except Exception as e:
                 duration_ms = (time.time() - start_time) * 1000
                 logger.error(
-                    f"{operation_name}_failed",
+                    "operation_failed",
+                    operation_name=operation_name,
                     error_type=type(e).__name__,
                     error_message=str(e),
                     duration_ms=duration_ms,

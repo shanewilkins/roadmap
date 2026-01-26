@@ -47,7 +47,8 @@ def traced(operation_name: str) -> Callable[[F], F]:
 
                 # Log span completion
                 logger.debug(
-                    f"Span completed: {operation_name}",
+                    "span_completed",
+                    operation_name=operation_name,
                     extra={
                         "span_id": span.span_id,
                         "parent_span_id": span.parent_span_id,
@@ -58,7 +59,8 @@ def traced(operation_name: str) -> Callable[[F], F]:
                 return result
             except Exception as exc:
                 logger.error(
-                    f"Span failed: {operation_name}",
+                    "span_failed",
+                    operation_name=operation_name,
                     extra={
                         "span_id": span.span_id,
                         "parent_span_id": span.parent_span_id,

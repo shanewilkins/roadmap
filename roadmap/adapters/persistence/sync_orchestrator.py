@@ -234,7 +234,9 @@ class SyncOrchestrator:
             # Threshold-based decision
             if total_files > 0 and (changed_files / total_files) >= threshold / 100:
                 logger.info(
-                    f"Many files changed ({changed_files}/{total_files}), triggering full rebuild"
+                    "many_files_changed_triggering_rebuild",
+                    changed_files=changed_files,
+                    total_files=total_files,
                 )
                 return True
 

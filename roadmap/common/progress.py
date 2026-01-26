@@ -59,7 +59,12 @@ class ProgressCalculationEngine:
                 else "None"
             )
             logger.info(
-                f"Updated milestone '{milestone.name}': progress {old_progress_str}% -> {new_progress_str}%, status {old_status} -> {milestone.status}"
+                "milestone_progress_updated",
+                milestone_name=milestone.name,
+                old_progress=old_progress_str,
+                new_progress=new_progress_str,
+                old_status=old_status,
+                new_status=milestone.status,
             )
             return True
 
@@ -101,7 +106,12 @@ class ProgressCalculationEngine:
                 else "None"
             )
             logger.info(
-                f"Updated project '{project.name}': progress {old_progress_str}% -> {new_progress_str}%, status {old_status} -> {project.status}"
+                "project_progress_updated",
+                project_name=project.name,
+                old_progress=old_progress_str,
+                new_progress=new_progress_str,
+                old_status=old_status,
+                new_status=project.status,
             )
             return True
 
@@ -355,7 +365,7 @@ class ProgressEventSystem:
                     }
                 )
             except Exception as e:
-                logger.error(f"Error in progress event listener: {e}")
+                logger.error("progress_event_listener_error", error=str(e))
 
         return {
             "milestones_updated": updated_milestones,

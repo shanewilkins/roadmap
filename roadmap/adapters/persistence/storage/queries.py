@@ -190,7 +190,9 @@ class QueryService:
 
         except Exception as e:
             logger.error(
-                f"Failed to get milestone progress for {milestone_name}", error=str(e)
+                "failed_to_get_milestone_progress",
+                error=str(e),
+                milestone_name=milestone_name,
             )
             return {"total": 0, "completed": 0}
 

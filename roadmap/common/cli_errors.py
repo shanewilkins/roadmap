@@ -61,14 +61,14 @@ def handle_cli_errors(
                     for k, v in kwargs.items()
                 }
                 logger.info(
-                    f"Command invoked: {cmd_name}",
+                    "command_invoked",
                     operation=cmd_name,
                     correlation_id=correlation_id,
                     args=filtered_kwargs,
                 )
             else:
                 logger.info(
-                    f"Command invoked: {cmd_name}",
+                    "command_invoked",
                     operation=cmd_name,
                     correlation_id=correlation_id,
                 )
@@ -79,7 +79,7 @@ def handle_cli_errors(
                 # Log successful completion with timing
                 duration = time.perf_counter() - start_time
                 logger.info(
-                    f"Command completed: {cmd_name}",
+                    "command_completed",
                     operation=cmd_name,
                     correlation_id=correlation_id,
                     duration_ms=round(duration * 1000, 2),
@@ -106,7 +106,7 @@ def handle_cli_errors(
             except Exception as e:
                 duration = time.perf_counter() - start_time
                 logger.error(
-                    f"Command failed: {cmd_name}",
+                    "command_failed",
                     operation=cmd_name,
                     correlation_id=correlation_id,
                     duration_ms=round(duration * 1000, 2),
