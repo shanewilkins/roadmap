@@ -274,37 +274,10 @@ rules:
     languages: [python]
 
   # Rule 12: Logger parameter order must follow standard
-  # DISABLED: This rule has too many false positives from semgrep's pattern-not limitations.
-  # The codebase is already using the correct parameter order for most cases.
-  # Re-enable after semgrep fixes the pattern matching logic.
+  # DISABLED: Parameter order is mostly correct in codebase. Semgrep patterns insufficient
+  # to reliably catch semantic parameter order without excessive false positives.
+  # Can be re-enabled with a custom plugin or linter when available.
   #- id: logger-parameter-order
-  #  pattern-either:
-  #    # Catch when severity= comes before error=
-  #    - patterns:
-  #        - pattern: logger.$METHOD(..., severity=$S, ..., error=$E, ...)
-  #        - pattern-not: logger.$METHOD(..., error=..., ..., severity=...)
-  #    # Catch when exc_info comes before severity (wrong order)
-  #    - patterns:
-  #        - pattern: logger.$METHOD(..., exc_info=$X, ..., severity=$S, ...)
-  #        - pattern-not: logger.$METHOD(..., severity=..., ..., exc_info=...)
-  #  message: |
-  #    Logger parameters must follow standard order for consistency.
-  #    
-  #    Standard parameter order:
-  #      1. Event name (positional)
-  #      2. Context fields (operation=, filepath=, etc.)
-  #      3. error= (exception details)
-  #      4. severity= (error category)
-  #      5. exc_info= (stack trace flag)
-  #    
-  #    ❌ WRONG (mixed order):
-  #      logger.error("event", severity="operational", error=str(e))
-  #      logger.error("event", exc_info=True, error=str(e), severity="op")
-  #      
-  #    ✅ CORRECT (standard order):
-  #      logger.error("event", operation="x", error=str(e), severity="operational", exc_info=True)
-  #  severity: WARNING
-  #  languages: [python]
 
   # Rule 13: exc_info must only be used on ERROR level, not WARNING
   - id: exc-info-only-on-error
