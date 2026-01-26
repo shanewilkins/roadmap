@@ -118,8 +118,8 @@ def handle_cli_error(
     # Log with full traceback if requested
     logger.error(
         "operation_failed",
-        exc_info=error,
         severity="operational",
+        exc_info=error,
         **error_context,
     )
 
