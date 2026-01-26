@@ -32,7 +32,7 @@ class EntitySyncCoordinator:
                 result = conn.execute("SELECT id FROM projects LIMIT 1").fetchone()
                 return result[0] if result else None
         except Exception as e:
-            logger.error("Failed to get default project ID", error=str(e))
+            logger.error("failed_to_get_default_project_id", error=str(e), severity="operational")
             return None
 
     def _get_milestone_id_by_name(self, milestone_name: str) -> str | None:
@@ -287,7 +287,9 @@ class MilestoneSyncCoordinator(EntitySyncCoordinator):
                 project_id = self._get_default_project_id()
                 if not project_id:
                     logger.warning(
-                        f"No projects found for milestone {milestone_id}, skipping"
+                        "no_projects_found_for_milestone",
+                        milestone_id=milestone_id,
+                        severity="operational",
                     )
                     return False
 
@@ -340,12 +342,19 @@ class MilestoneSyncCoordinator(EntitySyncCoordinator):
             # Update sync status
             self._update_sync_status(file_path)
             logger.info(
-                f"Synced milestone file: {milestone_id}", file_path=str(file_path)
+                "synced_milestone_file",
+                milestone_id=milestone_id,
+                file_path=str(file_path),
             )
             return True
 
         except Exception as e:
-            logger.error(f"Failed to sync milestone file {file_path}", error=str(e))
+            logger.error(
+                "failed_to_sync_milestone_file",
+                file_path=str(file_path),
+                error=str(e),
+                severity="operational",
+            )
             return False
 
 
@@ -414,5 +423,10 @@ class ProjectSyncCoordinator(EntitySyncCoordinator):
             return True
 
         except Exception as e:
-            logger.error(f"Failed to sync project file {file_path}", error=str(e))
+            logger.error(
+                "failed_to_sync_project_file",
+                file_path=str(file_path),
+                error=str(e),
+                severity="operational",
+            )
             return False
