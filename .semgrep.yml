@@ -217,6 +217,154 @@ rules:
     severity: ERROR
     languages: [python]
 
+# Phase 7g: Standardized Logging Enforcement Rules
+# These rules enforce the canonical logging pattern across the application
+# Pattern: logger.error("event_name", context_field=value, error=str(e), severity="category", exc_info=True)
+
+  # Rule 10: Event name must be a static string literal (not f-string or computed)
+  - id: event-name-must-be-static
+    pattern-either:
+      # Match f-string event names
+      - pattern: logger.$METHOD(f"...", ...)
+      - pattern: logger.$METHOD(f'...', ...)
+      # Match computed/concatenated event names
+      - pattern: logger.$METHOD($X + $Y, ...)
+      - pattern: logger.$METHOD(str($X), ...)
+    message: |
+      Event name must be a static string literal for searchability and log aggregation.
+      
+      ❌ WRONG (f-string - not greppable):
+        logger.error(f"{operation}_failed", error=str(e))
+        
+      ✅ CORRECT (static string):
+        logger.error("operation_failed", operation=operation, error=str(e))
+      
+      Event names must be constants so we can find all instances with grep:
+        grep "operation_failed" roadmap/
+      
+      Use keyword arguments to pass variable data.
+    severity: ERROR
+    languages: [python]
+
+  # Rule 11: Event name must follow snake_case convention
+  - id: event-name-must-be-snake-case
+    patterns:
+      - pattern: logger.$METHOD($EVENT, ...)
+      - metavariable-pattern:
+          metavariable: $EVENT
+          patterns:
+            # Must be a string literal
+            - pattern: '"..."'
+            # Must contain camelCase or PascalCase (violation)
+            - metavariable-regex:
+                metavariable: $EVENT
+                regex: '.*[a-z][A-Z].*'
+    message: |
+      Event names must use snake_case (all lowercase with underscores).
+      
+      ❌ WRONG (camelCase):
+        logger.error("operationFailed", ...)
+        logger.error("SyncCommandFailed", ...)
+        
+      ✅ CORRECT (snake_case):
+        logger.error("operation_failed", ...)
+        logger.error("sync_command_failed", ...)
+      
+      This ensures consistency and readability in logs.
+    severity: WARNING
+    languages: [python]
+
+  # Rule 12: Logger parameter order must follow standard
+  - id: logger-parameter-order
+    pattern-either:
+      # Catch when error= comes before severity=
+      - patterns:
+          - pattern: logger.$METHOD(..., error=$E, ..., severity=$S, ...)
+          - pattern-not: logger.$METHOD(..., severity=..., ..., error=...)
+      # Catch when exc_info comes before severity
+      - patterns:
+          - pattern: logger.$METHOD(..., exc_info=$X, ..., severity=$S, ...)
+          - pattern-not: logger.$METHOD(..., severity=..., ..., exc_info=...)
+    message: |
+      Logger parameters must follow standard order for consistency.
+      
+      Standard parameter order:
+        1. Event name (positional)
+        2. Context fields (operation=, filepath=, etc.)
+        3. error= (exception details)
+        4. severity= (error category)
+        5. exc_info= (stack trace flag)
+      
+      ❌ WRONG (mixed order):
+        logger.error("event", severity="operational", error=str(e))
+        logger.error("event", exc_info=True, error=str(e), severity="op")
+        
+      ✅ CORRECT (standard order):
+        logger.error("event", operation="x", error=str(e), severity="operational", exc_info=True)
+    severity: WARNING
+    languages: [python]
+
+  # Rule 13: exc_info must only be used on ERROR level, not WARNING
+  - id: exc-info-only-on-error
+    pattern-either:
+      # Match logger.warning(..., exc_info=...) or exc_info=True
+      - patterns:
+          - pattern: logger.warning(..., exc_info=$X, ...)
+          - pattern-not: logger.warning(..., exc_info=False, ...)
+      # Also warn about other levels
+      - patterns:
+          - pattern: logger.info(..., exc_info=$X, ...)
+          - pattern-not: logger.info(..., exc_info=False, ...)
+      - patterns:
+          - pattern: logger.debug(..., exc_info=$X, ...)
+          - pattern-not: logger.debug(..., exc_info=False, ...)
+    message: |
+      exc_info=True (stack trace) should only be used on ERROR level.
+      
+      ❌ WRONG (stack trace on warning):
+        logger.warning("operation_degraded", error=str(e), severity="operational", exc_info=True)
+        
+      ✅ CORRECT (stack trace only on error):
+        logger.error("operation_failed", error=str(e), severity="system_error", exc_info=True)
+        logger.warning("operation_degraded", error=str(e), severity="operational")
+      
+      Stack traces are verbose and should only be included for unexpected errors,
+      not for expected/recoverable warnings.
+    severity: WARNING
+    languages: [python]
+
+  # Rule 14: Refined caught-exception check - ensure structural logging, not f-string
+  - id: refined-caught-exception-logging
+    patterns:
+      - pattern-inside: |
+          try:
+              ...
+          except $EXCEPTION as $VAR:
+              ...
+      # Find logger calls with exception details in the message string
+      - pattern: logger.$METHOD(f"...{$VAR}...", ...)
+      - pattern-not: logger.$METHOD(..., error=$VAR, ...)
+      - pattern-not: logger.$METHOD(..., exception=$VAR, ...)
+    message: |
+      Exception details must be passed as structured parameters, not interpolated in event name/message.
+      
+      ❌ WRONG (f-string interpolation - loses structure):
+        except ValueError as e:
+            logger.error(f"operation_failed: {e}", ...)
+            
+      ✅ CORRECT (structured parameters):
+        except ValueError as e:
+            logger.error("operation_failed", error=str(e), exc_info=True, severity="data_error")
+      
+      Structured logging allows log aggregation systems to:
+      - Extract and analyze error types
+      - Deduplicate similar errors
+      - Create alerts on error patterns
+      
+      Interpolated strings destroy this structure.
+    severity: ERROR
+    languages: [python]
+
 
 # Phase 7e+ Placeholder rules (to be added)
 # - logging context completeness by error category
