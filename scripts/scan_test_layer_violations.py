@@ -84,8 +84,8 @@ def extract_imports(file_path):
                 imports.append((i, from_match.group(1)))
             elif import_match:
                 imports.append((i, import_match.group(1)))
-    except Exception:  # noqa: E722
-        pass
+    except Exception as e:  # noqa: E722
+        print(f"Failed to extract imports from {file_path}: {e}", file=sys.stderr)
 
     return imports
 

@@ -15,8 +15,8 @@ def get_files_by_pattern(spec_name):
                 content = f.read()
             if f"MagicMock(spec={spec_name})" in content:
                 files.append(py_file)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Failed to read {py_file}: {e}", file=sys.stderr)
     return files
 
 

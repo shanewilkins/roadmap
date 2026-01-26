@@ -345,7 +345,8 @@ class CredentialManager:
         except ImportError:
             # Fallback if keyring not available
             return self._delete_token_fallback()
-        except Exception:
+        except Exception as e:
+            logger.debug("delete_token_secretservice_failed", error=str(e))
             return False
 
     def _check_secretservice_available(self) -> bool:
@@ -358,7 +359,8 @@ class CredentialManager:
             return True
         except ImportError:
             return False
-        except Exception:
+        except Exception as e:
+            logger.debug("check_secretservice_available_failed", error=str(e))
             return False
 
     # Fallback implementation for unsupported systems

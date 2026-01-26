@@ -381,7 +381,7 @@ class TimezoneManager:
                 available = available_timezones()
                 return [tz for tz in common if tz in available]
             except ImportError:
-                pass
+                logger.debug("zoneinfo_import_failed", severity="operational")
 
         # Fallback list for systems without zoneinfo
         return [
