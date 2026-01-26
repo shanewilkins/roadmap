@@ -502,8 +502,8 @@ class YAMLMilestoneRepository(MilestoneRepository):
                     "status": milestone.status.value,
                 }
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("failed_to_persist_milestone_to_database", error=str(e), severity="operational")
 
     def update(self, milestone_id: str, updates: dict) -> Milestone | None:
         """Update specific fields of a milestone.
@@ -631,8 +631,8 @@ class YAMLProjectRepository(ProjectRepository):
                     "status": project.status.value,
                 }
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("failed_to_persist_project_to_database", error=str(e), severity="operational")
 
     def update(self, project_id: str, updates: dict) -> Project | None:
         """Update specific fields of a project.

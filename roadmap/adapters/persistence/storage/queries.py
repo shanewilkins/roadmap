@@ -105,7 +105,7 @@ class QueryService:
                             metadata = json.loads(row[10])
                             issue.update(metadata)
                         except json.JSONDecodeError:
-                            pass
+                            logger.warning("failed_to_parse_issue_metadata", severity="data_error")
 
                     issues.append(issue)
 
@@ -148,7 +148,7 @@ class QueryService:
                             metadata = json.loads(row[7])
                             milestone.update(metadata)
                         except json.JSONDecodeError:
-                            pass
+                            logger.warning("failed_to_parse_milestone_metadata", severity="data_error")
 
                     milestones.append(milestone)
 

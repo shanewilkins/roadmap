@@ -112,8 +112,8 @@ class TimezoneManager:
             if tz_env:
                 ZoneInfo(tz_env)  # Validate it
                 return tz_env
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("failed_to_validate_tz_env", error=str(e), severity="operational")
         return None
 
     def _get_tz_from_etc_timezone(self) -> str | None:

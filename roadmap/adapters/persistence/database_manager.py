@@ -78,7 +78,7 @@ class DatabaseManager:
                 conn.execute("ROLLBACK")
             except sqlite3.OperationalError:
                 # Transaction might not be active
-                pass
+                logger.debug("rollback_failed_transaction_not_active", severity="operational")
             raise
 
     def _init_database(self):
