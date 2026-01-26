@@ -100,7 +100,7 @@ class BackupCleanupService:
             except Exception as e:
                 result.add_failed(backup["path"], str(e))
                 logger.warning(
-                    "Failed to delete backup", file=backup["path"].name, error=str(e)
+                    "Failed to delete backup", file=backup["path"].name, error=str(e), severity="operational"
                 )
 
         return result

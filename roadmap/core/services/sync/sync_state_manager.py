@@ -124,6 +124,7 @@ class SyncStateManager:
                 "sync_state_db_save_error",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return False
 
@@ -195,6 +196,7 @@ class SyncStateManager:
                 "sync_state_db_load_error",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return None
 
@@ -280,6 +282,7 @@ class SyncStateManager:
                 logger.warning(
                     "base_state_update_save_failed",
                     issue_id=issue.id,
+                    severity="operational",
                 )
             return success
         except AttributeError as e:
@@ -288,6 +291,7 @@ class SyncStateManager:
                 issue_id=issue.id if hasattr(issue, "id") else "unknown",
                 error=str(e),
                 error_type="AttributeError",
+                severity="system_error",
             )
             return False
         except Exception as e:
@@ -296,6 +300,7 @@ class SyncStateManager:
                 issue_id=issue.id if hasattr(issue, "id") else "unknown",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return False
 
@@ -334,6 +339,7 @@ class SyncStateManager:
                         "skipping_issue_in_state_creation",
                         issue_id=issue.id if hasattr(issue, "id") else "unknown",
                         error=str(e),
+                        severity="operational",
                     )
                     continue
 
@@ -351,6 +357,7 @@ class SyncStateManager:
                 backend=backend,
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             # Return empty state as fallback
             return SyncState(
@@ -391,6 +398,7 @@ class SyncStateManager:
                 logger.warning(
                     "sync_state_migration_load_failed",
                     reason="could_not_load_json_state",
+                    severity="operational",
                 )
                 return False
 
@@ -411,12 +419,14 @@ class SyncStateManager:
                         "sync_state_migration_archive_failed",
                         error=str(e),
                         note="json_file_not_removed",
+                        severity="operational",
                     )
                 return True
             else:
                 logger.error(
                     "sync_state_migration_db_save_failed",
                     reason="could_not_save_to_database",
+                    severity="system_error",
                 )
                 return False
 
@@ -425,5 +435,6 @@ class SyncStateManager:
                 "sync_state_migration_error",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return False

@@ -102,6 +102,7 @@ class FileRepairService:
                             "Failed to write repaired file",
                             file=file_rel,
                             error=str(write_error),
+                            severity="operational",
                         )
                         continue
 
@@ -116,7 +117,7 @@ class FileRepairService:
                     entity_id=file_rel,
                 )
                 result.add_error(file_rel)
-                logger.warning("Failed to fix file", file=file_rel, error=str(e))
+                logger.warning("Failed to fix file", file=file_rel, error=str(e), severity="operational")
 
         return result
 
