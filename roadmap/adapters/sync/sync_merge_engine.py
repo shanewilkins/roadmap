@@ -162,6 +162,7 @@ class SyncMergeEngine:
                 error=str(e),
                 strategy=getattr(strategy, "value", None),
                 exc_info=True,
+                severity="operational",
             )
             return []
 
@@ -239,6 +240,7 @@ class SyncMergeEngine:
                         "push_single_issue_failed",
                         issue_id=issue.id,
                         issue_title=getattr(issue, "title", None),
+                        severity="operational",
                     )
                     push_errors.append(issue.id)
                 else:
@@ -253,6 +255,7 @@ class SyncMergeEngine:
                             "single_issue_state_update_failed",
                             issue_id=issue.id,
                             error=str(e),
+                            severity="operational",
                         )
             else:
                 logger.debug("pushing_batch_issues", batch_size=len(issues_to_push))
@@ -263,6 +266,7 @@ class SyncMergeEngine:
                         "push_batch_failed",
                         error_count=len(getattr(push_report, "errors", {})),
                         errors=str(getattr(push_report, "errors", {}))[:200],
+                        severity="operational",
                     )
                     try:
                         push_errors = (
@@ -285,6 +289,7 @@ class SyncMergeEngine:
                                 "batch_issue_state_update_failed",
                                 issue_id=issue.id,
                                 error=str(e),
+                                severity="operational",
                             )
                             state_update_failures += 1
 
@@ -297,7 +302,7 @@ class SyncMergeEngine:
         except Exception as e:
             report.error = f"Error during push operation: {str(e)}"
             logger.error(
-                "push_operation_exception", error=str(e), error_type=type(e).__name__
+                "push_operation_exception", error=str(e), error_type=type(e).__name__, severity="system_error"
             )
             pushed_count = 0
 
@@ -329,7 +334,7 @@ class SyncMergeEngine:
             )
         except Exception as e:
             logger.error(
-                "pull_operation_exception", error=str(e), error_type=type(e).__name__
+                "pull_operation_exception", error=str(e), error_type=type(e).__name__, severity="system_error"
             )
             pulled_count = 0
 
@@ -378,6 +383,7 @@ class SyncMergeEngine:
                     "batch_remote_links_lookup_failed",
                     error=str(e),
                     error_type=type(e).__name__,
+                    severity="operational",
                 )
 
             for remote_id, remote_issue in remote_issues_data.items():
@@ -411,6 +417,7 @@ class SyncMergeEngine:
                             remote_id=remote_id,
                             issue_uuid=matched_issue.id,
                             error=str(e),
+                            severity="operational",
                         )
 
                 elif match_type == "potential_duplicate" and matched_issue:
@@ -465,6 +472,7 @@ class SyncMergeEngine:
                             "remote_issue_creation_failed",
                             remote_id=remote_id,
                             error=str(e),
+                            severity="operational",
                         )
 
             logger.info(
@@ -479,6 +487,7 @@ class SyncMergeEngine:
                 "remote_matching_failed",
                 error_type=type(e).__name__,
                 error=str(e),
+                severity="system_error",
             )
             for remote_id in remote_issues_data.keys():
                 existing_issue_uuid = self.core.db.remote_links.get_issue_uuid(
