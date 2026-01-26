@@ -339,7 +339,7 @@ class DatabaseManager:
             ).fetchone()
             return result is not None
         except Exception as e:
-            logger.error("Failed to check database initialization", error=str(e))
+            logger.error("Failed to check database initialization", error=str(e), severity="infrastructure")
             return False
 
     def close(self):
@@ -371,7 +371,7 @@ class DatabaseManager:
             return len(tables) >= 3
 
         except Exception as e:
-            logger.warning("Error checking database existence", error=str(e))
+            logger.warning("Error checking database existence", error=str(e), severity="infrastructure")
             return False
 
     def is_safe_for_writes(self) -> tuple[bool, str]:

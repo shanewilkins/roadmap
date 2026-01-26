@@ -448,4 +448,4 @@ class GitHookManager:
 
         except Exception as e:
             # Silent fail to avoid breaking Git operations
-            logger.error("trigger_auto_sync_operation_failed", error=str(e))
+            logger.error("trigger_auto_sync_operation_failed", error=str(e), severity="operational")

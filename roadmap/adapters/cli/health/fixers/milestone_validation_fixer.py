@@ -171,7 +171,7 @@ class MilestoneValidationFixer(HealthFixer):
                     )
 
         except Exception as e:
-            logger.error("find_invalid_milestones_failed", error=str(e))
+            logger.error("find_invalid_milestones_failed", error=str(e), severity="data_error")
             return []
 
         return invalid

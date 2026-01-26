@@ -69,7 +69,7 @@ class ConflictService:
             return conflict_files
 
         except Exception as e:
-            logger.error("Failed to check git conflicts", error=str(e))
+            logger.error("Failed to check git conflicts", error=str(e), severity="data_error")
             return conflict_files
 
     def has_git_conflicts(self) -> bool:

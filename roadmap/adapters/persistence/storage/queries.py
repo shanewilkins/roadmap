@@ -112,7 +112,7 @@ class QueryService:
                 return issues
 
         except Exception as e:
-            logger.error("Failed to get issues", error=str(e))
+            logger.error("Failed to get issues", error=str(e), severity="infrastructure")
             return []
 
     def get_all_milestones(self) -> list[dict[str, Any]]:
@@ -155,7 +155,7 @@ class QueryService:
                 return milestones
 
         except Exception as e:
-            logger.error("Failed to get milestones", error=str(e))
+            logger.error("Failed to get milestones", error=str(e), severity="infrastructure")
             return []
 
     def get_milestone_progress(self, milestone_name: str) -> dict[str, int]:
@@ -208,5 +208,5 @@ class QueryService:
                 return {row[0]: row[1] for row in results}
 
         except Exception as e:
-            logger.error("Failed to get issues by status", error=str(e))
+            logger.error("Failed to get issues by status", error=str(e), severity="infrastructure")
             return {}

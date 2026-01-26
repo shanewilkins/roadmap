@@ -188,7 +188,7 @@ class OrphanedIssuesFixer(HealthFixer):
                         )
 
         except Exception as e:
-            logger.error("find_orphaned_issues_failed", error=str(e))
+            logger.error("find_orphaned_issues_failed", error=str(e), severity="data_error")
             return []
 
         return misplaced

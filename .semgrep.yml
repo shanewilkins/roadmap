@@ -83,10 +83,14 @@ rules:
   # Rule 4: Ensure error/warning logger calls include severity field
   # Only flags error() and warning() calls - info/debug don't need severity
   - id: missing-severity-field
-    pattern: |
-      logger.$LEVEL("$EVENT", error=...)
-    pattern-not: |
-      logger.$LEVEL("$EVENT", ..., severity=...)
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: logger.error("$EVENT", error=...)
+              - pattern-not: logger.error("$EVENT", ..., severity=...)
+          - patterns:
+              - pattern: logger.warning("$EVENT", error=...)
+              - pattern-not: logger.warning("$EVENT", ..., severity=...)
     message: |
       Error/warning log calls with 'error=' must include 'severity' field for log aggregation and filtering.
       Add severity field matching error category:

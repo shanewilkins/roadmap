@@ -183,5 +183,5 @@ class SyncDataFetchService:
                 remote_milestones_count,
             )
         except Exception as e:
-            logger.error("count_remote_stats_error", error=str(e))
+            logger.error("count_remote_stats_error", error=str(e), severity="operational")
             return 0, 0, 0, 0
