@@ -74,6 +74,7 @@ class BaselineStateRetriever:
                 "baseline_from_file_extraction_error",
                 issue_file=str(issue_file),
                 error=str(e),
+                severity="operational",
             )
             return None
 
@@ -129,6 +130,7 @@ class BaselineStateRetriever:
                 "local_baseline_git_error",
                 issue_file=str(issue_file),
                 error=str(e),
+                severity="operational",
             )
             raise BaselineRetrievalError(
                 f"Failed to retrieve baseline from git: {e}"
@@ -139,6 +141,7 @@ class BaselineStateRetriever:
                 issue_file=str(issue_file),
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="operational",
             )
             return None
 
@@ -191,6 +194,7 @@ class BaselineStateRetriever:
                 issue_file=str(issue_file),
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="operational",
             )
             return None
 

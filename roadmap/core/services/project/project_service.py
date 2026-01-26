@@ -67,7 +67,7 @@ class ProjectService:
                 operation="list",
                 entity_type="Project",
             )
-            logger.warning("returning_empty_project_list_due_to_error")
+            logger.warning("returning_empty_project_list_due_to_error", severity="operational")
             return []
 
         elapsed = time.time() - start_time

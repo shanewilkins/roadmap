@@ -105,7 +105,7 @@ class GitHubIssueClient:
                 field_name="issue_number",
                 proposed_value=issue_number,
             )
-            logger.warning("invalid_github_issue_number", error=str(e))
+            logger.warning("invalid_github_issue_number", error=str(e), severity="data_error")
             raise
         except GitHubAPIError as e:
             log_external_service_error(
@@ -113,7 +113,7 @@ class GitHubIssueClient:
                 service_name="GitHub",
                 operation="fetch_issue",
             )
-            logger.warning("github_issue_fetch_failed", error=str(e))
+            logger.warning("github_issue_fetch_failed", error=str(e), severity="infrastructure")
             raise
 
     @traced("validate_token")
@@ -140,6 +140,7 @@ class GitHubIssueClient:
                 logger.warning(
                     "github_token_validation_failed",
                     error_message=message,
+                    severity="config_error",
                 )
             return is_valid, message
         except GitHubAPIError as e:

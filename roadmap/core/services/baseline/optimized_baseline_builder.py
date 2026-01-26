@@ -138,6 +138,7 @@ class OptimizedBaselineBuilder:
                 "changed_file_detection_failed",
                 error=str(e),
                 using_fallback="rebuild_all",
+                severity="operational",
             )
             # If git history fails, return empty set to trigger full rebuild
             return set()

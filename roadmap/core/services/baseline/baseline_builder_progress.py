@@ -112,6 +112,7 @@ class ProgressTrackingBaselineBuilder:
                 "baseline_rebuild_error",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             # Return empty rebuild (will fall back to default)
             return (

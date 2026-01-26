@@ -69,7 +69,7 @@ class ProjectInitializationService:
                 operation="cleanup_existing",
                 entity_type="Roadmap",
             )
-            logger.error("Failed to cleanup existing roadmap", error=str(e))
+            logger.error("Failed to cleanup existing roadmap", error=str(e), severity="operational")
             return False
 
     @traced("detect_existing_projects")
@@ -103,5 +103,5 @@ class ProjectInitializationService:
                 entity_type="Roadmap",
                 additional_context={"project_info": project_info},
             )
-            logger.error("Validation failed", error=str(e))
+            logger.error("Validation failed", error=str(e), severity="operational")
             return False

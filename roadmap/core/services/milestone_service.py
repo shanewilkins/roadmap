@@ -143,7 +143,7 @@ class MilestoneService:
                 operation="list",
                 entity_type="Milestone",
             )
-            logger.warning("returning_empty_milestone_list_due_to_error")
+            logger.warning("returning_empty_milestone_list_due_to_error", severity="operational")
             return []
 
         # Filter by status if provided

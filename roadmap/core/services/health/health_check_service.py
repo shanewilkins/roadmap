@@ -36,7 +36,7 @@ class HealthCheckService:
             logger.debug("health_checks_completed", check_count=len(checks))
             return checks
         except Exception as e:
-            logger.error("health_checks_failed", error=str(e))
+            logger.error("health_checks_failed", error=str(e), severity="system_error")
             return {}
 
     def get_overall_status(
@@ -58,7 +58,7 @@ class HealthCheckService:
             logger.debug("overall_status_calculated", status=overall.value)
             return overall
         except Exception as e:
-            logger.error("overall_status_failed", error=str(e))
+            logger.error("overall_status_failed", error=str(e), severity="system_error")
             return HealthStatus.UNHEALTHY
 
     def get_check_status(self, check_name: str) -> tuple[HealthStatus, str] | None:
@@ -74,7 +74,7 @@ class HealthCheckService:
             checks = self.run_all_checks()
             return checks.get(check_name)
         except Exception as e:
-            logger.error("get_check_status_failed", check_name=check_name, error=str(e))
+            logger.error("get_check_status_failed", check_name=check_name, error=str(e), severity="system_error")
             return None
 
     def get_health_summary(self) -> dict[str, Any]:
@@ -112,7 +112,7 @@ class HealthCheckService:
                 },
             }
         except Exception as e:
-            logger.error("health_summary_failed", error=str(e))
+            logger.error("health_summary_failed", error=str(e), severity="system_error")
             return {"error": str(e)}
 
     def is_healthy(self) -> bool:
@@ -125,7 +125,7 @@ class HealthCheckService:
             overall_status = self.get_overall_status()
             return overall_status == HealthStatus.HEALTHY
         except Exception as e:
-            logger.error("is_healthy_check_failed", error=str(e))
+            logger.error("is_healthy_check_failed", error=str(e), severity="system_error")
             return False
 
     def is_degraded(self) -> bool:
@@ -138,7 +138,7 @@ class HealthCheckService:
             overall_status = self.get_overall_status()
             return overall_status == HealthStatus.DEGRADED
         except Exception as e:
-            logger.error("is_degraded_check_failed", error=str(e))
+            logger.error("is_degraded_check_failed", error=str(e), severity="system_error")
             return False
 
     def is_unhealthy(self) -> bool:
@@ -151,5 +151,5 @@ class HealthCheckService:
             overall_status = self.get_overall_status()
             return overall_status == HealthStatus.UNHEALTHY
         except Exception as e:
-            logger.error("is_unhealthy_check_failed", error=str(e))
+            logger.error("is_unhealthy_check_failed", error=str(e), severity="system_error")
             return True  # Fail safe: assume unhealthy on error

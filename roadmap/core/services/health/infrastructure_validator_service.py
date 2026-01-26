@@ -67,7 +67,7 @@ class RoadmapDirectoryValidator(BaseValidator):
             test_file.unlink()
         except OSError as e:
             logger.error(
-                "roadmap_dir_not_writable", error=str(e), action="check_writable"
+                "roadmap_dir_not_writable", error=str(e), action="check_writable", severity="system_error"
             )
             return HealthStatus.DEGRADED, ".roadmap directory is not writable"
 
@@ -306,6 +306,7 @@ class InfrastructureValidator:
             logger.error(
                 "infrastructure_validation_failed",
                 error=str(e),
+                severity="system_error",
             )
             return {
                 "error": (

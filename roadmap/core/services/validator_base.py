@@ -111,15 +111,18 @@ class BaseValidator(ABC):
         try:
             status, message = cls.perform_check()
             logger.debug(
-                f"health_check_{cls.get_check_name()}",
+                "health_check_completed",
+                check_name=cls.get_check_name(),
                 status=status,
             )
             return status, message
         except Exception as e:
             logger.error(
-                f"health_check_{cls.get_check_name()}_failed",
+                "health_check_failed",
+                check_name=cls.get_check_name(),
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return (
                 HealthStatus.UNHEALTHY,

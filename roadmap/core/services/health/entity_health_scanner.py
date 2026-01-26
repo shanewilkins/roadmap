@@ -188,7 +188,7 @@ class EntityHealthScanner:
             for issue in all_issues:
                 reports.append(self.scan_issue(issue))
         except Exception as e:
-            logger.error("error_scanning_issues", error=str(e))
+            logger.error("error_scanning_issues", error=str(e), severity="system_error")
 
         # Scan all milestones
         try:
@@ -196,7 +196,7 @@ class EntityHealthScanner:
             for milestone in all_milestones:
                 reports.append(self.scan_milestone(milestone))
         except Exception as e:
-            logger.error("error_scanning_milestones", error=str(e))
+            logger.error("error_scanning_milestones", error=str(e), severity="system_error")
 
         # Scan all projects
         try:
@@ -204,7 +204,7 @@ class EntityHealthScanner:
             for project in all_projects:
                 reports.append(self.scan_project(project))
         except Exception as e:
-            logger.error("error_scanning_projects", error=str(e))
+            logger.error("error_scanning_projects", error=str(e), severity="system_error")
 
         return reports
 
