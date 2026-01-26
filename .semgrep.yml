@@ -126,21 +126,21 @@ rules:
     languages: [python]
 
   # Rule 6: Exception caught but not included in log context
-  # REFINED: Only flag when exception is caught and DIRECTLY logged in same block
-  # This avoids false positives from extraction/transformation functions
+  # FIXED: Use pattern-inside to scope to except block, pattern-not-inside to exclude already-logged
   - id: caught-exception-not-logged
     patterns:
-      - pattern: |
+      # Establish context: we're inside an except block with a caught exception
+      - pattern-inside: |
           try:
               ...
           except $EXCEPTION as $VAR:
-              logger.$METHOD(...)
-      - pattern-not: logger.$METHOD(..., $VAR)
-      - pattern-not: logger.$METHOD(..., str($VAR))
-      - pattern-not: logger.$METHOD(..., error=$VAR)
-      - pattern-not: logger.$METHOD(..., error=str($VAR))
-      - pattern-not: logger.$METHOD(..., exception=$VAR)
-      - pattern-not: logger.$METHOD(..., exc_info=...)
+              ...
+      # Find logger calls in that context
+      - pattern: logger.$METHOD(...)
+      # But exclude if error/exception/exc_info are already present (handles multiline calls)
+      - pattern-not-inside: logger.$METHOD(..., error=..., ...)
+      - pattern-not-inside: logger.$METHOD(..., exception=..., ...)
+      - pattern-not-inside: logger.$METHOD(..., exc_info=..., ...)
     message: |
       Exception variable is caught and logged in same block, but exception details are not included.
       Include exception details in the log context:
