@@ -276,11 +276,11 @@ rules:
   # Rule 12: Logger parameter order must follow standard
   - id: logger-parameter-order
     pattern-either:
-      # Catch when error= comes before severity=
+      # Catch when severity= comes before error=
       - patterns:
-          - pattern: logger.$METHOD(..., error=$E, ..., severity=$S, ...)
-          - pattern-not: logger.$METHOD(..., severity=..., ..., error=...)
-      # Catch when exc_info comes before severity
+          - pattern: logger.$METHOD(..., severity=$S, ..., error=$E, ...)
+          - pattern-not: logger.$METHOD(..., error=..., ..., severity=...)
+      # Catch when exc_info comes before severity (wrong order)
       - patterns:
           - pattern: logger.$METHOD(..., exc_info=$X, ..., severity=$S, ...)
           - pattern-not: logger.$METHOD(..., severity=..., ..., exc_info=...)

@@ -95,8 +95,8 @@ def critical_path(
         except Exception as e:
             logger.error(
                 "failed_to_load_issues",
-                severity="operational",
                 error=str(e),
+                severity="operational",
                 exc_info=True,
             )
             console.print(f"❌ Failed to load issues: {str(e)}", style="bold red")
@@ -148,8 +148,8 @@ def critical_path(
         except Exception as e:
             logger.error(
                 "critical_path_calculation_failed",
-                severity="operational",
                 error=str(e),
+                severity="operational",
                 exc_info=True,
             )
             console.print(
@@ -172,8 +172,8 @@ def critical_path(
     except Exception as e:
         logger.error(
             f"Unexpected error in critical path command: {str(e)}",
-            severity="operational",
             error=str(e),
+            severity="operational",
             exc_info=True,
         )
         console.print(f"❌ Unexpected error: {str(e)}", style="bold red")
@@ -217,8 +217,8 @@ def _display_critical_path(result, milestone: str | None = None):
     except Exception as e:
         logger.error(
             "failed_to_format_critical_path_display",
-            severity="operational",
             error=str(e),
+            severity="operational",
             exc_info=True,
         )
         console.print(f"❌ Failed to format output: {str(e)}", style="bold red")
@@ -248,6 +248,7 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
             logger.error(
                 "unsupported_export_format",
                 format=format,
+                error=None,
                 severity="config_error",
             )
             console.print("❌ Unsupported export format", style="bold red")
@@ -266,8 +267,8 @@ def _export_critical_path(result, issues: list, format: str, output_path: str | 
             except OSError as e:
                 logger.error(
                     "failed_to_write_export_file",
-                    severity="operational",
                     error=str(e),
+                    severity="operational",
                     exc_info=True,
                 )
                 console.print(
