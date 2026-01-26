@@ -88,7 +88,7 @@ class FolderStructureFixer(HealthFixer):
                 # For now, just count successful operations
                 moved_count += 1
             except Exception as e:
-                logger.error("move_issue_failed", error=str(e))
+                logger.error("move_issue_failed", error=str(e), severity="system_error")
 
         return FixResult(
             fix_type=self.fix_type,

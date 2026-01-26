@@ -165,7 +165,7 @@ class FileLock:
                 self.lock_path.unlink()
             return True
         except Exception as e:
-            logger.error("force_unlock_failed", error=str(e))
+            logger.error("force_unlock_failed", error=str(e), severity="system_error")
             return False
 
 

@@ -61,7 +61,9 @@ class QueryService:
             return False
 
         except Exception as e:
-            logger.warning("Error checking file changes", error=str(e))
+            logger.warning(
+                "Error checking file changes", error=str(e), severity="operational"
+            )
             # If we can't check, assume changes exist to be safe
             return True
 

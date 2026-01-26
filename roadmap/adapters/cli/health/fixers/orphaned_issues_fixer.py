@@ -131,6 +131,7 @@ class OrphanedIssuesFixer(HealthFixer):
                     "move_orphaned_issue_failed",
                     issue_id=issue_data["id"],
                     error=str(e),
+                    severity="system_error",
                 )
                 failed_items.append(issue_data["id"])
 

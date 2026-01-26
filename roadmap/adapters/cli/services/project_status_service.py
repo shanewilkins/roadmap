@@ -48,7 +48,9 @@ class StatusDataService:
                 "milestone_count": len(milestones),
             }
         except Exception as e:
-            logger.error("failed_to_gather_status_data", error=str(e))
+            logger.error(
+                "failed_to_gather_status_data", error=str(e), severity="operational"
+            )
             return {
                 "issues": [],
                 "milestones": [],
@@ -94,6 +96,7 @@ class MilestoneProgressService:
                 "failed_to_get_milestone_progress",
                 milestone=milestone_name,
                 error=str(e),
+                severity="operational",
             )
             return {"total": 0, "completed": 0, "percentage": 0}
 
@@ -255,7 +258,11 @@ class RoadmapSummaryService:
                 "milestone_details": milestone_details,
             }
         except Exception as e:
-            logger.error("failed_to_compute_roadmap_summary", error=str(e))
+            logger.error(
+                "failed_to_compute_roadmap_summary",
+                error=str(e),
+                severity="operational",
+            )
             return {
                 "total_issues": len(issues),
                 "active_issues": 0,

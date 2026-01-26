@@ -76,7 +76,9 @@ class WorkflowAutomation:
             return True
 
         except Exception as e:
-            logger.error("context_cleanup_failed", error=str(e))
+            logger.error(
+                "context_cleanup_failed", error=str(e), severity="system_error"
+            )
             return False
 
     def _setup_status_automation(self) -> bool:
@@ -101,7 +103,9 @@ class WorkflowAutomation:
             return True
 
         except Exception as e:
-            logger.error("status_automation_setup_failed", error=str(e))
+            logger.error(
+                "status_automation_setup_failed", error=str(e), severity="system_error"
+            )
             return False
 
     def _setup_progress_tracking(self) -> bool:
@@ -124,7 +128,9 @@ class WorkflowAutomation:
             return True
 
         except Exception as e:
-            logger.error("progress_tracking_setup_failed", error=str(e))
+            logger.error(
+                "progress_tracking_setup_failed", error=str(e), severity="system_error"
+            )
             return False
 
     def sync_all_issues_with_git(self) -> dict[str, Any]:

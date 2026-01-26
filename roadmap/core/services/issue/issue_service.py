@@ -269,7 +269,10 @@ class IssueService:
                 operation="list",
                 entity_type="Issue",
             )
-            logger.warning("returning_empty_issue_list_due_to_error")
+            logger.warning(
+                "returning_empty_issue_list_due_to_error",
+                severity="operational",
+            )
             return []
 
         log_metric("issues_enumerated", len(issues))
@@ -325,7 +328,10 @@ class IssueService:
                 operation="list_all_including_archived",
                 entity_type="Issue",
             )
-            logger.warning("returning_empty_issue_list_due_to_error")
+            logger.warning(
+                "returning_empty_issue_list_due_to_error",
+                severity="operational",
+            )
             return []
 
         log_metric("all_issues_enumerated", len(issues))
@@ -434,6 +440,7 @@ class IssueService:
                     "invalid_priority_in_update",
                     issue_id=params.issue_id,
                     priority=params.priority,
+                    severity="data_error",
                 )
                 priority = issue.priority
             issue.priority = priority

@@ -36,7 +36,11 @@ class ProjectStatusService:
             project_info = {"issue_count": 0, "milestone_count": 0}
             return project_info
         except Exception as e:
-            logger.error("Failed to get project overview", error=str(e))
+            logger.error(
+                "Failed to get project overview",
+                error=str(e),
+                severity="operational",
+            )
             return {"error": str(e)}
 
     def get_milestone_progress(
@@ -53,7 +57,11 @@ class ProjectStatusService:
         try:
             return []
         except Exception as e:
-            logger.error("Failed to get milestone progress", error=str(e))
+            logger.error(
+                "Failed to get milestone progress",
+                error=str(e),
+                severity="operational",
+            )
             return []
 
     def get_issues_by_status(self, project_id: str | None = None) -> dict[str, int]:
@@ -68,7 +76,11 @@ class ProjectStatusService:
         try:
             return {}
         except Exception as e:
-            logger.error("Failed to get issues by status", error=str(e))
+            logger.error(
+                "Failed to get issues by status",
+                error=str(e),
+                severity="operational",
+            )
             return {}
 
     def get_assignee_workload(self, project_id: str | None = None) -> dict[str, int]:
@@ -83,7 +95,11 @@ class ProjectStatusService:
         try:
             return {}
         except Exception as e:
-            logger.error("Failed to get assignee workload", error=str(e))
+            logger.error(
+                "Failed to get assignee workload",
+                error=str(e),
+                severity="operational",
+            )
             return {}
 
     def get_status_summary(self, project_id: str | None = None) -> dict[str, Any]:
@@ -101,5 +117,9 @@ class ProjectStatusService:
                 "total_milestones": 0,
             }
         except Exception as e:
-            logger.error("Failed to get status summary", error=str(e))
+            logger.error(
+                "Failed to get status summary",
+                error=str(e),
+                severity="operational",
+            )
             return {"error": str(e)}

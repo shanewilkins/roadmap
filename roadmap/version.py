@@ -115,7 +115,11 @@ class VersionManager:
             if version_str:
                 return SemanticVersion(version_str)
         except Exception as e:
-            logger.error("get_current_version_failed", error=str(e))
+            logger.error(
+                "get_current_version_failed",
+                error=str(e),
+                severity="system_error",
+            )
         return None
 
     def get_init_version(self) -> SemanticVersion | None:
@@ -127,7 +131,11 @@ class VersionManager:
             if match:
                 return SemanticVersion(match.group(1))
         except Exception as e:
-            logger.error("get_init_version_failed", error=str(e))
+            logger.error(
+                "get_init_version_failed",
+                error=str(e),
+                severity="system_error",
+            )
         return None
 
     def check_version_consistency(self) -> dict[str, Any]:

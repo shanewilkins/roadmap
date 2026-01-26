@@ -116,10 +116,14 @@ class RemoteFetcher:
                     issue_id=issue_id,
                     attempt=attempt,
                     error=str(e),
+                    severity="infrastructure",
                 )
                 if attempt == rp.max_retries:
                     logger.error(
-                        "remote_fetch_issue_failed", issue_id=issue_id, attempts=attempt
+                        "remote_fetch_issue_failed",
+                        issue_id=issue_id,
+                        attempts=attempt,
+                        severity="infrastructure",
                     )
                     return None
                 # Backoff
@@ -174,10 +178,17 @@ class RemoteFetcher:
                     return result or []
                 except Exception as e:
                     logger.warning(
-                        "remote_fetch_issues_error", attempt=attempt, error=str(e)
+                        "remote_fetch_issues_error",
+                        attempt=attempt,
+                        error=str(e),
+                        severity="infrastructure",
                     )
                     if attempt == rp.max_retries:
-                        logger.error("remote_fetch_issues_failed", attempts=attempt)
+                        logger.error(
+                            "remote_fetch_issues_failed",
+                            attempts=attempt,
+                            severity="infrastructure",
+                        )
                         break
                     delay = rp.get_backoff_delay(attempt)
                     logger.info("remote_fetch_retry", attempt=attempt + 1, delay=delay)

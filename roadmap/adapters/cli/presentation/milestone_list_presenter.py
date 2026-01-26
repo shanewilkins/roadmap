@@ -73,6 +73,7 @@ class MilestoneTablePresenter:
             logger.error(
                 "failed_to_display_milestone_table",
                 error=str(e),
+                severity="operational",
             )
             console.print("❌ Failed to display milestone table", style="bold red")
 

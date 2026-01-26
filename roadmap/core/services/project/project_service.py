@@ -67,7 +67,9 @@ class ProjectService:
                 operation="list",
                 entity_type="Project",
             )
-            logger.warning("returning_empty_project_list_due_to_error", severity="operational")
+            logger.warning(
+                "returning_empty_project_list_due_to_error", severity="operational"
+            )
             return []
 
         elapsed = time.time() - start_time
@@ -237,7 +239,11 @@ class ProjectService:
 
         project = self.get_project(project_id)
         if not project:
-            logger.warning("updating_project_not_found", project_id=project_id)
+            logger.warning(
+                "updating_project_not_found",
+                project_id=project_id,
+                severity="operational",
+            )
             return None
 
         # Capture old state for change logging
@@ -290,6 +296,7 @@ class ProjectService:
                 "deleting_project_not_found",
                 project_id=project_id,
                 elapsed_seconds=round(elapsed, 3),
+                severity="operational",
             )
             return False
 
@@ -332,7 +339,9 @@ class ProjectService:
         project = self.get_project(project_id)
         if not project:
             logger.warning(
-                "calculate_progress_project_not_found", project_id=project_id
+                "calculate_progress_project_not_found",
+                project_id=project_id,
+                severity="operational",
             )
             return {
                 "total_milestones": 0,
@@ -416,6 +425,10 @@ class ProjectService:
             )
             logger.info("completing_project_complete", project_id=project_id)
         else:
-            logger.warning("completing_project_not_found", project_id=project_id)
+            logger.warning(
+                "completing_project_not_found",
+                project_id=project_id,
+                severity="operational",
+            )
 
         return result

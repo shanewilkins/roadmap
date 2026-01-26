@@ -106,7 +106,12 @@ class CollaboratorsHandler(BaseGitHubHandler):
             response = self._make_request("GET", f"/users/{username}")
             return response.status_code == 200
         except Exception as e:
-            logger.error("user_validation_failed", username=username, error=str(e))
+            logger.error(
+                "user_validation_failed",
+                username=username,
+                error=str(e),
+                severity="infrastructure",
+            )
             return False
 
     def validate_user_has_repository_access(self, username: str) -> bool:
@@ -122,7 +127,12 @@ class CollaboratorsHandler(BaseGitHubHandler):
             team_members = self.get_team_members()
             return username in team_members
         except Exception as e:
-            logger.error("access_validation_failed", username=username, error=str(e))
+            logger.error(
+                "access_validation_failed",
+                username=username,
+                error=str(e),
+                severity="infrastructure",
+            )
             return False
 
     def validate_assignee(self, assignee: str) -> tuple[bool, str]:

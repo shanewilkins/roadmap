@@ -93,6 +93,7 @@ class ConfigLoader:
                     "invalid_config_format",
                     path=str(path),
                     error="config is not a mapping",
+                    severity="data_error",
                 )
                 return None
 
@@ -105,6 +106,7 @@ class ConfigLoader:
                 "failed_to_load_config",
                 path=str(path),
                 error=str(e),
+                severity="data_error",
             )
             return None
 
@@ -191,6 +193,7 @@ class ConfigLoader:
                 "failed_to_save_config",
                 path=str(path),
                 error=str(e),
+                severity="system_error",
             )
             return False
 

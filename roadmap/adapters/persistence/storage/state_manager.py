@@ -135,6 +135,7 @@ class StateManager:
                 "Git sync failed, proceeding with potentially stale cache",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="operational",
             )
 
     def _initialize_remote_links_from_yaml(self) -> None:

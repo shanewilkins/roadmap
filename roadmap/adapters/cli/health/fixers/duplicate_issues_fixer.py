@@ -128,7 +128,9 @@ class DuplicateIssuesFixer(HealthFixer):
                 )
         except Exception as e:
             # If we can't read issues, log and return empty list
-            logger.error("read_duplicate_issues_failed", error=str(e))
+            logger.error(
+                "read_duplicate_issues_failed", error=str(e), severity="data_error"
+            )
             return []
 
         # Return only groups with duplicates

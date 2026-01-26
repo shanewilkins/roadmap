@@ -86,7 +86,10 @@ class DataIntegrityFixer(HealthFixer):
                     removed_count += 1
             except Exception as e:
                 logger.error(
-                    "remove_malformed_file_failed", file_path=file_path, error=str(e)
+                    "remove_malformed_file_failed",
+                    file_path=file_path,
+                    error=str(e),
+                    severity="system_error",
                 )
 
         return FixResult(
@@ -120,11 +123,15 @@ class DataIntegrityFixer(HealthFixer):
                 try:
                     IssueParser.parse_issue_file(issue_file)
                 except Exception as e:
-                    logger.debug("issue_file_parse_failed", file=str(issue_file), error=str(e))
+                    logger.debug(
+                        "issue_file_parse_failed", file=str(issue_file), error=str(e)
+                    )
                     # File couldn't be parsed
                     malformed.append(str(issue_file.relative_to(issues_dir)))
         except Exception as e:
-            logger.error("malformed_files_check_failed", error=str(e))
+            logger.error(
+                "malformed_files_check_failed", error=str(e), severity="system_error"
+            )
             return []
 
         return malformed

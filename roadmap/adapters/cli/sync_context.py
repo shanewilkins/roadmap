@@ -77,6 +77,7 @@ def _clear_baseline_db(core, console_inst):
             error_type=type(e).__name__,
             error=str(e),
             is_recoverable=True,
+            severity="operational",
         )
         console_inst.print(
             f"⚠️  Warning: Could not clear old baseline: {str(e)}", style="yellow"
@@ -87,6 +88,7 @@ def _clear_baseline_db(core, console_inst):
             operation="reset_baseline",
             error_type=type(e).__name__,
             error=str(e),
+            severity="operational",
         )
         console_inst.print(
             f"⚠️  Warning: Could not clear old baseline: {str(e)}", style="yellow"
@@ -139,6 +141,7 @@ def _create_and_save_baseline(
             error_type=type(e).__name__,
             error=str(e),
             error_classification="sync_error",
+            severity="system_error",
         )
         console_inst.print(f"❌ Failed to load issues: {str(e)}", style="bold red")
         return False

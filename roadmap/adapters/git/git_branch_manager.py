@@ -125,6 +125,7 @@ class GitBranchManager:
                     "format_branch_name_template_failed",
                     template=template,
                     error=str(e),
+                    severity="operational",
                 )
 
         return f"{prefix}/{issue_id}-{slug}"
@@ -391,5 +392,7 @@ class GitBranchManager:
             else:
                 return []
         except Exception as e:
-            logger.debug("branch_issue_extraction_failed", branch_name=branch_name, error=str(e))
+            logger.debug(
+                "branch_issue_extraction_failed", branch_name=branch_name, error=str(e)
+            )
             return []

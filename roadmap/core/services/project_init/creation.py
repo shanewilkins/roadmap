@@ -68,5 +68,9 @@ class ProjectCreationService:
             }
 
         except Exception as e:
-            logger.error("project_creation_failed", error=str(e))
+            logger.error(
+                "project_creation_failed",
+                error=str(e),
+                severity="system_error",
+            )
             return None

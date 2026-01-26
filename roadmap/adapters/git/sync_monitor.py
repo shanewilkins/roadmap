@@ -100,6 +100,7 @@ class GitSyncMonitor:
                 "Error detecting changes",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return {}
 
@@ -179,6 +180,7 @@ class GitSyncMonitor:
                 "Error syncing to database",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return False
 
@@ -236,6 +238,7 @@ class GitSyncMonitor:
                 "Error getting changed files",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return {}
 
@@ -302,6 +305,7 @@ class GitSyncMonitor:
                 "Error getting current commit",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return None
 
@@ -337,6 +341,7 @@ class GitSyncMonitor:
             logger.error(
                 "Error getting last synced commit",
                 error=str(e),
+                severity="system_error",
                 error_type=type(e).__name__,
             )
             return None
@@ -391,6 +396,7 @@ class GitSyncMonitor:
                 "Error saving last synced commit",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )
             return False
 

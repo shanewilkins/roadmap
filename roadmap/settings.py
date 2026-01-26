@@ -120,7 +120,11 @@ def validate_config() -> bool:
         logger.info("Configuration validation passed")
         return True
     except Exception as e:
-        logger.error("Configuration validation failed", error=str(e))
+        logger.error(
+            "Configuration validation failed",
+            error=str(e),
+            severity="config_error",
+        )
         return False
 
 
@@ -241,7 +245,11 @@ token = ""
         return True
 
     except Exception as e:
-        logger.error("Failed to create default configuration", error=str(e))
+        logger.error(
+            "Failed to create default configuration",
+            error=str(e),
+            severity="config_error",
+        )
         return False
 
 
@@ -308,7 +316,12 @@ def switch_environment(env_name: str) -> bool:
         logger.info("Switched environment", environment=env_name)
         return True
     except Exception as e:
-        logger.error("Failed to switch environment", environment=env_name, error=str(e))
+        logger.error(
+            "Failed to switch environment",
+            environment=env_name,
+            error=str(e),
+            severity="config_error",
+        )
         return False
 
 
@@ -317,5 +330,9 @@ try:
     validate_config()
     logger.debug("Configuration loaded successfully")
 except Exception as e:
-    logger.warning("Configuration validation failed, creating defaults", error=str(e))
+    logger.warning(
+        "Configuration validation failed, creating defaults",
+        error=str(e),
+        severity="config_error",
+    )
     create_default_config()

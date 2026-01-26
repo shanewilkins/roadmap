@@ -191,6 +191,7 @@ def validate_links(
             "validation_failed",
             error=str(e),
             error_type=type(e).__name__,
+            severity="system_error",
         )
         console.print(f"❌ Validation failed: {str(e)}", style="bold red")
         sys.exit(1)

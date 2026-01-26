@@ -70,7 +70,7 @@ class GitAuthenticationHandler:
 
         if not token or len(token.strip()) == 0:
             self.console.print("❌ Token cannot be empty", style="bold red")
-            logger.warning("github_auth_empty_token")
+            logger.warning("github_auth_empty_token", severity="operational")
             return
 
         # Validate token
@@ -92,6 +92,7 @@ class GitAuthenticationHandler:
                 "github_token_validation_error",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="infrastructure",
             )
             return
 
@@ -109,7 +110,7 @@ class GitAuthenticationHandler:
                     "⚠️  Token validation succeeded but storage failed",
                     style="yellow",
                 )
-                logger.warning("github_token_storage_failed")
+                logger.warning("github_token_storage_failed", severity="operational")
         except Exception as e:
             self.console.print(
                 f"⚠️  Token validation succeeded but could not store: {e}",
@@ -119,4 +120,5 @@ class GitAuthenticationHandler:
                 "github_token_storage_error",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="system_error",
             )

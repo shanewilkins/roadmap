@@ -66,7 +66,7 @@ class HookInstaller:
                 self._uninstall_single_hook(hook_name)
             return True
         except Exception as e:
-            logger.error("hook_uninstall_failed", error=str(e))
+            logger.error("hook_uninstall_failed", error=str(e), severity="operational")
             return False
 
     def _install_single_hook(self, hook_name: str) -> None:

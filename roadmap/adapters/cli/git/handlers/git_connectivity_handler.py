@@ -49,7 +49,9 @@ class GitConnectivityHandler:
                     "❌ Could not initialize Git backend (not in a git repository?)",
                     style="bold red",
                 )
-                logger.warning("git_backend_initialization_failed")
+                logger.warning(
+                    "git_backend_initialization_failed", severity="config_error"
+                )
                 return
 
             # Test authentication (connectivity check)
@@ -87,7 +89,9 @@ class GitConnectivityHandler:
                     "For HTTPS: Configure git credentials with: git config credential.helper",
                     style="dim",
                 )
-                logger.warning("git_connectivity_verification_failed")
+                logger.warning(
+                    "git_connectivity_verification_failed", severity="infrastructure"
+                )
 
         except ValueError as e:
             self.console.print(
@@ -98,6 +102,7 @@ class GitConnectivityHandler:
                 "git_repository_error",
                 error=str(e),
                 error_type=type(e).__name__,
+                severity="config_error",
             )
             self.console.print()
             self.console.print(
@@ -112,5 +117,6 @@ class GitConnectivityHandler:
             logger.error(
                 "git_connectivity_error",
                 error=str(e),
+                severity="infrastructure",
                 error_type=type(e).__name__,
             )

@@ -44,7 +44,9 @@ class MilestoneFilterService:
 
             return filtered
         except Exception as e:
-            logger.error("failed_to_filter_overdue", error=str(e))
+            logger.error(
+                "failed_to_filter_overdue", error=str(e), severity="operational"
+            )
             return []
 
     @staticmethod
@@ -98,6 +100,7 @@ class MilestoneProgressService:
                 "failed_to_get_milestone_progress",
                 milestone=milestone_name,
                 error=str(e),
+                severity="operational",
             )
             return {"total": 0, "completed": 0, "percentage": 0}
 
@@ -141,6 +144,7 @@ class MilestoneTimeEstimateService:
             logger.error(
                 "failed_to_get_time_estimate",
                 milestone=milestone.name,
+                severity="operational",
                 error=str(e),
             )
             return "-"
@@ -209,6 +213,7 @@ class MilestoneListService:
         except Exception as e:
             logger.error(
                 "failed_to_get_milestones_list_data",
+                severity="operational",
                 error=str(e),
             )
             return {
@@ -255,6 +260,7 @@ class MilestoneListService:
             logger.error(
                 "failed_to_get_due_date_status",
                 milestone=milestone.name,
+                severity="operational",
                 error=str(e),
             )
             return ("-", None)

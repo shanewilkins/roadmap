@@ -117,6 +117,7 @@ class MilestoneValidationFixer(HealthFixer):
                     "fix_invalid_milestone_failed",
                     issue_id=issue_data["id"],
                     error=str(e),
+                    severity="data_error",
                 )
                 failed_items.append(issue_data["id"])
 

@@ -216,6 +216,7 @@ def clear_baseline(core: Any, backend: str | None, console_inst: Any) -> bool:
             error_type=type(e).__name__,
             error=str(e),
             is_recoverable=True,
+            severity="system_error",
         )
         console_inst.print(
             f"❌ Failed to clear baseline: {str(e)}",
@@ -228,6 +229,7 @@ def clear_baseline(core: Any, backend: str | None, console_inst: Any) -> bool:
             operation="clear_baseline",
             error_type=type(e).__name__,
             error=str(e),
+            severity="system_error",
         )
         console_inst.print(
             f"❌ Failed to clear baseline: {str(e)}",
@@ -306,6 +308,7 @@ def capture_and_save_post_sync_baseline(
                 error_type=type(e).__name__,
                 error=str(e),
                 is_recoverable=True,
+                severity="system_error",
                 suggested_action="check_disk_space",
             )
             if verbose:
@@ -318,6 +321,7 @@ def capture_and_save_post_sync_baseline(
                 operation="save_post_sync_baseline",
                 error_type=type(e).__name__,
                 error=str(e),
+                severity="system_error",
                 error_classification="sync_error",
             )
             if verbose:
@@ -330,6 +334,7 @@ def capture_and_save_post_sync_baseline(
             operation="capture_post_sync_baseline",
             error_type=type(e).__name__,
             error=str(e),
+            severity="system_error",
             error_classification="sync_error",
         )
         if verbose:

@@ -58,7 +58,7 @@ class SyncOrchestrator:
                 "failed_to_check_file_changes",
                 file_path=str(file_path),
                 error=str(e),
-                severity="operational",
+                severity="system_error",
             )
             return True
 
@@ -124,7 +124,9 @@ class SyncOrchestrator:
             return stats
 
         except Exception as e:
-            logger.error("Incremental sync failed", error=str(e))
+            logger.error(
+                "Incremental sync failed", error=str(e), severity="system_error"
+            )
             stats["files_failed"] += 1
             return stats
 
@@ -206,7 +208,7 @@ class SyncOrchestrator:
             return stats
 
         except Exception as e:
-            logger.error("Full rebuild failed", error=str(e))
+            logger.error("Full rebuild failed", error=str(e), severity="system_error")
             return stats
 
     def should_do_full_rebuild(self, roadmap_dir: Path, threshold: int = 50) -> bool:

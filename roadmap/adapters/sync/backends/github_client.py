@@ -41,6 +41,7 @@ class GitHubClientWrapper:
                     "github_client_init_failed",
                     error=str(e),
                     error_type=type(e).__name__,
+                    severity="infrastructure",
                 )
 
     def __getattr__(self, item: str) -> Any:

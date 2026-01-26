@@ -93,6 +93,7 @@ class SyncPlanExecutor:
                     action_type=getattr(action, "action_type", None),
                     error=str(e),
                     action="Recording error and checking stop_on_error",
+                    severity="system_error",
                 )
                 # Record top-level error and optionally stop
                 report.error = str(e)

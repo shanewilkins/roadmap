@@ -67,6 +67,7 @@ class RemoteLinkRepository:
                 error_type=type(e).__name__,
                 error_message=str(e),
                 error_details=repr(e),
+                severity="operational",
             )
             return False
 
@@ -104,6 +105,7 @@ class RemoteLinkRepository:
                 backend_name=backend_name,
                 error_type=type(e).__name__,
                 error_message=str(e),
+                severity="operational",
             )
             return False
 
@@ -141,6 +143,7 @@ class RemoteLinkRepository:
                 backend_name=backend_name,
                 error_type=type(e).__name__,
                 error_message=str(e),
+                severity="operational",
             )
             return None
 

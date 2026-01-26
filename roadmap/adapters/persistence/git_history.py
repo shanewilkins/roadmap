@@ -117,6 +117,7 @@ def find_commit_at_time(
                 "no_commits_before_timestamp",
                 timestamp=timestamp_str,
                 file_path=file_path,
+                severity="operational",
             )
             args_first = ["log", "--format=%H", "--reverse", "-1"]
             if file_path:
