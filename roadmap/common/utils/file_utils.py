@@ -112,7 +112,11 @@ def SecureFileManager(file_path: str | Path, mode: str = "w", **kwargs):
             try:
                 os.unlink(temp_file.name)
             except OSError as cleanup_error:
-                logger.debug("failed_to_cleanup_temp_file", error=str(cleanup_error), severity="operational")
+                file_logger.debug(
+                    "failed_to_cleanup_temp_file",
+                    error=str(cleanup_error),
+                    severity="operational",
+                )
         raise FileOperationError(
             f"Secure file operation failed: {e}", Path(file_path), mode
         ) from e

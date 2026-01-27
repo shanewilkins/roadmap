@@ -12,18 +12,21 @@ from roadmap.adapters.cli.milestones.kanban import (
     _display_summary,
     milestone_kanban,
 )
-from roadmap.core.domain import Issue, Milestone, MilestoneStatus, Priority, Status
+from roadmap.core.domain import MilestoneStatus, Priority, Status
 from roadmap.core.domain.issue import IssueType
+from tests.factories import IssueBuilder, MilestoneBuilder
 
 
 @pytest.fixture
 def sample_milestone():
     """Create a sample milestone."""
-    return Milestone(
-        name="v1.0",
-        content="First release",
-        due_date=datetime.now(UTC) + timedelta(days=30),
-        status=MilestoneStatus.OPEN,
+    return (
+        MilestoneBuilder()
+        .with_name("v1.0")
+        .with_content("First release")
+        .with_due_date(datetime.now(UTC) + timedelta(days=30))
+        .with_status(MilestoneStatus.OPEN)
+        .build()
     )
 
 
@@ -31,34 +34,34 @@ def sample_milestone():
 def sample_issues():
     """Create sample issues for kanban board."""
     return [
-        Issue(
-            title="Feature A - To Do",
-            status=Status.TODO,
-            priority=Priority.HIGH,
-            issue_type=IssueType.FEATURE,
-            milestone="v1.0",
-        ),
-        Issue(
-            title="Feature B - In Progress",
-            status=Status.IN_PROGRESS,
-            priority=Priority.MEDIUM,
-            issue_type=IssueType.FEATURE,
-            milestone="v1.0",
-        ),
-        Issue(
-            title="Bug Fix - Closed",
-            status=Status.CLOSED,
-            priority=Priority.HIGH,
-            issue_type=IssueType.BUG,
-            milestone="v1.0",
-        ),
-        Issue(
-            title="Task - Blocked",
-            status=Status.BLOCKED,
-            priority=Priority.MEDIUM,
-            issue_type=IssueType.FEATURE,
-            milestone="v1.0",
-        ),
+        IssueBuilder()
+        .with_title("Feature A - To Do")
+        .with_status(Status.TODO)
+        .with_priority(Priority.HIGH)
+        .with_type(IssueType.FEATURE)
+        .with_milestone("v1.0")
+        .build(),
+        IssueBuilder()
+        .with_title("Feature B - In Progress")
+        .with_status(Status.IN_PROGRESS)
+        .with_priority(Priority.MEDIUM)
+        .with_type(IssueType.FEATURE)
+        .with_milestone("v1.0")
+        .build(),
+        IssueBuilder()
+        .with_title("Bug Fix - Closed")
+        .with_status(Status.CLOSED)
+        .with_priority(Priority.HIGH)
+        .with_type(IssueType.BUG)
+        .with_milestone("v1.0")
+        .build(),
+        IssueBuilder()
+        .with_title("Task - Blocked")
+        .with_status(Status.BLOCKED)
+        .with_priority(Priority.MEDIUM)
+        .with_type(IssueType.FEATURE)
+        .with_milestone("v1.0")
+        .build(),
     ]
 
 
@@ -222,21 +225,23 @@ class TestMilestoneKanban:
 
     def test_kanban_filters_by_milestone(self, cli_runner, mock_core, sample_milestone):
         """Test that kanban only shows issues for the specified milestone."""
-        other_milestone_issue = Issue(
-            title="Other Milestone Issue",
-            status=Status.TODO,
-            priority=Priority.LOW,
-            issue_type=IssueType.FEATURE,
-            milestone="v2.0",
+        other_milestone_issue = (
+            IssueBuilder()
+            .with_title("Other Milestone Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.LOW)
+            .with_type(IssueType.FEATURE)
+            .with_milestone("v2.0")
+            .build()
         )
         issues = [
-            Issue(
-                title="v1.0 Issue",
-                status=Status.TODO,
-                priority=Priority.HIGH,
-                issue_type=IssueType.FEATURE,
-                milestone="v1.0",
-            ),
+            IssueBuilder()
+            .with_title("v1.0 Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.HIGH)
+            .with_type(IssueType.FEATURE)
+            .with_milestone("v1.0")
+            .build(),
             other_milestone_issue,
         ]
         mock_core.milestones.get.return_value = sample_milestone
@@ -267,11 +272,13 @@ class TestMilestoneKanban:
 
     def test_display_header_with_no_due_date(self, mock_console, sample_issues):
         """Test header display when milestone has no due date."""
-        milestone = Milestone(
-            name="v1.0",
-            content="First release",
-            due_date=None,
-            status=MilestoneStatus.OPEN,
+        milestone = (
+            MilestoneBuilder()
+            .with_name("v1.0")
+            .with_content("First release")
+            .with_due_date(None)
+            .with_status(MilestoneStatus.OPEN)
+            .build()
         )
         with patch("roadmap.adapters.cli.milestones.kanban.console", mock_console):
             _display_header(milestone, sample_issues)
@@ -329,41 +336,41 @@ class TestMilestoneKanban:
     ):
         """Test kanban with issues in all different statuses."""
         issues = [
-            Issue(
-                title="Todo Issue",
-                status=Status.TODO,
-                priority=Priority.HIGH,
-                issue_type=IssueType.FEATURE,
-                milestone="v1.0",
-            ),
-            Issue(
-                title="In Progress Issue",
-                status=Status.IN_PROGRESS,
-                priority=Priority.HIGH,
-                issue_type=IssueType.FEATURE,
-                milestone="v1.0",
-            ),
-            Issue(
-                title="Blocked Issue",
-                status=Status.BLOCKED,
-                priority=Priority.MEDIUM,
-                issue_type=IssueType.FEATURE,
-                milestone="v1.0",
-            ),
-            Issue(
-                title="Review Issue",
-                status=Status.REVIEW,
-                priority=Priority.MEDIUM,
-                issue_type=IssueType.FEATURE,
-                milestone="v1.0",
-            ),
-            Issue(
-                title="Closed Issue",
-                status=Status.CLOSED,
-                priority=Priority.LOW,
-                issue_type=IssueType.BUG,
-                milestone="v1.0",
-            ),
+            IssueBuilder()
+            .with_title("Todo Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.HIGH)
+            .with_type(IssueType.FEATURE)
+            .with_milestone("v1.0")
+            .build(),
+            IssueBuilder()
+            .with_title("In Progress Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_priority(Priority.HIGH)
+            .with_type(IssueType.FEATURE)
+            .with_milestone("v1.0")
+            .build(),
+            IssueBuilder()
+            .with_title("Blocked Issue")
+            .with_status(Status.BLOCKED)
+            .with_priority(Priority.MEDIUM)
+            .with_type(IssueType.FEATURE)
+            .with_milestone("v1.0")
+            .build(),
+            IssueBuilder()
+            .with_title("Review Issue")
+            .with_status(Status.REVIEW)
+            .with_priority(Priority.MEDIUM)
+            .with_type(IssueType.FEATURE)
+            .with_milestone("v1.0")
+            .build(),
+            IssueBuilder()
+            .with_title("Closed Issue")
+            .with_status(Status.CLOSED)
+            .with_priority(Priority.LOW)
+            .with_type(IssueType.BUG)
+            .with_milestone("v1.0")
+            .build(),
         ]
         mock_core.milestones.get.return_value = sample_milestone
         mock_core.issues.list.return_value = issues

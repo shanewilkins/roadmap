@@ -46,7 +46,12 @@ class IssueBuilder:
     @classmethod
     def in_progress_feature(cls, title: str) -> "IssueBuilder":
         """Create an IN_PROGRESS feature issue (common pattern)."""
-        return cls().with_title(title).with_type(IssueType.FEATURE).with_status(Status.IN_PROGRESS)
+        return (
+            cls()
+            .with_title(title)
+            .with_type(IssueType.FEATURE)
+            .with_status(Status.IN_PROGRESS)
+        )
 
     @classmethod
     def high_priority(cls, title: str) -> "IssueBuilder":
@@ -189,13 +194,18 @@ class MilestoneBuilder:
 
     @classmethod
     def in_progress(cls, name: str) -> "MilestoneBuilder":
-        """Create an IN_PROGRESS milestone (common pattern)."""
-        return cls().with_name(name).with_status(MilestoneStatus.IN_PROGRESS)
+        """Create an OPEN milestone (common pattern)."""
+        return cls().with_name(name).with_status(MilestoneStatus.OPEN)
 
     @classmethod
     def at_risk(cls, name: str) -> "MilestoneBuilder":
-        """Create an AT_RISK milestone (common pattern)."""
-        return cls().with_name(name).with_status(MilestoneStatus.AT_RISK).with_risk_level(RiskLevel.HIGH)
+        """Create an OPEN milestone at risk (common pattern)."""
+        return (
+            cls()
+            .with_name(name)
+            .with_status(MilestoneStatus.OPEN)
+            .with_risk_level(RiskLevel.HIGH)
+        )
 
     def with_name(self, name: str) -> "MilestoneBuilder":
         """Set the milestone name."""
@@ -294,13 +304,18 @@ class ProjectBuilder:
 
     @classmethod
     def in_progress(cls, name: str) -> "ProjectBuilder":
-        """Create an IN_PROGRESS project (common pattern)."""
-        return cls().with_name(name).with_status(ProjectStatus.IN_PROGRESS)
+        """Create an ACTIVE project (common pattern)."""
+        return cls().with_name(name).with_status(ProjectStatus.ACTIVE)
 
     @classmethod
     def active_high_priority(cls, name: str) -> "ProjectBuilder":
         """Create an active high-priority project (common pattern)."""
-        return cls().with_name(name).with_status(ProjectStatus.IN_PROGRESS).with_priority(Priority.HIGH)
+        return (
+            cls()
+            .with_name(name)
+            .with_status(ProjectStatus.ACTIVE)
+            .with_priority(Priority.HIGH)
+        )
 
     def with_id(self, project_id: str) -> "ProjectBuilder":
         """Set the project ID."""

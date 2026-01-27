@@ -8,6 +8,7 @@ GitHub repository to be configured.
 import os
 from typing import TYPE_CHECKING, Any
 
+from roadmap.adapters.github.handlers.base import GitHubAPIError
 from roadmap.common.logging import get_logger
 from roadmap.common.logging.error_logging import (
     log_external_service_error,
@@ -20,7 +21,6 @@ if TYPE_CHECKING:
     from roadmap.core.interfaces import GitHubBackendInterface  # noqa: F401
 
 logger = get_logger(__name__)
-GitHubAPIError = GitHubGateway.get_github_api_error()
 
 
 class GitHubIssueClient:
@@ -105,7 +105,9 @@ class GitHubIssueClient:
                 field_name="issue_number",
                 proposed_value=issue_number,
             )
-            logger.warning("invalid_github_issue_number", error=str(e), severity="data_error")
+            logger.warning(
+                "invalid_github_issue_number", error=str(e), severity="data_error"
+            )
             raise
         except GitHubAPIError as e:
             log_external_service_error(
@@ -113,7 +115,9 @@ class GitHubIssueClient:
                 service_name="GitHub",
                 operation="fetch_issue",
             )
-            logger.warning("github_issue_fetch_failed", error=str(e), severity="infrastructure")
+            logger.warning(
+                "github_issue_fetch_failed", error=str(e), severity="infrastructure"
+            )
             raise
 
     @traced("validate_token")
