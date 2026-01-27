@@ -17,8 +17,9 @@ from unittest.mock import patch
 from roadmap.adapters.cli.mappers import MilestoneMapper, ProjectMapper
 from roadmap.adapters.cli.presentation.milestone_presenter import MilestonePresenter
 from roadmap.adapters.cli.presentation.project_presenter import ProjectPresenter
-from roadmap.core.domain.milestone import Milestone, MilestoneStatus
+from roadmap.core.domain.milestone import MilestoneStatus
 from roadmap.core.domain.project import Project, ProjectStatus
+from tests.factories import MilestoneBuilder
 
 
 class TestMilestonePresenterFullRendering:
@@ -103,11 +104,11 @@ class TestMilestonePresenterIntegrationWithMapper:
     def test_domain_to_dto_to_presenter_flow(self, milestone_dto):
         """Test end-to-end flow: domain model -> DTO -> presenter."""
         # Create domain milestone
-        milestone = Milestone(
-            name="v1.0.0",
-            status=MilestoneStatus.OPEN,
-            content="Release version 1.0\n\n## Goals\n- Complete features",
-            comments=[],
+        milestone = (
+            MilestoneBuilder()
+            .with_name("v1.0.0")
+            .with_status(MilestoneStatus.OPEN)
+            .build()
         )
 
         # Convert to DTO
@@ -127,14 +128,11 @@ class TestMilestonePresenterIntegrationWithMapper:
     def test_milestone_dto_roundtrip_with_enum_conversion(self):
         """Test DTO roundtrip preserves data and handles enum conversion."""
         # Create domain milestone with enum status
-        milestone = Milestone(
-            name="v1.0.0",
-            status=MilestoneStatus.CLOSED,
-            due_date=None,
-            content="",  # Changed from None to empty string
-            created=datetime.now(UTC),
-            updated=datetime.now(UTC),
-            comments=[],
+        milestone = (
+            MilestoneBuilder()
+            .with_name("v1.0.0")
+            .with_status(MilestoneStatus.CLOSED)
+            .build()
         )
 
         # Domain -> DTO
