@@ -7,6 +7,7 @@ import pytest
 from roadmap.common.constants import Priority, ProjectStatus
 from roadmap.core.domain.milestone import MilestoneStatus, RiskLevel
 from roadmap.core.domain.project import Project
+from tests.factories import ProjectBuilder
 
 
 class TestProjectInitialization:
@@ -14,7 +15,7 @@ class TestProjectInitialization:
 
     def test_project_with_required_fields(self):
         """Test creating project with only required fields."""
-        project = Project(name="My Project")
+        project = ProjectBuilder().with_name("My Project").build()
 
         assert project.name == "My Project"
         assert project.id is not None
@@ -25,17 +26,19 @@ class TestProjectInitialization:
     def test_project_with_all_fields(self):
         """Test creating project with all fields."""
         now = datetime.now(UTC)
-        project = Project(
-            id="proj001",
-            name="Test Project",
-            content="A test project",
-            status=ProjectStatus.ACTIVE,
-            priority=Priority.HIGH,
-            owner="john",
-            start_date=now,
-            target_end_date=now + timedelta(days=30),
-            estimated_hours=100.0,
-            risk_level=RiskLevel.MEDIUM,
+        project = (
+            ProjectBuilder()
+            .with_id("proj001")
+            .with_name("Test Project")
+            .with_content("A test project")
+            .with_status(ProjectStatus.ACTIVE)
+            .with_priority(Priority.HIGH)
+            .with_owner("john")
+            .with_start_date(now)
+            .with_target_end_date(now + timedelta(days=30))
+            .with_estimated_hours(100.0)
+            .with_risk_level(RiskLevel.MEDIUM)
+            .build()
         )
 
         assert project.id == "proj001"
@@ -46,15 +49,15 @@ class TestProjectInitialization:
 
     def test_project_auto_generated_id(self):
         """Test that project ID is auto-generated."""
-        p1 = Project(name="Project 1")
-        p2 = Project(name="Project 2")
+        p1 = ProjectBuilder().with_name("Project 1").build()
+        p2 = ProjectBuilder().with_name("Project 2").build()
 
         assert p1.id != p2.id
         assert len(p1.id) == 8
 
     def test_project_timestamps(self):
         """Test that project has created and updated timestamps."""
-        project = Project(name="Test")
+        project = ProjectBuilder().with_name("Test").build()
 
         assert project.created is not None
         assert project.updated is not None
@@ -62,7 +65,7 @@ class TestProjectInitialization:
 
     def test_project_defaults(self):
         """Test project default values."""
-        project = Project(name="Test")
+        project = ProjectBuilder().with_name("Test").build()
 
         assert project.status == ProjectStatus.PLANNING
         assert project.priority == Priority.MEDIUM
@@ -87,7 +90,7 @@ class TestProjectFilename:
     )
     def test_filename_generation(self, name, expected_contains):
         """Test filename generation with various names."""
-        project = Project(name=name, id="abc12345")
+        project = ProjectBuilder().with_name(name).with_id("abc12345").build()
         filename = project.filename
 
         assert filename.startswith("abc12345-")
@@ -96,8 +99,8 @@ class TestProjectFilename:
 
     def test_filename_is_unique_per_project(self):
         """Test that each project gets a unique filename."""
-        p1 = Project(name="Project", id="id1")
-        p2 = Project(name="Project", id="id2")
+        p1 = ProjectBuilder().with_name("Project").with_id("id1").build()
+        p2 = ProjectBuilder().with_name("Project").with_id("id2").build()
 
         assert p1.filename != p2.filename
         assert p1.filename.startswith("id1-")
@@ -109,7 +112,12 @@ class TestGetMilestones:
 
     def test_get_milestones_returns_assigned(self):
         """Test getting milestones assigned to project."""
-        project = Project(name="Project", milestones=["v1.0.0", "v2.0.0"])
+        project = (
+            ProjectBuilder()
+            .with_name("Project")
+            .with_milestones(["v1.0.0", "v2.0.0"])
+            .build()
+        )
 
         milestones = [
             MilestoneStub("v1.0.0"),
@@ -132,7 +140,12 @@ class TestGetMilestones:
 
     def test_get_milestone_count(self):
         """Test milestone count."""
-        project = Project(name="Project", milestones=["v1.0.0", "v2.0.0"])
+        project = (
+            ProjectBuilder()
+            .with_name("Project")
+            .with_milestones(["v1.0.0", "v2.0.0"])
+            .build()
+        )
 
         milestones = [
             MilestoneStub("v1.0.0"),
@@ -148,14 +161,16 @@ class TestCalculateProgress:
 
     def test_progress_no_milestones(self):
         """Test progress with no milestones."""
-        project = Project(name="Project", milestones=[])
+        project = ProjectBuilder().with_name("Project").with_milestones([]).build()
 
         progress = project.calculate_progress([], [])
         assert progress == 0.0
 
     def test_progress_single_closed_milestone(self):
         """Test progress with single closed milestone."""
-        project = Project(name="Project", milestones=["v1.0.0"])
+        project = (
+            ProjectBuilder().with_name("Project").with_milestones(["v1.0.0"]).build()
+        )
 
         milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
 
@@ -164,7 +179,9 @@ class TestCalculateProgress:
 
     def test_progress_partial_completion(self):
         """Test progress with partial milestone completion."""
-        project = Project(name="Project", milestones=["v1.0.0"])
+        project = (
+            ProjectBuilder().with_name("Project").with_milestones(["v1.0.0"]).build()
+        )
 
         milestone = MilestoneStub(
             "v1.0.0", status=MilestoneStatus.OPEN, progress_percent=50.0
@@ -175,7 +192,12 @@ class TestCalculateProgress:
 
     def test_progress_multiple_milestones_effort_weighted(self):
         """Test that progress is effort-weighted."""
-        project = Project(name="Project", milestones=["v1.0.0", "v2.0.0"])
+        project = (
+            ProjectBuilder()
+            .with_name("Project")
+            .with_milestones(["v1.0.0", "v2.0.0"])
+            .build()
+        )
 
         milestones = [
             MilestoneStub(
@@ -194,7 +216,9 @@ class TestUpdateAutomaticFields:
 
     def test_update_automatic_fields_progress(self):
         """Test that automatic fields are updated."""
-        project = Project(name="Project", milestones=["v1.0.0"])
+        project = (
+            ProjectBuilder().with_name("Project").with_milestones(["v1.0.0"]).build()
+        )
 
         milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
 
@@ -205,8 +229,12 @@ class TestUpdateAutomaticFields:
 
     def test_update_automatic_fields_status_change(self):
         """Test that project status updates based on progress."""
-        project = Project(
-            name="Project", milestones=["v1.0.0"], status=ProjectStatus.PLANNING
+        project = (
+            ProjectBuilder()
+            .with_name("Project")
+            .with_milestones(["v1.0.0"])
+            .with_status(ProjectStatus.PLANNING)
+            .build()
         )
 
         milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
@@ -218,8 +246,12 @@ class TestUpdateAutomaticFields:
 
     def test_update_automatic_fields_planning_to_active(self):
         """Test project transitions from planning to active."""
-        project = Project(
-            name="Project", milestones=["v1.0.0"], status=ProjectStatus.PLANNING
+        project = (
+            ProjectBuilder()
+            .with_name("Project")
+            .with_milestones(["v1.0.0"])
+            .with_status(ProjectStatus.PLANNING)
+            .build()
         )
 
         milestone = MilestoneStub(
@@ -233,8 +265,12 @@ class TestUpdateAutomaticFields:
     def test_update_automatic_fields_already_completed(self):
         """Test that actual_end_date is not reset if already set."""
         end_date = datetime.now(UTC) - timedelta(days=10)
-        project = Project(
-            name="Project", milestones=["v1.0.0"], actual_end_date=end_date
+        project = (
+            ProjectBuilder()
+            .with_name("Project")
+            .with_milestones(["v1.0.0"])
+            .with_actual_end_date(end_date)
+            .build()
         )
 
         milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
@@ -249,14 +285,14 @@ class TestProjectComments:
 
     def test_project_has_comments_field(self):
         """Test that project has comments field."""
-        project = Project(name="Project", comments=[])
+        project = ProjectBuilder().with_name("Project").build()
 
         assert hasattr(project, "comments")
         assert project.comments == []
 
     def test_project_default_comments_empty(self):
         """Test that default comments are empty list."""
-        project = Project(name="Project")
+        project = ProjectBuilder().with_name("Project").build()
 
         assert project.comments == []
 
