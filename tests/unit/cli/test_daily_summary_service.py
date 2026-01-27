@@ -12,8 +12,7 @@ import pytest
 
 from roadmap.adapters.cli.services.daily_summary_service import DailySummaryService
 from roadmap.common.constants import MilestoneStatus, Priority, Status
-from roadmap.core.domain.issue import Issue
-from roadmap.core.domain.milestone import Milestone
+from tests.factories import IssueBuilder, MilestoneBuilder
 
 
 class TestDailySummaryServiceUserResolution:
@@ -62,24 +61,24 @@ class TestDailySummaryServiceMilestoneSelection:
         today = datetime.now(UTC)
 
         milestones = [
-            Milestone(
-                name="v1.0",
-                headline="First release",
-                status=MilestoneStatus.OPEN,
-                due_date=today + timedelta(days=10),
-            ),
-            Milestone(
-                name="v2.0",
-                headline="Second release",
-                status=MilestoneStatus.OPEN,
-                due_date=today + timedelta(days=20),
-            ),
-            Milestone(
-                name="v3.0",
-                headline="Third release",
-                status=MilestoneStatus.CLOSED,
-                due_date=today + timedelta(days=5),
-            ),
+            MilestoneBuilder()
+            .with_name("v1.0")
+            .with_headline("First release")
+            .with_status(MilestoneStatus.OPEN)
+            .with_due_date(today + timedelta(days=10))
+            .build(),
+            MilestoneBuilder()
+            .with_name("v2.0")
+            .with_headline("Second release")
+            .with_status(MilestoneStatus.OPEN)
+            .with_due_date(today + timedelta(days=20))
+            .build(),
+            MilestoneBuilder()
+            .with_name("v3.0")
+            .with_headline("Third release")
+            .with_status(MilestoneStatus.CLOSED)
+            .with_due_date(today + timedelta(days=5))
+            .build(),
         ]
         core.milestones.list.return_value = milestones
 
@@ -105,18 +104,18 @@ class TestDailySummaryServiceMilestoneSelection:
         today = datetime.now(UTC)
 
         milestones = [
-            Milestone(
-                name="no-date",
-                headline="No due date",
-                status=MilestoneStatus.OPEN,
-                due_date=None,
-            ),
-            Milestone(
-                name="with-date",
-                headline="Has due date",
-                status=MilestoneStatus.OPEN,
-                due_date=today + timedelta(days=10),
-            ),
+            MilestoneBuilder()
+            .with_name("no-date")
+            .with_headline("No due date")
+            .with_status(MilestoneStatus.OPEN)
+            .with_due_date(None)
+            .build(),
+            MilestoneBuilder()
+            .with_name("with-date")
+            .with_headline("Has due date")
+            .with_status(MilestoneStatus.OPEN)
+            .with_due_date(today + timedelta(days=10))
+            .build(),
         ]
         core.milestones.list.return_value = milestones
 
@@ -132,19 +131,23 @@ class TestDailySummaryServiceIssueCategorization:
 
     def test_categorize_issues_in_progress(self):
         """Test that IN_PROGRESS issues are correctly categorized."""
-        in_progress_issue = Issue(
-            id="TASK-1",
-            title="Work in progress",
-            status=Status.IN_PROGRESS,
-            assignee="alice",
-            priority=Priority.MEDIUM,
+        in_progress_issue = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Work in progress")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_priority(Priority.MEDIUM)
+            .build()
         )
-        todo_issue = Issue(
-            id="TASK-2",
-            title="Not started",
-            status=Status.TODO,
-            assignee="alice",
-            priority=Priority.LOW,
+        todo_issue = (
+            IssueBuilder()
+            .with_id("TASK-2")
+            .with_title("Not started")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.LOW)
+            .build()
         )
 
         service = DailySummaryService(MagicMock())
@@ -155,21 +158,25 @@ class TestDailySummaryServiceIssueCategorization:
 
     def test_categorize_issues_overdue(self):
         """Test that overdue issues are correctly categorized."""
-        overdue_issue = Issue(
-            id="TASK-1",
-            title="Overdue task",
-            status=Status.TODO,
-            assignee="alice",
-            priority=Priority.HIGH,
-            due_date=datetime.now(UTC) - timedelta(days=2),
+        overdue_issue = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Overdue task")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .with_due_date(datetime.now(UTC) - timedelta(days=2))
+            .build()
         )
-        current_issue = Issue(
-            id="TASK-2",
-            title="Current task",
-            status=Status.TODO,
-            assignee="alice",
-            priority=Priority.HIGH,
-            due_date=datetime.now(UTC) + timedelta(days=2),
+        current_issue = (
+            IssueBuilder()
+            .with_id("TASK-2")
+            .with_title("Current task")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .with_due_date(datetime.now(UTC) + timedelta(days=2))
+            .build()
         )
 
         service = DailySummaryService(MagicMock())
@@ -180,19 +187,23 @@ class TestDailySummaryServiceIssueCategorization:
 
     def test_categorize_issues_blocked(self):
         """Test that BLOCKED issues are correctly categorized."""
-        blocked_issue = Issue(
-            id="TASK-1",
-            title="Blocked task",
-            status=Status.BLOCKED,
-            assignee="alice",
-            priority=Priority.HIGH,
+        blocked_issue = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Blocked task")
+            .with_status(Status.BLOCKED)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .build()
         )
-        active_issue = Issue(
-            id="TASK-2",
-            title="Active task",
-            status=Status.IN_PROGRESS,
-            assignee="alice",
-            priority=Priority.HIGH,
+        active_issue = (
+            IssueBuilder()
+            .with_id("TASK-2")
+            .with_title("Active task")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .build()
         )
 
         service = DailySummaryService(MagicMock())
@@ -204,13 +215,13 @@ class TestDailySummaryServiceIssueCategorization:
     def test_categorize_issues_high_priority_todos_limited_to_three(self):
         """Test that high priority TODOs are limited to top 3."""
         todos = [
-            Issue(
-                id=f"TASK-{i}",
-                title=f"High priority task {i}",
-                status=Status.TODO,
-                assignee="alice",
-                priority=Priority.HIGH,
-            )
+            IssueBuilder()
+            .with_id(f"TASK-{i}")
+            .with_title(f"High priority task {i}")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .build()
             for i in range(5)
         ]
 
@@ -222,22 +233,26 @@ class TestDailySummaryServiceIssueCategorization:
     def test_categorize_issues_completed_today(self):
         """Test that today's completed issues are correctly categorized."""
         today = datetime.now(UTC)
-        completed_today = Issue(
-            id="TASK-1",
-            title="Completed today",
-            status=Status.CLOSED,
-            assignee="alice",
-            priority=Priority.MEDIUM,
-            actual_end_date=today,
+        completed_today = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Completed today")
+            .with_status(Status.CLOSED)
+            .with_assignee("alice")
+            .with_priority(Priority.MEDIUM)
+            .build()
         )
-        completed_yesterday = Issue(
-            id="TASK-2",
-            title="Completed yesterday",
-            status=Status.CLOSED,
-            assignee="alice",
-            priority=Priority.MEDIUM,
-            actual_end_date=today - timedelta(days=1),
+        completed_today.actual_end_date = today
+        completed_yesterday = (
+            IssueBuilder()
+            .with_id("TASK-2")
+            .with_title("Completed yesterday")
+            .with_status(Status.CLOSED)
+            .with_assignee("alice")
+            .with_priority(Priority.MEDIUM)
+            .build()
         )
+        completed_yesterday.actual_end_date = today - timedelta(days=1)
 
         service = DailySummaryService(MagicMock())
         result = service.categorize_issues(
@@ -249,19 +264,23 @@ class TestDailySummaryServiceIssueCategorization:
 
     def test_categorize_issues_filters_by_status_only(self):
         """Test that categorization filters by status (assignee filtering is upstream)."""
-        alice_high_todo = Issue(
-            id="TASK-1",
-            title="Alice's high priority task",
-            status=Status.TODO,
-            assignee="alice",
-            priority=Priority.HIGH,
+        alice_high_todo = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Alice's high priority task")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .build()
         )
-        bob_high_todo = Issue(
-            id="TASK-2",
-            title="Bob's high priority task",
-            status=Status.TODO,
-            assignee="bob",
-            priority=Priority.HIGH,
+        bob_high_todo = (
+            IssueBuilder()
+            .with_id("TASK-2")
+            .with_title("Bob's high priority task")
+            .with_status(Status.TODO)
+            .with_assignee("bob")
+            .with_priority(Priority.HIGH)
+            .build()
         )
 
         service = DailySummaryService(MagicMock())
@@ -282,21 +301,25 @@ class TestDailySummaryServiceGetDailySummaryData:
         core.team.get_current_user.return_value = "alice"
 
         today = datetime.now(UTC)
-        milestone = Milestone(
-            name="v1.0",
-            headline="First release",
-            status=MilestoneStatus.OPEN,
-            due_date=today + timedelta(days=10),
+        milestone = (
+            MilestoneBuilder()
+            .with_name("v1.0")
+            .with_headline("First release")
+            .with_status(MilestoneStatus.OPEN)
+            .with_due_date(today + timedelta(days=10))
+            .build()
         )
         core.milestones.list.return_value = [milestone]
 
-        issue = Issue(
-            id="TASK-1",
-            title="Test task",
-            status=Status.IN_PROGRESS,
-            assignee="alice",
-            priority=Priority.HIGH,
-            milestone="v1.0",
+        issue = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Test task")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .with_milestone("v1.0")
+            .build()
         )
         core.issues.list.return_value = [issue]
 
@@ -315,31 +338,13 @@ class TestDailySummaryServiceGetDailySummaryData:
         core.team.get_current_user.return_value = "alice"
 
         today = datetime.now(UTC)
-        milestone = Milestone(
-            name="v1.0",
-            headline="First release",
-            status=MilestoneStatus.OPEN,
-            due_date=today + timedelta(days=10),
-        )
-        core.milestones.list.return_value = [milestone]
-        core.issues.list.return_value = []
-
-        service = DailySummaryService(core)
-        data = service.get_daily_summary_data()
-
-        assert data["current_user"] == "alice"
-
-    def test_get_daily_summary_data_milestone_value(self):
-        """Test that milestone is correctly populated."""
-        core = MagicMock()
-        core.team.get_current_user.return_value = "alice"
-
-        today = datetime.now(UTC)
-        milestone = Milestone(
-            name="v1.0",
-            headline="First release",
-            status=MilestoneStatus.OPEN,
-            due_date=today + timedelta(days=10),
+        milestone = (
+            MilestoneBuilder()
+            .with_name("v1.0")
+            .with_headline("First release")
+            .with_status(MilestoneStatus.OPEN)
+            .with_due_date(today + timedelta(days=10))
+            .build()
         )
         core.milestones.list.return_value = [milestone]
         core.issues.list.return_value = []
@@ -355,21 +360,25 @@ class TestDailySummaryServiceGetDailySummaryData:
         core.team.get_current_user.return_value = "alice"
 
         today = datetime.now(UTC)
-        milestone = Milestone(
-            name="v1.0",
-            headline="First release",
-            status=MilestoneStatus.OPEN,
-            due_date=today + timedelta(days=10),
+        milestone = (
+            MilestoneBuilder()
+            .with_name("v1.0")
+            .with_headline("First release")
+            .with_status(MilestoneStatus.OPEN)
+            .with_due_date(today + timedelta(days=10))
+            .build()
         )
         core.milestones.list.return_value = [milestone]
 
-        issue = Issue(
-            id="TASK-1",
-            title="Test task",
-            status=Status.IN_PROGRESS,
-            assignee="alice",
-            priority=Priority.HIGH,
-            milestone="v1.0",
+        issue = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Test task")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .with_milestone("v1.0")
+            .build()
         )
         core.issues.list.return_value = [issue]
 

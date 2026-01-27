@@ -16,7 +16,7 @@ from roadmap.core.services.sync.sync_conflict_resolver import (
     SyncConflictResolver,
 )
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
-from tests.factories import SyncIssueFactory
+from tests.factories import IssueBuilder, SyncIssueFactory
 
 
 class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
@@ -32,13 +32,15 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
     def test_sync_new_local_issue_dry_run(self):
         """Test dry-run mode detects new local issues without applying changes."""
         # Setup: 1 local issue, no remote issues
-        local_issue = Issue(
-            id="local-1",
-            title="New Local Issue",
-            status=Status.TODO,
-            priority=Priority.MEDIUM,
-            created=datetime.now(UTC),
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("local-1")
+            .with_title("New Local Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.MEDIUM)
+            .with_created_date(datetime.now(UTC))
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         self.core.issues.list_all_including_archived.return_value = [local_issue]
@@ -64,13 +66,15 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
     def test_sync_new_local_issue_apply(self):
         """Test applying changes pushes new local issues."""
         # Setup: 1 local issue, no remote issues
-        local_issue = Issue(
-            id="local-1",
-            title="New Local Issue",
-            status=Status.TODO,
-            priority=Priority.MEDIUM,
-            created=datetime.now(UTC),
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("local-1")
+            .with_title("New Local Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.MEDIUM)
+            .with_created_date(datetime.now(UTC))
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         self.core.issues.list_all_including_archived.return_value = [local_issue]
@@ -188,13 +192,15 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         earlier = now - timedelta(hours=1)
         later = now
 
-        local_issue = Issue(
-            id="conflict-1",
-            title="Local Title",
-            status=Status.TODO,
-            priority=Priority.MEDIUM,
-            created=earlier,
-            updated=earlier,  # Older
+        local_issue = (
+            IssueBuilder()
+            .with_id("conflict-1")
+            .with_title("Local Title")
+            .with_status(Status.TODO)
+            .with_priority(Priority.MEDIUM)
+            .with_created_date(earlier)
+            .with_updated_date(earlier)
+            .build()
         )
 
         remote_issue = SyncIssueFactory.create_github(
@@ -230,13 +236,15 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
 
-        local_issue = Issue(
-            id="conflict-1",
-            title="Local Title",
-            status=Status.TODO,
-            priority=Priority.MEDIUM,
-            created=earlier,
-            updated=earlier,
+        local_issue = (
+            IssueBuilder()
+            .with_id("conflict-1")
+            .with_title("Local Title")
+            .with_status(Status.TODO)
+            .with_priority(Priority.MEDIUM)
+            .with_created_date(earlier)
+            .with_updated_date(earlier)
+            .build()
         )
 
         remote_issue = SyncIssueFactory.create_github(
@@ -276,13 +284,15 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
 
-        local_issue = Issue(
-            id="conflict-1",
-            title="Local Title",
-            status=Status.TODO,
-            priority=Priority.MEDIUM,
-            created=earlier,
-            updated=earlier,
+        local_issue = (
+            IssueBuilder()
+            .with_id("conflict-1")
+            .with_title("Local Title")
+            .with_status(Status.TODO)
+            .with_priority(Priority.MEDIUM)
+            .with_created_date(earlier)
+            .with_updated_date(earlier)
+            .build()
         )
 
         remote_issue = SyncIssueFactory.create_github(
@@ -327,38 +337,39 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
     def test_sync_mixed_scenario_dry_run(self):
         """Test dry-run with multiple issue types."""
         now = datetime.now(UTC)
-        earlier = now - timedelta(hours=1)
         older = now - timedelta(hours=2)
 
         # Local: 3 issues
         # 1. New local issue
-        new_local = Issue(
-            id="local-new",
-            title="New Local Issue",
-            status=Status.TODO,
-            priority=Priority.MEDIUM,
-            created=now,
-            updated=now,
+        new_local = (
+            IssueBuilder()
+            .with_id("local-new")
+            .with_title("New Local Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.MEDIUM)
+            .with_created_date(now)
+            .with_updated_date(now)
+            .build()
         )
-
-        # 2. Updated local issue (newer than remote)
-        updated_local = Issue(
-            id="updated",
-            title="Updated Local",
-            status=Status.IN_PROGRESS,
-            priority=Priority.HIGH,
-            created=older,
-            updated=now,
+        updated_local = (
+            IssueBuilder()
+            .with_id("updated")
+            .with_title("Updated Local")
+            .with_status(Status.IN_PROGRESS)
+            .with_priority(Priority.HIGH)
+            .with_created_date(older)
+            .with_updated_date(now)
+            .build()
         )
-
-        # 3. Conflicting issue (both changed)
-        conflicted_local = Issue(
-            id="conflict",
-            title="Local Conflict Title",
-            status=Status.TODO,
-            priority=Priority.LOW,
-            created=older,
-            updated=earlier,
+        conflicted_local = (
+            IssueBuilder()
+            .with_id("conflict")
+            .with_title("Local Conflict Title")
+            .with_status(Status.TODO)
+            .with_priority(Priority.LOW)
+            .with_created_date(older)
+            .with_updated_date(now)
+            .build()
         )
 
         self.core.issues.list_all_including_archived.return_value = [
@@ -615,31 +626,37 @@ class TestFullBidirectionalSync(unittest.TestCase):
         now = datetime.now(UTC)
         past = now - timedelta(hours=2)
 
-        local_new = Issue(
-            id="local-new",
-            title="New Local Issue",
-            status=Status.TODO,
-            priority=Priority.HIGH,
-            created=now,
-            updated=now,
+        local_new = (
+            IssueBuilder()
+            .with_id("local-new")
+            .with_title("New Local Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.HIGH)
+            .with_created_date(now)
+            .with_updated_date(now)
+            .build()
         )
 
-        local_updated = Issue(
-            id="shared-1",
-            title="Updated Local Issue",
-            status=Status.IN_PROGRESS,
-            priority=Priority.HIGH,
-            created=past,
-            updated=now,
+        local_updated = (
+            IssueBuilder()
+            .with_id("shared-1")
+            .with_title("Updated Local Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_priority(Priority.HIGH)
+            .with_created_date(past)
+            .with_updated_date(now)
+            .build()
         )
 
-        local_unchanged = Issue(
-            id="shared-2",
-            title="Unchanged Issue",
-            status=Status.CLOSED,
-            priority=Priority.LOW,
-            created=past,
-            updated=past,
+        local_unchanged = (
+            IssueBuilder()
+            .with_id("shared-2")
+            .with_title("Unchanged Issue")
+            .with_status(Status.CLOSED)
+            .with_priority(Priority.LOW)
+            .with_created_date(past)
+            .with_updated_date(past)
+            .build()
         )
 
         # Remote: 1 new issue, 1 updated issue (shared-1), 1 unchanged (shared-2)
@@ -705,23 +722,27 @@ class TestFullBidirectionalSync(unittest.TestCase):
         past = now - timedelta(hours=2)
 
         # Local issue to push
-        local_issue = Issue(
-            id="local-new",
-            title="New Local Issue",
-            status=Status.TODO,
-            priority=Priority.HIGH,
-            created=now,
-            updated=now,
+        local_issue = (
+            IssueBuilder()
+            .with_id("local-new")
+            .with_title("New Local Issue")
+            .with_status(Status.TODO)
+            .with_priority(Priority.HIGH)
+            .with_created_date(now)
+            .with_updated_date(now)
+            .build()
         )
 
         # Shared issue with local changes
-        shared_local = Issue(
-            id="shared-1",
-            title="Shared Issue",
-            status=Status.IN_PROGRESS,
-            priority=Priority.HIGH,
-            created=past,
-            updated=now,
+        shared_local = (
+            IssueBuilder()
+            .with_id("shared-1")
+            .with_title("Shared Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_priority(Priority.HIGH)
+            .with_created_date(past)
+            .with_updated_date(now)
+            .build()
         )
 
         # Remote issue to pull
@@ -784,14 +805,16 @@ class TestFullBidirectionalSync(unittest.TestCase):
         past = now - timedelta(hours=2)
 
         # Issue with conflicting changes
-        local_conflict = Issue(
-            id="conflict-1",
-            title="Conflict Issue",
-            status=Status.IN_PROGRESS,  # Local wants IN_PROGRESS
-            priority=Priority.HIGH,
-            created=past,
-            updated=now,
-        )
+        local_conflict = (
+            IssueBuilder()
+            .with_id("conflict-1")
+            .with_title("Conflict Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_priority(Priority.HIGH)
+            .with_created_date(past)
+            .with_updated_date(now)
+            .build()
+        )  # Local wants IN_PROGRESS
 
         remote_conflict = SyncIssueFactory.create(
             id="conflict-1",
