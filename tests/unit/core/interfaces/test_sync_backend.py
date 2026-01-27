@@ -10,6 +10,7 @@ from roadmap.core.interfaces import (
     SyncConflict,
     SyncReport,
 )
+from tests.factories import IssueBuilder
 
 
 class TestSyncBackendInterface:
@@ -35,7 +36,7 @@ class TestSyncBackendInterface:
 
     def test_sync_conflict_creation(self):
         """Test SyncConflict can be created with proper fields."""
-        issue = Issue(title="Test Issue")
+        issue = IssueBuilder().build()
 
         conflict = SyncConflict(
             issue_id="test123",
@@ -186,7 +187,7 @@ class TestSyncBackendImplementation:
     def test_mock_backend_push_issue(self):
         """Test mock backend can push single issue."""
         backend = MockSyncBackend()
-        issue = Issue(title="Test")
+        issue = IssueBuilder().build()
         assert backend.push_issue(issue) is True
 
     def test_mock_backend_push_issues(self):

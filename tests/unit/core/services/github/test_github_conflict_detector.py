@@ -8,6 +8,7 @@ import pytest
 from roadmap.common.constants import Priority, Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.services.github.github_conflict_detector import GitHubConflictDetector
+from tests.factories import IssueBuilder
 
 
 class TestGitHubConflictDetector:
@@ -271,7 +272,7 @@ class TestGitHubConflictDetector:
         else:
             last_sync = base_time - timedelta(hours=1)
 
-        issue = Issue(id="test", title="Test")
+        issue = IssueBuilder().build()
         issue.updated = issue_updated  # type: ignore
 
         result = detector._is_local_modified_after_sync(issue, last_sync)
