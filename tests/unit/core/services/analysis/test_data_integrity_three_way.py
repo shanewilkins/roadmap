@@ -9,9 +9,9 @@ from datetime import UTC, datetime
 import pytest
 
 from roadmap.common.constants import Status
-from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
+from tests.factories import IssueBuilder
 
 
 class TestDataIntegrityThreeWayMerge:
@@ -40,15 +40,17 @@ class TestDataIntegrityThreeWayMerge:
     def test_no_changes_maintains_integrity(self, comparator, baseline_state):
         """Verify that unchanged issues remain identical across sync."""
         # All three states identical
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Issue",
-            status=Status.TODO,
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=baseline_state.updated_at,
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Issue")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(baseline_state.updated_at)
+            .build()
         )
 
         remote_issue = {
@@ -82,15 +84,17 @@ class TestDataIntegrityThreeWayMerge:
     def test_local_only_change_preserves_remote(self, comparator, baseline_state):
         """Verify that local-only changes don't corrupt remote state."""
         # Local changed, remote unchanged
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Issue",
-            status=Status.IN_PROGRESS,  # Changed
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
@@ -124,15 +128,17 @@ class TestDataIntegrityThreeWayMerge:
     def test_remote_only_change_preserves_local(self, comparator, baseline_state):
         """Verify that remote-only changes don't corrupt local state."""
         # Remote changed, local unchanged
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Issue",
-            status=Status.TODO,  # Same as baseline
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=baseline_state.updated_at,
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Issue")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(baseline_state.updated_at)
+            .build()
         )
 
         remote_issue = {
@@ -165,15 +171,17 @@ class TestDataIntegrityThreeWayMerge:
     def test_both_changed_detects_conflict(self, comparator, baseline_state):
         """Verify that conflicting changes are properly detected."""
         # Both changed (and differently)
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Issue",
-            status=Status.IN_PROGRESS,  # Changed to IN_PROGRESS
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
@@ -223,11 +231,13 @@ class TestDataIntegrityThreeWayMerge:
             status="todo",
             title="Issue 1",
         )
-        local_1 = Issue(
-            id="issue-1",
-            title="Issue 1",
-            status=Status.TODO,
-            updated=datetime.now(UTC),
+        local_1 = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Issue 1")
+            .with_status(Status.TODO)
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
         remote_1 = {"id": "issue-1", "title": "Issue 1", "status": "todo"}
 
@@ -237,11 +247,13 @@ class TestDataIntegrityThreeWayMerge:
             status="todo",
             title="Issue 2",
         )
-        local_2 = Issue(
-            id="issue-2",
-            title="Issue 2",
-            status=Status.IN_PROGRESS,
-            updated=datetime.now(UTC),
+        local_2 = (
+            IssueBuilder()
+            .with_id("issue-2")
+            .with_title("Issue 2")
+            .with_status(Status.IN_PROGRESS)
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
         remote_2 = {"id": "issue-2", "title": "Issue 2", "status": "todo"}
 
@@ -251,11 +263,13 @@ class TestDataIntegrityThreeWayMerge:
             status="todo",
             title="Issue 3",
         )
-        local_3 = Issue(
-            id="issue-3",
-            title="Issue 3",
-            status=Status.TODO,
-            updated=datetime.now(UTC),
+        local_3 = (
+            IssueBuilder()
+            .with_id("issue-3")
+            .with_title("Issue 3")
+            .with_status(Status.TODO)
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
         remote_3 = {"id": "issue-3", "title": "Issue 3", "status": "closed"}
 
@@ -281,15 +295,17 @@ class TestDataIntegrityThreeWayMerge:
     def test_issue_change_helper_methods_accuracy(self, comparator, baseline_state):
         """Verify helper methods correctly identify change types."""
         # Create a both_changed scenario
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Issue",
-            status=Status.IN_PROGRESS,
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
@@ -347,15 +363,17 @@ class TestDataIntegrityThreeWayMerge:
         self, comparator, baseline_state
     ):
         """Verify change descriptions include complete baseline context."""
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Issue",
-            status=Status.IN_PROGRESS,
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Issue")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {

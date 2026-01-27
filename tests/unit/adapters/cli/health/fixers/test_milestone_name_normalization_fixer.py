@@ -9,7 +9,7 @@ from roadmap.adapters.cli.health.fixers.milestone_name_normalization_fixer impor
     MilestoneNameNormalizationFixer,
 )
 from roadmap.common.constants import Status
-from roadmap.core.domain.issue import Issue
+from tests.factories import IssueBuilder
 
 
 @pytest.fixture
@@ -56,11 +56,13 @@ class TestMilestoneNameNormalizationFixer:
 
     def test_scan_with_mismatched_milestone(self, mock_core, fixer):
         """Test scanning with mismatched milestone names."""
-        issue = Issue(
-            id="issue1",
-            title="Test Issue",
-            status=Status.TODO,
-            milestone="v 1 0 0",
+        issue = (
+            IssueBuilder()
+            .with_id("issue1")
+            .with_title("Test Issue")
+            .with_status(Status.TODO)
+            .with_milestone("v 1 0 0")
+            .build()
         )
         mock_core.issues.list.return_value = [issue]
 
@@ -86,11 +88,13 @@ class TestMilestoneNameNormalizationFixer:
 
     def test_dry_run_with_mismatches(self, mock_core, fixer):
         """Test dry run with mismatched milestones."""
-        issue = Issue(
-            id="issue1",
-            title="Test Issue",
-            status=Status.TODO,
-            milestone="v 1 0 0",
+        issue = (
+            IssueBuilder()
+            .with_id("issue1")
+            .with_title("Test Issue")
+            .with_status(Status.TODO)
+            .with_milestone("v 1 0 0")
+            .build()
         )
         mock_core.issues.list.return_value = [issue]
 
@@ -118,11 +122,13 @@ class TestMilestoneNameNormalizationFixer:
 
     def test_apply_with_mismatches(self, mock_core, fixer):
         """Test applying fixes with mismatched milestones."""
-        issue = Issue(
-            id="issue1",
-            title="Test Issue",
-            status=Status.TODO,
-            milestone="v 1 0 0",
+        issue = (
+            IssueBuilder()
+            .with_id("issue1")
+            .with_title("Test Issue")
+            .with_status(Status.TODO)
+            .with_milestone("v 1 0 0")
+            .build()
         )
         mock_core.issues.list.return_value = [issue]
         mock_core.issues.assign_to_milestone.return_value = True
@@ -142,17 +148,21 @@ class TestMilestoneNameNormalizationFixer:
 
     def test_apply_with_partial_failure(self, mock_core, fixer):
         """Test applying fixes with partial failures."""
-        issue1 = Issue(
-            id="issue1",
-            title="Test Issue 1",
-            status=Status.TODO,
-            milestone="v 1 0 0",
+        issue1 = (
+            IssueBuilder()
+            .with_id("issue1")
+            .with_title("Test Issue 1")
+            .with_status(Status.TODO)
+            .with_milestone("v 1 0 0")
+            .build()
         )
-        issue2 = Issue(
-            id="issue2",
-            title="Test Issue 2",
-            status=Status.TODO,
-            milestone="v 2 0 0",
+        issue2 = (
+            IssueBuilder()
+            .with_id("issue2")
+            .with_title("Test Issue 2")
+            .with_status(Status.TODO)
+            .with_milestone("v 2 0 0")
+            .build()
         )
         mock_core.issues.list.return_value = [issue1, issue2]
 

@@ -123,15 +123,19 @@ class TestIssueQueryService:
     def test_get_filtered_issues_overdue(self, service, mock_core):
         """Test getting overdue issues."""
         now = datetime.now(UTC)
-        overdue_issue = Issue(
-            id="overdue",
-            title="Overdue",
-            due_date=now - timedelta(days=1),
+        overdue_issue = (
+            IssueBuilder()
+            .with_id("overdue")
+            .with_title("Overdue")
+            .with_due_date(now - timedelta(days=1))
+            .build()
         )
-        current_issue = Issue(
-            id="current",
-            title="Current",
-            due_date=now + timedelta(days=1),
+        current_issue = (
+            IssueBuilder()
+            .with_id("current")
+            .with_title("Current")
+            .with_due_date(now + timedelta(days=1))
+            .build()
         )
 
         mock_core.issues.list.return_value = [overdue_issue, current_issue]
@@ -155,10 +159,12 @@ class TestIssueQueryService:
 
     def test_apply_additional_filters_open_only(self, service, sample_issues):
         """Test filtering to open issues only."""
-        closed_issue = Issue(
-            id="closed",
-            title="Closed",
-            status=Status.CLOSED,
+        closed_issue = (
+            IssueBuilder()
+            .with_id("closed")
+            .with_title("Closed")
+            .with_status(Status.CLOSED)
+            .build()
         )
         all_issues = sample_issues + [closed_issue]
 
@@ -172,15 +178,19 @@ class TestIssueQueryService:
 
     def test_apply_additional_filters_blocked_only(self, service):
         """Test filtering to blocked issues only."""
-        blocked_issue = Issue(
-            id="blocked",
-            title="Blocked",
-            status=Status.BLOCKED,
+        blocked_issue = (
+            IssueBuilder()
+            .with_id("blocked")
+            .with_title("Blocked")
+            .with_status(Status.BLOCKED)
+            .build()
         )
-        todo_issue = Issue(
-            id="todo",
-            title="TODO",
-            status=Status.TODO,
+        todo_issue = (
+            IssueBuilder()
+            .with_id("todo")
+            .with_title("TODO")
+            .with_status(Status.TODO)
+            .build()
         )
         all_issues = [blocked_issue, todo_issue]
 
@@ -203,15 +213,19 @@ class TestIssueQueryService:
 
     def test_apply_additional_filters_by_priority(self, service):
         """Test filtering by priority."""
-        high_priority = Issue(
-            id="high",
-            title="High",
-            priority=Priority.HIGH,
+        high_priority = (
+            IssueBuilder()
+            .with_id("high")
+            .with_title("High")
+            .with_priority(Priority.HIGH)
+            .build()
         )
-        low_priority = Issue(
-            id="low",
-            title="Low",
-            priority=Priority.LOW,
+        low_priority = (
+            IssueBuilder()
+            .with_id("low")
+            .with_title("Low")
+            .with_priority(Priority.LOW)
+            .build()
         )
         all_issues = [high_priority, low_priority]
 
@@ -225,15 +239,19 @@ class TestIssueQueryService:
 
     def test_apply_additional_filters_by_type(self, service):
         """Test filtering by issue type."""
-        feature = Issue(
-            id="feature",
-            title="Feature",
-            issue_type=IssueType.FEATURE,
+        feature = (
+            IssueBuilder()
+            .with_id("feature")
+            .with_title("Feature")
+            .with_type(IssueType.FEATURE)
+            .build()
         )
-        bug = Issue(
-            id="bug",
-            title="Bug",
-            issue_type=IssueType.BUG,
+        bug = (
+            IssueBuilder()
+            .with_id("bug")
+            .with_title("Bug")
+            .with_type(IssueType.BUG)
+            .build()
         )
         all_issues = [feature, bug]
 
@@ -247,15 +265,19 @@ class TestIssueQueryService:
     def test_apply_additional_filters_overdue(self, service):
         """Test filtering to overdue issues."""
         now = datetime.now(UTC)
-        overdue = Issue(
-            id="overdue",
-            title="Overdue",
-            due_date=now - timedelta(days=1),
+        overdue = (
+            IssueBuilder()
+            .with_id("overdue")
+            .with_title("Overdue")
+            .with_due_date(now - timedelta(days=1))
+            .build()
         )
-        future = Issue(
-            id="future",
-            title="Future",
-            due_date=now + timedelta(days=1),
+        future = (
+            IssueBuilder()
+            .with_id("future")
+            .with_title("Future")
+            .with_due_date(now + timedelta(days=1))
+            .build()
         )
         all_issues = [overdue, future]
 
@@ -306,11 +328,13 @@ class TestWorkloadCalculator:
 
     def test_calculate_workload_single_issue(self):
         """Test calculating workload for single issue."""
-        issue = Issue(
-            id="1",
-            title="Issue",
-            status=Status.TODO,
-            estimated_hours=5.0,
+        issue = (
+            IssueBuilder()
+            .with_id("1")
+            .with_title("Issue")
+            .with_status(Status.TODO)
+            .with_estimated_hours(5.0)
+            .build()
         )
 
         result = WorkloadCalculator.calculate_workload([issue])

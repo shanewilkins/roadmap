@@ -8,6 +8,7 @@ import pytest
 from roadmap.common.constants import MilestoneStatus
 from roadmap.core.domain.project import Project, ProjectStatus
 from roadmap.core.services.project.project_service import ProjectService
+from tests.factories import MilestoneBuilder, ProjectBuilder
 
 
 @pytest.fixture
@@ -304,11 +305,13 @@ class TestProjectServiceProgress:
         self, project_service, temp_dirs, sample_project
     ):
         """Test calculating progress for project with no milestones."""
-        project_without_milestones = Project(
-            id="PROJ-002",
-            name="No Milestones",
-            milestones=[],
-            content="",
+        project_without_milestones = (
+            ProjectBuilder()
+            .with_id("PROJ-002")
+            .with_name("No Milestones")
+            .with_milestones([])
+            .with_content("")
+            .build()
         )
         (temp_dirs["projects"] / "project.md").touch()
 
@@ -323,22 +326,31 @@ class TestProjectServiceProgress:
 
     def test_calculate_progress_all_completed(self, project_service, temp_dirs):
         """Test progress calculation with all milestones completed."""
-        from roadmap.core.domain.milestone import Milestone
 
         # Create project with 2 milestones
-        project = Project(
-            id="PROJ-001",
-            name="Test",
-            milestones=["Milestone 1", "Milestone 2"],
-            content="",
+        project = (
+            ProjectBuilder()
+            .with_id("PROJ-001")
+            .with_name("Test")
+            .with_milestones(["Milestone 1", "Milestone 2"])
+            .with_content("")
+            .build()
         )
 
         # Create completed milestones
-        milestone1 = Milestone(
-            name="Milestone 1", status=MilestoneStatus.CLOSED, content=""
+        milestone1 = (
+            MilestoneBuilder()
+            .with_name("Milestone 1")
+            .with_status(MilestoneStatus.CLOSED)
+            .with_content("")
+            .build()
         )
-        milestone2 = Milestone(
-            name="Milestone 2", status=MilestoneStatus.CLOSED, content=""
+        milestone2 = (
+            MilestoneBuilder()
+            .with_name("Milestone 2")
+            .with_status(MilestoneStatus.CLOSED)
+            .with_content("")
+            .build()
         )
 
         (temp_dirs["projects"] / "project.md").touch()
@@ -364,21 +376,30 @@ class TestProjectServiceProgress:
 
     def test_calculate_progress_partial(self, project_service, temp_dirs):
         """Test progress calculation with partial completion."""
-        from roadmap.core.domain.milestone import Milestone
 
-        project = Project(
-            id="PROJ-001",
-            name="Test",
-            milestones=["Milestone 1", "Milestone 2"],
-            content="",
+        project = (
+            ProjectBuilder()
+            .with_id("PROJ-001")
+            .with_name("Test")
+            .with_milestones(["Milestone 1", "Milestone 2"])
+            .with_content("")
+            .build()
         )
 
         # One closed, one active
-        milestone1 = Milestone(
-            name="Milestone 1", status=MilestoneStatus.CLOSED, content=""
+        milestone1 = (
+            MilestoneBuilder()
+            .with_name("Milestone 1")
+            .with_status(MilestoneStatus.CLOSED)
+            .with_content("")
+            .build()
         )
-        milestone2 = Milestone(
-            name="Milestone 2", status=MilestoneStatus.OPEN, content=""
+        milestone2 = (
+            MilestoneBuilder()
+            .with_name("Milestone 2")
+            .with_status(MilestoneStatus.OPEN)
+            .with_content("")
+            .build()
         )
 
         (temp_dirs["projects"] / "project.md").touch()

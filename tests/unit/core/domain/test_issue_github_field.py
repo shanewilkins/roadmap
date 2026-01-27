@@ -5,6 +5,7 @@ from typing import cast
 import pytest
 
 from roadmap.core.domain.issue import Issue
+from tests.factories import IssueBuilder
 
 
 class TestGitHubIssueValidation:
@@ -17,7 +18,7 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_valid_none(self):
         """Test creating issue with no GitHub issue link."""
-        issue = Issue(title="Test")
+        issue = IssueBuilder().with_title("Test").build()
         assert issue.github_issue is None
 
     def test_github_issue_valid_large_number(self):
@@ -58,7 +59,7 @@ class TestGitHubIssueValidation:
 
     def test_github_issue_update(self):
         """Test updating github_issue after creation."""
-        issue = Issue(title="Test")
+        issue = IssueBuilder().with_title("Test").build()
         assert issue.github_issue is None
 
         issue.github_issue = 789
@@ -106,13 +107,23 @@ class TestGitHubIssueValidation:
     def test_github_issue_validation_in_dict(self):
         """Test validation works when creating from dict."""
         data = {"title": "Test", "github_issue": 999}
-        issue = Issue(**data)
+        issue = (
+            IssueBuilder()
+            .with_title(data["title"])
+            .with_github_issue(data["github_issue"])
+            .build()
+        )
         assert issue.github_issue == 999
 
     def test_github_issue_validation_string_in_dict(self):
         """Test string conversion works in dict creation."""
         data = cast(dict, {"title": "Test", "github_issue": "888"})
-        issue = Issue(**data)
+        issue = (
+            IssueBuilder()
+            .with_title(data["title"])
+            .with_github_issue(int(data["github_issue"]))
+            .build()
+        )
         assert issue.github_issue == 888
 
     def test_github_issue_validation_error_in_dict(self):

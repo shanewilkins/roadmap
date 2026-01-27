@@ -12,6 +12,7 @@ from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
+from tests.factories import IssueBuilder
 
 
 class TestThreeWayAnalysis:
@@ -89,15 +90,17 @@ class TestThreeWayAnalysis:
 
     def test_analyze_three_way_local_only_changed(self, comparator, baseline_state):
         """Test three-way analysis when only local changed."""
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Title",
-            status=Status.IN_PROGRESS,  # Changed from TODO
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Title")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
@@ -127,15 +130,17 @@ class TestThreeWayAnalysis:
 
     def test_analyze_three_way_remote_only_changed(self, comparator, baseline_state):
         """Test three-way analysis when only remote changed."""
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Title",
-            status=Status.TODO,  # Same as baseline
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Title")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
@@ -165,15 +170,17 @@ class TestThreeWayAnalysis:
 
     def test_analyze_three_way_no_changes(self, comparator, baseline_state):
         """Test three-way analysis when nothing changed."""
-        local_issue = Issue(
-            id="issue-1",
-            title="Original Title",
-            status=Status.TODO,
-            assignee="alice",
-            milestone="v1.0",
-            content="Original description",
-            labels=["bug"],
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Original Title")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_milestone("v1.0")
+            .with_content("Original description")
+            .with_labels(["bug"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
@@ -202,12 +209,14 @@ class TestThreeWayAnalysis:
 
     def test_analyze_three_way_new_local_issue(self, comparator):
         """Test three-way analysis for new local issue (not in baseline or remote)."""
-        local_issue = Issue(
-            id="issue-2",
-            title="New Issue",
-            status=Status.TODO,
-            assignee="alice",
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-2")
+            .with_title("New Issue")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         changes = comparator.analyze_three_way(
@@ -249,12 +258,14 @@ class TestThreeWayAnalysis:
     ):
         """Test three-way analysis with multiple issues."""
         # Issue 2: local only changed
-        local_issue_2 = Issue(
-            id="issue-2",
-            title="Issue 2",
-            status=Status.IN_PROGRESS,
-            assignee="charlie",
-            updated=datetime.now(UTC),
+        local_issue_2 = (
+            IssueBuilder()
+            .with_id("issue-2")
+            .with_title("Issue 2")
+            .with_status(Status.IN_PROGRESS)
+            .with_assignee("charlie")
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         baseline_state_2 = IssueBaseState(
@@ -279,12 +290,14 @@ class TestThreeWayAnalysis:
 
     def test_analyze_three_way_with_no_baseline(self, comparator):
         """Test three-way analysis when baseline is None (first sync)."""
-        local_issue = Issue(
-            id="issue-1",
-            title="New Issue",
-            status=Status.TODO,
-            assignee="alice",
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("New Issue")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
@@ -342,12 +355,14 @@ class TestThreeWayAnalysis:
             labels=["bug", "feature"],
         )
 
-        local_issue = Issue(
-            id="issue-1",
-            title="Test",
-            status=Status.TODO,
-            labels=["bug", "feature"],  # Same but different order
-            updated=datetime.now(UTC),
+        local_issue = (
+            IssueBuilder()
+            .with_id("issue-1")
+            .with_title("Test")
+            .with_status(Status.TODO)
+            .with_labels(["bug", "feature"])
+            .with_updated_date(datetime.now(UTC))
+            .build()
         )
 
         remote_issue = {
