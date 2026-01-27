@@ -2,8 +2,8 @@
 
 from datetime import UTC, datetime
 
-from roadmap.core.domain import Comment
 from roadmap.core.services.comment.comment_service import CommentService
+from tests.factories import CommentBuilder
 
 
 class TestCommentServiceFormatting:
@@ -225,13 +225,15 @@ class TestCommentServiceEdgeCases:
 
     def test_validate_thread_with_whitespace_author(self):
         """Test validation catches whitespace-only author."""
-        comment = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="   ",
-            body="Valid body",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        comment = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("   ")
+            .with_body("Valid body")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -239,13 +241,15 @@ class TestCommentServiceEdgeCases:
 
     def test_validate_thread_with_whitespace_body(self):
         """Test validation catches whitespace-only body."""
-        comment = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="author",
-            body="   ",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        comment = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("author")
+            .with_body("   ")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -282,41 +286,49 @@ class TestCommentServiceCircularReferenceDetection:
     def test_validate_deeply_nested_thread(self):
         """Test validation with deeply nested comment thread."""
         # Create a deep thread: comment1 -> comment2 -> comment3 -> comment4
-        root = Comment(
-            id=100,
-            issue_id="issue-1",
-            author="author1",
-            body="Root",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=None,
+        root = (
+            CommentBuilder()
+            .with_id(100)
+            .with_issue_id("issue-1")
+            .with_author("author1")
+            .with_body("Root")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(None)
+            .build()
         )
-        reply1 = Comment(
-            id=101,
-            issue_id="issue-1",
-            author="author2",
-            body="Reply 1",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=100,
+        reply1 = (
+            CommentBuilder()
+            .with_id(101)
+            .with_issue_id("issue-1")
+            .with_author("author2")
+            .with_body("Reply 1")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(100)
+            .build()
         )
-        reply2 = Comment(
-            id=102,
-            issue_id="issue-1",
-            author="author3",
-            body="Reply 2",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=101,
+        reply2 = (
+            CommentBuilder()
+            .with_id(102)
+            .with_issue_id("issue-1")
+            .with_author("author3")
+            .with_body("Reply 2")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(101)
+            .build()
         )
-        reply3 = Comment(
-            id=103,
-            issue_id="issue-1",
-            author="author4",
-            body="Reply 3",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=102,
+        reply3 = (
+            CommentBuilder()
+            .with_id(103)
+            .with_issue_id("issue-1")
+            .with_author("author4")
+            .with_body("Reply 3")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(102)
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([root, reply1, reply2, reply3])
@@ -325,24 +337,28 @@ class TestCommentServiceCircularReferenceDetection:
 
     def test_validate_thread_with_orphaned_reply(self):
         """Test validation with reply to non-existent parent."""
-        comment1 = Comment(
-            id=200,
-            issue_id="issue-1",
-            author="author1",
-            body="Comment 1",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=None,
+        comment1 = (
+            CommentBuilder()
+            .with_id(200)
+            .with_issue_id("issue-1")
+            .with_author("author1")
+            .with_body("Comment 1")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(None)
+            .build()
         )
         # Reply to non-existent comment
-        comment2 = Comment(
-            id=201,
-            issue_id="issue-1",
-            author="author2",
-            body="Comment 2",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=999,  # Non-existent
+        comment2 = (
+            CommentBuilder()
+            .with_id(201)
+            .with_issue_id("issue-1")
+            .with_author("author2")
+            .with_body("Comment 2")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(999)
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment1, comment2])
@@ -354,14 +370,16 @@ class TestCommentServiceCircularReferenceDetection:
         comments = []
         # Create 50 root comments
         for i in range(50):
-            comment = Comment(
-                id=i,
-                issue_id="issue-1",
-                author=f"author{i}",
-                body=f"Comment {i}",
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-                in_reply_to=None,
+            comment = (
+                CommentBuilder()
+                .with_id(i)
+                .with_issue_id("issue-1")
+                .with_author(f"author{i}")
+                .with_body(f"Comment {i}")
+                .with_created_at(datetime.now(UTC))
+                .with_updated_at(datetime.now(UTC))
+                .with_reply_to(None)
+                .build()
             )
             comments.append(comment)
 
@@ -371,31 +389,37 @@ class TestCommentServiceCircularReferenceDetection:
 
     def test_validate_thread_mixed_valid_and_invalid(self):
         """Test validation with mix of valid and invalid comments."""
-        valid = Comment(
-            id=300,
-            issue_id="issue-1",
-            author="valid_author",
-            body="Valid body",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        valid = (
+            CommentBuilder()
+            .with_id(300)
+            .with_issue_id("issue-1")
+            .with_author("valid_author")
+            .with_body("Valid body")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
-        invalid_author = Comment(
-            id=301,
-            issue_id="issue-1",
-            author="",
-            body="Valid body",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        invalid_author = (
+            CommentBuilder()
+            .with_id(301)
+            .with_issue_id("issue-1")
+            .with_author("")
+            .with_body("Valid body")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
-        invalid_body = Comment(
-            id=302,
-            issue_id="issue-1",
-            author="valid_author",
-            body="",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        invalid_body = (
+            CommentBuilder()
+            .with_id(302)
+            .with_issue_id("issue-1")
+            .with_author("valid_author")
+            .with_body("")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread(
@@ -406,15 +430,17 @@ class TestCommentServiceCircularReferenceDetection:
 
     def test_validate_thread_self_reply(self):
         """Test validation where comment replies to itself."""
-        comment = Comment(
-            id=400,
-            issue_id="issue-1",
-            author="author",
-            body="Body",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=400,  # Replies to itself
-        )
+        comment = (
+            CommentBuilder()
+            .with_id(400)
+            .with_issue_id("issue-1")
+            .with_author("author")
+            .with_body("Body")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(400)
+            .build()
+        )  # Replies to itself
 
         errors = CommentService.validate_comment_thread([comment])
         # Self-reply should be detected as circular reference
@@ -422,32 +448,38 @@ class TestCommentServiceCircularReferenceDetection:
 
     def test_validate_thread_indirect_cycle(self):
         """Test validation detects indirect cycles (2->3->2)."""
-        comment1 = Comment(
-            id=500,
-            issue_id="issue-1",
-            author="author1",
-            body="Comment 1",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=None,
+        comment1 = (
+            CommentBuilder()
+            .with_id(500)
+            .with_issue_id("issue-1")
+            .with_author("author1")
+            .with_body("Comment 1")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(None)
+            .build()
         )
-        comment2 = Comment(
-            id=501,
-            issue_id="issue-1",
-            author="author2",
-            body="Comment 2",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=502,  # Points to comment3
+        comment2 = (
+            CommentBuilder()
+            .with_id(501)
+            .with_issue_id("issue-1")
+            .with_author("author2")
+            .with_body("Comment 2")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(502)
+            .build()
         )
-        comment3 = Comment(
-            id=502,
-            issue_id="issue-1",
-            author="author3",
-            body="Comment 3",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=501,  # Points back to comment2 - cycle!
+        comment3 = (
+            CommentBuilder()
+            .with_id(502)
+            .with_issue_id("issue-1")
+            .with_author("author3")
+            .with_body("Comment 3")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(501)
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment1, comment2, comment3])
