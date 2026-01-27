@@ -33,6 +33,7 @@ from tests.fixtures import (
     cli_test_data,
     effort_data,
     fast_mock_core,
+    # Phase 9: Temporary directory factories
     github_api_response,
     # GitHub fixtures
     github_webhook_payload,

@@ -146,6 +146,12 @@ from .presenter_and_dto_fixtures import (
     project_dto_with_large_effort,
     project_with_all_components,
 )
+from .temp_dir_factories import (
+    git_repo_factory,
+    isolated_workspace,
+    roadmap_structure_factory,
+    temp_file_factory,
+)
 from .workspace import (
     isolate_roadmap_workspace,
     roadmap_workspace,
@@ -198,6 +204,11 @@ __all__ = [
     "temp_dir",
     "temp_workspace",
     "session_temp_workspace",
+    # Phase 9: Temporary directory factories
+    "temp_file_factory",
+    "git_repo_factory",
+    "roadmap_structure_factory",
+    "isolated_workspace",
     # Mock fixtures
     "mock_core",
     "mock_core_initialized",
