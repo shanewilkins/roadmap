@@ -6,8 +6,8 @@ from typing import cast
 import pytest
 
 from roadmap.common.errors.exceptions import ValidationError
-from roadmap.core.domain import Comment
 from roadmap.core.services.comment.comment_service import CommentService
+from tests.factories import CommentBuilder
 
 
 class TestCommentService:
@@ -139,13 +139,15 @@ class TestCommentService:
             body="Comment 1",
         )
         # Create second comment with same ID
-        comment2 = Comment(
-            id=comment1.id,
-            issue_id="issue-1",
-            author="author2",
-            body="Comment 2",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        comment2 = (
+            CommentBuilder()
+            .with_id(comment1.id)
+            .with_issue_id("issue-1")
+            .with_author("author2")
+            .with_body("Comment 2")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment1, comment2])
@@ -153,13 +155,15 @@ class TestCommentService:
 
     def test_validate_comment_thread_invalid_created_at(self):
         """Test validation catches invalid created_at."""
-        comment = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="author",
-            body="Body",
-            created_at=cast(datetime, "not-a-datetime"),
-            updated_at=datetime.now(UTC),
+        comment = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("author")
+            .with_body("Body")
+            .with_created_at(cast(datetime, "not-a-datetime"))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -167,13 +171,15 @@ class TestCommentService:
 
     def test_validate_comment_thread_invalid_updated_at(self):
         """Test validation catches invalid updated_at."""
-        comment = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="author",
-            body="Body",
-            created_at=datetime.now(UTC),
-            updated_at=cast(datetime, "not-a-datetime"),
+        comment = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("author")
+            .with_body("Body")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(cast(datetime, "not-a-datetime"))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -181,13 +187,15 @@ class TestCommentService:
 
     def test_validate_comment_thread_empty_author(self):
         """Test validation catches empty author."""
-        comment = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="",
-            body="Body",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        comment = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("")
+            .with_body("Body")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -195,13 +203,15 @@ class TestCommentService:
 
     def test_validate_comment_thread_empty_body(self):
         """Test validation catches empty body."""
-        comment = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="author",
-            body="",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+        comment = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("author")
+            .with_body("")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment])
@@ -214,14 +224,16 @@ class TestCommentService:
             body="Comment 1",
         )
         # Create comment with invalid reply-to reference
-        comment2 = Comment(
-            id=CommentService.generate_comment_id(),
-            issue_id="issue-1",
-            author="author2",
-            body="Comment 2",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=9999,  # Non-existent ID
+        comment2 = (
+            CommentBuilder()
+            .with_id(CommentService.generate_comment_id())
+            .with_issue_id("issue-1")
+            .with_author("author2")
+            .with_body("Comment 2")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(9999)
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment1, comment2])
@@ -229,13 +241,15 @@ class TestCommentService:
 
     def test_validate_comment_thread_multiple_errors(self):
         """Test validation catches multiple errors in thread."""
-        comment1 = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="",  # Error 1: empty author
-            body="",  # Error 2: empty body
-            created_at=cast(datetime, "invalid"),
-            updated_at=datetime.now(UTC),
+        comment1 = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("")
+            .with_body("")
+            .with_created_at(cast(datetime, "invalid"))
+            .with_updated_at(datetime.now(UTC))
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment1])
@@ -244,23 +258,27 @@ class TestCommentService:
     def test_validate_comment_thread_circular_reference(self):
         """Test validation catches circular references in reply chains."""
         # Create a circular reference: comment1 -> comment2 -> comment1
-        comment1 = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="author1",
-            body="Comment 1",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=2,  # Points to comment2
+        comment1 = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("author1")
+            .with_body("Comment 1")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(2)
+            .build()
         )
-        comment2 = Comment(
-            id=2,
-            issue_id="issue-1",
-            author="author2",
-            body="Comment 2",
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            in_reply_to=1,  # Points back to comment1 - circular!
+        comment2 = (
+            CommentBuilder()
+            .with_id(2)
+            .with_issue_id("issue-1")
+            .with_author("author2")
+            .with_body("Comment 2")
+            .with_created_at(datetime.now(UTC))
+            .with_updated_at(datetime.now(UTC))
+            .with_reply_to(1)
+            .build()
         )
 
         errors = CommentService.validate_comment_thread([comment1, comment2])
@@ -312,31 +330,37 @@ class TestCommentService:
     def test_build_comment_threads_sorted_by_timestamp(self):
         """Test that comments in threads are sorted by created_at."""
         now = datetime.now(UTC)
-        comment1 = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="author1",
-            body="First",
-            created_at=now,
-            updated_at=now,
+        comment1 = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("author1")
+            .with_body("First")
+            .with_created_at(now)
+            .with_updated_at(now)
+            .build()
         )
-        comment2 = Comment(
-            id=2,
-            issue_id="issue-1",
-            author="author2",
-            body="Third",
-            created_at=datetime(2025, 1, 20),  # Latest
-            updated_at=datetime(2025, 1, 20),
-            in_reply_to=1,
+        comment2 = (
+            CommentBuilder()
+            .with_id(2)
+            .with_issue_id("issue-1")
+            .with_author("author2")
+            .with_body("Third")
+            .with_created_at(datetime(2025, 1, 20))
+            .with_updated_at(datetime(2025, 1, 20))
+            .with_reply_to(1)
+            .build()
         )
-        comment3 = Comment(
-            id=3,
-            issue_id="issue-1",
-            author="author3",
-            body="Second",
-            created_at=datetime(2025, 1, 10),
-            updated_at=datetime(2025, 1, 10),
-            in_reply_to=1,
+        comment3 = (
+            CommentBuilder()
+            .with_id(3)
+            .with_issue_id("issue-1")
+            .with_author("author3")
+            .with_body("Second")
+            .with_created_at(datetime(2025, 1, 10))
+            .with_updated_at(datetime(2025, 1, 10))
+            .with_reply_to(1)
+            .build()
         )
 
         threads = CommentService.build_comment_threads([comment1, comment2, comment3])
@@ -347,13 +371,15 @@ class TestCommentService:
 
     def test_format_comment_for_display_no_indent(self):
         """Test formatting comment with no indentation."""
-        comment = Comment(
-            id=1,
-            issue_id="issue-1",
-            author="john_doe",
-            body="Test comment body",
-            created_at=datetime(2025, 1, 15, 14, 30),
-            updated_at=datetime(2025, 1, 15, 14, 30),
+        comment = (
+            CommentBuilder()
+            .with_id(1)
+            .with_issue_id("issue-1")
+            .with_author("john_doe")
+            .with_body("Test comment body")
+            .with_created_at(datetime(2025, 1, 15, 14, 30))
+            .with_updated_at(datetime(2025, 1, 15, 14, 30))
+            .build()
         )
 
         formatted = CommentService.format_comment_for_display(comment, indent=0)
