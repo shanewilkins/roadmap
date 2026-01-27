@@ -13,7 +13,7 @@ from roadmap.common.constants import (
 )
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
-from roadmap.core.domain.project import Project
+from tests.factories import ProjectBuilder
 
 
 class TestIssueDTO:
@@ -325,10 +325,12 @@ class TestProjectMapper:
 
     def test_domain_to_dto_converts_status_to_string(self):
         """Test that domain_to_dto converts status enum to string."""
-        project = Project(
-            id="proj-1",
-            name="Test Project",
-            status=ProjectStatus.ACTIVE,
+        project = (
+            ProjectBuilder()
+            .with_id("proj-1")
+            .with_name("Test Project")
+            .with_status(ProjectStatus.ACTIVE)
+            .build()
         )
 
         dto = ProjectMapper.domain_to_dto(project)

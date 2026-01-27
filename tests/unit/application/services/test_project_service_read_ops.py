@@ -7,6 +7,7 @@ import pytest
 
 from roadmap.core.domain.project import Project, ProjectStatus
 from roadmap.core.services.project.project_service import ProjectService
+from tests.factories import ProjectBuilder
 
 
 @pytest.fixture
@@ -100,17 +101,21 @@ class TestProjectServiceList:
     ):
         """Test projects are sorted by creation date."""
         # Create two projects with different creation dates
-        project1 = Project(
-            id="PROJ-001",
-            name="Project 1",
-            created=datetime(2025, 1, 2, tzinfo=UTC),
-            content="",
+        project1 = (
+            ProjectBuilder()
+            .with_id("PROJ-001")
+            .with_name("Project 1")
+            .with_created_date(datetime(2025, 1, 2, tzinfo=UTC))
+            .with_content("")
+            .build()
         )
-        project2 = Project(
-            id="PROJ-002",
-            name="Project 2",
-            created=datetime(2025, 1, 1, tzinfo=UTC),
-            content="",
+        project2 = (
+            ProjectBuilder()
+            .with_id("PROJ-002")
+            .with_name("Project 2")
+            .with_created_date(datetime(2025, 1, 1, tzinfo=UTC))
+            .with_content("")
+            .build()
         )
 
         (temp_dirs["projects"] / "project1.md").touch()
