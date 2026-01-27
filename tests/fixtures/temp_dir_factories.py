@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import toml
 
 
 @pytest.fixture
@@ -328,6 +329,39 @@ def roadmap_structure_factory(tmp_path):
                     )
 
             return roadmap_dir
+
+        @staticmethod
+        def create_project_structure(
+            pyproject_version: str | None = "1.0.0",
+            init_version: str | None = "1.0.0",
+        ) -> Path:
+            """Create a full project structure with pyproject.toml and __init__.py.
+
+            This is useful for version management tests.
+
+            Args:
+                pyproject_version: Version to write in pyproject.toml (None to skip)
+                init_version: Version to write in roadmap/__init__.py (None to skip)
+
+            Returns:
+                Path to the project root (tmp_path)
+            """
+            # Create roadmap package directory
+            (tmp_path / "roadmap").mkdir(exist_ok=True)
+
+            # Create pyproject.toml if version specified
+            if pyproject_version:
+                pyproject_file = tmp_path / "pyproject.toml"
+                pyproject_data = {"tool": {"poetry": {"version": pyproject_version}}}
+                with open(pyproject_file, "w") as f:
+                    toml.dump(pyproject_data, f)
+
+            # Create __init__.py if version specified
+            if init_version:
+                init_file = tmp_path / "roadmap" / "__init__.py"
+                init_file.write_text(f'__version__ = "{init_version}"')
+
+            return tmp_path
 
     return RoadmapStructureFactory()
 

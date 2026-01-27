@@ -128,120 +128,93 @@ class TestSemanticVersionOperations:
 class TestVersionManagerFileReading:
     """Test version reading from different file formats."""
 
-    def test_get_current_version_from_pyproject(self, tmp_path):
-        """Test reading version from pyproject.toml."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        # Create directories
-        (project_root / "roadmap").mkdir()
-
-        # Write pyproject.toml
-        pyproject_data = {"tool": {"poetry": {"version": "1.2.3"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        # Write __init__.py
-        init_file.write_text('__version__ = "1.2.3"')
-
+    @pytest.mark.parametrize(
+        "pyproject_version,init_version,expect_version",
+        [
+            ("1.2.3", "1.2.3", "1.2.3"),  # both present and matching
+            ("1.0.0", "1.5.2", "1.0.0"),  # both present, pyproject takes precedence
+        ],
+    )
+    def test_get_current_version(
+        self, roadmap_structure_factory, pyproject_version, init_version, expect_version
+    ):
+        """Test reading version from pyproject.toml and __init__.py."""
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version=pyproject_version, init_version=init_version
+        )
         manager = VersionManager(project_root)
         version = manager.get_current_version()
 
         assert version is not None
-        assert str(version) == "1.2.3"
+        assert str(version) == expect_version
 
     def test_get_current_version_returns_none_when_file_missing(self, tmp_path):
         """Test that get_current_version returns None when pyproject.toml is missing."""
-        project_root = tmp_path
-        (project_root / "roadmap").mkdir()
-
-        manager = VersionManager(project_root)
+        (tmp_path / "roadmap").mkdir()
+        manager = VersionManager(tmp_path)
         version = manager.get_current_version()
-
         assert version is None
 
     def test_get_current_version_returns_none_when_version_missing(self, tmp_path):
         """Test that get_current_version returns None when version key is missing."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        (project_root / "roadmap").mkdir()
+        pyproject_file = tmp_path / "pyproject.toml"
+        (tmp_path / "roadmap").mkdir()
 
         # Write pyproject without version
         pyproject_data = {"tool": {"poetry": {}}}
         with open(pyproject_file, "w") as f:
             toml.dump(pyproject_data, f)
 
-        manager = VersionManager(project_root)
+        manager = VersionManager(tmp_path)
         version = manager.get_current_version()
 
         assert version is None
 
-    def test_get_init_version_from_file(self, tmp_path):
-        """Test reading version from __init__.py."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
+    @pytest.mark.parametrize(
+        "version_str,quote_type",
+        [
+            ("1.5.2", "double"),  # double quotes
+            ("2.0.0", "single"),  # single quotes
+            ("3.1.0", "double"),  # another double quote variant
+        ],
+    )
+    def test_get_init_version(self, roadmap_structure_factory, version_str, quote_type):
+        """Test reading version from __init__.py with various quote styles."""
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.0.0", init_version=version_str
+        )
 
-        (project_root / "roadmap").mkdir()
-
-        # Write minimal pyproject
-        pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        # Write __init__.py with version
-        init_file.write_text('__version__ = "1.5.2"')
+        # Override the init file quote style if needed
+        if quote_type == "single":
+            init_file = project_root / "roadmap" / "__init__.py"
+            init_file.write_text(f"__version__ = '{version_str}'")
 
         manager = VersionManager(project_root)
         version = manager.get_init_version()
 
         assert version is not None
-        assert str(version) == "1.5.2"
-
-    def test_get_init_version_with_single_quotes(self, tmp_path):
-        """Test that single quotes in __init__.py are recognized."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        (project_root / "roadmap").mkdir()
-
-        pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        # Single quotes
-        init_file.write_text("__version__ = '2.0.0'")
-
-        manager = VersionManager(project_root)
-        version = manager.get_init_version()
-
-        assert str(version) == "2.0.0"
+        assert str(version) == version_str
 
     def test_get_init_version_returns_none_when_file_missing(self, tmp_path):
         """Test that get_init_version returns None when __init__.py is missing."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-
-        (project_root / "roadmap").mkdir()
+        pyproject_file = tmp_path / "pyproject.toml"
+        (tmp_path / "roadmap").mkdir()
 
         pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
         with open(pyproject_file, "w") as f:
             toml.dump(pyproject_data, f)
 
-        manager = VersionManager(project_root)
+        manager = VersionManager(tmp_path)
         version = manager.get_init_version()
 
         assert version is None
 
     def test_get_init_version_returns_none_when_version_not_found(self, tmp_path):
         """Test that get_init_version returns None when __version__ is not defined."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
+        pyproject_file = tmp_path / "pyproject.toml"
+        init_file = tmp_path / "roadmap" / "__init__.py"
 
-        (project_root / "roadmap").mkdir()
+        (tmp_path / "roadmap").mkdir()
 
         pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
         with open(pyproject_file, "w") as f:
@@ -250,7 +223,7 @@ class TestVersionManagerFileReading:
         # No version in __init__.py
         init_file.write_text("# No version here")
 
-        manager = VersionManager(project_root)
+        manager = VersionManager(tmp_path)
         version = manager.get_init_version()
 
         assert version is None
@@ -262,87 +235,56 @@ class TestVersionManagerFileReading:
 class TestVersionConsistencyChecking:
     """Test version consistency verification."""
 
-    def test_check_consistency_returns_false_when_no_pyproject_version(self, tmp_path):
-        """Test consistency check fails when pyproject version is missing."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
+    @pytest.mark.parametrize(
+        "pyproject_version,init_version,is_consistent,issue_contains",
+        [
+            (None, "1.0.0", False, "No version found in pyproject.toml"),
+            ("1.0.0", None, False, "No version found in __init__.py"),
+            ("1.0.0", "2.0.0", False, "Version mismatch"),
+            ("1.2.3", "1.2.3", True, None),
+        ],
+    )
+    def test_check_version_consistency(
+        self,
+        roadmap_structure_factory,
+        pyproject_version,
+        init_version,
+        is_consistent,
+        issue_contains,
+    ):
+        """Test version consistency checking with various scenarios."""
+        # Build base versions, excluding None values
+        kwargs = {}
+        if pyproject_version:
+            kwargs["pyproject_version"] = pyproject_version
+        if init_version:
+            kwargs["init_version"] = init_version
 
-        (project_root / "roadmap").mkdir()
+        project_root = roadmap_structure_factory.create_project_structure(**kwargs)
 
-        # No version in pyproject
-        pyproject_data = {"tool": {"poetry": {}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
+        # For the "no version" cases, manually remove the version
+        if pyproject_version is None:
+            pyproject_file = project_root / "pyproject.toml"
+            if pyproject_file.exists():
+                data = toml.load(open(pyproject_file))
+                if "tool" in data and "poetry" in data["tool"]:
+                    del data["tool"]["poetry"]["version"]
+                with open(pyproject_file, "w") as f:
+                    toml.dump(data, f)
 
-        init_file.write_text('__version__ = "1.0.0"')
-
-        manager = VersionManager(project_root)
-        result = manager.check_version_consistency()
-
-        assert result["consistent"] is False
-        assert "No version found in pyproject.toml" in result["issues"]
-
-    def test_check_consistency_returns_false_when_no_init_version(self, tmp_path):
-        """Test consistency check fails when __init__.py version is missing."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        (project_root / "roadmap").mkdir()
-
-        pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        # No version in init
-        init_file.write_text("# No version")
-
-        manager = VersionManager(project_root)
-        result = manager.check_version_consistency()
-
-        assert result["consistent"] is False
-        assert "No version found in __init__.py" in result["issues"]
-
-    def test_check_consistency_returns_false_when_versions_mismatch(self, tmp_path):
-        """Test consistency check fails when versions don't match."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        (project_root / "roadmap").mkdir()
-
-        pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        init_file.write_text('__version__ = "2.0.0"')
+        if init_version is None:
+            init_file = project_root / "roadmap" / "__init__.py"
+            if init_file.exists():
+                init_file.write_text("# No version")
 
         manager = VersionManager(project_root)
         result = manager.check_version_consistency()
 
-        assert result["consistent"] is False
-        assert "Version mismatch" in result["issues"][0]
-
-    def test_check_consistency_returns_true_when_versions_match(self, tmp_path):
-        """Test consistency check passes when versions match."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        (project_root / "roadmap").mkdir()
-
-        pyproject_data = {"tool": {"poetry": {"version": "1.2.3"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        init_file.write_text('__version__ = "1.2.3"')
-
-        manager = VersionManager(project_root)
-        result = manager.check_version_consistency()
-
-        assert result["consistent"] is True
-        assert len(result["issues"]) == 0
+        assert result["consistent"] is is_consistent
+        if is_consistent:
+            assert len(result["issues"]) == 0
+        else:
+            assert any(issue_contains in issue for issue in result["issues"])
 
 
 # ========== Integration Tests: Version Update ==========
@@ -351,20 +293,11 @@ class TestVersionConsistencyChecking:
 class TestVersionUpdate:
     """Test version update in multiple files."""
 
-    def test_update_version_in_both_files(self, tmp_path):
+    def test_update_version_in_both_files(self, roadmap_structure_factory):
         """Test that update_version updates both pyproject and __init__.py."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        (project_root / "roadmap").mkdir()
-
-        # Initial versions
-        pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        init_file.write_text('__version__ = "1.0.0"')
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.0.0", init_version="1.0.0"
+        )
 
         manager = VersionManager(project_root)
         new_version = SemanticVersion("2.0.0")
@@ -373,22 +306,22 @@ class TestVersionUpdate:
         assert success is True
 
         # Verify pyproject was updated
+        pyproject_file = project_root / "pyproject.toml"
         updated_pyproject = toml.load(open(pyproject_file))
         assert updated_pyproject["tool"]["poetry"]["version"] == "2.0.0"
 
         # Verify __init__.py was updated
+        init_file = project_root / "roadmap" / "__init__.py"
         updated_init = init_file.read_text()
         assert '__version__ = "2.0.0"' in updated_init
 
     def test_update_version_handles_missing_pyproject(self, tmp_path):
         """Test that missing pyproject.toml doesn't crash update_version."""
-        project_root = tmp_path
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        (project_root / "roadmap").mkdir()
+        (tmp_path / "roadmap").mkdir()
+        init_file = tmp_path / "roadmap" / "__init__.py"
         init_file.write_text('__version__ = "1.0.0"')
 
-        manager = VersionManager(project_root)
+        manager = VersionManager(tmp_path)
         new_version = SemanticVersion("2.0.0")
         success = manager.update_version(new_version)
 
@@ -398,18 +331,15 @@ class TestVersionUpdate:
 
     def test_update_version_handles_malformed_pyproject(self, tmp_path):
         """Test that malformed pyproject.toml is handled gracefully."""
-        project_root = tmp_path
-        pyproject_file = project_root / "pyproject.toml"
-        init_file = project_root / "roadmap" / "__init__.py"
-
-        (project_root / "roadmap").mkdir()
+        (tmp_path / "roadmap").mkdir()
+        pyproject_file = tmp_path / "pyproject.toml"
+        init_file = tmp_path / "roadmap" / "__init__.py"
 
         # Write invalid TOML
         pyproject_file.write_text("invalid: toml: content: [")
-
         init_file.write_text('__version__ = "1.0.0"')
 
-        manager = VersionManager(project_root)
+        manager = VersionManager(tmp_path)
         new_version = SemanticVersion("2.0.0")
 
         # Should handle exception gracefully
