@@ -34,11 +34,13 @@ from tests.fixtures import (
     effort_data,
     fast_mock_core,
     # Phase 9: Temporary directory factories
+    git_repo_factory,
     github_api_response,
     # GitHub fixtures
     github_webhook_payload,
     # Workspace fixtures
     isolate_roadmap_workspace,
+    isolated_workspace,
     large_effort_data,
     lightweight_mock_core,
     milestone_description_content,
@@ -93,6 +95,7 @@ from tests.fixtures import (
     project_dto_minimal,
     project_dto_with_large_effort,
     project_with_all_components,
+    roadmap_structure_factory,
     roadmap_workspace,
     selective_git_mock,
     session_mock_github_client,
@@ -101,6 +104,7 @@ from tests.fixtures import (
     # IO fixtures
     strip_ansi_fixture,
     temp_dir,
+    temp_file_factory,
     temp_roadmap_dir,
     temp_roadmap_team_scenario,
     temp_roadmap_with_config,
@@ -196,6 +200,10 @@ __all__ = [
     "project_dto_minimal",
     "project_dto_with_large_effort",
     "project_with_all_components",
+    # Phase 9: Temporary directory factories
+    "git_repo_factory",
+    "isolated_workspace",
+    "roadmap_structure_factory",
     "roadmap_workspace",
     "selective_git_mock",
     "session_mock_github_client",
@@ -203,6 +211,7 @@ __all__ = [
     "shared_git_repo",
     "strip_ansi_fixture",
     "temp_dir",
+    "temp_file_factory",
     "temp_roadmap_dir",
     "temp_roadmap_team_scenario",
     "temp_roadmap_with_config",
