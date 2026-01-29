@@ -11,10 +11,10 @@ from tests.unit.domain.test_data_factory_generation import TestDataFactory
 class TestHealthCheck:
     """Tests for HealthCheck class methods."""
 
-    def test_check_roadmap_directory_healthy(self, tmp_path):
+    def test_check_roadmap_directory_healthy(self, roadmap_structure_factory):
         """Test health check when .roadmap directory exists and is writable."""
-        roadmap_dir = tmp_path / ".roadmap"
-        roadmap_dir.mkdir()
+        # Factory creates .roadmap directory structure
+        roadmap_structure_factory.create_minimal()
 
         with patch(
             "roadmap.core.services.health.infrastructure_validator_service.Path"
@@ -56,14 +56,18 @@ class TestHealthCheck:
             assert status == HealthStatus.UNHEALTHY
             assert "not a directory" in message
 
-    def test_check_state_file_healthy(self, tmp_path):
+    def test_check_state_file_healthy(self, roadmap_structure_factory):
         """Test health check when state.db exists and is readable."""
-        roadmap_dir = tmp_path / ".roadmap"
-        db_dir = roadmap_dir / "db"
-        db_dir.mkdir(parents=True)
-        # Create a valid SQLite database file
-        import sqlite3
+        # Factory creates .roadmap directory, then add db structure
+        roadmap_structure_factory.create_minimal()
 
+        import sqlite3
+        from pathlib import Path
+
+        db_dir = Path.cwd() / ".roadmap" / "db"
+        db_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create a valid SQLite database file
         db_file = db_dir / "state.db"
         conn = sqlite3.connect(str(db_file))
         conn.execute("CREATE TABLE test (id INTEGER)")
@@ -91,11 +95,15 @@ class TestHealthCheck:
             assert status == HealthStatus.DEGRADED
             assert "not found" in message
 
-    def test_check_state_file_empty(self, tmp_path):
+    def test_check_state_file_empty(self, roadmap_structure_factory):
         """Test health check when state.db is empty."""
-        roadmap_dir = tmp_path / ".roadmap"
-        db_dir = roadmap_dir / "db"
-        db_dir.mkdir(parents=True)
+        # Factory creates .roadmap directory
+        roadmap_structure_factory.create_minimal()
+
+        from pathlib import Path
+
+        db_dir = Path.cwd() / ".roadmap" / "db"
+        db_dir.mkdir(parents=True, exist_ok=True)
         state_file = db_dir / "state.db"
         state_file.write_text("")
 

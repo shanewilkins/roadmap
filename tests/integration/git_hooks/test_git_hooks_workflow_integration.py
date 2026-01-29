@@ -20,23 +20,23 @@ class TestWorkflowAutomation:
     """Test workflow automation orchestrator."""
 
     @pytest.fixture
-    def temp_git_repo(self, temp_dir_context):
+    def temp_git_repo(self, git_repo_factory):
         """Create a temporary Git repository for testing."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        # git_repo_factory creates and initializes git repo with initial commit
+        repo_path = git_repo_factory.create_repo()
 
-            # Initialize Git repo
-            subprocess.run(["git", "init"], check=True, capture_output=True)
-            subprocess.run(["git", "config", "user.name", "Test User"], check=True)
-            subprocess.run(
-                ["git", "config", "user.email", "test@example.com"], check=True
-            )
+        # Initialize roadmap in the git repo
+        import os
 
-            # Initialize roadmap
+        original_cwd = os.getcwd()
+        os.chdir(repo_path)
+
+        try:
             core = RoadmapCore()
             core.initialize()
-
-            yield temp_dir, core
+            yield str(repo_path), core
+        finally:
+            os.chdir(original_cwd)
 
     def test_workflow_automation_initialization(self, temp_git_repo):
         """Test WorkflowAutomation initialization."""
