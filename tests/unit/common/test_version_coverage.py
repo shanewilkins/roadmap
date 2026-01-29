@@ -128,48 +128,46 @@ class TestSemanticVersion:
 class TestVersionManager:
     """Test VersionManager class."""
 
-    def test_version_manager_creation(self, tmp_path):
+    def test_version_manager_creation(self, roadmap_structure_factory):
         """Test creating a VersionManager instance."""
-        # Create minimal project structure
-        (tmp_path / "roadmap").mkdir()
-        (tmp_path / "pyproject.toml").write_text('[tool.poetry]\nversion = "0.1.0"')
-        (tmp_path / "roadmap" / "__init__.py").write_text('__version__ = "0.1.0"')
+        # Factory handles project structure creation: more readable
+        project_root = roadmap_structure_factory.create_project_structure()
 
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         assert manager is not None
 
-    def test_version_manager_get_current_version(self, tmp_path):
+    def test_version_manager_get_current_version(self, roadmap_structure_factory):
         """Test getting current version from manager."""
-        # Create minimal project structure
-        (tmp_path / "roadmap").mkdir()
-        (tmp_path / "pyproject.toml").write_text('[tool.poetry]\nversion = "1.2.3"')
-        (tmp_path / "roadmap" / "__init__.py").write_text('__version__ = "1.2.3"')
+        # Factory handles project structure creation
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.2.3", init_version="1.2.3"
+        )
 
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         version = manager.get_current_version()
         assert isinstance(version, SemanticVersion)
         assert str(version) == "1.2.3"
 
-    def test_version_manager_get_init_version(self, tmp_path):
+    def test_version_manager_get_init_version(self, roadmap_structure_factory):
         """Test getting version from __init__.py."""
-        # Create minimal project structure
-        (tmp_path / "roadmap").mkdir()
-        (tmp_path / "pyproject.toml").write_text('[tool.poetry]\nversion = "1.2.3"')
-        (tmp_path / "roadmap" / "__init__.py").write_text('__version__ = "1.2.3"')
+        # Factory handles project structure creation
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.2.3", init_version="1.2.3"
+        )
 
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         version = manager.get_init_version()
         assert isinstance(version, SemanticVersion)
         assert str(version) == "1.2.3"
 
-    def test_version_manager_check_consistency(self, tmp_path):
+    def test_version_manager_check_consistency(self, roadmap_structure_factory):
         """Test version consistency checking."""
-        # Create minimal project structure with consistent versions
-        (tmp_path / "roadmap").mkdir()
-        (tmp_path / "pyproject.toml").write_text('[tool.poetry]\nversion = "1.2.3"')
-        (tmp_path / "roadmap" / "__init__.py").write_text('__version__ = "1.2.3"')
+        # Factory handles project structure with consistent versions
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.2.3", init_version="1.2.3"
+        )
 
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         result = manager.check_version_consistency()
         assert result["consistent"]
         assert result["pyproject_version"] == "1.2.3"

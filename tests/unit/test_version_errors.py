@@ -148,24 +148,34 @@ class TestVersionManagerFileReading:
         assert version is not None
         assert str(version) == expect_version
 
-    def test_get_current_version_returns_none_when_file_missing(self, tmp_path):
+    def test_get_current_version_returns_none_when_file_missing(
+        self, roadmap_structure_factory
+    ):
         """Test that get_current_version returns None when pyproject.toml is missing."""
-        (tmp_path / "roadmap").mkdir()
-        manager = VersionManager(tmp_path)
+        # Factory creates minimal structure without pyproject.toml
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version=None, init_version="1.0.0"
+        )
+        manager = VersionManager(project_root)
         version = manager.get_current_version()
         assert version is None
 
-    def test_get_current_version_returns_none_when_version_missing(self, tmp_path):
+    def test_get_current_version_returns_none_when_version_missing(
+        self, roadmap_structure_factory
+    ):
         """Test that get_current_version returns None when version key is missing."""
-        pyproject_file = tmp_path / "pyproject.toml"
-        (tmp_path / "roadmap").mkdir()
+        # Factory creates structure, then manually remove version
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.0.0"
+        )
+        pyproject_file = project_root / "pyproject.toml"
 
-        # Write pyproject without version
+        # Remove version key
         pyproject_data = {"tool": {"poetry": {}}}
         with open(pyproject_file, "w") as f:
             toml.dump(pyproject_data, f)
 
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         version = manager.get_current_version()
 
         assert version is None
@@ -195,35 +205,34 @@ class TestVersionManagerFileReading:
         assert version is not None
         assert str(version) == version_str
 
-    def test_get_init_version_returns_none_when_file_missing(self, tmp_path):
+    def test_get_init_version_returns_none_when_file_missing(
+        self, roadmap_structure_factory
+    ):
         """Test that get_init_version returns None when __init__.py is missing."""
-        pyproject_file = tmp_path / "pyproject.toml"
-        (tmp_path / "roadmap").mkdir()
+        # Factory creates structure without __init__.py version
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.0.0", init_version=None
+        )
 
-        pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
-
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         version = manager.get_init_version()
 
         assert version is None
 
-    def test_get_init_version_returns_none_when_version_not_found(self, tmp_path):
+    def test_get_init_version_returns_none_when_version_not_found(
+        self, roadmap_structure_factory
+    ):
         """Test that get_init_version returns None when __version__ is not defined."""
-        pyproject_file = tmp_path / "pyproject.toml"
-        init_file = tmp_path / "roadmap" / "__init__.py"
-
-        (tmp_path / "roadmap").mkdir()
-
-        pyproject_data = {"tool": {"poetry": {"version": "1.0.0"}}}
-        with open(pyproject_file, "w") as f:
-            toml.dump(pyproject_data, f)
+        # Factory creates structure, then manually clear __init__.py
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version="1.0.0"
+        )
+        init_file = project_root / "roadmap" / "__init__.py"
 
         # No version in __init__.py
         init_file.write_text("# No version here")
 
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         version = manager.get_init_version()
 
         assert version is None
@@ -315,13 +324,14 @@ class TestVersionUpdate:
         updated_init = init_file.read_text()
         assert '__version__ = "2.0.0"' in updated_init
 
-    def test_update_version_handles_missing_pyproject(self, tmp_path):
+    def test_update_version_handles_missing_pyproject(self, roadmap_structure_factory):
         """Test that missing pyproject.toml doesn't crash update_version."""
-        (tmp_path / "roadmap").mkdir()
-        init_file = tmp_path / "roadmap" / "__init__.py"
-        init_file.write_text('__version__ = "1.0.0"')
+        # Factory creates structure without pyproject.toml
+        project_root = roadmap_structure_factory.create_project_structure(
+            pyproject_version=None, init_version="1.0.0"
+        )
 
-        manager = VersionManager(tmp_path)
+        manager = VersionManager(project_root)
         new_version = SemanticVersion("2.0.0")
         success = manager.update_version(new_version)
 

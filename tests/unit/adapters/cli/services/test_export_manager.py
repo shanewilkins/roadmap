@@ -12,6 +12,8 @@ from roadmap.common.models import RoadmapConfig
 @pytest.fixture
 def temp_project_dir(tmp_path):
     """Create a temporary project directory."""
+    # Using tmp_path directly for backward compatibility
+    # This fixture already uses tmp_path efficiently
     project_dir = tmp_path / "test_project"
     project_dir.mkdir()
     return project_dir
