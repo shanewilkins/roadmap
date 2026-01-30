@@ -425,3 +425,35 @@ def temp_dir_context():
         return TemporaryDirectory()
 
     return _context_manager
+
+
+# ============================================================================
+# Test Independence Fixtures (Autouse)
+# ============================================================================
+
+
+@pytest.fixture(autouse=True)
+def clear_session_cache_between_tests():
+    """Clear the session cache before and after each test.
+
+    This ensures tests don't share cached state, which is critical for
+    CLI tests that invoke commands sequentially. Each test should start
+    with a clean cache state.
+
+    This fixture uses autouse=True to run automatically for all tests.
+
+    Pattern: Cache Cleanup Between Tests
+    - Prevents state leakage between tests
+    - Ensures each test has a clean environment
+    - Critical for CLI/command testing where cache persists
+    """
+    from roadmap.common.cache import clear_session_cache
+
+    # Clear before test
+    clear_session_cache()
+
+    # Test runs here
+    yield
+
+    # Clear after test
+    clear_session_cache()
