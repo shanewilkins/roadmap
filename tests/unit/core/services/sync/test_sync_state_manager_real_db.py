@@ -9,10 +9,9 @@ Strategy: The current implementation saves issues to DB but does NOT load them b
 Once issue-loading is implemented, these tests can be enhanced to full roundtrip validation.
 """
 
-from datetime import UTC, datetime
-from pathlib import Path
-from unittest.mock import Mock, MagicMock
 import json
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -28,19 +27,21 @@ class TestSyncStateMetadataRoundtrip:
         """Create a mock DB manager that records operations."""
         manager = Mock()
         manager._get_connection = MagicMock()
-        
+
         # Track what was written
         saved_metadata = {}
         saved_issues = {}
-        
+
         def track_execute(query, params=None):
             if "sync_metadata" in query:
-                key, value = params[0], params[1]
-                saved_metadata[key] = value
+                if params:
+                    key, value = params[0], params[1]
+                    saved_metadata[key] = value
             elif "sync_base_state" in query:
-                issue_id = params[0]
-                saved_issues[issue_id] = params
-            
+                if params:
+                    issue_id = params[0]
+                    saved_issues[issue_id] = params
+
         conn = Mock()
         conn.execute = track_execute
         conn.commit = Mock()
@@ -48,7 +49,7 @@ class TestSyncStateMetadataRoundtrip:
         manager._saved_metadata = saved_metadata
         manager._saved_issues = saved_issues
         manager._connection = conn
-        
+
         return manager
 
     def test_save_preserves_last_sync_timestamp(self, mock_db_manager, tmp_path):
@@ -57,10 +58,10 @@ class TestSyncStateMetadataRoundtrip:
         roadmap_dir.mkdir()
 
         manager = SyncStateManager(roadmap_dir, db_manager=mock_db_manager)
-        
+
         # Specific datetime with microseconds
         now = datetime(2026, 1, 31, 12, 30, 45, 123456, tzinfo=UTC)
-        
+
         state = SyncState(
             last_sync=now,
             backend="github",
@@ -82,7 +83,7 @@ class TestSyncStateMetadataRoundtrip:
         roadmap_dir.mkdir()
 
         manager = SyncStateManager(roadmap_dir, db_manager=mock_db_manager)
-        
+
         state = SyncState(
             last_sync=datetime(2026, 1, 31, 12, 0, 0, tzinfo=UTC),
             backend="github",
@@ -100,7 +101,7 @@ class TestSyncStateMetadataRoundtrip:
         roadmap_dir.mkdir()
 
         manager = SyncStateManager(roadmap_dir, db_manager=mock_db_manager)
-        
+
         issue = IssueBaseState(
             id="ISSUE-1",
             status="open",
@@ -111,7 +112,7 @@ class TestSyncStateMetadataRoundtrip:
             content="Test content with special chars: café, 日本語",
             labels=["bug", "priority-high"],
         )
-        
+
         state = SyncState(
             last_sync=datetime(2026, 1, 31, 12, 0, 0, tzinfo=UTC),
             backend="github",
@@ -123,7 +124,7 @@ class TestSyncStateMetadataRoundtrip:
         # Verify issue was saved
         saved_issues = mock_db_manager._saved_issues
         assert "ISSUE-1" in saved_issues
-        
+
         # Saved as: (issue_id, status, assignee, milestone, headline, content, labels_json, synced_at)
         saved_data = saved_issues["ISSUE-1"]
         assert saved_data[0] == "ISSUE-1"
@@ -132,7 +133,7 @@ class TestSyncStateMetadataRoundtrip:
         assert saved_data[3] == "v1.0"
         assert saved_data[4] == "Test headline"
         assert saved_data[5] == "Test content with special chars: café, 日本語"
-        
+
         # Labels are JSON serialized
         labels_json = saved_data[6]
         labels = json.loads(labels_json)
@@ -144,7 +145,7 @@ class TestSyncStateMetadataRoundtrip:
         roadmap_dir.mkdir()
 
         manager = SyncStateManager(roadmap_dir, db_manager=mock_db_manager)
-        
+
         issue = IssueBaseState(
             id="UNASSIGNED",
             status="backlog",
@@ -155,7 +156,7 @@ class TestSyncStateMetadataRoundtrip:
             content="Waiting",
             labels=[],
         )
-        
+
         state = SyncState(
             last_sync=datetime(2026, 1, 31, 12, 0, 0, tzinfo=UTC),
             backend="github",
@@ -176,7 +177,7 @@ class TestSyncStateMetadataRoundtrip:
         roadmap_dir.mkdir()
 
         manager = SyncStateManager(roadmap_dir, db_manager=mock_db_manager)
-        
+
         issue = IssueBaseState(
             id="NO-LABELS",
             status="open",
@@ -187,7 +188,7 @@ class TestSyncStateMetadataRoundtrip:
             content="Content",
             labels=[],  # Empty
         )
-        
+
         state = SyncState(
             last_sync=datetime(2026, 1, 31, 12, 0, 0, tzinfo=UTC),
             backend="github",
@@ -207,7 +208,7 @@ class TestSyncStateMetadataRoundtrip:
         roadmap_dir.mkdir()
 
         manager = SyncStateManager(roadmap_dir, db_manager=mock_db_manager)
-        
+
         issues = {}
         for i in range(5):
             issues[f"ISSUE-{i}"] = IssueBaseState(
@@ -220,7 +221,7 @@ class TestSyncStateMetadataRoundtrip:
                 content=f"Content {i}",
                 labels=[f"label-{i}"],
             )
-        
+
         state = SyncState(
             last_sync=datetime(2026, 1, 31, 12, 0, 0, tzinfo=UTC),
             backend="github",
@@ -241,7 +242,7 @@ class TestSyncStateMetadataRoundtrip:
         roadmap_dir.mkdir()
 
         manager = SyncStateManager(roadmap_dir, db_manager=None)
-        
+
         state = SyncState(
             last_sync=datetime(2026, 1, 31, 12, 0, 0, tzinfo=UTC),
             backend="github",
@@ -262,7 +263,7 @@ class TestSyncStateMetadataRoundtrip:
         mock_db._get_connection.return_value = mock_conn
 
         manager = SyncStateManager(roadmap_dir, db_manager=mock_db)
-        
+
         state = SyncState(
             last_sync=datetime(2026, 1, 31, 12, 0, 0, tzinfo=UTC),
             backend="github",
@@ -312,7 +313,7 @@ class TestSyncStateLoadMetadata:
 
         mock_db = Mock()
         mock_conn = Mock()
-        
+
         # Return mock rows with metadata
         def mock_execute(query):
             if "SELECT key, value FROM sync_metadata" in query:
@@ -321,7 +322,7 @@ class TestSyncStateLoadMetadata:
                     ("backend", "github"),
                 ]
             return []
-        
+
         mock_conn.execute.side_effect = mock_execute
         mock_db._get_connection.return_value = mock_conn
 
@@ -345,12 +346,12 @@ class TestSyncStateLoadMetadata:
 
         mock_db = Mock()
         mock_conn = Mock()
-        
+
         def mock_execute(query):
             if "SELECT key, value FROM sync_metadata" in query:
                 return [("last_sync", now_iso)]  # No backend specified
             return []
-        
+
         mock_conn.execute.side_effect = mock_execute
         mock_db._get_connection.return_value = mock_conn
 
@@ -383,12 +384,12 @@ class TestSyncStateLoadMetadata:
 
         mock_db = Mock()
         mock_conn = Mock()
-        
+
         def mock_execute(query):
             if "SELECT key, value FROM sync_metadata" in query:
                 return [("last_sync", "not-a-valid-date")]
             return []
-        
+
         mock_conn.execute.side_effect = mock_execute
         mock_db._get_connection.return_value = mock_conn
 

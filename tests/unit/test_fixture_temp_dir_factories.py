@@ -1,4 +1,8 @@
-"""Quick test to verify Phase 9 temp directory factories work correctly."""
+"""Tests for temporary directory and workspace factory fixtures.
+
+Validates that temp_file_factory, git_repo_factory, roadmap_structure_factory,
+and isolated_workspace fixtures work correctly for test infrastructure.
+"""
 
 import pytest
 
