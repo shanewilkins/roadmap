@@ -457,3 +457,256 @@ def clear_session_cache_between_tests():
 
     # Clear after test
     clear_session_cache()
+
+
+# ============================================================================
+# PHASE 8: NEW FIXTURES FOR FUNCTIONAL TESTING
+# ============================================================================
+# These fixtures support high-quality functional tests with real code paths,
+# minimal mocking, and parameterization for comprehensive coverage.
+
+
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock
+
+from roadmap.adapters.persistence.storage import StateManager
+from roadmap.adapters.persistence.yaml_repositories import YAMLIssueRepository
+from roadmap.common.constants import IssueType, MilestoneStatus, Priority, Status
+from roadmap.core.domain.comment import Comment
+from roadmap.core.domain.issue import Issue
+from roadmap.core.domain.milestone import Milestone
+
+# ============================================================================
+# DATA FIXTURES: Raw dictionaries for test parameterization
+# ============================================================================
+
+
+@pytest.fixture
+def p8_valid_issue_data() -> dict[str, Any]:
+    """Minimal valid issue dictionary for Phase 8 tests."""
+    return {
+        "id": "issue-1",
+        "title": "Test Issue",
+        "status": Status.TODO,
+        "priority": Priority.MEDIUM,
+    }
+
+
+@pytest.fixture
+def p8_complete_issue_data(p8_valid_issue_data) -> dict[str, Any]:
+    """Complete issue with all optional fields."""
+    return {
+        **p8_valid_issue_data,
+        "headline": "Brief summary",
+        "content": "Detailed description",
+        "assignee": "user@example.com",
+        "labels": ["bug", "urgent"],
+        "milestone": "v1.0",
+        "issue_type": IssueType.BUG,
+        "estimated_hours": 8.0,
+        "due_date": datetime(2024, 12, 31, tzinfo=UTC),
+        "depends_on": ["issue-2"],
+        "blocks": ["issue-3"],
+        "progress_percentage": 50.0,
+    }
+
+
+@pytest.fixture
+def p8_minimal_issue_data() -> dict[str, Any]:
+    """Truly minimal valid issue (only required fields)."""
+    return {
+        "title": "Minimal Issue",
+    }
+
+
+@pytest.fixture
+def p8_valid_milestone_data() -> dict[str, Any]:
+    """Minimal valid milestone dictionary."""
+    return {
+        "name": "v1.0",
+        "status": MilestoneStatus.OPEN,
+    }
+
+
+@pytest.fixture
+def p8_complete_milestone_data(p8_valid_milestone_data) -> dict[str, Any]:
+    """Complete milestone with all optional fields."""
+    return {
+        **p8_valid_milestone_data,
+        "headline": "First release",
+        "content": "Release notes",
+        "due_date": datetime(2024, 12, 31, tzinfo=UTC),
+    }
+
+
+@pytest.fixture
+def p8_valid_comment_data() -> dict[str, Any]:
+    """Valid comment dictionary."""
+    return {
+        "id": 1,
+        "issue_id": "issue-1",
+        "author": "alice",
+        "body": "This is a comment",
+        "created_at": datetime(2024, 1, 1, tzinfo=UTC),
+        "updated_at": datetime(2024, 1, 1, tzinfo=UTC),
+    }
+
+
+# ============================================================================
+# DOMAIN MODEL FIXTURES: Real Pydantic objects
+# ============================================================================
+
+
+@pytest.fixture
+def p8_issue(p8_valid_issue_data) -> Issue:
+    """Create a valid Issue object."""
+    return Issue(**p8_valid_issue_data)
+
+
+@pytest.fixture
+def p8_complete_issue(p8_complete_issue_data) -> Issue:
+    """Create a complete Issue with all fields."""
+    return Issue(**p8_complete_issue_data)
+
+
+@pytest.fixture
+def p8_minimal_issue(p8_minimal_issue_data) -> Issue:
+    """Create a minimal Issue."""
+    return Issue(**p8_minimal_issue_data)
+
+
+@pytest.fixture
+def p8_milestone(p8_valid_milestone_data) -> Milestone:
+    """Create a valid Milestone object."""
+    return Milestone(**p8_valid_milestone_data)
+
+
+@pytest.fixture
+def p8_complete_milestone(p8_complete_milestone_data) -> Milestone:
+    """Create a complete Milestone with all fields."""
+    return Milestone(**p8_complete_milestone_data)
+
+
+@pytest.fixture
+def p8_comment(p8_valid_comment_data) -> Comment:
+    """Create a valid Comment object."""
+    return Comment(**p8_valid_comment_data)
+
+
+# ============================================================================
+# FILE SYSTEM FIXTURES
+# ============================================================================
+
+
+@pytest.fixture
+def p8_issues_dir(tmp_path) -> Path:
+    """Create an empty issues directory."""
+    issues_dir = tmp_path / "issues"
+    issues_dir.mkdir(parents=True, exist_ok=True)
+    return issues_dir
+
+
+@pytest.fixture
+def p8_milestones_dir(tmp_path) -> Path:
+    """Create an empty milestones directory."""
+    milestones_dir = tmp_path / "milestones"
+    milestones_dir.mkdir(parents=True, exist_ok=True)
+    return milestones_dir
+
+
+@pytest.fixture
+def p8_populated_issues_dir(p8_issues_dir) -> Path:
+    """Create directory with sample issues as YAML files."""
+    issues_data = [
+        {
+            "id": "issue-1",
+            "title": "Build feature A",
+            "status": Status.TODO,
+            "milestone": "v1.0",
+        },
+        {
+            "id": "issue-2",
+            "title": "Fix bug B",
+            "status": Status.IN_PROGRESS,
+            "milestone": "v1.0",
+        },
+        {
+            "id": "issue-3",
+            "title": "Documentation",
+            "status": Status.TODO,
+            "milestone": "v2.0",
+        },
+        {
+            "id": "issue-4",
+            "title": "Unassigned task",
+            "status": Status.TODO,
+            "milestone": None,
+        },
+    ]
+
+    # Import here to avoid circular imports
+    from roadmap.adapters.persistence.parser import IssueParser
+
+    for data in issues_data:
+        issue = Issue(**data)
+        issue_file = p8_issues_dir / f"{issue.id}.md"
+        IssueParser.save_issue_file(issue, issue_file)
+
+    return p8_issues_dir
+
+
+@pytest.fixture
+def p8_corrupted_yaml_file(tmp_path) -> Path:
+    """Create a corrupted YAML file."""
+    bad_file = tmp_path / "corrupted.md"
+    bad_file.write_text("{ invalid: yaml: structure: [")
+    return bad_file
+
+
+@pytest.fixture
+def p8_populated_milestones_dir(p8_milestones_dir) -> Path:
+    """Create directory with sample milestones as YAML files."""
+    milestones_data = [
+        {"name": "v1.0", "status": MilestoneStatus.OPEN},
+        {"name": "v2.0", "status": MilestoneStatus.OPEN},
+        {"name": "v0.5", "status": MilestoneStatus.CLOSED},
+    ]
+
+    # Import here to avoid circular imports
+    from roadmap.adapters.persistence.parser import MilestoneParser
+
+    for data in milestones_data:
+        milestone = Milestone(**data)
+        milestone_file = p8_milestones_dir / f"{milestone.name}.md"
+        MilestoneParser.save_milestone_file(milestone, milestone_file)
+
+    return p8_milestones_dir
+
+
+# ============================================================================
+# SERVICE FIXTURES: Repositories with real storage
+# ============================================================================
+
+
+@pytest.fixture
+def p8_mock_state_manager() -> MagicMock:
+    """Create a mock StateManager for Phase 8 tests."""
+    return MagicMock(spec=StateManager)
+
+
+@pytest.fixture
+def p8_yaml_issue_repository(
+    p8_mock_state_manager, p8_issues_dir
+) -> YAMLIssueRepository:
+    """Create YAMLIssueRepository with temporary directory."""
+    return YAMLIssueRepository(p8_mock_state_manager, p8_issues_dir)
+
+
+@pytest.fixture
+def p8_populated_issue_repository(
+    p8_mock_state_manager, p8_populated_issues_dir
+) -> YAMLIssueRepository:
+    """Create YAMLIssueRepository with pre-populated data."""
+    return YAMLIssueRepository(p8_mock_state_manager, p8_populated_issues_dir)
