@@ -8,9 +8,9 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.sync.sync_conflict_resolver import SyncConflictResolver
 from roadmap.core.services.sync.sync_report import SyncReport
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
 
@@ -438,9 +438,7 @@ class TestSchemaValidation(unittest.TestCase):
             labels=["feature", "priority"],
         )
 
-        sync_state = SyncState(
-            last_sync_time=datetime.now(UTC)
-        )
+        sync_state = SyncState(last_sync_time=datetime.now(UTC))
         sync_state.add_issue("base", issue_state)
 
         # Retrieve and verify
@@ -465,9 +463,7 @@ class TestSchemaValidation(unittest.TestCase):
         }
 
         # Simulate save: convert to IssueBaseState
-        state = SyncState(
-            last_sync_time=datetime.now(UTC)
-        )
+        state = SyncState(last_sync_time=datetime.now(UTC))
         for issue_id, data in original_data.items():
             state.add_issue(
                 "base",

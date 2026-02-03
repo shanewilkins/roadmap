@@ -169,7 +169,9 @@ def _create_and_save_baseline(
                 style="bold green",
             )
             console_inst.print(f"   Last Sync: {new_baseline.last_sync_time}")
-            console_inst.print(f"   Issues in baseline: {len(new_baseline.base_issues)}")
+            console_inst.print(
+                f"   Issues in baseline: {len(new_baseline.base_issues)}"
+            )
 
             if verbose and new_baseline.base_issues:
                 console_inst.print("\n   Issues:", style="bold")
@@ -224,7 +226,9 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
     pre_sync_baseline = (
         orchestrator.get_baseline_state() if not baseline_option else None
     )
-    pre_sync_issue_count = len(pre_sync_baseline.base_issues) if pre_sync_baseline else 0
+    pre_sync_issue_count = (
+        len(pre_sync_baseline.base_issues) if pre_sync_baseline else 0
+    )
 
     # Helper services
     state_comparator = SyncStateComparator()

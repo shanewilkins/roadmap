@@ -8,7 +8,6 @@ Tests cover:
 - Type safety and interface contracts
 """
 
-from typing import Type
 from unittest.mock import Mock
 
 from roadmap.infrastructure.github_gateway import GitHubGateway
@@ -74,7 +73,7 @@ class TestGitHubGatewayErrorClassRetrieval:
 
     def test_get_github_api_error_can_be_raised(self):
         """Returned error class should be raisable."""
-        error_class: Type[Exception] = GitHubGateway.get_github_api_error()
+        error_class: type[Exception] = GitHubGateway.get_github_api_error()
 
         # Should be able to instantiate and raise
         try:
@@ -323,7 +322,7 @@ class TestGitHubGatewayIntegration:
         """Test typical pattern: get client and error handling."""
         config = Mock()
         client = GitHubGateway.get_github_client(config)
-        error_class: Type[Exception] = GitHubGateway.get_github_api_error()
+        error_class: type[Exception] = GitHubGateway.get_github_api_error()
 
         # Simulate typical usage
         try:

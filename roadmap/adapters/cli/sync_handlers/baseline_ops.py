@@ -103,7 +103,9 @@ def show_baseline(
                         "\n✅ Initial baseline created and saved to database:",
                         style="bold green",
                     )
-                    console_inst.print(f"   Last Sync: {initial_baseline.last_sync_time}")
+                    console_inst.print(
+                        f"   Last Sync: {initial_baseline.last_sync_time}"
+                    )
                     console_inst.print(
                         f"   Issues in baseline: {len(initial_baseline.base_issues)}",
                     )

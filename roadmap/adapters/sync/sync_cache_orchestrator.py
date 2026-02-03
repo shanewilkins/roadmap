@@ -10,7 +10,6 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
 from roadmap.adapters.sync.sync_retrieval_orchestrator import SyncRetrievalOrchestrator
-from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.core.services.baseline.baseline_builder_progress import (
     ProgressTrackingBaselineBuilder,
     create_progress_builder,
@@ -19,6 +18,7 @@ from roadmap.core.services.baseline.optimized_baseline_builder import (
     OptimizedBaselineBuilder,
 )
 from roadmap.core.services.sync.sync_report import SyncReport
+from roadmap.core.services.sync.sync_state import SyncState
 
 logger = get_logger(__name__)
 
@@ -141,7 +141,9 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 VALUES (?, ?, ?)
                 """,
                 (
-                    baseline.last_sync_time.isoformat() if baseline.last_sync_time else "unknown",
+                    baseline.last_sync_time.isoformat()
+                    if baseline.last_sync_time
+                    else "unknown",
                     json.dumps(baseline.to_dict()),
                     datetime.now(UTC).isoformat(),
                 ),
@@ -152,7 +154,9 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             logger.info(
                 "baseline_cached_to_db",
                 issue_count=len(baseline.base_issues),
-                last_sync=baseline.last_sync_time.isoformat() if baseline.last_sync_time else "unknown",
+                last_sync=baseline.last_sync_time.isoformat()
+                if baseline.last_sync_time
+                else "unknown",
             )
 
         except OSError as e:
@@ -195,7 +199,10 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 )
                 from datetime import datetime
 
-                from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
+                from roadmap.core.services.sync.sync_state import (
+                    IssueBaseState,
+                    SyncState,
+                )
 
                 issues = {}
                 for issue_id, data in db_baseline.items():
@@ -421,7 +428,9 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             logger.info(
                 "post_sync_baseline_captured",
                 issue_count=len(baseline.base_issues),
-                last_sync=baseline.last_sync_time.isoformat() if baseline.last_sync_time else "unknown",
+                last_sync=baseline.last_sync_time.isoformat()
+                if baseline.last_sync_time
+                else "unknown",
             )
             return baseline
 

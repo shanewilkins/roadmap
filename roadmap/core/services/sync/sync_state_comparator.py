@@ -13,7 +13,6 @@ from structlog import get_logger
 
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
-from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_change_computer import (
     compute_changes as _compute_changes_helper,
 )
@@ -28,6 +27,7 @@ from roadmap.core.services.sync.sync_key_normalizer import (
     normalize_remote_keys as _normalize_remote_keys_helper,
 )
 from roadmap.core.services.sync.sync_report import IssueChange
+from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_state_normalizer import (
     extract_timestamp as _extract_timestamp_helper,
 )

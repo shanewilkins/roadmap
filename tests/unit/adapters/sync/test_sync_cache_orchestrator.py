@@ -153,7 +153,6 @@ class TestSyncCacheOrchestrator:
         """Test saving baseline to cache."""
         baseline = SyncState(
             last_sync_time=datetime.now(UTC),
-            
             base_issues={},
         )
 
@@ -221,7 +220,6 @@ class TestOptimizedSyncIntegration:
         # Create baseline
         baseline = SyncState(
             last_sync_time=datetime.now(UTC),
-            
             base_issues={
                 "test-1": IssueBaseState(
                     id="test-1",

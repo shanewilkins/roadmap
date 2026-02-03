@@ -46,4 +46,6 @@ class SyncStateUpdateService:
 
         except Exception as e:
             # Log but don't raise - state update failures shouldn't break sync
-            logger.error("update_sync_state_failed", error=str(e), severity="operational")
+            logger.error(
+                "update_sync_state_failed", error=str(e), severity="operational"
+            )

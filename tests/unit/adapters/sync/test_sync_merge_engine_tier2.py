@@ -1,7 +1,6 @@
 """Tests for SyncMergeEngine (Tier 2 coverage)."""
 
-from datetime import UTC, datetime
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -11,7 +10,6 @@ from roadmap.core.services.sync.sync_conflict_resolver import (
     ConflictStrategy,
     SyncConflictResolver,
 )
-from roadmap.core.services.sync.sync_plan import Action, PushAction
 from roadmap.core.services.sync.sync_report import SyncReport
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
@@ -63,10 +61,12 @@ class TestSyncMergeEngine:
         mock_state_manager,
     ):
         """Create SyncMergeEngine instance."""
-        with patch("roadmap.adapters.sync.sync_merge_engine.RemoteIssueCreationService"), \
-             patch("roadmap.adapters.sync.sync_merge_engine.SyncStateUpdateService"), \
-             patch("roadmap.adapters.sync.sync_merge_engine.BaselineStateHandler"), \
-             patch("roadmap.adapters.sync.sync_merge_engine.ConflictConverter"):
+        with (
+            patch("roadmap.adapters.sync.sync_merge_engine.RemoteIssueCreationService"),
+            patch("roadmap.adapters.sync.sync_merge_engine.SyncStateUpdateService"),
+            patch("roadmap.adapters.sync.sync_merge_engine.BaselineStateHandler"),
+            patch("roadmap.adapters.sync.sync_merge_engine.ConflictConverter"),
+        ):
             engine = SyncMergeEngine(
                 core=mock_core,
                 backend=mock_backend,
@@ -220,7 +220,16 @@ class TestSyncMergeEngine:
         result = engine._analyze_and_classify({}, {}, None)
 
         assert len(result) == 8
-        changes, conflicts, local_only, remote_only, no_changes, updates, pulls, up_to_date = result
+        (
+            changes,
+            conflicts,
+            local_only,
+            remote_only,
+            no_changes,
+            updates,
+            pulls,
+            up_to_date,
+        ) = result
         assert changes == [change]
         assert conflicts == []
         assert no_changes == [change]
@@ -293,7 +302,9 @@ class TestSyncMergeEngine:
         ]
         engine.conflict_resolver.resolve_batch.return_value = [MagicMock(id="1")]
 
-        result = engine._resolve_conflicts_if_needed([conflict], force_local=True, force_remote=False)
+        result = engine._resolve_conflicts_if_needed(
+            [conflict], force_local=True, force_remote=False
+        )
 
         assert len(result) == 1
         engine.conflict_resolver.resolve_batch.assert_called_once()
@@ -308,7 +319,9 @@ class TestSyncMergeEngine:
         ]
         engine.conflict_resolver.resolve_batch.return_value = []
 
-        result = engine._resolve_conflicts_if_needed([conflict], force_local=False, force_remote=True)
+        result = engine._resolve_conflicts_if_needed(
+            [conflict], force_local=False, force_remote=True
+        )
 
         call_args = engine.conflict_resolver.resolve_batch.call_args
         assert call_args[0][1] == ConflictStrategy.KEEP_REMOTE
@@ -321,7 +334,9 @@ class TestSyncMergeEngine:
         ]
         engine.conflict_resolver.resolve_batch.return_value = []
 
-        result = engine._resolve_conflicts_if_needed([conflict], force_local=False, force_remote=False)
+        result = engine._resolve_conflicts_if_needed(
+            [conflict], force_local=False, force_remote=False
+        )
 
         call_args = engine.conflict_resolver.resolve_batch.call_args
         assert call_args[0][1] == ConflictStrategy.AUTO_MERGE
@@ -332,7 +347,9 @@ class TestSyncMergeEngine:
         engine._conflict_converter.convert_changes_to_conflicts.return_value = [
             conflict
         ]
-        engine.conflict_resolver.resolve_batch.side_effect = RuntimeError("Resolution error")
+        engine.conflict_resolver.resolve_batch.side_effect = RuntimeError(
+            "Resolution error"
+        )
 
         with patch("roadmap.adapters.sync.sync_merge_engine.logger"):
             result = engine._resolve_conflicts_if_needed([conflict], False, False)
@@ -557,9 +574,7 @@ class TestSyncMergeEngine:
         engine.backend.push_issues.return_value = push_report
 
         with patch("roadmap.adapters.sync.sync_merge_engine.logger"):
-            pushed_count, errors = engine._push_updates(
-                [issue1, issue2], report
-            )
+            pushed_count, errors = engine._push_updates([issue1, issue2], report)
 
         assert pushed_count == 0
         assert "1" in errors

@@ -30,7 +30,6 @@ class TestDataIntegrityThreeWayMerge:
             status="todo",
             title="Original Issue",
             assignee="alice",
-            
             description="test",
             content="Original description",
             labels=["bug"],

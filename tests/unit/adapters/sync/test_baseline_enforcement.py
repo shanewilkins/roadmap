@@ -13,8 +13,8 @@ import pytest
 from roadmap.adapters.sync.sync_retrieval_orchestrator import (
     SyncRetrievalOrchestrator,
 )
-from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.baseline.baseline_selector import BaselineStrategy
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 
 class TestBaselineEnforcement:
@@ -63,10 +63,7 @@ class TestBaselineEnforcement:
 
     def test_has_baseline_returns_false_when_empty_state(self, orchestrator):
         """Test has_baseline returns False when sync state has no issues."""
-        empty_state = SyncState(
-            last_sync_time=datetime.now(UTC)
-            
-        )
+        empty_state = SyncState(last_sync_time=datetime.now(UTC))
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=empty_state)
         assert orchestrator.has_baseline() is False
 
@@ -77,10 +74,7 @@ class TestBaselineEnforcement:
             status="todo",
             title="Test",
         )
-        state = SyncState(
-            last_sync_time=datetime.now(UTC)
-            
-        )
+        state = SyncState(last_sync_time=datetime.now(UTC))
         state.base_issues["issue-1"] = baseline_state
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=state)
         assert orchestrator.has_baseline() is True
@@ -92,10 +86,7 @@ class TestBaselineEnforcement:
             status="todo",
             title="Test",
         )
-        state = SyncState(
-            last_sync_time=datetime.now(UTC)
-            
-        )
+        state = SyncState(last_sync_time=datetime.now(UTC))
         state.base_issues["issue-1"] = baseline_state
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=state)
 
@@ -142,10 +133,7 @@ class TestBaselineEnforcement:
             status="todo",
             title="Test Issue",
         )
-        mock_sync_state = SyncState(
-            last_sync_time=datetime.now(UTC)
-            
-        )
+        mock_sync_state = SyncState(last_sync_time=datetime.now(UTC))
         mock_sync_state.base_issues["issue-1"] = baseline_state
 
         mocker.patch.object(
@@ -159,10 +147,7 @@ class TestBaselineEnforcement:
 
     def test_create_baseline_from_local_fails_when_empty(self, orchestrator, mocker):
         """Test creating baseline from local fails with empty state."""
-        empty_state = SyncState(
-            last_sync_time=datetime.now(UTC)
-            
-        )
+        empty_state = SyncState(last_sync_time=datetime.now(UTC))
 
         mocker.patch.object(
             orchestrator, "_create_initial_baseline", return_value=empty_state
@@ -257,10 +242,7 @@ class TestBaselineEnforcement:
             status="todo",
             title="Test",
         )
-        state = SyncState(
-            last_sync_time=datetime.now(UTC)
-            
-        )
+        state = SyncState(last_sync_time=datetime.now(UTC))
         state.base_issues["issue-1"] = baseline_state
         orchestrator.state_manager.load_sync_state = MagicMock(return_value=state)
 

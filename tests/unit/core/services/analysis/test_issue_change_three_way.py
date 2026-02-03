@@ -6,8 +6,8 @@ import pytest
 
 from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_report import IssueChange
+from roadmap.core.services.sync.sync_state import IssueBaseState
 
 
 @pytest.fixture

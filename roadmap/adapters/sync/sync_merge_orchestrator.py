@@ -200,7 +200,9 @@ class SyncMergeOrchestrator:
             # Helper: run comparator and classify changes
             def _run_analysis(local_dict, remote_data, base_state):
                 changes = self.state_comparator.analyze_three_way(
-                    local_dict, remote_data, base_state.base_issues if base_state else None
+                    local_dict,
+                    remote_data,
+                    base_state.base_issues if base_state else None,
                 )
                 conflicts = [c for c in changes if c.has_conflict]
                 local_only_changes = [c for c in changes if c.is_local_only_change()]

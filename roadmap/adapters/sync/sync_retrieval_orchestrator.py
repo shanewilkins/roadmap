@@ -14,7 +14,6 @@ from structlog import get_logger
 
 from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.baseline.baseline_selector import (
     BaselineStrategy,
     InteractiveBaselineSelector,
@@ -22,6 +21,7 @@ from roadmap.core.services.baseline.baseline_selector import (
 from roadmap.core.services.baseline.baseline_state_retriever import (
     BaselineStateRetriever,
 )
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 logger = get_logger(__name__)
 
@@ -129,7 +129,9 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
             return False
 
         except Exception as e:
-            logger.warning("baseline_check_failed", error=str(e), severity="operational")
+            logger.warning(
+                "baseline_check_failed", error=str(e), severity="operational"
+            )
             return False
 
     def ensure_baseline(
@@ -181,11 +183,16 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                 return self._create_baseline_from_remote()
             else:
                 # INTERACTIVE - would need per-issue prompts
-                logger.warning("interactive_baseline_not_fully_implemented_yet", severity="operational")
+                logger.warning(
+                    "interactive_baseline_not_fully_implemented_yet",
+                    severity="operational",
+                )
                 return self._create_baseline_from_local()
 
         except Exception as e:
-            logger.error("baseline_creation_failed", error=str(e), severity="system_error")
+            logger.error(
+                "baseline_creation_failed", error=str(e), severity="system_error"
+            )
             return False
 
     def _create_baseline_from_local(self) -> bool:
@@ -216,10 +223,16 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                 )
                 return True
             else:
-                logger.warning("baseline_creation_produced_empty_state", severity="operational")
+                logger.warning(
+                    "baseline_creation_produced_empty_state", severity="operational"
+                )
                 return False
         except Exception as e:
-            logger.error("baseline_creation_from_local_failed", error=str(e), severity="system_error")
+            logger.error(
+                "baseline_creation_from_local_failed",
+                error=str(e),
+                severity="system_error",
+            )
             return False
 
     def _create_baseline_from_remote(self) -> bool:
@@ -233,7 +246,9 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             # Authenticate with backend
             if not self.backend.authenticate():
-                logger.error("backend_auth_failed_for_baseline", severity="infrastructure")
+                logger.error(
+                    "backend_auth_failed_for_baseline", severity="infrastructure"
+                )
                 return False
 
             # Get remote issues
@@ -289,7 +304,11 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
             return True
 
         except Exception as e:
-            logger.error("baseline_creation_from_remote_failed", error=str(e), severity="system_error")
+            logger.error(
+                "baseline_creation_from_remote_failed",
+                error=str(e),
+                severity="system_error",
+            )
             return False
 
     def _build_baseline_state_from_git(

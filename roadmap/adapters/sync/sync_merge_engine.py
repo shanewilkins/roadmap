@@ -301,7 +301,10 @@ class SyncMergeEngine:
         except Exception as e:
             report.error = f"Error during push operation: {str(e)}"
             logger.error(
-                "push_operation_exception", error=str(e), error_type=type(e).__name__, severity="system_error"
+                "push_operation_exception",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
             )
             pushed_count = 0
 
@@ -333,7 +336,10 @@ class SyncMergeEngine:
             )
         except Exception as e:
             logger.error(
-                "pull_operation_exception", error=str(e), error_type=type(e).__name__, severity="system_error"
+                "pull_operation_exception",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
             )
             pulled_count = 0
 

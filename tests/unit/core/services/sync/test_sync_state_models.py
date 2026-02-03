@@ -489,7 +489,7 @@ class TestSyncStateUnhappyPaths:
         """Three sources should track diverging states without conflict."""
         now = datetime.now(UTC)
         state = SyncState()
-        
+
         # Simulate three-way merge: base → local + remote
         base = IssueBaseState(
             id="issue-1",
@@ -511,11 +511,11 @@ class TestSyncStateUnhappyPaths:
             assignee="bob",  # Remote modified
             updated_at=now,
         )
-        
+
         state.add_issue("base", base)
         state.add_issue("local", local)
         state.add_issue("remote", remote)
-        
+
         # All three should be stored independently
         base_issue = state.get_issue("base", "issue-1")
         assert base_issue is not None and base_issue.status == "open"
@@ -527,44 +527,44 @@ class TestSyncStateUnhappyPaths:
     def test_three_way_merge_scenario_both_sides_deleted(self):
         """When both sides delete same issue, track both deletions."""
         state = SyncState()
-        
+
         # Start with issue in all three
         issue = IssueBaseState(id="issue-1", status="open")
         state.add_issue("base", issue)
         state.add_issue("local", issue)
         state.add_issue("remote", issue)
-        
+
         # Both sides delete it
         state.mark_deleted("local", "issue-1")
         state.mark_deleted("remote", "issue-1")
-        
+
         # Issue should be removed from both local and remote
         assert state.get_issue("local", "issue-1") is None
         assert state.get_issue("remote", "issue-1") is None
-        
+
         # But deletion should be tracked
         assert "issue-1" in state.local_deleted_ids
         assert "issue-1" in state.remote_deleted_ids
-        
+
         # Base should still have it (represents agreed-upon state from last sync)
         assert state.get_issue("base", "issue-1") is not None
 
     def test_three_way_merge_scenario_one_side_deleted(self):
         """When only one side deletes, it should be tracked separately."""
         state = SyncState()
-        
+
         issue = IssueBaseState(id="issue-1", status="open")
         state.add_issue("base", issue)
         state.add_issue("local", issue)
         state.add_issue("remote", issue)
-        
+
         # Only local deletes
         state.mark_deleted("local", "issue-1")
-        
+
         # Local should show deletion
         assert "issue-1" in state.local_deleted_ids
         assert state.get_issue("local", "issue-1") is None
-        
+
         # Remote should still have it (divergence!)
         assert state.get_issue("remote", "issue-1") is not None
         assert "issue-1" not in state.remote_deleted_ids
@@ -572,7 +572,7 @@ class TestSyncStateUnhappyPaths:
     def test_sync_state_inconsistent_sources_allowed(self):
         """SyncState should allow storing inconsistent state across sources."""
         state = SyncState()
-        
+
         # Same ID with completely different states
         local_issue = IssueBaseState(
             id="issue-1",
@@ -586,10 +586,10 @@ class TestSyncStateUnhappyPaths:
             assignee="bob",
             title="Still open remotely",
         )
-        
+
         state.add_issue("local", local_issue)
         state.add_issue("remote", remote_issue)
-        
+
         # Both should coexist
         local_result = state.get_issue("local", "issue-1")
         assert local_result is not None and local_result.status == "closed"
@@ -600,15 +600,15 @@ class TestSyncStateUnhappyPaths:
         """Deleting from one source should not affect others."""
         issue = IssueBaseState(id="issue-1", status="open")
         state = SyncState()
-        
+
         # Add to all three sources
         state.add_issue("local", issue)
         state.add_issue("remote", issue)
         state.add_issue("base", issue)
-        
+
         # Delete from local only
         state.mark_deleted("local", "issue-1")
-        
+
         # Verify state
         assert state.get_issue("local", "issue-1") is None
         assert state.get_issue("remote", "issue-1") is not None
@@ -617,19 +617,19 @@ class TestSyncStateUnhappyPaths:
     def test_deleted_ids_independent_across_sources(self):
         """Deletion tracking should be separate per source."""
         state = SyncState()
-        
+
         issue1 = IssueBaseState(id="issue-1", status="open")
         issue2 = IssueBaseState(id="issue-2", status="open")
-        
+
         state.add_issue("local", issue1)
         state.add_issue("local", issue2)
         state.add_issue("remote", issue1)
         state.add_issue("remote", issue2)
-        
+
         # Delete different issues from each source
         state.mark_deleted("local", "issue-1")
         state.mark_deleted("remote", "issue-2")
-        
+
         # Verify tracking
         assert "issue-1" in state.local_deleted_ids
         assert "issue-1" not in state.remote_deleted_ids
@@ -639,16 +639,16 @@ class TestSyncStateUnhappyPaths:
     def test_sync_progress_flag_lifecycle(self):
         """sync_in_progress flag should control sync state transitions."""
         state = SyncState()
-        
+
         # Initially not syncing
         assert state.sync_in_progress is False
         assert state.last_sync_time is None
-        
+
         # Simulate starting sync
         state.sync_in_progress = True
         assert state.sync_in_progress is True
         assert state.last_sync_time is None  # Not updated yet
-        
+
         # Complete sync
         state.mark_synced()
         assert state.sync_in_progress is False
@@ -658,9 +658,9 @@ class TestSyncStateUnhappyPaths:
         """mark_synced should reset flag regardless of previous state."""
         state = SyncState()
         state.sync_in_progress = True
-        
+
         state.mark_synced()
-        
+
         # Flag should be reset
         assert state.sync_in_progress is False
         # Time should be set
@@ -670,13 +670,13 @@ class TestSyncStateUnhappyPaths:
         """Issue can be deleted but still tracked in deletion set."""
         state = SyncState()
         issue = IssueBaseState(id="issue-1", status="open")
-        
+
         state.add_issue("local", issue)
         assert "issue-1" not in state.local_deleted_ids
-        
+
         # Delete it
         state.mark_deleted("local", "issue-1")
-        
+
         # Now it should be tracked as deleted
         assert "issue-1" in state.local_deleted_ids
         # But removed from active issues
@@ -686,14 +686,14 @@ class TestSyncStateUnhappyPaths:
         """Adding a deleted issue back should allow undelete scenarios."""
         state = SyncState()
         issue = IssueBaseState(id="issue-1", status="open")
-        
+
         state.add_issue("local", issue)
         state.mark_deleted("local", "issue-1")
         assert "issue-1" in state.local_deleted_ids
-        
+
         # Re-add the issue
         state.add_issue("local", issue)
-        
+
         # Issue is back but deletion flag persists (for history)
         assert state.get_issue("local", "issue-1") is not None
         assert "issue-1" in state.local_deleted_ids  # Still marked as deleted
@@ -703,17 +703,17 @@ class TestSyncStateUnhappyPaths:
         state = SyncState()
         issue1 = IssueBaseState(id="issue-1", status="open")
         issue2 = IssueBaseState(id="issue-2", status="open")
-        
+
         state.add_issue("local", issue1)
         state.add_issue("local", issue2)
-        
+
         # Get dict before deletion
         dict_before = state.get_issue_dict("local")
         assert len(dict_before) == 2
-        
+
         # Delete one
         state.mark_deleted("local", "issue-1")
-        
+
         # Get dict after deletion
         dict_after = state.get_issue_dict("local")
         assert len(dict_after) == 1
@@ -723,15 +723,15 @@ class TestSyncStateUnhappyPaths:
     def test_operations_on_nonexistent_issue_idempotent(self):
         """Operations on non-existent issues should be safe."""
         state = SyncState()
-        
+
         # Getting non-existent issue
         result = state.get_issue("local", "nonexistent")
         assert result is None
-        
+
         # Deleting non-existent issue should not crash
         state.mark_deleted("local", "nonexistent")
         assert "nonexistent" in state.local_deleted_ids
-        
+
         # Getting issue_dict should work even with deleted non-existent
         dict_result = state.get_issue_dict("local")
         assert dict_result == {}
@@ -739,7 +739,7 @@ class TestSyncStateUnhappyPaths:
     def test_issue_state_independence_across_sources(self):
         """Modifying issue in one source should not affect others."""
         state = SyncState()
-        
+
         issue1_v1 = IssueBaseState(
             id="issue-1",
             status="open",
@@ -750,16 +750,16 @@ class TestSyncStateUnhappyPaths:
             status="closed",
             title="Version 2",
         )
-        
+
         state.add_issue("local", issue1_v1)
         state.add_issue("remote", issue1_v2)
-        
+
         # They should remain independent
         local_v1 = state.get_issue("local", "issue-1")
         assert local_v1 is not None and local_v1.title == "Version 1"
         remote_v1 = state.get_issue("remote", "issue-1")
         assert remote_v1 is not None and remote_v1.title == "Version 2"
-        
+
         # Updating local should not affect remote
         updated = IssueBaseState(
             id="issue-1",
@@ -767,7 +767,7 @@ class TestSyncStateUnhappyPaths:
             title="Version 3",
         )
         state.add_issue("local", updated)
-        
+
         local_v3 = state.get_issue("local", "issue-1")
         assert local_v3 is not None and local_v3.title == "Version 3"
         remote_v2 = state.get_issue("remote", "issue-1")
@@ -776,26 +776,26 @@ class TestSyncStateUnhappyPaths:
     def test_large_scale_issue_tracking(self):
         """SyncState should efficiently handle many issues."""
         state = SyncState()
-        
+
         # Add many issues
         for i in range(1000):
             issue = IssueBaseState(id=f"issue-{i}", status="open")
             state.add_issue("local", issue)
-        
+
         assert len(state.local_issues) == 1000
         assert len(state.get_issue_dict("local")) == 1000
-        
+
         # Delete half of them
         for i in range(0, 1000, 2):
             state.mark_deleted("local", f"issue-{i}")
-        
+
         assert len(state.local_deleted_ids) == 500
         assert len(state.get_issue_dict("local")) == 500
 
     def test_sync_state_with_circular_dependencies(self):
         """SyncState should handle circular blocking relationships."""
         state = SyncState()
-        
+
         # Create circular dependency: A blocks B, B blocks A
         issue_a = IssueBaseState(
             id="issue-a",
@@ -809,12 +809,11 @@ class TestSyncStateUnhappyPaths:
             blocks=["issue-a"],
             blocked_by=["issue-a"],
         )
-        
+
         state.add_issue("local", issue_a)
         state.add_issue("local", issue_b)
-        
+
         # Should be stored without issue
         retrieved_a = state.get_issue("local", "issue-a")
         assert retrieved_a is not None and "issue-b" in retrieved_a.blocks
         assert retrieved_a is not None and "issue-b" in retrieved_a.blocked_by
-

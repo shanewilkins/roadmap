@@ -6,11 +6,11 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.baseline.optimized_baseline_builder import (
     CachedBaselineState,
     OptimizedBaselineBuilder,
 )
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 
 @pytest.fixture

@@ -10,11 +10,11 @@ from time import time
 
 from structlog import get_logger
 
-from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.core.services.baseline.optimized_baseline_builder import (
     CachedBaselineState,
     OptimizedBaselineBuilder,
 )
+from roadmap.core.services.sync.sync_state import SyncState
 
 logger = get_logger(__name__)
 

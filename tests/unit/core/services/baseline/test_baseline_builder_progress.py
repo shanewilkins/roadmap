@@ -10,11 +10,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.core.services.baseline.baseline_builder_progress import (
     ProgressTrackingBaselineBuilder,
     create_progress_builder,
 )
+from roadmap.core.services.sync.sync_state import SyncState
 
 
 @pytest.fixture

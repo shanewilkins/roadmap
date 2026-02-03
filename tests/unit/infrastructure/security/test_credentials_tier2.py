@@ -6,7 +6,6 @@ import pytest
 
 from roadmap.infrastructure.security.credentials import (
     CredentialManager,
-    CredentialManagerError,
     get_credential_manager,
     mask_token,
 )
@@ -111,7 +110,9 @@ class TestCredentialManager:
         manager = CredentialManager()
         manager.system = "linux"
 
-        with patch.object(manager, "_get_token_secretservice", return_value="linux-token"):
+        with patch.object(
+            manager, "_get_token_secretservice", return_value="linux-token"
+        ):
             result = manager.get_token()
 
         assert result == "linux-token"
@@ -129,7 +130,9 @@ class TestCredentialManager:
         """Test get_token returns None on error."""
         manager.system = "darwin"
 
-        with patch.object(manager, "_get_token_keychain", side_effect=RuntimeError("Keychain error")):
+        with patch.object(
+            manager, "_get_token_keychain", side_effect=RuntimeError("Keychain error")
+        ):
             result = manager.get_token()
 
         assert result is None
@@ -207,7 +210,11 @@ class TestCredentialManager:
         """Test is_available returns False on error."""
         manager.system = "darwin"
 
-        with patch.object(manager, "_check_keychain_available", side_effect=RuntimeError("Check error")):
+        with patch.object(
+            manager,
+            "_check_keychain_available",
+            side_effect=RuntimeError("Check error"),
+        ):
             result = manager.is_available()
 
         assert result is False
@@ -238,7 +245,6 @@ class TestCredentialManager:
         result = manager._check_wincred_available()
 
         assert result is True
-
 
     def test_get_credential_manager(self):
         """Test get_credential_manager factory function."""
@@ -287,6 +293,7 @@ class TestKeyringIntegration:
 
         try:
             import keyring  # noqa: F401
+
             # If keyring is available, test normal path
             result = manager._get_token_wincred()
             assert result is None or isinstance(result, str)
@@ -300,6 +307,7 @@ class TestKeyringIntegration:
 
         try:
             import keyring  # noqa: F401
+
             result = manager._delete_token_wincred()
             assert isinstance(result, bool)
         except ImportError:
@@ -312,6 +320,7 @@ class TestKeyringIntegration:
 
         try:
             import keyring  # noqa: F401
+
             result = manager._store_token_secretservice("test-token")
             assert isinstance(result, bool)
         except ImportError:
@@ -323,6 +332,7 @@ class TestKeyringIntegration:
 
         try:
             import keyring  # noqa: F401
+
             result = manager._get_token_secretservice()
             assert result is None or isinstance(result, str)
         except ImportError:
@@ -334,6 +344,7 @@ class TestKeyringIntegration:
 
         try:
             import keyring  # noqa: F401
+
             result = manager._delete_token_secretservice()
             assert isinstance(result, bool)
         except ImportError:
