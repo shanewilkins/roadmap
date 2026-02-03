@@ -6,7 +6,7 @@ Breaks circular dependencies between core services and persistence layer.
 
 from abc import ABC, abstractmethod
 
-from roadmap.core.models.sync_state import SyncState
+from roadmap.core.services.sync.sync_state import SyncState
 
 
 class SyncStateStorageInterface(ABC):

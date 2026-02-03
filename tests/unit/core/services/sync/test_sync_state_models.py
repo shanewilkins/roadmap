@@ -85,6 +85,8 @@ class TestIssueBaseState:
             "labels": ["feature"],
             "description": "Feature description",
             "title": "Feature Title",
+            "headline": "",
+            "content": "",
             "priority": 2,
             "blocked_by": ["issue-4"],
             "blocks": ["issue-5"],
@@ -472,3 +474,347 @@ class TestSyncState:
         retrieved = state.get_issue("local", "complex-issue")
 
         assert retrieved is not None
+        assert retrieved.assignee == "team-lead"
+        assert len(retrieved.labels) == 3
+        assert len(retrieved.blocked_by) == 2
+        assert len(retrieved.blocks) == 3
+        assert len(retrieved.custom_fields) == 4
+        assert retrieved.custom_fields["story_points"] == "13"
+
+
+class TestSyncStateUnhappyPaths:
+    """Tests for unhappy paths and error conditions."""
+
+    def test_three_way_merge_scenario_no_conflict(self):
+        """Three sources should track diverging states without conflict."""
+        now = datetime.now(UTC)
+        state = SyncState()
+        
+        # Simulate three-way merge: base → local + remote
+        base = IssueBaseState(
+            id="issue-1",
+            status="open",
+            title="Original",
+            assignee="alice",
+        )
+        local = IssueBaseState(
+            id="issue-1",
+            status="in-progress",  # Local modified
+            title="Original",
+            assignee="alice",
+            updated_at=now,
+        )
+        remote = IssueBaseState(
+            id="issue-1",
+            status="open",  # Remote unchanged
+            title="Original",
+            assignee="bob",  # Remote modified
+            updated_at=now,
+        )
+        
+        state.add_issue("base", base)
+        state.add_issue("local", local)
+        state.add_issue("remote", remote)
+        
+        # All three should be stored independently
+        base_issue = state.get_issue("base", "issue-1")
+        assert base_issue is not None and base_issue.status == "open"
+        local_issue = state.get_issue("local", "issue-1")
+        assert local_issue is not None and local_issue.status == "in-progress"
+        remote_issue = state.get_issue("remote", "issue-1")
+        assert remote_issue is not None and remote_issue.assignee == "bob"
+
+    def test_three_way_merge_scenario_both_sides_deleted(self):
+        """When both sides delete same issue, track both deletions."""
+        state = SyncState()
+        
+        # Start with issue in all three
+        issue = IssueBaseState(id="issue-1", status="open")
+        state.add_issue("base", issue)
+        state.add_issue("local", issue)
+        state.add_issue("remote", issue)
+        
+        # Both sides delete it
+        state.mark_deleted("local", "issue-1")
+        state.mark_deleted("remote", "issue-1")
+        
+        # Issue should be removed from both local and remote
+        assert state.get_issue("local", "issue-1") is None
+        assert state.get_issue("remote", "issue-1") is None
+        
+        # But deletion should be tracked
+        assert "issue-1" in state.local_deleted_ids
+        assert "issue-1" in state.remote_deleted_ids
+        
+        # Base should still have it (represents agreed-upon state from last sync)
+        assert state.get_issue("base", "issue-1") is not None
+
+    def test_three_way_merge_scenario_one_side_deleted(self):
+        """When only one side deletes, it should be tracked separately."""
+        state = SyncState()
+        
+        issue = IssueBaseState(id="issue-1", status="open")
+        state.add_issue("base", issue)
+        state.add_issue("local", issue)
+        state.add_issue("remote", issue)
+        
+        # Only local deletes
+        state.mark_deleted("local", "issue-1")
+        
+        # Local should show deletion
+        assert "issue-1" in state.local_deleted_ids
+        assert state.get_issue("local", "issue-1") is None
+        
+        # Remote should still have it (divergence!)
+        assert state.get_issue("remote", "issue-1") is not None
+        assert "issue-1" not in state.remote_deleted_ids
+
+    def test_sync_state_inconsistent_sources_allowed(self):
+        """SyncState should allow storing inconsistent state across sources."""
+        state = SyncState()
+        
+        # Same ID with completely different states
+        local_issue = IssueBaseState(
+            id="issue-1",
+            status="closed",
+            assignee="alice",
+            title="Fixed in local",
+        )
+        remote_issue = IssueBaseState(
+            id="issue-1",
+            status="open",
+            assignee="bob",
+            title="Still open remotely",
+        )
+        
+        state.add_issue("local", local_issue)
+        state.add_issue("remote", remote_issue)
+        
+        # Both should coexist
+        local_result = state.get_issue("local", "issue-1")
+        assert local_result is not None and local_result.status == "closed"
+        remote_result = state.get_issue("remote", "issue-1")
+        assert remote_result is not None and remote_result.status == "open"
+
+    def test_mark_deleted_removes_from_correct_source_only(self):
+        """Deleting from one source should not affect others."""
+        issue = IssueBaseState(id="issue-1", status="open")
+        state = SyncState()
+        
+        # Add to all three sources
+        state.add_issue("local", issue)
+        state.add_issue("remote", issue)
+        state.add_issue("base", issue)
+        
+        # Delete from local only
+        state.mark_deleted("local", "issue-1")
+        
+        # Verify state
+        assert state.get_issue("local", "issue-1") is None
+        assert state.get_issue("remote", "issue-1") is not None
+        assert state.get_issue("base", "issue-1") is not None
+
+    def test_deleted_ids_independent_across_sources(self):
+        """Deletion tracking should be separate per source."""
+        state = SyncState()
+        
+        issue1 = IssueBaseState(id="issue-1", status="open")
+        issue2 = IssueBaseState(id="issue-2", status="open")
+        
+        state.add_issue("local", issue1)
+        state.add_issue("local", issue2)
+        state.add_issue("remote", issue1)
+        state.add_issue("remote", issue2)
+        
+        # Delete different issues from each source
+        state.mark_deleted("local", "issue-1")
+        state.mark_deleted("remote", "issue-2")
+        
+        # Verify tracking
+        assert "issue-1" in state.local_deleted_ids
+        assert "issue-1" not in state.remote_deleted_ids
+        assert "issue-2" not in state.local_deleted_ids
+        assert "issue-2" in state.remote_deleted_ids
+
+    def test_sync_progress_flag_lifecycle(self):
+        """sync_in_progress flag should control sync state transitions."""
+        state = SyncState()
+        
+        # Initially not syncing
+        assert state.sync_in_progress is False
+        assert state.last_sync_time is None
+        
+        # Simulate starting sync
+        state.sync_in_progress = True
+        assert state.sync_in_progress is True
+        assert state.last_sync_time is None  # Not updated yet
+        
+        # Complete sync
+        state.mark_synced()
+        assert state.sync_in_progress is False
+        assert state.last_sync_time is not None
+
+    def test_mark_synced_called_during_sync_in_progress(self):
+        """mark_synced should reset flag regardless of previous state."""
+        state = SyncState()
+        state.sync_in_progress = True
+        
+        state.mark_synced()
+        
+        # Flag should be reset
+        assert state.sync_in_progress is False
+        # Time should be set
+        assert state.last_sync_time is not None
+
+    def test_sync_state_with_deleted_but_still_tracked_issue(self):
+        """Issue can be deleted but still tracked in deletion set."""
+        state = SyncState()
+        issue = IssueBaseState(id="issue-1", status="open")
+        
+        state.add_issue("local", issue)
+        assert "issue-1" not in state.local_deleted_ids
+        
+        # Delete it
+        state.mark_deleted("local", "issue-1")
+        
+        # Now it should be tracked as deleted
+        assert "issue-1" in state.local_deleted_ids
+        # But removed from active issues
+        assert state.get_issue("local", "issue-1") is None
+
+    def test_re_add_deleted_issue_clears_deletion_flag(self):
+        """Adding a deleted issue back should allow undelete scenarios."""
+        state = SyncState()
+        issue = IssueBaseState(id="issue-1", status="open")
+        
+        state.add_issue("local", issue)
+        state.mark_deleted("local", "issue-1")
+        assert "issue-1" in state.local_deleted_ids
+        
+        # Re-add the issue
+        state.add_issue("local", issue)
+        
+        # Issue is back but deletion flag persists (for history)
+        assert state.get_issue("local", "issue-1") is not None
+        assert "issue-1" in state.local_deleted_ids  # Still marked as deleted
+
+    def test_get_issue_dict_reflects_current_state(self):
+        """get_issue_dict should only include current issues, not deleted ones."""
+        state = SyncState()
+        issue1 = IssueBaseState(id="issue-1", status="open")
+        issue2 = IssueBaseState(id="issue-2", status="open")
+        
+        state.add_issue("local", issue1)
+        state.add_issue("local", issue2)
+        
+        # Get dict before deletion
+        dict_before = state.get_issue_dict("local")
+        assert len(dict_before) == 2
+        
+        # Delete one
+        state.mark_deleted("local", "issue-1")
+        
+        # Get dict after deletion
+        dict_after = state.get_issue_dict("local")
+        assert len(dict_after) == 1
+        assert "issue-1" not in dict_after
+        assert "issue-2" in dict_after
+
+    def test_operations_on_nonexistent_issue_idempotent(self):
+        """Operations on non-existent issues should be safe."""
+        state = SyncState()
+        
+        # Getting non-existent issue
+        result = state.get_issue("local", "nonexistent")
+        assert result is None
+        
+        # Deleting non-existent issue should not crash
+        state.mark_deleted("local", "nonexistent")
+        assert "nonexistent" in state.local_deleted_ids
+        
+        # Getting issue_dict should work even with deleted non-existent
+        dict_result = state.get_issue_dict("local")
+        assert dict_result == {}
+
+    def test_issue_state_independence_across_sources(self):
+        """Modifying issue in one source should not affect others."""
+        state = SyncState()
+        
+        issue1_v1 = IssueBaseState(
+            id="issue-1",
+            status="open",
+            title="Version 1",
+        )
+        issue1_v2 = IssueBaseState(
+            id="issue-1",
+            status="closed",
+            title="Version 2",
+        )
+        
+        state.add_issue("local", issue1_v1)
+        state.add_issue("remote", issue1_v2)
+        
+        # They should remain independent
+        local_v1 = state.get_issue("local", "issue-1")
+        assert local_v1 is not None and local_v1.title == "Version 1"
+        remote_v1 = state.get_issue("remote", "issue-1")
+        assert remote_v1 is not None and remote_v1.title == "Version 2"
+        
+        # Updating local should not affect remote
+        updated = IssueBaseState(
+            id="issue-1",
+            status="in-progress",
+            title="Version 3",
+        )
+        state.add_issue("local", updated)
+        
+        local_v3 = state.get_issue("local", "issue-1")
+        assert local_v3 is not None and local_v3.title == "Version 3"
+        remote_v2 = state.get_issue("remote", "issue-1")
+        assert remote_v2 is not None and remote_v2.title == "Version 2"
+
+    def test_large_scale_issue_tracking(self):
+        """SyncState should efficiently handle many issues."""
+        state = SyncState()
+        
+        # Add many issues
+        for i in range(1000):
+            issue = IssueBaseState(id=f"issue-{i}", status="open")
+            state.add_issue("local", issue)
+        
+        assert len(state.local_issues) == 1000
+        assert len(state.get_issue_dict("local")) == 1000
+        
+        # Delete half of them
+        for i in range(0, 1000, 2):
+            state.mark_deleted("local", f"issue-{i}")
+        
+        assert len(state.local_deleted_ids) == 500
+        assert len(state.get_issue_dict("local")) == 500
+
+    def test_sync_state_with_circular_dependencies(self):
+        """SyncState should handle circular blocking relationships."""
+        state = SyncState()
+        
+        # Create circular dependency: A blocks B, B blocks A
+        issue_a = IssueBaseState(
+            id="issue-a",
+            status="blocked",
+            blocks=["issue-b"],
+            blocked_by=["issue-b"],
+        )
+        issue_b = IssueBaseState(
+            id="issue-b",
+            status="blocked",
+            blocks=["issue-a"],
+            blocked_by=["issue-a"],
+        )
+        
+        state.add_issue("local", issue_a)
+        state.add_issue("local", issue_b)
+        
+        # Should be stored without issue
+        retrieved_a = state.get_issue("local", "issue-a")
+        assert retrieved_a is not None and "issue-b" in retrieved_a.blocks
+        assert retrieved_a is not None and "issue-b" in retrieved_a.blocked_by
+

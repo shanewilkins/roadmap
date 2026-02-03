@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from .sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 # Import from parent models.py (service params and other models)
 # Get the parent directory's models.py file

@@ -1,12 +1,21 @@
-"""Manages persistence of sync state via git-based baselines."""
+"""Manages persistence of sync state for three-way merge operations.
 
+The new SyncState model tracks three snapshots:
+- base_issues: The agreed-upon state from last successful sync
+- local_issues: Current local state (populated before sync)
+- remote_issues: Current remote state (fetched during sync)
+
+This manager persists the base_issues snapshot and sync metadata.
+"""
+
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
 from structlog import get_logger
 
 from roadmap.core.domain.issue import Issue
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 logger = get_logger(__name__)
 
@@ -59,6 +68,8 @@ class SyncStateManager:
     def save_sync_state_to_db(self, state: SyncState) -> bool:
         """Save sync state to database (preferred storage method).
 
+        Persists the base_issues snapshot and last_sync_time metadata.
+
         Args:
             state: SyncState to save
 
@@ -79,33 +90,29 @@ class SyncStateManager:
 
             logger.debug(
                 "sync_state_db_save_starting",
-                issues_count=len(state.issues),
-                backend=state.backend,
+                base_issues_count=len(state.base_issues),
+                sync_time=state.last_sync_time,
             )
 
-            # Save metadata
-            conn.execute(
-                "INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) VALUES (?, ?, ?)",
-                ("last_sync", state.last_sync.isoformat(), datetime.now(UTC)),
-            )
-            conn.execute(
-                "INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) VALUES (?, ?, ?)",
-                ("backend", state.backend, datetime.now(UTC)),
-            )
+            # Save metadata - only last_sync_time (no backend in new model)
+            if state.last_sync_time:
+                conn.execute(
+                    "INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) VALUES (?, ?, ?)",
+                    ("last_sync", state.last_sync_time.isoformat(), datetime.now(UTC)),
+                )
 
-            # Save each issue's base state
-            for issue_id, base_state in state.issues.items():
+            # Save each base issue state
+            for issue_id, base_state in state.base_issues.items():
                 conn.execute(
                     """INSERT OR REPLACE INTO sync_base_state
-                       (issue_id, status, assignee, milestone, headline, content, labels, synced_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                       (issue_id, status, assignee, title, description, labels, synced_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
                     (
                         issue_id,
                         base_state.status,
                         base_state.assignee,
-                        base_state.milestone,
-                        base_state.headline,
-                        base_state.content,
+                        base_state.title,
+                        base_state.description,
                         json.dumps(base_state.labels or []),
                         datetime.now(UTC),
                     ),
@@ -114,8 +121,7 @@ class SyncStateManager:
             conn.commit()
             logger.info(
                 "sync_state_saved_to_db",
-                issues_count=len(state.issues),
-                backend=state.backend,
+                base_issues_count=len(state.base_issues),
             )
             return True
 
@@ -132,7 +138,7 @@ class SyncStateManager:
         """Load sync state from database.
 
         Returns:
-            SyncState if database has valid state, None otherwise
+            SyncState with base_issues if database has valid state, None otherwise
         """
         if not self.db_manager:
             logger.debug(
@@ -156,38 +162,38 @@ class SyncStateManager:
                 )
                 return None
 
-            last_sync = datetime.fromisoformat(metadata["last_sync"])
-            backend = metadata.get("backend", "github")
+            last_sync_time = datetime.fromisoformat(metadata["last_sync"])
 
-            # Get all base states
+            # Create new SyncState with metadata
             state = SyncState(
-                last_sync=last_sync,
-                backend=backend,
+                last_sync_time=last_sync_time,
             )
 
-            # TODO: This DB-based approach will be replaced by git history + YAML metadata
-            # For now, we skip populating issues from DB to avoid schema issues
-            # See SYNC_ARCHITECTURE.md for details on new approach
-            #
-            # for row in conn.execute(
-            #     "SELECT issue_id, status, assignee, milestone, description, labels FROM sync_base_state"
-            # ):
-            #     issue_id, status, assignee, milestone, description, labels_json = row
-            #     base_state = IssueBaseState(
-            #         id=issue_id,
-            #         title="",  # Will be populated from git
-            #         status=status,
-            #         assignee=assignee,
-            #         milestone=milestone,
-            #         description=description or "",
-            #         labels=json.loads(labels_json) if labels_json else [],
-            #     )
-            #     state.issues[issue_id] = base_state
+            # Load base states from database
+            try:
+                for row in conn.execute(
+                    "SELECT issue_id, status, assignee, title, description, labels FROM sync_base_state"
+                ):
+                    issue_id, status, assignee, title, description, labels_json = row
+                    base_state = IssueBaseState(
+                        id=issue_id,
+                        status=status,
+                        title=title or "",
+                        assignee=assignee,
+                        description=description or "",
+                        labels=json.loads(labels_json) if labels_json else [],
+                    )
+                    state.base_issues[issue_id] = base_state
+            except Exception as e:
+                logger.warning(
+                    "sync_state_db_load_issues_failed",
+                    error=str(e),
+                    note="metadata_loaded_but_issues_skipped",
+                )
 
             logger.info(
                 "sync_state_loaded_from_db",
-                issues_count=len(state.issues),
-                backend=backend,
+                base_issues_count=len(state.base_issues),
             )
             return state
 
@@ -222,16 +228,15 @@ class SyncStateManager:
         return IssueBaseState(
             id=issue.id,
             status=status_value,
-            title=issue.title,  # Include title since it's synced to remote
+            title=issue.title,
             assignee=issue.assignee,
-            milestone=issue.milestone if hasattr(issue, "milestone") else None,
-            headline=issue.content or "",
+            description=issue.content or "",
             labels=issue.labels or [],
             updated_at=datetime.now(UTC),
         )
 
     def save_base_state(self, issue: Issue, remote_version: bool = False) -> bool:
-        """Update the base state for a single issue in the sync state file.
+        """Update the base state for a single issue after successful sync.
 
         This method is called after successfully syncing an issue to update
         the persisted state so it won't be re-synced next time.
@@ -247,12 +252,12 @@ class SyncStateManager:
             logger.debug(
                 "base_state_update_starting",
                 issue_id=issue.id,
-                issue_title=issue.title[:50],
+                issue_title=issue.title[:50] if issue.title else "",
                 remote_version=remote_version,
             )
 
-            # Load current sync state
-            state = self.load_sync_state()
+            # Load current sync state or create new one
+            state = self.load_sync_state_from_db()
             if state is None:
                 logger.info(
                     "creating_new_sync_state_for_issue",
@@ -260,14 +265,13 @@ class SyncStateManager:
                     reason="no_existing_state",
                 )
                 state = SyncState(
-                    last_sync=datetime.now(UTC),
-                    backend="github",  # Default, will be overridden if state file exists
+                    last_sync_time=datetime.now(UTC),
                 )
 
             # Create new base state for this issue
             base_state = self.create_base_state_from_issue(issue)
-            state.add_issue(issue.id, base_state)
-            state.last_sync = datetime.now(UTC)
+            state.base_issues[issue.id] = base_state
+            state.last_sync_time = datetime.now(UTC)
 
             # Save the updated state to database
             success = self.save_sync_state_to_db(state)
@@ -313,7 +317,7 @@ class SyncStateManager:
 
         Args:
             issues: List of Issue objects
-            backend: Backend type (default: "github")
+            backend: Backend type (used for logging only, not stored in new model)
 
         Returns:
             SyncState with base states for all issues
@@ -326,14 +330,13 @@ class SyncStateManager:
             )
 
             state = SyncState(
-                last_sync=datetime.now(UTC),
-                backend=backend,
+                last_sync_time=datetime.now(UTC),
             )
 
             for issue in issues:
                 try:
                     base_state = self.create_base_state_from_issue(issue)
-                    state.add_issue(issue.id, base_state)
+                    state.base_issues[issue.id] = base_state
                 except Exception as e:
                     logger.warning(
                         "skipping_issue_in_state_creation",
@@ -347,7 +350,7 @@ class SyncStateManager:
                 "sync_state_created_successfully",
                 issues_count=len(issues),
                 backend=backend,
-                issues_in_state=len(state.issues),
+                issues_in_state=len(state.base_issues),
             )
             return state
         except Exception as e:
@@ -361,15 +364,15 @@ class SyncStateManager:
             )
             # Return empty state as fallback
             return SyncState(
-                last_sync=datetime.now(UTC),
-                backend=backend,
+                last_sync_time=datetime.now(UTC),
             )
 
     def migrate_json_to_db(self) -> bool:
-        """Migrate sync state from JSON file to database.
+        """Migrate sync state from JSON file to database (legacy operation).
 
         One-time operation for existing installations to move from file-based
-        to database-based sync state storage.
+        to database-based sync state storage. With the new model, this operation
+        should not be needed as state is created fresh from issues.
 
         Returns:
             True if migration was successful or not needed
@@ -390,43 +393,27 @@ class SyncStateManager:
             return True
 
         try:
-            # Load from JSON
             logger.info("sync_state_migration_starting", source="json_file")
-            state = self.load_sync_state()
+            logger.warning(
+                "sync_state_migration_deprecated",
+                note="new_model_creates_fresh_state_from_issues",
+            )
 
-            if not state:
-                logger.warning(
-                    "sync_state_migration_load_failed",
-                    reason="could_not_load_json_state",
-                    severity="operational",
-                )
-                return False
-
-            # Save to database
-            success = self.save_sync_state_to_db(state)
-
-            if success:
-                # Optionally archive the JSON file
+            # Archive the JSON file
+            try:
                 archive_path = self.state_file.with_suffix(".json.backup")
-                try:
-                    self.state_file.rename(archive_path)
-                    logger.info(
-                        "sync_state_migration_complete",
-                        json_archived=str(archive_path),
-                    )
-                except OSError as e:
-                    logger.warning(
-                        "sync_state_migration_archive_failed",
-                        error=str(e),
-                        note="json_file_not_removed",
-                        severity="operational",
-                    )
+                self.state_file.rename(archive_path)
+                logger.info(
+                    "sync_state_legacy_json_archived",
+                    archived_to=str(archive_path),
+                )
                 return True
-            else:
-                logger.error(
-                    "sync_state_migration_db_save_failed",
-                    reason="could_not_save_to_database",
-                    severity="system_error",
+            except OSError as e:
+                logger.warning(
+                    "sync_state_migration_archive_failed",
+                    error=str(e),
+                    note="json_file_remains",
+                    severity="operational",
                 )
                 return False
 

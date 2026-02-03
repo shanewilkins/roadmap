@@ -42,7 +42,6 @@ def dict_to_sync_issue(remote_id: int | str, issue_dict: dict[str, Any]) -> Sync
         status=issue_dict.get("status", "open"),
         headline=issue_dict.get("description", ""),
         assignee=issue_dict.get("assignee"),
-        milestone=issue_dict.get("milestone"),
         labels=issue_dict.get("labels", []),
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -257,15 +256,14 @@ class TestSyncKeyNormalization:
         )
 
         # Baseline state
-        from roadmap.core.models.sync_state import IssueBaseState
+        from roadmap.core.services.sync.sync_state import IssueBaseState
 
         baseline = IssueBaseState(
             id="7e99d67b",
             status=Status.IN_PROGRESS,
             title="Test Issue",
-            headline="",
+            description="test",
             assignee=None,
-            milestone=None,
             labels=[],
             updated_at=datetime.now(UTC),
         )
@@ -309,16 +307,15 @@ class TestSyncKeyNormalization:
             ),
         }
 
-        from roadmap.core.models.sync_state import IssueBaseState
+        from roadmap.core.services.sync.sync_state import IssueBaseState
 
         baseline = {
             "7e99d67b": IssueBaseState(
                 id="7e99d67b",
                 status=Status.TODO,
                 title="Existing Issue",
-                headline="",
+                description="test",
                 assignee=None,
-                milestone=None,
                 labels=[],
                 updated_at=datetime.now(UTC),
             )

@@ -9,7 +9,7 @@ import pytest
 from roadmap.adapters.sync.sync_retrieval_orchestrator import SyncRetrievalOrchestrator
 from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 
 @pytest.fixture
@@ -157,9 +157,9 @@ class TestBuildBaselineStateFromGit:
 
         # Assert
         assert result is not None
-        assert issue_id in result.issues
-        assert result.issues[issue_id] == mock_baseline
-        assert result.last_sync == last_synced
+        assert issue_id in result.base_issues
+        assert result.base_issues[issue_id] == mock_baseline
+        assert result.last_sync_time == last_synced
 
 
 class TestGetBaselineState:
@@ -190,10 +190,9 @@ class TestGetBaselineState:
             title="Test",
         )
         remote_state = SyncState(
-            last_sync=last_synced,
-            backend="sync_metadata",
-            issues={issue_id: remote_baseline},
+            last_sync_time=last_synced,
         )
+        remote_state.base_issues[issue_id] = remote_baseline
 
         local_baseline = IssueBaseState(
             id=issue_id,
@@ -201,10 +200,9 @@ class TestGetBaselineState:
             title="Test",
         )
         local_state = SyncState(
-            last_sync=last_synced,
-            backend="git",
-            issues={issue_id: local_baseline},
+            last_sync_time=last_synced,
         )
+        local_state.base_issues[issue_id] = local_baseline
 
         # Mock: database baseline not available (falls through to git)
         enhanced_orchestrator.core.db = Mock()
@@ -224,9 +222,8 @@ class TestGetBaselineState:
                 result = enhanced_orchestrator.get_baseline_state()
 
                 assert result is not None
-                assert result.last_sync == last_synced
-                assert result.issues[issue_id].status == Status.TODO
-                assert result.backend == "sync_metadata"
+                assert result.last_sync_time == last_synced
+                assert result.base_issues[issue_id].status == Status.TODO
 
 
 class TestCreateInitialBaseline:
@@ -260,8 +257,7 @@ class TestCreateInitialBaseline:
             title="First Issue",
             status=Status.TODO,
             assignee=None,
-            milestone=None,
-            headline="Test issue 1",
+            description="Test issue 1",
             labels=[],
         )
         base_state2 = IssueBaseState(
@@ -269,8 +265,7 @@ class TestCreateInitialBaseline:
             title="Second Issue",
             status=Status.IN_PROGRESS,
             assignee=None,
-            milestone=None,
-            headline="Test issue 2",
+            description="Test issue 2",
             labels=[],
         )
 
@@ -288,11 +283,11 @@ class TestCreateInitialBaseline:
             baseline = enhanced_orchestrator._create_initial_baseline()
 
             assert baseline is not None
-            assert len(baseline.issues) == 2
-            assert "issue-1" in baseline.issues
-            assert "issue-2" in baseline.issues
-            assert baseline.issues["issue-1"].status == Status.TODO
-            assert baseline.issues["issue-2"].status == Status.IN_PROGRESS
+            assert len(baseline.base_issues) == 2
+            assert "issue-1" in baseline.base_issues
+            assert "issue-2" in baseline.base_issues
+            assert baseline.base_issues["issue-1"].status == Status.TODO
+            assert baseline.base_issues["issue-2"].status == Status.IN_PROGRESS
 
     def test_returns_empty_baseline_when_no_issues(self, enhanced_orchestrator):
         """Should return empty baseline when no local issues exist."""
@@ -301,8 +296,7 @@ class TestCreateInitialBaseline:
         baseline = enhanced_orchestrator._create_initial_baseline()
 
         assert baseline is not None
-        assert len(baseline.issues) == 0
-        assert baseline.backend == "mockbackend"
+        assert len(baseline.base_issues) == 0
 
     def test_handles_missing_issue_files(self, enhanced_orchestrator):
         """Should skip issues with missing files gracefully."""
@@ -330,8 +324,7 @@ class TestCreateInitialBaseline:
             title="Existing Issue",
             status="todo",
             assignee=None,
-            milestone=None,
-            headline="Test",
+            description="Test",
             labels=[],
         )
 
@@ -352,4 +345,4 @@ class TestCreateInitialBaseline:
 
             # Should only have the existing issue
             assert baseline is not None
-            assert "issue-1" in baseline.issues
+            assert "issue-1" in baseline.base_issues

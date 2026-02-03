@@ -129,14 +129,8 @@ class TestMilestoneAssign:
             result = cli_runner.invoke(
                 main, ["milestone", "assign", "fake-id", "nonexistent"]
             )
-            # Command should indicate failure - either via exit code or error message in output
-            # The command may succeed (exit 0) but show error messages for individual operations
-            assert (
-                result.exit_code != 0
-                or "failed" in result.output.lower()
-                or "not found" in result.output.lower()
-                or "error" in result.output.lower()
-            )
+            # Command should fail when given invalid target
+            assert result.exit_code != 0, f"Expected error but got: {result.output}"
 
     def test_milestone_assign_without_roadmap(self, cli_runner):
         """Test assigning without initialized roadmap."""

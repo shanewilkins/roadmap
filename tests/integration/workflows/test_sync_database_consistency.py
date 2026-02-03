@@ -94,9 +94,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
             issue_id: {
                 "status": "todo",
                 "assignee": "alice",
-                "milestone": None,
-                "headline": "Database version",
-                "content": "Database version",
+                "description": "Database version",
                 "labels": ["bug"],
             }
         }
@@ -118,13 +116,13 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
             retrieved_baseline, "Should retrieve baseline from database"
         )
         assert retrieved_baseline is not None  # Type guard for Pylance
-        self.assertIn(issue_id, retrieved_baseline.issues)
+        self.assertIn(issue_id, retrieved_baseline.base_issues)
 
-        # Verify headline matches database, not remote
-        retrieved_issue = retrieved_baseline.issues[issue_id]
+        # Verify description matches database, not remote
+        retrieved_issue = retrieved_baseline.base_issues[issue_id]
         self.assertEqual(retrieved_issue.status, "todo")
         self.assertEqual(retrieved_issue.assignee, "alice")
-        self.assertEqual(retrieved_issue.headline, "Database version")
+        self.assertEqual(retrieved_issue.description, "Database version")
 
     def test_clear_baseline_removes_from_database(self):
         """Test that clear_sync_baseline removes baseline from database."""

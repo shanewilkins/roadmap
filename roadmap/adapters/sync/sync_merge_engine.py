@@ -107,7 +107,7 @@ class SyncMergeEngine:
         return self.state_comparator.analyze_three_way(
             local_issues_dict,
             remote_issues_data,
-            base_state.issues if base_state else None,
+            base_state.base_issues if base_state else None,
         )
 
     def _analyze_and_classify(self, local_issues_dict, remote_issues_data, base_state):

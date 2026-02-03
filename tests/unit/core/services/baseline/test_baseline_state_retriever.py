@@ -94,7 +94,6 @@ Issue content here"""
         assert baseline.title == "Test Issue"
         assert baseline.status == "in-progress"
         assert baseline.assignee == "john@example.com"
-        assert baseline.milestone == "v1.0"
         assert "bug" in baseline.labels
 
     def test_get_local_baseline_file_not_found(self, temp_dir_context):

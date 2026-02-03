@@ -24,9 +24,9 @@ class TestCliSmoke:
         """Ensure top-level commands print help and exit correctly."""
         args = [] if cmd == "--help" else [cmd, "--help"]
         result = cli_runner.invoke(main, args)
-        # Root --help exits with 2; subcommand help exits with 0
-        expected_exit = 2 if cmd == "--help" else 0
-        assert result.exit_code == expected_exit
+        # In Click 8.1+, both root --help and subcommand help exit with 0
+        # This changed from older Click versions which used exit code 2 for root help
+        assert result.exit_code == 0
 
     def test_data_export_help(self, cli_runner):
         """Test that data export command has help available."""

@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from roadmap.core.models.sync_state import SyncState
+from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.core.services.baseline.baseline_builder_progress import (
     ProgressTrackingBaselineBuilder,
     create_progress_builder,
@@ -34,12 +34,11 @@ def progress_builder(issues_dir):
 @pytest.fixture
 def cached_state():
     """Create mock cached state."""
-    from roadmap.core.models.sync_state import IssueBaseState
+    from roadmap.core.services.sync.sync_state import IssueBaseState
 
     return SyncState(
-        last_sync=datetime.now(UTC),
-        backend="test",
-        issues={
+        last_sync_time=datetime.now(UTC),
+        base_issues={
             "123": IssueBaseState(
                 id="123",
                 title="Test issue",

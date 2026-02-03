@@ -10,7 +10,7 @@ from time import time
 
 from structlog import get_logger
 
-from roadmap.core.models.sync_state import SyncState
+from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.core.services.baseline.optimized_baseline_builder import (
     CachedBaselineState,
     OptimizedBaselineBuilder,
@@ -119,7 +119,7 @@ class ProgressTrackingBaselineBuilder:
                 None,
                 None,
                 CachedBaselineState(
-                    SyncState(last_sync=datetime.now(UTC), backend="error", issues={}),
+                    SyncState(last_sync_time=datetime.now(UTC), base_issues={}),
                     from_cache=False,
                     rebuilt_issues=0,
                     reused_issues=0,
@@ -170,9 +170,8 @@ class ProgressTrackingBaselineBuilder:
             [],
             CachedBaselineState(
                 SyncState(
-                    last_sync=datetime.now(UTC),
-                    backend="git",
-                    issues={},
+                    last_sync_time=datetime.now(UTC),
+                    base_issues={},
                 ),
                 from_cache=False,
                 rebuilt_issues=len(issues_to_update),
@@ -211,7 +210,7 @@ class ProgressTrackingBaselineBuilder:
         # Phase 3: Determine which issues need updates
         self._log_phase(
             f"Analyzing {len(all_issue_files)} issues",
-            {"cached_count": len(cached_state.issues)},
+            {"cached_count": len(cached_state.base_issues)},
         )
 
         issues_to_update, deleted_issues = self.builder.get_incremental_update_issues(
@@ -219,7 +218,7 @@ class ProgressTrackingBaselineBuilder:
         )
 
         rebuild_time_ms = (time() - start_time) * 1000
-        reused_count = len(cached_state.issues) - len(issues_to_update)
+        reused_count = len(cached_state.base_issues) - len(issues_to_update)
 
         self._log_phase(
             "Rebuild analysis complete",
@@ -236,9 +235,8 @@ class ProgressTrackingBaselineBuilder:
             deleted_issues,
             CachedBaselineState(
                 SyncState(
-                    last_sync=cached_state.last_sync,
-                    backend="git",
-                    issues=cached_state.issues,
+                    last_sync_time=cached_state.last_sync_time,
+                    base_issues=cached_state.base_issues,
                 ),
                 from_cache=False,
                 rebuilt_issues=len(issues_to_update),

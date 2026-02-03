@@ -14,7 +14,7 @@ from structlog import get_logger
 
 from roadmap.adapters.persistence.parser.issue import IssueParser
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.baseline.baseline_selector import (
     BaselineStrategy,
     InteractiveBaselineSelector,
@@ -106,7 +106,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             # Check if sync state can be loaded (legacy)
             base_state = self.state_manager.load_sync_state()
-            if base_state and base_state.issues:
+            if base_state and base_state.base_issues:
                 logger.debug("baseline_exists_from_sync_state")
                 return True
 
@@ -197,24 +197,22 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         try:
             logger.info("creating_baseline_from_local")
             baseline = self._create_initial_baseline()
-            if baseline and baseline.issues:
+            if baseline and baseline.base_issues:
                 # Save baseline to database for fast retrieval
                 baseline_dict = {
                     issue_id: {
                         "status": state.status,
                         "assignee": state.assignee,
-                        "milestone": state.milestone,
-                        "headline": state.headline or "",
-                        "content": state.content or "",
+                        "description": state.description or "",
                         "labels": state.labels or [],
                     }
-                    for issue_id, state in baseline.issues.items()
+                    for issue_id, state in baseline.base_issues.items()
                 }
                 self.core.db.save_sync_baseline(baseline_dict)
 
                 logger.info(
                     "baseline_created_from_local",
-                    issue_count=len(baseline.issues),
+                    issue_count=len(baseline.base_issues),
                 )
                 return True
             else:
@@ -246,12 +244,11 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             # Create baseline from remote
             baseline = SyncState(
-                last_sync=datetime.now(UTC),
-                backend=self.backend.__class__.__name__.lower(),
+                last_sync_time=datetime.now(UTC),
             )
 
             # Convert remote issues to baseline states
-            from roadmap.core.models.sync_state import IssueBaseState
+            from roadmap.core.services.sync.sync_state import IssueBaseState
 
             for issue_id, remote_issue in remote_issues.items():
                 try:
@@ -260,12 +257,11 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                         status=remote_issue.status or "todo",
                         title=remote_issue.title or "Untitled",
                         assignee=remote_issue.assignee,
-                        milestone=remote_issue.milestone,
                         headline=remote_issue.headline or "",
                         labels=remote_issue.labels or [],
                         updated_at=datetime.now(UTC),
                     )
-                    baseline.issues[issue_id] = baseline_state
+                    baseline.base_issues[issue_id] = baseline_state
                 except Exception as e:
                     logger.warning(
                         "baseline_issue_conversion_failed",
@@ -279,18 +275,16 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                 issue_id: {
                     "status": base_state.status,
                     "assignee": base_state.assignee,
-                    "milestone": base_state.milestone,
-                    "headline": base_state.headline,
-                    "content": base_state.content,
+                    "description": base_state.description,
                     "labels": base_state.labels or [],
                 }
-                for issue_id, base_state in baseline.issues.items()
+                for issue_id, base_state in baseline.base_issues.items()
             }
             self.core.db.save_sync_baseline(baseline_dict)
 
             logger.info(
                 "baseline_created_from_remote",
-                issue_count=len(baseline.issues),
+                issue_count=len(baseline.base_issues),
             )
             return True
 
@@ -328,8 +322,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
             )
 
             baseline = SyncState(
-                last_sync=last_synced,
-                backend=self.backend.__class__.__name__.lower(),
+                last_sync_time=last_synced,
             )
 
             # Get all current issue files (including archived)
@@ -360,7 +353,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     )
 
                     if local_baseline:
-                        baseline.issues[issue.id] = local_baseline
+                        baseline.base_issues[issue.id] = local_baseline
                         logger.debug(
                             "baseline_issue_reconstructed_from_git",
                             issue_id=issue.id,
@@ -384,7 +377,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             logger.info(
                 "baseline_state_reconstruction_complete",
-                reconstructed_count=len(baseline.issues),
+                reconstructed_count=len(baseline.base_issues),
                 reason="using_git_history",
             )
             return baseline
@@ -450,8 +443,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                 return None
 
             baseline = SyncState(
-                last_sync=last_synced_time,
-                backend="sync_metadata",
+                last_sync_time=last_synced_time,
             )
 
             # Build from sync_metadata remote_state
@@ -466,7 +458,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     )
 
                     if remote_baseline:
-                        baseline.issues[issue.id] = remote_baseline
+                        baseline.base_issues[issue.id] = remote_baseline
                         logger.debug(
                             "baseline_remote_loaded_from_metadata",
                             issue_id=issue.id,
@@ -483,7 +475,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             logger.info(
                 "baseline_remote_retrieval_complete",
-                count=len(baseline.issues),
+                count=len(baseline.base_issues),
                 reason="from_sync_metadata_yaml",
             )
             return baseline
@@ -547,8 +539,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         logger.info("creating_initial_baseline_from_local_state")
 
         baseline = SyncState(
-            last_sync=datetime.now(UTC),
-            backend=self.backend.__class__.__name__.lower(),
+            last_sync_time=datetime.now(UTC),
         )
 
         # Get all current local issues (including archived for baseline)
@@ -567,7 +558,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                             issue_file
                         )
                         if local_state:
-                            baseline.issues[issue.id] = local_state
+                            baseline.base_issues[issue.id] = local_state
                 except Exception as e:
                     logger.warning(
                         "initial_baseline_issue_reconstruction_failed",
@@ -585,7 +576,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
         logger.info(
             "initial_baseline_created",
-            issue_count=len(baseline.issues),
+            issue_count=len(baseline.base_issues),
         )
         return baseline
 
@@ -613,23 +604,19 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                 )
 
                 # Convert from database format to SyncState format
-                issues = {}
+                sync_state = SyncState(
+                    last_sync_time=datetime.now(UTC),
+                )
                 for issue_id, data in db_baseline.items():
-                    issues[issue_id] = IssueBaseState(
+                    sync_state.base_issues[issue_id] = IssueBaseState(
                         id=issue_id,
                         status=data.get("status", "todo"),
                         title="",  # Title not stored in baseline, will come from issue
                         assignee=data.get("assignee"),
-                        milestone=data.get("milestone"),
-                        headline=data.get("headline", ""),
+                        description=data.get("description", ""),
                         labels=data.get("labels", []),
                     )
 
-                sync_state = SyncState(
-                    last_sync=datetime.now(UTC),
-                    backend="github",
-                    issues=issues,
-                )
                 return sync_state
 
             # Fallback: Try git history approach (original logic)
@@ -641,26 +628,24 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
             if remote_baseline:
                 # Now get local baseline from git history
                 local_baseline = self._build_baseline_state_from_git(
-                    remote_baseline.last_sync
+                    remote_baseline.last_sync_time
                 )
 
                 if local_baseline:
                     # Merge: use git local baseline, keep remote from YAML
                     merged = SyncState(
-                        last_sync=remote_baseline.last_sync,
-                        backend=remote_baseline.backend,
-                        issues={},
+                        last_sync_time=remote_baseline.last_sync_time,
                     )
 
                     # Prefer git-reconstructed local baseline over YAML remote
                     # Remote is used for reference but git is source of truth
-                    for issue_id, local_base in local_baseline.issues.items():
-                        merged.issues[issue_id] = local_base
+                    for issue_id, local_base in local_baseline.base_issues.items():
+                        merged.base_issues[issue_id] = local_base
 
                     logger.info(
                         "baseline_state_loaded",
                         source="git_history_and_sync_metadata",
-                        issue_count=len(merged.issues),
+                        issue_count=len(merged.base_issues),
                     )
                     return merged
                 else:
@@ -668,7 +653,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                     logger.info(
                         "baseline_state_loaded",
                         source="sync_metadata_only",
-                        issue_count=len(remote_baseline.issues),
+                        issue_count=len(remote_baseline.base_issues),
                     )
                     return remote_baseline
 
@@ -706,7 +691,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                 # Temporarily replace state_manager's loaded state
                 logger.info(
                     "using_git_based_baseline",
-                    issue_count=len(git_baseline.issues),
+                    issue_count=len(git_baseline.base_issues),
                 )
 
                 # Call parent sync with git-based baseline

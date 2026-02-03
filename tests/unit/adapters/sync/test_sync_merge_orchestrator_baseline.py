@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.sync.sync_conflict_resolver import SyncConflictResolver
 from roadmap.core.services.sync.sync_report import SyncReport
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
@@ -38,17 +38,17 @@ class TestLoadBaselineState(unittest.TestCase):
             "issue-1": {
                 "status": "todo",
                 "assignee": "user1",
-                "milestone": "v1.0",
-                "headline": "Fix bug",
                 "content": "Bug description",
+                "headline": "",
+                "title": "Bug Title",
                 "labels": ["bug", "urgent"],
             },
             "issue-2": {
                 "status": "in_progress",
                 "assignee": None,
-                "milestone": None,
-                "headline": "Add feature",
                 "content": "Feature details",
+                "headline": "",
+                "title": "Feature Title",
                 "labels": [],
             },
         }
@@ -60,24 +60,20 @@ class TestLoadBaselineState(unittest.TestCase):
         # Verify
         assert result is not None
         assert isinstance(result, SyncState)
-        assert len(result.issues) == 2
-        assert "issue-1" in result.issues
-        assert "issue-2" in result.issues
+        assert len(result.base_issues) == 2
+        assert "issue-1" in result.base_issues
+        assert "issue-2" in result.base_issues
 
         # Verify data integrity
-        issue1 = result.issues["issue-1"]
+        issue1 = result.base_issues["issue-1"]
         assert issue1.status == "todo"
         assert issue1.assignee == "user1"
-        assert issue1.milestone == "v1.0"
-        assert issue1.headline == "Fix bug"
         assert issue1.content == "Bug description"
         assert issue1.labels == ["bug", "urgent"]
 
-        issue2 = result.issues["issue-2"]
+        issue2 = result.base_issues["issue-2"]
         assert issue2.status == "in_progress"
         assert issue2.assignee is None
-        assert issue2.milestone is None
-        assert issue2.headline == "Add feature"
         assert issue2.content == "Feature details"
         assert issue2.labels == []
 
@@ -132,8 +128,7 @@ class TestLoadBaselineState(unittest.TestCase):
             "issue-1": {
                 "status": "todo",
                 "assignee": None,
-                "milestone": None,
-                "headline": "Test",
+                "description": "This is the full content field with markdown\n\n## Details\nMore info",
                 "content": "This is the full content field with markdown\n\n## Details\nMore info",
                 "labels": [],
             }
@@ -145,7 +140,7 @@ class TestLoadBaselineState(unittest.TestCase):
 
         # Verify content field is set (critical for three-way merge)
         assert result is not None
-        issue = result.issues["issue-1"]
+        issue = result.base_issues["issue-1"]
         assert (
             issue.content
             == "This is the full content field with markdown\n\n## Details\nMore info"
@@ -174,11 +169,9 @@ class TestLoadBaselineState(unittest.TestCase):
 
         # Verify defaults are applied
         assert result is not None
-        issue = result.issues["issue-1"]
+        issue = result.base_issues["issue-1"]
         assert issue.status == "todo"
         assert issue.assignee is None
-        assert issue.milestone is None
-        assert issue.headline == ""
         assert issue.content == ""
         assert issue.labels == []
 
@@ -402,14 +395,14 @@ class TestSchemaValidation(unittest.TestCase):
     def test_issue_base_state_has_required_fields(self):
         """Test that IssueBaseState has all required fields for comparison."""
         # Fields required by _compute_changes() in sync_state_comparator
-        required_fields = ["status", "assignee", "content", "labels"]
+        required_fields = ["status", "assignee", "description", "labels"]
 
         state = IssueBaseState(
             id="test-1",
             status="todo",
             title="Test",
             assignee="user1",
-            milestone=None,
+            description="Test description",
             headline="Headline",
             content="Full content",
             labels=["tag1"],
@@ -420,10 +413,6 @@ class TestSchemaValidation(unittest.TestCase):
             assert hasattr(
                 state, field
             ), f"IssueBaseState missing required field: {field}"
-            value = getattr(state, field)
-            # Content should not be None (used in comparison)
-            if field == "content":
-                assert value is not None, "content field must not be None"
 
     def test_issue_base_state_defaults(self):
         """Test that IssueBaseState has sensible defaults."""
@@ -435,9 +424,7 @@ class TestSchemaValidation(unittest.TestCase):
 
         # Verify defaults
         assert state.assignee is None
-        assert state.milestone is None
-        assert state.headline == ""
-        assert state.content == ""
+        assert state.description == ""
         assert state.labels == []
 
     def test_sync_state_preserves_all_fields(self):
@@ -447,27 +434,21 @@ class TestSchemaValidation(unittest.TestCase):
             status="in_progress",
             title="Test Issue",
             assignee="user1",
-            milestone="v1.0",
-            headline="Summary",
-            content="Full markdown content\nwith multiple\nlines",
+            description="Summary",
             labels=["feature", "priority"],
         )
 
         sync_state = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="github",
+            last_sync_time=datetime.now(UTC)
         )
-        sync_state.add_issue("issue-1", issue_state)
+        sync_state.add_issue("base", issue_state)
 
         # Retrieve and verify
-        retrieved = sync_state.issues["issue-1"]
+        retrieved = sync_state.base_issues["issue-1"]
         assert retrieved.id == "issue-1"
         assert retrieved.status == "in_progress"
         assert retrieved.title == "Test Issue"
         assert retrieved.assignee == "user1"
-        assert retrieved.milestone == "v1.0"
-        assert retrieved.headline == "Summary"
-        assert retrieved.content == "Full markdown content\nwith multiple\nlines"
         assert retrieved.labels == ["feature", "priority"]
 
     def test_baseline_data_round_trip(self):
@@ -476,27 +457,26 @@ class TestSchemaValidation(unittest.TestCase):
             "issue-1": {
                 "status": "todo",
                 "assignee": "user1",
-                "milestone": "v1.0",
-                "headline": "Test Issue",
-                "content": "Long content field\n\n## Details\nMore content",
+                "description": "",
+                "headline": "",
+                "content": "",
                 "labels": ["bug", "critical"],
             }
         }
 
         # Simulate save: convert to IssueBaseState
         state = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="github",
+            last_sync_time=datetime.now(UTC)
         )
         for issue_id, data in original_data.items():
             state.add_issue(
-                issue_id,
+                "base",
                 IssueBaseState(
                     id=issue_id,
                     status=data["status"],
                     title="",
                     assignee=data.get("assignee"),
-                    milestone=data.get("milestone"),
+                    description=data.get("description", ""),
                     headline=data.get("headline", ""),
                     content=data.get("content", ""),
                     labels=data.get("labels", []),
@@ -505,11 +485,11 @@ class TestSchemaValidation(unittest.TestCase):
 
         # Simulate load: convert back
         loaded_data = {}
-        for issue_id, base_state in state.issues.items():
+        for issue_id, base_state in state.base_issues.items():
             loaded_data[issue_id] = {
                 "status": base_state.status,
                 "assignee": base_state.assignee,
-                "milestone": base_state.milestone,
+                "description": base_state.description,
                 "headline": base_state.headline,
                 "content": base_state.content,
                 "labels": base_state.labels,

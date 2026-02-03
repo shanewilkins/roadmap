@@ -1,24 +1,24 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 # ============================================================================
 # ROADMAP CLI - Enterprise Project Management Tool
 # ============================================================================
-# PRODUCTION INSTALLATION: poetry install --no-dev
-#   Installs only runtime dependencies (0 known CVEs)
+# PRODUCTION INSTALLATION: uv sync
+#   Installs runtime dependencies (0 known CVEs)
 #
-# DEVELOPMENT INSTALLATION: poetry install
-#   Includes testing, linting, and documentation tools
+# DEVELOPMENT INSTALLATION: uv sync
+#   Includes all dependencies including testing, linting, and documentation
 # ============================================================================
 name = "roadmap-cli"
-
 version = "1.0.0"
-
 description = "Enterprise-grade command line tool for project roadmap management with GitHub integration, data visualization, and advanced analytics"
-authors = ["Roadmap CLI Team <contact@roadmap-cli.com>"]
-license = "MIT"
 readme = "README.md"
-homepage = "https://roadmap-cli.readthedocs.io"
-repository = "https://github.com/roadmap-cli/roadmap"
-documentation = "https://roadmap-cli.readthedocs.io"
+requires-python = ">=3.13,<4.0"
+license = {text = "MIT"}
+authors = [{name = "Roadmap CLI Team", email = "contact@roadmap-cli.com"}]
 keywords = [
     "cli",
     "roadmap",
@@ -40,8 +40,8 @@ classifiers = [
     "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Bug Tracking",
     "Topic :: Software Development :: Version Control :: Git",
@@ -50,90 +50,70 @@ classifiers = [
     "Environment :: Console",
     "Operating System :: OS Independent"
 ]
-packages = [{include = "roadmap"}]
-include = [
-    "LICENSE.md",
-    "CHANGELOG.md",
-    "docs/**/*.md",
-    "demos/*.py"
+dependencies = [
+    "click>=8.0.0,<9.0.0",
+    "rich>=13.5.2,<13.6.0",
+    "pydantic>=2.0.0,<3.0.0",
+    "pyyaml>=6.0.0,<7.0.0",
+    "requests>=2.28.0,<3.0.0",
+    "aiohttp>=3.8.0,<4.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "keyring>=23.0.0,<26.0.0",
+    "pandas>=2.0.0,<3.0.0",
+    "openpyxl>=3.1.0,<4.0.0",
+    "matplotlib>=3.6.0,<4.0.0",
+    "plotly>=5.15.0,<6.0.0",
+    "seaborn>=0.12.0,<1.0.0",
+    "toml>=0.10.0,<1.0.0",
+    "structlog>=23.0.0,<24.0.0",
+    "GitPython>=3.1.40,<4.0.0",
+    "dynaconf>=3.2.0,<4.0.0",
+    "diskcache>=5.6.0,<6.0.0",
+    "asyncclick>=8.1.0,<9.0.0",
+    "tabulate>=0.9.0,<1.0.0",
+    "opentelemetry-api>=1.20.0,<2.0.0",
+    "opentelemetry-sdk>=1.20.0,<2.0.0",
+    "opentelemetry-exporter-otlp>=1.20.0,<2.0.0",
+    "import-linter>=2.6.0,<2.7.0",
 ]
-exclude = [
-    "tests/",
-    "htmlcov/",
-    "site/",
-    ".roadmap/",
-    "scripts/"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-aiohttp>=1.0.0",
+    "ruff>=0.6.9",
+    "pre-commit>=4.3.0",
+    "vulture>=2.14",
+    "bandit[toml]>=1.9.2",
+    "pydocstyle>=6.3.0",
+    "radon>=6.0.1",
+    "pytest-xdist>=3.5.0",
+    "pytest-benchmark>=4.0.0",
+    "pyright>=1.1.350",
+    "pylint>=3.0.0",
+    "sphinx>=8.0.0",
+    "sphinx-rtd-theme>=3.0.0",
+    "sphinx-click>=6.0.0",
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocs-click>=0.8.0",
+    "myst-parser>=4.0.0",
+    "pytest-mock>=3.15.1",
+    "semgrep>=1.45.0,<2.0.0",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<4.0"
-click = ">=8.0.0,<9.0.0"
-rich = ">=13.5.2,<13.6.0"
-pydantic = ">=2.0.0,<3.0.0"
-pyyaml = ">=6.0.0,<7.0.0"
-requests = ">=2.28.0,<3.0.0"
-aiohttp = ">=3.8.0,<4.0.0"
-python-dotenv = ">=1.0.0,<2.0.0"
-keyring = ">=23.0.0,<26.0.0"
-pandas = ">=2.0.0,<3.0.0"
-openpyxl = ">=3.1.0,<4.0.0"
-matplotlib = ">=3.6.0,<4.0.0"
-plotly = ">=5.15.0,<6.0.0"
-seaborn = ">=0.12.0,<1.0.0"
-toml = ">=0.10.0,<1.0.0"
-# Phase 1 dependencies for v1.0 architecture
-structlog = ">=23.0.0,<24.0.0"
-GitPython = ">=3.1.40,<4.0.0"
-dynaconf = ">=3.2.0,<4.0.0"
-diskcache = ">=5.6.0,<6.0.0"
-asyncclick = ">=8.1.0,<9.0.0"
-tabulate = ">=0.9.0,<1.0.0"
-# OpenTelemetry for distributed tracing (using OTLP, not deprecated Jaeger)
-opentelemetry-api = ">=1.20.0,<2.0.0"
-opentelemetry-sdk = ">=1.20.0,<2.0.0"
-opentelemetry-exporter-otlp = ">=1.20.0,<2.0.0"
+[project.urls]
+Homepage = "https://roadmap-cli.readthedocs.io"
+Repository = "https://github.com/roadmap-cli/roadmap"
+Documentation = "https://roadmap-cli.readthedocs.io"
 
-# ============================================================================
-# DEVELOPMENT DEPENDENCIES
-# NOTE: Production installations should use: poetry install --no-dev
-#       This excludes all development and testing dependencies, resulting in
-#       a minimal, secure package with zero known vulnerabilities.
-#       Verified: pip-audit shows 0 CVEs in production-only installs.
-# ============================================================================
-import-linter = ">=2.6.0,<2.7.0"
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.4.2"
-pytest-cov = "^7.0.0"
-pytest-asyncio = "^0.23.0"
-pytest-aiohttp = "^1.0.0"
-ruff = "^0.6.9"
-pre-commit = "^4.3.0"
-vulture = "^2.14"
-bandit = {version = "^1.9.2", extras = ["toml"]}
-pydocstyle = "^6.3.0"
-radon = "^6.0.1"
-pytest-xdist = "^3.5.0"
-pytest-benchmark = "^4.0.0"
-pyright = "^1.1.350"
-pylint = "^3.0.0"
-# Documentation dependencies
-sphinx = "^8.0.0"
-sphinx-rtd-theme = "^3.0.0"
-sphinx-click = "^6.0.0"
-mkdocs = "^1.6.0"
-mkdocs-material = "^9.5.0"
-mkdocs-click = "^0.8.0"
-myst-parser = "^4.0.0"
-pytest-mock = "^3.15.1"
-semgrep = ">=1.45.0,<2.0.0"
-import-linter = ">=2.6.0,<2.7.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 roadmap = "roadmap.adapters.cli:main"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.hatch.build.targets.wheel]
+packages = ["roadmap"]
 
 [tool.ruff]
 line-length = 88

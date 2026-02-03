@@ -65,7 +65,7 @@ class LocalChangeFilter:
                 if hasattr(obj.status, "value")
                 else str(obj.status),
                 "assignee": lambda obj: obj.assignee,
-                "content": lambda obj: obj.content,
+                "description": lambda obj: obj.description,
                 "labels": lambda obj: sorted(obj.labels or []),
             }
 
@@ -84,10 +84,7 @@ class LocalChangeFilter:
                     )
                     local_value = None
 
-                if field_name == "content":
-                    base_value = base_state.content
-                else:
-                    base_value = getattr(base_state, field_name, None)
+                base_value = getattr(base_state, field_name, None)
 
                 if local_value != base_value:
                     logger.debug(

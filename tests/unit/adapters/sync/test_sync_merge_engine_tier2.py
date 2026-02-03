@@ -619,40 +619,6 @@ class TestSyncMergeEngine:
 class TestSyncMergeEngineIntegration:
     """Integration tests for SyncMergeEngine."""
 
-    @pytest.mark.skip(reason="Complex mocking - skipped for Phase 6")
-    def test_full_conflict_resolution_flow(self):
-        """Test full conflict detection and resolution flow."""
-        mock_core = MagicMock()
-        mock_backend = MagicMock()
-        mock_comparator = MagicMock(spec=SyncStateComparator)
-        mock_resolver = MagicMock(spec=SyncConflictResolver)
-        mock_state_manager = MagicMock(spec=SyncStateManager)
-
-        engine = SyncMergeEngine(
-            core=mock_core,
-            backend=mock_backend,
-            state_comparator=mock_comparator,
-            conflict_resolver=mock_resolver,
-            state_manager=mock_state_manager,
-        )
-
-        # Setup conflict scenario
-        conflict_change = MagicMock()
-        conflict_change.has_conflict = True
-        conflict_change.is_local_only_change.return_value = False
-        conflict_change.is_remote_only_change.return_value = False
-
-        mock_comparator.analyze_three_way.return_value = [conflict_change]
-        engine._conflict_converter.convert_changes_to_conflicts.return_value = [
-            conflict_change
-        ]
-        mock_resolver.resolve_batch.return_value = [MagicMock(id="resolved")]
-
-        result = engine._analyze_and_classify({}, {}, None)
-
-        _, conflicts, _, _, _, _, _, _ = result
-        assert len(conflicts) == 1
-
     def test_push_pull_round_trip(self):
         """Test push and pull operations in sequence."""
         mock_core = MagicMock()

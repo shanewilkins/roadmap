@@ -122,7 +122,7 @@ def _create_and_save_baseline(
             new_baseline = orchestrator._create_initial_baseline()
             progress.update(task, completed=True)
 
-            if not new_baseline or len(new_baseline.issues) == 0:
+            if not new_baseline or len(new_baseline.base_issues) == 0:
                 logger.warning("baseline_reset_no_issues", operation="reset_baseline")
                 console_inst.print(
                     "❌ No local issues found. Create issues first with `roadmap issue create`.",
@@ -131,7 +131,7 @@ def _create_and_save_baseline(
                 return False
 
             console_inst.print(
-                f"✅ Loaded {len(new_baseline.issues)} issues", style="green"
+                f"✅ Loaded {len(new_baseline.base_issues)} issues", style="green"
             )
 
     except Exception as e:
@@ -154,12 +154,11 @@ def _create_and_save_baseline(
             issue_id: {
                 "status": issue_state.status,
                 "assignee": issue_state.assignee,
-                "milestone": issue_state.milestone,
                 "headline": issue_state.headline,
                 "content": issue_state.content,
                 "labels": issue_state.labels,
             }
-            for issue_id, issue_state in new_baseline.issues.items()
+            for issue_id, issue_state in new_baseline.base_issues.items()
         }
 
         result = core.db.save_sync_baseline(baseline_dict)
@@ -169,13 +168,12 @@ def _create_and_save_baseline(
                 "\n✅ Initial baseline created and saved to database:",
                 style="bold green",
             )
-            console_inst.print(f"   Last Sync: {new_baseline.last_sync}")
-            console_inst.print(f"   Backend: {new_baseline.backend}")
-            console_inst.print(f"   Issues in baseline: {len(new_baseline.issues)}")
+            console_inst.print(f"   Last Sync: {new_baseline.last_sync_time}")
+            console_inst.print(f"   Issues in baseline: {len(new_baseline.base_issues)}")
 
-            if verbose and new_baseline.issues:
+            if verbose and new_baseline.base_issues:
                 console_inst.print("\n   Issues:", style="bold")
-                for issue_id, issue_state in sorted(new_baseline.issues.items()):
+                for issue_id, issue_state in sorted(new_baseline.base_issues.items()):
                     console_inst.print(
                         f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
                     )
@@ -226,7 +224,7 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
     pre_sync_baseline = (
         orchestrator.get_baseline_state() if not baseline_option else None
     )
-    pre_sync_issue_count = len(pre_sync_baseline.issues) if pre_sync_baseline else 0
+    pre_sync_issue_count = len(pre_sync_baseline.base_issues) if pre_sync_baseline else 0
 
     # Helper services
     state_comparator = SyncStateComparator()

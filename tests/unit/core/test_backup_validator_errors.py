@@ -186,7 +186,6 @@ class TestBackupValidatorSizeCalculation:
             assert len(result["files_to_delete"]) == 1
             assert result["total_size_bytes"] == len(content.encode())
 
-    @pytest.mark.skipif(False, reason="")
     def test_size_calculation_multiple_files(self, temp_dir_context):
         """Total size should sum all deleted files."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -439,7 +438,6 @@ class TestBackupValidatorDataIntegrity:
                 assert "path" in deleted_file
                 assert isinstance(deleted_file["path"], Path)
 
-    @pytest.mark.skipif(False, reason="")
     def test_newest_files_kept_not_deleted(self, temp_dir_context):
         """Newest files (by mtime) should be kept, oldest deleted."""
         with tempfile.TemporaryDirectory() as tmpdir:

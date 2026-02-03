@@ -12,7 +12,7 @@
     ".venv/**",
     "htmlcov"
   ],
-  "pythonVersion": "3.12",
+  "pythonVersion": "3.14",
   "pythonPlatform": "All",
   "typeCheckingMode": "basic",
   "reportMissingModuleSource": false,
@@ -76,8 +76,9 @@
   ],
   "useLibraryCodeForTypes": true,
   "autoSearchPaths": true,
+  "venvPath": ".",
   "extraPaths": [
     "./roadmap",
-    "./.venv/lib/python3.12/site-packages"
+    "./.venv/lib/python3.14/site-packages"
   ]
 }

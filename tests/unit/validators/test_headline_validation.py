@@ -65,11 +65,6 @@ class TestHeadlineValidationHealthyState:
         status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.HEALTHY
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
-
-        assert status == HealthStatus.DEGRADED
-        assert "missing" in message.lower()
-        assert "issue" in message.lower()
 
     def test_issue_with_empty_string_headline_detected(self):
         """Should detect issues with empty string headlines."""
@@ -115,7 +110,7 @@ class TestHeadlineValidationHealthyState:
         core.milestone_service.list_milestones.return_value = [milestone_no_headline]
         core.project_service.list_projects.return_value = []
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.DEGRADED
         assert "milestone" in message.lower()
@@ -132,7 +127,7 @@ class TestHeadlineValidationHealthyState:
         core.milestone_service.list_milestones.return_value = []
         core.project_service.list_projects.return_value = [project_no_headline]
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.DEGRADED
         assert "project" in message.lower()
@@ -155,7 +150,7 @@ class TestHeadlineValidationMultipleMissing:
         core.milestone_service.list_milestones.return_value = []
         core.project_service.list_projects.return_value = []
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.DEGRADED
         assert "2 issue" in message
@@ -174,7 +169,7 @@ class TestHeadlineValidationMultipleMissing:
             Mock(headline=None, id="core"),
         ]
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.DEGRADED
         assert "issue" in message.lower()
@@ -224,7 +219,7 @@ class TestHeadlineValidationErrorHandling:
         core = Mock()
         core.issue_service.list_issues.side_effect = RuntimeError("Unexpected error")
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.DEGRADED
         assert "error" in message.lower()
@@ -264,7 +259,7 @@ class TestHeadlineValidationPerformCheck:
 
         assert isinstance(result, tuple)
         assert len(result) == 2
-        status, _ = result
+        status, message = result
         assert isinstance(status, str)
         assert isinstance(message, str)
 
@@ -283,7 +278,7 @@ class TestHeadlineValidationMessageQuality:
         core.milestone_service.list_milestones.return_value = []
         core.project_service.list_projects.return_value = []
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert "2" in message
         assert "entity" in message.lower() or "issue" in message.lower()
@@ -295,7 +290,7 @@ class TestHeadlineValidationMessageQuality:
         core.milestone_service.list_milestones.return_value = []
         core.project_service.list_projects.return_value = []
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.HEALTHY
         assert "headline" in message.lower()
@@ -310,7 +305,7 @@ class TestHeadlineValidationMessageQuality:
         core.milestone_service.list_milestones.return_value = []
         core.project_service.list_projects.return_value = []
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert "fix" in message.lower() or "missing-headline" in message.lower()
 
@@ -413,7 +408,7 @@ class TestHeadlineValidationLargeDatasets:
         core.milestone_service.list_milestones.return_value = []
         core.project_service.list_projects.return_value = []
 
-        status, _ = MissingHeadlinesValidator.check_missing_headlines(core)
+        status, message = MissingHeadlinesValidator.check_missing_headlines(core)
 
         assert status == HealthStatus.DEGRADED
         assert "50" in message

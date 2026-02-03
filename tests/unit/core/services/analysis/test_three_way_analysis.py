@@ -10,7 +10,7 @@ import pytest
 
 from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
-from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from tests.factories import IssueBuilder
 
@@ -31,8 +31,7 @@ class TestThreeWayAnalysis:
             status="todo",
             title="Original Title",
             assignee="alice",
-            milestone="v1.0",
-            headline="Original description",
+            description="test",
             content="Original description",
             labels=["bug"],
             updated_at=datetime.now(UTC),

@@ -79,15 +79,6 @@ class TestCredentialManager:
 
         assert result is True
 
-    @pytest.mark.skip(reason="Complex mocking - skipped for Phase 6")
-    def test_store_token_error_raises(self, manager):
-        """Test store_token raises CredentialManagerError on failure."""
-        manager.system = "darwin"
-
-        with patch.object(manager, "_store_token_keychain", side_effect=RuntimeError("Keychain error")):
-            with pytest.raises(CredentialManagerError):
-                manager.store_token("test-token")
-
     def test_get_token_from_env(self, manager):
         """Test get_token retrieves from environment variable first."""
         with patch.dict("os.environ", {"GITHUB_TOKEN": "env-token"}):
@@ -173,15 +164,6 @@ class TestCredentialManager:
 
         assert result is True
 
-    @pytest.mark.skip(reason="Complex mocking - skipped for Phase 6")
-    def test_delete_token_error_raises(self, manager):
-        """Test delete_token raises CredentialManagerError on failure."""
-        manager.system = "darwin"
-
-        with patch.object(manager, "_delete_token_keychain", side_effect=RuntimeError("Keychain error")):
-            with pytest.raises(CredentialManagerError):
-                manager.delete_token()
-
     def test_is_available_darwin(self):
         """Test is_available on macOS."""
         manager = CredentialManager()
@@ -257,15 +239,6 @@ class TestCredentialManager:
 
         assert result is True
 
-    @pytest.mark.skip(reason="Complex mocking - skipped for Phase 6")
-    def test_secretservice_availability_check(self, manager):
-        """Test _check_secretservice_available."""
-        manager.system = "linux"
-
-        with patch("roadmap.infrastructure.security.credentials.keyring"):
-            result = manager._check_secretservice_available()
-
-        assert isinstance(result, bool)
 
     def test_get_credential_manager(self):
         """Test get_credential_manager factory function."""
@@ -300,26 +273,13 @@ class TestCredentialManager:
 
     def test_mask_token_none(self):
         """Test mask_token with None."""
-        result = mask_token(None)
+        result = mask_token(None)  # type: ignore
 
         assert result == "****"
 
 
 class TestKeyringIntegration:
     """Tests for keyring-based credential storage."""
-
-    @pytest.mark.skip(reason="Complex mocking - skipped for Phase 6")
-    def test_store_token_wincred_with_keyring(self):
-        """Test _store_token_wincred with keyring."""
-        manager = CredentialManager()
-
-        with patch.dict("sys.modules", {"keyring": MagicMock()}):
-            with patch("roadmap.infrastructure.security.credentials.keyring") as mock_keyring:
-                mock_keyring.set_password = MagicMock()
-                result = manager._store_token_wincred("test-token")
-
-        # Result may be True or raise ImportError - both are acceptable test outcomes
-        assert isinstance(result, bool) or result is None
 
     def test_get_token_wincred_with_keyring(self):
         """Test _get_token_wincred with keyring."""

@@ -252,11 +252,11 @@ class TestResolveAutoMerge:
 
         with patch.object(
             resolver, "_convert_remote_to_local", return_value=local_issue
-        ):
+        ) as mock_convert:
             resolver.resolve(conflict, ConflictStrategy.AUTO_MERGE)
 
             # Should convert remote
-            resolver._convert_remote_to_local.assert_called_once()
+            mock_convert.assert_called_once()
 
     def test_auto_merge_equal_timestamps_keeps_local(self):
         """Auto merge with equal timestamps keeps local."""

@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.common.constants import Status
-from roadmap.core.models.sync_state import SyncState
+from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
 from roadmap.core.services.sync.three_way_merger import ThreeWayMerger
 from tests.factories.sync_data import IssueTestDataBuilder

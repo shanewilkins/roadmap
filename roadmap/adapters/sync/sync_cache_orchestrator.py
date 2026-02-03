@@ -10,7 +10,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
 from roadmap.adapters.sync.sync_retrieval_orchestrator import SyncRetrievalOrchestrator
-from roadmap.core.models.sync_state import SyncState
+from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.core.services.baseline.baseline_builder_progress import (
     ProgressTrackingBaselineBuilder,
     create_progress_builder,
@@ -98,11 +98,11 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             data = json.loads(data_json)
 
             baseline = SyncState.from_dict(data)
-            baseline.last_sync = last_sync
+            baseline.last_sync_time = last_sync
 
             logger.info(
                 "cached_baseline_loaded",
-                issue_count=len(baseline.issues),
+                issue_count=len(baseline.base_issues),
                 last_sync=last_sync.isoformat(),
             )
             return baseline
@@ -141,7 +141,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 VALUES (?, ?, ?)
                 """,
                 (
-                    baseline.last_sync.isoformat(),
+                    baseline.last_sync_time.isoformat() if baseline.last_sync_time else "unknown",
                     json.dumps(baseline.to_dict()),
                     datetime.now(UTC).isoformat(),
                 ),
@@ -151,8 +151,8 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
 
             logger.info(
                 "baseline_cached_to_db",
-                issue_count=len(baseline.issues),
-                last_sync=baseline.last_sync.isoformat(),
+                issue_count=len(baseline.base_issues),
+                last_sync=baseline.last_sync_time.isoformat() if baseline.last_sync_time else "unknown",
             )
 
         except OSError as e:
@@ -195,7 +195,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 )
                 from datetime import datetime
 
-                from roadmap.core.models.sync_state import IssueBaseState, SyncState
+                from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
                 issues = {}
                 for issue_id, data in db_baseline.items():
@@ -204,16 +204,14 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                         status=data.get("status", "todo"),
                         title=data.get("title", ""),
                         assignee=data.get("assignee"),
-                        milestone=data.get("milestone"),
                         headline=data.get("headline", ""),
                         content=data.get("content", ""),
                         labels=data.get("labels", []),
                     )
 
                 return SyncState(
-                    last_sync=datetime.now(UTC),
-                    backend="github",
-                    issues=issues,
+                    last_sync_time=datetime.now(UTC),
+                    base_issues=issues,
                 )
         except Exception as e:
             logger.warning(
@@ -227,7 +225,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
         if cached:
             logger.debug(
                 "using_cached_baseline",
-                issue_count=len(cached.issues),
+                issue_count=len(cached.base_issues),
             )
             return cached
 
@@ -264,8 +262,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
 
             # Build baseline using optimized builder
             baseline = SyncState(
-                last_sync=datetime.now(UTC),
-                backend=self.backend.__class__.__name__.lower(),
+                last_sync_time=datetime.now(UTC),
             )
 
             # Reconstruct each issue from git history
@@ -274,10 +271,10 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                     issue_file = self.issues_dir / f"{issue.id}.md"
                     if issue_file.exists():
                         local_baseline = self.baseline_retriever.get_local_baseline(
-                            issue_file, baseline.last_sync
+                            issue_file, baseline.last_sync_time or datetime.now(UTC)
                         )
                         if local_baseline:
-                            baseline.issues[issue.id] = local_baseline
+                            baseline.base_issues[issue.id] = local_baseline
                 except Exception as e:
                     logger.warning(
                         "baseline_issue_reconstruction_failed",
@@ -290,7 +287,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
 
             logger.info(
                 "baseline_constructed_and_cached",
-                issue_count=len(baseline.issues),
+                issue_count=len(baseline.base_issues),
             )
             return baseline
 
@@ -400,8 +397,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
 
             # Create new baseline from current state
             baseline = SyncState(
-                last_sync=datetime.now(UTC),
-                backend=self.backend.__class__.__name__.lower(),
+                last_sync_time=datetime.now(UTC),
             )
 
             # Reconstruct each issue from current file state
@@ -414,7 +410,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                             issue_file
                         )
                         if local_baseline:
-                            baseline.issues[issue.id] = local_baseline
+                            baseline.base_issues[issue.id] = local_baseline
                 except Exception as e:
                     logger.warning(
                         "post_sync_baseline_issue_reconstruction_failed",
@@ -424,8 +420,8 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
 
             logger.info(
                 "post_sync_baseline_captured",
-                issue_count=len(baseline.issues),
-                last_sync=baseline.last_sync.isoformat(),
+                issue_count=len(baseline.base_issues),
+                last_sync=baseline.last_sync_time.isoformat() if baseline.last_sync_time else "unknown",
             )
             return baseline
 

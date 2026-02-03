@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.baseline.optimized_baseline_builder import (
     CachedBaselineState,
     OptimizedBaselineBuilder,
@@ -25,9 +25,8 @@ def builder(tmp_path):
 def mock_sync_state():
     """Create mock sync state."""
     return SyncState(
-        last_sync=datetime.now(UTC) - timedelta(hours=2),
-        backend="git",
-        issues={
+        last_sync_time=datetime.now(UTC) - timedelta(hours=2),
+        base_issues={
             "TASK-123": IssueBaseState(
                 id="TASK-123",
                 status="todo",
@@ -276,9 +275,8 @@ class TestCachedBaselineState:
     def test_tracks_cache_metadata(self):
         """Should track cache metadata."""
         state = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="git",
-            issues={},
+            last_sync_time=datetime.now(UTC),
+            base_issues={},
         )
         cached = CachedBaselineState(
             state=state,
@@ -295,9 +293,8 @@ class TestCachedBaselineState:
     def test_identifies_full_rebuild(self):
         """Should identify full rebuild."""
         state = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="git",
-            issues={},
+            last_sync_time=datetime.now(UTC),
+            base_issues={},
         )
         cached = CachedBaselineState(
             state=state,
@@ -312,9 +309,8 @@ class TestCachedBaselineState:
     def test_identifies_incremental_update(self):
         """Should identify incremental update."""
         state = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="git",
-            issues={},
+            last_sync_time=datetime.now(UTC),
+            base_issues={},
         )
         cached = CachedBaselineState(
             state=state,
@@ -329,9 +325,8 @@ class TestCachedBaselineState:
     def test_converts_to_dict_for_logging(self):
         """Should convert to dictionary for logging."""
         state = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="git",
-            issues={"TASK-1": Mock(), "TASK-2": Mock()},
+            last_sync_time=datetime.now(UTC),
+            base_issues={"TASK-1": Mock(), "TASK-2": Mock()},
         )
         cached = CachedBaselineState(
             state=state,

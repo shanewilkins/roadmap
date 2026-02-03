@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 import pytest
 
 from roadmap.common.constants import Status
-from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from tests.factories import IssueBuilder
 
@@ -30,8 +30,8 @@ class TestDataIntegrityThreeWayMerge:
             status="todo",
             title="Original Issue",
             assignee="alice",
-            milestone="v1.0",
-            headline="Original description",
+            
+            description="test",
             content="Original description",
             labels=["bug"],
             updated_at=datetime.now(UTC),

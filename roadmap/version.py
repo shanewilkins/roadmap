@@ -111,7 +111,11 @@ class VersionManager:
         try:
             with open(self.pyproject_path) as f:
                 data = toml.load(f)
-            version_str = data.get("tool", {}).get("poetry", {}).get("version")
+            # Try PEP 621 format first (new format)
+            version_str = data.get("project", {}).get("version")
+            # Fall back to Poetry format for compatibility
+            if not version_str:
+                version_str = data.get("tool", {}).get("poetry", {}).get("version")
             if version_str:
                 return SemanticVersion(version_str)
         except Exception as e:
@@ -183,7 +187,12 @@ class VersionManager:
             with open(self.pyproject_path) as f:
                 data = toml.load(f)
 
-            data["tool"]["poetry"]["version"] = str(new_version)
+            # Update PEP 621 format if present
+            if "project" in data:
+                data["project"]["version"] = str(new_version)
+            # Fall back to Poetry format
+            elif "tool" in data and "poetry" in data["tool"]:
+                data["tool"]["poetry"]["version"] = str(new_version)
 
             with open(self.pyproject_path, "w") as f:
                 toml.dump(data, f)

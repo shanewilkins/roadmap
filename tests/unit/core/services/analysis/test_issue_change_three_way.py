@@ -6,7 +6,7 @@ import pytest
 
 from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
-from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_report import IssueChange
 
 
@@ -18,8 +18,7 @@ def baseline_state():
         title="Test Issue",
         status=Status.TODO,
         assignee="alice",
-        milestone="v1.0",
-        headline="Original description",
+        description="test",
         labels=["bug"],
     )
 

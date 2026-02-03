@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_report import IssueChange
 
 

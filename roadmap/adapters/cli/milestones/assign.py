@@ -45,6 +45,8 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
             for line in lines:
                 console.print(line, style="bold red")
             raise click.Abort()
+    except click.Abort:
+        raise
     except Exception as e:
         handle_cli_error(
             error=e,
@@ -57,3 +59,4 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
         lines = format_operation_failure("Assign", issue_id, str(e))
         for line in lines:
             console.print(line, style="bold red")
+        raise click.Abort()

@@ -15,6 +15,8 @@ class IssueBaseState:
     labels: list[str] = field(default_factory=list)
     description: str = ""
     title: str = ""
+    headline: str = ""
+    content: str = ""
     priority: int = 0
     blocked_by: list[str] = field(default_factory=list)
     blocks: list[str] = field(default_factory=list)
@@ -32,6 +34,8 @@ class IssueBaseState:
             "labels": self.labels,
             "description": self.description,
             "title": self.title,
+            "headline": self.headline,
+            "content": self.content,
             "priority": self.priority,
             "blocked_by": self.blocked_by,
             "blocks": self.blocks,
@@ -115,3 +119,55 @@ class SyncState:
         """Mark sync as complete."""
         self.sync_in_progress = False
         self.last_sync_time = datetime.now(UTC)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "local_issues": {
+                issue_id: state.to_dict()
+                for issue_id, state in self.local_issues.items()
+            },
+            "remote_issues": {
+                issue_id: state.to_dict()
+                for issue_id, state in self.remote_issues.items()
+            },
+            "base_issues": {
+                issue_id: state.to_dict()
+                for issue_id, state in self.base_issues.items()
+            },
+            "last_sync_time": self.last_sync_time.isoformat()
+            if self.last_sync_time
+            else None,
+            "sync_in_progress": self.sync_in_progress,
+            "local_deleted_ids": list(self.local_deleted_ids),
+            "remote_deleted_ids": list(self.remote_deleted_ids),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SyncState":
+        """Create from dictionary."""
+        local_issues = {
+            issue_id: IssueBaseState.from_dict(state)
+            for issue_id, state in data.get("local_issues", {}).items()
+        }
+        remote_issues = {
+            issue_id: IssueBaseState.from_dict(state)
+            for issue_id, state in data.get("remote_issues", {}).items()
+        }
+        base_issues = {
+            issue_id: IssueBaseState.from_dict(state)
+            for issue_id, state in data.get("base_issues", {}).items()
+        }
+        last_sync_time = None
+        if data.get("last_sync_time"):
+            last_sync_time = datetime.fromisoformat(data["last_sync_time"])
+
+        return cls(
+            local_issues=local_issues,
+            remote_issues=remote_issues,
+            base_issues=base_issues,
+            last_sync_time=last_sync_time,
+            sync_in_progress=data.get("sync_in_progress", False),
+            local_deleted_ids=set(data.get("local_deleted_ids", [])),
+            remote_deleted_ids=set(data.get("remote_deleted_ids", [])),
+        )

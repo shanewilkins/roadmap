@@ -38,8 +38,8 @@ class SyncStateUpdateService:
 
             now = datetime.now(UTC)
             for remote_id in pulled_remote_ids:
-                if remote_id in base_state.issues:
-                    base_state.issues[remote_id].updated_at = now
+                if remote_id in base_state.base_issues:
+                    base_state.base_issues[remote_id].updated_at = now
 
             # Save updated state
             self.state_manager.save_sync_state_to_db(base_state)

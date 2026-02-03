@@ -67,13 +67,12 @@ def show_baseline(
 
     if baseline_state:
         console_inst.print("\n📋 Baseline State (from database):", style="bold cyan")
-        console_inst.print(f"   Last Sync: {baseline_state.last_sync}")
-        console_inst.print(f"   Backend: {baseline_state.backend}")
-        console_inst.print(f"   Issues in baseline: {len(baseline_state.issues)}")
+        console_inst.print(f"   Last Sync: {baseline_state.last_sync_time}")
+        console_inst.print(f"   Issues in baseline: {len(baseline_state.base_issues)}")
 
-        if verbose and baseline_state.issues:
+        if verbose and baseline_state.base_issues:
             console_inst.print("\n   Issues:", style="bold")
-            for issue_id, issue_state in sorted(baseline_state.issues.items()):
+            for issue_id, issue_state in sorted(baseline_state.base_issues.items()):
                 console_inst.print(
                     f"      {issue_id}: {issue_state.title} [{issue_state.status}]"
                 )
@@ -85,13 +84,12 @@ def show_baseline(
 
         initial_baseline = orchestrator._create_initial_baseline()
 
-        if initial_baseline and len(initial_baseline.issues) > 0:
+        if initial_baseline and len(initial_baseline.base_issues) > 0:
             baseline_dict = {}
-            for issue_id, issue_state in initial_baseline.issues.items():
+            for issue_id, issue_state in initial_baseline.base_issues.items():
                 baseline_dict[issue_id] = {
                     "status": issue_state.status,
                     "assignee": issue_state.assignee,
-                    "milestone": issue_state.milestone,
                     "headline": issue_state.headline,
                     "content": issue_state.content,
                     "labels": issue_state.labels,
@@ -105,16 +103,15 @@ def show_baseline(
                         "\n✅ Initial baseline created and saved to database:",
                         style="bold green",
                     )
-                    console_inst.print(f"   Last Sync: {initial_baseline.last_sync}")
-                    console_inst.print(f"   Backend: {initial_baseline.backend}")
+                    console_inst.print(f"   Last Sync: {initial_baseline.last_sync_time}")
                     console_inst.print(
-                        f"   Issues in baseline: {len(initial_baseline.issues)}",
+                        f"   Issues in baseline: {len(initial_baseline.base_issues)}",
                     )
 
-                    if verbose and initial_baseline.issues:
+                    if verbose and initial_baseline.base_issues:
                         console_inst.print("\n   Issues:", style="bold")
                         for issue_id, issue_state in sorted(
-                            initial_baseline.issues.items()
+                            initial_baseline.base_issues.items()
                         ):
                             console_inst.print(
                                 f"      {issue_id}: {issue_state.title} [{issue_state.status}]"

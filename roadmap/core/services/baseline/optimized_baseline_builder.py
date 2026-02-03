@@ -10,7 +10,7 @@ from pathlib import Path
 from structlog import get_logger
 
 from roadmap.core.interfaces.persistence import GitHistoryError
-from roadmap.core.models.sync_state import SyncState
+from roadmap.core.services.sync.sync_state import SyncState
 from roadmap.infrastructure.persistence_gateway import PersistenceGateway
 
 logger = get_logger(__name__)
@@ -181,7 +181,7 @@ class OptimizedBaselineBuilder:
         # If we get here, incremental update is safe
         logger.debug(
             "incremental_update_safe",
-            cached_issues=len(cached_state.issues),
+            cached_issues=len(cached_state.base_issues),
         )
         return False
 
@@ -264,7 +264,7 @@ class OptimizedBaselineBuilder:
             )
 
             # Check if new (or full rebuild if no cached state)
-            is_new = cached_state is None or issue_id not in cached_state.issues
+            is_new = cached_state is None or issue_id not in cached_state.base_issues
 
             if is_changed or is_new:
                 files_to_update[issue_id] = file_path
@@ -328,7 +328,7 @@ class OptimizedBaselineBuilder:
 
         deleted_ids = [
             issue_id
-            for issue_id in cached_state.issues.keys()
+            for issue_id in cached_state.base_issues.keys()
             if issue_id not in current_ids
         ]
 
@@ -420,6 +420,6 @@ class CachedBaselineState:
             "is_incremental": self.is_incremental,
             "rebuilt_issues": self.rebuilt_issues,
             "reused_issues": self.reused_issues,
-            "total_issues": len(self.state.issues),
+            "total_issues": len(self.state.base_issues),
             "rebuild_time_ms": f"{self.rebuild_time_ms:.1f}",
         }

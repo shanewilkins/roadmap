@@ -37,9 +37,9 @@ class SyncAnalysisService:
             if base_state:
                 logger.info(
                     "previous_sync_state_loaded",
-                    base_issues_count=len(base_state.issues),
-                    last_sync=base_state.last_sync.isoformat()
-                    if base_state.last_sync
+                    base_issues_count=len(base_state.base_issues),
+                    last_sync=base_state.last_sync_time.isoformat()
+                    if base_state.last_sync_time
                     else None,
                 )
             else:
@@ -68,7 +68,7 @@ class SyncAnalysisService:
         changes = self.state_comparator.analyze_three_way(
             local_issues_dict,
             remote_issues_data,
-            base_state.issues if base_state else None,
+            base_state.base_issues if base_state else None,
         )
 
         conflicts = [c for c in changes if c.has_conflict]

@@ -6,7 +6,7 @@ from typing import Any
 
 from roadmap.common.console import get_console
 from roadmap.core.domain.issue import Issue
-from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync.sync_state import IssueBaseState
 
 console = get_console()
 

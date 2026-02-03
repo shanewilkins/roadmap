@@ -13,7 +13,7 @@ from roadmap.adapters.sync.sync_cache_orchestrator import (
     SyncCacheOrchestrator,
 )
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 
 @pytest.fixture
@@ -152,9 +152,9 @@ class TestSyncCacheOrchestrator:
     def test_save_baseline_to_cache(self, cached_orchestrator):
         """Test saving baseline to cache."""
         baseline = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="github",
-            issues={},
+            last_sync_time=datetime.now(UTC),
+            
+            base_issues={},
         )
 
         # Should not raise
@@ -220,14 +220,15 @@ class TestOptimizedSyncIntegration:
 
         # Create baseline
         baseline = SyncState(
-            last_sync=datetime.now(UTC),
-            backend="github",
-            issues={
+            last_sync_time=datetime.now(UTC),
+            
+            base_issues={
                 "test-1": IssueBaseState(
                     id="test-1",
                     title="Test issue",
                     status="open",
-                    headline="Test",
+                    description="Test description",
+                    content="Test content",
                 )
             },
         )

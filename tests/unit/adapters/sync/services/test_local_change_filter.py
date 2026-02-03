@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 
 from roadmap.adapters.sync.services.local_change_filter import LocalChangeFilter
-from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync.sync_state import IssueBaseState
 
 
 class TestFilterUnchangedFromBase:
@@ -100,7 +100,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status=Mock(value="closed"),
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
         base_issue = IssueBaseState(
@@ -108,7 +108,7 @@ class TestFilterUnchangedFromBase:
             status="open",  # Changed
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
 
@@ -128,7 +128,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status=Mock(value="open"),
             assignee="user2",  # Changed
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
         base_issue = IssueBaseState(
@@ -136,7 +136,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
 
@@ -156,7 +156,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status=Mock(value="open"),
             assignee="user1",
-            content="Updated content",  # Changed
+            description="Updated content",  # Changed
             labels=["bug"],
         )
         base_issue = IssueBaseState(
@@ -164,7 +164,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
 
@@ -184,7 +184,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status=Mock(value="open"),
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug", "urgent"],  # Changed
         )
         base_issue = IssueBaseState(
@@ -192,7 +192,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
 
@@ -212,7 +212,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status=Mock(value="open"),
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
         base_issue = IssueBaseState(
@@ -220,7 +220,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
 
@@ -240,7 +240,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status="open",  # String, not enum
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
         base_issue = IssueBaseState(
@@ -248,7 +248,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
 
@@ -268,7 +268,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status=Mock(value="open"),
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=None,
         )
         base_issue = IssueBaseState(
@@ -276,7 +276,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=[],
         )
 
@@ -298,7 +298,7 @@ class TestFilterUnchangedFromBase:
             lambda self: (_ for _ in ()).throw(RuntimeError("Access error"))
         )
         local_issue.assignee = "user1"
-        local_issue.content = "Test"
+        local_issue.description = "Test"
         local_issue.labels = []
 
         base_issue = IssueBaseState(
@@ -306,7 +306,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test",
+            description="Test",
             labels=[],
         )
 
@@ -347,7 +347,7 @@ class TestFilterUnchangedFromBase:
             id="ISSUE-1",
             status=Mock(value="closed" if status_change else "open"),
             assignee="user2" if assignee_change else "user1",
-            content="Updated" if content_change else "Test content",
+            description="Updated" if content_change else "Test content",
             labels=["bug", "urgent"] if labels_change else ["bug"],
         )
         base_issue = IssueBaseState(
@@ -355,7 +355,7 @@ class TestFilterUnchangedFromBase:
             status="open",
             title="Test",
             assignee="user1",
-            content="Test content",
+            description="Test content",
             labels=["bug"],
         )
 
@@ -381,35 +381,35 @@ class TestFilterUnchangedFromBase:
                 id="ISSUE-1",
                 status=Mock(value="closed"),  # Changed
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
             "ISSUE-2": Mock(
                 id="ISSUE-2",
                 status=Mock(value="open"),  # Unchanged
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
             "ISSUE-3": Mock(
                 id="ISSUE-3",
                 status=Mock(value="open"),  # New issue
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
             "ISSUE-4": Mock(
                 id="ISSUE-4",
                 status=Mock(value="open"),  # Unchanged
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
             "ISSUE-5": Mock(
                 id="ISSUE-5",
                 status=Mock(value="open"),  # Changed
                 assignee="user2",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
         }
@@ -420,7 +420,7 @@ class TestFilterUnchangedFromBase:
                 status="open",
                 title="Test",
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
             "ISSUE-2": IssueBaseState(
@@ -428,7 +428,7 @@ class TestFilterUnchangedFromBase:
                 status="open",
                 title="Test",
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
             # ISSUE-3 is new (not in base)
@@ -437,7 +437,7 @@ class TestFilterUnchangedFromBase:
                 status="open",
                 title="Test",
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
             "ISSUE-5": IssueBaseState(
@@ -445,7 +445,7 @@ class TestFilterUnchangedFromBase:
                 status="open",
                 title="Test",
                 assignee="user1",
-                content="Test",
+                description="Test",
                 labels=[],
             ),
         }

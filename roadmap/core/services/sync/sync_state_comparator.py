@@ -13,7 +13,7 @@ from structlog import get_logger
 
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
-from roadmap.core.models.sync_state import IssueBaseState
+from roadmap.core.services.sync.sync_state import IssueBaseState
 from roadmap.core.services.sync.sync_change_computer import (
     compute_changes as _compute_changes_helper,
 )

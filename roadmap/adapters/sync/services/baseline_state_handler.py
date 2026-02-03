@@ -8,7 +8,7 @@ from typing import Any
 
 from structlog import get_logger
 
-from roadmap.core.models.sync_state import IssueBaseState, SyncState
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 logger = get_logger(__name__)
 
@@ -38,23 +38,21 @@ class BaselineStateHandler:
                 logger.debug(
                     "baseline_loaded_from_database", issue_count=len(db_baseline)
                 )
-                issues = {}
+                base_issues = {}
                 for issue_id, data in db_baseline.items():
-                    issues[issue_id] = IssueBaseState(
+                    base_issues[issue_id] = IssueBaseState(
                         id=issue_id,
                         status=data.get("status", "todo"),
-                        title="",
+                        title=data.get("title", ""),
                         assignee=data.get("assignee"),
-                        milestone=data.get("milestone"),
                         headline=data.get("headline", ""),
                         content=data.get("content", ""),
                         labels=data.get("labels", []),
                     )
 
                 sync_state = SyncState(
-                    last_sync=datetime.now(UTC),
-                    backend="github",
-                    issues=issues,
+                    last_sync_time=datetime.now(UTC),
+                    base_issues=base_issues,
                 )
                 return sync_state
 

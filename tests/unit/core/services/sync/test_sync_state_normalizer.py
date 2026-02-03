@@ -238,6 +238,7 @@ class TestNormalizeRemoteState:
         obj = Mock()
         obj.labels = {"label1", "label2", "label3"}  # Set, not list
         result = normalize_remote_state(obj)
+        assert result is not None
         assert isinstance(result["labels"], list)
         assert len(result["labels"]) == 3
 
