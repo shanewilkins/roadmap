@@ -147,6 +147,11 @@ exclude_dirs = ["tests"]
 # Skip try_except_pass: intentional in cleanup/cleanup handlers (B110)
 skips = ["B101", "B110"]
 
+# Dead code detection configuration for Vulture
+[tool.vulture]
+ignore_names = ["include_traceback", "filters", "log_level", "log_file", "force"]
+min_confidence = 80
+
 # Type checking is now handled by Pyright
 # Configuration is in pyrightconfig.json
 # Pyright provides superior type inference and VSCode integration

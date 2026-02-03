@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ master, main, develop ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ master, main, develop ]
+    branches: [ master, main ]
 
 jobs:
   test:
@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.12', '3.13']
+        python-version: ['3.14']
 
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
@@ -25,25 +25,24 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
       with:
-        version: "1.8.3"
-        virtualenvs-in-project: true
+        version: "latest"
 
-    - name: Cache Poetry dependencies
+    - name: Cache uv dependencies
       uses: actions/cache@v3
       with:
         path: .venv
-        key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
         restore-keys: |
-          ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+          ${{ runner.os }}-uv-${{ matrix.python-version }}-
 
     - name: Install dependencies
-      run: poetry install
+      run: uv sync --all-extras
 
     - name: Run Tests
-      run: poetry run pytest --cov=roadmap --cov-report=xml --cov-report=term-missing
+      run: uv run pytest --cov=roadmap --cov-report=xml --cov-report=term-missing
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -64,39 +63,38 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: '3.14'
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
       with:
-        version: "1.8.3"
-        virtualenvs-in-project: true
+        version: "latest"
 
-    - name: Cache Poetry dependencies
+    - name: Cache uv dependencies
       uses: actions/cache@v3
       with:
         path: .venv
-        key: ${{ runner.os }}-poetry-3.12-${{ hashFiles('**/poetry.lock') }}
+        key: ${{ runner.os }}-uv-3.14-${{ hashFiles('**/uv.lock') }}
         restore-keys: |
-          ${{ runner.os }}-poetry-3.12-
+          ${{ runner.os }}-uv-3.14-
 
     - name: Install dependencies
-      run: poetry install
+      run: uv sync --all-extras
 
     - name: Run Ruff Format Check
-      run: poetry run ruff format --check roadmap tests
+      run: uv run ruff format --check roadmap tests
 
     - name: Run Ruff Linter
-      run: poetry run ruff check roadmap tests
+      run: uv run ruff check roadmap tests
 
     - name: Run Bandit Security Check
-      run: poetry run bandit -r roadmap -c .bandit --severity-level=high
+      run: uv run bandit -r roadmap --severity-level=high
 
     - name: Run Radon Complexity Check
-      run: bash -c 'poetry run radon cc roadmap --exclude=tests --min D 2>&1 | grep -q . && exit 1 || exit 0'
+      run: bash -c 'uv run radon cc roadmap --exclude=tests --min D 2>&1 | grep -q . && exit 1 || exit 0'
 
     - name: Run Vulture Dead Code Detection
-      run: poetry run vulture roadmap --min-confidence=80 --exclude=tests
+      run: uv run vulture roadmap --min-confidence=80 --exclude=tests
 
     - name: Run Semgrep Semantic Analysis
       run: poetry run semgrep --config=.semgrep.yml --error roadmap/
