@@ -104,13 +104,21 @@ class TestCLIMilestoneAssign:
         # First create an issue
         IntegrationTestBase.create_issue(cli_runner, title="Test Issue")
 
+        # Verify the issue was created
+        core = IntegrationTestBase.get_roadmap_core()
+        issues = core.issues.list()
+        assert len(issues) > 0, "Issue was not created"
+
+        # Get the ID of the created issue
+        issue_id = issues[0].id if hasattr(issues[0], 'id') else "1"
+
         result = cli_runner.invoke(
             main,
-            ["milestone", "assign", "1", "Sprint 1"],
+            ["milestone", "assign", str(issue_id), "Sprint 1"],
         )
 
         # Should succeed or handle gracefully
-        assert result.exit_code == 0 or "assigned" in result.output.lower()
+        assert result.exit_code == 0 or "assigned" in result.output.lower(), f"Exit code: {result.exit_code}, Output: {result.output}"
 
     def test_assign_nonexistent_issue(self, roadmap_with_milestones):
         """Test assigning non-existent issue."""
