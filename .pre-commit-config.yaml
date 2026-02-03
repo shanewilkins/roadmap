@@ -40,7 +40,7 @@ repos:
     rev: 1.7.6
     hooks:
       - id: bandit
-        args: ['-r', '-c', 'config/.bandit', '--severity-level=high']
+        args: ['-r', '--severity-level=high']
         additional_dependencies: ['bandit[toml]']
         types: [python]
 
@@ -128,7 +128,7 @@ repos:
     hooks:
       - id: semgrep
         name: semgrep - semantic error pattern detection
-        args: [--config=.semgrep.yml, --error]
+        args: [--config=config/.semgrep.yml, --error]
         types: [python]
 
   # Run cosmetic fixes last (don't block on whitespace)

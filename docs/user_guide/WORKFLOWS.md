@@ -312,9 +312,8 @@ roadmap issue list --format json | \
 roadmap issue list --format json | \
   jq 'group_by(.assignee) | map({assignee: .[0].assignee, count: length})'
 
-# Export to spreadsheet for reporting
+# Export to CSV for reporting (Excel-compatible)
 roadmap data export csv --format detailed > roadmap.csv
-# Open in Excel/Sheets for further analysis
 ```
 
 ### Automation with Cron

@@ -121,8 +121,8 @@ class TestGitHubClient:
         with pytest.raises(GitHubAPIError, match="Validation error: Validation failed"):
             client._make_request("GET", "/test")
 
-    def test_test_authentication(self, client, mock_session):
-        """Test authentication testing."""
+    def test_authentication_verification(self, client, mock_session):
+        """Test authentication verification."""
         mock_response = Mock()
         mock_response.json.return_value = {"login": "test_user"}
         mock_session.request.return_value = mock_response
@@ -134,8 +134,8 @@ class TestGitHubClient:
             "GET", "https://api.github.com/user"
         )
 
-    def test_test_repository_access(self, client, mock_session):
-        """Test repository access testing."""
+    def test_repository_access_verification(self, client, mock_session):
+        """Test repository access verification."""
         mock_response = Mock()
         mock_response.json.return_value = {"full_name": "test_owner/test_repo"}
         mock_session.request.return_value = mock_response

@@ -72,7 +72,7 @@ _validators = [
     Validator("performance.cache_ttl", default=3600, gte=0),
     # Export settings
     Validator(
-        "export.default_format", default="csv", is_in=["csv", "json", "yaml", "xlsx"]
+        "export.default_format", default="csv", is_in=["csv", "json", "markdown"]
     ),
     Validator("export.include_metadata", default=False, is_type_of=bool),
     Validator("export.date_format", default="%Y-%m-%d"),

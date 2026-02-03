@@ -19,27 +19,9 @@ logger = get_logger(__name__)
 
 
 def get_current_user() -> str:
-    """Get current user from environment or git config."""
-    # Try environment first
+    """Get current user from environment."""
     user = os.environ.get("USER") or os.environ.get("USERNAME")
-    if user:
-        return user
-
-    # Try git config as fallback
-    try:
-        import git
-
-        repo = git.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
-        try:
-            name = repo.config_reader().get_value("user", "name")
-            if isinstance(name, str):
-                return name
-        except Exception as e:
-            logger.debug("user_name_lookup_failed_in_repo_config", error=str(e))
-    except Exception as e:
-        logger.debug("user_name_lookup_failed", error=str(e))
-
-    return "unknown"
+    return user if user else "unknown"
 
 
 def log_command(

@@ -319,7 +319,7 @@ class TestSyncMergeEngine:
         ]
         engine.conflict_resolver.resolve_batch.return_value = []
 
-        result = engine._resolve_conflicts_if_needed(
+        engine._resolve_conflicts_if_needed(
             [conflict], force_local=False, force_remote=True
         )
 
@@ -334,7 +334,7 @@ class TestSyncMergeEngine:
         ]
         engine.conflict_resolver.resolve_batch.return_value = []
 
-        result = engine._resolve_conflicts_if_needed(
+        engine._resolve_conflicts_if_needed(
             [conflict], force_local=False, force_remote=False
         )
 
@@ -581,8 +581,6 @@ class TestSyncMergeEngine:
 
     def test_pull_updates_success(self, engine):
         """Test _pull_updates successful pull."""
-        report = SyncReport()
-
         with patch(
             "roadmap.adapters.sync.sync_merge_engine.RemoteFetcher"
         ) as mock_fetcher:
@@ -598,8 +596,6 @@ class TestSyncMergeEngine:
 
     def test_pull_updates_error(self, engine):
         """Test _pull_updates with fetch error."""
-        report = SyncReport()
-
         with patch(
             "roadmap.adapters.sync.sync_merge_engine.RemoteFetcher"
         ) as mock_fetcher:

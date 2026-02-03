@@ -283,8 +283,8 @@ class TestGitHubSetupValidator:
         assert success
         assert repo_info["permissions"] == permissions_dict
 
-    def test_test_api_access_success(self, validator, mock_client):
-        """Test successful API access test."""
+    def test_api_access_validation_success(self, validator, mock_client):
+        """Test successful API access validation."""
         mock_response = MagicMock()
         mock_response.json.return_value = [{"id": 1, "title": "Issue 1"}]
         mock_client._make_request.return_value = mock_response
@@ -294,8 +294,8 @@ class TestGitHubSetupValidator:
         assert result
         mock_client._make_request.assert_called_once()
 
-    def test_test_api_access_failure(self, validator, mock_client):
-        """Test failed API access test."""
+    def test_api_access_validation_failure(self, validator, mock_client):
+        """Test failed API access validation."""
         mock_client._make_request.side_effect = Exception("API error")
 
         result = validator.test_api_access("user/repo")

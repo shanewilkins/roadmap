@@ -1,4 +1,4 @@
-"""Integration tests for Phase 3: Init Messaging & UX enhancements.
+"""Integration tests for init messaging & UX enhancements.
 
 Tests enhanced init messaging:
 - Show which projects are being joined
@@ -10,8 +10,8 @@ Tests enhanced init messaging:
 from roadmap.adapters.cli.core import init
 
 
-class TestInitMessagingPhase3:
-    """Test Phase 3: Enhanced init messaging and UX."""
+class TestInitMessagingEnhancements:
+    """Test enhanced init messaging and UX."""
 
     def test_init_messaging_joined_existing_projects(
         self, temp_roadmap_with_projects, cli_runner
@@ -270,7 +270,7 @@ class TestInitErrorMessaging:
             assert result.exit_code in [0, 1]  # Either succeeds or shows error clearly
 
 
-class TestInitPhase3HelpText:
+class TestInitHelpText:
     """Test that init help text mentions team onboarding features."""
 
     def test_init_help_mentions_team_onboarding(self, cli_runner):

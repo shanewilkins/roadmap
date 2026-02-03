@@ -5,6 +5,19 @@ All notable changes to the Roadmap CLI project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- **Unused Dependencies**: Removed openpyxl, GitPython, diskcache, aiohttp, and python-dotenv packages
+  - openpyxl: Excel export never implemented (CSV is universal format)
+  - GitPython: Git operations handled via CLI, no programmatic git access needed
+  - diskcache: No active caching implementation
+  - aiohttp: No async HTTP operations in codebase (requests handles all HTTP)
+  - python-dotenv: dynaconf is primary configuration system
+- **Transitive Dependencies**: Removed ~20 transitive packages (gitdb, smmap, frozenlist, multidict, yarl, et-xmlfile, etc.)
+- **Environment Size**: Reduced installation footprint by ~50-75MB
+
 ## [1.0.0] - 2024-10-11
 
 ### Added
@@ -35,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **File Locking Mechanism**: Concurrent access protection for multi-user environments
 - **Bulk Operations**: Directory-wide validation, updates, and batch processing
 - **Schema Migration**: Tools for updating roadmap formats and maintaining compatibility
-- **Data Export**: CSV and Excel export capabilities with comprehensive analytics
+- **Data Export**: CSV and JSON export capabilities with comprehensive analytics
 
 #### 🚀 **GitHub Integration**
 
@@ -85,9 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### **Dependencies**
 
 - **Core**: Click (CLI), Rich (terminal UI), Pydantic (validation), PyYAML (data)
-- **GitHub**: Requests (HTTP), Python-dotenv (config), Keyring (credentials)
-- **Analytics**: Pandas (data analysis), OpenPyXL (Excel export)
-- **Visualization**: Matplotlib (static charts), Plotly (interactive), Seaborn (styling)
+- **GitHub**: Requests (HTTP), Keyring (credentials)
 - **Development**: Pytest (testing), Sphinx/MkDocs (documentation), Black/isort (formatting)
 
 #### **Compatibility**
@@ -95,7 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Python Versions**: 3.10, 3.11, 3.12 support
 - **Operating Systems**: Windows, macOS, Linux cross-platform compatibility
 - **GitHub**: Full GitHub API v4 support with GraphQL integration
-- **Export Formats**: YAML, CSV, Excel, PNG, SVG, HTML output support
+- **Export Formats**: YAML, CSV, JSON, Markdown output support
 
 ### Performance Metrics
 

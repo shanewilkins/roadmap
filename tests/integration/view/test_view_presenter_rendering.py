@@ -319,8 +319,8 @@ class TestMilestoneViewCommandIntegration:
         assert view_project.name == "view"
 
 
-class TestPhase3CodeReduction:
-    """Test that Phase 3 refactoring achieved code reduction goals."""
+class TestViewCodeOptimization:
+    """Test that view refactoring achieved code reduction goals."""
 
     def test_milestone_view_file_size_reduction(self):
         """Verify milestone view file is significantly smaller after refactoring."""

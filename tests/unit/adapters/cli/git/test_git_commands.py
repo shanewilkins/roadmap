@@ -233,8 +233,8 @@ class TestSetupGithubAuthFunction:
 class TestTestGitConnectivityFunction:
     """Test suite for _test_git_connectivity helper."""
 
-    def test_test_git_connectivity_creates_handler(self):
-        """Test _test_git_connectivity creates GitConnectivityHandler."""
+    def test_git_connectivity_handler_creation(self):
+        """Test git connectivity helper creates handler."""
         from roadmap.adapters.cli.git.commands import _test_git_connectivity
 
         mock_core = MagicMock()
@@ -249,8 +249,8 @@ class TestTestGitConnectivityFunction:
 
             mock_handler_class.assert_called_once()
 
-    def test_test_git_connectivity_calls_test_method(self):
-        """Test _test_git_connectivity calls handler.test_git_connectivity."""
+    def test_git_connectivity_handler_method_call(self):
+        """Test git connectivity helper calls handler method."""
         from roadmap.adapters.cli.git.commands import _test_git_connectivity
 
         mock_core = MagicMock()
@@ -265,8 +265,8 @@ class TestTestGitConnectivityFunction:
 
             mock_handler.test_git_connectivity.assert_called_once_with(mock_core)
 
-    def test_test_git_connectivity_passes_core(self):
-        """Test _test_git_connectivity passes core to handler."""
+    def test_git_connectivity_passes_core_object(self):
+        """Test git connectivity helper passes core to handler."""
         from roadmap.adapters.cli.git.commands import _test_git_connectivity
 
         mock_core = MagicMock()

@@ -270,13 +270,14 @@ For v1.1, we're considering:
 **A:** Yes:
 
 ```bash
-# Export to CSV
+# Export to CSV (Excel-compatible)
 roadmap data export csv > status.csv
-# Open in Excel
 
 # Export to JSON
 roadmap data export json > status.json
-# Share as-is or generate HTML report
+
+# Export to Markdown
+roadmap data export markdown > status.md
 
 # Export per-milestone
 roadmap milestone list --format json | \
