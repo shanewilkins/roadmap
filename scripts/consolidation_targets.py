@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Batch consolidate all MagicMock patterns with builders."""
 
+import sys
 from pathlib import Path
 
 

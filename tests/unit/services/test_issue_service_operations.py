@@ -464,7 +464,7 @@ class TestIssueServiceWorkflows:
             status=Status.IN_PROGRESS,
             assignee="alice@example.com",
         )
-        updated = service.update_issue(update_params)
+        service.update_issue(update_params)
 
         # Retrieve
         retrieved = service.get_issue(created.id)

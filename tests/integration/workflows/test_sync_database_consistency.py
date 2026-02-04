@@ -1,5 +1,3 @@
-import pytest
-
 """Integration tests for sync database consistency.
 
 Verifies that after a successful sync, local issues, remote/GitHub issues,
@@ -10,6 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
+
+import pytest
 
 from roadmap.adapters.sync.sync_retrieval_orchestrator import SyncRetrievalOrchestrator
 from roadmap.common.constants import Status
