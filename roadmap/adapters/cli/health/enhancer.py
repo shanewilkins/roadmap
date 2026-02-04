@@ -6,6 +6,7 @@ This module provides infrastructure for enriching health check results with:
 - Auto-fix commands (ready-to-run commands for common fixes)
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -210,7 +211,7 @@ class HealthCheckEnhancer:
             ]
 
     def enhance_all_checks(
-        self, checks: dict[str, tuple[HealthStatus, str]]
+        self, checks: Mapping[str, tuple[HealthStatus, str]]
     ) -> dict[str, HealthCheckDetail]:
         """Enhance all health check results.
 

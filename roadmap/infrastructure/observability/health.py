@@ -8,6 +8,8 @@ This module orchestrates health checks by delegating to specialized checkers:
 These replace the original monolithic HealthCheck class to improve separation of concerns.
 """
 
+from collections.abc import Mapping
+
 from roadmap.common.logging import get_logger
 from roadmap.core.domain.health import HealthStatus
 from roadmap.infrastructure.observability.specialized_health_checkers import (
@@ -163,7 +165,7 @@ class HealthCheck:
         return checks
 
     @staticmethod
-    def get_overall_status(checks: dict[str, tuple[HealthStatus, str]]) -> HealthStatus:
+    def get_overall_status(checks: Mapping[str, tuple[HealthStatus, str]]) -> HealthStatus:
         """Get overall health status from check results.
 
         Args:
