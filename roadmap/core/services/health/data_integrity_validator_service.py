@@ -71,7 +71,9 @@ class DataIntegrityValidatorService:
 
             return checks
         except Exception as e:
-            logger.error("data_integrity_validation_failed", error=str(e), severity="data_error")
+            logger.error(
+                "data_integrity_validation_failed", error=str(e), severity="data_error"
+            )
             return {
                 "error": (
                     HealthStatus.UNHEALTHY,

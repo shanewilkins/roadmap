@@ -117,7 +117,12 @@ class FileRepairService:
                     entity_id=file_rel,
                 )
                 result.add_error(file_rel)
-                logger.warning("Failed to fix file", file=file_rel, error=str(e), severity="operational")
+                logger.warning(
+                    "Failed to fix file",
+                    file=file_rel,
+                    error=str(e),
+                    severity="operational",
+                )
 
         return result
 

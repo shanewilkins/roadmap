@@ -32,7 +32,9 @@ class EntitySyncCoordinator:
                 result = conn.execute("SELECT id FROM projects LIMIT 1").fetchone()
                 return result[0] if result else None
         except Exception as e:
-            logger.error("failed_to_get_default_project_id", error=str(e), severity="operational")
+            logger.error(
+                "failed_to_get_default_project_id", error=str(e), severity="operational"
+            )
             return None
 
     def _get_milestone_id_by_name(self, milestone_name: str) -> str | None:

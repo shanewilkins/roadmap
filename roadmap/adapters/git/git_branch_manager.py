@@ -332,7 +332,9 @@ class GitBranchManager:
             issue = roadmap_core.issues.create(**issue_data)
             return issue.id
         except Exception as e:
-            logger.error("auto_issue_creation_failed", error=str(e), severity="operational")
+            logger.error(
+                "auto_issue_creation_failed", error=str(e), severity="operational"
+            )
             return None
 
     def _extract_title_from_branch_name(self, branch_name: str) -> str | None:

@@ -78,7 +78,9 @@ class DatabaseManager:
                 conn.execute("ROLLBACK")
             except sqlite3.OperationalError:
                 # Transaction might not be active
-                logger.debug("rollback_failed_transaction_not_active", severity="operational")
+                logger.debug(
+                    "rollback_failed_transaction_not_active", severity="operational"
+                )
             raise
 
     def _init_database(self):
@@ -310,7 +312,9 @@ class DatabaseManager:
 
         # Migration 4: Add headline column to issues table
         cursor.execute("PRAGMA table_info(issues)")
-        issue_columns = [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
+        issue_columns = (
+            [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
+        )
         if "headline" not in issue_columns:
             migrations.append("""
                 ALTER TABLE issues ADD COLUMN headline TEXT DEFAULT '';
@@ -348,7 +352,11 @@ class DatabaseManager:
             ).fetchone()
             return result is not None
         except Exception as e:
-            logger.error("Failed to check database initialization", error=str(e), severity="infrastructure")
+            logger.error(
+                "Failed to check database initialization",
+                error=str(e),
+                severity="infrastructure",
+            )
             return False
 
     def close(self):
@@ -380,7 +388,11 @@ class DatabaseManager:
             return len(tables) >= 3
 
         except Exception as e:
-            logger.warning("Error checking database existence", error=str(e), severity="infrastructure")
+            logger.warning(
+                "Error checking database existence",
+                error=str(e),
+                severity="infrastructure",
+            )
             return False
 
     def is_safe_for_writes(self) -> tuple[bool, str]:

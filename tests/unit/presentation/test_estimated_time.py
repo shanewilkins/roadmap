@@ -1,7 +1,7 @@
 """Tests for estimated time functionality."""
 
 from roadmap.adapters.cli import main
-from roadmap.core.domain import Issue, Milestone, Status
+from roadmap.core.domain import Status
 from tests.factories import IssueBuilder, MilestoneBuilder
 from tests.unit.common.formatters.test_assertion_helpers import (
     assert_command_success,
@@ -50,7 +50,10 @@ class TestMilestoneEstimatedTime:
             IssueBuilder().with_milestone("v1.0").with_estimated_hours(4.0).build(),
             IssueBuilder().with_milestone("v1.0").with_estimated_hours(8.0).build(),
             IssueBuilder().with_milestone("v1.0").build(),  # No estimate
-            IssueBuilder().with_milestone("v2.0").with_estimated_hours(2.0).build(),  # Different milestone
+            IssueBuilder()
+            .with_milestone("v2.0")
+            .with_estimated_hours(2.0)
+            .build(),  # Different milestone
         ]
 
         total_hours = milestone.get_total_estimated_hours(issues)
@@ -60,9 +63,21 @@ class TestMilestoneEstimatedTime:
         """Test milestone remaining estimated hours calculation."""
         milestone = MilestoneBuilder().with_name("v1.0").build()
         issues = [
-            IssueBuilder().with_milestone("v1.0").with_status(Status.CLOSED).with_estimated_hours(4.0).build(),
-            IssueBuilder().with_milestone("v1.0").with_status(Status.TODO).with_estimated_hours(8.0).build(),
-            IssueBuilder().with_milestone("v1.0").with_status(Status.IN_PROGRESS).with_estimated_hours(6.0).build(),
+            IssueBuilder()
+            .with_milestone("v1.0")
+            .with_status(Status.CLOSED)
+            .with_estimated_hours(4.0)
+            .build(),
+            IssueBuilder()
+            .with_milestone("v1.0")
+            .with_status(Status.TODO)
+            .with_estimated_hours(8.0)
+            .build(),
+            IssueBuilder()
+            .with_milestone("v1.0")
+            .with_status(Status.IN_PROGRESS)
+            .with_estimated_hours(6.0)
+            .build(),
         ]
 
         remaining_hours = milestone.get_remaining_estimated_hours(issues)

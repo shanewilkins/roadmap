@@ -243,5 +243,9 @@ class SyncOrchestrator:
             return False
 
         except Exception as e:
-            logger.error("Failed to determine rebuild strategy", error=str(e), severity="operational")
+            logger.error(
+                "Failed to determine rebuild strategy",
+                error=str(e),
+                severity="operational",
+            )
             return True

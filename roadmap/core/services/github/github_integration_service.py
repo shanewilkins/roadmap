@@ -311,7 +311,11 @@ class GitHubIntegrationService:
                 logger.debug("assignee_validated", assignee=assignee)
                 return True, ""
             else:
-                logger.warning("assignee_validation_failed", assignee=assignee, severity="data_error")
+                logger.warning(
+                    "assignee_validation_failed",
+                    assignee=assignee,
+                    severity="data_error",
+                )
                 return False, error_message
 
         except Exception as e:
@@ -367,7 +371,9 @@ class GitHubIntegrationService:
                 logger.debug("assignee_validated_via_github", assignee=assignee)
                 return True, ""
             else:
-                logger.warning("assignee_not_in_github", assignee=assignee, severity="data_error")
+                logger.warning(
+                    "assignee_not_in_github", assignee=assignee, severity="data_error"
+                )
                 return False, github_error
 
         except Exception as fallback_error:
@@ -390,7 +396,11 @@ class GitHubIntegrationService:
                 f"{str(fallback_error)}"
             )
             self._last_canonical_assignee = assignee
-            logger.warning("assignee_validation_unavailable", error=str(fallback_error), severity="infrastructure")
+            logger.warning(
+                "assignee_validation_unavailable",
+                error=str(fallback_error),
+                severity="infrastructure",
+            )
             return True, warning_msg
 
     @traced("get_canonical_assignee")

@@ -353,7 +353,7 @@ class TestCommentAttributes:
     def test_comment_body_supports_markdown(self):
         """Comment body should support markdown."""
         markdown_body = """# Header
-        
+
 - Bullet point
 - Another point
 

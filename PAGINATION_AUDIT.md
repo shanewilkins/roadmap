@@ -15,7 +15,7 @@ All pagination issues have been fixed with a reusable utility pattern.
 **File**: `roadmap/adapters/github/handlers/base.py`
 - **Method**: `_paginate_request(method, endpoint, params, per_page)`
 - **Purpose**: Centralized pagination handling for all list endpoints
-- **Implementation**: 
+- **Implementation**:
   - Loops through pages using `page` parameter
   - Checks `Link` header for `rel="next"` to detect end of pagination
   - Returns complete list of all items across all pages
@@ -67,7 +67,7 @@ To prevent pagination bugs in the future:
 # Before fix: Shows only 100 "Needs Pull"
 uv run roadmap sync --dry-run
 
-# After fix: Shows all 1258 "Needs Pull"  
+# After fix: Shows all 1258 "Needs Pull"
 ✓ Up-to-date: 51
 📥 Needs Pull: 1258
 Potential Conflicts: 0
@@ -80,4 +80,3 @@ Potential Conflicts: 0
 3. `roadmap/adapters/github/handlers/milestones.py` - Refactored to use utility
 4. `roadmap/adapters/github/handlers/labels.py` - Refactored to use utility
 5. `roadmap/adapters/github/handlers/comments.py` - Refactored to use utility
-

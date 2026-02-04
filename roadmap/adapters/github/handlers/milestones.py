@@ -11,12 +11,12 @@ class MilestoneHandler(BaseGitHubHandler):
 
     def get_milestones(self, state: str = "open") -> list[dict[str, Any]]:
         """Get milestones from the repository.
-        
+
         Handles pagination automatically - returns all milestones.
-        
+
         Args:
             state: Milestone state ('open', 'closed', 'all')
-            
+
         Returns:
             List of all milestones across all pages
         """

@@ -162,7 +162,9 @@ class GitHubPayloadToIssueConverter:
         # Use backend_id if available, or look in remote_ids dict
         github_number = sync_issue.backend_id or sync_issue.remote_ids.get("github")
         if github_number:
-            issue.remote_ids["github"] = int(github_number) if isinstance(github_number, str) else github_number
+            issue.remote_ids["github"] = (
+                int(github_number) if isinstance(github_number, str) else github_number
+            )
 
         return issue
 
@@ -189,7 +191,9 @@ class GitHubPayloadToIssueConverter:
             status=status,
             labels=[label["name"] for label in (github_dict.get("labels") or [])],
             assignee=assignee,
-            milestone=github_dict.get("milestone", {}).get("title") if github_dict.get("milestone") else None,
+            milestone=github_dict.get("milestone", {}).get("title")
+            if github_dict.get("milestone")
+            else None,
         )
 
         # Store GitHub issue number

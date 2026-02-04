@@ -130,7 +130,9 @@ class FolderStructureValidator(BaseValidator):
                 issues_dir, core, orphaned
             )
         except Exception as e:
-            logger.error("folder_structure_check_failed", error=str(e), severity="system_error")
+            logger.error(
+                "folder_structure_check_failed", error=str(e), severity="system_error"
+            )
 
         return (
             {

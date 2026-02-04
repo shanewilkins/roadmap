@@ -13,7 +13,6 @@ Uses real service with real repository (tmp_path).
 Minimal mocking - testing actual service behavior.
 """
 
-
 from roadmap.common.constants import IssueType, Priority, Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models import IssueCreateServiceParams, IssueUpdateServiceParams

@@ -71,7 +71,12 @@ class GitHubAssigneeValidator:
 
         except Exception as e:
             error_msg = f"GitHub validation failed: {e}"
-            logger.warning("github_validation_error", assignee=assignee, error=str(e), severity="infrastructure")
+            logger.warning(
+                "github_validation_error",
+                assignee=assignee,
+                error=str(e),
+                severity="infrastructure",
+            )
             return AssigneeValidationResult(is_valid=False, message=error_msg)
 
     def get_team_members(self) -> list[str]:
@@ -88,5 +93,9 @@ class GitHubAssigneeValidator:
             logger.debug("github_team_members_retrieved", count=len(members))
             return members
         except Exception as e:
-            logger.warning("github_team_members_retrieval_failed", error=str(e), severity="infrastructure")
+            logger.warning(
+                "github_team_members_retrieval_failed",
+                error=str(e),
+                severity="infrastructure",
+            )
             return []

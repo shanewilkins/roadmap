@@ -1,7 +1,6 @@
 """Security event logging utilities."""
 
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 from structlog import get_logger
@@ -26,4 +25,3 @@ def log_security_event(event_type: str, details: dict[str, Any] | None = None) -
         timestamp=datetime.now(UTC).isoformat(),
         **details,
     )
-

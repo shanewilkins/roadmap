@@ -4,7 +4,6 @@ Tests security event logging, logging configuration, export size validation,
 and comprehensive security workflows.
 """
 
-import logging
 import os
 import tempfile
 import time
@@ -114,6 +113,7 @@ class TestLogSecurityEvent:
             log_security_event("closed_handler_event")
             # The implementation doesn't check handler status, so it will still be called
             mock_info.assert_called_once()
+
 
 class TestValidateExportSize:
     """Test validate_export_size function."""

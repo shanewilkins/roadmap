@@ -202,58 +202,68 @@ def _display_issue_lists(core, analysis_report, local_only, remote_only, console
     """Display lists of local-only or remote-only issues."""
     from rich.table import Table
     from collections import Counter
-    
-    if not hasattr(analysis_report, 'changes') or not analysis_report.changes:
+
+    if not hasattr(analysis_report, "changes") or not analysis_report.changes:
         console_inst.print("[dim]No issues found[/dim]")
         return
-    
+
     # Get all issues by type
     local_only_issues = [c for c in analysis_report.changes if c.is_local_only_change()]
-    remote_only_issues = [c for c in analysis_report.changes if c.is_remote_only_change()]
-    
+    remote_only_issues = [
+        c for c in analysis_report.changes if c.is_remote_only_change()
+    ]
+
     if local_only and local_only_issues:
-        console_inst.print("\n[bold cyan]📝 Local-Only Issues[/bold cyan] (exist locally but not remotely)")
-        
+        console_inst.print(
+            "\n[bold cyan]📝 Local-Only Issues[/bold cyan] (exist locally but not remotely)"
+        )
+
         table = Table(show_header=True, header_style="bold cyan")
         table.add_column("Local ID", style="dim", width=10)
         table.add_column("Title", width=50)
         table.add_column("Status", style="yellow", width=12)
-        
+
         for change in sorted(local_only_issues, key=lambda c: c.title):
             status = change.local_state.status if change.local_state else "unknown"
-            table.add_row(
-                change.issue_id[:8],
-                change.title,
-                status
-            )
-        
+            table.add_row(change.issue_id[:8], change.title, status)
+
         console_inst.print(table)
-        
+
         # Show status breakdown
         statuses = [c.local_state.status for c in local_only_issues if c.local_state]
         status_counts = Counter(statuses)
-        breakdown = ", ".join(f"{s}: {count}" for s, count in sorted(status_counts.items()))
-        console_inst.print(f"[dim]Total: {len(local_only_issues)} issues ({breakdown})[/dim]")
-    
+        breakdown = ", ".join(
+            f"{s}: {count}" for s, count in sorted(status_counts.items())
+        )
+        console_inst.print(
+            f"[dim]Total: {len(local_only_issues)} issues ({breakdown})[/dim]"
+        )
+
     if remote_only and remote_only_issues:
-        console_inst.print("\n[bold cyan]🔄 Remote-Only Issues[/bold cyan] (exist remotely but not locally)")
-        
+        console_inst.print(
+            "\n[bold cyan]🔄 Remote-Only Issues[/bold cyan] (exist remotely but not locally)"
+        )
+
         table = Table(show_header=True, header_style="bold cyan")
         table.add_column("Local ID", style="dim", width=10)
         table.add_column("Remote ID", style="cyan", width=12)
         table.add_column("Title", width=40)
         table.add_column("Status", style="yellow", width=10)
         table.add_column("Linked", width=8)
-        
+
         # Count linked vs orphaned
         linked_count = 0
         orphaned_count = 0
-        
+
         for change in sorted(remote_only_issues, key=lambda c: c.title):
-            status = change.remote_state.get("status") if change.remote_state else "unknown"
+            status = (
+                change.remote_state.get("status") if change.remote_state else "unknown"
+            )
             # Extract remote ID (backend_id) from remote_state
-            remote_id = change.remote_state.get("backend_id") if change.remote_state else "?"
-            
+            remote_id = (
+                change.remote_state.get("backend_id") if change.remote_state else "?"
+            )
+
             # Determine if linked (has a local ID that's not "_remote_")
             is_linked = change.issue_id and not change.issue_id.startswith("_remote_")
             if is_linked:
@@ -262,26 +272,36 @@ def _display_issue_lists(core, analysis_report, local_only, remote_only, console
             else:
                 linked_icon = "[dim red]✗[/dim red]"
                 orphaned_count += 1
-            
+
             table.add_row(
                 change.issue_id[:8] if is_linked else "_remote_",
                 str(remote_id),
                 change.title,
                 status,
-                linked_icon
+                linked_icon,
             )
-        
+
         console_inst.print(table)
-        
+
         # Show status breakdown and link status
-        statuses = [c.remote_state.get("status") for c in remote_only_issues if c.remote_state]
+        statuses = [
+            c.remote_state.get("status") for c in remote_only_issues if c.remote_state
+        ]
         status_counts = Counter(statuses)
-        breakdown = ", ".join(f"{s}: {count}" for s, count in sorted(status_counts.items()))
-        console_inst.print(f"[dim]Total: {len(remote_only_issues)} issues ({breakdown})[/dim]")
-        console_inst.print(f"[green]Linked to local: {linked_count}[/green] | [dim red]Orphaned (no local match): {orphaned_count}[/dim red]")
-    
+        breakdown = ", ".join(
+            f"{s}: {count}" for s, count in sorted(status_counts.items())
+        )
+        console_inst.print(
+            f"[dim]Total: {len(remote_only_issues)} issues ({breakdown})[/dim]"
+        )
+        console_inst.print(
+            f"[green]Linked to local: {linked_count}[/green] | [dim red]Orphaned (no local match): {orphaned_count}[/dim red]"
+        )
+
     if not (local_only or remote_only):
-        console_inst.print("[dim]Use --local-only or --remote-only to see issue lists[/dim]")
+        console_inst.print(
+            "[dim]Use --local-only or --remote-only to see issue lists[/dim]"
+        )
 
 
 def _clear_baseline(core, backend, console_inst) -> bool:
@@ -540,7 +560,9 @@ def sync(
 
         # Display local-only or remote-only lists if requested
         if local_only or remote_only:
-            _display_issue_lists(core, analysis_report, local_only, remote_only, console_inst)
+            _display_issue_lists(
+                core, analysis_report, local_only, remote_only, console_inst
+            )
 
         # If dry-run, stop here and show what would be applied
         if dry_run:

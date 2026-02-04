@@ -69,7 +69,9 @@ class HookStatus:
             content = hook_file.read_text()
             return "roadmap-hook" in content
         except Exception as e:
-            logger.error("hook_content_check_failed", error=str(e), severity="operational")
+            logger.error(
+                "hook_content_check_failed", error=str(e), severity="operational"
+            )
             return False
 
     @staticmethod

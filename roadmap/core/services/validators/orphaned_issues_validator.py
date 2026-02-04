@@ -76,7 +76,9 @@ class OrphanedIssuesValidator:
                 f"⚠️ {count} orphaned issue(s) found (in wrong folder): "
                 "These issues are not in the folder matching their milestone"
             )
-            logger.warning("health_check_orphaned_issues", count=count, severity="operational")
+            logger.warning(
+                "health_check_orphaned_issues", count=count, severity="operational"
+            )
             return HealthStatus.DEGRADED, message
 
         except Exception as e:

@@ -1,7 +1,7 @@
 # Semgrep Quick Reference Card
 
-**Status:** ✅ All violations fixed (0 findings)  
-**Last Updated:** January 26, 2026  
+**Status:** ✅ All violations fixed (0 findings)
+**Last Updated:** January 26, 2026
 **Print this out** or keep it handy as a reference guide for maintaining standards
 
 ---

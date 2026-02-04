@@ -17,7 +17,7 @@ class IssueHandler(BaseGitHubHandler):
         per_page: int = 100,
     ) -> list[dict[str, Any]]:
         """Get issues from the repository, handling pagination.
-        
+
         Automatically fetches all pages of issues. Returns complete list
         regardless of total count.
 

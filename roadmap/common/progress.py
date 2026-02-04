@@ -367,7 +367,11 @@ class ProgressEventSystem:
                     }
                 )
             except Exception as e:
-                logger.error("progress_event_listener_error", error=str(e), severity="system_error")
+                logger.error(
+                    "progress_event_listener_error",
+                    error=str(e),
+                    severity="system_error",
+                )
 
         return {
             "milestones_updated": updated_milestones,

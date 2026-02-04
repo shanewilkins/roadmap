@@ -231,16 +231,16 @@ rules:
       - pattern: logger.$METHOD(str($X), ...)
     message: |
       Event name must be a static string literal for searchability and log aggregation.
-      
+
       ❌ WRONG (f-string - not greppable):
         logger.error(f"{operation}_failed", error=str(e))
-        
+
       ✅ CORRECT (static string):
         logger.error("operation_failed", operation=operation, error=str(e))
-      
+
       Event names must be constants so we can find all instances with grep:
         grep "operation_failed" roadmap/
-      
+
       Use keyword arguments to pass variable data.
     severity: ERROR
     languages: [python]
@@ -260,15 +260,15 @@ rules:
                 regex: '.*[a-z][A-Z].*'
     message: |
       Event names must use snake_case (all lowercase with underscores).
-      
+
       ❌ WRONG (camelCase):
         logger.error("operationFailed", ...)
         logger.error("SyncCommandFailed", ...)
-        
+
       ✅ CORRECT (snake_case):
         logger.error("operation_failed", ...)
         logger.error("sync_command_failed", ...)
-      
+
       This ensures consistency and readability in logs.
     severity: WARNING
     languages: [python]
@@ -295,14 +295,14 @@ rules:
           - pattern-not: logger.debug(..., exc_info=False, ...)
     message: |
       exc_info=True (stack trace) should only be used on ERROR level.
-      
+
       ❌ WRONG (stack trace on warning):
         logger.warning("operation_degraded", error=str(e), severity="operational", exc_info=True)
-        
+
       ✅ CORRECT (stack trace only on error):
         logger.error("operation_failed", error=str(e), severity="system_error", exc_info=True)
         logger.warning("operation_degraded", error=str(e), severity="operational")
-      
+
       Stack traces are verbose and should only be included for unexpected errors,
       not for expected/recoverable warnings.
     severity: WARNING
@@ -322,20 +322,20 @@ rules:
       - pattern-not: logger.$METHOD(..., exception=$VAR, ...)
     message: |
       Exception details must be passed as structured parameters, not interpolated in event name/message.
-      
+
       ❌ WRONG (f-string interpolation - loses structure):
         except ValueError as e:
             logger.error(f"operation_failed: {e}", ...)
-            
+
       ✅ CORRECT (structured parameters):
         except ValueError as e:
             logger.error("operation_failed", error=str(e), exc_info=True, severity="data_error")
-      
+
       Structured logging allows log aggregation systems to:
       - Extract and analyze error types
       - Deduplicate similar errors
       - Create alerts on error patterns
-      
+
       Interpolated strings destroy this structure.
     severity: ERROR
     languages: [python]

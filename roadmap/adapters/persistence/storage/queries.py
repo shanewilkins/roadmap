@@ -105,14 +105,18 @@ class QueryService:
                             metadata = json.loads(row[10])
                             issue.update(metadata)
                         except json.JSONDecodeError:
-                            logger.warning("failed_to_parse_issue_metadata", severity="data_error")
+                            logger.warning(
+                                "failed_to_parse_issue_metadata", severity="data_error"
+                            )
 
                     issues.append(issue)
 
                 return issues
 
         except Exception as e:
-            logger.error("Failed to get issues", error=str(e), severity="infrastructure")
+            logger.error(
+                "Failed to get issues", error=str(e), severity="infrastructure"
+            )
             return []
 
     def get_all_milestones(self) -> list[dict[str, Any]]:
@@ -148,14 +152,19 @@ class QueryService:
                             metadata = json.loads(row[7])
                             milestone.update(metadata)
                         except json.JSONDecodeError:
-                            logger.warning("failed_to_parse_milestone_metadata", severity="data_error")
+                            logger.warning(
+                                "failed_to_parse_milestone_metadata",
+                                severity="data_error",
+                            )
 
                     milestones.append(milestone)
 
                 return milestones
 
         except Exception as e:
-            logger.error("Failed to get milestones", error=str(e), severity="infrastructure")
+            logger.error(
+                "Failed to get milestones", error=str(e), severity="infrastructure"
+            )
             return []
 
     def get_milestone_progress(self, milestone_name: str) -> dict[str, int]:
@@ -210,5 +219,9 @@ class QueryService:
                 return {row[0]: row[1] for row in results}
 
         except Exception as e:
-            logger.error("Failed to get issues by status", error=str(e), severity="infrastructure")
+            logger.error(
+                "Failed to get issues by status",
+                error=str(e),
+                severity="infrastructure",
+            )
             return {}

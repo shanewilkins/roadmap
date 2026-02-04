@@ -69,7 +69,11 @@ class ProjectInitializationService:
                 operation="cleanup_existing",
                 entity_type="Roadmap",
             )
-            logger.error("Failed to cleanup existing roadmap", error=str(e), severity="operational")
+            logger.error(
+                "Failed to cleanup existing roadmap",
+                error=str(e),
+                severity="operational",
+            )
             return False
 
     @traced("detect_existing_projects")

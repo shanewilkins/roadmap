@@ -172,7 +172,9 @@ class MilestoneNameNormalizationFixer(HealthFixer):
                     )
 
         except Exception as e:
-            logger.error("find_mismatched_milestones_failed", error=str(e), severity="data_error")
+            logger.error(
+                "find_mismatched_milestones_failed", error=str(e), severity="data_error"
+            )
             return []
 
         return mismatched

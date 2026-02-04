@@ -76,5 +76,9 @@ class DataIntegrityValidator:
             return HealthStatus.DEGRADED, message
 
         except Exception as e:
-            logger.error("health_check_data_integrity_failed", error=str(e), severity="system_error")
+            logger.error(
+                "health_check_data_integrity_failed",
+                error=str(e),
+                severity="system_error",
+            )
             return HealthStatus.UNHEALTHY, f"Error checking data integrity: {e}"

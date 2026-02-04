@@ -13,7 +13,7 @@ We can't use the latest semgrep or import-linter, because import-linter>2.6 requ
 - Fixed phases:
   - Phase 1: Fixed 36 event-name violations (f-strings → static with context)
   - Phase 2: Fixed 7 silent-pass/silent-return violations
-  - Phase 3: Fixed 4 remaining silent-pass violations  
+  - Phase 3: Fixed 4 remaining silent-pass violations
   - Phase 4: Fixed 4 silent-return violations in credentials.py
   - Phase 5: Fixed 12 remaining violations (event names, exc_info, severity)
 - Ended with: **0 violations** (100% compliance)
@@ -25,4 +25,4 @@ We can't use the latest semgrep or import-linter, because import-linter>2.6 requ
 4. All warning logs on silent returns are properly logged
 5. No exc_info=True on non-error log levels
 
-See `SEMGREP_RULES.md` for detailed reference on each rule. 
+See `SEMGREP_RULES.md` for detailed reference on each rule.

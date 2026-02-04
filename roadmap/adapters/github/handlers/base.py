@@ -22,6 +22,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
     """
 
     BASE_URL = "https://api.github.com"
+
     def __init__(
         self,
         session: requests.Session,
@@ -73,10 +74,10 @@ class BaseGitHubHandler(BasePaginatedAdapter):
             return response
         except requests.exceptions.HTTPError as e:
             status_code = response.status_code
-            
+
             # Don't log expected/recoverable errors at ERROR level to external_service_error
             # We'll handle logging at appropriate levels below based on status code
-            
+
             # Handle different HTTP status codes with specific error messages and logging
             if status_code == 400:
                 error_msg = "Bad Request: Invalid request payload"
@@ -95,7 +96,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="data_error",
                 )
                 raise GitHubAPIError(error_msg) from e
-                
+
             elif status_code == 401:
                 error_msg = "Authentication failed. Check your GitHub token."
                 logger = get_logger()
@@ -111,9 +112,11 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="config",
                 )
                 raise GitHubAPIError(error_msg) from e
-                
+
             elif status_code == 403:
-                error_msg = "Access forbidden. Check repository permissions and token scopes."
+                error_msg = (
+                    "Access forbidden. Check repository permissions and token scopes."
+                )
                 logger = get_logger()
                 # 403 is often expected (token scope), don't log as external error
                 logger.debug(
@@ -123,7 +126,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="config",
                 )
                 raise GitHubAPIError(error_msg) from e
-                
+
             elif status_code == 404:
                 error_msg = "Repository or resource not found."
                 logger = get_logger()
@@ -140,7 +143,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="operational",
                 )
                 raise GitHubAPIError(error_msg) from e
-                
+
             elif status_code == 410:
                 # Gone - resource was deleted (expected, don't log as external error)
                 error_msg = "Resource has been deleted (410 Gone)"
@@ -152,7 +155,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="operational",
                 )
                 raise GitHubAPIError(error_msg) from e
-                
+
             elif status_code == 422:
                 # Validation error - most common for issue creation/update
                 error_data = response.json() if response.content else {}
@@ -176,7 +179,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="data_error",
                 )
                 raise GitHubAPIError(f"Validation error: {error_msg}") from e
-                
+
             elif status_code == 429:
                 # Rate limited (expected for heavy usage)
                 error_msg = "Rate limit exceeded. Please try again later."
@@ -189,7 +192,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="operational",
                 )
                 raise GitHubAPIError(error_msg) from e
-                
+
             elif 500 <= status_code < 600:
                 # Server error
                 error_msg = f"GitHub API server error ({status_code})"
@@ -207,7 +210,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     severity="infrastructure",
                 )
                 raise GitHubAPIError(error_msg) from e
-                
+
             else:
                 # Unknown error
                 error_msg = f"GitHub API error ({status_code}): {e}"
@@ -245,4 +248,3 @@ class BaseGitHubHandler(BasePaginatedAdapter):
         self._check_repository()
         response = self._make_request("GET", f"/repos/{self.owner}/{self.repo}")
         return response.json()
-

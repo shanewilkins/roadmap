@@ -32,7 +32,7 @@ class CommentsHandler(BaseGitHubHandler):
 
     def get_issue_comments(self, issue_number: int) -> list[Comment]:
         """Get all comments for a specific issue.
-        
+
         Handles pagination automatically - returns all comments.
 
         Args:

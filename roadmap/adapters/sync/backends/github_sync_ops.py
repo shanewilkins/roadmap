@@ -5,7 +5,6 @@ from typing import Any
 
 from structlog import get_logger
 
-from roadmap.adapters.sync.backends.converters import IssueToGitHubPayloadConverter
 from roadmap.common.logging import log_error_with_context
 from roadmap.core.interfaces import SyncReport
 
@@ -33,7 +32,9 @@ class GitHubSyncOps:
             Tuple of (success: bool, error_message: str | None)
         """
         try:
-            from roadmap.adapters.sync.backends.converters import IssueToGitHubPayloadConverter
+            from roadmap.adapters.sync.backends.converters import (
+                IssueToGitHubPayloadConverter,
+            )
 
             # Get the API client from the backend (ensures we don't create duplicates)
             client = self.backend.get_api_client()
@@ -59,12 +60,16 @@ class GitHubSyncOps:
 
                 # Ensure issue is persisted to database before linking
                 # This satisfies the FK constraint in issue_remote_links table
-                if github_number and hasattr(self.backend, "core") and self.backend.core:
+                if (
+                    github_number
+                    and hasattr(self.backend, "core")
+                    and self.backend.core
+                ):
                     try:
                         # First, ensure the issue exists in the database
                         issue_repo = self.backend.core.db.get_issue_repository()
                         existing = issue_repo.get(issue.id)
-                        
+
                         if not existing:
                             # Issue not in database yet - persist it
                             # Convert Issue domain object to dict for database
@@ -72,13 +77,18 @@ class GitHubSyncOps:
                             issue_data = {
                                 "id": issue.id,
                                 "title": issue.title,
-                                "headline": getattr(issue, 'headline', ''),
-                                "description": issue.content or "",  # content → description
+                                "headline": getattr(issue, "headline", ""),
+                                "description": issue.content
+                                or "",  # content → description
                                 "status": str(issue.status),
                                 "priority": str(issue.priority),
-                                "issue_type": str(issue.type) if hasattr(issue, 'type') else "task",
+                                "issue_type": str(issue.type)
+                                if hasattr(issue, "type")
+                                else "task",
                                 "assignee": issue.assignee,
-                                "estimate_hours": issue.estimated_hours if hasattr(issue, 'estimated_hours') else None,
+                                "estimate_hours": issue.estimated_hours
+                                if hasattr(issue, "estimated_hours")
+                                else None,
                                 "due_date": None,
                                 "project_id": None,  # Synced issues have no local project
                             }
@@ -129,7 +139,7 @@ class GitHubSyncOps:
         except Exception as e:
             error_msg = str(e)
             error_type = type(e).__name__
-            
+
             # Handle specific error types differently with structured logging
             if "Access forbidden" in error_msg or "403" in error_msg:
                 # 403 Forbidden - token lacks permissions or repo access
@@ -221,7 +231,9 @@ class GitHubSyncOps:
                         logger.debug("push_issue_succeeded", issue_id=issue.id)
                     else:
                         report.errors[issue.id] = error_msg or "Failed to push issue"
-                        logger.debug("push_issue_failed", issue_id=issue.id, error=error_msg)
+                        logger.debug(
+                            "push_issue_failed", issue_id=issue.id, error=error_msg
+                        )
                 except Exception as e:
                     error_msg = str(e)
                     report.errors[issue.id] = error_msg
@@ -309,18 +321,23 @@ class GitHubSyncOps:
                 # Link the issue to GitHub
                 try:
                     self.backend.core.db.remote_links.link_issue(
-                        issue_uuid=sync_issue.remote_ids.get("github") or sync_issue.backend_id,
+                        issue_uuid=sync_issue.remote_ids.get("github")
+                        or sync_issue.backend_id,
                         backend_name="github",
-                        remote_id=str(sync_issue.remote_ids.get("github") or sync_issue.backend_id),
+                        remote_id=str(
+                            sync_issue.remote_ids.get("github") or sync_issue.backend_id
+                        ),
                     )
                     logger.info(
                         "github_issue_linked_locally",
-                        github_number=sync_issue.remote_ids.get("github") or sync_issue.backend_id,
+                        github_number=sync_issue.remote_ids.get("github")
+                        or sync_issue.backend_id,
                     )
                 except Exception as e:
                     logger.warning(
                         "github_issue_link_failed",
-                        github_number=sync_issue.remote_ids.get("github") or sync_issue.backend_id,
+                        github_number=sync_issue.remote_ids.get("github")
+                        or sync_issue.backend_id,
                         error=str(e),
                         severity="operational",
                     )
@@ -330,7 +347,7 @@ class GitHubSyncOps:
         except Exception as e:
             error_msg = str(e)
             error_type = type(e).__name__
-            
+
             # Handle specific error types differently with structured logging
             if "Access forbidden" in error_msg or "403" in error_msg:
                 # 403 Forbidden - token lacks permissions

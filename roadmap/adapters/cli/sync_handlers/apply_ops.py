@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from collections import Counter
 from typing import Any
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
