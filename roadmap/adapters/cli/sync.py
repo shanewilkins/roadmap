@@ -264,9 +264,7 @@ def _display_remote_only_issues(remote_only_issues, console_inst):
     orphaned_count = 0
 
     for change in sorted(remote_only_issues, key=lambda c: c.title):
-        status = (
-            change.remote_state.get("status") if change.remote_state else "unknown"
-        )
+        status = change.remote_state.get("status") if change.remote_state else "unknown"
         # Extract remote ID (backend_id) from remote_state
         remote_id = (
             change.remote_state.get("backend_id") if change.remote_state else "?"

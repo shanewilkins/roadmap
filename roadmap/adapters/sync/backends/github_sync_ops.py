@@ -47,9 +47,7 @@ class GitHubSyncOps:
                     "description": issue.content or "",
                     "status": str(issue.status),
                     "priority": str(issue.priority),
-                    "issue_type": str(issue.type)
-                    if hasattr(issue, "type")
-                    else "task",
+                    "issue_type": str(issue.type) if hasattr(issue, "type") else "task",
                     "assignee": issue.assignee,
                     "estimate_hours": issue.estimated_hours
                     if hasattr(issue, "estimated_hours")
@@ -287,7 +285,11 @@ class GitHubSyncOps:
             projects = list(self.backend.core.projects.list())
             return projects[0].id if projects else None
         except Exception as e:
-            logger.warning("failed_to_get_projects_for_issue", error=str(e))
+            logger.warning(
+                "failed_to_get_projects_for_issue",
+                error=str(e),
+                severity="operational",
+            )
             return None
 
     def _create_or_update_issue_locally(

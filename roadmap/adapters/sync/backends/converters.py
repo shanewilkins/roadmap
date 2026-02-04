@@ -7,9 +7,13 @@ This module handles bidirectional conversion:
 
 from typing import Any
 
+from structlog import get_logger
+
 from roadmap.common.constants import Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
+
+logger = get_logger()
 
 
 class IssueToGitHubPayloadConverter:
@@ -127,6 +131,10 @@ class IssueToGitHubPayloadConverter:
                 try:
                     return int(github_id)
                 except ValueError:
+                    logger.debug(
+                        "failed_to_convert_github_id_to_int",
+                        github_id=github_id,
+                    )
                     return None
             return github_id
         return None
