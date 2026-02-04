@@ -4,6 +4,7 @@ from typing import Any
 
 import requests
 
+from roadmap.adapters.base_paginated_adapter import BasePaginatedAdapter
 from roadmap.common.logging import get_logger, log_external_service_error
 
 
@@ -13,11 +14,14 @@ class GitHubAPIError(Exception):
     pass
 
 
-class BaseGitHubHandler:
-    """Base class for GitHub API handlers."""
+class BaseGitHubHandler(BasePaginatedAdapter):
+    """Base class for GitHub API handlers.
+
+    Inherits pagination support from BasePaginatedAdapter for handling
+    GitHub's paginated API responses.
+    """
 
     BASE_URL = "https://api.github.com"
-
     def __init__(
         self,
         session: requests.Session,
@@ -241,75 +245,4 @@ class BaseGitHubHandler:
         self._check_repository()
         response = self._make_request("GET", f"/repos/{self.owner}/{self.repo}")
         return response.json()
-
-    def _paginate_request(
-        self,
-        method: str,
-        endpoint: str,
-        params: dict | None = None,
-        per_page: int = 100,
-    ) -> list[dict[str, Any]]:
-        """Make a paginated request to GitHub API.
-
-        Automatically handles pagination by checking the Link header
-        for next page references. Returns all items across all pages.
-
-        Args:
-            method: HTTP method (GET, POST, etc.)
-            endpoint: API endpoint path
-            params: Query parameters (will add page and per_page)
-            per_page: Items per page (max 100 for GitHub)
-
-        Returns:
-            List of all items from all pages
-
-        Raises:
-            GitHubAPIError: If any request fails
-        """
-        logger = get_logger()
-        all_items = []
-        page = 1
-        params = params or {}
-
-        while True:
-            # Add pagination params
-            page_params = {**params, "page": page, "per_page": per_page}
-
-            response = self._make_request(method, endpoint, params=page_params)
-            items_page = response.json()
-
-            if not items_page:
-                # No more items on this page
-                logger.debug(
-                    "pagination_complete",
-                    endpoint=endpoint,
-                    total_pages=page - 1,
-                    total_items=len(all_items),
-                )
-                break
-
-            all_items.extend(items_page)
-            logger.debug(
-                "pagination_page_fetched",
-                endpoint=endpoint,
-                page=page,
-                page_count=len(items_page),
-                total_so_far=len(all_items),
-            )
-
-            # Check if there are more pages by looking at the Link header
-            link_header = response.headers.get("Link", "")
-            if 'rel="next"' not in link_header:
-                # No next page link, we're done
-                logger.debug(
-                    "pagination_no_next_link",
-                    endpoint=endpoint,
-                    final_page=page,
-                    total_items=len(all_items),
-                )
-                break
-
-            page += 1
-
-        return all_items
 
