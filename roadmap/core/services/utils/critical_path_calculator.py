@@ -186,7 +186,7 @@ class CriticalPathCalculator:
         # Find leaf nodes (no blocks)
         leaf_nodes = [
             issue_id
-            for issue_id, node in nodes.items()
+            for issue_id, _ in nodes.items()
             if not any(issue_id in graph.get(other_id, []) for other_id in nodes)
         ]
 

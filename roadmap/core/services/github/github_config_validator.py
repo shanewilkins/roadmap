@@ -29,7 +29,7 @@ class GitHubConfigValidator:
             Tuple of (is_valid, error_message)
         """
         # Check if config exists
-        token, owner, repo = self.service.get_github_config()
+        token, _, repo = self.service.get_github_config()
         if not token or not repo:
             return (
                 False,
@@ -55,7 +55,7 @@ class GitHubConfigValidator:
         Returns:
             Tuple of (is_valid, error_message)
         """
-        token, owner, repo = self.service.get_github_config()
+        token, _, _ = self.service.get_github_config()
         if not token:
             return False, "GitHub token not set"
 
@@ -93,7 +93,7 @@ class GitHubConfigValidator:
         Returns:
             Tuple of (is_valid, error_message)
         """
-        token, owner, repo = self.service.get_github_config()
+        token, _, repo = self.service.get_github_config()
         if not token or not repo:
             return False, "GitHub config incomplete"
 

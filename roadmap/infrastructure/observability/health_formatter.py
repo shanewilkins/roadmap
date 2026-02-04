@@ -3,6 +3,8 @@
 Provides health-specific formatting built on top of generic status utilities.
 """
 
+from collections.abc import Mapping
+
 from roadmap.core.domain.health import HealthStatus
 
 
@@ -11,7 +13,7 @@ class HealthStatusFormatter:
 
     @staticmethod
     def summarize_health_checks(
-        checks: dict[str, tuple[HealthStatus, str]],
+        checks: Mapping[str, tuple[HealthStatus, str]],
     ) -> dict[str, int]:
         """Summarize health check results into status counts.
 

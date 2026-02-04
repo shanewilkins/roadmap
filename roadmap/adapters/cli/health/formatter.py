@@ -8,6 +8,7 @@ Supports:
 """
 
 import json
+from collections.abc import Mapping
 
 import click
 
@@ -43,7 +44,7 @@ class HealthCheckFormatter:
 
     def format_plain(
         self,
-        checks: dict[str, tuple[HealthStatus, str]],
+        checks: Mapping[str, tuple[HealthStatus, str]],
         details: bool = False,
     ) -> str:
         """Format checks as plain text.
@@ -91,7 +92,7 @@ class HealthCheckFormatter:
 
     def format_json(
         self,
-        checks: dict[str, tuple[HealthStatus, str]],
+        checks: Mapping[str, tuple[HealthStatus, str]],
         details: bool = False,
         hierarchical: bool = True,
     ) -> str:
@@ -113,7 +114,7 @@ class HealthCheckFormatter:
             return self._format_json_flat(checks, details)
 
     def _format_json_hierarchical(
-        self, checks: dict[str, tuple[HealthStatus, str]]
+        self, checks: Mapping[str, tuple[HealthStatus, str]]
     ) -> str:
         """Format as hierarchical JSON with full details."""
         enhanced_checks = self.enhancer.enhance_all_checks(checks)
@@ -148,7 +149,7 @@ class HealthCheckFormatter:
         return json.dumps(output, indent=2, default=str)
 
     def _format_json_hierarchical_simple(
-        self, checks: dict[str, tuple[HealthStatus, str]]
+        self, checks: Mapping[str, tuple[HealthStatus, str]]
     ) -> str:
         """Format as hierarchical JSON without details."""
         # Group by status
@@ -185,7 +186,7 @@ class HealthCheckFormatter:
         return json.dumps(output, indent=2, default=str)
 
     def _format_json_flat(
-        self, checks: dict[str, tuple[HealthStatus, str]], details: bool = False
+        self, checks: Mapping[str, tuple[HealthStatus, str]], details: bool = False
     ) -> str:
         """Format as flat JSON."""
         output = {
