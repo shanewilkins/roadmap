@@ -153,6 +153,39 @@ class GitHubSyncBackend:
             self.github_client = self._auth_service.github_client
         return result
 
+    def get_api_client(self) -> Any:
+        """Get the GitHub API client with handler methods for push/pull operations.
+
+        Returns:
+            IssueHandler instance with create_issue(), update_issue(), etc. methods.
+
+        This method is used internally by GitHubSyncOps for actual API calls.
+        It ensures operations use the proper handler-based client for low-level
+        API operations, not the high-level GitHubClient wrapper.
+        """
+        import requests
+
+        from roadmap.adapters.github.handlers.issues import IssueHandler
+
+        # Create a session with the token
+        session = requests.Session()
+        token = self.config.get("token")
+        if token:
+            session.headers.update(
+                {
+                    "Authorization": f"token {token}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "roadmap-cli/1.0",
+                }
+            )
+
+        # Return a properly configured issue handler for API calls
+        return IssueHandler(
+            session=session,
+            owner=self.config.get("owner"),
+            repo=self.config.get("repo"),
+        )
+
     def get_issues(self) -> dict[str, SyncIssue]:
         """Fetch all issues from GitHub remote.
 
@@ -196,11 +229,9 @@ class GitHubSyncBackend:
         Returns:
             True if push succeeds, False if error.
 
-        Notes:
-            - Delegates to push_issues for consistency
-            - Creates new GitHub issue if not linked (no github_issue field)
-            - Updates existing GitHub issue if linked (has github_issue field)
-            - Stores the GitHub issue number for future syncs
+        Deprecated:
+            Use push_issues([issue]) instead. This method exists for backward
+            compatibility but is not used by the sync orchestrator.
         """
         report = self.push_issues([local_issue])
         return len(report.pushed) > 0 and len(report.errors) == 0

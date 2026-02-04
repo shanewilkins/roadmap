@@ -16,7 +16,21 @@ class IssueHandler(BaseGitHubHandler):
         assignee: str | None = None,
         per_page: int = 100,
     ) -> list[dict[str, Any]]:
-        """Get issues from the repository."""
+        """Get issues from the repository, handling pagination.
+        
+        Automatically fetches all pages of issues. Returns complete list
+        regardless of total count.
+
+        Args:
+            state: Issue state ('open', 'closed', 'all')
+            labels: Optional list of label names to filter by
+            milestone: Optional milestone title to filter by
+            assignee: Optional assignee username to filter by
+            per_page: Items per page (max 100)
+
+        Returns:
+            List of all issue dictionaries across all pages
+        """
         from structlog import get_logger
 
         logger = get_logger()
@@ -26,7 +40,6 @@ class IssueHandler(BaseGitHubHandler):
 
         params = {
             "state": state,
-            "per_page": per_page,
             "sort": "created",
             "direction": "desc",
         }
@@ -38,12 +51,18 @@ class IssueHandler(BaseGitHubHandler):
         if assignee:
             params["assignee"] = assignee
 
-        response = self._make_request(
-            "GET", f"/repos/{self.owner}/{self.repo}/issues", params=params
+        all_issues = self._paginate_request(
+            "GET",
+            f"/repos/{self.owner}/{self.repo}/issues",
+            params=params,
+            per_page=per_page,
         )
-        result = response.json()
 
-        return result
+        logger.info(
+            "issue_handler_get_issues_complete",
+            total_issues=len(all_issues),
+        )
+        return all_issues
 
     def get_issue(self, issue_number: int) -> dict[str, Any]:
         """Get a specific issue by number."""

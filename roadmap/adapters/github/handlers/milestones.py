@@ -10,14 +10,22 @@ class MilestoneHandler(BaseGitHubHandler):
     """Handler for GitHub Milestones API operations."""
 
     def get_milestones(self, state: str = "open") -> list[dict[str, Any]]:
-        """Get milestones from the repository."""
+        """Get milestones from the repository.
+        
+        Handles pagination automatically - returns all milestones.
+        
+        Args:
+            state: Milestone state ('open', 'closed', 'all')
+            
+        Returns:
+            List of all milestones across all pages
+        """
         self._check_repository()
 
         params = {"state": state}
-        response = self._make_request(
+        return self._paginate_request(
             "GET", f"/repos/{self.owner}/{self.repo}/milestones", params=params
         )
-        return response.json()
 
     def get_milestone(self, milestone_number: int) -> dict[str, Any]:
         """Get a specific milestone by number."""

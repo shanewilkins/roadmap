@@ -200,6 +200,9 @@ class SyncMergeEngine:
         report.issues_pulled = pulled_count
         if getattr(exec_report, "error", None):
             report.error = exec_report.error
+        # Copy errors from executor report
+        if hasattr(exec_report, "errors") and exec_report.errors:
+            report.errors.update(exec_report.errors)
 
         if (pushed_count > 0 or pulled_count > 0) and not dry_run:
             report.issues_needs_push = max(0, report.issues_needs_push - pushed_count)

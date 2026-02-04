@@ -14,10 +14,17 @@ class LabelHandler(BaseGitHubHandler):
     """Handler for GitHub Labels API operations."""
 
     def get_labels(self) -> list[dict[str, Any]]:
-        """Get repository labels."""
+        """Get repository labels.
+        
+        Handles pagination automatically - returns all labels.
+        
+        Returns:
+            List of all repository labels across all pages
+        """
         self._check_repository()
-        response = self._make_request("GET", f"/repos/{self.owner}/{self.repo}/labels")
-        return response.json()
+        return self._paginate_request(
+            "GET", f"/repos/{self.owner}/{self.repo}/labels"
+        )
 
     def create_label(
         self, name: str, color: str, description: str | None = None

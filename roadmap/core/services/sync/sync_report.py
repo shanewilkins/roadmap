@@ -127,6 +127,7 @@ class SyncReport:
     issues_pulled: int = 0  # Issues successfully pulled from remote
 
     changes: list[IssueChange] = field(default_factory=list)
+    errors: dict[str, str] = field(default_factory=dict)  # Issue ID -> error message
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     error: str | None = None
 

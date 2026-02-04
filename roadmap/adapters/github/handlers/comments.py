@@ -32,21 +32,23 @@ class CommentsHandler(BaseGitHubHandler):
 
     def get_issue_comments(self, issue_number: int) -> list[Comment]:
         """Get all comments for a specific issue.
+        
+        Handles pagination automatically - returns all comments.
 
         Args:
             issue_number: GitHub issue number
 
         Returns:
-            List of Comment objects
+            List of all Comment objects for the issue
         """
         self._check_repository()
 
-        response = self._make_request(
+        comments_data = self._paginate_request(
             "GET", f"/repos/{self.owner}/{self.repo}/issues/{issue_number}/comments"
         )
 
         comments = []
-        for comment_data in response.json():
+        for comment_data in comments_data:
             comment = self._create_comment_from_response(
                 comment_data, issue_id=str(issue_number)
             )

@@ -58,7 +58,7 @@ class SyncAnalysisService:
 
         Args:
             local_issues_dict: Dict of local Issue objects (id -> Issue)
-            remote_issues_data: Dict of remote issue data
+            remote_issues_data: Dict of remote issue data (keyed by remote ID)
             base_state: Previous sync state or None
 
         Returns:
@@ -77,7 +77,29 @@ class SyncAnalysisService:
         no_changes = [c for c in changes if c.conflict_type == "no_change"]
 
         updates = [c.local_state for c in local_only_changes if c.local_state]
-        pulls = [c.issue_id for c in remote_only_changes]
+        
+        # For pulls, we need to pass the remote ID (GitHub issue number) to pull_issues()
+        # After _normalize_remote_keys(), the remote_issues_data dict is keyed by local UUIDs,
+        # but we need to extract the GitHub number from each SyncIssue
+        pulls = []
+        for c in remote_only_changes:
+            if c.issue_id in remote_issues_data:
+                remote_obj = remote_issues_data[c.issue_id]
+                # Extract GitHub issue number (backend_id) from the SyncIssue
+                github_number = None
+                if isinstance(remote_obj, dict):
+                    github_number = remote_obj.get("backend_id") or remote_obj.get("number")
+                else:
+                    github_number = getattr(remote_obj, "backend_id", None)
+                
+                if github_number:
+                    pulls.append(str(github_number))
+                else:
+                    # Should not happen, but fallback to local ID if needed
+                    pulls.append(c.issue_id)
+            else:
+                pulls.append(c.issue_id)
+        
         up_to_date = [c.issue_id for c in no_changes]
 
         logger.debug(

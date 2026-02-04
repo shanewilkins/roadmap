@@ -76,6 +76,7 @@ class SyncPlanExecutor:
         `dry_run=True`), and return a `SyncReport` summarizing outcomes.
         """
         report = initial_report or SyncReport()
+        self._accumulated_errors = {}
 
         for action in getattr(plan, "actions", []):
             try:
@@ -99,6 +100,10 @@ class SyncPlanExecutor:
                 report.error = str(e)
                 if self.stop_on_error:
                     return report
+
+        # Transfer accumulated errors to the report
+        if self._accumulated_errors:
+            report.errors.update(self._accumulated_errors)
 
         return report
 
@@ -143,6 +148,11 @@ class SyncPlanExecutor:
         if issues and hasattr(adapter, "push_issues"):
             try:
                 r = adapter.push_issues(issues)
+                # Store errors from the push operation if available
+                if hasattr(r, "errors") and r.errors:
+                    if not hasattr(self, "_accumulated_errors"):
+                        self._accumulated_errors = {}
+                    self._accumulated_errors.update(r.errors)
                 return bool(getattr(r, "pushed", None))
             except Exception as e:
                 logger.debug(
@@ -185,6 +195,11 @@ class SyncPlanExecutor:
         if issue_ids and hasattr(adapter, "pull_issues"):
             try:
                 r = adapter.pull_issues(issue_ids)
+                # Store errors from the pull operation if available
+                if hasattr(r, "errors") and r.errors:
+                    if not hasattr(self, "_accumulated_errors"):
+                        self._accumulated_errors = {}
+                    self._accumulated_errors.update(r.errors)
                 return bool(getattr(r, "pulled", None))
             except Exception as e:
                 logger.debug(

@@ -35,14 +35,15 @@ class IssueRepository:
         with self._transaction() as conn:
             conn.execute(
                 """
-                INSERT INTO issues (id, project_id, milestone_id, title, description, status, priority, issue_type, assignee, estimate_hours, due_date, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO issues (id, project_id, milestone_id, title, headline, description, status, priority, issue_type, assignee, estimate_hours, due_date, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     issue_data["id"],
                     issue_data.get("project_id"),
                     issue_data.get("milestone_id"),
                     issue_data.get("title"),
+                    issue_data.get("headline", ""),
                     issue_data.get("description"),
                     issue_data.get("status", "open"),
                     issue_data.get("priority", "medium"),

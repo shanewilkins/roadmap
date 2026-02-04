@@ -113,10 +113,11 @@ class DatabaseManager:
         -- Issues table
         CREATE TABLE IF NOT EXISTS issues (
             id TEXT PRIMARY KEY,
-            project_id TEXT NOT NULL,
+            project_id TEXT,
             milestone_id TEXT,
             title TEXT NOT NULL,
-            description TEXT,
+            headline TEXT DEFAULT '',  -- Short summary for list views
+            description TEXT,  -- Full markdown content
             status TEXT NOT NULL DEFAULT 'open',
             priority TEXT NOT NULL DEFAULT 'medium',
             issue_type TEXT NOT NULL DEFAULT 'task',
@@ -307,7 +308,15 @@ class DatabaseManager:
                 CREATE INDEX idx_issue_remote_links_issue_uuid ON issue_remote_links (issue_uuid);
             """)
 
-        # Migration 4: Add headline and content columns to sync_base_state
+        # Migration 4: Add headline column to issues table
+        cursor.execute("PRAGMA table_info(issues)")
+        issue_columns = [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
+        if "headline" not in issue_columns:
+            migrations.append("""
+                ALTER TABLE issues ADD COLUMN headline TEXT DEFAULT '';
+            """)
+
+        # Migration 5: Add headline and content columns to sync_base_state
         cursor.execute("PRAGMA table_info(sync_base_state)")
         columns = [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
         if "headline" not in columns and "content" not in columns:

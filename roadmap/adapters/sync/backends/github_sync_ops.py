@@ -5,6 +5,7 @@ from typing import Any
 
 from structlog import get_logger
 
+from roadmap.adapters.sync.backends.converters import IssueToGitHubPayloadConverter
 from roadmap.common.logging import log_error_with_context
 from roadmap.core.interfaces import SyncReport
 
@@ -22,8 +23,174 @@ class GitHubSyncOps:
         """
         self.backend = backend
 
+    def _push_single_issue(self, issue: Any) -> tuple[bool, str | None]:
+        """Push a single issue to GitHub API.
+
+        Args:
+            issue: The Issue domain object to push
+
+        Returns:
+            Tuple of (success: bool, error_message: str | None)
+        """
+        try:
+            from roadmap.adapters.sync.backends.converters import IssueToGitHubPayloadConverter
+
+            # Get the API client from the backend (ensures we don't create duplicates)
+            client = self.backend.get_api_client()
+
+            # Check if issue is already linked to GitHub
+            github_number = IssueToGitHubPayloadConverter.get_github_number(issue)
+            payload = IssueToGitHubPayloadConverter.to_payload(issue, github_number)
+
+            if github_number:
+                # Update existing issue
+                result = client.update_issue(github_number, **payload)
+                logger.info(
+                    "github_issue_updated",
+                    issue_id=issue.id,
+                    github_number=github_number,
+                    title=issue.title,
+                )
+                return True, None
+            else:
+                # Create new issue
+                result = client.create_issue(**payload)
+                github_number = result.get("number")
+
+                # Ensure issue is persisted to database before linking
+                # This satisfies the FK constraint in issue_remote_links table
+                if github_number and hasattr(self.backend, "core") and self.backend.core:
+                    try:
+                        # First, ensure the issue exists in the database
+                        issue_repo = self.backend.core.db.get_issue_repository()
+                        existing = issue_repo.get(issue.id)
+                        
+                        if not existing:
+                            # Issue not in database yet - persist it
+                            # Convert Issue domain object to dict for database
+                            # Synced issues don't belong to a specific project
+                            issue_data = {
+                                "id": issue.id,
+                                "title": issue.title,
+                                "headline": getattr(issue, 'headline', ''),
+                                "description": issue.content or "",  # content → description
+                                "status": str(issue.status),
+                                "priority": str(issue.priority),
+                                "issue_type": str(issue.type) if hasattr(issue, 'type') else "task",
+                                "assignee": issue.assignee,
+                                "estimate_hours": issue.estimated_hours if hasattr(issue, 'estimated_hours') else None,
+                                "due_date": None,
+                                "project_id": None,  # Synced issues have no local project
+                            }
+                            issue_repo.create(issue_data)
+                            logger.info(
+                                "persisted_issue_for_linking",
+                                issue_id=issue.id,
+                                title=issue.title,
+                            )
+                    except Exception as e:
+                        logger.warning(
+                            "failed_to_persist_issue_before_linking",
+                            issue_id=issue.id,
+                            error=str(e),
+                            severity="operational",
+                        )
+                        # Continue with linking even if persist fails
+
+                    # Now link the issue to GitHub
+                    try:
+                        self.backend.core.db.remote_links.link_issue(
+                            issue_uuid=issue.id,
+                            backend_name="github",
+                            remote_id=str(github_number),
+                        )
+                        logger.info(
+                            "github_issue_linked",
+                            issue_id=issue.id,
+                            github_number=github_number,
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "github_issue_link_failed",
+                            issue_id=issue.id,
+                            github_number=github_number,
+                            error=str(e),
+                            severity="operational",
+                        )
+
+                logger.info(
+                    "github_issue_created",
+                    issue_id=issue.id,
+                    github_number=github_number,
+                    title=issue.title,
+                )
+                return True, None
+
+        except Exception as e:
+            error_msg = str(e)
+            error_type = type(e).__name__
+            
+            # Handle specific error types differently with structured logging
+            if "Access forbidden" in error_msg or "403" in error_msg:
+                # 403 Forbidden - token lacks permissions or repo access
+                # This is expected when token scope is limited, log at DEBUG level
+                logger.debug(
+                    "github_push_issue_skipped_due_to_permissions",
+                    issue_id=issue.id,
+                    error=error_msg,
+                    severity="config",
+                )
+                return False, f"Permission denied (check token scope): {error_msg}"
+            elif "Gone" in error_msg or "410" in error_msg:
+                # 410 Gone - resource was deleted on GitHub
+                # Expected for issues that were deleted, log at INFO level
+                logger.info(
+                    "github_push_issue_skipped_resource_deleted",
+                    issue_id=issue.id,
+                    error=error_msg,
+                    severity="operational",
+                )
+                return False, f"Remote issue deleted: {error_msg}"
+            elif "not found" in error_msg.lower() or "404" in error_msg:
+                # 404 Not Found - repo or resource doesn't exist
+                logger.warning(
+                    "github_push_issue_failed_not_found",
+                    issue_id=issue.id,
+                    error=error_msg,
+                    severity="operational",
+                )
+                return False, error_msg
+            elif "Rate limit exceeded" in error_msg or "429" in error_msg:
+                # 429 Rate Limited - too many requests
+                logger.warning(
+                    "github_push_issue_rate_limited",
+                    issue_id=issue.id,
+                    error=error_msg,
+                    severity="operational",
+                )
+                return False, f"Rate limited: {error_msg}"
+            elif "Validation error" in error_msg:
+                # 422 Validation error - invalid payload
+                logger.warning(
+                    "github_push_issue_validation_error",
+                    issue_id=issue.id,
+                    error=error_msg,
+                    severity="data_error",
+                )
+                return False, error_msg
+            else:
+                # Other errors (network, server errors, etc.)
+                logger.warning(
+                    "github_push_issue_failed",
+                    issue_id=issue.id,
+                    error=error_msg,
+                    error_type=error_type,
+                    severity="operational",
+                )
+                return False, error_msg
+
     def push_issues(self, local_issues: list) -> SyncReport:
-        """Push local issues to GitHub backend with progress tracking.
+        """Push local issues to GitHub backend with parallel execution.
 
         Args:
             local_issues: List of local issues to push.
@@ -41,20 +208,20 @@ class GitHubSyncOps:
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = {
-                executor.submit(self.backend.push_issue, issue): issue
+                executor.submit(self._push_single_issue, issue): issue
                 for issue in local_issues
             }
 
             for future in as_completed(futures):
                 issue = futures[future]
                 try:
-                    if future.result():
+                    success, error_msg = future.result()
+                    if success:
                         report.pushed.append(issue.id)
                         logger.debug("push_issue_succeeded", issue_id=issue.id)
                     else:
-                        error_msg = "Failed to push issue"
-                        report.errors[issue.id] = error_msg
-                        logger.warning("push_issue_failed", issue_id=issue.id)
+                        report.errors[issue.id] = error_msg or "Failed to push issue"
+                        logger.debug("push_issue_failed", issue_id=issue.id, error=error_msg)
                 except Exception as e:
                     error_msg = str(e)
                     report.errors[issue.id] = error_msg
@@ -73,6 +240,144 @@ class GitHubSyncOps:
             failed=len(report.errors),
         )
         return report
+
+    def _pull_single_issue(self, sync_issue: Any) -> tuple[bool, str | None]:
+        """Pull a single issue from GitHub and create/update locally.
+
+        Args:
+            sync_issue: The SyncIssue from GitHub fetch
+
+        Returns:
+            Tuple of (success: bool, error_message: str | None)
+        """
+        try:
+            from roadmap.adapters.sync.backends.converters import (
+                GitHubPayloadToIssueConverter,
+            )
+
+            # Convert GitHub issue to local Issue domain object
+            local_issue = GitHubPayloadToIssueConverter.from_sync_issue(sync_issue)
+
+            # Save the issue locally if it doesn't exist
+            # This ensures the FK constraint is satisfied before linking
+            if hasattr(self.backend, "core") and self.backend.core:
+                issue_repo = self.backend.core.db.get_issue_repository()
+                # Check if issue already exists by ID (using GitHub issue number as ID)
+                github_id = sync_issue.remote_ids.get("github") or sync_issue.backend_id
+                existing = issue_repo.get(github_id)
+
+                # Get a default project for synced issues (use first project)
+                project_id = None
+                try:
+                    projects = list(self.backend.core.projects.list())
+                    if projects:
+                        project_id = projects[0].id
+                except Exception as e:
+                    logger.warning("failed_to_get_projects_for_issue", error=str(e))
+
+                if existing:
+                    # Update existing issue - need to preserve the ID
+                    local_issue.id = github_id
+                    issue_repo.update(local_issue)
+                    logger.info(
+                        "github_issue_updated_locally",
+                        github_number=github_id,
+                        title=local_issue.title,
+                    )
+                else:
+                    # Create new issue locally - use GitHub issue number as local ID
+                    issue_data = {
+                        "id": github_id,
+                        "title": local_issue.title,
+                        "headline": local_issue.headline,
+                        "description": local_issue.content or "",
+                        "status": str(local_issue.status),
+                        "priority": str(local_issue.priority),
+                        "issue_type": str(local_issue.issue_type),
+                        "project_id": project_id,
+                        "assignee": local_issue.assignee,
+                        "estimate_hours": local_issue.estimated_hours,
+                        "due_date": None,
+                    }
+                    issue_repo.create(issue_data)
+                    logger.info(
+                        "github_issue_created_locally",
+                        github_number=github_id,
+                        title=local_issue.title,
+                    )
+
+                # Link the issue to GitHub
+                try:
+                    self.backend.core.db.remote_links.link_issue(
+                        issue_uuid=sync_issue.remote_ids.get("github") or sync_issue.backend_id,
+                        backend_name="github",
+                        remote_id=str(sync_issue.remote_ids.get("github") or sync_issue.backend_id),
+                    )
+                    logger.info(
+                        "github_issue_linked_locally",
+                        github_number=sync_issue.remote_ids.get("github") or sync_issue.backend_id,
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "github_issue_link_failed",
+                        github_number=sync_issue.remote_ids.get("github") or sync_issue.backend_id,
+                        error=str(e),
+                        severity="operational",
+                    )
+
+            return True, None
+
+        except Exception as e:
+            error_msg = str(e)
+            error_type = type(e).__name__
+            
+            # Handle specific error types differently with structured logging
+            if "Access forbidden" in error_msg or "403" in error_msg:
+                # 403 Forbidden - token lacks permissions
+                logger.debug(
+                    "github_pull_issue_skipped_due_to_permissions",
+                    github_number=getattr(sync_issue, "remote_id", "unknown"),
+                    error=error_msg,
+                    severity="config",
+                )
+                return False, f"Permission denied (check token scope): {error_msg}"
+            elif "Gone" in error_msg or "410" in error_msg:
+                # 410 Gone - issue was deleted on GitHub
+                logger.info(
+                    "github_pull_issue_skipped_resource_deleted",
+                    github_number=getattr(sync_issue, "remote_id", "unknown"),
+                    error=error_msg,
+                    severity="operational",
+                )
+                return False, f"Remote issue deleted: {error_msg}"
+            elif "not found" in error_msg.lower() or "404" in error_msg:
+                # 404 Not Found - issue or repo doesn't exist
+                logger.debug(
+                    "github_pull_issue_failed_not_found",
+                    github_number=getattr(sync_issue, "remote_id", "unknown"),
+                    error=error_msg,
+                    severity="operational",
+                )
+                return False, error_msg
+            elif "Rate limit exceeded" in error_msg or "429" in error_msg:
+                # 429 Rate Limited - too many requests
+                logger.debug(
+                    "github_pull_issue_rate_limited",
+                    github_number=getattr(sync_issue, "remote_id", "unknown"),
+                    error=error_msg,
+                    severity="operational",
+                )
+                return False, f"Rate limited: {error_msg}"
+            else:
+                # Other errors (network, server errors, etc.)
+                logger.debug(
+                    "github_pull_issue_failed",
+                    github_number=getattr(sync_issue, "remote_id", "unknown"),
+                    error=error_msg,
+                    error_type=error_type,
+                    severity="operational",
+                )
+                return False, error_msg
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
         """Pull issues from GitHub backend by IDs.
@@ -115,9 +420,15 @@ class GitHubSyncOps:
                         logger.debug("pull_issue_not_found", issue_id=issue_id)
                         continue
 
-                    # Mark as successfully pulled
-                    successful_pulls.append(issue_id)
-                    logger.debug("pull_issue_processed", issue_id=issue_id)
+                    # Pull the issue and create/update locally
+                    sync_issue = all_remote_issues[issue_id]
+                    success, error = self._pull_single_issue(sync_issue)
+
+                    if success:
+                        successful_pulls.append(issue_id)
+                        logger.debug("pull_issue_processed", issue_id=issue_id)
+                    else:
+                        failed_pulls[issue_id] = error or "Unknown error"
 
                 except Exception as e:
                     error_msg = str(e)

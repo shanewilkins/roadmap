@@ -198,6 +198,92 @@ def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst
     return run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst)
 
 
+def _display_issue_lists(core, analysis_report, local_only, remote_only, console_inst):
+    """Display lists of local-only or remote-only issues."""
+    from rich.table import Table
+    from collections import Counter
+    
+    if not hasattr(analysis_report, 'changes') or not analysis_report.changes:
+        console_inst.print("[dim]No issues found[/dim]")
+        return
+    
+    # Get all issues by type
+    local_only_issues = [c for c in analysis_report.changes if c.is_local_only_change()]
+    remote_only_issues = [c for c in analysis_report.changes if c.is_remote_only_change()]
+    
+    if local_only and local_only_issues:
+        console_inst.print("\n[bold cyan]📝 Local-Only Issues[/bold cyan] (exist locally but not remotely)")
+        
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("Local ID", style="dim", width=10)
+        table.add_column("Title", width=50)
+        table.add_column("Status", style="yellow", width=12)
+        
+        for change in sorted(local_only_issues, key=lambda c: c.title):
+            status = change.local_state.status if change.local_state else "unknown"
+            table.add_row(
+                change.issue_id[:8],
+                change.title,
+                status
+            )
+        
+        console_inst.print(table)
+        
+        # Show status breakdown
+        statuses = [c.local_state.status for c in local_only_issues if c.local_state]
+        status_counts = Counter(statuses)
+        breakdown = ", ".join(f"{s}: {count}" for s, count in sorted(status_counts.items()))
+        console_inst.print(f"[dim]Total: {len(local_only_issues)} issues ({breakdown})[/dim]")
+    
+    if remote_only and remote_only_issues:
+        console_inst.print("\n[bold cyan]🔄 Remote-Only Issues[/bold cyan] (exist remotely but not locally)")
+        
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("Local ID", style="dim", width=10)
+        table.add_column("Remote ID", style="cyan", width=12)
+        table.add_column("Title", width=40)
+        table.add_column("Status", style="yellow", width=10)
+        table.add_column("Linked", width=8)
+        
+        # Count linked vs orphaned
+        linked_count = 0
+        orphaned_count = 0
+        
+        for change in sorted(remote_only_issues, key=lambda c: c.title):
+            status = change.remote_state.get("status") if change.remote_state else "unknown"
+            # Extract remote ID (backend_id) from remote_state
+            remote_id = change.remote_state.get("backend_id") if change.remote_state else "?"
+            
+            # Determine if linked (has a local ID that's not "_remote_")
+            is_linked = change.issue_id and not change.issue_id.startswith("_remote_")
+            if is_linked:
+                linked_icon = "[green]✓[/green]"
+                linked_count += 1
+            else:
+                linked_icon = "[dim red]✗[/dim red]"
+                orphaned_count += 1
+            
+            table.add_row(
+                change.issue_id[:8] if is_linked else "_remote_",
+                str(remote_id),
+                change.title,
+                status,
+                linked_icon
+            )
+        
+        console_inst.print(table)
+        
+        # Show status breakdown and link status
+        statuses = [c.remote_state.get("status") for c in remote_only_issues if c.remote_state]
+        status_counts = Counter(statuses)
+        breakdown = ", ".join(f"{s}: {count}" for s, count in sorted(status_counts.items()))
+        console_inst.print(f"[dim]Total: {len(remote_only_issues)} issues ({breakdown})[/dim]")
+        console_inst.print(f"[green]Linked to local: {linked_count}[/green] | [dim red]Orphaned (no local match): {orphaned_count}[/dim red]")
+    
+    if not (local_only or remote_only):
+        console_inst.print("[dim]Use --local-only or --remote-only to see issue lists[/dim]")
+
+
 def _clear_baseline(core, backend, console_inst) -> bool:
     """Handle the `--clear-baseline` flag to clear baseline without syncing."""
     from roadmap.adapters.cli.sync_handlers import clear_baseline
@@ -329,6 +415,16 @@ def _handle_pre_sync_actions(
     default=None,
     help="Strategy for first sync baseline (local=local is source, remote=remote is source, interactive=choose per-issue)",
 )
+@click.option(
+    "--local-only",
+    is_flag=True,
+    help="Show issues that exist locally but not remotely",
+)
+@click.option(
+    "--remote-only",
+    is_flag=True,
+    help="Show issues that exist remotely but not locally",
+)
 @click.pass_context
 @require_initialized
 def sync(
@@ -348,6 +444,8 @@ def sync(
     unlink: bool,
     issue_id: str | None,
     baseline: str | None,
+    local_only: bool,
+    remote_only: bool,
 ) -> None:
     """Sync roadmap with remote repository.
 
@@ -439,6 +537,10 @@ def sync(
         plan, analysis_report = _run_analysis_phase(
             orchestrator, push, pull, dry_run, verbose, console_inst
         )
+
+        # Display local-only or remote-only lists if requested
+        if local_only or remote_only:
+            _display_issue_lists(core, analysis_report, local_only, remote_only, console_inst)
 
         # If dry-run, stop here and show what would be applied
         if dry_run:

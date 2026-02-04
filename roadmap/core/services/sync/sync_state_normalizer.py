@@ -74,6 +74,7 @@ def normalize_remote_state(
 
         return {
             "id": getattr(remote, "id", None),
+            "backend_id": getattr(remote, "backend_id", None),
             "title": getattr(remote, "title", None),
             "status": getattr(remote, "status", None),
             "assignee": getattr(remote, "assignee", None),
