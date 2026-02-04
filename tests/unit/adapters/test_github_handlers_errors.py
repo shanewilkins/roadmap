@@ -13,6 +13,23 @@ from roadmap.adapters.github.handlers.issues import IssueHandler
 from roadmap.adapters.github.handlers.milestones import MilestoneHandler
 
 
+def create_mock_response(json_data, has_next=False):
+    """Create a mock response with proper pagination headers.
+    
+    Args:
+        json_data: The JSON data to return
+        has_next: Whether to include a rel="next" link
+    
+    Returns:
+        Mock response object
+    """
+    mock_response = Mock()
+    mock_response.json.return_value = json_data
+    link_header = '<https://api.github.com/next>; rel="next"' if has_next else ""
+    mock_response.headers = {"Link": link_header}
+    return mock_response
+
+
 @pytest.fixture
 def mock_session():
     """Create a mock HTTP session."""
@@ -45,11 +62,10 @@ class TestIssueHandlerOperations:
     def test_get_issues_success(self, issue_handler):
         """Test successfully fetching issues."""
         with patch.object(issue_handler, "_make_request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = [
+            mock_response = create_mock_response([
                 {"number": 1, "title": "Issue 1", "state": "open"},
                 {"number": 2, "title": "Issue 2", "state": "closed"},
-            ]
+            ])
             mock_request.return_value = mock_response
 
             result = issue_handler.get_issues()
@@ -59,8 +75,7 @@ class TestIssueHandlerOperations:
     def test_get_issues_with_filters(self, issue_handler):
         """Test fetching issues with various filters."""
         with patch.object(issue_handler, "_make_request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = [{"number": 1, "title": "Filtered Issue"}]
+            mock_response = create_mock_response([{"number": 1, "title": "Filtered Issue"}])
             mock_request.return_value = mock_response
 
             result = issue_handler.get_issues(
@@ -212,11 +227,10 @@ class TestMilestoneHandlerOperations:
     def test_get_milestones_success(self, milestone_handler):
         """Test successfully fetching milestones."""
         with patch.object(milestone_handler, "_make_request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = [
+            mock_response = create_mock_response([
                 {"number": 1, "title": "v1.0", "state": "open"},
                 {"number": 2, "title": "v2.0", "state": "closed"},
-            ]
+            ])
             mock_request.return_value = mock_response
 
             result = milestone_handler.get_milestones()
