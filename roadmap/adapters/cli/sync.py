@@ -198,11 +198,111 @@ def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst
     return run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst)
 
 
-def _display_issue_lists(core, analysis_report, local_only, remote_only, console_inst):
-    """Display lists of local-only or remote-only issues."""
-    from rich.table import Table
+def _build_local_status_breakdown(local_only_issues):
+    """Build status breakdown string for local-only issues."""
     from collections import Counter
 
+    statuses = [c.local_state.status for c in local_only_issues if c.local_state]
+    status_counts = Counter(statuses)
+    return ", ".join(f"{s}: {count}" for s, count in sorted(status_counts.items()))
+
+
+def _build_remote_status_breakdown(remote_only_issues):
+    """Build status breakdown string for remote-only issues."""
+    from collections import Counter
+
+    statuses = [
+        c.remote_state.get("status") for c in remote_only_issues if c.remote_state
+    ]
+    status_counts = Counter(statuses)
+    return ", ".join(f"{s}: {count}" for s, count in sorted(status_counts.items()))
+
+
+def _display_local_only_issues(local_only_issues, console_inst):
+    """Display local-only issues in a formatted table."""
+    from rich.table import Table
+
+    console_inst.print(
+        "\n[bold cyan]📝 Local-Only Issues[/bold cyan] (exist locally but not remotely)"
+    )
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Local ID", style="dim", width=10)
+    table.add_column("Title", width=50)
+    table.add_column("Status", style="yellow", width=12)
+
+    for change in sorted(local_only_issues, key=lambda c: c.title):
+        status = change.local_state.status if change.local_state else "unknown"
+        table.add_row(change.issue_id[:8], change.title, status)
+
+    console_inst.print(table)
+
+    # Show status breakdown
+    breakdown = _build_local_status_breakdown(local_only_issues)
+    console_inst.print(
+        f"[dim]Total: {len(local_only_issues)} issues ({breakdown})[/dim]"
+    )
+
+
+def _display_remote_only_issues(remote_only_issues, console_inst):
+    """Display remote-only issues in a formatted table with link status."""
+    from rich.table import Table
+
+    console_inst.print(
+        "\n[bold cyan]🔄 Remote-Only Issues[/bold cyan] (exist remotely but not locally)"
+    )
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Local ID", style="dim", width=10)
+    table.add_column("Remote ID", style="cyan", width=12)
+    table.add_column("Title", width=40)
+    table.add_column("Status", style="yellow", width=10)
+    table.add_column("Linked", width=8)
+
+    # Count linked vs orphaned
+    linked_count = 0
+    orphaned_count = 0
+
+    for change in sorted(remote_only_issues, key=lambda c: c.title):
+        status = (
+            change.remote_state.get("status") if change.remote_state else "unknown"
+        )
+        # Extract remote ID (backend_id) from remote_state
+        remote_id = (
+            change.remote_state.get("backend_id") if change.remote_state else "?"
+        )
+
+        # Determine if linked (has a local ID that's not "_remote_")
+        is_linked = change.issue_id and not change.issue_id.startswith("_remote_")
+        if is_linked:
+            linked_icon = "[green]✓[/green]"
+            linked_count += 1
+        else:
+            linked_icon = "[dim red]✗[/dim red]"
+            orphaned_count += 1
+
+        table.add_row(
+            change.issue_id[:8] if is_linked else "_remote_",
+            str(remote_id),
+            change.title,
+            status,
+            linked_icon,
+        )
+
+    console_inst.print(table)
+
+    # Show status breakdown and link status
+    breakdown = _build_remote_status_breakdown(remote_only_issues)
+    console_inst.print(
+        f"[dim]Total: {len(remote_only_issues)} issues ({breakdown})[/dim]"
+    )
+    console_inst.print(
+        f"[green]Linked to local: {linked_count}[/green] | [dim red]Orphaned (no local match): {orphaned_count}[/dim red]"
+    )
+
+
+def _display_issue_lists(core, analysis_report, local_only, remote_only, console_inst):
+    """Display lists of local-only or remote-only issues."""
     if not hasattr(analysis_report, "changes") or not analysis_report.changes:
         console_inst.print("[dim]No issues found[/dim]")
         return
@@ -214,89 +314,10 @@ def _display_issue_lists(core, analysis_report, local_only, remote_only, console
     ]
 
     if local_only and local_only_issues:
-        console_inst.print(
-            "\n[bold cyan]📝 Local-Only Issues[/bold cyan] (exist locally but not remotely)"
-        )
-
-        table = Table(show_header=True, header_style="bold cyan")
-        table.add_column("Local ID", style="dim", width=10)
-        table.add_column("Title", width=50)
-        table.add_column("Status", style="yellow", width=12)
-
-        for change in sorted(local_only_issues, key=lambda c: c.title):
-            status = change.local_state.status if change.local_state else "unknown"
-            table.add_row(change.issue_id[:8], change.title, status)
-
-        console_inst.print(table)
-
-        # Show status breakdown
-        statuses = [c.local_state.status for c in local_only_issues if c.local_state]
-        status_counts = Counter(statuses)
-        breakdown = ", ".join(
-            f"{s}: {count}" for s, count in sorted(status_counts.items())
-        )
-        console_inst.print(
-            f"[dim]Total: {len(local_only_issues)} issues ({breakdown})[/dim]"
-        )
+        _display_local_only_issues(local_only_issues, console_inst)
 
     if remote_only and remote_only_issues:
-        console_inst.print(
-            "\n[bold cyan]🔄 Remote-Only Issues[/bold cyan] (exist remotely but not locally)"
-        )
-
-        table = Table(show_header=True, header_style="bold cyan")
-        table.add_column("Local ID", style="dim", width=10)
-        table.add_column("Remote ID", style="cyan", width=12)
-        table.add_column("Title", width=40)
-        table.add_column("Status", style="yellow", width=10)
-        table.add_column("Linked", width=8)
-
-        # Count linked vs orphaned
-        linked_count = 0
-        orphaned_count = 0
-
-        for change in sorted(remote_only_issues, key=lambda c: c.title):
-            status = (
-                change.remote_state.get("status") if change.remote_state else "unknown"
-            )
-            # Extract remote ID (backend_id) from remote_state
-            remote_id = (
-                change.remote_state.get("backend_id") if change.remote_state else "?"
-            )
-
-            # Determine if linked (has a local ID that's not "_remote_")
-            is_linked = change.issue_id and not change.issue_id.startswith("_remote_")
-            if is_linked:
-                linked_icon = "[green]✓[/green]"
-                linked_count += 1
-            else:
-                linked_icon = "[dim red]✗[/dim red]"
-                orphaned_count += 1
-
-            table.add_row(
-                change.issue_id[:8] if is_linked else "_remote_",
-                str(remote_id),
-                change.title,
-                status,
-                linked_icon,
-            )
-
-        console_inst.print(table)
-
-        # Show status breakdown and link status
-        statuses = [
-            c.remote_state.get("status") for c in remote_only_issues if c.remote_state
-        ]
-        status_counts = Counter(statuses)
-        breakdown = ", ".join(
-            f"{s}: {count}" for s, count in sorted(status_counts.items())
-        )
-        console_inst.print(
-            f"[dim]Total: {len(remote_only_issues)} issues ({breakdown})[/dim]"
-        )
-        console_inst.print(
-            f"[green]Linked to local: {linked_count}[/green] | [dim red]Orphaned (no local match): {orphaned_count}[/dim red]"
-        )
+        _display_remote_only_issues(remote_only_issues, console_inst)
 
     if not (local_only or remote_only):
         console_inst.print(
